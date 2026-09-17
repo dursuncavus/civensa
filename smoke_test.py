@@ -62,7 +62,7 @@ def csrf_from(html: str) -> str:
 def health_check():
     response = open_with_retry(urllib.request.build_opener(), BASE + "/health")
     health = json.loads(response.read().decode())
-    assert health.get("status") == "ok", health
+    assert health.get("status") == "ok", health\n    assert health.get("version") == "1.8.2", health\n    assert health.get("database", {}).get("status") == "ok", health\n    assert health.get("database", {}).get("backend") in {"sqlite", "postgresql"}, health
     print("HEALTH_OK", health, flush=True)
 
 
