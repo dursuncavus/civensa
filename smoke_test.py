@@ -63,7 +63,7 @@ def health_check():
     response = open_with_retry(urllib.request.build_opener(), BASE + "/health")
     health = json.loads(response.read().decode())
     assert health.get("status") == "ok", health
-    assert health.get("version") == "1.8.3", health
+    assert health.get("version") == "1.8.4", health
     assert health.get("database", {}).get("status") == "ok", health
     assert health.get("database", {}).get("backend") in {"sqlite", "postgresql"}, health
     print("HEALTH_OK", health, flush=True)
