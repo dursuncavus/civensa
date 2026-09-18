@@ -23,8 +23,15 @@ for name in archive.namelist():
     if controls:
         bad_controls.append((name, controls[:5]))
 main = archive.read("app/main.py").decode("utf-8")
+requirements = [
+    line.strip() for line in archive.read("requirements.txt").decode("utf-8").splitlines()
+    if line.strip() and not line.lstrip().startswith("#")
+]
 assert not bad_controls, bad_controls
 assert "APP_VERSION" in main
+assert requirements, "requirements.txt is empty"
+assert all("==" in line for line in requirements), requirements
+assert not any(">=" in line for line in requirements), requirements
 assert "app/templates/department.html" in archive.namelist()
 assert "app/static/app.js" in archive.namelist()
 print("BUNDLE_INTEGRITY_OK", len(archive.namelist()), "files", python_files, "python_utf8_clean")
