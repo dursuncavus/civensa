@@ -22,7 +22,7 @@ def login(email):
 strategy = login("strateji@civensa.local")
 payload = json.loads(strategy.open(BASE + "/api/operations/status", timeout=30).read())
 assert payload["status"] == "ok", payload
-assert payload["version"] == "2.0.2", payload
+assert payload["version"] == "2.1.0", payload
 assert payload["database"]["status"] == "ok", payload
 assert payload["records"]["departments"] >= 1, payload
 assert payload["records"]["indicators"] >= 1, payload
