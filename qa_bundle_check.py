@@ -34,6 +34,6 @@ assert all("==" in line for line in requirements), requirements
 assert not any(">=" in line for line in requirements), requirements
 assert "app/templates/department.html" in archive.namelist()
 assert "app/static/app.js" in archive.namelist()
-assert "app/report_export.py" in archive.namelist()
-assert 'APP_VERSION = "2.0.1"' in main
+assert "app/report_export.py" in archive.namelist()\nassert "app/templates/operations.html" in archive.namelist()
+assert 'APP_VERSION = "2.0.2"' in main
 print("BUNDLE_INTEGRITY_OK", len(archive.namelist()), "files", python_files, "python_utf8_clean")
