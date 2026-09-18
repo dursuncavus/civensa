@@ -23,7 +23,7 @@ def login(email):
 strategy, dashboard = login("strateji@civensa.local")
 payload = json.loads(strategy.open(BASE + "/api/progress", timeout=30).read())
 assert payload["status"] == "ok", payload
-assert payload["version"] == "2.2.1", payload
+assert payload["version"] == "2.2.2", payload
 assert payload["total"] == len(payload["rows"]) >= 1, payload
 assert sum(payload["summary"].values()) == payload["total"], payload
 assert all(row["state"] in VALID_STATES for row in payload["rows"]), payload

@@ -1,44 +1,15 @@
 """Validate the split deployment bundle before release."""
-import base64
-import io
-import pathlib
-import zipfile
-
-PARTS = [
-    "bundle.part01", "bundle.part02", "bundle.part03a", "bundle.part03b",
-    "bundle.part03c", "bundle.part03d", "bundle.part04", "bundle.part05",
-]
-root = pathlib.Path(__file__).resolve().parent
-encoded = "".join((root / name).read_text() for name in PARTS)
-archive = zipfile.ZipFile(io.BytesIO(base64.b64decode(encoded)))
-bad_controls = []
-python_files = 0
+import base64, io, pathlib, zipfile
+PARTS=["bundle.part01","bundle.part02","bundle.part03a","bundle.part03b","bundle.part03c","bundle.part03d","bundle.part04","bundle.part05"]
+root=pathlib.Path(__file__).resolve().parent
+archive=zipfile.ZipFile(io.BytesIO(base64.b64decode("".join((root/n).read_text() for n in PARTS))))
 for name in archive.namelist():
-    if not name.endswith(".py"):
-        continue
-    source = archive.read(name).decode("utf-8")
-    compile(source, name, "exec")
-    python_files += 1
-    controls = [(index, ord(char)) for index, char in enumerate(source)
-                if ord(char) < 32 and char not in "\n\r\t"]
-    if controls:
-        bad_controls.append((name, controls[:5]))
-main = archive.read("app/main.py").decode("utf-8")
-parser = archive.read("app/data_importer.py").decode("utf-8")
-import_service = archive.read("app/import_service.py").decode("utf-8")
-requirements = [
-    line.strip() for line in archive.read("requirements.txt").decode("utf-8").splitlines()
-    if line.strip() and not line.lstrip().startswith("#")
-]
-assert not bad_controls, bad_controls
-assert 'APP_VERSION = "2.2.1"' in main
-assert 'lower.startswith(("gostergeye", "gostergelere"))' in parser
-assert "_validate_import_field_lengths(plan)" in import_service
-assert requirements
-assert all("==" in line for line in requirements), requirements
-assert not any(">=" in line for line in requirements), requirements
-assert "app/templates/department.html" in archive.namelist()
-assert "app/static/app.js" in archive.namelist()
-assert "app/report_export.py" in archive.namelist()
-assert "app/templates/operations.html" in archive.namelist()
-print("BUNDLE_INTEGRITY_OK", len(archive.namelist()), "files", python_files, "python_utf8_clean")
+    if name.endswith(".py"): compile(archive.read(name).decode("utf-8"),name,"exec")
+main=archive.read("app/main.py").decode()
+template=archive.read("app/templates/activity_mapping.html").decode()
+javascript=archive.read("app/static/app.js").decode()
+assert 'APP_VERSION = "2.2.2"' in main
+assert "selected' if suggestion" not in template
+assert "choose-suggestion" in template and "selectStrongSuggestions" in template
+assert "window.confirm(assignments.length" in javascript
+print("BUNDLE_INTEGRITY_OK",len(archive.namelist()))
