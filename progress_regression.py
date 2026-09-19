@@ -23,7 +23,7 @@ def login(email):
 strategy, dashboard = login("strateji@civensa.local")
 payload = json.loads(strategy.open(BASE + "/api/progress", timeout=30).read())
 assert payload["status"] == "ok", payload
-assert payload["version"] == "2.3.0", payload
+assert payload["version"] == "2.3.1", payload
 assert payload["total"] == len(payload["rows"]) >= 1, payload
 assert sum(value for key, value in payload["summary"].items() if key != "missing_accounts") == payload["total"], payload
 assert payload["summary"]["missing_accounts"] >= 0, payload

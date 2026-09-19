@@ -4,7 +4,7 @@ r=pathlib.Path(__file__).resolve().parent
 z=zipfile.ZipFile(io.BytesIO(base64.b64decode("".join((r/p).read_text() for p in parts))))
 for n in z.namelist():
     if n.endswith(".py"):compile(z.read(n).decode(),n,"exec")
-m=z.read("app/main.py").decode();d=z.read("app/templates/dashboard.html").decode()
-assert 'APP_VERSION = "2.3.0"' in m and '"has_department_user": has_department_user' in m
-assert "Kullanıcı hesabı eksik" in d
+m=z.read("app/main.py").decode();u=z.read("app/templates/users.html").decode()
+assert 'APP_VERSION = "2.3.1"' in m and '"missing_departments": missing_departments' in m
+assert "Hesabı Olmayan Müdürlükler" in u
 print("BUNDLE_INTEGRITY_OK",len(z.namelist()))
