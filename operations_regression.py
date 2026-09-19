@@ -22,12 +22,12 @@ def login(email):
 strategy = login("strateji@civensa.local")
 payload = json.loads(strategy.open(BASE + "/api/operations/status", timeout=30).read())
 assert payload["status"] == "ok", payload
-assert payload["version"] == "2.2.2", payload
+assert payload["version"] == "2.2.3", payload
 assert payload["database"]["status"] == "ok", payload
 assert payload["records"]["departments"] >= 1, payload
 assert payload["records"]["indicators"] >= 1, payload
 assert payload["records"]["activities"] >= 1, payload
-assert payload["records"]["unresolved_activities"] >= 0, payload
+assert payload["records"]["unresolved_activities"] >= 0, payload\nassert payload["records"]["mapping_suggestions"] >= payload["records"]["strong_mapping_suggestions"] >= 0, payload
 assert isinstance(payload["submissions"], dict), payload
 html = strategy.open(BASE + "/operations", timeout=30).read().decode("utf-8")
 assert "Sistem Durumu" in html, html[:500]
