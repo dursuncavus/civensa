@@ -33,11 +33,19 @@ assert not bad_preview["ok"] and bad_preview["errors"],bad_preview
 before=len(rows)-1
 if APPLY:
     applied=json.loads(multipart("/api/activity-mappings/import-apply",payload).read())
-    assert applied["ok"] and applied["updated"]==1,applied
+    assert applied["ok"] and applied["updated"]==1 and applied["batch_id"],applied
     after=len(export_rows())-1; assert after==before-1,(before,after)
     try:
         multipart("/api/activity-mappings/import-apply",payload)
         raise AssertionError("stale mapping CSV unexpectedly applied twice")
     except urllib.error.HTTPError as exc:
         assert exc.code==422,exc.code
-print("MAPPING_CSV_ROUNDTRIP_OK",before,"apply",APPLY)
+    req=urllib.request.Request(BASE+"/api/activity-mappings/batches/"+applied["batch_id"]+"/revert",data=b"",method="POST",headers={"X-CSRF-Token":token})
+    reverted=json.loads(opener.open(req,timeout=120).read()); assert reverted=={"ok":True,"reverted":1},reverted
+    restored=len(export_rows())-1; assert restored==before,(before,restored)
+    try:
+        opener.open(req,timeout=120)
+        raise AssertionError("mapping batch reverted twice")
+    except urllib.error.HTTPError as exc:
+        assert exc.code==409,exc.code
+print("MAPPING_CSV_ROLLBACK_OK",before,"apply",APPLY)
