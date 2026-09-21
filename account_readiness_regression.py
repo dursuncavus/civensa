@@ -15,7 +15,7 @@ assert rows[0]==["Müdürlük ID","Müdürlük","Ad Soyad","E-posta","Geçici Pa
 assert len(rows)>=2,rows
 assert all(len(row)==5 for row in rows)
 html=strategy.open(BASE+"/users",timeout=60).read().decode()
-assert "Eksik hesap listesini indir" in html
+assert "Eksik hesap şablonunu indir" in html
 department=login("saglik@civensa.local")
 try:
     department.open(BASE+"/api/users/missing-departments.csv",timeout=60)
