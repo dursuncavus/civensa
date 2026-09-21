@@ -27,7 +27,7 @@ bad_preview=json.loads(multipart("/api/users/bulk-preview",bad).read())
 assert not bad_preview["ok"] and bad_preview["errors"],bad_preview
 if APPLY:
     applied=json.loads(multipart("/api/users/bulk-import",payload).read())
-    assert applied=={"ok":True,"created":1},applied
+    assert applied["ok"] and applied["created"]==1 and applied["batch_id"],applied
     after=list(csv.reader(io.StringIO(opener.open(BASE+"/api/users/missing-departments.csv",timeout=90).read().decode("utf-8-sig"))))
     assert len(after)-1==before-1,(before,len(after)-1)
     try:
@@ -35,4 +35,8 @@ if APPLY:
         raise AssertionError("duplicate import unexpectedly succeeded")
     except urllib.error.HTTPError as exc:
         assert exc.code in (409,422),exc.code
+    req=urllib.request.Request(BASE+"/api/users/batches/"+applied["batch_id"]+"/revert",data=b"",method="POST",headers={"X-CSRF-Token":token})
+    reverted=json.loads(opener.open(req,timeout=120).read()); assert reverted=={"ok":True,"reverted":1},reverted
+    restored=list(csv.reader(io.StringIO(opener.open(BASE+"/api/users/missing-departments.csv",timeout=90).read().decode("utf-8-sig"))))
+    assert len(restored)-1==before,(before,len(restored)-1)
 print("BULK_ACCOUNT_CSV_OK",before,"apply",APPLY)
