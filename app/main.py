@@ -1,0 +1,1954 @@
+from datetime import datetime, UTC
+from pathlib import Path
+from contextlib import asynccontextmanager
+import json
+import os
+import secrets
+import hmac
+import io
+import csv
+import time
+from urllib.parse import quote
+
+from fastapi import FastAPI, Request, Depends, Form, HTTPException, UploadFile, File
+from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse, StreamingResponse
+from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
+from sqlalchemy import select, inspect, func
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import Session, selectinload
+from starlette.middleware.sessions import SessionMiddleware
+from alembic import command as alembic_command
+from alembic.config import Config as AlembicConfig
+
+from .db import Base, engine, get_db, SessionLocal
+from .models import (
+    User, Department, ReportingPeriod, Indicator, IndicatorValue, Activity,
+    ActivityCostValue, DepartmentCostValue, Submission, AuditLog, Program,
+    SubProgram, TemplateSnapshot, ImportBatch, SubmissionEvent, Notification,
+)
+from .security import verify_password, hash_password
+from .seed import seed
+from .template_parser import analyze_template
+from .data_importer import parse_performance_docx
+from .import_service import build_department_plan, apply_import_batch, import_revert_status, revert_import_batch
+from .config import validate_runtime_settings, session_secret, cookie_secure, demo_seed_enabled, is_production
+from .file_security import read_upload_limited, validate_office_zip
+from .report_export import build_department_docx
+
+BASE_DIR = Path(__file__).resolve().parent
+APP_VERSION = "4.2.0"
+MIGRATION_HEAD = "d4f0a1b2c3d4"
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    validate_runtime_settings()
+    if is_production():
+        # Apply committed, reversible schema migrations before serving traffic.
+        alembic_config = AlembicConfig(str(BASE_DIR.parent / "alembic.ini"))
+        alembic_config.set_main_option("script_location", str(BASE_DIR.parent / "migrations"))
+        schema = inspect(engine)
+        if schema.has_table("users") and not schema.has_table("alembic_version"):
+            # Legacy pilot databases predate Alembic tracking but already match
+            # the initial schema. Baseline them before applying later revisions.
+            alembic_command.stamp(alembic_config, "290ef7e62102")
+        alembic_command.upgrade(alembic_config, "head")
+        if not inspect(engine).has_table("users"):
+            raise RuntimeError("Civensa veritabanı hazırlanmadı. Önce `alembic upgrade head` çalıştırın.")
+    else:
+        Base.metadata.create_all(engine)
+        alembic_config = AlembicConfig(str(BASE_DIR.parent / "alembic.ini"))
+        alembic_config.set_main_option("script_location", str(BASE_DIR.parent / "migrations"))
+        alembic_command.stamp(alembic_config, "head")
+        if demo_seed_enabled():
+            with SessionLocal() as db:
+                seed(db)
+    yield
+
+
+app = FastAPI(title="Civensa", version=APP_VERSION, lifespan=lifespan)
+app.add_middleware(
+    SessionMiddleware,
+    secret_key=session_secret(),
+    same_site="lax",
+    https_only=cookie_secure(),
+    max_age=8 * 60 * 60,
+)
+
+
+@app.middleware("http")
+async def security_headers(request: Request, call_next):
+    response = await call_next(request)
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["Referrer-Policy"] = "same-origin"
+    response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
+    response.headers["Content-Security-Policy"] = (
+        "default-src 'self'; img-src 'self' data:; script-src 'self'; "
+        "style-src 'self' 'unsafe-inline'; font-src 'self'; frame-ancestors 'none'; "
+        "form-action 'self'; base-uri 'self'"
+    )
+    return response
+app.mount("/static", StaticFiles(directory=BASE_DIR / "static"), name="static")
+templates = Jinja2Templates(directory=BASE_DIR / "templates")
+
+
+def current_user(request: Request, db: Session):
+    uid = request.session.get("user_id")
+    return db.get(User, uid) if uid else None
+
+
+async def require_user(request: Request, db: Session = Depends(get_db)):
+    user = current_user(request, db)
+    if not user or not user.is_active:
+        request.session.clear()
+        raise HTTPException(status_code=401)
+    if request.method in {"POST", "PUT", "PATCH", "DELETE"}:
+        expected = request.session.get("csrf_token", "")
+        supplied = request.headers.get("X-CSRF-Token", "")
+        if not supplied and request.headers.get("content-type", "").startswith("application/x-www-form-urlencoded"):
+            form = await request.form()
+            supplied = str(form.get("csrf_token", ""))
+        if not expected or not supplied or not hmac.compare_digest(str(expected), str(supplied)):
+            raise HTTPException(403, "Güvenlik doğrulaması başarısız. Sayfayı yenileyip tekrar deneyin.")
+    return user
+
+
+def require_strategy(user: User = Depends(require_user)):
+    if user.role != "strategy":
+        raise HTTPException(status_code=403)
+    return user
+
+
+def notification_query(user: User):
+    query = select(Notification)
+    if user.role == "strategy":
+        return query.where(Notification.role == "strategy")
+    return query.where(
+        Notification.role == "department",
+        Notification.department_id == user.department_id,
+    )
+
+
+def user_notifications(db: Session, user: User, limit: int = 8):
+    return db.scalars(
+        notification_query(user).order_by(Notification.created_at.desc()).limit(limit)
+    ).all()
+
+
+def log(db, user, action, entity_type, entity_id=None, details=""):
+    db.add(AuditLog(
+        user_id=user.id if user else None,
+        action=action,
+        entity_type=entity_type,
+        entity_id=entity_id,
+        details=details,
+    ))
+    db.commit()
+
+
+def format_tr(value: float, money=False):
+    if money:
+        return f"{value:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+    return f"{value:,.0f}".replace(",", ".")
+
+
+def parse_tr_number(raw, field="Değer"):
+    text = str(raw if raw is not None else "0").strip().replace("₺", "").replace(" ", "")
+    if not text:
+        return 0.0
+    text = text.replace(".", "").replace(",", ".")
+    try:
+        return float(text)
+    except ValueError:
+        raise HTTPException(422, f"{field} sayı olmalı.")
+
+
+def parse_optional_number(raw, field="Deger"):
+    text = str(raw if raw is not None else "").strip()
+    if not text:
+        return None
+    return parse_tr_number(raw, field)
+
+
+def parse_nonnegative_money(raw, field="Tutar"):
+    value = parse_tr_number(raw, field)
+    if value < 0:
+        raise HTTPException(422, f"{field} negatif olamaz.")
+    return value
+
+
+def parse_optional_nonnegative_money(raw, field="Tutar"):
+    text = str(raw if raw is not None else "").strip().replace("₺", "").replace(" ", "")
+    if not text:
+        return None
+    return parse_nonnegative_money(raw, field)
+
+
+templates.env.filters["trnum"] = lambda v: format_tr(float(v or 0), False)
+templates.env.filters["trmoney"] = lambda v: format_tr(float(v or 0), True)
+
+
+def active_period(db: Session):
+    period = db.scalar(select(ReportingPeriod).where(ReportingPeriod.status == "active").order_by(ReportingPeriod.year.desc()))
+    return period or db.scalar(select(ReportingPeriod).order_by(ReportingPeriod.year.desc()))
+
+
+def session_period(request: Request, db: Session):
+    pid = request.session.get("period_id")
+    period = db.get(ReportingPeriod, pid) if pid else None
+    return period or active_period(db)
+
+
+def indicator_columns(year: int):
+    return [
+        {"year": year - 1, "kind": "planned", "label": f"{year-1} Planlanan"},
+        {"year": year - 1, "kind": "year_end_estimate", "label": f"{year-1} Yıl Sonu Gerçekleşme Tahmini"},
+        {"year": year, "kind": "target", "label": f"{year} Hedef"},
+        {"year": year + 1, "kind": "forecast", "label": f"{year+1} Tahmin"},
+        {"year": year + 2, "kind": "forecast", "label": f"{year+2} Tahmin"},
+    ]
+
+
+def activity_columns(year: int):
+    return [
+        {"year": year - 1, "kind": "budget", "label": f"{year-1} Bütçe"},
+        {"year": year - 1, "kind": "midyear_spend", "label": f"{year-1} Haziran Sonu Harcama"},
+        {"year": year - 1, "kind": "year_end_estimate", "label": f"{year-1} Yıl Sonu Harcama Tahmini"},
+        {"year": year, "kind": "budget", "label": f"{year} Bütçe"},
+        {"year": year + 1, "kind": "forecast", "label": f"{year+1} Tahmin"},
+        {"year": year + 2, "kind": "forecast", "label": f"{year+2} Tahmin"},
+    ]
+
+
+def indicator_value_map(ind: Indicator):
+    return {(v.year, v.value_kind): v for v in ind.values}
+
+
+def activity_cost_map(activity: Activity, funding_type="total"):
+    return {(v.year, v.value_kind): v.amount for v in activity.cost_values if v.funding_type == funding_type}
+
+
+def indicator_issues(ind: Indicator, period_year: int):
+    issues = []
+    vals = indicator_value_map(ind)
+    if not ind.name.strip():
+        issues.append("Gösterge adı boş.")
+    if not ind.unit.strip():
+        issues.append("Ölçü birimi boş.")
+    if "sayısı" in ind.name.lower() and ind.unit.lower().startswith("oran"):
+        issues.append("Gösterge adı sayı/adet ifade ederken ölçü birimi Oran (%) seçilmiş.")
+    if (period_year, "target") not in vals:
+        issues.append(f"{period_year} hedefi girilmemiş.")
+    if not ind.explanation.strip():
+        issues.append("Göstergeye ilişkin açıklama boş.")
+    if not ind.calculation_method.strip():
+        issues.append("Hesaplama yöntemi boş.")
+    if not ind.data_source.strip():
+        issues.append("Verinin kaynağı boş.")
+    return issues
+
+
+
+
+def _mapping_tokens(text: str) -> set[str]:
+    import re as _re
+    raw = str(text or "").lower().replace("ı", "i")
+    raw = raw.translate(str.maketrans("çğıöşü", "cgiosu"))
+    words = _re.findall(r"[a-z0-9]+", raw)
+    stop = {
+        "ve", "ile", "icin", "ilgili", "kapsaminda", "yapilmasi", "yapmak", "yurutulmesi",
+        "yurutmek", "hizmet", "hizmetleri", "faaliyet", "faaliyetleri", "projesi", "saglamak",
+        "edilmesi", "gerceklestirmek", "yonetimi", "destek", "belediye", "mudurlugu", "yil", "genel"
+    }
+    return {w for w in words if len(w) > 2 and w not in stop}
+
+
+def _activity_mapping_suggestion(activity: Activity, candidates: list[SubProgram], indicators_by_sp: dict[int, list[Indicator]]):
+    activity_tokens = _mapping_tokens(activity.name + " " + (activity.explanation or ""))
+    if not activity_tokens or not candidates:
+        return None, 0.0
+    scored = []
+    for sp in candidates:
+        corpus = f"{sp.program.name} {sp.name} {sp.rationale or ''} {sp.goal or ''} " + " ".join(i.name for i in indicators_by_sp.get(sp.id, []))
+        target_tokens = _mapping_tokens(corpus)
+        overlap = len(activity_tokens & target_tokens)
+        union = max(1, len(activity_tokens | target_tokens))
+        score = overlap / union
+        # Reward direct keyword evidence without pretending the model knows more than the source.
+        score += min(0.35, overlap * 0.08)
+        scored.append((score, sp))
+    scored.sort(key=lambda x: x[0], reverse=True)
+    best_score, best = scored[0]
+    second = scored[1][0] if len(scored) > 1 else 0.0
+    if best_score >= 0.22 and best_score - second >= 0.05:
+        return best, round(min(best_score, 0.99), 2)
+    return None, round(best_score, 2)
+
+
+def _department_mapping_choices(db: Session, department_id: int, period_id: int):
+    indicators = db.scalars(
+        select(Indicator).where(Indicator.department_id == department_id, Indicator.period_id == period_id)
+        .options(selectinload(Indicator.subprogram).selectinload(SubProgram.program))
+    ).all()
+    by_sp: dict[int, list[Indicator]] = {}
+    choices: list[SubProgram] = []
+    seen = set()
+    for ind in indicators:
+        by_sp.setdefault(ind.subprogram_id, []).append(ind)
+        if ind.subprogram_id not in seen:
+            seen.add(ind.subprogram_id)
+            choices.append(ind.subprogram)
+    choices.sort(key=lambda sp: (sp.program.name, sp.name))
+    return choices, by_sp
+
+def editable_submission(db: Session, department_id: int, period_id: int | None = None):
+    period = db.get(ReportingPeriod, period_id) if period_id else active_period(db)
+    if not period:
+        return None
+    return db.scalar(select(Submission).where(Submission.department_id == department_id, Submission.period_id == period.id))
+
+
+def ensure_department_editable(db: Session, user: User, department_id: int, period_id: int | None = None):
+    if user.role != "department" or user.department_id != department_id:
+        raise HTTPException(403)
+    sub = editable_submission(db, department_id, period_id)
+    if sub and sub.status in {"submitted", "approved"}:
+        raise HTTPException(409, "Kayıt incelemede veya onaylı; değiştirilemez.")
+    return sub
+
+
+def ensure_submission(db: Session, department_id: int, period_id: int):
+    sub = db.scalar(select(Submission).where(Submission.department_id == department_id, Submission.period_id == period_id))
+    if not sub:
+        sub = Submission(department_id=department_id, period_id=period_id, status="draft")
+        db.add(sub); db.flush()
+    return sub
+
+
+@app.get("/", include_in_schema=False)
+def root(request: Request, db: Session = Depends(get_db)):
+    return RedirectResponse("/dashboard" if current_user(request, db) else "/login", 303)
+
+
+@app.get("/login", response_class=HTMLResponse)
+def login_page(request: Request):
+    return templates.TemplateResponse(request, "login.html", {"error": None})
+
+
+@app.post("/login", response_class=HTMLResponse)
+def login(request: Request, email: str = Form(...), password: str = Form(...), db: Session = Depends(get_db)):
+    user = db.scalar(select(User).where(User.email == email.strip().lower()))
+    if not user or not user.is_active or not verify_password(password, user.password_hash):
+        return templates.TemplateResponse(request, "login.html", {"error": "E-posta veya parola hatalı."}, status_code=400)
+    # Never carry role/period context from a previous session into a new login.
+    request.session.clear()
+    request.session["user_id"] = user.id
+    request.session["csrf_token"] = secrets.token_urlsafe(32)
+    log(db, user, "login", "user", user.id)
+    return RedirectResponse("/dashboard", 303)
+
+
+@app.post("/logout")
+def logout(request: Request):
+    request.session.clear()
+    return RedirectResponse("/login", 303)
+
+
+@app.get("/dashboard", response_class=HTMLResponse)
+def dashboard(request: Request, db: Session = Depends(get_db), user: User = Depends(require_user)):
+    period = active_period(db) if user.role == "department" else session_period(request, db)
+    if not period:
+        raise HTTPException(409, "Raporlama dönemi bulunamadı.")
+    if user.role == "department":
+        dept = db.get(Department, user.department_id)
+        submission = ensure_submission(db, dept.id, period.id)
+        db.commit()
+        indicators = db.scalars(select(Indicator).where(Indicator.department_id == dept.id, Indicator.period_id == period.id).options(selectinload(Indicator.values))).all()
+        issues = sum(1 for i in indicators if indicator_issues(i, period.year))
+        return templates.TemplateResponse(request, "dashboard.html", {
+            "user": user, "period": period, "department": dept, "submission": submission,
+            "indicators": indicators, "issues": issues, "notifications": user_notifications(db, user),
+        })
+
+    departments = db.scalars(select(Department).order_by(Department.name)).all()
+    periods = db.scalars(select(ReportingPeriod).order_by(ReportingPeriod.year.desc())).all()
+    snapshots = db.scalars(select(TemplateSnapshot).where(TemplateSnapshot.period_id == period.id).order_by(TemplateSnapshot.created_at.desc())).all()
+    imports = db.scalars(select(ImportBatch).where(ImportBatch.period_id == period.id).order_by(ImportBatch.created_at.desc())).all()
+    submissions = db.scalars(select(Submission).where(Submission.period_id == period.id)).all()
+    status_map = {s.department_id: s.status for s in submissions}
+    unresolved_count = len(db.scalars(select(Activity).where(Activity.period_id == period.id, Activity.subprogram_id.is_(None))).all())
+    progress = department_progress_overview(db, period)
+    return templates.TemplateResponse(request, "dashboard.html", {
+        "user": user, "period": period, "periods": periods, "snapshots": snapshots,
+        "imports": imports, "departments": departments, "status_map": status_map,
+        "unresolved_count": unresolved_count, "progress_rows": progress["rows"],
+        "progress_summary": progress["summary"], "notifications": user_notifications(db, user),
+    })
+
+
+@app.get("/department/{department_id}", response_class=HTMLResponse)
+def department_page(department_id: int, request: Request, db: Session = Depends(get_db), user: User = Depends(require_user)):
+    if user.role == "department" and user.department_id != department_id:
+        raise HTTPException(403)
+    dept = db.get(Department, department_id)
+    if not dept:
+        raise HTTPException(404)
+    period = active_period(db) if user.role == "department" else session_period(request, db)
+    indicators = db.scalars(
+        select(Indicator).where(Indicator.department_id == department_id, Indicator.period_id == period.id)
+        .options(selectinload(Indicator.values), selectinload(Indicator.subprogram).selectinload(SubProgram.program))
+        .order_by(Indicator.id)
+    ).all()
+    activities = db.scalars(
+        select(Activity).where(Activity.department_id == department_id, Activity.period_id == period.id)
+        .options(selectinload(Activity.cost_values), selectinload(Activity.subprogram).selectinload(SubProgram.program))
+        .order_by(Activity.id)
+    ).all()
+    submission = ensure_submission(db, department_id, period.id)
+    db.commit()
+    issue_map = {i.id: indicator_issues(i, period.year) for i in indicators}
+    subprograms = []
+    seen = set()
+    for i in indicators:
+        if i.subprogram_id not in seen:
+            seen.add(i.subprogram_id); subprograms.append(i.subprogram)
+    ind_cols = indicator_columns(period.year)
+    act_cols = activity_columns(period.year)
+    ind_value_maps = {i.id: {f"{v.year}:{v.value_kind}": v.value for v in i.values} for i in indicators}
+    activity_maps = {a.id: {f"{y}:{k}": val for (y, k), val in activity_cost_map(a).items()} for a in activities}
+    personnel_rows = db.scalars(select(DepartmentCostValue).where(DepartmentCostValue.department_id == department_id, DepartmentCostValue.period_id == period.id, DepartmentCostValue.category == "personnel_sgk")).all()
+    personnel_map = {f"{r.year}:{r.value_kind}": r.amount for r in personnel_rows}
+    workflow_events = db.scalars(
+        select(SubmissionEvent).where(SubmissionEvent.submission_id == submission.id)
+        .order_by(SubmissionEvent.created_at.desc())
+    ).all()
+    activity_totals = {}
+    general_totals = {}
+    for col in act_cols:
+        key = f"{col['year']}:{col['kind']}"
+        activity_values = [activity_maps[a.id][key] for a in activities if key in activity_maps[a.id]]
+        activity_totals[key] = sum(activity_values) if activity_values else None
+        if activity_values or key in personnel_map:
+            general_totals[key] = sum(activity_values) + personnel_map.get(key, 0)
+        else:
+            general_totals[key] = None
+    return templates.TemplateResponse(request, "department.html", {
+        "user": user, "department": dept, "indicators": indicators, "activities": activities,
+        "submission": submission, "issue_map": issue_map, "subprograms": subprograms, "period": period,
+        "indicator_columns": ind_cols, "activity_columns": act_cols, "indicator_value_maps": ind_value_maps,
+        "activity_maps": activity_maps, "personnel_map": personnel_map, "activity_totals": activity_totals,
+        "general_totals": general_totals, "workflow_events": workflow_events,
+        "notifications": user_notifications(db, user),
+    })
+
+
+@app.post("/api/indicators/{indicator_id}/save")
+async def save_indicator(indicator_id: int, request: Request, db: Session = Depends(get_db), user: User = Depends(require_user)):
+    ind = db.scalar(select(Indicator).where(Indicator.id == indicator_id).options(selectinload(Indicator.values)))
+    if not ind:
+        raise HTTPException(404)
+    if user.role != "department" or user.department_id != ind.department_id:
+        raise HTTPException(403)
+    ensure_department_editable(db, user, ind.department_id, ind.period_id)
+    period = db.get(ReportingPeriod, ind.period_id)
+    data = await request.json()
+    ind.name = str(data.get("name", ind.name)).strip()
+    ind.unit = str(data.get("unit", ind.unit)).strip()
+    ind.explanation = str(data.get("explanation", ind.explanation)).strip()
+    ind.calculation_method = str(data.get("calculation_method", ind.calculation_method)).strip()
+    ind.data_source = str(data.get("data_source", ind.data_source)).strip()
+    value_map = indicator_value_map(ind)
+    for col in indicator_columns(period.year):
+        key = f"value_{col['year']}_{col['kind']}"
+        if key not in data:
+            continue
+        value = parse_optional_number(data[key], col["label"])
+        existing = value_map.get((col["year"], col["kind"]))
+        if value is None:
+            if existing:
+                db.delete(existing)
+            continue
+        if existing:
+            existing.value = value
+        else:
+            db.add(IndicatorValue(indicator_id=ind.id, year=col["year"], value_kind=col["kind"], value=value))
+    db.commit()
+    log(db, user, "indicator_update", "indicator", ind.id)
+    refreshed = db.scalar(select(Indicator).where(Indicator.id == ind.id).options(selectinload(Indicator.values)))
+    return {"ok": True, "issues": indicator_issues(refreshed, period.year)}
+
+
+@app.post("/api/activities")
+async def create_activity(request: Request, db: Session = Depends(get_db), user: User = Depends(require_user)):
+    if user.role != "department" or not user.department_id:
+        raise HTTPException(403)
+    period = active_period(db)
+    ensure_department_editable(db, user, user.department_id, period.id)
+    data = await request.json()
+    name = str(data.get("name", "")).strip()
+    if not name:
+        raise HTTPException(422, "Faaliyet adı zorunlu.")
+    subprogram_id = int(data["subprogram_id"]) if data.get("subprogram_id") else None
+    if not subprogram_id:
+        raise HTTPException(422, "Program / Alt Program seçimi zorunlu.")
+    sp = db.get(SubProgram, subprogram_id)
+    if not sp or sp.period_id != period.id:
+        raise HTTPException(422, "Alt program bu döneme ait değil.")
+    act = Activity(period_id=period.id, department_id=user.department_id, subprogram_id=subprogram_id, name=name, explanation=str(data.get("explanation", "")).strip())
+    db.add(act); db.flush()
+    for col in activity_columns(period.year):
+        key = f"cost_{col['year']}_{col['kind']}"
+        amount = parse_optional_nonnegative_money(data.get(key), col["label"])
+        if amount is None:
+            continue
+        for funding, val in (("total", amount), ("inside", amount), ("outside", 0.0)):
+            db.add(ActivityCostValue(activity_id=act.id, year=col["year"], value_kind=col["kind"], funding_type=funding, amount=val))
+    db.commit(); db.refresh(act)
+    log(db, user, "activity_create", "activity", act.id)
+    return {"ok": True, "id": act.id}
+
+
+@app.put("/api/activities/{activity_id}")
+async def update_activity(activity_id: int, request: Request, db: Session = Depends(get_db), user: User = Depends(require_user)):
+    act = db.scalar(select(Activity).where(Activity.id == activity_id).options(selectinload(Activity.cost_values)))
+    if not act:
+        raise HTTPException(404)
+    ensure_department_editable(db, user, act.department_id, act.period_id)
+    period = db.get(ReportingPeriod, act.period_id)
+    data = await request.json()
+    name = str(data.get("name", act.name)).strip()
+    if not name:
+        raise HTTPException(422, "Faaliyet adı zorunlu.")
+    act.name = name
+    act.explanation = str(data.get("explanation", act.explanation)).strip()
+    if "subprogram_id" in data:
+        subprogram_id = int(data["subprogram_id"]) if data.get("subprogram_id") else None
+        if not subprogram_id:
+            raise HTTPException(422, "Program / Alt Program seçimi zorunlu.")
+        sp = db.get(SubProgram, subprogram_id)
+        if not sp or sp.period_id != period.id:
+            raise HTTPException(422, "Alt program bu döneme ait değil.")
+        act.subprogram_id = subprogram_id
+    cost_map = {(v.year, v.value_kind, v.funding_type): v for v in act.cost_values}
+    for col in activity_columns(period.year):
+        key = f"cost_{col['year']}_{col['kind']}"
+        if key not in data:
+            continue
+        amount = parse_optional_nonnegative_money(data[key], col["label"])
+        total_key = (col["year"], col["kind"], "total")
+        inside_key = (col["year"], col["kind"], "inside")
+        outside_key = (col["year"], col["kind"], "outside")
+        if amount is None:
+            for cost_key in (total_key, inside_key, outside_key):
+                row = cost_map.pop(cost_key, None)
+                if row:
+                    db.delete(row)
+            continue
+        if total_key in cost_map:
+            cost_map[total_key].amount = amount
+        else:
+            db.add(ActivityCostValue(activity_id=act.id, year=col["year"], value_kind=col["kind"], funding_type="total", amount=amount))
+        # Until detailed source split UI is opened, preserve outside budget and make inside reconcile to total.
+        outside = cost_map[outside_key].amount if outside_key in cost_map else 0.0
+        inside = max(0.0, amount - outside)
+        if inside_key in cost_map:
+            cost_map[inside_key].amount = inside
+        else:
+            db.add(ActivityCostValue(activity_id=act.id, year=col["year"], value_kind=col["kind"], funding_type="inside", amount=inside))
+        if outside_key not in cost_map:
+            db.add(ActivityCostValue(activity_id=act.id, year=col["year"], value_kind=col["kind"], funding_type="outside", amount=0.0))
+    db.commit()
+    log(db, user, "activity_update", "activity", act.id)
+    return {"ok": True}
+
+
+@app.delete("/api/activities/{activity_id}")
+def delete_activity(activity_id: int, db: Session = Depends(get_db), user: User = Depends(require_user)):
+    act = db.get(Activity, activity_id)
+    if not act:
+        raise HTTPException(404)
+    ensure_department_editable(db, user, act.department_id, act.period_id)
+    db.delete(act); db.commit()
+    log(db, user, "activity_delete", "activity", activity_id)
+    return {"ok": True}
+
+
+@app.post("/api/departments/{department_id}/personnel-costs")
+async def save_personnel_costs(department_id: int, request: Request, db: Session = Depends(get_db), user: User = Depends(require_user)):
+    period = active_period(db)
+    ensure_department_editable(db, user, department_id, period.id)
+    data = await request.json()
+    existing = db.scalars(select(DepartmentCostValue).where(DepartmentCostValue.department_id == department_id, DepartmentCostValue.period_id == period.id, DepartmentCostValue.category == "personnel_sgk")).all()
+    value_map = {(v.year, v.value_kind): v for v in existing}
+    for col in activity_columns(period.year):
+        key = f"cost_{col['year']}_{col['kind']}"
+        if key not in data:
+            continue
+        amount = parse_optional_nonnegative_money(data[key], col["label"])
+        row = value_map.get((col["year"], col["kind"]))
+        if amount is None:
+            if row:
+                db.delete(row)
+            continue
+        if row:
+            row.amount = amount
+        else:
+            db.add(DepartmentCostValue(department_id=department_id, period_id=period.id, year=col["year"], value_kind=col["kind"], category="personnel_sgk", amount=amount))
+    db.commit(); log(db, user, "personnel_cost_update", "department", department_id)
+    return {"ok": True}
+
+
+@app.post("/api/departments/{department_id}/submit")
+def submit_department(department_id: int, db: Session = Depends(get_db), user: User = Depends(require_user)):
+    if user.role != "department" or user.department_id != department_id:
+        raise HTTPException(403)
+    period = active_period(db)
+    submission = ensure_submission(db, department_id, period.id)
+    if submission.status == "approved":
+        raise HTTPException(409, "Onaylanmış paket yeniden gönderilemez.")
+    if submission.status == "submitted":
+        raise HTTPException(409, "Paket zaten Strateji incelemesinde.")
+    indicators = db.scalars(select(Indicator).where(Indicator.department_id == department_id, Indicator.period_id == period.id).options(selectinload(Indicator.values))).all()
+    problems = {i.id: indicator_issues(i, period.year) for i in indicators if indicator_issues(i, period.year)}
+    activities = db.scalars(select(Activity).where(Activity.department_id == department_id, Activity.period_id == period.id).options(selectinload(Activity.cost_values))).all()
+    activity_problems = {}
+    for act in activities:
+        issues = []
+        if not act.subprogram_id:
+            issues.append("Program / Alt Program seçilmemiş.")
+        cost_map = {}
+        for value in act.cost_values:
+            cost_map[(value.year, value.value_kind, value.funding_type)] = value.amount or 0.0
+        for year, kind in {(v.year, v.value_kind) for v in act.cost_values}:
+            total = cost_map.get((year, kind, "total"), 0.0)
+            inside = cost_map.get((year, kind, "inside"), 0.0)
+            outside = cost_map.get((year, kind, "outside"), 0.0)
+            if abs(total - (inside + outside)) > 0.01:
+                issues.append(f"{year} {kind} toplamı Bütçe İçi + Bütçe Dışı ile uyuşmuyor.")
+        if issues:
+            activity_problems[act.id] = issues
+    if not indicators:
+        return JSONResponse({"ok": False, "message": "Gönderilecek performans göstergesi yok."}, status_code=422)
+    if problems or activity_problems:
+        return JSONResponse({
+            "ok": False,
+            "message": "Gönderimden önce gösterge ve faaliyet kontrollerini tamamlayın.",
+            "problems": problems, "activity_problems": activity_problems,
+        }, status_code=422)
+    submission.status = "submitted"
+    submission.submitted_at = datetime.now(UTC).replace(tzinfo=None)
+    submission.return_note = ""
+    submission.revision = (submission.revision or 0) + 1
+    snapshot = {
+        "indicators": len(indicators),
+        "activities": len(activities),
+        "indicator_issues": 0,
+        "activity_issues": 0,
+    }
+    department = db.get(Department, department_id)
+    db.add(SubmissionEvent(
+        submission_id=submission.id, department_id=department_id, period_id=period.id,
+        actor_user_id=user.id, event_type="submitted", revision=submission.revision,
+        snapshot_json=json.dumps(snapshot, ensure_ascii=False),
+    ))
+    db.add(Notification(
+        role="strategy", event_type="submission_submitted",
+        message=f"{department.name} revizyon {submission.revision} incelemeye gönderildi.",
+        link=f"/department/{department_id}",
+    ))
+    db.commit(); log(db, user, "department_submit", "submission", submission.id, f"revision={submission.revision}")
+    return {"ok": True, "revision": submission.revision}
+
+
+@app.get("/activity-mapping", response_class=HTMLResponse)
+def activity_mapping_page(request: Request, db: Session = Depends(get_db), user: User = Depends(require_strategy)):
+    period = session_period(request, db)
+    activities = db.scalars(
+        select(Activity).where(Activity.period_id == period.id, Activity.subprogram_id.is_(None))
+        .options(selectinload(Activity.department))
+        .order_by(Activity.department_id, Activity.id)
+    ).all()
+    departments: dict[int, dict] = {}
+    for act in activities:
+        group = departments.setdefault(act.department_id, {"department": act.department, "activities": [], "choices": []})
+        group["activities"].append(act)
+    suggestion_count = 0
+    strong_suggestion_count = 0
+    for did, group in departments.items():
+        choices, by_sp = _department_mapping_choices(db, did, period.id)
+        group["choices"] = choices
+        suggestions = {}
+        for act in group["activities"]:
+            suggested, score = _activity_mapping_suggestion(act, choices, by_sp)
+            suggestions[act.id] = {"subprogram_id": suggested.id if suggested else None, "score": score}
+            if suggested:
+                suggestion_count += 1
+                if score >= 0.50:
+                    strong_suggestion_count += 1
+        group["suggestions"] = suggestions
+    batch_rows = db.scalars(
+        select(AuditLog).where(AuditLog.action == "activity_mapping_csv")
+        .order_by(AuditLog.created_at.desc()).limit(500)
+    ).all()
+    batch_groups = {}
+    for audit in batch_rows:
+        details = dict(part.split("=", 1) for part in audit.details.split(";") if "=" in part)
+        batch_id = details.get("batch")
+        if not batch_id:
+            continue
+        group = batch_groups.setdefault(batch_id, {
+            "id": batch_id, "created_at": audit.created_at, "count": 0, "can_revert": True,
+        })
+        group["count"] += 1
+        activity = db.get(Activity, audit.entity_id)
+        try:
+            expected = int(details.get("subprogram_id", ""))
+        except ValueError:
+            expected = None
+        if not activity or activity.period_id != period.id or activity.subprogram_id != expected:
+            group["can_revert"] = False
+        submission = editable_submission(db, activity.department_id, period.id) if activity else None
+        if submission and submission.status in {"submitted", "approved"}:
+            group["can_revert"] = False
+    recent_batches = list(batch_groups.values())[:10]
+    return templates.TemplateResponse(request, "activity_mapping.html", {
+        "user": user, "period": period, "groups": list(departments.values()),
+        "unresolved_count": len(activities), "suggestion_count": suggestion_count,
+        "strong_suggestion_count": strong_suggestion_count, "recent_batches": recent_batches,
+    })
+
+
+@app.get("/api/activity-mappings/export.csv")
+def export_activity_mapping_queue(request: Request, db: Session = Depends(get_db), user: User = Depends(require_strategy)):
+    period = session_period(request, db)
+    activities = db.scalars(
+        select(Activity).where(Activity.period_id == period.id, Activity.subprogram_id.is_(None))
+        .options(selectinload(Activity.department))
+        .order_by(Activity.department_id, Activity.id)
+    ).all()
+    grouped: dict[int, list[Activity]] = {}
+    for activity in activities:
+        grouped.setdefault(activity.department_id, []).append(activity)
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow([
+        "Müdürlük", "Faaliyet ID", "Faaliyet", "Civensa Önerisi",
+        "Güven (%)", "Öneri Düzeyi", "Seçilecek Program / Alt Program",
+    ])
+    for department_id, pending in grouped.items():
+        choices, by_sp = _department_mapping_choices(db, department_id, period.id)
+        for activity in pending:
+            suggested, score = _activity_mapping_suggestion(activity, choices, by_sp)
+            suggestion = f"{suggested.program.name} / {suggested.name}" if suggested else ""
+            level = "Güçlü" if suggested and score >= 0.50 else "Kontrol gerekli" if suggested else "Öneri yok"
+            writer.writerow([
+                activity.department.name, activity.id, activity.name, suggestion,
+                round(score * 100), level, "",
+            ])
+    data = ("\ufeff" + output.getvalue()).encode("utf-8")
+    headers = {"Content-Disposition": 'attachment; filename="civensa-faaliyet-eslestirme-kuyrugu.csv"'}
+    return StreamingResponse(io.BytesIO(data), media_type="text/csv; charset=utf-8", headers=headers)
+
+
+MAPPING_CSV_HEADERS = [
+    "Müdürlük", "Faaliyet ID", "Faaliyet", "Civensa Önerisi",
+    "Güven (%)", "Öneri Düzeyi", "Seçilecek Program / Alt Program",
+]
+
+
+def validate_mapping_csv(data: bytes, db: Session, period: ReportingPeriod):
+    try:
+        text = data.decode("utf-8-sig")
+    except UnicodeDecodeError:
+        return [], ["Dosya UTF-8 kodlamalı CSV olmalı."]
+    if "\x00" in text:
+        return [], ["CSV dosyasında geçersiz karakter bulundu."]
+    reader = csv.DictReader(io.StringIO(text))
+    if reader.fieldnames != MAPPING_CSV_HEADERS:
+        return [], ["Sütun başlıkları indirilen eşleştirme şablonuyla aynı olmalı."]
+    try:
+        source_rows = list(reader)
+    except csv.Error:
+        return [], ["CSV satırları okunamadı."]
+    if len(source_rows) > 1000:
+        return [], ["CSV en fazla 1000 satır içerebilir."]
+
+    resolved, errors, seen = [], [], set()
+    for line_no, source in enumerate(source_rows, start=2):
+        selection = str(source.get("Seçilecek Program / Alt Program", "")).strip()
+        if not selection:
+            continue
+        prefix = f"Satır {line_no}: "
+        try:
+            activity_id = int(str(source.get("Faaliyet ID", "")).strip())
+        except ValueError:
+            errors.append(prefix + "Faaliyet ID sayısal olmalı.")
+            continue
+        if activity_id in seen:
+            errors.append(prefix + "Aynı faaliyet dosyada birden fazla kez seçilmiş.")
+            continue
+        seen.add(activity_id)
+        activity = db.scalar(
+            select(Activity).where(Activity.id == activity_id, Activity.period_id == period.id)
+            .options(selectinload(Activity.department))
+        )
+        if not activity:
+            errors.append(prefix + "Faaliyet bu dönemde bulunamadı.")
+            continue
+        row_errors = []
+        if activity.subprogram_id is not None:
+            row_errors.append("Faaliyet artık eşleştirme kuyruğunda değil; güncel CSV'yi indirin.")
+        if activity.department.name.strip() != str(source.get("Müdürlük", "")).strip():
+            row_errors.append("Müdürlük adı güncel kayıtla eşleşmiyor.")
+        if activity.name.strip() != str(source.get("Faaliyet", "")).strip():
+            row_errors.append("Faaliyet adı güncel kayıtla eşleşmiyor.")
+        choices, _ = _department_mapping_choices(db, activity.department_id, period.id)
+        choice_map = {f"{sp.program.name} / {sp.name}": sp for sp in choices}
+        subprogram = choice_map.get(selection)
+        if not subprogram:
+            row_errors.append("Seçilen Program / Alt Program bu müdürlüğün göstergelerinde kullanılmıyor.")
+        submission = editable_submission(db, activity.department_id, period.id)
+        if submission and submission.status in {"submitted", "approved"}:
+            row_errors.append("Müdürlük paketi incelemede veya onaylı; eşleştirme değiştirilemez.")
+        if row_errors:
+            errors.extend(prefix + message for message in row_errors)
+            continue
+        resolved.append({"activity": activity, "subprogram": subprogram, "selection": selection})
+    if not resolved and not errors:
+        errors.append("“Seçilecek Program / Alt Program” sütununda doldurulmuş satır bulunamadı.")
+    return resolved, errors
+
+
+@app.post("/api/activity-mappings/import-preview")
+async def preview_activity_mapping_csv(
+    request: Request, file: UploadFile = File(...), db: Session = Depends(get_db),
+    user: User = Depends(require_strategy),
+):
+    period = session_period(request, db)
+    data = await read_upload_limited(file, 512 * 1024, "CSV dosyası")
+    rows, errors = validate_mapping_csv(data, db, period)
+    return {
+        "ok": not errors,
+        "count": len(rows),
+        "rows": [{
+            "activity_id": row["activity"].id,
+            "department": row["activity"].department.name,
+            "activity": row["activity"].name,
+            "selection": row["selection"],
+        } for row in rows[:100]],
+        "errors": errors[:50],
+    }
+
+
+@app.post("/api/activity-mappings/import-apply")
+async def apply_activity_mapping_csv(
+    request: Request, file: UploadFile = File(...), db: Session = Depends(get_db),
+    user: User = Depends(require_strategy),
+):
+    period = session_period(request, db)
+    data = await read_upload_limited(file, 512 * 1024, "CSV dosyası")
+    rows, errors = validate_mapping_csv(data, db, period)
+    if errors:
+        raise HTTPException(422, {
+            "message": "CSV doğrulaması başarısız; hiçbir eşleştirme kaydedilmedi.",
+            "errors": errors[:50],
+        })
+    batch_id = secrets.token_hex(8)
+    for row in rows:
+        activity, subprogram = row["activity"], row["subprogram"]
+        activity.subprogram_id = subprogram.id
+        db.add(AuditLog(
+            user_id=user.id, action="activity_mapping_csv", entity_type="activity",
+            entity_id=activity.id, details=f"batch={batch_id};subprogram_id={subprogram.id}",
+        ))
+    db.commit()
+    remaining = db.scalar(select(func.count(Activity.id)).where(
+        Activity.period_id == period.id, Activity.subprogram_id.is_(None)
+    ))
+    return {"ok": True, "updated": len(rows), "remaining": remaining, "batch_id": batch_id}
+
+
+@app.post("/api/activity-mappings/batches/{batch_id}/revert")
+async def revert_activity_mapping_batch(
+    batch_id: str, request: Request, db: Session = Depends(get_db),
+    user: User = Depends(require_strategy),
+):
+    if len(batch_id) != 16 or any(char not in "0123456789abcdef" for char in batch_id):
+        raise HTTPException(404)
+    period = session_period(request, db)
+    audits = db.scalars(
+        select(AuditLog).where(
+            AuditLog.action == "activity_mapping_csv",
+            AuditLog.details.contains(f"batch={batch_id};"),
+        ).order_by(AuditLog.id)
+    ).all()
+    if not audits:
+        raise HTTPException(404, "Eşleştirme işlem grubu bulunamadı.")
+    validated = []
+    errors = []
+    for audit in audits:
+        details = dict(part.split("=", 1) for part in audit.details.split(";") if "=" in part)
+        activity = db.get(Activity, audit.entity_id)
+        try:
+            expected = int(details.get("subprogram_id", ""))
+        except ValueError:
+            expected = None
+        if not activity or activity.period_id != period.id:
+            errors.append(f"Faaliyet #{audit.entity_id} artık bulunamıyor.")
+            continue
+        if activity.subprogram_id != expected:
+            errors.append(f"Faaliyet #{activity.id} eşleştirmesi sonradan değişmiş.")
+            continue
+        submission = editable_submission(db, activity.department_id, period.id)
+        if submission and submission.status in {"submitted", "approved"}:
+            errors.append(f"{activity.department.name}: paket incelemede veya onaylı.")
+            continue
+        validated.append(activity)
+    if errors:
+        db.rollback()
+        raise HTTPException(409, {
+            "message": "İşlem grubunun tamamı güvenle geri alınamıyor; hiçbir kayıt değiştirilmedi.",
+            "errors": errors[:50],
+        })
+    for activity in validated:
+        activity.subprogram_id = None
+    db.add(AuditLog(
+        user_id=user.id, action="activity_mapping_csv_revert", entity_type="mapping_batch",
+        details=f"batch={batch_id};count={len(validated)}",
+    ))
+    db.commit()
+    return {"ok": True, "reverted": len(validated)}
+
+
+@app.post("/api/activity-mappings/bulk")
+async def save_activity_mappings(request: Request, db: Session = Depends(get_db), user: User = Depends(require_strategy)):
+    data = await request.json()
+    assignments = data.get("assignments", [])
+    if not isinstance(assignments, list) or not assignments:
+        raise HTTPException(422, "Kaydedilecek eşleştirme seçilmedi.")
+    period = session_period(request, db)
+    validated = []
+    errors = []
+    seen = set()
+    for item in assignments:
+        try:
+            activity_id = int(item.get("activity_id"))
+            subprogram_id = int(item.get("subprogram_id"))
+        except (TypeError, ValueError):
+            errors.append("Geçersiz faaliyet/alt program kimliği.")
+            continue
+        if activity_id in seen:
+            errors.append(f"Faaliyet #{activity_id} birden fazla kez seçildi.")
+            continue
+        seen.add(activity_id)
+        act = db.get(Activity, activity_id)
+        sp = db.get(SubProgram, subprogram_id)
+        if not act or act.period_id != period.id:
+            errors.append(f"Faaliyet #{activity_id} bu dönemde bulunamadı.")
+            continue
+        if not sp or sp.period_id != period.id:
+            errors.append(f"Alt program #{subprogram_id} bu döneme ait değil.")
+            continue
+        # Safety: Strategy may only map an activity to a subprogram already used by
+        # that department's indicators. This prevents cross-department accidental links.
+        valid = db.scalar(select(Indicator.id).where(
+            Indicator.period_id == period.id, Indicator.department_id == act.department_id,
+            Indicator.subprogram_id == sp.id
+        ).limit(1))
+        if not valid:
+            errors.append(f"'{act.name[:60]}' için seçilen alt program müdürlüğün göstergelerinde kullanılmıyor.")
+            continue
+        submission = ensure_submission(db, act.department_id, period.id)
+        if submission.status in {"submitted", "approved"}:
+            errors.append(f"{act.department.name}: paket incelemede/onaylı; eşleştirme değiştirilemez.")
+            continue
+        validated.append((act, sp))
+    if errors:
+        db.rollback()
+        return JSONResponse({
+            "ok": False, "message": "Tüm seçimler doğrulanamadı; hiçbir eşleştirme kaydedilmedi.",
+            "updated": 0, "errors": errors[:20],
+        }, status_code=422)
+    for act, sp in validated:
+        act.subprogram_id = sp.id
+        db.add(AuditLog(user_id=user.id, action="activity_mapping", entity_type="activity", entity_id=act.id, details=f"subprogram_id={sp.id}"))
+    if validated:
+        db.commit()
+    else:
+        db.rollback()
+    remaining = len(db.scalars(select(Activity).where(Activity.period_id == period.id, Activity.subprogram_id.is_(None))).all())
+    return {"ok": bool(validated), "updated": len(validated), "remaining": remaining, "errors": []}
+
+
+@app.get("/users", response_class=HTMLResponse)
+def users_page(request: Request, db: Session = Depends(get_db), user: User = Depends(require_strategy)):
+    users = db.scalars(select(User).order_by(User.full_name)).all()
+    departments = db.scalars(select(Department).order_by(Department.name)).all()
+    assigned_department_ids = {item.department_id for item in users if item.role == "department" and item.department_id and item.is_active}
+    missing_departments = [item for item in departments if item.id not in assigned_department_ids]
+    return templates.TemplateResponse(request, "users.html", {
+        "user": user, "users": users, "departments": departments,
+        "missing_departments": missing_departments,
+        "department_account_count": len(assigned_department_ids),
+    })
+
+
+@app.get("/api/users/missing-departments.csv")
+def missing_department_accounts_csv(db: Session = Depends(get_db), user: User = Depends(require_strategy)):
+    departments = db.scalars(select(Department).order_by(Department.name)).all()
+    assigned = set(db.scalars(
+        select(User.department_id).where(User.role == "department", User.is_active.is_(True), User.department_id.is_not(None))
+    ).all())
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(["Müdürlük ID", "Müdürlük", "Ad Soyad", "E-posta", "Geçici Parola"])
+    for department in departments:
+        if department.id not in assigned:
+            writer.writerow([department.id, department.name, "", "", ""])
+    data = ("\ufeff" + output.getvalue()).encode("utf-8")
+    headers = {"Content-Disposition": 'attachment; filename="civensa-eksik-mudurluk-hesaplari.csv"'}
+    return StreamingResponse(io.BytesIO(data), media_type="text/csv; charset=utf-8", headers=headers)
+
+
+ACCOUNT_CSV_HEADERS = ["Müdürlük ID", "Müdürlük", "Ad Soyad", "E-posta", "Geçici Parola"]
+
+
+def validate_account_csv(data: bytes, db: Session):
+    try:
+        text = data.decode("utf-8-sig")
+    except UnicodeDecodeError:
+        return [], ["Dosya UTF-8 kodlamalı CSV olmalı."]
+    if "\x00" in text:
+        return [], ["CSV dosyasında geçersiz karakter bulundu."]
+    try:
+        reader = csv.DictReader(io.StringIO(text))
+    except csv.Error:
+        return [], ["CSV dosyası okunamadı."]
+    if reader.fieldnames != ACCOUNT_CSV_HEADERS:
+        return [], ["Sütun başlıkları indirilen şablonla aynı olmalı."]
+
+    departments = {item.id: item for item in db.scalars(select(Department)).all()}
+    assigned = set(db.scalars(
+        select(User.department_id).where(User.role == "department", User.is_active.is_(True), User.department_id.is_not(None))
+    ).all())
+    existing_emails = {str(value).lower() for value in db.scalars(select(User.email)).all()}
+    seen_departments, seen_emails, rows, errors = set(), set(), [], []
+    try:
+        source_rows = list(reader)
+    except csv.Error:
+        return [], ["CSV satırları okunamadı."]
+    if len(source_rows) > 200:
+        return [], ["CSV en fazla 200 satır içerebilir."]
+
+    for line_no, source in enumerate(source_rows, start=2):
+        department_raw = str(source.get("Müdürlük ID", "")).strip()
+        department_name = str(source.get("Müdürlük", "")).strip()
+        full_name = str(source.get("Ad Soyad", "")).strip()
+        email = str(source.get("E-posta", "")).strip().lower()
+        password = str(source.get("Geçici Parola", ""))
+        if not full_name and not email and not password.strip():
+            continue
+        prefix = f"Satır {line_no}: "
+        try:
+            department_id = int(department_raw)
+        except ValueError:
+            errors.append(prefix + "Müdürlük ID sayısal olmalı.")
+            continue
+        department = departments.get(department_id)
+        if not department:
+            errors.append(prefix + "Müdürlük bulunamadı.")
+            continue
+        row_errors = []
+        if department.name.strip() != department_name:
+            row_errors.append("Müdürlük adı şablonla eşleşmiyor.")
+        if department_id in assigned:
+            row_errors.append("Bu müdürlüğün hesabı zaten var.")
+        if department_id in seen_departments:
+            row_errors.append("Aynı müdürlük dosyada birden fazla kez doldurulmuş.")
+        if not full_name:
+            row_errors.append("Ad Soyad gerekli.")
+        if not email or "@" not in email or email.startswith("@") or email.endswith("@"):
+            row_errors.append("Geçerli e-posta gerekli.")
+        elif email in existing_emails or email in seen_emails:
+            row_errors.append("E-posta zaten kayıtlı veya dosyada tekrarlanıyor.")
+        if password != password.strip():
+            row_errors.append("Geçici parolanın başında veya sonunda boşluk olamaz.")
+        if len(password) < 8:
+            row_errors.append("Geçici parola en az 8 karakter olmalı.")
+        if row_errors:
+            errors.extend(prefix + message for message in row_errors)
+            continue
+        seen_departments.add(department_id)
+        seen_emails.add(email)
+        rows.append({
+            "department_id": department_id,
+            "department_name": department.name,
+            "full_name": full_name,
+            "email": email,
+            "password": password,
+        })
+    if not rows and not errors:
+        errors.append("Doldurulmuş hesap satırı bulunamadı.")
+    return rows, errors
+
+
+@app.post("/api/users/bulk-preview")
+async def preview_users_csv(file: UploadFile = File(...), db: Session = Depends(get_db), user: User = Depends(require_strategy)):
+    data = await read_upload_limited(file, 256 * 1024, "CSV dosyası")
+    rows, errors = validate_account_csv(data, db)
+    return {
+        "ok": not errors,
+        "count": len(rows),
+        "rows": [{key: row[key] for key in ("department_id", "department_name", "full_name", "email")} for row in rows],
+        "errors": errors[:50],
+    }
+
+
+@app.post("/api/users/bulk-import")
+async def import_users_csv(file: UploadFile = File(...), db: Session = Depends(get_db), user: User = Depends(require_strategy)):
+    data = await read_upload_limited(file, 256 * 1024, "CSV dosyası")
+    rows, errors = validate_account_csv(data, db)
+    if errors:
+        raise HTTPException(422, {"message": "CSV doğrulaması başarısız; hiçbir hesap oluşturulmadı.", "errors": errors[:50]})
+    batch_id = secrets.token_hex(8)
+    try:
+        for row in rows:
+            new_user = User(
+                email=row["email"], full_name=row["full_name"], role="department",
+                department_id=row["department_id"], password_hash=hash_password(row["password"]),
+            )
+            db.add(new_user); db.flush()
+            db.add(AuditLog(
+                user_id=user.id, action="user_bulk_create_item", entity_type="user", entity_id=new_user.id,
+                details=f"batch={batch_id};department_id={row['department_id']}",
+            ))
+        db.add(AuditLog(
+            user_id=user.id, action="user_bulk_create", entity_type="user",
+            details=f"batch={batch_id};count={len(rows)}",
+        ))
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(409, "Hesaplar başka bir işlemde değişti; listeyi yeniden indirip tekrar deneyin.")
+    return {"ok": True, "created": len(rows), "batch_id": batch_id}
+
+
+@app.post("/api/users/{user_id}/active")
+async def set_user_active(user_id: int, request: Request, db: Session = Depends(get_db), user: User = Depends(require_strategy)):
+    target = db.get(User, user_id)
+    if not target:
+        raise HTTPException(404)
+    data = await request.json()
+    active = data.get("active")
+    if not isinstance(active, bool):
+        raise HTTPException(422, "Etkinlik durumu true/false olmalı.")
+    if target.id == user.id and not active:
+        raise HTTPException(409, "Kendi hesabınızı devre dışı bırakamazsınız.")
+    target.is_active = active
+    db.commit()
+    log(db, user, "user_activate" if active else "user_deactivate", "user", target.id)
+    return {"ok": True, "active": target.is_active}
+
+
+@app.post("/api/users/{user_id}/reset-password")
+async def reset_user_password(user_id: int, request: Request, db: Session = Depends(get_db), user: User = Depends(require_strategy)):
+    target = db.get(User, user_id)
+    if not target:
+        raise HTTPException(404)
+    data = await request.json()
+    password = str(data.get("password", ""))
+    if password != password.strip() or len(password) < 8:
+        raise HTTPException(422, "Yeni parola en az 8 karakter olmalı ve kenar boşluğu içermemeli.")
+    target.password_hash = hash_password(password)
+    db.commit()
+    log(db, user, "user_password_reset", "user", target.id)
+    return {"ok": True}
+
+
+@app.post("/api/users/batches/{batch_id}/revert")
+async def revert_user_batch(batch_id: str, request: Request, db: Session = Depends(get_db), user: User = Depends(require_strategy)):
+    if len(batch_id) != 16 or any(char not in "0123456789abcdef" for char in batch_id):
+        raise HTTPException(404)
+    audits = db.scalars(select(AuditLog).where(
+        AuditLog.action == "user_bulk_create_item", AuditLog.details.contains(f"batch={batch_id};")
+    )).all()
+    if not audits:
+        raise HTTPException(404, "Hesap işlem grubu bulunamadı.")
+    targets, errors = [], []
+    for audit in audits:
+        target = db.get(User, audit.entity_id)
+        if not target:
+            errors.append(f"Kullanıcı #{audit.entity_id} artık bulunamıyor.")
+            continue
+        used = db.scalar(select(AuditLog.id).where(AuditLog.user_id == target.id).limit(1))
+        if used:
+            errors.append(f"{target.email}: hesap kullanılmış; silinemez.")
+            continue
+        targets.append(target)
+    if errors:
+        raise HTTPException(409, {"message": "İşlem grubu güvenle geri alınamıyor; hiçbir hesap silinmedi.", "errors": errors[:50]})
+    for target in targets:
+        db.delete(target)
+    db.add(AuditLog(user_id=user.id, action="user_bulk_create_revert", entity_type="user_batch", details=f"batch={batch_id};count={len(targets)}"))
+    db.commit()
+    return {"ok": True, "reverted": len(targets)}
+
+
+@app.post("/api/users")
+async def create_user(request: Request, db: Session = Depends(get_db), user: User = Depends(require_strategy)):
+    data = await request.json()
+    email = str(data.get("email", "")).strip().lower()
+    full_name = str(data.get("full_name", "")).strip()
+    role = str(data.get("role", "department"))
+    password = str(data.get("password", "")).strip()
+    if not email or "@" not in email:
+        raise HTTPException(422, "Geçerli e-posta gerekli.")
+    if not full_name:
+        raise HTTPException(422, "Ad soyad gerekli.")
+    if role not in {"department", "strategy"}:
+        raise HTTPException(422, "Geçersiz rol.")
+    if len(password) < 8:
+        raise HTTPException(422, "Geçici parola en az 8 karakter olmalı.")
+    if db.scalar(select(User).where(User.email == email)):
+        raise HTTPException(409, "Bu e-posta zaten kayıtlı.")
+    department_id = int(data["department_id"]) if role == "department" and data.get("department_id") else None
+    if role == "department" and not department_id:
+        raise HTTPException(422, "Müdürlük kullanıcısına müdürlük atanmalı.")
+    if department_id and not db.get(Department, department_id):
+        raise HTTPException(422, "Müdürlük bulunamadı.")
+    new = User(email=email, full_name=full_name, role=role, department_id=department_id, password_hash=hash_password(password))
+    db.add(new); db.commit(); db.refresh(new)
+    log(db, user, "user_create", "user", new.id, f"role={role}")
+    return {"ok": True, "id": new.id}
+
+
+@app.get("/review", response_class=HTMLResponse)
+def review(request: Request, db: Session = Depends(get_db), user: User = Depends(require_strategy)):
+    period = session_period(request, db)
+    submissions = db.scalars(select(Submission).where(Submission.period_id == period.id)).all()
+    rows = [(s, db.get(Department, s.department_id)) for s in submissions]
+    event_map = {}
+    if submissions:
+        events = db.scalars(
+            select(SubmissionEvent).where(SubmissionEvent.submission_id.in_([s.id for s in submissions]))
+            .order_by(SubmissionEvent.created_at.desc())
+        ).all()
+        for event in events:
+            event_map.setdefault(event.submission_id, []).append(event)
+    return templates.TemplateResponse(request, "review.html", {
+        "user": user, "rows": rows, "period": period, "event_map": event_map,
+        "notifications": user_notifications(db, user),
+    })
+
+
+@app.post("/api/submissions/{submission_id}/decision")
+async def submission_decision(submission_id: int, request: Request, db: Session = Depends(get_db), user: User = Depends(require_strategy)):
+    sub = db.get(Submission, submission_id)
+    if not sub:
+        raise HTTPException(404)
+    if sub.status != "submitted":
+        raise HTTPException(409, "Yalnızca incelemedeki paket için karar verilebilir.")
+    data = await request.json()
+    decision = data.get("decision")
+    note = str(data.get("note", "")).strip()
+    if decision == "approve":
+        sub.status = "approved"; sub.return_note = ""
+    elif decision == "return":
+        if not note:
+            raise HTTPException(422, "İade açıklaması zorunlu.")
+        sub.status = "returned"; sub.return_note = note
+    else:
+        raise HTTPException(422, "Geçersiz karar.")
+    sub.reviewed_at = datetime.now(UTC).replace(tzinfo=None)
+    department = db.get(Department, sub.department_id)
+    db.add(SubmissionEvent(
+        submission_id=sub.id, department_id=sub.department_id, period_id=sub.period_id,
+        actor_user_id=user.id, event_type=decision, revision=sub.revision or 1, note=note,
+    ))
+    decision_label = "onaylandı" if decision == "approve" else "düzeltme için iade edildi"
+    db.add(Notification(
+        role="department", department_id=sub.department_id,
+        event_type=f"submission_{decision}",
+        message=f"{department.name} revizyon {sub.revision or 1} {decision_label}.",
+        link=f"/department/{sub.department_id}",
+    ))
+    db.commit(); log(db, user, f"submission_{decision}", "submission", sub.id, f"revision={sub.revision or 1};note={note}")
+    return {"ok": True, "status": sub.status}
+
+
+@app.get("/api/notifications")
+def notifications_api(db: Session = Depends(get_db), user: User = Depends(require_user)):
+    rows = user_notifications(db, user, 50)
+    return {
+        "unread": sum(1 for row in rows if not row.is_read),
+        "items": [{
+            "id": row.id, "event_type": row.event_type, "message": row.message,
+            "link": row.link, "is_read": row.is_read, "created_at": row.created_at.isoformat(),
+        } for row in rows],
+    }
+
+
+@app.post("/api/notifications/{notification_id}/read")
+def notification_read(notification_id: int, db: Session = Depends(get_db), user: User = Depends(require_user)):
+    row = db.scalar(notification_query(user).where(Notification.id == notification_id))
+    if not row:
+        raise HTTPException(404)
+    row.is_read = True
+    db.commit()
+    return {"ok": True}
+
+
+@app.post("/api/me/change-password")
+async def change_own_password(request: Request, db: Session = Depends(get_db), user: User = Depends(require_user)):
+    data = await request.json()
+    current_password = str(data.get("current_password", ""))
+    new_password = str(data.get("new_password", ""))
+    confirmation = str(data.get("confirmation", ""))
+    if not verify_password(current_password, user.password_hash):
+        raise HTTPException(422, "Mevcut parola hatalı.")
+    if new_password != confirmation:
+        raise HTTPException(422, "Yeni parola ve tekrarı eşleşmiyor.")
+    if new_password != new_password.strip() or len(new_password) < 12:
+        raise HTTPException(422, "Yeni parola en az 12 karakter olmalı ve kenar boşluğu içermemeli.")
+    if new_password == current_password:
+        raise HTTPException(422, "Yeni parola mevcut paroladan farklı olmalı.")
+    user.password_hash = hash_password(new_password)
+    db.commit()
+    log(db, user, "self_password_change", "user", user.id)
+    return {"ok": True}
+
+
+@app.post("/api/periods/{period_id}/template-upload")
+async def upload_template(period_id: int, file: UploadFile = File(...), db: Session = Depends(get_db), user: User = Depends(require_strategy)):
+    period = db.get(ReportingPeriod, period_id)
+    if not period:
+        raise HTTPException(404)
+    filename = (file.filename or "template").replace("/", "_").replace("\\", "_")
+    suffix = Path(filename).suffix.lower()
+    if suffix not in {".docx", ".xlsx", ".xlsm"}:
+        raise HTTPException(415, "Yalnızca DOCX ve XLSX yükleyebilirsiniz.")
+    data = await read_upload_limited(file, 10 * 1024 * 1024, "Şablon dosyası")
+    validate_office_zip(data, suffix)
+    try:
+        result = analyze_template(filename, data)
+    except Exception as e:
+        raise HTTPException(422, f"Şablon okunamadı: {e}")
+    snap = TemplateSnapshot(
+        period_id=period.id, filename=filename, file_type=result["file_type"],
+        fields_json=json.dumps(result["present"], ensure_ascii=False),
+        missing_json=json.dumps(result["missing"], ensure_ascii=False),
+        extra_json=json.dumps(result["extra"], ensure_ascii=False),
+        departments_json=json.dumps(result["departments"], ensure_ascii=False),
+    )
+    db.add(snap); db.commit(); db.refresh(snap)
+    log(db, user, "template_upload", "template_snapshot", snap.id, f"{filename}; eksik={len(result['missing'])}")
+    return {"ok": True, "snapshot_id": snap.id, **result}
+
+
+@app.get("/api/template-snapshots/{snapshot_id}")
+def template_snapshot(snapshot_id: int, db: Session = Depends(get_db), user: User = Depends(require_strategy)):
+    s = db.get(TemplateSnapshot, snapshot_id)
+    if not s:
+        raise HTTPException(404)
+    return {"id": s.id, "period_id": s.period_id, "filename": s.filename, "present": json.loads(s.fields_json), "missing": json.loads(s.missing_json), "extra": json.loads(s.extra_json), "departments": json.loads(s.departments_json)}
+
+
+@app.post("/api/periods/{period_id}/data-import-preview")
+async def data_import_preview(period_id: int, file: UploadFile = File(...), db: Session = Depends(get_db), user: User = Depends(require_strategy)):
+    period = db.get(ReportingPeriod, period_id)
+    if not period:
+        raise HTTPException(404)
+    filename = (file.filename or "data.docx").replace("/", "_").replace("\\", "_")
+    if Path(filename).suffix.lower() != ".docx":
+        raise HTTPException(415, "Veri içe aktarma önizlemesi şu anda DOCX destekliyor.")
+    data = await read_upload_limited(file, 30 * 1024 * 1024, "Veri dosyası")
+    validate_office_zip(data, ".docx")
+    try:
+        parsed = parse_performance_docx(data)
+    except Exception as e:
+        raise HTTPException(422, f"Performans verisi okunamadı: {e}")
+    plan = build_department_plan(db, parsed)
+    payload = json.dumps(parsed, ensure_ascii=False)
+    batch = ImportBatch(period_id=period.id, filename=filename, status="preview", payload_json=payload, created_by=user.id)
+    db.add(batch); db.commit(); db.refresh(batch)
+    log(db, user, "data_import_preview", "import_batch", batch.id, f"{filename}; {plan['summary']}")
+    preview_departments = [{
+        "name": d["name"],
+        "block_count": len(d["blocks"]),
+        "indicator_count": sum(len(b["indicators"]) for b in d["blocks"]),
+        "activity_count": len(d["activities"]),
+    } for d in plan["parsed"]["departments"][:12]]
+    source_years = plan["summary"].get("source_years", [])
+    year_mismatch = bool(source_years and source_years != [period.year])
+    warnings = list(plan["parsed"]["warnings"])
+    if year_mismatch:
+        warnings.insert(0, f"Dosya bütçe yılı {source_years}; seçilen Civensa dönemi {period.year}. Uygulama engellendi.")
+    return {
+        "ok": True, "batch_id": batch.id, "status": batch.status,
+        "summary": plan["summary"], "warnings": warnings,
+        "departments": preview_departments, "mappings": plan["mappings"],
+        "can_apply": not plan["unresolved"] and not year_mismatch,
+    }
+
+
+@app.get("/api/import-batches/{batch_id}")
+def import_batch_detail(batch_id: int, db: Session = Depends(get_db), user: User = Depends(require_strategy)):
+    batch = db.get(ImportBatch, batch_id)
+    if not batch:
+        raise HTTPException(404)
+    parsed = json.loads(batch.payload_json)
+    plan = build_department_plan(db, parsed)
+    period = db.get(ReportingPeriod, batch.period_id)
+    source_years = plan["summary"].get("source_years", [])
+    year_mismatch = bool(period and source_years and source_years != [period.year])
+    warnings = list(plan["parsed"].get("warnings", []))
+    if year_mismatch:
+        warnings.insert(0, f"Dosya bütçe yılı {source_years}; seçilen Civensa dönemi {period.year}. Uygulama engellendi.")
+    can_revert, revert_reason = import_revert_status(db, batch)
+    return {
+        "id": batch.id, "filename": batch.filename, "status": batch.status,
+        "summary": plan["summary"], "warnings": warnings,
+        "departments": [{
+            "name": d["name"], "block_count": len(d["blocks"]),
+            "indicator_count": sum(len(b["indicators"]) for b in d["blocks"]),
+            "activity_count": len(d["activities"]),
+        } for d in plan["parsed"].get("departments", [])],
+        "mappings": plan["mappings"], "can_apply": batch.status == "preview" and not plan["unresolved"] and not year_mismatch,
+        "can_revert": can_revert, "revert_reason": revert_reason,
+    }
+
+
+@app.post("/api/import-batches/{batch_id}/apply")
+def apply_data_import(batch_id: int, preserve_existing: bool = False, db: Session = Depends(get_db), user: User = Depends(require_strategy)):
+    batch = db.get(ImportBatch, batch_id)
+    if not batch:
+        raise HTTPException(404)
+    try:
+        result = apply_import_batch(db, batch, preserve_existing=preserve_existing)
+        db.commit()
+    except ValueError as e:
+        db.rollback()
+        raise HTTPException(409, str(e))
+    except Exception:
+        db.rollback()
+        raise
+    log(db, user, "data_import_apply", "import_batch", batch.id, json.dumps(result, ensure_ascii=False))
+    return {"ok": True, "status": batch.status, **result}
+
+
+@app.post("/api/import-batches/{batch_id}/revert")
+def revert_data_import(batch_id: int, db: Session = Depends(get_db), user: User = Depends(require_strategy)):
+    batch = db.get(ImportBatch, batch_id)
+    if not batch:
+        raise HTTPException(404)
+    try:
+        result = revert_import_batch(db, batch)
+        db.commit()
+    except ValueError as e:
+        db.rollback()
+        raise HTTPException(409, str(e))
+    except Exception:
+        db.rollback()
+        raise
+    log(db, user, "data_import_revert", "import_batch", batch.id, json.dumps(result, ensure_ascii=False))
+    return {"ok": True, "status": batch.status, **result}
+
+
+@app.post("/period/select/{period_id}")
+def select_period(period_id: int, request: Request, db: Session = Depends(get_db), user: User = Depends(require_strategy)):
+    period = db.get(ReportingPeriod, period_id)
+    if not period:
+        raise HTTPException(404)
+    request.session["period_id"] = period.id
+    return RedirectResponse("/dashboard", 303)
+
+
+@app.post("/api/periods")
+async def create_period(request: Request, db: Session = Depends(get_db), user: User = Depends(require_strategy)):
+    data = await request.json()
+    try:
+        year = int(data.get("year"))
+    except (TypeError, ValueError):
+        raise HTTPException(422, "Dönem yılı geçersiz.")
+    if year < 2020 or year > 2100:
+        raise HTTPException(422, "Dönem yılı geçersiz.")
+    if db.scalar(select(ReportingPeriod).where(ReportingPeriod.year == year)):
+        raise HTTPException(409, "Bu dönem zaten var.")
+    base_id = data.get("base_period_id")
+    base = db.get(ReportingPeriod, int(base_id)) if base_id else active_period(db)
+    period = ReportingPeriod(year=year, status="draft", template_status="pending")
+    db.add(period); db.flush()
+    program_map = {}; sub_map = {}
+    if base:
+        programs = db.scalars(select(Program).where(Program.period_id == base.id)).all()
+        for old in programs:
+            new = Program(period_id=period.id, name=old.name); db.add(new); db.flush(); program_map[old.id] = new.id
+        subs = db.scalars(select(SubProgram).where(SubProgram.period_id == base.id)).all()
+        for old in subs:
+            new = SubProgram(period_id=period.id, program_id=program_map[old.program_id], name=old.name, rationale=old.rationale, goal=old.goal)
+            db.add(new); db.flush(); sub_map[old.id] = new.id
+        inds = db.scalars(select(Indicator).where(Indicator.period_id == base.id)).all()
+        for old in inds:
+            new = Indicator(period_id=period.id, department_id=old.department_id, subprogram_id=sub_map[old.subprogram_id], name=old.name, unit=old.unit, explanation=old.explanation, calculation_method=old.calculation_method, data_source=old.data_source, status="draft")
+            db.add(new); db.flush()
+            for col in indicator_columns(year):
+                db.add(IndicatorValue(indicator_id=new.id, year=col["year"], value_kind=col["kind"], value=0))
+        acts = db.scalars(select(Activity).where(Activity.period_id == base.id)).all()
+        for old in acts:
+            new_act = Activity(period_id=period.id, department_id=old.department_id, subprogram_id=sub_map.get(old.subprogram_id), name=old.name, explanation=old.explanation)
+            db.add(new_act); db.flush()
+            for col in activity_columns(year):
+                for funding in ("total", "inside", "outside"):
+                    db.add(ActivityCostValue(activity_id=new_act.id, year=col["year"], value_kind=col["kind"], funding_type=funding, amount=0))
+        depts = db.scalars(select(Department)).all()
+        for dept in depts:
+            db.add(Submission(department_id=dept.id, period_id=period.id, status="draft"))
+    db.commit(); log(db, user, "period_create", "reporting_period", period.id, f"{year} dönemi; şablon doğrulaması bekleniyor")
+    return {"ok": True, "id": period.id, "year": year}
+
+
+@app.post("/api/periods/{period_id}/verify-template")
+def verify_period_template(period_id: int, db: Session = Depends(get_db), user: User = Depends(require_strategy)):
+    period = db.get(ReportingPeriod, period_id)
+    if not period:
+        raise HTTPException(404)
+    period.template_status = "verified"; db.commit()
+    log(db, user, "template_verify", "reporting_period", period.id)
+    return {"ok": True}
+
+
+@app.post("/api/periods/{period_id}/activate")
+def activate_period(period_id: int, db: Session = Depends(get_db), user: User = Depends(require_strategy)):
+    period = db.get(ReportingPeriod, period_id)
+    if not period:
+        raise HTTPException(404)
+    if period.template_status != "verified":
+        raise HTTPException(409, "Bakanlık şablonu doğrulanmadan dönem aktif edilemez.")
+    for p in db.scalars(select(ReportingPeriod)).all():
+        if p.status == "active":
+            p.status = "closed"
+    period.status = "active"; db.commit()
+    log(db, user, "period_activate", "reporting_period", period.id)
+    return {"ok": True}
+
+
+@app.get("/health")
+def health():
+    backend = engine.url.get_backend_name()
+    started = time.perf_counter()
+    try:
+        with engine.connect() as connection:
+            connection.exec_driver_sql("SELECT 1")
+        database_status = "ok"
+    except Exception:
+        database_status = "error"
+    database_latency_ms = round((time.perf_counter() - started) * 1000, 1)
+    payload = {
+        "status": "ok" if database_status == "ok" else "degraded",
+        "app": "civensa",
+        "version": APP_VERSION,
+        "environment": "production" if is_production() else "qa",
+        "database": {
+            "backend": backend, "status": database_status,
+            "latency_ms": database_latency_ms,
+        },
+    }
+    return payload if database_status == "ok" else JSONResponse(payload, status_code=503)
+
+
+@app.get("/export/department/{department_id}.json")
+def export_department(department_id: int, request: Request, db: Session = Depends(get_db), user: User = Depends(require_strategy)):
+    dept = db.get(Department, department_id)
+    if not dept:
+        raise HTTPException(404)
+    period = session_period(request, db)
+    submission = db.scalar(select(Submission).where(Submission.department_id == department_id, Submission.period_id == period.id))
+    if not submission or submission.status != "approved":
+        raise HTTPException(409, "Çıktı yalnızca Strateji onayından sonra alınabilir.")
+    inds = db.scalars(select(Indicator).where(Indicator.department_id == department_id, Indicator.period_id == period.id).options(selectinload(Indicator.values), selectinload(Indicator.subprogram).selectinload(SubProgram.program))).all()
+    acts = db.scalars(select(Activity).where(Activity.department_id == department_id, Activity.period_id == period.id).options(selectinload(Activity.cost_values), selectinload(Activity.subprogram).selectinload(SubProgram.program))).all()
+    personnel = db.scalars(select(DepartmentCostValue).where(DepartmentCostValue.department_id == department_id, DepartmentCostValue.period_id == period.id, DepartmentCostValue.category == "personnel_sgk")).all()
+    return {
+        "period": period.year,
+        "department": dept.name,
+        "indicators": [{
+            "id": i.id, "program": i.subprogram.program.name, "subprogram": i.subprogram.name,
+            "name": i.name, "unit": i.unit,
+            "values": [{"year": v.year, "kind": v.value_kind, "value": v.value} for v in i.values],
+            "explanation": i.explanation, "calculation_method": i.calculation_method, "data_source": i.data_source,
+        } for i in inds],
+        "activities": [{
+            "id": a.id, "program": a.subprogram.program.name if a.subprogram else None,
+            "subprogram": a.subprogram.name if a.subprogram else None, "name": a.name,
+            "explanation": a.explanation,
+            "costs": [{"year": v.year, "kind": v.value_kind, "funding_type": v.funding_type, "amount": v.amount} for v in a.cost_values],
+        } for a in acts],
+        "department_costs": [{"year": v.year, "kind": v.value_kind, "category": v.category, "amount": v.amount} for v in personnel],
+    }
+
+
+@app.get("/export/department/{department_id}.docx")
+def export_department_docx(department_id: int, request: Request, db: Session = Depends(get_db), user: User = Depends(require_strategy)):
+    dept = db.get(Department, department_id)
+    if not dept:
+        raise HTTPException(404)
+    period = session_period(request, db)
+    submission = db.scalar(select(Submission).where(
+        Submission.department_id == department_id, Submission.period_id == period.id
+    ))
+    if not submission or submission.status != "approved":
+        raise HTTPException(409, "Word çıktısı yalnızca Strateji onayından sonra alınabilir.")
+    indicators = db.scalars(select(Indicator).where(
+        Indicator.department_id == department_id, Indicator.period_id == period.id
+    ).options(selectinload(Indicator.values), selectinload(Indicator.subprogram).selectinload(SubProgram.program))).all()
+    activities = db.scalars(select(Activity).where(
+        Activity.department_id == department_id, Activity.period_id == period.id
+    ).options(selectinload(Activity.cost_values), selectinload(Activity.subprogram).selectinload(SubProgram.program))).all()
+    personnel = db.scalars(select(DepartmentCostValue).where(
+        DepartmentCostValue.department_id == department_id,
+        DepartmentCostValue.period_id == period.id,
+        DepartmentCostValue.category == "personnel_sgk",
+    )).all()
+    payload = {
+        "period": period.year,
+        "department": dept.name,
+        "indicators": [{
+            "program": i.subprogram.program.name,
+            "subprogram": i.subprogram.name,
+            "name": i.name, "unit": i.unit,
+            "values": [{"year": v.year, "kind": v.value_kind, "value": v.value} for v in i.values],
+            "explanation": i.explanation,
+            "calculation_method": i.calculation_method,
+            "data_source": i.data_source,
+        } for i in indicators],
+        "activities": [{
+            "program": a.subprogram.program.name if a.subprogram else None,
+            "subprogram": a.subprogram.name if a.subprogram else None,
+            "name": a.name, "explanation": a.explanation,
+            "costs": [{"year": v.year, "kind": v.value_kind, "funding_type": v.funding_type, "amount": v.amount} for v in a.cost_values],
+        } for a in activities],
+        "department_costs": [{
+            "year": v.year, "kind": v.value_kind, "category": v.category, "amount": v.amount
+        } for v in personnel],
+    }
+    output = build_department_docx(payload)
+    filename = quote(f"{period.year}-{dept.name}-performans-raporu.docx")
+    log(db, user, "department_export_docx", "department", dept.id, f"period_id={period.id}")
+    return StreamingResponse(
+        io.BytesIO(output),
+        media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        headers={"Content-Disposition": f"attachment; filename*=UTF-8''{filename}"},
+    )
+
+
+@app.get("/api/operations/status")
+def operations_status(request: Request, db: Session = Depends(get_db), user: User = Depends(require_strategy)):
+    period = session_period(request, db)
+    def count(model, *conditions):
+        return db.scalar(select(func.count()).select_from(model).where(*conditions)) or 0
+    submission_rows = db.execute(
+        select(Submission.status, func.count(Submission.id))
+        .where(Submission.period_id == period.id)
+        .group_by(Submission.status)
+    ).all()
+    latest_audit = db.scalar(select(AuditLog).order_by(AuditLog.created_at.desc()).limit(1))
+    unresolved = db.scalars(
+        select(Activity).where(Activity.period_id == period.id, Activity.subprogram_id.is_(None))
+    ).all()
+    mapping_suggestions = 0
+    strong_mapping_suggestions = 0
+    unresolved_by_department: dict[int, list[Activity]] = {}
+    for activity in unresolved:
+        unresolved_by_department.setdefault(activity.department_id, []).append(activity)
+    for department_id, pending in unresolved_by_department.items():
+        choices, by_sp = _department_mapping_choices(db, department_id, period.id)
+        for activity in pending:
+            suggested, score = _activity_mapping_suggestion(activity, choices, by_sp)
+            if suggested:
+                mapping_suggestions += 1
+                if score >= 0.50:
+                    strong_mapping_suggestions += 1
+    return {
+        "status": "ok",
+        "version": APP_VERSION,
+        "environment": "production" if is_production() else "qa",
+        "database": health()["database"],
+        "period": {"id": period.id, "year": period.year, "status": period.status},
+        "records": {
+            "departments": count(Department),
+            "department_accounts": count(User, User.role == "department", User.is_active.is_(True), User.department_id.is_not(None)),
+            "missing_department_accounts": max(
+                0,
+                count(Department) - count(User, User.role == "department", User.is_active.is_(True), User.department_id.is_not(None)),
+            ),
+            "indicators": count(Indicator, Indicator.period_id == period.id),
+            "activities": count(Activity, Activity.period_id == period.id),
+            "unresolved_activities": len(unresolved),
+            "mapping_suggestions": mapping_suggestions,
+            "strong_mapping_suggestions": strong_mapping_suggestions,
+            "workflow_events": count(SubmissionEvent, SubmissionEvent.period_id == period.id),
+            "unread_notifications": count(Notification, Notification.is_read.is_(False)),
+        },
+        "submissions": {status: total for status, total in submission_rows},
+        "latest_audit_at": latest_audit.created_at.isoformat() if latest_audit else None,
+    }
+
+
+@app.get("/api/release/readiness")
+def release_readiness(request: Request, db: Session = Depends(get_db), user: User = Depends(require_strategy)):
+    operations = operations_status(request, db, user)
+    with engine.connect() as connection:
+        migration = connection.exec_driver_sql("SELECT version_num FROM alembic_version").scalar()
+        orphan_activities = connection.exec_driver_sql(
+            "SELECT count(*) FROM activities a LEFT JOIN departments d ON d.id=a.department_id WHERE d.id IS NULL"
+        ).scalar()
+        orphan_indicators = connection.exec_driver_sql(
+            "SELECT count(*) FROM indicators i LEFT JOIN departments d ON d.id=i.department_id WHERE d.id IS NULL"
+        ).scalar()
+    duplicate_accounts = db.execute(
+        select(User.department_id, func.count(User.id)).where(
+            User.role == "department", User.is_active.is_(True), User.department_id.is_not(None)
+        ).group_by(User.department_id).having(func.count(User.id) > 1)
+    ).all()
+    checks = {
+        "database": operations["database"]["status"] == "ok",
+        "migration_head": migration == MIGRATION_HEAD,
+        "period_active": operations["period"]["status"] == "active",
+        "departments_present": operations["records"]["departments"] > 0,
+        "indicators_present": operations["records"]["indicators"] > 0,
+        "activities_present": operations["records"]["activities"] > 0,
+        "no_orphan_activities": orphan_activities == 0,
+        "no_orphan_indicators": orphan_indicators == 0,
+        "no_duplicate_active_department_accounts": len(duplicate_accounts) == 0,
+        "workflow_schema_present": inspect(engine).has_table("submission_events") and inspect(engine).has_table("notifications"),
+    }
+    warnings = []
+    if operations["records"]["missing_department_accounts"]:
+        warnings.append(f"{operations['records']['missing_department_accounts']} müdürlüğün etkin hesabı yok.")
+    if operations["records"]["unresolved_activities"]:
+        warnings.append(f"{operations['records']['unresolved_activities']} faaliyet insan eşleştirmesi bekliyor.")
+    return {
+        "status": "ready" if all(checks.values()) else "blocked",
+        "version": APP_VERSION, "checks": checks, "warnings": warnings,
+        "migration": migration, "checked_at": datetime.now(UTC).isoformat(),
+    }
+
+
+@app.get("/operations", response_class=HTMLResponse)
+def operations_page(request: Request, db: Session = Depends(get_db), user: User = Depends(require_strategy)):
+    payload = operations_status(request, db, user)
+    readiness = release_readiness(request, db, user)
+    return templates.TemplateResponse(request, "operations.html", {
+        "user": user,
+        "operations": payload,
+        "readiness": readiness,
+        "period": payload["period"],
+    })
+
+
+@app.get("/api/operations/backup.json")
+def operations_backup(db: Session = Depends(get_db), user: User = Depends(require_strategy)):
+    """Portable logical snapshot without authentication secrets."""
+    excluded_columns = {"password_hash"}
+    payload = {
+        "format": "civensa-logical-backup-v1",
+        "app_version": APP_VERSION,
+        "generated_at": datetime.now(UTC).isoformat(),
+        "tables": {},
+    }
+    with engine.connect() as connection:
+        for table in Base.metadata.sorted_tables:
+            rows = []
+            for row in connection.execute(select(table)).mappings():
+                item = {}
+                for key, value in row.items():
+                    if key in excluded_columns:
+                        continue
+                    item[key] = value.isoformat() if isinstance(value, datetime) else value
+                rows.append(item)
+            payload["tables"][table.name] = rows
+    raw = json.dumps(payload, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
+    log(db, user, "operations_backup_export", "database", details=f"bytes={len(raw)}")
+    filename = f"civensa-backup-{datetime.now(UTC).strftime('%Y%m%d-%H%M%S')}.json"
+    return StreamingResponse(
+        io.BytesIO(raw), media_type="application/json",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
+def audit_query(request: Request, db: Session):
+    action = request.query_params.get("action", "").strip()
+    user_text = request.query_params.get("user", "").strip().lower()
+    query = select(AuditLog).order_by(AuditLog.created_at.desc(), AuditLog.id.desc())
+    if action:
+        query = query.where(AuditLog.action == action)
+    if user_text:
+        matching_users = db.scalars(select(User.id).where(func.lower(User.email).contains(user_text))).all()
+        query = query.where(AuditLog.user_id.in_(matching_users or [-1]))
+    return query, action, user_text
+
+
+def safe_audit_details(value: str):
+    text = str(value or "")
+    lowered = text.lower()
+    if "password" in lowered or "parola" in lowered:
+        return "[hassas ayrıntı gizlendi]"
+    return text
+
+
+@app.get("/audit", response_class=HTMLResponse)
+def audit_page(request: Request, db: Session = Depends(get_db), user: User = Depends(require_strategy)):
+    query, action, user_text = audit_query(request, db)
+    try:
+        page = max(1, int(request.query_params.get("page", "1")))
+    except ValueError:
+        page = 1
+    per_page = 100
+    rows = db.scalars(query.offset((page - 1) * per_page).limit(per_page + 1)).all()
+    user_ids = {row.user_id for row in rows if row.user_id}
+    users = {item.id: item for item in db.scalars(select(User).where(User.id.in_(user_ids))).all()} if user_ids else {}
+    actions = db.scalars(select(AuditLog.action).distinct().order_by(AuditLog.action)).all()
+    return templates.TemplateResponse(request, "audit.html", {
+        "user": user, "rows": rows[:per_page], "users": users, "actions": actions,
+        "selected_action": action, "user_text": user_text, "page": page,
+        "has_next": len(rows) > per_page, "safe_details": safe_audit_details,
+    })
+
+
+@app.get("/api/audit/export.csv")
+def audit_export(request: Request, db: Session = Depends(get_db), user: User = Depends(require_strategy)):
+    query, _, _ = audit_query(request, db)
+    rows = db.scalars(query.limit(5000)).all()
+    user_ids = {row.user_id for row in rows if row.user_id}
+    users = {item.id: item for item in db.scalars(select(User).where(User.id.in_(user_ids))).all()} if user_ids else {}
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(["Tarih", "Kullanıcı", "İşlem", "Varlık", "Varlık ID", "Ayrıntı"])
+    for row in rows:
+        actor = users.get(row.user_id)
+        writer.writerow([row.created_at.isoformat(sep=" "), actor.email if actor else "sistem", row.action, row.entity_type, row.entity_id or "", safe_audit_details(row.details)])
+    data = ("\ufeff" + output.getvalue()).encode("utf-8")
+    return StreamingResponse(io.BytesIO(data), media_type="text/csv; charset=utf-8", headers={"Content-Disposition": 'attachment; filename="civensa-denetim-gecmisi.csv"'})
+
+
+PROGRESS_LABELS = {
+    "not_started": "Başlamadı",
+    "in_progress": "Veri girişi devam ediyor",
+    "needs_attention": "Eksikleri / hataları var",
+    "ready": "Gönderime hazır",
+    "submitted": "İnceleme bekliyor",
+    "returned": "İade edildi",
+    "approved": "Tamamlandı",
+}
+
+
+def department_progress_overview(db: Session, period: ReportingPeriod):
+    departments = db.scalars(select(Department).order_by(Department.name)).all()
+    submissions = db.scalars(select(Submission).where(Submission.period_id == period.id)).all()
+    submission_by_department = {item.department_id: item for item in submissions}
+    indicators = db.scalars(
+        select(Indicator).where(Indicator.period_id == period.id).options(selectinload(Indicator.values))
+    ).all()
+    activities = db.scalars(
+        select(Activity).where(Activity.period_id == period.id).options(selectinload(Activity.cost_values))
+    ).all()
+    indicators_by_department = {}
+    activities_by_department = {}
+    for indicator in indicators:
+        indicators_by_department.setdefault(indicator.department_id, []).append(indicator)
+    for activity in activities:
+        activities_by_department.setdefault(activity.department_id, []).append(activity)
+
+    department_users = db.scalars(select(User).where(User.role == "department", User.is_active.is_(True))).all()
+    user_department = {item.id: item.department_id for item in department_users if item.department_id}
+    departments_with_users = {item.department_id for item in department_users if item.department_id}
+    last_activity = {}
+    # Only count edits that still point to real period data. This deliberately
+    # ignores deleted activities, including release persistence probes, so
+    # operational tests cannot make a department look as if it started work.
+    activity_department = {item.id: item.department_id for item in activities}
+    direct_actions = {"indicator_update", "personnel_cost_update", "department_submit"}
+    if user_department:
+        audit_rows = db.scalars(
+            select(AuditLog)
+            .where(AuditLog.user_id.in_(list(user_department)))
+            .order_by(AuditLog.created_at)
+        ).all()
+        for audit in audit_rows:
+            department_id = user_department.get(audit.user_id)
+            counts_as_progress = audit.action in direct_actions
+            if audit.action in {"activity_create", "activity_update"}:
+                counts_as_progress = activity_department.get(audit.entity_id) == department_id
+            if department_id and counts_as_progress:
+                last_activity[department_id] = audit.created_at
+
+    rows = []
+    summary = {key: 0 for key in PROGRESS_LABELS}
+    summary["missing_accounts"] = 0
+    for department in departments:
+        dept_indicators = indicators_by_department.get(department.id, [])
+        dept_activities = activities_by_department.get(department.id, [])
+        indicator_problem_count = sum(
+            len(indicator_issues(indicator, period.year)) for indicator in dept_indicators
+        )
+        unresolved_count = sum(1 for activity in dept_activities if not activity.subprogram_id)
+        total_checks = len(dept_indicators) * 6 + len(dept_activities)
+        completed_checks = max(
+            0,
+            len(dept_indicators) * 6 - indicator_problem_count
+            + len(dept_activities) - unresolved_count,
+        )
+        calculated_progress = round((completed_checks / total_checks) * 100) if total_checks else 0
+        submission = submission_by_department.get(department.id)
+        submission_status = submission.status if submission else "draft"
+        activity_at = last_activity.get(department.id)
+        warning_count = indicator_problem_count + unresolved_count
+
+        if submission_status == "approved":
+            state, progress_percent = "approved", 100
+        elif submission_status == "submitted":
+            state, progress_percent = "submitted", 100
+        elif submission_status == "returned":
+            state, progress_percent = "returned", calculated_progress
+        elif not activity_at:
+            state, progress_percent = "not_started", 0
+        elif warning_count:
+            state, progress_percent = "needs_attention", calculated_progress
+        elif calculated_progress >= 100:
+            state, progress_percent = "ready", 100
+        else:
+            state, progress_percent = "in_progress", calculated_progress
+
+        has_department_user = department.id in departments_with_users
+        summary[state] += 1
+        if not has_department_user:
+            summary["missing_accounts"] += 1
+        rows.append({
+            "department_id": department.id,
+            "department_name": department.name,
+            "state": state,
+            "label": PROGRESS_LABELS[state],
+            "progress_percent": progress_percent,
+            "warning_count": warning_count,
+            "indicator_issues": indicator_problem_count,
+            "unresolved_activities": unresolved_count,
+            "indicator_count": len(dept_indicators),
+            "activity_count": len(dept_activities),
+            "has_department_user": has_department_user,
+            "last_activity_at": activity_at.isoformat() if activity_at else None,
+        })
+    return {"rows": rows, "summary": summary, "total": len(rows)}
+
+
+@app.get("/api/progress")
+def progress_status(request: Request, db: Session = Depends(get_db), user: User = Depends(require_strategy)):
+    period = session_period(request, db)
+    payload = department_progress_overview(db, period)
+    return {
+        "status": "ok",
+        "version": APP_VERSION,
+        "period": {"id": period.id, "year": period.year},
+        **payload,
+    }
