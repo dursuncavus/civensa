@@ -1,12 +1,17 @@
 """Upgrade a populated v4 database; compare raw values, row identity and indexes."""
 import os,subprocess,sys
+import pytest
 from pathlib import Path
 from sqlalchemy import create_engine,MetaData,select,inspect
 
 ROOT=Path(__file__).resolve().parents[1]
 
-def test_populated_v4_migration(tmp_path):
-    url=f'sqlite:///{tmp_path / "upgrade.db"}'
+@pytest.mark.parametrize("backend",["sqlite","postgres"])
+def test_populated_v4_migration(tmp_path,backend):
+    if backend=="postgres":
+        url=os.environ.get("CIVENSA_TEST_POSTGRES_URL")
+        if not url:pytest.skip("Disposable PostgreSQL test database not configured")
+    else:url=f'sqlite:///{tmp_path / "upgrade.db"}'
     env={**os.environ,'DATABASE_URL':url}
     def migrate(rev):
         result=subprocess.run([sys.executable,'-m','alembic','upgrade',rev],cwd=ROOT,env=env,capture_output=True,text=True)
