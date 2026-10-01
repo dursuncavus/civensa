@@ -119,7 +119,8 @@ def validate_department(db, period_id, department_id):
     economics = rows(db, EconomicValue, period_id, department_id)
     if scope and scope.status in {'zero', 'excluded'}:
         if not scope.reason.strip(): errors.append('Kapsam istisnasının gerekçesi zorunlu.')
-        if any(v.amount for v in economics) or indicators or activities or cards:
+        personnel_scope=rows(db,DepartmentCostValue,period_id,department_id)
+        if any(v.amount for v in economics) or any(v.amount is None or v.amount!=0 or v.state!='verified' for v in personnel_scope) or indicators or activities or cards:
             errors.append('Sıfır/kapsam dışı müdürlükte veri var; kayıtları silmeden kapsamı kontrol edin.')
         return errors, warnings
     if not indicators: errors.append('Performans göstergesi yok.')
