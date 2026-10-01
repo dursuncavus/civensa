@@ -3,6 +3,7 @@ import re
 import unicodedata
 from collections import OrderedDict
 from docx import Document
+from .numbers import source_cell
 
 
 def _clean(text: str) -> str:
@@ -15,25 +16,15 @@ def _key(text: str) -> str:
 
 
 def _number(text: str):
-    raw=_clean(text).replace("*", "").replace("₺", "").replace("TL", "").strip()
-    if not raw or raw in {"-", "–", "—"}:
-        return None
-    raw=re.sub(r"[^0-9,.-]", "", raw)
-    if not raw or raw in {"-", ".", ","}:
-        return None
-    # Turkish source: 1.234.567,89. Some source cells contain 30.970.987.00.
-    if "," in raw:
-        raw=raw.replace(".", "").replace(",", ".")
-    elif raw.count(".") > 1:
-        parts=raw.split(".")
-        if len(parts[-1])==2:
-            raw="".join(parts[:-1])+"."+parts[-1]
-        else:
-            raw="".join(parts)
-    try:
-        return float(raw)
-    except ValueError:
-        return None
+    cell = source_cell(text)
+    if cell['state'] == 'needs_review':
+        raise ValueError(cell['issue'])
+    return cell['number']
+
+
+def _source_value(raw, field):
+    cell = source_cell(raw, money=field == 'amount')
+    return {field: cell['number'], 'raw_text': cell['raw_text'], 'state': cell['state']}
 
 
 def _field_value(row, label_cols=2):
@@ -61,6 +52,8 @@ def _value_kind(header: str):
         kind="midyear_spend"
     elif "yıl sonu" in h or "yil sonu" in h:
         kind="year_end_estimate"
+    elif "gerçekleşme" in h or "gerceklesme" in h:
+        kind="actual"
     elif "planlanan" in h:
         kind="planned"
     elif "hedef" in h:
@@ -85,7 +78,7 @@ def _parse_indicator_table(table):
     department=_department_name(_field_value(rows[2]))
     subprogram=_field_value(rows[3])
     rationale=_field_value(rows[4])
-    goal=_field_value(rows[6]) if len(rows)>6 else ""
+    goal=next((_field_value(r) for r in rows if _key(r.cells[0].text).startswith("alt programin hedefi")), "")
     header_idx=None
     for idx,row in enumerate(rows):
         if _key(row.cells[0].text).startswith("performans gostergesi"):
@@ -115,7 +108,7 @@ def _parse_indicator_table(table):
                 unit=candidate; break
         values=[]
         for col,year,kind in value_columns:
-            values.append({"year":year,"kind":kind,"value":_number(cells[col]) if col<len(cells) else None})
+            values.append({"year":year,"kind":kind,**_source_value(cells[col] if col<len(cells) else "", "value")})
         indicators.append({"name":first,"unit":unit,"values":values})
     for row in rows[stop_idx+1:]:
         first=_key(row.cells[0].text)
@@ -128,7 +121,7 @@ def _parse_indicator_table(table):
             metadata["responsible"]=val
     for ind in indicators:
         ind.update(metadata)
-    return {"department":department,"budget_year":budget_year,"program":program,"subprogram":subprogram,"rationale":rationale,"goal":goal,"indicators":indicators}
+    return {"department":department,"budget_year":budget_year,"program":program,"subprogram":subprogram,"rationale":rationale,"goal":goal,"source_title":budget_year_text,"administration":_field_value(rows[2]),"metadata":metadata,"indicators":indicators}
 
 
 def _parse_activity_table(table):
@@ -151,7 +144,7 @@ def _parse_activity_table(table):
             i+=1; continue
         if lower.startswith("personel ve sgk"):
             for col,year,kind in value_columns:
-                personnel.append({"year":year,"kind":kind,"amount":_number(cells[col]) if col<len(cells) else None})
+                personnel.append({"year":year,"kind":kind,**_source_value(cells[col] if col<len(cells) else "", "amount")})
             i+=1; continue
         if not first or lower in {"butce ici","butce disi"}:
             i+=1; continue
@@ -165,14 +158,14 @@ def _parse_activity_table(table):
             continue
         total=[]
         for col,year,kind in value_columns:
-            total.append({"year":year,"kind":kind,"funding_type":"total","amount":_number(cells[col]) if col<len(cells) else None})
+            total.append({"year":year,"kind":kind,"funding_type":"total",**_source_value(cells[col] if col<len(cells) else "", "amount")})
         inside=[]; outside=[]
         icells=[_clean(c.text) for c in rows[i+1].cells]
         for col,year,kind in value_columns:
-            inside.append({"year":year,"kind":kind,"funding_type":"inside","amount":_number(icells[col]) if col<len(icells) else None})
+            inside.append({"year":year,"kind":kind,"funding_type":"inside",**_source_value(icells[col] if col<len(icells) else "", "amount")})
         ocells=[_clean(c.text) for c in rows[i+2].cells]
         for col,year,kind in value_columns:
-            outside.append({"year":year,"kind":kind,"funding_type":"outside","amount":_number(ocells[col]) if col<len(ocells) else None})
+            outside.append({"year":year,"kind":kind,"funding_type":"outside",**_source_value(ocells[col] if col<len(ocells) else "", "amount")})
         activities.append({"name":first,"explanation":"","official_name":"","costs":total+inside+outside})
         i+=3
     if explanation_start is not None:
@@ -203,7 +196,7 @@ def parse_performance_docx(data: bytes):
             if not current_department:
                 warnings.append(f"Tablo {index+1}: müdürlük adı bulunamadı."); continue
             dept=departments.setdefault(current_department,{"name":current_department,"blocks":[],"activities":[],"personnel":[]})
-            dept["blocks"].append({k:perf[k] for k in ("budget_year","program","subprogram","rationale","goal","indicators")})
+            dept["blocks"].append({k:perf[k] for k in ("budget_year","program","subprogram","rationale","goal","source_title","administration","metadata","indicators")})
             continue
         cost=_parse_activity_table(table)
         if cost:

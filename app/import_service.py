@@ -1,5 +1,7 @@
 import hashlib
 import json
+from .serialization import json_dumps
+from decimal import Decimal
 import re
 import unicodedata
 from datetime import datetime, UTC
@@ -10,7 +12,7 @@ from sqlalchemy.orm import Session, selectinload
 from .models import (
     Organization, Department, ReportingPeriod, Program, SubProgram,
     Indicator, IndicatorValue, Activity, ActivityCostValue,
-    DepartmentCostValue, Submission, ImportBatch, User,
+    DepartmentCostValue, Submission, ImportBatch, User, ReportCard, EconomicValue, ActivityCatalogueLink, DepartmentScope,
 )
 
 # Only obvious spelling/title variants observed in the supplied 2026 source are normalized.
@@ -38,7 +40,7 @@ def _clean(text: str) -> str:
 
 def _validate_import_field_lengths(plan: dict) -> None:
     """Reject malformed/stale previews before PostgreSQL reports a server error."""
-    limits = (("name", 300, "Gösterge adı"), ("unit", 50, "Ölçü birimi"), ("data_source", 250, "Veri kaynağı"))
+    limits = (("name", 300, "Gösterge adı"), ("unit", 50, "Ölçü birimi"))
     for department in plan["parsed"].get("departments", []):
         for block in department.get("blocks", []):
             for item in block.get("indicators", []):
@@ -135,7 +137,7 @@ def _source_activity_linkable(dept: dict) -> bool:
         key = (_clean(block.get("program", "")), _clean(block.get("subprogram", "")))
         if key not in unique_blocks:
             unique_blocks.append(key)
-    return len(unique_blocks) == 1 or len(unique_blocks) == len(activities) or len(dept.get("blocks", [])) == len(activities)
+    return len(unique_blocks) == 1
 
 
 def _link_subprograms(block_subprograms: list, activity_count: int):
@@ -148,10 +150,6 @@ def _link_subprograms(block_subprograms: list, activity_count: int):
             seen.add(sp.id); unique.append(sp)
     if len(unique) == 1:
         return [unique[0]] * activity_count
-    if len(unique) == activity_count:
-        return unique
-    if len(block_subprograms) == activity_count:
-        return block_subprograms
     return [None] * activity_count
 
 def build_department_plan(db: Session, parsed: dict) -> dict:
@@ -260,9 +258,12 @@ def _delete_department_period_data(db: Session, department_id: int, period_id: i
         db.delete(ind)
     acts = db.scalars(select(Activity).where(Activity.department_id == department_id, Activity.period_id == period_id).options(selectinload(Activity.cost_values))).all()
     for act in acts:
+        db.execute(ActivityCatalogueLink.__table__.delete().where(ActivityCatalogueLink.activity_id==act.id))
         db.delete(act)
     for row in db.scalars(select(DepartmentCostValue).where(DepartmentCostValue.department_id == department_id, DepartmentCostValue.period_id == period_id)).all():
         db.delete(row)
+    for card in db.scalars(select(ReportCard).where(ReportCard.department_id==department_id, ReportCard.period_id==period_id)).all():
+        db.delete(card)
     db.flush()
 
 
@@ -295,14 +296,18 @@ def _serialize_department_state(db: Session, department_id: int, period_id: int)
     return {
         "department_id": department_id,
         "department_name": dept.name if dept else "",
+        "economics": [{c.name:getattr(v,c.name) for c in EconomicValue.__table__.columns} for v in db.scalars(select(EconomicValue).where(EconomicValue.period_id==period_id,EconomicValue.department_id==department_id).order_by(EconomicValue.id)).all()],
+        "scope": [{c.name:getattr(v,c.name) for c in DepartmentScope.__table__.columns} for v in db.scalars(select(DepartmentScope).where(DepartmentScope.period_id==period_id,DepartmentScope.department_id==department_id)).all()],
+        "catalogue_links": [{"activity_id": a.id,"official_activity_id": oid} for a in acts for oid in db.scalars(select(ActivityCatalogueLink.official_activity_id).where(ActivityCatalogueLink.activity_id==a.id)).all()],
+        "cards": [{c.name: getattr(card,c.name) for c in ReportCard.__table__.columns} for card in db.scalars(select(ReportCard).where(ReportCard.department_id==department_id,ReportCard.period_id==period_id).order_by(ReportCard.id)).all()],
         "user_ids": [u.id for u in users],
         "indicators": [
             {
-                "id": i.id, "subprogram_id": i.subprogram_id, "name": i.name, "unit": i.unit,
+                "id": i.id, "card_id": i.card_id, "code": i.code, "position": i.position, "subprogram_id": i.subprogram_id, "name": i.name, "unit": i.unit,
                 "explanation": i.explanation, "calculation_method": i.calculation_method,
                 "data_source": i.data_source, "status": i.status,
                 "values": [
-                    {"id": v.id, "year": v.year, "value_kind": v.value_kind, "value": v.value}
+                    {"id": v.id, "year": v.year, "value_kind": v.value_kind, "value": v.value, "raw_text": v.raw_text, "state": v.state}
                     for v in i.values
                 ],
             }
@@ -310,11 +315,11 @@ def _serialize_department_state(db: Session, department_id: int, period_id: int)
         ],
         "activities": [
             {
-                "id": a.id, "subprogram_id": a.subprogram_id, "name": a.name, "explanation": a.explanation,
+                "id": a.id, "card_id": a.card_id, "code": a.code, "position": a.position, "subprogram_id": a.subprogram_id, "name": a.name, "explanation": a.explanation,
                 "cost_values": [
                     {
                         "id": v.id, "year": v.year, "value_kind": v.value_kind,
-                        "funding_type": v.funding_type, "amount": v.amount,
+                        "funding_type": v.funding_type, "amount": v.amount, "raw_text": v.raw_text, "state": v.state,
                     }
                     for v in a.cost_values
                 ],
@@ -324,7 +329,7 @@ def _serialize_department_state(db: Session, department_id: int, period_id: int)
         "department_costs": [
             {
                 "id": c.id, "year": c.year, "value_kind": c.value_kind,
-                "category": c.category, "amount": c.amount,
+                "category": c.category, "amount": c.amount, "raw_text": c.raw_text, "state": c.state,
             }
             for c in costs
         ],
@@ -337,7 +342,7 @@ def _serialize_department_state(db: Session, department_id: int, period_id: int)
 
 def _state_hash(db: Session, department_ids: list[int], period_id: int) -> str:
     state = [_serialize_department_state(db, did, period_id) for did in sorted(set(department_ids)) if db.get(Department, did)]
-    raw = json.dumps(state, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+    raw = json_dumps(state, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
     return hashlib.sha256(raw.encode("utf-8")).hexdigest()
 
 
@@ -373,9 +378,13 @@ def import_revert_status(db: Session, batch: ImportBatch) -> tuple[bool, str]:
 
 def _restore_department_state(db: Session, state: dict, period_id: int) -> None:
     department_id = int(state["department_id"])
+    for card in state.get("cards", []):
+        db.add(ReportCard(**card))
+    db.flush()
     for item in state.get("indicators", []):
         ind = Indicator(
             id=item["id"], period_id=period_id, department_id=department_id,
+            card_id=item.get("card_id"), code=item.get("code", ""), position=item.get("position", 0),
             subprogram_id=item["subprogram_id"], name=item["name"], unit=item["unit"],
             explanation=item.get("explanation", ""), calculation_method=item.get("calculation_method", ""),
             data_source=item.get("data_source", ""), status=item.get("status", "draft"),
@@ -384,23 +393,26 @@ def _restore_department_state(db: Session, state: dict, period_id: int) -> None:
         for value in item.get("values", []):
             db.add(IndicatorValue(
                 id=value["id"], indicator_id=ind.id, year=value["year"],
-                value_kind=value["value_kind"], value=value["value"],
+                value_kind=value["value_kind"], value=value["value"], raw_text=value.get("raw_text", ""), state=value.get("state", "verified"),
             ))
     for item in state.get("activities", []):
         act = Activity(
             id=item["id"], period_id=period_id, department_id=department_id,
+            card_id=item.get("card_id"), code=item.get("code", ""), position=item.get("position", 0),
             subprogram_id=item.get("subprogram_id"), name=item["name"], explanation=item.get("explanation", ""),
         )
         db.add(act); db.flush()
         for value in item.get("cost_values", []):
             db.add(ActivityCostValue(
                 id=value["id"], activity_id=act.id, year=value["year"], value_kind=value["value_kind"],
-                funding_type=value.get("funding_type", "total"), amount=value.get("amount", 0),
+                funding_type=value.get("funding_type", "total"), amount=value.get("amount"), raw_text=value.get("raw_text", ""), state=value.get("state", "verified"),
             ))
+    db.flush()
+    for link in state.get("catalogue_links", []):db.add(ActivityCatalogueLink(**link))
     for item in state.get("department_costs", []):
         db.add(DepartmentCostValue(
             id=item["id"], department_id=department_id, period_id=period_id, year=item["year"],
-            value_kind=item["value_kind"], category=item.get("category", "personnel_sgk"), amount=item.get("amount", 0),
+            value_kind=item["value_kind"], category=item.get("category", "personnel_sgk"), amount=item.get("amount"), raw_text=item.get("raw_text", ""), state=item.get("state", "verified"),
         ))
     sub = state.get("submission")
     if sub:
@@ -483,6 +495,10 @@ def apply_import_batch(db: Session, batch: ImportBatch, preserve_existing: bool 
     if source_years and source_years != [period.year]:
         raise ValueError(f"Word dosyasındaki bütçe yılı {source_years}; seçilen Civensa dönemi {period.year}. Yanlış döneme veri yazılması engellendi.")
     plan = build_department_plan(db, raw)
+    for mapping in plan['mappings']:
+        did = mapping.get('department_id')
+        if did and not preserve_existing and (db.scalar(select(ReportCard.id).where(ReportCard.department_id==did, ReportCard.period_id==period.id).limit(1)) or db.scalar(select(EconomicValue.id).where(EconomicValue.department_id==did, EconomicValue.period_id==period.id).limit(1))):
+            raise ValueError('Bu müdürlükte yeni rapor kartı/ekonomik tablo verisi var. Mevcut veriyi değiştiren toplu içe aktarma engellendi; kart ekranını kullanın veya yeni taslak dönem açın.')
     _validate_import_field_lengths(plan)
     if plan["unresolved"]:
         names = ", ".join(x["source_name"] for x in plan["unresolved"][:5])
@@ -541,13 +557,22 @@ def apply_import_batch(db: Session, batch: ImportBatch, preserve_existing: bool 
             submission.reviewed_at = None
 
         block_subprograms = []
-        for block in src.get("blocks", []):
+        block_cards = []
+        for block_index, block in enumerate(src.get("blocks", []), 1):
             program = _get_or_create_program(db, period.id, block.get("program", ""))
             subprogram = _get_or_create_subprogram(db, period.id, program, block)
             block_subprograms.append(subprogram)
+            meta = block.get('metadata') or (block.get('indicators') or [{}])[0]
+            card = ReportCard(period_id=period.id, department_id=dept.id, subprogram_id=subprogram.id,
+                position=block_index, source_title=block.get('source_title') or f'{period.year}/{block_index}',
+                administration=block.get('administration') or src['name'],
+                rationale=block.get('rationale',''), goal=block.get('goal',''),
+                explanation=meta.get('explanation',''), calculation_method=meta.get('calculation_method',''),
+                data_source=meta.get('data_source',''), responsible=meta.get('responsible',''))
+            db.add(card); db.flush(); block_cards.append(card)
             for item in block.get("indicators", []):
                 ind = Indicator(
-                    period_id=period.id, department_id=dept.id, subprogram_id=subprogram.id,
+                    period_id=period.id, department_id=dept.id, subprogram_id=subprogram.id, card_id=card.id,
                     name=_clean(item.get("name", "")), unit=_clean(item.get("unit", "")),
                     explanation=_clean(item.get("explanation", "")),
                     calculation_method=_clean(item.get("calculation_method", "")),
@@ -558,10 +583,10 @@ def apply_import_batch(db: Session, batch: ImportBatch, preserve_existing: bool 
                 for value in item.get("values", []):
                     year, kind = value.get("year"), value.get("kind")
                     amount = value.get("value")
-                    if year is None or not kind or amount is None or (year, kind) in seen_values:
+                    if year is None or not kind or (amount is None and value.get("state") != "needs_review") or (year, kind) in seen_values:
                         continue
                     seen_values.add((year, kind))
-                    db.add(IndicatorValue(indicator_id=ind.id, year=int(year), value_kind=str(kind), value=float(amount)))
+                    db.add(IndicatorValue(indicator_id=ind.id, year=int(year), value_kind=str(kind), value=Decimal(str(amount)) if amount is not None else None, raw_text=value.get("raw_text", str(amount)), state=value.get("state", "verified")))
 
         activities = src.get("activities", [])
         # Conservative linking: unique one-subprogram packages are safe; exact source-order
@@ -573,6 +598,7 @@ def apply_import_batch(db: Session, batch: ImportBatch, preserve_existing: bool 
             act = Activity(
                 period_id=period.id, department_id=dept.id,
                 subprogram_id=subprogram.id if subprogram else None,
+                card_id=block_cards[0].id if len(block_cards)==1 else None,
                 name=_clean(item.get("name", "")) or _clean(item.get("official_name", "")) or "Faaliyet adı belirtilmedi",
                 explanation=_clean(item.get("explanation", "")),
             )
@@ -581,29 +607,30 @@ def apply_import_batch(db: Session, batch: ImportBatch, preserve_existing: bool 
             for cost in item.get("costs", []):
                 key = (cost.get("year"), cost.get("kind"), cost.get("funding_type", "total"))
                 amount = cost.get("amount")
-                if key[0] is None or not key[1] or amount is None or key in seen_costs:
+                if key[0] is None or not key[1] or (amount is None and cost.get("state") != "needs_review") or key in seen_costs:
                     continue
                 seen_costs.add(key)
                 db.add(ActivityCostValue(
                     activity_id=act.id, year=int(key[0]), value_kind=str(key[1]),
-                    funding_type=str(key[2]), amount=float(amount),
+                    funding_type=str(key[2]), amount=Decimal(str(amount)) if amount is not None else None, raw_text=cost.get("raw_text", str(amount)), state=cost.get("state", "verified"),
                 ))
 
         seen_personnel = set()
         for row in src.get("personnel", []):
             key = (row.get("year"), row.get("kind"))
             amount = row.get("amount")
-            if key[0] is None or not key[1] or amount is None or key in seen_personnel:
+            if key[0] is None or not key[1] or (amount is None and row.get("state") != "needs_review") or key in seen_personnel:
                 continue
             seen_personnel.add(key)
             db.add(DepartmentCostValue(
                 department_id=dept.id, period_id=period.id, year=int(key[0]),
-                value_kind=str(key[1]), category="personnel_sgk", amount=float(amount),
+                value_kind=str(key[1]), category="personnel_sgk", amount=Decimal(str(amount)) if amount is not None else None,
+                raw_text=row.get("raw_text", ""), state=row.get("state", "verified"),
             ))
             result["personnel_values"] += 1
         result["departments"] += 1
 
-    batch.snapshot_json = json.dumps(snapshot, ensure_ascii=False, sort_keys=True)
+    batch.snapshot_json = json_dumps(snapshot, ensure_ascii=False, sort_keys=True)
     batch.status = "applied"
     batch.applied_at = datetime.now(UTC).replace(tzinfo=None)
     db.flush()

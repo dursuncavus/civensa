@@ -1,5 +1,5 @@
 from datetime import datetime, UTC
-from sqlalchemy import String, Integer, ForeignKey, Text, Float, DateTime, UniqueConstraint, Boolean
+from sqlalchemy import String, Integer, ForeignKey, Text, Float, Numeric, DateTime, UniqueConstraint, Boolean
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from .db import Base
 
@@ -66,11 +66,15 @@ class Indicator(Base):
     period_id: Mapped[int] = mapped_column(ForeignKey("reporting_periods.id"))
     department_id: Mapped[int] = mapped_column(ForeignKey("departments.id"))
     subprogram_id: Mapped[int] = mapped_column(ForeignKey("subprograms.id"))
+    card_id: Mapped[int | None] = mapped_column(ForeignKey("report_cards.id"), nullable=True)
+    code: Mapped[str] = mapped_column(String(80), default="")
+    position: Mapped[int] = mapped_column(Integer, default=0)
+    card: Mapped["ReportCard | None"] = relationship()
     name: Mapped[str] = mapped_column(String(300))
     unit: Mapped[str] = mapped_column(String(50))
     explanation: Mapped[str] = mapped_column(Text, default="")
     calculation_method: Mapped[str] = mapped_column(Text, default="")
-    data_source: Mapped[str] = mapped_column(String(250), default="")
+    data_source: Mapped[str] = mapped_column(Text, default="")
     status: Mapped[str] = mapped_column(String(30), default="draft")
     department: Mapped[Department] = relationship(back_populates="indicators")
     subprogram: Mapped[SubProgram] = relationship()
@@ -83,7 +87,9 @@ class IndicatorValue(Base):
     indicator_id: Mapped[int] = mapped_column(ForeignKey("indicators.id"))
     year: Mapped[int] = mapped_column(Integer)
     value_kind: Mapped[str] = mapped_column(String(50))
-    value: Mapped[float] = mapped_column(Float, default=0)
+    value: Mapped[float | None] = mapped_column(Numeric(26, 6), nullable=True)
+    raw_text: Mapped[str] = mapped_column(Text, default="")
+    state: Mapped[str] = mapped_column(String(30), default="verified")
     indicator: Mapped[Indicator] = relationship(back_populates="values")
     __table_args__ = (UniqueConstraint("indicator_id", "year", "value_kind", name="uq_indicator_year_kind"),)
 
@@ -94,6 +100,10 @@ class Activity(Base):
     period_id: Mapped[int] = mapped_column(ForeignKey("reporting_periods.id"))
     department_id: Mapped[int] = mapped_column(ForeignKey("departments.id"))
     subprogram_id: Mapped[int | None] = mapped_column(ForeignKey("subprograms.id"), nullable=True)
+    card_id: Mapped[int | None] = mapped_column(ForeignKey("report_cards.id"), nullable=True)
+    code: Mapped[str] = mapped_column(String(80), default="")
+    position: Mapped[int] = mapped_column(Integer, default=0)
+    card: Mapped["ReportCard | None"] = relationship()
     name: Mapped[str] = mapped_column(String(350))
     explanation: Mapped[str] = mapped_column(Text, default="")
     department: Mapped[Department] = relationship(back_populates="activities")
@@ -114,7 +124,9 @@ class ActivityCostValue(Base):
     year: Mapped[int] = mapped_column(Integer)
     value_kind: Mapped[str] = mapped_column(String(50))
     funding_type: Mapped[str] = mapped_column(String(30), default="total")
-    amount: Mapped[float] = mapped_column(Float, default=0)
+    amount: Mapped[float | None] = mapped_column(Numeric(22, 2), nullable=True)
+    raw_text: Mapped[str] = mapped_column(Text, default="")
+    state: Mapped[str] = mapped_column(String(30), default="verified")
     activity: Mapped[Activity] = relationship(back_populates="cost_values")
     __table_args__ = (UniqueConstraint("activity_id", "year", "value_kind", "funding_type", name="uq_activity_cost_value"),)
 
@@ -128,7 +140,9 @@ class DepartmentCostValue(Base):
     year: Mapped[int] = mapped_column(Integer)
     value_kind: Mapped[str] = mapped_column(String(50))
     category: Mapped[str] = mapped_column(String(50), default="personnel_sgk")
-    amount: Mapped[float] = mapped_column(Float, default=0)
+    amount: Mapped[float | None] = mapped_column(Numeric(22, 2), nullable=True)
+    raw_text: Mapped[str] = mapped_column(Text, default="")
+    state: Mapped[str] = mapped_column(String(30), default="verified")
     __table_args__ = (UniqueConstraint("department_id", "period_id", "year", "value_kind", "category", name="uq_department_cost_value"),)
 
 
@@ -212,3 +226,100 @@ class AuditLog(Base):
     entity_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     details: Mapped[str] = mapped_column(Text, default="")
     created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(UTC).replace(tzinfo=None))
+
+
+class ReportCard(Base):
+    __tablename__ = "report_cards"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    period_id: Mapped[int] = mapped_column(ForeignKey("reporting_periods.id"))
+    department_id: Mapped[int] = mapped_column(ForeignKey("departments.id"))
+    subprogram_id: Mapped[int] = mapped_column(ForeignKey("subprograms.id"))
+    position: Mapped[int] = mapped_column(Integer, default=0)
+    source_title: Mapped[str] = mapped_column(String(100), default="")
+    administration: Mapped[str] = mapped_column(Text, default="")
+    responsible: Mapped[str] = mapped_column(Text, default="")
+    rationale: Mapped[str] = mapped_column(Text, default="")
+    goal: Mapped[str] = mapped_column(Text, default="")
+    explanation: Mapped[str] = mapped_column(Text, default="")
+    calculation_method: Mapped[str] = mapped_column(Text, default="")
+    data_source: Mapped[str] = mapped_column(Text, default="")
+    footnote: Mapped[str] = mapped_column(Text, default="")
+    source_page: Mapped[str] = mapped_column(String(100), default="")
+    service_area: Mapped[str] = mapped_column(String(250), default="")
+    strategic_link: Mapped[str] = mapped_column(Text, default="")
+    subprogram: Mapped[SubProgram] = relationship()
+
+
+class EconomicValue(Base):
+    __tablename__ = "economic_values"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    period_id: Mapped[int] = mapped_column(ForeignKey("reporting_periods.id"))
+    department_id: Mapped[int] = mapped_column(ForeignKey("departments.id"))
+    year: Mapped[int] = mapped_column(Integer)
+    value_kind: Mapped[str] = mapped_column(String(50))
+    category: Mapped[str] = mapped_column(String(50))
+    program_group: Mapped[str] = mapped_column(String(50))
+    funding_type: Mapped[str] = mapped_column(String(30))
+    amount: Mapped[float] = mapped_column(Numeric(22, 2))
+    __table_args__ = (UniqueConstraint("period_id", "department_id", "year", "value_kind", "category", "program_group", "funding_type", name="uq_economic_cell"),)
+
+
+class DepartmentScope(Base):
+    __tablename__ = "department_scopes"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    period_id: Mapped[int] = mapped_column(ForeignKey("reporting_periods.id"))
+    department_id: Mapped[int] = mapped_column(ForeignKey("departments.id"))
+    position: Mapped[int] = mapped_column(Integer, default=0)
+    display_name: Mapped[str] = mapped_column(String(250), default="")
+    status: Mapped[str] = mapped_column(String(30), default="required")
+    reason: Mapped[str] = mapped_column(Text, default="")
+    __table_args__ = (UniqueConstraint("period_id", "department_id", name="uq_scope_department"),)
+
+
+class ReportSection(Base):
+    __tablename__ = "report_sections"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    period_id: Mapped[int] = mapped_column(ForeignKey("reporting_periods.id"))
+    position: Mapped[int] = mapped_column(Integer, default=0)
+    title: Mapped[str] = mapped_column(String(300))
+    kind: Mapped[str] = mapped_column(String(30), default="text")
+    content_json: Mapped[str] = mapped_column(Text, default="{}")
+
+
+class OfficialActivity(Base):
+    __tablename__ = "official_activities"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    period_id: Mapped[int] = mapped_column(ForeignKey("reporting_periods.id"))
+    program_code: Mapped[str] = mapped_column(String(80), default="")
+    program_name: Mapped[str] = mapped_column(String(300))
+    subprogram_code: Mapped[str] = mapped_column(String(80), default="")
+    subprogram_name: Mapped[str] = mapped_column(String(300))
+    code: Mapped[str] = mapped_column(String(80))
+    name: Mapped[str] = mapped_column(Text)
+
+
+class ActivityResponsibility(Base):
+    __tablename__ = "activity_responsibilities"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    official_activity_id: Mapped[int] = mapped_column(ForeignKey("official_activities.id"))
+    department_id: Mapped[int] = mapped_column(ForeignKey("departments.id"))
+    __table_args__ = (UniqueConstraint("official_activity_id", "department_id", name="uq_activity_department"),)
+
+
+class ActivityCatalogueLink(Base):
+    __tablename__ = "activity_catalogue_links"
+    activity_id: Mapped[int] = mapped_column(ForeignKey("activities.id"), primary_key=True)
+    official_activity_id: Mapped[int] = mapped_column(ForeignKey("official_activities.id"), primary_key=True)
+
+
+class Publication(Base):
+    __tablename__ = "publications"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    period_id: Mapped[int] = mapped_column(ForeignKey("reporting_periods.id"))
+    version: Mapped[int] = mapped_column(Integer)
+    snapshot_json: Mapped[str] = mapped_column(Text)
+    sha256: Mapped[str] = mapped_column(String(64))
+    template_version: Mapped[str] = mapped_column(String(30), default="5.0")
+    created_by: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(UTC).replace(tzinfo=None))
+    __table_args__ = (UniqueConstraint("period_id", "version", name="uq_publication_version"),)

@@ -2,6 +2,9 @@ from datetime import datetime, UTC
 from pathlib import Path
 from contextlib import asynccontextmanager
 import json
+from decimal import Decimal
+from .serialization import json_dumps
+from .numbers import parse_number, format_number
 import os
 import secrets
 import hmac
@@ -37,15 +40,15 @@ from .file_security import read_upload_limited, validate_office_zip
 from .report_export import build_department_docx
 
 BASE_DIR = Path(__file__).resolve().parent
-APP_VERSION = "4.2.0"
-MIGRATION_HEAD = "d4f0a1b2c3d4"
+APP_VERSION = "5.0.0"
+MIGRATION_HEAD = "e5a0b1c2d3e4"
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     validate_runtime_settings()
     if is_production():
-        # Apply committed, reversible schema migrations before serving traffic.
+        # Apply committed schema migrations before serving traffic; back up before upgrading.
         alembic_config = AlembicConfig(str(BASE_DIR.parent / "alembic.ini"))
         alembic_config.set_main_option("script_location", str(BASE_DIR.parent / "migrations"))
         schema = inspect(engine)
@@ -57,10 +60,11 @@ async def lifespan(app: FastAPI):
         if not inspect(engine).has_table("users"):
             raise RuntimeError("Civensa veritabanı hazırlanmadı. Önce `alembic upgrade head` çalıştırın.")
     else:
-        Base.metadata.create_all(engine)
         alembic_config = AlembicConfig(str(BASE_DIR.parent / "alembic.ini"))
         alembic_config.set_main_option("script_location", str(BASE_DIR.parent / "migrations"))
-        alembic_command.stamp(alembic_config, "head")
+        if inspect(engine).has_table("users") and not inspect(engine).has_table("alembic_version"):
+            alembic_command.stamp(alembic_config, "290ef7e62102")
+        alembic_command.upgrade(alembic_config, "head")
         if demo_seed_enabled():
             with SessionLocal() as db:
                 seed(db)
@@ -107,7 +111,7 @@ async def require_user(request: Request, db: Session = Depends(get_db)):
     if request.method in {"POST", "PUT", "PATCH", "DELETE"}:
         expected = request.session.get("csrf_token", "")
         supplied = request.headers.get("X-CSRF-Token", "")
-        if not supplied and request.headers.get("content-type", "").startswith("application/x-www-form-urlencoded"):
+        if not supplied and request.headers.get("content-type", "").startswith(("application/x-www-form-urlencoded", "multipart/form-data")):
             form = await request.form()
             supplied = str(form.get("csrf_token", ""))
         if not expected or not supplied or not hmac.compare_digest(str(expected), str(supplied)):
@@ -148,46 +152,49 @@ def log(db, user, action, entity_type, entity_id=None, details=""):
     db.commit()
 
 
-def format_tr(value: float, money=False):
-    if money:
-        return f"{value:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
-    return f"{value:,.0f}".replace(",", ".")
+def format_tr(value, money=False):
+    return format_number(value, money)
 
 
 def parse_tr_number(raw, field="Değer"):
-    text = str(raw if raw is not None else "0").strip().replace("₺", "").replace(" ", "")
-    if not text:
-        return 0.0
-    text = text.replace(".", "").replace(",", ".")
     try:
-        return float(text)
-    except ValueError:
-        raise HTTPException(422, f"{field} sayı olmalı.")
+        value = parse_number(raw)
+        if value is None:
+            raise ValueError("Değer boş olamaz.")
+        return value
+    except ValueError as exc:
+        raise HTTPException(422, f"{field}: {exc}") from None
 
 
-def parse_optional_number(raw, field="Deger"):
-    text = str(raw if raw is not None else "").strip()
-    if not text:
-        return None
-    return parse_tr_number(raw, field)
+def parse_optional_number(raw, field="Değer"):
+    try:
+        return parse_number(raw)
+    except ValueError as exc:
+        raise HTTPException(422, f"{field}: {exc}") from None
 
 
 def parse_nonnegative_money(raw, field="Tutar"):
-    value = parse_tr_number(raw, field)
-    if value < 0:
-        raise HTTPException(422, f"{field} negatif olamaz.")
+    value = parse_optional_nonnegative_money(raw, field)
+    if value is None:
+        raise HTTPException(422, f"{field} boş olamaz.")
     return value
 
 
 def parse_optional_nonnegative_money(raw, field="Tutar"):
-    text = str(raw if raw is not None else "").strip().replace("₺", "").replace(" ", "")
-    if not text:
-        return None
-    return parse_nonnegative_money(raw, field)
+    try:
+        return parse_number(raw, money=True)
+    except ValueError as exc:
+        raise HTTPException(422, f"{field}: {exc}") from None
 
 
-templates.env.filters["trnum"] = lambda v: format_tr(float(v or 0), False)
-templates.env.filters["trmoney"] = lambda v: format_tr(float(v or 0), True)
+templates.env.filters["trnum"] = lambda v: format_number(v)
+templates.env.filters["trmoney"] = lambda v: format_number(v, True)
+def section_text(raw):
+    content=json.loads(raw)
+    if 'caption' in content: return content['caption']
+    return content.get('text','') if 'text' in content else '\n'.join('\t'.join(str(c) for c in row) for row in content.get('rows',[]))
+templates.env.filters['section_text']=section_text
+templates.env.filters['section_placement']=lambda raw: json.loads(raw).get('placement','before')
 
 
 def active_period(db: Session):
@@ -203,6 +210,7 @@ def session_period(request: Request, db: Session):
 
 def indicator_columns(year: int):
     return [
+        {"year": year - 2, "kind": "actual", "label": f"{year-2} Gerçekleşme"},
         {"year": year - 1, "kind": "planned", "label": f"{year-1} Planlanan"},
         {"year": year - 1, "kind": "year_end_estimate", "label": f"{year-1} Yıl Sonu Gerçekleşme Tahmini"},
         {"year": year, "kind": "target", "label": f"{year} Hedef"},
@@ -237,16 +245,17 @@ def indicator_issues(ind: Indicator, period_year: int):
         issues.append("Gösterge adı boş.")
     if not ind.unit.strip():
         issues.append("Ölçü birimi boş.")
-    if "sayısı" in ind.name.lower() and ind.unit.lower().startswith("oran"):
-        issues.append("Gösterge adı sayı/adet ifade ederken ölçü birimi Oran (%) seçilmiş.")
     if (period_year, "target") not in vals:
         issues.append(f"{period_year} hedefi girilmemiş.")
-    if not ind.explanation.strip():
+    if not (ind.explanation.strip() or (ind.card and ind.card.explanation.strip())):
         issues.append("Göstergeye ilişkin açıklama boş.")
-    if not ind.calculation_method.strip():
+    if not (ind.calculation_method.strip() or (ind.card and ind.card.calculation_method.strip())):
         issues.append("Hesaplama yöntemi boş.")
-    if not ind.data_source.strip():
+    if not (ind.data_source.strip() or (ind.card and ind.card.data_source.strip())):
         issues.append("Verinin kaynağı boş.")
+    for value in ind.values:
+        if value.state != "verified" or value.value is None:
+            issues.append(f"{value.year} {value.value_kind}: kaynak değeri doğrulanmalı ({value.raw_text}).")
     return issues
 
 
@@ -409,11 +418,7 @@ def department_page(department_id: int, request: Request, db: Session = Depends(
     submission = ensure_submission(db, department_id, period.id)
     db.commit()
     issue_map = {i.id: indicator_issues(i, period.year) for i in indicators}
-    subprograms = []
-    seen = set()
-    for i in indicators:
-        if i.subprogram_id not in seen:
-            seen.add(i.subprogram_id); subprograms.append(i.subprogram)
+    subprograms = db.scalars(select(SubProgram).where(SubProgram.period_id == period.id).order_by(SubProgram.name)).all()
     ind_cols = indicator_columns(period.year)
     act_cols = activity_columns(period.year)
     ind_value_maps = {i.id: {f"{v.year}:{v.value_kind}": v.value for v in i.values} for i in indicators}
@@ -428,18 +433,18 @@ def department_page(department_id: int, request: Request, db: Session = Depends(
     general_totals = {}
     for col in act_cols:
         key = f"{col['year']}:{col['kind']}"
-        activity_values = [activity_maps[a.id][key] for a in activities if key in activity_maps[a.id]]
-        activity_totals[key] = sum(activity_values) if activity_values else None
-        if activity_values or key in personnel_map:
-            general_totals[key] = sum(activity_values) + personnel_map.get(key, 0)
-        else:
-            general_totals[key] = None
+        activity_values = [activity_maps[a.id].get(key) for a in activities]
+        complete = bool(activities) and all(v is not None for v in activity_values)
+        activity_totals[key] = sum(activity_values) if complete else None
+        general_totals[key] = (sum(activity_values) + personnel_map[key]
+                               if complete and personnel_map.get(key) is not None else None)
     return templates.TemplateResponse(request, "department.html", {
         "user": user, "department": dept, "indicators": indicators, "activities": activities,
         "submission": submission, "issue_map": issue_map, "subprograms": subprograms, "period": period,
         "indicator_columns": ind_cols, "activity_columns": act_cols, "indicator_value_maps": ind_value_maps,
         "activity_maps": activity_maps, "personnel_map": personnel_map, "activity_totals": activity_totals,
         "general_totals": general_totals, "workflow_events": workflow_events,
+        "funding_maps": {a.id:{f"{v.year}:{v.value_kind}:{v.funding_type}":v.amount for v in a.cost_values} for a in activities},
         "notifications": user_notifications(db, user),
     })
 
@@ -466,14 +471,18 @@ async def save_indicator(indicator_id: int, request: Request, db: Session = Depe
             continue
         value = parse_optional_number(data[key], col["label"])
         existing = value_map.get((col["year"], col["kind"]))
+        if existing and existing.state != "verified" and (value is None or value == existing.value):
+            continue  # Unrelated edits must not erase or approve unresolved source values.
         if value is None:
             if existing:
                 db.delete(existing)
             continue
         if existing:
             existing.value = value
+            existing.raw_text = existing.raw_text or str(data[key])
+            existing.state = "verified"
         else:
-            db.add(IndicatorValue(indicator_id=ind.id, year=col["year"], value_kind=col["kind"], value=value))
+            db.add(IndicatorValue(indicator_id=ind.id, year=col["year"], value_kind=col["kind"], value=value, raw_text=str(data[key]), state="verified"))
     db.commit()
     log(db, user, "indicator_update", "indicator", ind.id)
     refreshed = db.scalar(select(Indicator).where(Indicator.id == ind.id).options(selectinload(Indicator.values)))
@@ -498,13 +507,8 @@ async def create_activity(request: Request, db: Session = Depends(get_db), user:
         raise HTTPException(422, "Alt program bu döneme ait değil.")
     act = Activity(period_id=period.id, department_id=user.department_id, subprogram_id=subprogram_id, name=name, explanation=str(data.get("explanation", "")).strip())
     db.add(act); db.flush()
-    for col in activity_columns(period.year):
-        key = f"cost_{col['year']}_{col['kind']}"
-        amount = parse_optional_nonnegative_money(data.get(key), col["label"])
-        if amount is None:
-            continue
-        for funding, val in (("total", amount), ("inside", amount), ("outside", 0.0)):
-            db.add(ActivityCostValue(activity_id=act.id, year=col["year"], value_kind=col["kind"], funding_type=funding, amount=val))
+    from .program_service import save_activity_costs
+    save_activity_costs(db, act, period.year, data)
     db.commit(); db.refresh(act)
     log(db, user, "activity_create", "activity", act.id)
     return {"ok": True, "id": act.id}
@@ -530,35 +534,10 @@ async def update_activity(activity_id: int, request: Request, db: Session = Depe
         sp = db.get(SubProgram, subprogram_id)
         if not sp or sp.period_id != period.id:
             raise HTTPException(422, "Alt program bu döneme ait değil.")
+        if act.card and act.card.subprogram_id != subprogram_id: act.card_id = None
         act.subprogram_id = subprogram_id
-    cost_map = {(v.year, v.value_kind, v.funding_type): v for v in act.cost_values}
-    for col in activity_columns(period.year):
-        key = f"cost_{col['year']}_{col['kind']}"
-        if key not in data:
-            continue
-        amount = parse_optional_nonnegative_money(data[key], col["label"])
-        total_key = (col["year"], col["kind"], "total")
-        inside_key = (col["year"], col["kind"], "inside")
-        outside_key = (col["year"], col["kind"], "outside")
-        if amount is None:
-            for cost_key in (total_key, inside_key, outside_key):
-                row = cost_map.pop(cost_key, None)
-                if row:
-                    db.delete(row)
-            continue
-        if total_key in cost_map:
-            cost_map[total_key].amount = amount
-        else:
-            db.add(ActivityCostValue(activity_id=act.id, year=col["year"], value_kind=col["kind"], funding_type="total", amount=amount))
-        # Until detailed source split UI is opened, preserve outside budget and make inside reconcile to total.
-        outside = cost_map[outside_key].amount if outside_key in cost_map else 0.0
-        inside = max(0.0, amount - outside)
-        if inside_key in cost_map:
-            cost_map[inside_key].amount = inside
-        else:
-            db.add(ActivityCostValue(activity_id=act.id, year=col["year"], value_kind=col["kind"], funding_type="inside", amount=inside))
-        if outside_key not in cost_map:
-            db.add(ActivityCostValue(activity_id=act.id, year=col["year"], value_kind=col["kind"], funding_type="outside", amount=0.0))
+    from .program_service import save_activity_costs
+    save_activity_costs(db, act, period.year, data)
     db.commit()
     log(db, user, "activity_update", "activity", act.id)
     return {"ok": True}
@@ -570,6 +549,8 @@ def delete_activity(activity_id: int, db: Session = Depends(get_db), user: User 
     if not act:
         raise HTTPException(404)
     ensure_department_editable(db, user, act.department_id, act.period_id)
+    from .models import ActivityCatalogueLink
+    db.execute(ActivityCatalogueLink.__table__.delete().where(ActivityCatalogueLink.activity_id == act.id))
     db.delete(act); db.commit()
     log(db, user, "activity_delete", "activity", activity_id)
     return {"ok": True}
@@ -588,12 +569,16 @@ async def save_personnel_costs(department_id: int, request: Request, db: Session
             continue
         amount = parse_optional_nonnegative_money(data[key], col["label"])
         row = value_map.get((col["year"], col["kind"]))
+        if row and row.state != "verified" and (amount is None or amount == row.amount):
+            continue
         if amount is None:
             if row:
                 db.delete(row)
             continue
         if row:
             row.amount = amount
+            row.state = "verified"
+            row.raw_text = row.raw_text or str(data[key])
         else:
             db.add(DepartmentCostValue(department_id=department_id, period_id=period.id, year=col["year"], value_kind=col["kind"], category="personnel_sgk", amount=amount))
     db.commit(); log(db, user, "personnel_cost_update", "department", department_id)
@@ -610,48 +595,20 @@ def submit_department(department_id: int, db: Session = Depends(get_db), user: U
         raise HTTPException(409, "Onaylanmış paket yeniden gönderilemez.")
     if submission.status == "submitted":
         raise HTTPException(409, "Paket zaten Strateji incelemesinde.")
-    indicators = db.scalars(select(Indicator).where(Indicator.department_id == department_id, Indicator.period_id == period.id).options(selectinload(Indicator.values))).all()
-    problems = {i.id: indicator_issues(i, period.year) for i in indicators if indicator_issues(i, period.year)}
-    activities = db.scalars(select(Activity).where(Activity.department_id == department_id, Activity.period_id == period.id).options(selectinload(Activity.cost_values))).all()
-    activity_problems = {}
-    for act in activities:
-        issues = []
-        if not act.subprogram_id:
-            issues.append("Program / Alt Program seçilmemiş.")
-        cost_map = {}
-        for value in act.cost_values:
-            cost_map[(value.year, value.value_kind, value.funding_type)] = value.amount or 0.0
-        for year, kind in {(v.year, v.value_kind) for v in act.cost_values}:
-            total = cost_map.get((year, kind, "total"), 0.0)
-            inside = cost_map.get((year, kind, "inside"), 0.0)
-            outside = cost_map.get((year, kind, "outside"), 0.0)
-            if abs(total - (inside + outside)) > 0.01:
-                issues.append(f"{year} {kind} toplamı Bütçe İçi + Bütçe Dışı ile uyuşmuyor.")
-        if issues:
-            activity_problems[act.id] = issues
-    if not indicators:
-        return JSONResponse({"ok": False, "message": "Gönderilecek performans göstergesi yok."}, status_code=422)
-    if problems or activity_problems:
-        return JSONResponse({
-            "ok": False,
-            "message": "Gönderimden önce gösterge ve faaliyet kontrollerini tamamlayın.",
-            "problems": problems, "activity_problems": activity_problems,
-        }, status_code=422)
+    from .program_service import validate_department, department_snapshot
+    errors, warnings = validate_department(db, period.id, department_id)
+    if errors:
+        return JSONResponse({"ok": False, "message": "Kart ve mali tablo kontrollerini tamamlayın.", "errors": errors, "warnings": warnings}, status_code=422)
     submission.status = "submitted"
     submission.submitted_at = datetime.now(UTC).replace(tzinfo=None)
     submission.return_note = ""
     submission.revision = (submission.revision or 0) + 1
-    snapshot = {
-        "indicators": len(indicators),
-        "activities": len(activities),
-        "indicator_issues": 0,
-        "activity_issues": 0,
-    }
+    snapshot = department_snapshot(db, period.id, department_id)
     department = db.get(Department, department_id)
     db.add(SubmissionEvent(
         submission_id=submission.id, department_id=department_id, period_id=period.id,
         actor_user_id=user.id, event_type="submitted", revision=submission.revision,
-        snapshot_json=json.dumps(snapshot, ensure_ascii=False),
+        snapshot_json=json_dumps(snapshot, ensure_ascii=False),
     ))
     db.add(Notification(
         role="strategy", event_type="submission_submitted",
@@ -858,6 +815,7 @@ async def apply_activity_mapping_csv(
     batch_id = secrets.token_hex(8)
     for row in rows:
         activity, subprogram = row["activity"], row["subprogram"]
+        if activity.card and activity.card.subprogram_id != subprogram.id: activity.card_id = None
         activity.subprogram_id = subprogram.id
         db.add(AuditLog(
             user_id=user.id, action="activity_mapping_csv", entity_type="activity",
@@ -913,6 +871,7 @@ async def revert_activity_mapping_batch(
             "errors": errors[:50],
         })
     for activity in validated:
+        activity.card_id = None
         activity.subprogram_id = None
     db.add(AuditLog(
         user_id=user.id, action="activity_mapping_csv_revert", entity_type="mapping_batch",
@@ -972,6 +931,7 @@ async def save_activity_mappings(request: Request, db: Session = Depends(get_db)
             "updated": 0, "errors": errors[:20],
         }, status_code=422)
     for act, sp in validated:
+        if act.card and act.card.subprogram_id != sp.id: act.card_id = None
         act.subprogram_id = sp.id
         db.add(AuditLog(user_id=user.id, action="activity_mapping", entity_type="activity", entity_id=act.id, details=f"subprogram_id={sp.id}"))
     if validated:
@@ -1250,10 +1210,15 @@ async def submission_decision(submission_id: int, request: Request, db: Session 
         raise HTTPException(404)
     if sub.status != "submitted":
         raise HTTPException(409, "Yalnızca incelemedeki paket için karar verilebilir.")
+    from .program_service import department_snapshot
     data = await request.json()
     decision = data.get("decision")
     note = str(data.get("note", "")).strip()
     if decision == "approve":
+        from .program_service import validate_department
+        errors, warnings = validate_department(db, sub.period_id, sub.department_id)
+        if errors:
+            raise HTTPException(409, errors)
         sub.status = "approved"; sub.return_note = ""
     elif decision == "return":
         if not note:
@@ -1266,6 +1231,7 @@ async def submission_decision(submission_id: int, request: Request, db: Session 
     db.add(SubmissionEvent(
         submission_id=sub.id, department_id=sub.department_id, period_id=sub.period_id,
         actor_user_id=user.id, event_type=decision, revision=sub.revision or 1, note=note,
+        snapshot_json=json_dumps(department_snapshot(db,sub.period_id,sub.department_id),ensure_ascii=False),
     ))
     decision_label = "onaylandı" if decision == "approve" else "düzeltme için iade edildi"
     db.add(Notification(
@@ -1337,10 +1303,10 @@ async def upload_template(period_id: int, file: UploadFile = File(...), db: Sess
         raise HTTPException(422, f"Şablon okunamadı: {e}")
     snap = TemplateSnapshot(
         period_id=period.id, filename=filename, file_type=result["file_type"],
-        fields_json=json.dumps(result["present"], ensure_ascii=False),
-        missing_json=json.dumps(result["missing"], ensure_ascii=False),
-        extra_json=json.dumps(result["extra"], ensure_ascii=False),
-        departments_json=json.dumps(result["departments"], ensure_ascii=False),
+        fields_json=json_dumps(result["present"], ensure_ascii=False),
+        missing_json=json_dumps(result["missing"], ensure_ascii=False),
+        extra_json=json_dumps(result["extra"], ensure_ascii=False),
+        departments_json=json_dumps(result["departments"], ensure_ascii=False),
     )
     db.add(snap); db.commit(); db.refresh(snap)
     log(db, user, "template_upload", "template_snapshot", snap.id, f"{filename}; eksik={len(result['missing'])}")
@@ -1370,7 +1336,7 @@ async def data_import_preview(period_id: int, file: UploadFile = File(...), db: 
     except Exception as e:
         raise HTTPException(422, f"Performans verisi okunamadı: {e}")
     plan = build_department_plan(db, parsed)
-    payload = json.dumps(parsed, ensure_ascii=False)
+    payload = json_dumps(parsed, ensure_ascii=False)
     batch = ImportBatch(period_id=period.id, filename=filename, status="preview", payload_json=payload, created_by=user.id)
     db.add(batch); db.commit(); db.refresh(batch)
     log(db, user, "data_import_preview", "import_batch", batch.id, f"{filename}; {plan['summary']}")
@@ -1434,7 +1400,7 @@ def apply_data_import(batch_id: int, preserve_existing: bool = False, db: Sessio
     except Exception:
         db.rollback()
         raise
-    log(db, user, "data_import_apply", "import_batch", batch.id, json.dumps(result, ensure_ascii=False))
+    log(db, user, "data_import_apply", "import_batch", batch.id, json_dumps(result, ensure_ascii=False))
     return {"ok": True, "status": batch.status, **result}
 
 
@@ -1452,7 +1418,7 @@ def revert_data_import(batch_id: int, db: Session = Depends(get_db), user: User 
     except Exception:
         db.rollback()
         raise
-    log(db, user, "data_import_revert", "import_batch", batch.id, json.dumps(result, ensure_ascii=False))
+    log(db, user, "data_import_revert", "import_batch", batch.id, json_dumps(result, ensure_ascii=False))
     return {"ok": True, "status": batch.status, **result}
 
 
@@ -1489,19 +1455,20 @@ async def create_period(request: Request, db: Session = Depends(get_db), user: U
         for old in subs:
             new = SubProgram(period_id=period.id, program_id=program_map[old.program_id], name=old.name, rationale=old.rationale, goal=old.goal)
             db.add(new); db.flush(); sub_map[old.id] = new.id
+        from .models import ReportCard
+        card_map = {}
+        for old in db.scalars(select(ReportCard).where(ReportCard.period_id==base.id)).all():
+            fields = {c.name:getattr(old,c.name) for c in ReportCard.__table__.columns if c.name not in {'id','period_id','subprogram_id','source_title'}}
+            card=ReportCard(period_id=period.id,subprogram_id=sub_map[old.subprogram_id],source_title=f'{year}/{old.position}',**fields)
+            db.add(card);db.flush();card_map[old.id]=card.id
         inds = db.scalars(select(Indicator).where(Indicator.period_id == base.id)).all()
         for old in inds:
-            new = Indicator(period_id=period.id, department_id=old.department_id, subprogram_id=sub_map[old.subprogram_id], name=old.name, unit=old.unit, explanation=old.explanation, calculation_method=old.calculation_method, data_source=old.data_source, status="draft")
+            new = Indicator(period_id=period.id, department_id=old.department_id, subprogram_id=sub_map[old.subprogram_id], card_id=card_map.get(old.card_id), code=old.code, position=old.position, name=old.name, unit=old.unit, explanation=old.explanation, calculation_method=old.calculation_method, data_source=old.data_source, status="draft")
             db.add(new); db.flush()
-            for col in indicator_columns(year):
-                db.add(IndicatorValue(indicator_id=new.id, year=col["year"], value_kind=col["kind"], value=0))
         acts = db.scalars(select(Activity).where(Activity.period_id == base.id)).all()
         for old in acts:
-            new_act = Activity(period_id=period.id, department_id=old.department_id, subprogram_id=sub_map.get(old.subprogram_id), name=old.name, explanation=old.explanation)
+            new_act = Activity(period_id=period.id, department_id=old.department_id, subprogram_id=sub_map.get(old.subprogram_id), card_id=card_map.get(old.card_id), code=old.code, position=old.position, name=old.name, explanation=old.explanation)
             db.add(new_act); db.flush()
-            for col in activity_columns(year):
-                for funding in ("total", "inside", "outside"):
-                    db.add(ActivityCostValue(activity_id=new_act.id, year=col["year"], value_kind=col["kind"], funding_type=funding, amount=0))
         depts = db.scalars(select(Department)).all()
         for dept in depts:
             db.add(Submission(department_id=dept.id, period_id=period.id, status="draft"))
@@ -1567,26 +1534,8 @@ def export_department(department_id: int, request: Request, db: Session = Depend
     submission = db.scalar(select(Submission).where(Submission.department_id == department_id, Submission.period_id == period.id))
     if not submission or submission.status != "approved":
         raise HTTPException(409, "Çıktı yalnızca Strateji onayından sonra alınabilir.")
-    inds = db.scalars(select(Indicator).where(Indicator.department_id == department_id, Indicator.period_id == period.id).options(selectinload(Indicator.values), selectinload(Indicator.subprogram).selectinload(SubProgram.program))).all()
-    acts = db.scalars(select(Activity).where(Activity.department_id == department_id, Activity.period_id == period.id).options(selectinload(Activity.cost_values), selectinload(Activity.subprogram).selectinload(SubProgram.program))).all()
-    personnel = db.scalars(select(DepartmentCostValue).where(DepartmentCostValue.department_id == department_id, DepartmentCostValue.period_id == period.id, DepartmentCostValue.category == "personnel_sgk")).all()
-    return {
-        "period": period.year,
-        "department": dept.name,
-        "indicators": [{
-            "id": i.id, "program": i.subprogram.program.name, "subprogram": i.subprogram.name,
-            "name": i.name, "unit": i.unit,
-            "values": [{"year": v.year, "kind": v.value_kind, "value": v.value} for v in i.values],
-            "explanation": i.explanation, "calculation_method": i.calculation_method, "data_source": i.data_source,
-        } for i in inds],
-        "activities": [{
-            "id": a.id, "program": a.subprogram.program.name if a.subprogram else None,
-            "subprogram": a.subprogram.name if a.subprogram else None, "name": a.name,
-            "explanation": a.explanation,
-            "costs": [{"year": v.year, "kind": v.value_kind, "funding_type": v.funding_type, "amount": v.amount} for v in a.cost_values],
-        } for a in acts],
-        "department_costs": [{"year": v.year, "kind": v.value_kind, "category": v.category, "amount": v.amount} for v in personnel],
-    }
+    from .program_service import department_snapshot
+    return department_snapshot(db, period.id, department_id)
 
 
 @app.get("/export/department/{department_id}.docx")
@@ -1595,52 +1544,18 @@ def export_department_docx(department_id: int, request: Request, db: Session = D
     if not dept:
         raise HTTPException(404)
     period = session_period(request, db)
-    submission = db.scalar(select(Submission).where(
-        Submission.department_id == department_id, Submission.period_id == period.id
-    ))
+    submission = db.scalar(select(Submission).where(Submission.department_id == department_id, Submission.period_id == period.id))
     if not submission or submission.status != "approved":
-        raise HTTPException(409, "Word çıktısı yalnızca Strateji onayından sonra alınabilir.")
-    indicators = db.scalars(select(Indicator).where(
-        Indicator.department_id == department_id, Indicator.period_id == period.id
-    ).options(selectinload(Indicator.values), selectinload(Indicator.subprogram).selectinload(SubProgram.program))).all()
-    activities = db.scalars(select(Activity).where(
-        Activity.department_id == department_id, Activity.period_id == period.id
-    ).options(selectinload(Activity.cost_values), selectinload(Activity.subprogram).selectinload(SubProgram.program))).all()
-    personnel = db.scalars(select(DepartmentCostValue).where(
-        DepartmentCostValue.department_id == department_id,
-        DepartmentCostValue.period_id == period.id,
-        DepartmentCostValue.category == "personnel_sgk",
-    )).all()
-    payload = {
-        "period": period.year,
-        "department": dept.name,
-        "indicators": [{
-            "program": i.subprogram.program.name,
-            "subprogram": i.subprogram.name,
-            "name": i.name, "unit": i.unit,
-            "values": [{"year": v.year, "kind": v.value_kind, "value": v.value} for v in i.values],
-            "explanation": i.explanation,
-            "calculation_method": i.calculation_method,
-            "data_source": i.data_source,
-        } for i in indicators],
-        "activities": [{
-            "program": a.subprogram.program.name if a.subprogram else None,
-            "subprogram": a.subprogram.name if a.subprogram else None,
-            "name": a.name, "explanation": a.explanation,
-            "costs": [{"year": v.year, "kind": v.value_kind, "funding_type": v.funding_type, "amount": v.amount} for v in a.cost_values],
-        } for a in activities],
-        "department_costs": [{
-            "year": v.year, "kind": v.value_kind, "category": v.category, "amount": v.amount
-        } for v in personnel],
-    }
-    output = build_department_docx(payload)
+        raise HTTPException(409, "Çıktı yalnızca Strateji onayından sonra alınabilir.")
+    from .program_service import department_snapshot, validate_department
+    issues, _ = validate_department(db, period.id, department_id)
+    if issues: raise HTTPException(409, issues)
+    from .book_export import export_book
+    payload = {"period": period.year, "departments": [department_snapshot(db, period.id, department_id)]}
+    output, mime = export_book(payload, "docx")
     filename = quote(f"{period.year}-{dept.name}-performans-raporu.docx")
     log(db, user, "department_export_docx", "department", dept.id, f"period_id={period.id}")
-    return StreamingResponse(
-        io.BytesIO(output),
-        media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-        headers={"Content-Disposition": f"attachment; filename*=UTF-8''{filename}"},
-    )
+    return StreamingResponse(io.BytesIO(output), media_type=mime, headers={"Content-Disposition": f"attachment; filename*=UTF-8''{filename}"})
 
 
 @app.get("/api/operations/status")
@@ -1769,7 +1684,7 @@ def operations_backup(db: Session = Depends(get_db), user: User = Depends(requir
                     item[key] = value.isoformat() if isinstance(value, datetime) else value
                 rows.append(item)
             payload["tables"][table.name] = rows
-    raw = json.dumps(payload, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
+    raw = json_dumps(payload, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
     log(db, user, "operations_backup_export", "database", details=f"bytes={len(raw)}")
     filename = f"civensa-backup-{datetime.now(UTC).strftime('%Y%m%d-%H%M%S')}.json"
     return StreamingResponse(
@@ -1952,3 +1867,6 @@ def progress_status(request: Request, db: Session = Depends(get_db), user: User 
         "period": {"id": period.id, "year": period.year},
         **payload,
     }
+
+from .program_routes import register as register_program_routes
+register_program_routes(app)
