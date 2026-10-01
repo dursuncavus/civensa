@@ -155,6 +155,23 @@ def register(app):
         db.commit();log(db,user,'source_value_verified','indicator_value',v.id)
         return RedirectResponse(f'/program/{department_id}?period_id={period.id}',303)
 
+    @app.post('/program/{department_id}/verify-money/{kind}/{value_id}')
+    async def verify_money(department_id:int,kind:str,value_id:int,request:Request,db:Session=Depends(get_db),user:User=Depends(require_user)):
+        model=ActivityCostValue if kind=='activity' else DepartmentCostValue if kind=='personnel' else None
+        if not model:raise HTTPException(404)
+        value=db.get(model,value_id)
+        if not value:raise HTTPException(404)
+        owner=value.activity if kind=='activity' else value
+        context(db,user,department_id,owner.period_id,True)
+        if owner.department_id!=department_id:raise HTTPException(403)
+        data=await request.form()
+        try:amount=parse_number(data.get('amount'),money=True)
+        except ValueError as exc:raise HTTPException(422,str(exc)) from None
+        if amount is None:raise HTTPException(422,'Kaynakla doğruladığınız tutarı girin.')
+        value.amount=amount;value.state='verified'
+        db.commit();log(db,user,'source_money_verified',model.__tablename__,value.id)
+        return RedirectResponse(f'/program/{department_id}?period_id={owner.period_id}',303)
+
     @app.get('/report-builder')
     def builder(request:Request,db:Session=Depends(get_db),user:User=Depends(require_strategy)):
         period=session_period(request,db)

@@ -32,13 +32,13 @@ Bu sürüm, v4.2.0 kodundaki nihai performans programı uyumluluğu sorunların�
 - Genel bilgi tabloları ve görselleri editoryal içeriktir. İçerik doğruluğu/satır kapsamı otomatik belediye kayıt sistemi entegrasyonuyla doğrulanmaz.
 - Döner sermaye ve genel yönetim/destek giderlerinin programlara dağıtım anahtarı kaynakta teyit edilmeden üretilmez. Bu özel dağıtım cetvelleri bölüm tablosu olarak girilebilir; otomatik mali dağıtım motoru değildir.
 - Word/PDF işlevsel kitap çıktısı üretir; kaynak PDF'nin bire bir sayfa tasarımını taklit etmez. Otomatik sayfa referanslı içindekiler ve mevzuat şablonu eşdeğerliği ayrıca kabul kontrolü gerektirir.
-- PostgreSQL üzerinde uygulama/veri geçiş provası canlıya alma öncesinde yapılmalıdır. Mevcut doğrulama SQLite testleri ve yerel yedek kopyası üzerindedir.
+- Dolu v4 şema geçişi GitHub Actions içinde geçici PostgreSQL 16 veritabanında da test edilmiştir. Gerçek üretim sürümü ve tam üretim yedeğiyle geçiş provası canlıya alma öncesinde ayrıca yapılmalıdır.
 
 ## Doğrulama
 
 `python -m pip install -r requirements-dev.txt` ve `python -m pytest -q`.
 
-33 test; sayı hassasiyeti, belirsiz kaynak, eksik/sıfır, finansman mutabakatı, kart ayrımı, kilit/sahiplik, dönem, CSRF/görsel, yayın bütünlüğü, Word/PDF içerik eşliği ve dolu v4 şema geçişi.
+35 test (yerelde PostgreSQL servisi yoksa 34 geçer, 1 atlanır); sayı hassasiyeti, belirsiz kaynak, eksik/sıfır, finansman mutabakatı, kart ayrımı, kilit/sahiplik, dönem, CSRF/görsel, yayın bütünlüğü, Word/PDF içerik eşliği ve dolu v4 şema geçişi.
 
 21 Eylül 2026 tarihli 2027 taslağı içeren mantıksal yedeğin yalnız yerel test kopyası taşındı: 17 eski tablonun satır sayıları, toplam 544 gösterge ve 462 faaliyet korundu. Kullanıcı parola alanları testte devre dışı değerlerle dolduruldu. Bu mantıksal yedek kimlik doğrulama sırlarını içermediği için tam üretim geri dönüş yedeği yerine geçmez.
 

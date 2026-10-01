@@ -165,3 +165,10 @@ def test_missing_economic_zero_is_not_complete(db,sample):
     row=db.scalar(select(EconomicValue).where(EconomicValue.year==2027,EconomicValue.category=='lending',EconomicValue.funding_type=='outside'))
     assert row.amount==0;db.delete(row);db.commit()
     assert any('ekonomik gider hücresi eksik' in e for e in validate_department(db,1,1)[0])
+
+
+def test_explicit_money_review_preserves_original(client,db,sample):
+    row=db.scalar(select(DepartmentCostValue));row.amount=Decimal('1.23');row.raw_text='1.234';row.state='needs_review';db.commit()
+    r=client.post(f'/program/1/verify-money/personnel/{row.id}',data={'amount':'1,23'},follow_redirects=False)
+    assert r.status_code==303,r.text
+    db.refresh(row);assert row.state=='verified' and row.raw_text=='1.234' and row.amount==Decimal('1.23')
