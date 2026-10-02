@@ -140,13 +140,22 @@ def validate_department(db, period_id, department_id):
     required = cost_columns(period.year)[3:]
     totals = {c: Decimal(0) for c in required}
     complete = {c: bool(activities) for c in required}
+    links_by_activity = defaultdict(list)
+    links = db.scalars(select(ActivityCatalogueLink).join(Activity).where(
+        Activity.period_id == period_id, Activity.department_id == department_id)).all()
+    for link in links:
+        links_by_activity[link.activity_id].append(link)
+    official_ids = {link.official_activity_id for link in links}
+    officials = {item.id: item for item in db.scalars(select(OfficialActivity).where(OfficialActivity.id.in_(official_ids))).all()} if official_ids else {}
+    responsible_ids = set(db.scalars(select(ActivityResponsibility.official_activity_id).where(
+        ActivityResponsibility.department_id == department_id,
+        ActivityResponsibility.official_activity_id.in_(official_ids))).all()) if official_ids else set()
     for a in activities:
-        links=db.scalars(select(ActivityCatalogueLink).where(ActivityCatalogueLink.activity_id==a.id)).all()
+        links = links_by_activity[a.id]
         if not links: errors.append(f'{a.name}: sorumlu harcama birimleri kataloğu bağlantısı eksik.')
         for link in links:
-            official=db.get(OfficialActivity,link.official_activity_id)
-            responsible=db.scalar(select(ActivityResponsibility.id).where(ActivityResponsibility.official_activity_id==link.official_activity_id,ActivityResponsibility.department_id==department_id))
-            if not official or official.period_id!=period_id or not responsible:errors.append(f'{a.name}: katalog kapsamı geçersiz.')
+            official = officials.get(link.official_activity_id)
+            if not official or official.period_id!=period_id or link.official_activity_id not in responsible_ids:errors.append(f'{a.name}: katalog kapsamı geçersiz.')
         if not a.card_id: errors.append(f'{a.name}: kart bağlantısı eksik.')
         elif a.card.department_id != department_id or a.card.period_id != period_id or a.card.subprogram_id != a.subprogram_id:
             errors.append(f'{a.name}: kart ve alt program kapsamı uyuşmuyor.')

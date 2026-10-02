@@ -1,6 +1,37 @@
-const toast=(msg)=>{const el=document.getElementById('toast');if(!el)return;el.textContent=msg;el.classList.add('show');clearTimeout(window.__toastTimer);window.__toastTimer=setTimeout(()=>el.classList.remove('show'),2800)};
+const toast=(msg)=>{const el=document.getElementById('toast');if(!el)return;el.textContent=errorMessage(msg);el.classList.add('show');clearTimeout(window.__toastTimer);window.__toastTimer=setTimeout(()=>el.classList.remove('show'),2800)};
 const trNumber=(raw,money=false)=>String(raw??'').trim();
-const jsonFetch=async(url,options={})=>{const token=document.querySelector('meta[name=\"csrf-token\"]')?.content;if(token){const headers=new Headers(options.headers||{});headers.set('X-CSRF-Token',token);options={...options,headers}}const r=await fetch(url,options);let j={};try{j=await r.json()}catch{}return {r,j}};
+const requestFailure='İşlem sonucu doğrulanamadı. Yeniden denemeden önce kayıt durumunu kontrol edin.';
+const errorMessage=(value)=>{
+  if(typeof value==='string')return value.trim();
+  if(Array.isArray(value))return [...new Set(value.map(errorMessage).filter(Boolean))].join(' · ');
+  if(!value||typeof value!=='object')return '';
+  if(Array.isArray(value.loc)&&value.type){
+    return 'Girilen bilgiler geçersiz veya eksik. Alanları kontrol edip tekrar deneyin.';
+  }
+  return errorMessage([value.message,value.detail,value.errors,value.error]);
+};
+const jsonFetch=async(url,options={})=>{
+  const failure=(r,message)=>({r:{ok:false,status:r?.status||0},j:{detail:message,message}});
+  const token=document.querySelector('meta[name="csrf-token"]')?.content;
+  if(token){const headers=new Headers(options.headers||{});headers.set('X-CSRF-Token',token);options={...options,headers}}
+  let r;
+  try{r=await fetch(url,options)}catch{return failure(null,'Sunucuya ulaşılamadı. İnternet bağlantınızı kontrol edin. '+requestFailure)}
+  if(r.status===401||(r.redirected&&new URL(r.url,location.origin).pathname==='/login')){
+    return failure(r,'Oturumunuz sona ermiş veya giriş yapmanız gerekiyor. Yeniden giriş yapın; ardından kayıt durumunu kontrol edin.');
+  }
+  if(r.status>=500)return failure(r,'Sunucu isteği tamamlayamadı. '+requestFailure);
+  let j;
+  try{j=await r.json()}catch{return failure(r,'Sunucudan beklenen yanıt alınamadı. '+requestFailure)}
+  if(!r.ok){
+    const defaults={403:'Bu işlem için yetkiniz yok. Erişiminizi kontrol edin.',404:'İstenen kayıt bulunamadı. Sayfayı yenileyip kontrol edin.',422:'Girilen bilgileri kontrol edip tekrar deneyin.'};
+    const message=errorMessage(j)||defaults[r.status]||'İşlem tamamlanamadı. Bilgileri kontrol edip tekrar deneyin.';
+    const payload=j&&typeof j==='object'&&!Array.isArray(j)?j:{};
+    const errors=payload.errors||(Array.isArray(payload.detail)?payload.detail:payload.detail?.errors);
+    return {r,j:{...payload,errors,detail:message,message}};
+  }
+  if(!j||typeof j!=='object'||Array.isArray(j))return failure(r,'Sunucudan beklenen yanıt alınamadı. '+requestFailure);
+  return {r,j};
+};
 const escapeHtml=(value)=>String(value??'').replace(/[&<>'\"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','\"':'&quot;'}[c]));
 
 (function(){
@@ -56,7 +87,19 @@ const savePersonnel=document.getElementById('savePersonnel');if(savePersonnel)sa
 
 document.querySelectorAll('.money').forEach(i=>i.addEventListener('blur',()=>{if(!i.readOnly)i.value=trNumber(i.value,true)}));
 
-let pendingReturn=null;document.querySelectorAll('.review-action').forEach(btn=>btn.addEventListener('click',async()=>{if(btn.dataset.decision==='return'){pendingReturn=btn.dataset.id;document.getElementById('reviewModal').hidden=false;document.getElementById('returnNote').focus();return}if(!window.confirm('Bu müdürlük paketi onaylanacak ve veri girişi kilitlenecek. Devam edilsin mi?'))return;await decide(btn.dataset.id,'approve','')}));async function decide(id,decision,note){const {r,j}=await jsonFetch(`/api/submissions/${id}/decision`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({decision,note})});if(!r.ok){toast(j.detail||'İşlem yapılamadı.');return}toast(decision==='approve'?'Müdürlük paketi onaylandı.':'Paket müdürlüğe iade edildi.');setTimeout(()=>location.reload(),600)}
+let pendingReturn=null;document.querySelectorAll('.review-action').forEach(btn=>btn.addEventListener('click',async()=>{if(btn.dataset.decision==='return'){pendingReturn=btn.dataset.id;document.getElementById('reviewModal').hidden=false;document.getElementById('returnNote').focus();return}if(!window.confirm('Bu müdürlük paketi onaylanacak ve veri girişi kilitlenecek. Devam edilsin mi?'))return;await decide(btn.dataset.id,'approve','')}));async function decide(id,decision,note){const {r,j}=await jsonFetch(`/api/submissions/${id}/decision`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({decision,note})});if(!r.ok){
+  const box=document.getElementById('reviewErrors-'+id);
+  if(decision==='approve'&&box){
+    const title=document.createElement('strong');title.textContent='Paket onaylanamadı. Aşağıdaki sorunları düzeltip yeniden onaylayın.';
+    const list=document.createElement('ul');
+    const messages=Array.isArray(j.errors)&&j.errors.length?j.errors:[j.detail||'İşlem yapılamadı.'];
+    messages.forEach(message=>{const item=document.createElement('li');item.textContent=errorMessage(message)||'Bilgileri kontrol edip tekrar deneyin.';list.append(item)});
+    box.replaceChildren(title,list);box.hidden=false;box.focus();box.scrollIntoView({behavior:'smooth',block:'center'});
+  }else toast(j.detail||'İşlem yapılamadı.');
+  return;
+}
+const box=document.getElementById('reviewErrors-'+id);if(box){box.replaceChildren();box.hidden=true}
+toast(decision==='approve'?'Müdürlük paketi onaylandı.':'Paket müdürlüğe iade edildi.');setTimeout(()=>location.reload(),600)}
 const cancelReturn=document.getElementById('cancelReturn');if(cancelReturn)cancelReturn.addEventListener('click',()=>{document.getElementById('reviewModal').hidden=true;pendingReturn=null});const confirmReturn=document.getElementById('confirmReturn');if(confirmReturn)confirmReturn.addEventListener('click',()=>{const note=document.getElementById('returnNote').value.trim();if(!note){toast('İade açıklaması zorunlu.');return}decide(pendingReturn,'return',note)});
 
 const npb=document.getElementById('newPeriodBtn');if(npb)npb.addEventListener('click',()=>{document.getElementById('newPeriodForm').hidden=false;document.getElementById('newPeriodYear').focus()});const cp=document.getElementById('cancelPeriod');if(cp)cp.addEventListener('click',()=>document.getElementById('newPeriodForm').hidden=true);const createP=document.getElementById('createPeriod');if(createP)createP.addEventListener('click',async()=>{const year=document.getElementById('newPeriodYear').value;const base=document.getElementById('basePeriod').value;const {r,j}=await jsonFetch('/api/periods',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({year,base_period_id:base})});if(!r.ok){toast(j.detail||'Dönem oluşturulamadı.');return}toast(`${j.year} dönemi taslak olarak oluşturuldu.`);setTimeout(()=>location.reload(),600)});document.querySelectorAll('.verify-period').forEach(b=>b.addEventListener('click',async()=>{const {r,j}=await jsonFetch(`/api/periods/${b.dataset.id}/verify-template`,{method:'POST'});if(!r.ok){toast(j.detail||'Şablon doğrulanamadı.');return}toast('Şablon doğrulandı.');setTimeout(()=>location.reload(),500)}));document.querySelectorAll('.activate-period').forEach(b=>b.addEventListener('click',async()=>{const {r,j}=await jsonFetch(`/api/periods/${b.dataset.id}/activate`,{method:'POST'});if(!r.ok){toast(j.detail||'Dönem aktif edilemedi.');return}toast('Dönem aktif edildi.');setTimeout(()=>location.reload(),500)}));
@@ -190,3 +233,26 @@ document.querySelectorAll('.revert-mapping-batch').forEach(button=>button.addEve
   if(!r.ok){button.disabled=false;const detail=j.detail;toast((detail&&detail.message)||detail||'İşlem geri alınamadı.');return}
   toast(j.reverted+' faaliyet yeniden eşleştirme kuyruğuna alındı.');setTimeout(()=>location.reload(),700);
 }));
+
+(function(){
+  const form=document.getElementById('economicGridForm'),box=document.getElementById('economicGridErrors');
+  if(!form||!box)return;
+  const button=form.querySelector('button[type="submit"],button:not([type])');
+  if(!button)return;
+  let saving=false;
+  form.addEventListener('submit',async event=>{
+    event.preventDefault();if(saving)return;
+    saving=true;button.disabled=true;
+    try{
+      const {r,j}=await jsonFetch(form.action,{method:'POST',headers:{Accept:'application/json'},body:new FormData(form)});
+      if(r.ok&&j.ok===true&&j.redirect_url){
+        box.replaceChildren();box.hidden=true;location.assign(j.redirect_url);return;
+      }
+      const title=document.createElement('strong');title.textContent='Tablo kaydı doğrulanamadı. Girdiğiniz değerler bu ekranda korunuyor.';
+      const list=document.createElement('ul');
+      const messages=Array.isArray(j.errors)&&j.errors.length?j.errors:[j.detail||'İşlem sonucu doğrulanamadı. Yeniden denemeden önce kayıt durumunu kontrol edin.'];
+      messages.forEach(message=>{const item=document.createElement('li');item.textContent=errorMessage(message)||'Bilgileri kontrol edip tekrar deneyin.';list.append(item)});
+      box.replaceChildren(title,list);box.hidden=false;box.focus();box.scrollIntoView({behavior:'smooth',block:'center'});
+    }finally{saving=false;button.disabled=false}
+  });
+})();
