@@ -1,14 +1,39 @@
-import io, re
+import io, json, re
 from pathlib import Path
 from docx import Document
 from openpyxl import load_workbook
 
-CANONICAL_FIELDS = ["Bütçe Yılı", "Program Adı", "İdare Birim Adı", "Alt Program Adı", "Gerekçe ve Açıklamalar", "Alt Program Hedefi", "Performans Göstergeleri", "Ölçü Birimi", "Planlanan", "Yıl Sonu Gerçekleşme Tahmini", "Hedef", "Tahmin", "Göstergeye İlişkin Açıklama", "Hesaplama Yöntemi", "Verinin Kaynağı", "Sorumlu İdare", "Alt Program Kapsamında Yürütülecek Faaliyet Maliyetleri", "Faaliyetler", "Bütçe İçi", "Bütçe Dışı", "Personel ve SGK Giderleri", "Genel Toplam", "Faaliyetlere İlişkin Açıklamalar"]
+CANONICAL_FIELDS = [
+    "Bütçe Yılı",
+    "Program Adı",
+    "İdare Birim Adı",
+    "Alt Program Adı",
+    "Gerekçe ve Açıklamalar",
+    "Alt Program Hedefi",
+    "Performans Göstergeleri",
+    "Ölçü Birimi",
+    "Planlanan",
+    "Yıl Sonu Gerçekleşme Tahmini",
+    "Hedef",
+    "Tahmin",
+    "Göstergeye İlişkin Açıklama",
+    "Hesaplama Yöntemi",
+    "Verinin Kaynağı",
+    "Sorumlu İdare",
+    "Alt Program Kapsamında Yürütülecek Faaliyet Maliyetleri",
+    "Faaliyetler",
+    "Bütçe İçi",
+    "Bütçe Dışı",
+    "Personel ve SGK Giderleri",
+    "Genel Toplam",
+    "Faaliyetlere İlişkin Açıklamalar",
+]
 
 def _norm(s: str) -> str:
     s=(s or "").lower().replace("ı","i").replace("ş","s").replace("ğ","g").replace("ü","u").replace("ö","o").replace("ç","c")
     s=re.sub(r"\s+"," ",s)
     return re.sub(r"[^a-z0-9% ]+","",s).strip()
+
 
 def _tr_title(s: str) -> str:
     trans=str.maketrans({"I":"ı","İ":"i","Ş":"ş","Ğ":"ğ","Ü":"ü","Ö":"ö","Ç":"ç"})
@@ -44,12 +69,19 @@ def analyze_template(filename: str, data: bytes):
     else: raise ValueError("Yalnızca DOCX ve XLSX şablonları destekleniyor.")
     normalized=[_norm(x) for x in items]
     present=[]; missing=[]
-    aliases={"Göstergeye İlişkin Açıklama":["gostergeye iliskin aciklama","gostergelere iliskin aciklama"],"Alt Program Hedefi":["alt program hedefi","alt program hedefleri"],"Performans Göstergeleri":["performans gostergeleri","performans gostergesi"],"Faaliyetlere İlişkin Açıklamalar":["faaliyetlere iliskin aciklamalar","faaliyetlere iliskin aciklama"]}
+    aliases={
+        "Göstergeye İlişkin Açıklama":["gostergeye iliskin aciklama","gostergelere iliskin aciklama"],
+        "Alt Program Hedefi":["alt program hedefi","alt program hedefleri"],
+        "Performans Göstergeleri":["performans gostergeleri","performans gostergesi"],
+        "Faaliyetlere İlişkin Açıklamalar":["faaliyetlere iliskin aciklamalar","faaliyetlere iliskin aciklama"],
+    }
     for field in CANONICAL_FIELDS:
         candidates=aliases.get(field,[_norm(field)])
         ok=any(any(c in text for c in candidates) for text in normalized)
         (present if ok else missing).append(field)
-    canon_norm={_norm(x) for x in CANONICAL_FIELDS}; extras=[]
+    # extra = table/paragraph labels that look like headings but don't match canonical set
+    canon_norm={_norm(x) for x in CANONICAL_FIELDS}
+    extras=[]
     for raw,n in zip(items,normalized):
         if 2<=len(raw)<=90 and n not in canon_norm and (raw.isupper() or raw.endswith(":")):
             if raw not in extras: extras.append(raw)

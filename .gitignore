@@ -1,7 +1,6 @@
-__pycache__/
-*.py[cod]
 .venv/
-.env
-civensa.db
+__pycache__/
+*.pyc
+*.db
 .pytest_cache/
-.DS_Store
+.env
