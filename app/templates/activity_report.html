@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block page_title %}Faaliyet Raporu{% endblock %}
+{% block page_subtitle %}Hazırlık alanı · Veri girişi ve rapor üretimi henüz açık değil.{% endblock %}
+{% block content %}
+<section class="card"><h2>Çalışma kapsamı</h2><p>2026 Faaliyet Raporu için 2022–2025 geçmiş harcamaları kaynaklarıyla hazırlama ve müdürlük eşlemelerini doğrulama çalışması yürütülüyor.</p><p>Performans Programı’ndaki planlanan değerler, gerçekleşme olarak kullanılmayacak. Geçmiş yıllarda bulunmayan program bütçe dağılımları üretilmeyecek.</p></section>
+<section class="card"><h2>İlk kullanılabilir bölüm</h2><p>Kaynak doğrulaması sonrası tek müdürlükte hedef, gerçekleşme ve mali verilerin ayrı izlendiği pilot hazırlanacak. Nihai rapor yapısı ve veri aktarımı doğrulanmadan bu ekran veri kaydetmeyecek.</p><p>Kurumsal sunum, meclis sunumu ve tasarım aktarımı planlanan kapsamdır; hazır özellik değildir.</p></section>
+<section class="card"><h2>{{ year }} · Gösterge inceleme pilotu</h2>
+<p>Yalnız seçilen yılın dönemine bağlı mevcut kayıtlar gösterilir. Geçmiş dönemlerden otomatik eşleme yapılmaz. Tahminler gerçekleşme olarak kullanılmaz; oran hesaplanmaz. Gerçekleşme sütunu yalnız gerçekleşme türünde kayıtlı değerleri gösterir; kaynak doğrulamasının tamamlandığı anlamına gelmez. Bu ekran resmî rapor değildir.</p>
+<form method="get" action="/activity-report"><label>Rapor yılı<select name="year">{% for y in range(2022, 2027) %}<option value="{{ y }}" {% if y == year %}selected{% endif %}>{{ y }}</option>{% endfor %}</select></label><button class="button">Göster</button></form>
+{% if indicator_rows %}<div class="table-wrap"><table><thead><tr><th>Müdürlük</th><th>Gösterge</th><th>Ölçü birimi</th><th>{{ year }} hedef</th><th>{{ year }} gerçekleşme</th><th>Kayıtlı veri kaynağı</th></tr></thead><tbody>{% for row in indicator_rows %}<tr><td>{{ row.department }}</td><td>{{ row.name }}</td><td>{{ row.unit }}</td><td>{{ row.target }}</td><td>{{ row.actual }}</td><td>{{ row.source or 'Belirtilmedi' }}</td></tr>{% endfor %}</tbody></table></div>
+{% else %}<p>Bu yıl için erişebileceğiniz gösterge kaydı yok. Kaynak raporların aktarımı henüz tamamlanmadı.</p>{% endif %}</section>
+<a class="button" href="/modules">Modül seçimine dön</a>
+{% endblock %}

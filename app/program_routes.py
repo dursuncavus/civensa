@@ -134,7 +134,10 @@ def register(app):
             elif obj:obj.amount=amount
             else:db.add(EconomicValue(period_id=pid,department_id=department_id,year=year,value_kind=kind,category=cat,program_group=group,funding_type=fund,amount=amount))
         db.commit();log(db,user,'economic_grid_save','department',department_id,f'{pid}/{group}/{fund}')
-        return RedirectResponse(f'/program/{department_id}?period_id={pid}&group={group}&fund={fund}',303)
+        redirect_url=f'/program/{department_id}?period_id={pid}&group={group}&fund={fund}'
+        if 'application/json' in request.headers.get('accept',''):
+            return {'ok':True,'redirect_url':redirect_url}
+        return RedirectResponse(redirect_url,303)
 
     @app.post('/program/{department_id}/verify-value/{value_id}')
     async def verify_value(department_id:int,value_id:int,request:Request,db:Session=Depends(get_db),user:User=Depends(require_user)):

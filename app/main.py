@@ -338,7 +338,7 @@ def ensure_submission(db: Session, department_id: int, period_id: int):
 
 @app.get("/", include_in_schema=False)
 def root(request: Request, db: Session = Depends(get_db)):
-    return RedirectResponse("/dashboard" if current_user(request, db) else "/login", 303)
+    return RedirectResponse("/modules" if current_user(request, db) else "/login", 303)
 
 
 @app.get("/login", response_class=HTMLResponse)
@@ -356,13 +356,28 @@ def login(request: Request, email: str = Form(...), password: str = Form(...), d
     request.session["user_id"] = user.id
     request.session["csrf_token"] = secrets.token_urlsafe(32)
     log(db, user, "login", "user", user.id)
-    return RedirectResponse("/dashboard", 303)
+    return RedirectResponse("/modules", 303)
 
 
 @app.post("/logout")
 def logout(request: Request):
     request.session.clear()
     return RedirectResponse("/login", 303)
+
+
+@app.get("/modules", response_class=HTMLResponse)
+def modules(request: Request, user: User = Depends(require_user)):
+    return templates.TemplateResponse(request, "modules.html", {"user": user})
+
+
+@app.get("/activity-report", response_class=HTMLResponse)
+def activity_report_workspace(request: Request, year: int = 2026, db: Session = Depends(get_db), user: User = Depends(require_user)):
+    from .activity_report_service import annual_indicators
+    if year < 2022 or year > 2026:
+        raise HTTPException(422, "Faaliyet Raporu yılı 2022–2026 arasında olmalı.")
+    return templates.TemplateResponse(request, "activity_report.html", {
+        "user": user, "year": year, "indicator_rows": annual_indicators(db, user, year),
+    })
 
 
 @app.get("/dashboard", response_class=HTMLResponse)
@@ -459,8 +474,12 @@ async def save_indicator(indicator_id: int, request: Request, db: Session = Depe
     ensure_department_editable(db, user, ind.department_id, ind.period_id)
     period = db.get(ReportingPeriod, ind.period_id)
     data = await request.json()
-    ind.name = str(data.get("name", ind.name)).strip()
-    ind.unit = str(data.get("unit", ind.unit)).strip()
+    name = str(data.get("name", ind.name)).strip()
+    unit = str(data.get("unit", ind.unit)).strip()
+    if not name or not unit or len(name) > 300 or len(unit) > 50:
+        raise HTTPException(422, "Gösterge adı ve birimini kontrol edin.")
+    ind.name = name
+    ind.unit = unit
     ind.explanation = str(data.get("explanation", ind.explanation)).strip()
     ind.calculation_method = str(data.get("calculation_method", ind.calculation_method)).strip()
     ind.data_source = str(data.get("data_source", ind.data_source)).strip()
@@ -489,6 +508,17 @@ async def save_indicator(indicator_id: int, request: Request, db: Session = Depe
     return {"ok": True, "issues": indicator_issues(refreshed, period.year)}
 
 
+def activity_subprogram_id(value):
+    if value is None or value == "":
+        raise HTTPException(422, "Program / Alt Program seçimi zorunlu.")
+    if type(value) not in (int, str) or not str(value).strip().isascii() or not str(value).strip().isdecimal():
+        raise HTTPException(422, "Program / Alt Program seçimi geçersiz.")
+    digits = str(value).strip().lstrip("0")
+    if not digits or len(digits) > 19 or int(digits) > 9223372036854775807:
+        raise HTTPException(422, "Program / Alt Program seçimi geçersiz.")
+    return int(digits)
+
+
 @app.post("/api/activities")
 async def create_activity(request: Request, db: Session = Depends(get_db), user: User = Depends(require_user)):
     if user.role != "department" or not user.department_id:
@@ -499,7 +529,7 @@ async def create_activity(request: Request, db: Session = Depends(get_db), user:
     name = str(data.get("name", "")).strip()
     if not name:
         raise HTTPException(422, "Faaliyet adı zorunlu.")
-    subprogram_id = int(data["subprogram_id"]) if data.get("subprogram_id") else None
+    subprogram_id = activity_subprogram_id(data.get("subprogram_id"))
     if not subprogram_id:
         raise HTTPException(422, "Program / Alt Program seçimi zorunlu.")
     sp = db.get(SubProgram, subprogram_id)
@@ -525,10 +555,8 @@ async def update_activity(activity_id: int, request: Request, db: Session = Depe
     name = str(data.get("name", act.name)).strip()
     if not name:
         raise HTTPException(422, "Faaliyet adı zorunlu.")
-    act.name = name
-    act.explanation = str(data.get("explanation", act.explanation)).strip()
     if "subprogram_id" in data:
-        subprogram_id = int(data["subprogram_id"]) if data.get("subprogram_id") else None
+        subprogram_id = activity_subprogram_id(data.get("subprogram_id"))
         if not subprogram_id:
             raise HTTPException(422, "Program / Alt Program seçimi zorunlu.")
         sp = db.get(SubProgram, subprogram_id)
@@ -536,6 +564,8 @@ async def update_activity(activity_id: int, request: Request, db: Session = Depe
             raise HTTPException(422, "Alt program bu döneme ait değil.")
         if act.card and act.card.subprogram_id != subprogram_id: act.card_id = None
         act.subprogram_id = subprogram_id
+    act.name = name
+    act.explanation = str(data.get("explanation", act.explanation)).strip()
     from .program_service import save_activity_costs
     save_activity_costs(db, act, period.year, data)
     db.commit()
@@ -590,6 +620,10 @@ def submit_department(department_id: int, db: Session = Depends(get_db), user: U
     if user.role != "department" or user.department_id != department_id:
         raise HTTPException(403)
     period = active_period(db)
+    # Serialize submission creation and repeated sends for this department.
+    department = db.scalar(select(Department).where(Department.id == department_id).with_for_update())
+    if not department:
+        raise HTTPException(404)
     submission = ensure_submission(db, department_id, period.id)
     if submission.status == "approved":
         raise HTTPException(409, "Onaylanmış paket yeniden gönderilemez.")
@@ -1205,7 +1239,8 @@ def review(request: Request, db: Session = Depends(get_db), user: User = Depends
 
 @app.post("/api/submissions/{submission_id}/decision")
 async def submission_decision(submission_id: int, request: Request, db: Session = Depends(get_db), user: User = Depends(require_strategy)):
-    sub = db.get(Submission, submission_id)
+    sub = db.scalar(select(Submission).where(Submission.id == submission_id)
+                    .with_for_update().execution_options(populate_existing=True))
     if not sub:
         raise HTTPException(404)
     if sub.status != "submitted":
@@ -1760,6 +1795,7 @@ PROGRESS_LABELS = {
 
 
 def department_progress_overview(db: Session, period: ReportingPeriod):
+    from .program_service import validate_department
     departments = db.scalars(select(Department).order_by(Department.name)).all()
     submissions = db.scalars(select(Submission).where(Submission.period_id == period.id)).all()
     submission_by_department = {item.department_id: item for item in submissions}
@@ -1819,7 +1855,10 @@ def department_progress_overview(db: Session, period: ReportingPeriod):
         submission = submission_by_department.get(department.id)
         submission_status = submission.status if submission else "draft"
         activity_at = last_activity.get(department.id)
-        warning_count = indicator_problem_count + unresolved_count
+        validation_errors, _ = validate_department(db, period.id, department.id)
+        warning_count = max(indicator_problem_count + unresolved_count, len(validation_errors))
+        if validation_errors:
+            calculated_progress = min(calculated_progress, 99)
 
         if submission_status == "approved":
             state, progress_percent = "approved", 100
