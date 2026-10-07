@@ -41,7 +41,7 @@ from .report_export import build_department_docx
 
 BASE_DIR = Path(__file__).resolve().parent
 APP_VERSION = "5.0.0"
-MIGRATION_HEAD = "e5a0b1c2d3e4"
+MIGRATION_HEAD = "f6b1c2d3e4f5"
 
 
 @asynccontextmanager
@@ -373,10 +373,11 @@ def modules(request: Request, user: User = Depends(require_user)):
 @app.get("/activity-report", response_class=HTMLResponse)
 def activity_report_workspace(request: Request, year: int = 2026, db: Session = Depends(get_db), user: User = Depends(require_user)):
     from .activity_report_service import annual_indicators
-    if year < 2022 or year > 2026:
-        raise HTTPException(422, "Faaliyet Raporu yılı 2022–2026 arasında olmalı.")
+    if year < 2020 or year > 2100:
+        raise HTTPException(422, "Faaliyet Raporu yılı 2020–2100 arasında olmalı.")
     return templates.TemplateResponse(request, "activity_report.html", {
         "user": user, "year": year, "indicator_rows": annual_indicators(db, user, year),
+        "years": sorted(set(db.scalars(select(ReportingPeriod.year)).all()) | {year}),
     })
 
 
@@ -1498,7 +1499,10 @@ async def create_period(request: Request, db: Session = Depends(get_db), user: U
             db.add(card);db.flush();card_map[old.id]=card.id
         inds = db.scalars(select(Indicator).where(Indicator.period_id == base.id)).all()
         for old in inds:
+            from .activity_contract_service import ensure_identity
+            identity_id = ensure_identity(db, old)
             new = Indicator(period_id=period.id, department_id=old.department_id, subprogram_id=sub_map[old.subprogram_id], card_id=card_map.get(old.card_id), code=old.code, position=old.position, name=old.name, unit=old.unit, explanation=old.explanation, calculation_method=old.calculation_method, data_source=old.data_source, status="draft")
+            new.persistent_indicator_id = identity_id
             db.add(new); db.flush()
         acts = db.scalars(select(Activity).where(Activity.period_id == base.id)).all()
         for old in acts:
@@ -1909,3 +1913,5 @@ def progress_status(request: Request, db: Session = Depends(get_db), user: User 
 
 from .program_routes import register as register_program_routes
 register_program_routes(app)
+from .activity_contract_routes import register as register_activity_contract_routes
+register_activity_contract_routes(app)

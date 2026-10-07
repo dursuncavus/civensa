@@ -3,7 +3,8 @@ def test_module_selector_distinguishes_readiness(client):
     assert response.status_code==200
     assert 'href="/dashboard"' in response.text
     assert 'href="/activity-report"' in response.text
-    assert 'Hazırlık aşamasında' in response.text
+    assert 'href="/activity-reports"' in response.text
+    assert 'Tam rapor hazırlık aşamasında' in response.text
 
 def test_activity_preparation_does_not_expose_write_form(client):
     response=client.get('/activity-report')

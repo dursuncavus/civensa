@@ -304,6 +304,7 @@ def _serialize_department_state(db: Session, department_id: int, period_id: int)
         "indicators": [
             {
                 "id": i.id, "card_id": i.card_id, "code": i.code, "position": i.position, "subprogram_id": i.subprogram_id, "name": i.name, "unit": i.unit,
+                **({'persistent_indicator_id': i.persistent_indicator_id} if i.persistent_indicator_id else {}),
                 "explanation": i.explanation, "calculation_method": i.calculation_method,
                 "data_source": i.data_source, "status": i.status,
                 "values": [
@@ -384,6 +385,7 @@ def _restore_department_state(db: Session, state: dict, period_id: int) -> None:
     for item in state.get("indicators", []):
         ind = Indicator(
             id=item["id"], period_id=period_id, department_id=department_id,
+            persistent_indicator_id=item.get('persistent_indicator_id'),
             card_id=item.get("card_id"), code=item.get("code", ""), position=item.get("position", 0),
             subprogram_id=item["subprogram_id"], name=item["name"], unit=item["unit"],
             explanation=item.get("explanation", ""), calculation_method=item.get("calculation_method", ""),
@@ -497,6 +499,10 @@ def apply_import_batch(db: Session, batch: ImportBatch, preserve_existing: bool 
     plan = build_department_plan(db, raw)
     for mapping in plan['mappings']:
         did = mapping.get('department_id')
+        if did and not preserve_existing and db.scalar(select(Indicator.id).where(
+                Indicator.department_id == did, Indicator.period_id == period.id,
+                Indicator.persistent_indicator_id.is_not(None)).limit(1)):
+            raise ValueError('Kalıcı kimliği atanmış göstergeler toplu içe aktarmayla değiştirilemez. Mevcut kayıtları koruyun veya yeni taslak dönem açın.')
         if did and not preserve_existing and (db.scalar(select(ReportCard.id).where(ReportCard.department_id==did, ReportCard.period_id==period.id).limit(1)) or db.scalar(select(EconomicValue.id).where(EconomicValue.department_id==did, EconomicValue.period_id==period.id).limit(1))):
             raise ValueError('Bu müdürlükte yeni rapor kartı/ekonomik tablo verisi var. Mevcut veriyi değiştiren toplu içe aktarma engellendi; kart ekranını kullanın veya yeni taslak dönem açın.')
     _validate_import_field_lengths(plan)

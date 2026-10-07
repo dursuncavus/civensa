@@ -16,7 +16,7 @@ def indicator_cell(row):
 
 def annual_indicators(db, user, year):
     if user.role not in {'strategy', 'department'} or (user.role == 'department' and not user.department_id):
-        raise HTTPException(403)
+        raise HTTPException(403, 'Müdürlük atamanız bulunmuyor. Strateji biriminden yetkinizi kontrol etmesini isteyin.')
     period = db.scalar(select(ReportingPeriod).where(ReportingPeriod.year == year))
     if period is None:
         return []

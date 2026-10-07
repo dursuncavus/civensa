@@ -1,0 +1,3 @@
+{% extends "base.html" %}
+{% block page_title %}İşlem tamamlanamadı{% endblock %}
+{% block content %}<section class="card"><p role="alert">{{ message }}</p><p>Geçmiş kayıtlar korundu. Hatanın nedenini giderdikten sonra işlemi yeniden deneyebilirsiniz.</p><a class="button" href="{{ back }}">İlgili ekrana dön</a></section>{% endblock %}

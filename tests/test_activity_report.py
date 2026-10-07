@@ -48,7 +48,8 @@ def test_department_and_period_isolation(client, db, sample):
 def test_missing_period_and_invalid_year(client):
     r = client.get('/activity-report?year=2022')
     assert r.status_code == 200 and 'gösterge kaydı yok' in r.text
-    assert client.get('/activity-report?year=2027').status_code == 422
+    assert client.get('/activity-report?year=2027').status_code == 200
+    assert client.get('/activity-report?year=2101').status_code == 422
     assert client.get('/activity-report?year=abc').status_code == 422
 
 
