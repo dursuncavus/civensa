@@ -19,6 +19,7 @@ class NewRevision(BaseModel):
     organization_id: StrictInt
     report_id: StrictInt | None = None
     expected_revision: StrictInt = Field(default=0, ge=0)
+    revision_reason: StrictStr = Field(default='', max_length=10000)
 
 
 class NewActual(BaseModel):
@@ -48,6 +49,9 @@ def register(app):
         try:
             result = operation()
             entity_id = getattr(result, 'id', 0)
+            if isinstance(result, ActivityReportRevision):
+                audit_details = service.canonical({'revision_reason': result.revision_reason,
+                    'previous_revision_id': result.previous_revision_id, 'publication_id': result.publication_id})
             db.add(AuditLog(user_id=user.id, action=action, entity_type=entity, entity_id=entity_id,
                             details=audit_details))
             db.commit()
@@ -124,6 +128,7 @@ def register(app):
                 pub = db.get(Publication, rev.publication_id)
                 revisions.append({'id': rev.id, 'year': db.get(ReportingPeriod, report.period_id).year,
                     'revision': rev.revision, 'publication_version': pub.version,
+                    'revision_reason': rev.revision_reason,
                     'organization': db.get(Organization, report.organization_id).name})
         publications = []
         if user.role == 'strategy':
@@ -142,7 +147,7 @@ def register(app):
             result = transact(db, user, 'activity_report_revision', 'activity_report_revision',
                 lambda: service.create_report_revision(db, user, integer(data.get('publication_id')),
                     integer(data.get('organization_id')), integer(data['report_id']) if data.get('report_id') else None,
-                    integer(data.get('expected_revision', 0))))
+                    integer(data.get('expected_revision', 0)), data.get('revision_reason', '')))
             return RedirectResponse(f'/activity-reports/revisions/{result.id}', 303)
         except HTTPException as error:
             return ui_error(request, user, error, '/activity-reports')

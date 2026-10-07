@@ -382,6 +382,7 @@ class ActivityReportRevision(Base):
     contract_version: Mapped[str] = mapped_column(String(20), default='1.0')
     previous_revision_id: Mapped[int | None] = mapped_column(ForeignKey('activity_report_revisions.id'), nullable=True)
     diff_json: Mapped[str] = mapped_column(Text, default='[]')
+    revision_reason: Mapped[str] = mapped_column(Text, default='', server_default='')
     created_by: Mapped[int] = mapped_column(ForeignKey('users.id'))
     created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(UTC).replace(tzinfo=None))
     __table_args__ = (UniqueConstraint('report_id', 'revision', name='uq_activity_report_revision'),)

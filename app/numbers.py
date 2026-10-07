@@ -62,3 +62,12 @@ def format_number(value, money=False):
         return 'Kontrol gerekli'
     text = f'{value:,.2f}' if money else f'{value:,.6f}'.rstrip('0').rstrip('.')
     return text.replace(',', '_').replace('.', ',').replace('_', '.')
+
+
+def format_contract_targets(targets):
+    """Display target diffs without leaking raw decimal strings or internal row ids."""
+    if not targets:
+        return 'Kayıt yok'
+    return '; '.join(format_number(target['value']) if target.get('state') == 'verified'
+                     and target.get('value') is not None else 'Doğrulanmalı'
+                     for target in targets)

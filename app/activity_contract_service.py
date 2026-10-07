@@ -13,6 +13,16 @@ from .models import (Indicator, Department, ReportingPeriod, Publication, Indica
                      ActivityReportRevision, ReportIndicator, ActualRevision, ActivityReportApproval)
 from .serialization import json_dumps
 
+CURRENT_DEFINITION_CONTRACT = '2.0'
+
+
+def publication_contract_version(payload):
+    # Missing markers are the original v1 semantics, including legacy publications.
+    version = payload.get('activity_contract_version', '1.0')
+    if version not in {'1.0', '2.0'} or payload.get('definition_contract_version', version) != version:
+        raise HTTPException(409, 'Bu yayın veri sözleşmesinin desteklenmeyen bir sürümünü kullanıyor.')
+    return version
+
 
 def canonical(data):
     return json_dumps(data, ensure_ascii=False, sort_keys=True, separators=(',', ':'))
@@ -47,8 +57,7 @@ def checked_publication(db, publication_id):
         period = db.get(ReportingPeriod, pub.period_id)
         if payload['period'] != period.year or not isinstance(payload['departments'], list):
             raise ValueError()
-        if payload.get('activity_contract_version', '1.0') != '1.0':
-            raise HTTPException(409, 'Bu yayın veri sözleşmesinin desteklenmeyen bir sürümünü kullanıyor.')
+        publication_contract_version(payload)
     except (ValueError, KeyError, TypeError, AttributeError):
         raise HTTPException(409, 'Program yayınının yıl veya içerik yapısı doğrulanamadı.') from None
     return pub, payload
@@ -58,11 +67,13 @@ def snapshot_rows(payload):
     result = {}
     try:
         for department in payload['departments']:
+            cards = {card['id']: card for card in department.get('cards', [])}
             for row in department.get('indicators', []):
                 sid = row['id']
                 if sid in result or row['department_id'] != department['department_id']:
                     raise HTTPException(409, 'Yayın içindeki gösterge bağlantıları tutarsız.')
-                result[sid] = dict(row, department=department['department'])
+                result[sid] = dict(row, department=department['department'],
+                                   _report_card=cards.get(row.get('card_id')))
     except (KeyError, TypeError, AttributeError):
         raise HTTPException(409, 'Yayın içindeki gösterge yapısı doğrulanamadı.') from None
     return result
@@ -78,7 +89,7 @@ def ensure_identity(db, row):
     return row.persistent_indicator_id
 
 
-def definition_payload(row, year):
+def _definition_payload_v1(row, year):
     # Annual target is part of the immutable definition, not the global identity.
     fields = ('name', 'code', 'unit', 'explanation', 'calculation_method', 'data_source',
               'card_id', 'subprogram_id', 'department_id')
@@ -90,12 +101,30 @@ def definition_payload(row, year):
     return data
 
 
-def make_definition(db, identity_id, period_id, row, year, user):
+def definition_payload(row, year, contract_version='1.0'):
+    # Keep the checkpoint's v1 builder unchanged; never reinterpret old snapshots.
+    if contract_version == '1.0':
+        return _definition_payload_v1(row, year)
+    if contract_version != '2.0':
+        raise HTTPException(409, 'Gösterge tanım sözleşmesinin sürümü desteklenmiyor.')
+    data = _definition_payload_v1(row, year)
+    card = row.get('_report_card')
+    if row.get('card_id') is not None:
+        if not card or card['department_id'] != row['department_id'] or card['subprogram_id'] != row['subprogram_id']:
+            raise HTTPException(409, 'Gösterge tanımı için yayın içindeki kart bağlantısı doğrulanamadı.')
+    for field in ('calculation_method', 'data_source'):
+        own = row.get(field)
+        data[field] = own if own and own.strip() else (card or {}).get(field, '')
+    data['definition_contract_version'] = contract_version
+    return data
+
+
+def make_definition(db, identity_id, period_id, row, year, user, contract_version='1.0'):
     # Identity lock serializes numbering across publications of different periods.
     identity = db.scalar(select(IndicatorIdentity).where(IndicatorIdentity.indicator_id == identity_id).with_for_update())
     if identity is None:
         raise HTTPException(422, 'Kalıcı gösterge kimliği bulunamadı.')
-    text = canonical(definition_payload(row, year))
+    text = canonical(definition_payload(row, year, contract_version))
     previous = db.scalar(select(IndicatorDefinitionRevision).where(
         IndicatorDefinitionRevision.indicator_id == identity_id,
         IndicatorDefinitionRevision.period_id == period_id,
@@ -121,7 +150,7 @@ def freeze_program_payload(db, period_id, user):
         if identity_id in seen:
             raise HTTPException(409, 'Aynı kalıcı gösterge kimliği bu dönemde birden fazla kayda bağlı.')
         seen.add(identity_id)
-        definition = make_definition(db, identity_id, period_id, row, payload['period'], user)
+        definition = make_definition(db, identity_id, period_id, row, payload['period'], user, CURRENT_DEFINITION_CONTRACT)
         definitions[row['id']] = definition
     for department in payload['departments']:
         for row in department.get('indicators', []):
@@ -129,7 +158,8 @@ def freeze_program_payload(db, period_id, user):
             row['indicator_id'] = definition.indicator_id
             row['persistent_indicator_id'] = definition.indicator_id
             row['definition_revision_id'] = definition.id
-    payload['activity_contract_version'] = '1.0'
+    payload['activity_contract_version'] = CURRENT_DEFINITION_CONTRACT
+    payload['definition_contract_version'] = CURRENT_DEFINITION_CONTRACT
     return payload, definitions
 
 
@@ -168,7 +198,8 @@ def bind_legacy_indicator(db, user, publication_id, snapshot_indicator_id, ident
     existing = db.scalars(select(PublicationIndicatorBinding).where(PublicationIndicatorBinding.publication_id == pub.id)).all()
     if any(db.get(IndicatorDefinitionRevision, b.definition_revision_id).indicator_id == identity.indicator_id for b in existing):
         raise HTTPException(409, 'Bu kimlik yayında başka bir göstergeye bağlı.')
-    definition = make_definition(db, identity.indicator_id, pub.period_id, row, payload['period'], user)
+    definition = make_definition(db, identity.indicator_id, pub.period_id, row, payload['period'], user,
+                                 publication_contract_version(payload))
     binding = PublicationIndicatorBinding(publication_id=pub.id, snapshot_indicator_id=snapshot_indicator_id,
         definition_revision_id=definition.id, department_id=row['department_id'], created_by=user.id, reason=reason)
     db.add(binding); db.flush()
@@ -211,7 +242,7 @@ def publication_bindings(db, pub, payload, organization_id):
         if (binding.department_id != row['department_id'] or definition.period_id != pub.period_id
                 or identity.organization_id != organization_id
                 or digest(definition.definition_json) != definition.sha256
-                or canonical(definition_payload(row, payload['period'])) != definition.definition_json
+                or canonical(definition_payload(row, payload['period'], publication_contract_version(payload))) != definition.definition_json
                 or (row.get('definition_revision_id') and row['definition_revision_id'] != definition.id)
                 or (row.get('indicator_id') and row['indicator_id'] != definition.indicator_id)):
             raise HTTPException(409, 'Yayın göstergesinin kimlik veya tanım sürümü doğrulanamadı.')
@@ -240,7 +271,8 @@ def report_revision(db, user, revision_id):
     if user.role == 'department' and db.get(Department, user.department_id).organization_id != report.organization_id:
         raise HTTPException(403, 'Bu rapor kurumunuza ait değil.')
     pub, payload = checked_publication(db, revision.publication_id)
-    if pub.sha256 != revision.publication_sha256 or pub.period_id != report.period_id:
+    if (pub.sha256 != revision.publication_sha256 or pub.period_id != report.period_id
+            or revision.contract_version != publication_contract_version(payload)):
         raise HTTPException(409, 'Raporun sabit baz yayını doğrulanamadı.')
     return report, revision, pub, payload
 
@@ -255,8 +287,11 @@ def revision_definitions(db, revision):
     return result
 
 
-def create_report_revision(db, user, publication_id, organization_id, report_id=None, expected_revision=0):
+def create_report_revision(db, user, publication_id, organization_id, report_id=None, expected_revision=0,
+                           revision_reason=''):
     strategy(user)
+    if not isinstance(revision_reason, str) or len(revision_reason) > 10000:
+        raise HTTPException(422, 'Revizyon gerekçesi en fazla 10.000 karakterlik metin olmalı.')
     pub, payload = checked_publication(db, publication_id)
     # Serialize creation within a period without modifying the published snapshot.
     db.scalar(select(ReportingPeriod).where(ReportingPeriod.id == pub.period_id).with_for_update())
@@ -270,9 +305,13 @@ def create_report_revision(db, user, publication_id, organization_id, report_id=
             raise HTTPException(409, 'Rapor revizyonu değişti. Son sürümü açıp tekrar kontrol edin.')
         previous = db.scalar(select(ActivityReportRevision).where(ActivityReportRevision.report_id == report.id,
             ActivityReportRevision.revision == report.current_revision))
+        predecessor_approved = bool(db.scalar(select(ActivityReportApproval.id).where(
+            ActivityReportApproval.report_revision_id == previous.id)))
+        if predecessor_approved and not revision_reason.strip():
+            raise HTTPException(422, 'Onaylı rapor için yeni revizyon oluştururken düzeltme gerekçesi girin.')
         if previous.publication_id == pub.id:
             # Same-base correction of an approved report is valid, too.
-            if not db.scalar(select(ActivityReportApproval.id).where(ActivityReportApproval.report_revision_id == previous.id)):
+            if not predecessor_approved:
                 raise HTTPException(409, 'Rapor zaten bu yayın sürümüne bağlı; taslakta gerçekleşmeleri düzenleyebilirsiniz.')
     else:
         report = ActivityReport(organization_id=organization_id, period_id=pub.period_id, current_revision=0, lock_version=0)
@@ -288,7 +327,8 @@ def create_report_revision(db, user, publication_id, organization_id, report_id=
             changes.append({'indicator_id': identity_id, 'before': before.get(identity_id), 'after': after.get(identity_id)})
     revision = ActivityReportRevision(report_id=report.id, revision=report.current_revision + 1,
         publication_id=pub.id, publication_sha256=pub.sha256, previous_revision_id=previous.id if previous else None,
-        diff_json=canonical(changes), created_by=user.id)
+        diff_json=canonical(changes), created_by=user.id,
+        contract_version=publication_contract_version(payload), revision_reason=revision_reason.strip())
     db.add(revision); db.flush()
     for binding in bindings:
         db.add(ReportIndicator(report_revision_id=revision.id, publication_binding_id=binding.id))
@@ -395,7 +435,9 @@ def report_data(db, user, revision_id):
         if user.role == 'department' and binding.department_id != user.department_id:
             continue
         definition = db.get(IndicatorDefinitionRevision, binding.definition_revision_id)
-        if digest(definition.definition_json) != definition.sha256:
+        if (digest(definition.definition_json) != definition.sha256
+                or canonical(definition_payload(rows[binding.snapshot_indicator_id], payload['period'],
+                    publication_contract_version(payload))) != definition.definition_json):
             raise HTTPException(409, 'Gösterge tanımının bütünlüğü doğrulanamadı.')
         actuals = db.scalars(select(ActualRevision).where(ActualRevision.report_indicator_id == item.id).order_by(ActualRevision.revision)).all()
         result.append({'report_indicator_id': item.id, 'snapshot_indicator_id': binding.snapshot_indicator_id,
@@ -412,5 +454,6 @@ def report_data(db, user, revision_id):
         'revision': revision.revision, 'current_revision': report.current_revision, 'year': payload['period'],
         'publication_id': pub.id, 'publication_version': pub.version, 'publication_sha256': revision.publication_sha256,
         'newer_publication_available': latest > pub.version, 'previous_revision_id': revision.previous_revision_id,
+        'revision_reason': revision.revision_reason, 'contract_version': revision.contract_version,
         'approved': bool(db.scalar(select(ActivityReportApproval.id).where(ActivityReportApproval.report_revision_id == revision.id))),
         'differences': differences, 'indicators': result}

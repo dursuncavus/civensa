@@ -45,7 +45,7 @@ def test_contract_migration_preserves_rows_and_blocks_sql_overwrites(tmp_path, b
             conn.execute(text("INSERT INTO indicator_values(id,indicator_id,year,value_kind,value,raw_text,state) VALUES (1,1,2027,'target',1.75,'1,75','verified')"))
             conn.execute(text("INSERT INTO publications(id,period_id,version,snapshot_json,sha256,template_version,created_by,created_at) VALUES (1,1,1,'{}','oldhash','5.0',1,CURRENT_TIMESTAMP)"))
         before_indexes = {t: {i['name'] for i in inspect(engine).get_indexes(t)} for t in ('notifications', 'submission_events', 'indicators')}
-        migrate('head'); migrate('head')  # New upgrade is a no-op on second invocation.
+        migrate('f6b1c2d3e4f5')
         with engine.connect() as conn:
             row = conn.execute(text('SELECT * FROM indicators')).mappings().one()
             assert row['id'] == 1 and row['name'] == 'Kaynak gösterge' and row['persistent_indicator_id'] is None
@@ -70,6 +70,22 @@ def test_contract_migration_preserves_rows_and_blocks_sql_overwrites(tmp_path, b
             conn.execute(text("INSERT INTO activity_report_revisions(id,report_id,revision,publication_id,publication_sha256,contract_version,previous_revision_id,diff_json,created_by,created_at) VALUES (1,1,1,1,'oldhash','1.0',NULL,'[]',1,CURRENT_TIMESTAMP)"))
             conn.execute(text("INSERT INTO report_indicators(id,report_revision_id,publication_binding_id) VALUES (1,1,1)"))
             conn.execute(text("INSERT INTO activity_report_approvals(id,report_revision_id,created_by,created_at) VALUES (1,1,1,CURRENT_TIMESTAMP)"))
+        # Apply the reason migration to populated immutable history, not empty tables.
+        with engine.connect() as conn:
+            previous_revision = dict(conn.execute(text('SELECT * FROM activity_report_revisions WHERE id=1')).mappings().one())
+        migrate('head'); migrate('head')
+        with engine.connect() as conn:
+            migrated_revision = dict(conn.execute(text('SELECT * FROM activity_report_revisions WHERE id=1')).mappings().one())
+            assert migrated_revision.pop('revision_reason') == ''
+            assert migrated_revision == previous_revision
+        with pytest.raises(DBAPIError, match='düzeltme gerekçesi'):
+            with engine.begin() as conn:
+                conn.execute(text("INSERT INTO activity_report_revisions(id,report_id,revision,publication_id,publication_sha256,contract_version,previous_revision_id,diff_json,created_by,created_at) VALUES (2,1,2,1,'oldhash','1.0',1,'[]',1,CURRENT_TIMESTAMP)"))
+        with engine.begin() as conn:
+            conn.execute(text("INSERT INTO activity_report_revisions(id,report_id,revision,publication_id,publication_sha256,contract_version,previous_revision_id,diff_json,created_by,created_at,revision_reason) VALUES (2,1,2,1,'oldhash','1.0',1,'[]',1,CURRENT_TIMESTAMP,'Kaynak düzeltmesi')"))
+        with pytest.raises(DBAPIError, match='değiştirilemez'):
+            with engine.begin() as conn:
+                conn.execute(text("UPDATE activity_report_revisions SET revision_reason='Üzerine yaz' WHERE id=2"))
         with pytest.raises(DBAPIError, match='değiştirilemez'):
             with engine.begin() as conn:
                 conn.execute(text("UPDATE indicator_definition_revisions SET definition_json='overwrite' WHERE id=1"))

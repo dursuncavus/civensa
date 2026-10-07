@@ -121,7 +121,8 @@ def test_approval_gate_and_same_base_correction(client, db, sample):
     assert client.post(url).status_code == 200
     assert client.post(url).status_code == 409
     assert client.post(f'/api/activity-reports/indicators/{slot}/actuals', json=actual_payload(expected_revision=3)).status_code == 409
-    revised = new_report(client, pub, sample, report_id=report['report_id'], expected_revision=1)
+    revised = new_report(client, pub, sample, report_id=report['report_id'], expected_revision=1,
+                         revision_reason='Kaynak düzeltmesi')
     assert revised['revision'] == 2 and not revised['approved'] and not revised['differences']
     assert revised['indicators'][0]['actuals'] == []
     assert client.get(f"/api/activity-reports/revisions/{report['revision_id']}").json()['approved']

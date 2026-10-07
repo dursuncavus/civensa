@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
 import json
 from decimal import Decimal
 from .serialization import json_dumps
-from .numbers import parse_number, format_number
+from .numbers import parse_number, format_number, format_contract_targets
 import os
 import secrets
 import hmac
@@ -41,7 +41,7 @@ from .report_export import build_department_docx
 
 BASE_DIR = Path(__file__).resolve().parent
 APP_VERSION = "5.0.0"
-MIGRATION_HEAD = "f6b1c2d3e4f5"
+MIGRATION_HEAD = "a7c2d3e4f5a6"
 
 
 @asynccontextmanager
@@ -188,6 +188,7 @@ def parse_optional_nonnegative_money(raw, field="Tutar"):
 
 
 templates.env.filters["trnum"] = lambda v: format_number(v)
+templates.env.filters['contract_targets'] = format_contract_targets
 templates.env.filters["trmoney"] = lambda v: format_number(v, True)
 def section_text(raw):
     content=json.loads(raw)
