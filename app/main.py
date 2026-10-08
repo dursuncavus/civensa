@@ -41,7 +41,7 @@ from .report_export import build_department_docx
 
 BASE_DIR = Path(__file__).resolve().parent
 APP_VERSION = "5.0.0"
-MIGRATION_HEAD = "0429caba7123"
+MIGRATION_HEAD = "153acbd48290"
 
 
 @asynccontextmanager

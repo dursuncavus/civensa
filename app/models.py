@@ -449,3 +449,6 @@ from .authorization_models import (AuthorizationConfiguration, DirectorateMember
     MembershipEvent, AuthorityDelegation, DelegationRevocation, DelegationEvent,
     FinalAuthorityAssignment, FinalAuthorityEvent, WorkflowEvent, FieldChangeEvent,
     NotificationRecipient)
+
+# Disabled Phase 3 backend package history; legacy models retain their semantics.
+from .package_models import DirectoratePackage, PackageRevision, PackageDecision

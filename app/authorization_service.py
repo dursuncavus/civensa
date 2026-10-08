@@ -115,8 +115,8 @@ def active_membership(db, user_id, org_id, dep_id):
         DirectorateMembership.department_id==dep_id,DirectorateMembership.active.is_(True),User.is_active.is_(True)))
 
 
-def active_delegation(db, org_id, dep_id):
-    now=server_now(db)
+def active_delegation(db, org_id, dep_id, *, at=None):
+    now=at if at is not None else server_now(db)
     return db.scalar(select(AuthorityDelegation).where(AuthorityDelegation.organization_id==org_id,
         AuthorityDelegation.department_id==dep_id,AuthorityDelegation.active.is_(True),
         AuthorityDelegation.start_at<=now,AuthorityDelegation.end_at>now,
@@ -124,7 +124,7 @@ def active_delegation(db, org_id, dep_id):
 
 
 def eligibility(db, actor, action, organization_id, department_id=None, *, resource_scope=None,
-                workflow_state='draft', revision_locked=False, approved_assignment_id=None):
+                workflow_state='draft', revision_locked=False, approved_assignment_id=None, delegation_at=None):
     """Preview foundation eligibility only; cannot activate a workflow or authorize HTTP."""
     try:
         actor=active_actor(db,actor)
@@ -151,7 +151,7 @@ def eligibility(db, actor, action, organization_id, department_id=None, *, resou
             DirectorateMembership.active.is_(True),DirectorateMembership.role_code=='department_director',User.is_active.is_(True)))
         if action=='edit_draft':return workflow_state in {'draft','returned'}
         if action=='submit_to_director':return workflow_state in {'draft','returned'} and director is not None
-        delegated=active_delegation(db,organization_id,department_id)
+        delegated=active_delegation(db,organization_id,department_id,at=delegation_at)
         if action in {'director_approve','director_return'}:
             if workflow_state!='director_review' or not director:return False
             if delegated:
@@ -288,3 +288,31 @@ def atomic_change(db, actor, organization_id, department_id, resource_type, reso
         for uid in recipients:db.add(NotificationRecipient(notification_id=notice.id,user_id=uid))
         db.flush()
     return result,event
+
+
+def package_eligibility(db, actor, action, package, *, transition_time=None):
+    """Internal Phase 3 backend eligibility. No HTTP/runtime activation grant.
+
+    The caller must hold the package and department locks and derive state from DB.
+    `can()` continues to deny every new workflow action until reviewed rollout.
+    """
+    try:
+        actor = active_actor(db, actor)
+        if actor.role not in {'department', 'strategy'}:
+            return False
+        if package.resource_scope not in {'performance_program', 'activity_report'}:
+            return False
+        scope_department(db, package.organization_id, package.department_id)
+        if action == 'read_package':
+            return actor.role == 'strategy' or (actor.department_id == package.department_id and
+                active_membership(db, actor.id, package.organization_id, package.department_id) is not None)
+        if action in {'strategy_approve', 'strategy_return'}:
+            return actor.role == 'strategy' and package.state == 'strategy_review'
+        if actor.role != 'department' or actor.department_id != package.department_id:
+            return False
+        if action == 'director_reopen':
+            action = 'director_return'
+        return eligibility(db, actor, action, package.organization_id, package.department_id,
+            resource_scope=package.resource_scope, workflow_state=package.state, delegation_at=transition_time)
+    except HTTPException:
+        return False
