@@ -13,7 +13,8 @@ from . import authorization_service as auth
 from .activity_contract_service import digest, parse_actual
 from .models import (DirectoratePackage, PackageRevision, PackageDecision, ReportingPeriod,
     DirectorateMembership, User, ActivityReportRevision, ActivityReport, ActivityReportApproval,
-    WorkflowEvent, Notification, NotificationRecipient, FieldChangeEvent)
+    WorkflowEvent, Notification, NotificationRecipient, FieldChangeEvent, ReportIndicator,
+    PublicationIndicatorBinding, IndicatorDefinitionRevision)
 
 TRANSITIONS = {
     'submit_to_director': ('editable', 'director_review'),
@@ -131,8 +132,8 @@ def create_package(db, actor, organization_id, department_id, resource_scope, so
         period = db.get(ReportingPeriod, source_id)
         if not period or period.status in {'published','archived'}:
             auth.fail('Düzenlenebilir performans dönemi bulunamadı.',409)
-        from .program_service import department_snapshot
-        content = department_snapshot(db, period.id, department_id)
+        from .program_service import department_package_snapshot
+        content = department_package_snapshot(db, period.id, department_id)
         period_id, report_revision_id = period.id, None
     elif resource_scope == 'activity_report':
         from .activity_contract_service import report_data
@@ -293,6 +294,8 @@ def transition(db, actor, package_id, action, expected_version, expected_hash, r
         for entry in content['entries']:validate_actual(entry)
         # The submitted content must already include its canonical calculation.
         if auth.encode(content)!=current.content_json:conflict()
+    if action in {'director_approve','strategy_approve'}:
+        validate_package_approval(db,package,current)
     with db.begin_nested():
         decision_time=auth.server_now(db)
         if not auth.package_eligibility(db,actor,action,package,transition_time=decision_time):
@@ -322,3 +325,67 @@ def package_detail(db, actor, package_id):
         'revisions':[{'id':r.id,'revision':r.revision,'sha256':r.sha256,'content':json.loads(r.content_json),'previous_revision_id':r.previous_revision_id} for r in revisions],
         'events':[{'id':e.id,'action':e.event_type,'actor':json.loads(e.actor_snapshot_json),'context':json.loads(e.context_json),'reason':e.reason,
             'created_at':e.created_at.isoformat(),'changes':[{'field':c.field_key,'old':json.loads(c.previous_json),'new':json.loads(c.new_json)} for c in db.scalars(select(FieldChangeEvent).where(FieldChangeEvent.workflow_event_id==e.id))]} for e in events]}
+
+
+def validate_package_approval(db, package, current):
+    """Approve only exact immutable content; independent at both control layers."""
+    if digest(current.content_json) != current.sha256:
+        conflict()
+    content = json.loads(current.content_json)
+    if package.resource_scope == 'performance_program':
+        from .program_service import validate_department_snapshot
+        errors, _ = validate_department_snapshot(content,package.period_id,package.department_id)
+        blockers = [{'field':'performance_program','message':error} for error in errors]
+    elif package.resource_scope == 'activity_report':
+        blockers = activity_package_approval_blockers(db,package,content)
+    else:
+        auth.fail('Paket türü tanınmıyor.',403)
+    if blockers:
+        auth.fail({'message':'Paket onaylanmadı. Aşağıdaki alanları düzeltip yeni revizyonu yeniden gönderin.',
+            'package_id':package.id,'revision_id':current.id,'sha256':current.sha256,'blockers':blockers},409)
+
+
+def activity_package_approval_blockers(db, package, content):
+    # Read only immutable report bindings/definitions, never ActualRevision or live targets.
+    expected = db.execute(select(ReportIndicator,PublicationIndicatorBinding,IndicatorDefinitionRevision)
+        .join(PublicationIndicatorBinding,ReportIndicator.publication_binding_id==PublicationIndicatorBinding.id)
+        .join(IndicatorDefinitionRevision,PublicationIndicatorBinding.definition_revision_id==IndicatorDefinitionRevision.id)
+        .where(ReportIndicator.report_revision_id==package.report_revision_id,
+            PublicationIndicatorBinding.department_id==package.department_id)).all()
+    source=db.get(ActivityReportRevision,package.report_revision_id)
+    if not source or content.get('report_revision_id')!=source.id or content.get('publication_id')!=source.publication_id or content.get('publication_sha256')!=source.publication_sha256:
+        return [{'field':'publication','message':'Paketin sabit rapor / yayın bağlantısı uyuşmuyor. Doğru yayın sürümünden geçerli paket oluşturun.'}]
+    definitions = {item.id:definition for item,binding,definition in expected}
+    blockers=[]
+    entries=content.get('entries')
+    if not isinstance(entries,list) or not entries or any(not isinstance(e,dict) or type(e.get('report_indicator_id')) is not int for e in entries):
+        return [{'field':'entries','message':'Müdürlüğün tüm zorunlu rapor göstergelerini içeren geçerli paket oluşturun.'}]
+    ids=[e['report_indicator_id'] for e in entries]
+    if len(ids)!=len(set(ids)) or set(ids)!=set(definitions):
+        return [{'field':'entries','message':'Zorunlu göstergeler eksik, yinelenmiş veya kapsam dışı. Tüm bağlı göstergeleri içeren paket oluşturun.'}]
+    for entry in entries:
+        definition=definitions[entry['report_indicator_id']]
+        frozen=json.loads(definition.definition_json)
+        name=frozen.get('name',str(entry['report_indicator_id']))
+        def block(message,field):
+            blockers.append({'indicator':name,'report_indicator_id':entry['report_indicator_id'],'field':field,'message':message})
+        if (digest(definition.definition_json)!=definition.sha256 or entry.get('definition_revision_id')!=definition.id or entry.get('definition')!=frozen):
+            block('Sabit gösterge tanımı / hedef bağlantısı uyuşmuyor. Doğru yayın sürümünden geçerli paket oluşturun.','definition');continue
+        try:
+            copy=json.loads(auth.encode(entry))
+            validate_actual(copy)  # existing numeric/evidence rules and recomputed difference-v1
+            if copy['state']!='verified' or parse_actual(copy['value']) is None:
+                block('Doğrulanmış sayısal gerçekleşme ve tam dayanak kaynağı girin. Boş değer sıfır değildir.','value/state')
+            calculated=copy['deviation']
+            stored=entry['deviation']
+            keys=('calculation_rule_version','target_definition_revision_id','delta','achievement_percent')
+            if any(stored.get(key)!=calculated[key] for key in keys):
+                block('Hedef farkı sabit tanıma göre uyuşmuyor. Gerçekleşmeyi yeni revizyonda kaydedip farkı yeniden hesaplatın.','deviation')
+            delta=calculated['delta']
+            if delta is not None and Decimal(delta)!=0 and not copy['explanation'].strip():
+                block('Hedef ile gerçekleşme farkını açıklayın.','explanation')
+        except HTTPException as exc:
+            block(str(exc.detail),'actual/evidence')
+        except (KeyError,TypeError,ValueError,AttributeError):
+            block('Gerçekleşme, kaynak ve sapma alanları eksik / geçersiz. Alanları kontrol edip yeni revizyon kaydedin.','actual/evidence')
+    return blockers

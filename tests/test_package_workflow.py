@@ -22,6 +22,9 @@ def package(foundation_db,people,request):
         pub=Publication(period_id=x['period'].id,version=1,snapshot_json=raw,sha256=contract.digest(raw),created_by=x['strategy'].id)
         db.add(pub);db.flush();contract.attach_publication_definitions(db,pub,defs,x['strategy']);db.commit()
         r=contract.create_report_revision(db,x['strategy'],pub.id,x['department'].organization_id);db.commit();source=r.id
+        slot=db.scalar(select(ReportIndicator)).id
+        contract.save_actual(db,x['user'],slot,0,'1.75','verified',
+            [{'title':'Defter','locator':'s1','source_revision':'r1'}],'Hedef gerçekleşti',{});db.commit()
     row=service.create_package(db,x['user'],x['department'].organization_id,x['department'].id,request.param,source)
     db.commit();return row
 
@@ -34,7 +37,8 @@ def submit(db,x,p):return act(db,x,p,'submit_to_director','user')
 
 def patches(p,value='2.50'):
     if p.resource_scope=='performance_program':return [{'path':['indicators',0,'values',0,'value'],'value':value},{'path':['indicators',0,'values',0,'state'],'value':'verified'}]
-    return [{'path':['entries',0,'value'],'value':value},{'path':['entries',0,'state'],'value':'needs_review'}]
+    return [{'path':['entries',0,'value'],'value':value},{'path':['entries',0,'state'],'value':'verified'},
+        {'path':['entries',0,'explanation'],'value':'Kaynak kayıtlarına göre fark oluştu.'}]
 
 def edit(db,x,p,key='director',value='2.50'):
     row=service.edit_package(db,x[key],p.id,p.version,service.revision(db,p).sha256,patches(p,value),'Kaynak düzeltmesi')
@@ -169,13 +173,14 @@ def test_actual_zero_evidence_no_live_write(foundation_db,people,package):
     if package.resource_scope!='activity_report':return
     db=foundation_db;x=people;p=package;old=service.revision(db,p)
     error(422,lambda:service.edit_package(db,x['user'],p.id,p.version,old.sha256,
-        [{'path':['entries',0,'value'],'value':'0'},{'path':['entries',0,'state'],'value':'verified'}]))
+        [{'path':['entries',0,'value'],'value':'0'},{'path':['entries',0,'state'],'value':'verified'},{'path':['entries',0,'evidence'],'value':[]}]))
     valid=[{'path':['entries',0,'value'],'value':'0'},{'path':['entries',0,'state'],'value':'verified'},
         {'path':['entries',0,'evidence'],'value':[{'title':'Defter','locator':'s1','source_revision':'r1'}]}]
     service.edit_package(db,x['user'],p.id,p.version,old.sha256,valid);db.commit()
     data=json.loads(service.revision(db,p).content_json)['entries'][0]
     assert data['value']=='0' and Decimal(data['deviation']['delta'])==Decimal('-1.75')
-    assert db.scalar(select(func.count(ActualRevision.id)))==0
+    assert db.scalar(select(func.count(ActualRevision.id)))==1
+    assert db.scalar(select(ActualRevision.value))==Decimal('1.75')
     submit(db,x,p)
 
 def test_binding_fields_director_reason(foundation_db,people,package):
