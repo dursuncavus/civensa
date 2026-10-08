@@ -334,6 +334,6 @@ def report_workflow_eligibility(db, actor, action, organization_id, state='assem
         if action=='view_candidate' and actor.role=='strategy':return True
         assigned=db.scalar(select(FinalAuthorityAssignment).join(User,User.id==FinalAuthorityAssignment.user_id).where(
             FinalAuthorityAssignment.organization_id==organization_id,FinalAuthorityAssignment.active.is_(True),User.is_active.is_(True)))
-        if not assigned or assigned.user_id!=actor.id or actor.role not in {'strategy','department'}:return False
+        if not assigned or assigned.user_id!=actor.id:return False
         return action=='view_candidate' or (action=='final_return' and state=='final_review') or (action=='final_approve' and state in {'final_review','final_approved'})
     except HTTPException:return False

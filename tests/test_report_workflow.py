@@ -293,3 +293,84 @@ def test_candidate_state_no_unaudited_update(foundation_db,candidate):
         with db.begin_nested():db.execute(text("UPDATE report_candidate_states SET state='final_approved',version=version+1"))
     with pytest.raises(DBAPIError):
         with db.begin_nested():db.execute(text('DELETE FROM report_candidate_states'))
+
+
+@pytest.mark.parametrize('assigned',[False,True])
+def test_executive_final_authority_assignment_not_legacy_role(foundation_db,people,candidate,assigned):
+    db=foundation_db;x=people;c=candidate;executive=x['editor2']
+    executive.role='executive';db.commit()
+    if assigned:
+        auth.assign_final_authority(db,x['strategy'],c.organization_id,executive.id,'Resmî üst yönetim görevlendirmesi');db.commit()
+        assert service.candidate_detail(db,executive,c.organization_id,c.id)['state']=='assembling'
+    else:rejects(403,lambda:service.candidate_detail(db,executive,c.organization_id,c.id))
+    rejects(403,lambda:service.assemble_candidate(db,executive,c.organization_id,c.resource_scope,int(json.loads(c.manifest_json)['source_id']),[]))
+    review(db,x,c)
+    rejects(403,lambda:service.request_final_review(db,executive,c.organization_id,c.id,1,c.sha256))
+    if assigned:
+        d=approve(db,x,c,'editor2');assert db.get(FinalAuthorityAssignment,d.assignment_id).user_id==executive.id
+        rejects(403,lambda:publish(db,x,c,'editor2'))
+    else:
+        rejects(403,lambda:approve(db,x,c,'editor2'))
+        state=db.get(ReportCandidateState,c.id)
+        rejects(403,lambda:service.final_decision(db,executive,c.organization_id,c.id,'final_return',state.version,c.sha256,'Geri gönder'))
+    for action in set().union(*auth.LEGACY_ACTIONS.values())|{'final_approve','final_return','view_candidate','publish_report'}:
+        assert not auth.can(db,executive,action,c.organization_id,x['department'].id,resource_scope=c.resource_scope)
+
+
+def test_assigned_executive_return_requires_reason(foundation_db,people,candidate):
+    db=foundation_db;x=people;c=candidate;executive=x['editor2'];executive.role='executive';db.commit()
+    auth.assign_final_authority(db,x['strategy'],c.organization_id,executive.id,'Üst yönetim nihai yetkisi');db.commit()
+    review(db,x,c);state=db.get(ReportCandidateState,c.id)
+    rejects(422,lambda:service.final_decision(db,executive,c.organization_id,c.id,'final_return',state.version,c.sha256,'  '))
+    d=service.final_decision(db,executive,c.organization_id,c.id,'final_return',state.version,c.sha256,'Kaynak cetvelini açıklayın');db.commit()
+    assert db.get(WorkflowEvent,d.workflow_event_id).reason=='Kaynak cetvelini açıklayın'
+    assert service.candidate_detail(db,executive,c.organization_id,c.id)['state']=='returned_to_strategy'
+
+
+def simulate_later_package_projection(db,x,p):
+    """Fixture only: audited later revision, no Phase 5 correction implementation."""
+    old=service.packages.revision(db,p)
+    new=service.packages.append_revision(db,p,x['director'],old.content_json,old,'Sonraki revizyon simülasyonu')
+    service.packages.history_event(db,x['director'],p,'test_later_projection',
+        {'revision_id':old.id,'next_revision_id':new.id,'sha256':old.sha256},'Yalnız tarihsel doğrulama regresyonu')
+    service.packages.move(db,p,p.version,'returned',new.revision);db.commit()
+    return old,new
+
+
+@pytest.mark.parametrize('published',[False,True])
+def test_frozen_provenance_survives_later_package_projection(foundation_db,people,candidate,approved,published):
+    db=foundation_db;x=people;c=candidate;p=approved
+    original=(c.payload_json,c.manifest_json,c.sha256)
+    if published:
+        review(db,x,c);approve(db,x,c);release=publish(db,x,c)
+        artifact=service.verify_artifact(db,release);sealed=(artifact.content_json,artifact.sha256)
+    old,new=simulate_later_package_projection(db,x,p)
+    db.expire_all()
+    assert p.state=='returned' and p.current_revision==new.revision and new.id!=old.id
+    assert service.verify(db,c)['packages'][0]['revision_id']==old.id
+    assert service.candidate_detail(db,x['strategy'],c.organization_id,c.id)['state']==('published' if published else 'assembling')
+    assert (c.payload_json,c.manifest_json,c.sha256)==original
+    if not published:
+        review(db,x,c);approve(db,x,c);release=publish(db,x,c)
+    artifact=service.verify_artifact(db,release)
+    if published:assert (artifact.content_json,artifact.sha256)==sealed
+
+
+@pytest.mark.parametrize('target',['bytes','decision_revision','decision_hash','decision_event','event_revision','event_hash','package_source'])
+def test_bound_provenance_mismatch_after_projection_fails(foundation_db,people,candidate,approved,target):
+    from sqlalchemy.orm.attributes import set_committed_value
+    db=foundation_db;x=people;c=candidate;p=approved
+    old,_=simulate_later_package_projection(db,x,p)
+    binding=db.scalar(select(CandidatePackage).where(CandidatePackage.candidate_id==c.id))
+    decision=db.get(PackageDecision,binding.strategy_decision_id)
+    if target=='bytes':set_committed_value(old,'content_json','{}')
+    elif target=='decision_revision':set_committed_value(decision,'package_revision_id',old.id+999)
+    elif target=='decision_hash':set_committed_value(decision,'snapshot_sha256','0'*64)
+    elif target=='decision_event':set_committed_value(decision,'workflow_event_id',decision.workflow_event_id+999)
+    elif target=='package_source':set_committed_value(p,'source_key','wrong-report')
+    else:
+        e=db.get(WorkflowEvent,decision.workflow_event_id);context=json.loads(e.context_json)
+        context['revision_id' if target=='event_revision' else 'sha256']=old.id+999 if target=='event_revision' else '0'*64
+        set_committed_value(e,'context_json',auth.encode(context))
+    rejects(409,lambda:service.candidate_detail(db,x['strategy'],c.organization_id,c.id))
+    db.expire_all()

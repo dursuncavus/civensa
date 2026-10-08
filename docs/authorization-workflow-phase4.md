@@ -39,3 +39,9 @@ Each assembly, decision and release uses a savepoint containing all business mut
 Only focused Phase 4 tests run during implementation, followed by one complete final PostgreSQL suite. Results and exact-commit GitHub CI are reported at checkpoint. Populated Phase 3 upgrades are tested, along with historical rows, legacy behavior, ORM/DB immutability, source snapshot consistency, authority replacement and transaction rollback.
 
 No browser UAT is performed or claimed: there are no new screens. Deployment blockers #4 (database role privileges) and #5 (sidebar overlap) remain outside scope. The approved design is represented by the earlier design chat's authority/freeze/history rules and the explicit current Phase 4 work order; the original cloud-only Markdown file is not copied into this checkout. No PR, merge or deployment is authorized.
+
+## Phase 4 review blockers
+
+Final Authority viewing/decisions depend only on an active user and the current active organization assignment, regardless of legacy `User.role` (including executive accounts). Strategy viewing is separate; assembly, review request and release remain Strategy-only. Current Final Authority cannot release even with legacy Strategy role. The disabled runtime adapter and legacy permissions are unchanged.
+
+Current `strategy_approved` package state/current revision are assembly gates only. Frozen candidate verification uses its exact immutable revision/hash, Strategy decision/event and stable package organization/period/department/resource/source identity, plus snapshot business validation. Later package state/revision movement does not invalidate frozen candidates or released artifacts. Decision events are independently checked against the bound revision/hash and package identity. Tests simulate later audited projection movement without adding any Phase 5 transition.

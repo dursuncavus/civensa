@@ -75,14 +75,24 @@ def verify(db,candidate):
     if len(bindings)!=len(manifest['packages']):packages.conflict()
     sources=[];departments=set()
     for binding,expected in zip(bindings,manifest['packages']):
-        rev=db.get(PackageRevision,binding.package_revision_id);pkg=db.get(DirectoratePackage,rev.package_id)
+        rev=db.get(PackageRevision,binding.package_revision_id)
+        if not rev:packages.conflict()
+        pkg=db.get(DirectoratePackage,rev.package_id)
         decision=db.get(PackageDecision,binding.strategy_decision_id)
+        if not pkg or not decision:packages.conflict()
         if (binding.package_revision_id!=expected['revision_id'] or binding.strategy_decision_id!=expected['decision_id']
             or binding.sha256!=expected['sha256'] or rev.sha256!=binding.sha256 or contract.digest(rev.content_json)!=rev.sha256
             or decision.action!='strategy_approve' or decision.package_revision_id!=rev.id or decision.snapshot_sha256!=rev.sha256
             or pkg.organization_id!=candidate.organization_id or pkg.period_id!=candidate.period_id or pkg.resource_scope!=candidate.resource_scope
-            or pkg.state!='strategy_approved' or pkg.current_revision!=rev.revision):packages.conflict()
+            or pkg.source_key!=str(manifest['source_id'])):packages.conflict()
         if expected['package_id']!=pkg.id or expected['department_id']!=pkg.department_id or expected['strategy_event_id']!=decision.workflow_event_id or pkg.department_id in departments:packages.conflict()
+        strategy_event=db.get(WorkflowEvent,decision.workflow_event_id)
+        if (not strategy_event or strategy_event.event_type!='strategy_approve'
+            or strategy_event.resource_type!='directorate_package' or strategy_event.resource_id!=str(pkg.id)
+            or strategy_event.organization_id!=pkg.organization_id or strategy_event.department_id!=pkg.department_id):packages.conflict()
+        context=json.loads(strategy_event.context_json)
+        if context.get('revision_id')!=rev.id or context.get('sha256')!=rev.sha256:packages.conflict()
+        # Current state/revision are assembly gates, never historical integrity gates.
         departments.add(pkg.department_id);sources.append(json.loads(rev.content_json))
         packages.validate_package_approval(db,pkg,rev)
     if sorted(departments)!=manifest['required_department_ids']:packages.conflict()

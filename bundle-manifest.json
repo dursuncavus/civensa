@@ -1,6 +1,6 @@
 {
   "version": "5.0.0",
-  "sha256": "40a078065ed52fe4c5ffedf778bd86a308462053072cec81341827a0f95c34ed",
+  "sha256": "f74a392c517ca1473065177b54a2d90f209ec75901f85a96cfa3e24ff04a0430",
   "parts": [
     "bundle.part01",
     "bundle.part02",
@@ -19,7 +19,7 @@
     "app/activity_contract_service.py": "29271d494b4301491c6b7f381596d19491492aff0f1627bd774316a0679117f6",
     "app/activity_report_service.py": "92ed04bd6810b00a2796a7c5efcbd13b89332a888188a6b988dbcfcfdbf0f5f8",
     "app/authorization_models.py": "6d37057e0d71e5bff061e82800fb9a982c91e002ee4dea3e0485c616ec21a361",
-    "app/authorization_service.py": "bb9238d56e11f8e1da4e44f790bbf2fec010ba93772db29948dfb1e16787cf5b",
+    "app/authorization_service.py": "cf1940602d2f7e0be92a4bd36a923b11bd7a3c1c6bf345e29e6243a5eb7c64b7",
     "app/book_export.py": "97f01dd5efdfdaaa3c8057e41d63e891bcf776258b707fde5c273de7b049df59",
     "app/config.py": "610a80447e708c0f04470bb1ceef382e8a7d4a53ab2e2007364961ee2b37530d",
     "app/data_importer.py": "eb9479c80705712750023eb367aa5f21f04c5cf1b449b2edb565ebb832c01e92",
@@ -38,7 +38,7 @@
     "app/program_service.py": "c2150d2aedebfd7dd0df2b709120fa7e1c149eefcb840a84b2998bec43b40ef2",
     "app/report_export.py": "9e56d2d7c2aaa4d969c904a71644d86c8e873fdba1c8ed5a124eda3a3aa58271",
     "app/report_workflow_models.py": "83b96ae0c3e73a19dcea8cb2ee8469726ebe870eddd0713e0a914f4baeef94fe",
-    "app/report_workflow_service.py": "a1e5b0ee2c1a385e72918465a7216388c793ef7324969a6f55d889eb7e537174",
+    "app/report_workflow_service.py": "a8840350b5c876b001131a8296232da1f289b4cdf9f337fa7165f3bbe235cd58",
     "app/security.py": "ea0fd5452a72604f9cda774ecfdb19eb7a502b2fffb8f6b518bc6d3eafee9132",
     "app/seed.py": "113e221f145921120ea8b31ed06e9a46b571654dc5cc2633faaf5a82ee05c268",
     "app/serialization.py": "16899a4a704d5c6ac09afd614bc1f601f6986f44b88430912588ce1805e3e3f1",
