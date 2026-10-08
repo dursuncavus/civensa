@@ -4,3 +4,7 @@ __pycache__/
 *.db
 .pytest_cache/
 .env
+*.py[cod]
+.DS_Store
+.env.*
+!.env.example

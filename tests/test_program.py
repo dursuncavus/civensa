@@ -99,8 +99,11 @@ def test_publication_is_immutable(client,db,sample):
     sample['card'].goal='Sonraki değişiklik';db.commit()
     r=client.get(f'/publications/{pub.id}.json');assert r.status_code==200 and r.text==before
     assert 'Sonraki değişiklik' not in r.text
-    pub.snapshot_json+=' ';db.commit()
-    assert client.get(f'/publications/{pub.id}.pdf').status_code==409
+    pub.snapshot_json+=' '
+    with pytest.raises(ValueError, match='değiştirilemez'):
+        db.commit()
+    db.rollback()
+    assert client.get(f'/publications/{pub.id}.json').text == before
 
 def test_image_upload_and_csrf(db,sample):
     import base64

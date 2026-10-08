@@ -1,4 +1,5 @@
 from datetime import datetime, UTC
+from decimal import Decimal
 from sqlalchemy import String, Integer, ForeignKey, Text, Float, Numeric, DateTime, UniqueConstraint, Boolean
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from .db import Base
@@ -63,6 +64,8 @@ class SubProgram(Base):
 class Indicator(Base):
     __tablename__ = "indicators"
     id: Mapped[int] = mapped_column(primary_key=True)
+    # Legacy id is the period row; this UUID is the cross-period indicator_id.
+    persistent_indicator_id: Mapped[str | None] = mapped_column(ForeignKey('indicator_identities.indicator_id'), nullable=True)
     period_id: Mapped[int] = mapped_column(ForeignKey("reporting_periods.id"))
     department_id: Mapped[int] = mapped_column(ForeignKey("departments.id"))
     subprogram_id: Mapped[int] = mapped_column(ForeignKey("subprograms.id"))
@@ -79,6 +82,7 @@ class Indicator(Base):
     department: Mapped[Department] = relationship(back_populates="indicators")
     subprogram: Mapped[SubProgram] = relationship()
     values: Mapped[list["IndicatorValue"]] = relationship(back_populates="indicator", cascade="all, delete-orphan", order_by="IndicatorValue.year")
+    __table_args__ = (UniqueConstraint('period_id', 'persistent_indicator_id', name='uq_period_persistent_indicator'),)
 
 
 class IndicatorValue(Base):
@@ -323,3 +327,118 @@ class Publication(Base):
     created_by: Mapped[int] = mapped_column(ForeignKey("users.id"))
     created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(UTC).replace(tzinfo=None))
     __table_args__ = (UniqueConstraint("period_id", "version", name="uq_publication_version"),)
+
+
+class IndicatorIdentity(Base):
+    __tablename__ = 'indicator_identities'
+    indicator_id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    organization_id: Mapped[int] = mapped_column(ForeignKey('organizations.id'))
+
+
+class IndicatorDefinitionRevision(Base):
+    __tablename__ = 'indicator_definition_revisions'
+    id: Mapped[int] = mapped_column(primary_key=True)
+    indicator_id: Mapped[str] = mapped_column(ForeignKey('indicator_identities.indicator_id'))
+    revision: Mapped[int] = mapped_column(Integer)
+    period_id: Mapped[int] = mapped_column(ForeignKey('reporting_periods.id'))
+    definition_json: Mapped[str] = mapped_column(Text)
+    sha256: Mapped[str] = mapped_column(String(64))
+    created_by: Mapped[int] = mapped_column(ForeignKey('users.id'))
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(UTC).replace(tzinfo=None))
+    __table_args__ = (UniqueConstraint('indicator_id', 'revision', name='uq_indicator_definition_revision'),)
+
+
+class PublicationIndicatorBinding(Base):
+    __tablename__ = 'publication_indicator_bindings'
+    id: Mapped[int] = mapped_column(primary_key=True)
+    publication_id: Mapped[int] = mapped_column(ForeignKey('publications.id'))
+    snapshot_indicator_id: Mapped[int] = mapped_column(Integer)
+    definition_revision_id: Mapped[int] = mapped_column(ForeignKey('indicator_definition_revisions.id'))
+    department_id: Mapped[int] = mapped_column(ForeignKey('departments.id'))
+    created_by: Mapped[int] = mapped_column(ForeignKey('users.id'))
+    reason: Mapped[str] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(UTC).replace(tzinfo=None))
+    __table_args__ = (UniqueConstraint('publication_id', 'snapshot_indicator_id', name='uq_publication_indicator_binding'),)
+
+
+class ActivityReport(Base):
+    __tablename__ = 'activity_reports'
+    id: Mapped[int] = mapped_column(primary_key=True)
+    organization_id: Mapped[int] = mapped_column(ForeignKey('organizations.id'))
+    period_id: Mapped[int] = mapped_column(ForeignKey('reporting_periods.id'))
+    current_revision: Mapped[int] = mapped_column(Integer, default=0)
+    # CAS guard serializes actual edits and rebase on SQLite as well as PostgreSQL.
+    lock_version: Mapped[int] = mapped_column(Integer, default=0)
+    __table_args__ = (UniqueConstraint('organization_id', 'period_id', name='uq_activity_report_org_period'),)
+
+
+class ActivityReportRevision(Base):
+    __tablename__ = 'activity_report_revisions'
+    id: Mapped[int] = mapped_column(primary_key=True)
+    report_id: Mapped[int] = mapped_column(ForeignKey('activity_reports.id'))
+    revision: Mapped[int] = mapped_column(Integer)
+    publication_id: Mapped[int] = mapped_column(ForeignKey('publications.id'))
+    publication_sha256: Mapped[str] = mapped_column(String(64))
+    contract_version: Mapped[str] = mapped_column(String(20), default='1.0')
+    previous_revision_id: Mapped[int | None] = mapped_column(ForeignKey('activity_report_revisions.id'), nullable=True)
+    diff_json: Mapped[str] = mapped_column(Text, default='[]')
+    revision_reason: Mapped[str] = mapped_column(Text, default='', server_default='')
+    created_by: Mapped[int] = mapped_column(ForeignKey('users.id'))
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(UTC).replace(tzinfo=None))
+    __table_args__ = (UniqueConstraint('report_id', 'revision', name='uq_activity_report_revision'),)
+
+
+class ReportIndicator(Base):
+    __tablename__ = 'report_indicators'
+    id: Mapped[int] = mapped_column(primary_key=True)
+    report_revision_id: Mapped[int] = mapped_column(ForeignKey('activity_report_revisions.id'))
+    publication_binding_id: Mapped[int] = mapped_column(ForeignKey('publication_indicator_bindings.id'))
+    __table_args__ = (UniqueConstraint('report_revision_id', 'publication_binding_id', name='uq_report_indicator'),)
+
+
+class ActualRevision(Base):
+    __tablename__ = 'actual_revisions'
+    id: Mapped[int] = mapped_column(primary_key=True)
+    report_indicator_id: Mapped[int] = mapped_column(ForeignKey('report_indicators.id'))
+    revision: Mapped[int] = mapped_column(Integer)
+    supersedes_id: Mapped[int | None] = mapped_column(ForeignKey('actual_revisions.id'), nullable=True)
+    value: Mapped[Decimal | None] = mapped_column(Numeric(26, 6), nullable=True)
+    raw_text: Mapped[str] = mapped_column(Text, default='')
+    state: Mapped[str] = mapped_column(String(30))
+    # Atomic revision includes evidence, explanation and deviation; never updated.
+    evidence_json: Mapped[str] = mapped_column(Text)
+    explanation: Mapped[str] = mapped_column(Text)
+    deviation_json: Mapped[str] = mapped_column(Text)
+    created_by: Mapped[int] = mapped_column(ForeignKey('users.id'))
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(UTC).replace(tzinfo=None))
+    __table_args__ = (UniqueConstraint('report_indicator_id', 'revision', name='uq_actual_revision'),)
+
+
+class ActivityReportApproval(Base):
+    __tablename__ = 'activity_report_approvals'
+    id: Mapped[int] = mapped_column(primary_key=True)
+    report_revision_id: Mapped[int] = mapped_column(ForeignKey('activity_report_revisions.id'), unique=True)
+    created_by: Mapped[int] = mapped_column(ForeignKey('users.id'))
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(UTC).replace(tzinfo=None))
+
+
+from sqlalchemy import event
+from sqlalchemy import inspect as inspect_model
+
+
+@event.listens_for(Indicator, 'before_update')
+def _preserve_indicator_identity(mapper, connection, target):
+    history = inspect_model(target).attrs.persistent_indicator_id.history
+    if history.deleted and history.deleted[0] is not None and history.has_changes():
+        raise ValueError('Atanmış gösterge kimliği değiştirilemez; açık kimlik ilişkisini koruyun.')
+
+
+def _immutable_revision(mapper, connection, target):
+    raise ValueError('Geçmiş sürüm değiştirilemez; yeni revizyon oluşturun.')
+
+
+for _model in (Publication, IndicatorIdentity, IndicatorDefinitionRevision,
+               PublicationIndicatorBinding, ActivityReportRevision, ReportIndicator,
+               ActualRevision, ActivityReportApproval):
+    event.listen(_model, 'before_update', _immutable_revision)
+    event.listen(_model, 'before_delete', _immutable_revision)

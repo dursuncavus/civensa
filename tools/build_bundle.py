@@ -6,7 +6,7 @@ PARTS=['bundle.part01','bundle.part02','bundle.part03a','bundle.part03b','bundle
 files=[]
 for folder in ['app','migrations']:
     files.extend(p for p in (ROOT/folder).rglob('*') if p.is_file() and '__pycache__' not in p.parts and p.suffix!='.pyc')
-files.extend(ROOT/name for name in ['requirements.txt','alembic.ini','RELEASE_V5.md'])
+files.extend(ROOT/name for name in ['requirements.txt','alembic.ini','RELEASE_V5.md','sitecustomize.py'])
 stream=io.BytesIO()
 with zipfile.ZipFile(stream,'w',compression=zipfile.ZIP_DEFLATED,compresslevel=9) as archive:
     for path in sorted(files):

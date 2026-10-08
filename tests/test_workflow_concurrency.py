@@ -12,13 +12,13 @@ from app.models import Submission, SubmissionEvent, Notification
 import app.program_service as service
 
 
+@pytest.mark.postgres
 @pytest.mark.parametrize('operation,second_operation', [
     ('submit', 'submit'), ('approve', 'approve'), ('return', 'return'),
     ('approve', 'return'), ('return', 'approve'), ('submit', 'approve'), ('approve', 'submit'),
 ])
 def test_concurrent_transition_applied_once(db, sample, monkeypatch, operation, second_operation):
-    if db.get_bind().dialect.name != 'postgresql':
-        pytest.skip('Row-lock concurrency requires PostgreSQL')
+    assert db.get_bind().dialect.name == 'postgresql'
     submission = db.scalar(select(Submission))
     submission.status = 'draft' if operation == 'submit' else 'submitted'
     submission.revision = 0 if operation == 'submit' else 1

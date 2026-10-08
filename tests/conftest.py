@@ -1,12 +1,62 @@
+import os
+from uuid import uuid4
+
 import pytest
 from sqlalchemy import create_engine, event, select
+from sqlalchemy.schema import CreateSchema, DropSchema
 from sqlalchemy.orm import Session
 from sqlalchemy.pool import StaticPool
 from app.db import Base
 from app.models import *
 
+def pytest_addoption(parser):
+    parser.addoption('--require-postgres', action='store_true',
+                     help='Fail if the disposable PostgreSQL test URL is missing.')
+
+
+def pytest_configure(config):
+    config.addinivalue_line('markers', 'postgres: requires a disposable PostgreSQL database')
+    if config.getoption('--require-postgres') and not os.getenv('CIVENSA_TEST_POSTGRES_URL'):
+        raise pytest.UsageError('--require-postgres needs CIVENSA_TEST_POSTGRES_URL')
+
+
+@pytest.fixture(autouse=True)
+def isolated_application_startup(tmp_path, monkeypatch):
+    # TestClient lifespan must never migrate the developer's local database.
+    from app import main
+    url = f"sqlite:///{tmp_path / 'application-startup.db'}"
+    runtime_engine = create_engine(url)
+    monkeypatch.setenv('DATABASE_URL', url)
+    monkeypatch.setenv('DEMO_SEED', '0')
+    monkeypatch.setattr(main, 'engine', runtime_engine)
+    yield
+    runtime_engine.dispose()
+
+
 @pytest.fixture
-def db():
+def db(request):
+    if request.node.get_closest_marker('postgres'):
+        url = os.getenv('CIVENSA_TEST_POSTGRES_URL')
+        if not url:
+            pytest.skip('Disposable PostgreSQL test database not configured')
+        # Each scenario gets its own schema; migration tests retain the public schema.
+        base_engine = create_engine(url, future=True)
+        if base_engine.dialect.name != 'postgresql':
+            base_engine.dispose()
+            pytest.fail('CIVENSA_TEST_POSTGRES_URL must use PostgreSQL')
+        schema = 'civensa_test_' + uuid4().hex
+        try:
+            with base_engine.begin() as connection:
+                connection.execute(CreateSchema(schema))
+            engine = base_engine.execution_options(schema_translate_map={None: schema})
+            Base.metadata.create_all(engine)
+            with Session(engine, expire_on_commit=False) as session:
+                yield session
+        finally:
+            with base_engine.begin() as connection:
+                connection.execute(DropSchema(schema, cascade=True, if_exists=True))
+            base_engine.dispose()
+        return
     engine=create_engine('sqlite://',poolclass=StaticPool,connect_args={'check_same_thread':False})
     @event.listens_for(engine,'connect')
     def fk(connection,record):connection.execute('PRAGMA foreign_keys=ON')

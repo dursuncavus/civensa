@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
 import json
 from decimal import Decimal
 from .serialization import json_dumps
-from .numbers import parse_number, format_number
+from .numbers import parse_number, format_number, format_contract_targets
 import os
 import secrets
 import hmac
@@ -41,7 +41,7 @@ from .report_export import build_department_docx
 
 BASE_DIR = Path(__file__).resolve().parent
 APP_VERSION = "5.0.0"
-MIGRATION_HEAD = "e5a0b1c2d3e4"
+MIGRATION_HEAD = "a7c2d3e4f5a6"
 
 
 @asynccontextmanager
@@ -187,7 +187,10 @@ def parse_optional_nonnegative_money(raw, field="Tutar"):
         raise HTTPException(422, f"{field}: {exc}") from None
 
 
+from .time_display import turkey_time
+templates.env.filters['turkey_time'] = turkey_time
 templates.env.filters["trnum"] = lambda v: format_number(v)
+templates.env.filters['contract_targets'] = format_contract_targets
 templates.env.filters["trmoney"] = lambda v: format_number(v, True)
 def section_text(raw):
     content=json.loads(raw)
@@ -338,7 +341,7 @@ def ensure_submission(db: Session, department_id: int, period_id: int):
 
 @app.get("/", include_in_schema=False)
 def root(request: Request, db: Session = Depends(get_db)):
-    return RedirectResponse("/dashboard" if current_user(request, db) else "/login", 303)
+    return RedirectResponse("/modules" if current_user(request, db) else "/login", 303)
 
 
 @app.get("/login", response_class=HTMLResponse)
@@ -356,13 +359,29 @@ def login(request: Request, email: str = Form(...), password: str = Form(...), d
     request.session["user_id"] = user.id
     request.session["csrf_token"] = secrets.token_urlsafe(32)
     log(db, user, "login", "user", user.id)
-    return RedirectResponse("/dashboard", 303)
+    return RedirectResponse("/modules", 303)
 
 
 @app.post("/logout")
 def logout(request: Request):
     request.session.clear()
     return RedirectResponse("/login", 303)
+
+
+@app.get("/modules", response_class=HTMLResponse)
+def modules(request: Request, user: User = Depends(require_user)):
+    return templates.TemplateResponse(request, "modules.html", {"user": user})
+
+
+@app.get("/activity-report", response_class=HTMLResponse)
+def activity_report_workspace(request: Request, year: int = 2026, db: Session = Depends(get_db), user: User = Depends(require_user)):
+    from .activity_report_service import annual_indicators
+    if year < 2020 or year > 2100:
+        raise HTTPException(422, "Faaliyet Raporu yılı 2020–2100 arasında olmalı.")
+    return templates.TemplateResponse(request, "activity_report.html", {
+        "user": user, "year": year, "indicator_rows": annual_indicators(db, user, year),
+        "years": sorted(set(db.scalars(select(ReportingPeriod.year)).all()) | {year}),
+    })
 
 
 @app.get("/dashboard", response_class=HTMLResponse)
@@ -1483,7 +1502,10 @@ async def create_period(request: Request, db: Session = Depends(get_db), user: U
             db.add(card);db.flush();card_map[old.id]=card.id
         inds = db.scalars(select(Indicator).where(Indicator.period_id == base.id)).all()
         for old in inds:
+            from .activity_contract_service import ensure_identity
+            identity_id = ensure_identity(db, old)
             new = Indicator(period_id=period.id, department_id=old.department_id, subprogram_id=sub_map[old.subprogram_id], card_id=card_map.get(old.card_id), code=old.code, position=old.position, name=old.name, unit=old.unit, explanation=old.explanation, calculation_method=old.calculation_method, data_source=old.data_source, status="draft")
+            new.persistent_indicator_id = identity_id
             db.add(new); db.flush()
         acts = db.scalars(select(Activity).where(Activity.period_id == base.id)).all()
         for old in acts:
@@ -1894,3 +1916,5 @@ def progress_status(request: Request, db: Session = Depends(get_db), user: User 
 
 from .program_routes import register as register_program_routes
 register_program_routes(app)
+from .activity_contract_routes import register as register_activity_contract_routes
+register_activity_contract_routes(app)

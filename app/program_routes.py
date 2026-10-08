@@ -281,10 +281,14 @@ def register(app):
         if not rows(db,ReportSection,pid):errors.append('Kitabın genel bilgi bölümleri hazırlanmalı.')
         if not rows(db,OfficialActivity,pid):errors.append('Sorumlu harcama birimleri kataloğu hazırlanmalı.')
         if errors:raise HTTPException(409,errors)
-        raw=json_dumps(book_snapshot(db,pid),ensure_ascii=False,sort_keys=True,separators=(',',':'))
+        from .activity_contract_service import freeze_program_payload, attach_publication_definitions
+        payload, definitions = freeze_program_payload(db, pid, user)
+        raw=json_dumps(payload,ensure_ascii=False,sort_keys=True,separators=(',',':'))
         version=(db.scalar(select(func.max(Publication.version)).where(Publication.period_id==pid)) or 0)+1
         obj=Publication(period_id=pid,version=version,snapshot_json=raw,sha256=hashlib.sha256(raw.encode()).hexdigest(),created_by=user.id)
-        db.add(obj);db.commit();log(db,user,'publication_freeze','publication',obj.id)
+        db.add(obj);db.flush()
+        attach_publication_definitions(db, obj, definitions, user)
+        db.commit();log(db,user,'publication_freeze','publication',obj.id)
         return RedirectResponse('/report-builder',303)
 
     @app.get('/publications/{publication_id}.{format}')

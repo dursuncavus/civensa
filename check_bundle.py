@@ -1,9 +1,30 @@
-import base64,io,pathlib,zipfile
-parts=["bundle.part01","bundle.part02","bundle.part03a","bundle.part03b","bundle.part03c","bundle.part03d","bundle.part04","bundle.part05"];r=pathlib.Path(__file__).resolve().parent
-z=zipfile.ZipFile(io.BytesIO(base64.b64decode("".join((r/p).read_text() for p in parts))))
-for n in z.namelist():
- if n.endswith(".py"):compile(z.read(n).decode(),n,"exec")
-m=z.read("app/main.py").decode()
-assert 'APP_VERSION = "3.0.0"' in m and "/api/release/readiness" in m and "/api/audit/export.csv" in m and "alembic_command.upgrade" in m and "alembic_command.stamp" in m and "user_bulk_create_revert" in m and "is_active" in z.read("app/models.py").decode()
-assert "migrations/versions/8c4f72a10b31_add_user_active.py" in z.namelist()
-print("BUNDLE_INTEGRITY_OK",len(z.namelist()))
+"""Check current bundle hashes, source equality and Python syntax without importing it."""
+from pathlib import Path
+import base64
+import hashlib
+import io
+import json
+import zipfile
+
+
+def check_bundle(root=None):
+    root = Path(root) if root is not None else Path(__file__).resolve().parent
+    manifest = json.loads((root / "bundle-manifest.json").read_text())
+    raw = base64.b64decode("".join((root / part).read_text() for part in manifest["parts"]), validate=True)
+    assert hashlib.sha256(raw).hexdigest() == manifest["sha256"], "Bundle checksum mismatch"
+    with zipfile.ZipFile(io.BytesIO(raw)) as archive:
+        assert archive.testzip() is None, "Corrupt ZIP entry"
+        assert set(archive.namelist()) == set(manifest["files"]), "Bundle file list mismatch"
+        for name, digest in manifest["files"].items():
+            content = archive.read(name)
+            assert hashlib.sha256(content).hexdigest() == digest, name
+            assert content == (root / name).read_bytes(), f"Stale bundled source: {name}"
+            if name.endswith(".py"):
+                source = content.decode("utf-8")
+                assert all(ord(char) >= 32 or char in "\n\r\t" for char in source), name
+                compile(source, name, "exec")
+    print("BUNDLE_INTEGRITY_OK", len(manifest["files"]), "files", manifest["sha256"])
+
+
+if __name__ == "__main__":
+    check_bundle()
