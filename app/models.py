@@ -187,6 +187,7 @@ class Notification(Base):
     event_type: Mapped[str] = mapped_column(String(30))
     message: Mapped[str] = mapped_column(String(500))
     link: Mapped[str] = mapped_column(String(300), default="")
+    delivery_mode: Mapped[str] = mapped_column(String(20), default="legacy", server_default="legacy")
     is_read: Mapped[bool] = mapped_column(Boolean, default=False, server_default="0")
     created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(UTC).replace(tzinfo=None))
 
@@ -442,3 +443,9 @@ for _model in (Publication, IndicatorIdentity, IndicatorDefinitionRevision,
                ActualRevision, ActivityReportApproval):
     event.listen(_model, 'before_update', _immutable_revision)
     event.listen(_model, 'before_delete', _immutable_revision)
+
+# Register additive authorization tables without changing legacy User.role semantics.
+from .authorization_models import (AuthorizationConfiguration, DirectorateMembership,
+    MembershipEvent, AuthorityDelegation, DelegationRevocation, DelegationEvent,
+    FinalAuthorityAssignment, FinalAuthorityEvent, WorkflowEvent, FieldChangeEvent,
+    NotificationRecipient)

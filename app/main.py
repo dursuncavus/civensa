@@ -17,7 +17,7 @@ from fastapi import FastAPI, Request, Depends, Form, HTTPException, UploadFile, 
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from sqlalchemy import select, inspect, func
+from sqlalchemy import select, inspect, func, exists, false
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, selectinload
 from starlette.middleware.sessions import SessionMiddleware
@@ -28,7 +28,7 @@ from .db import Base, engine, get_db, SessionLocal
 from .models import (
     User, Department, ReportingPeriod, Indicator, IndicatorValue, Activity,
     ActivityCostValue, DepartmentCostValue, Submission, AuditLog, Program,
-    SubProgram, TemplateSnapshot, ImportBatch, SubmissionEvent, Notification,
+    SubProgram, TemplateSnapshot, ImportBatch, SubmissionEvent, Notification, NotificationRecipient,
 )
 from .security import verify_password, hash_password
 from .seed import seed
@@ -41,7 +41,7 @@ from .report_export import build_department_docx
 
 BASE_DIR = Path(__file__).resolve().parent
 APP_VERSION = "5.0.0"
-MIGRATION_HEAD = "a7c2d3e4f5a6"
+MIGRATION_HEAD = "0429caba7123"
 
 
 @asynccontextmanager
@@ -126,19 +126,28 @@ def require_strategy(user: User = Depends(require_user)):
 
 
 def notification_query(user: User):
-    query = select(Notification)
+    # Recipient-bound notices never become visible via a role/department fallback.
+    addressed = exists().where(NotificationRecipient.notification_id == Notification.id,
+                               NotificationRecipient.user_id == user.id)
     if user.role == "strategy":
-        return query.where(Notification.role == "strategy")
-    return query.where(
-        Notification.role == "department",
-        Notification.department_id == user.department_id,
-    )
+        legacy_scope = Notification.role == "strategy"
+    elif user.role == "department":
+        legacy_scope = (Notification.role == "department") & (Notification.department_id == user.department_id)
+    else:
+        legacy_scope = false()
+    return select(Notification).where(
+        ((Notification.delivery_mode == "legacy") & legacy_scope) |
+        ((Notification.delivery_mode == "recipients") & addressed))
 
 
 def user_notifications(db: Session, user: User, limit: int = 8):
-    return db.scalars(
-        notification_query(user).order_by(Notification.created_at.desc()).limit(limit)
-    ).all()
+    rows = db.scalars(notification_query(user).order_by(Notification.created_at.desc()).limit(limit)).all()
+    receipts = {r.notification_id: r for r in db.scalars(select(NotificationRecipient).where(
+        NotificationRecipient.user_id == user.id, NotificationRecipient.notification_id.in_([r.id for r in rows])))}
+    # Old shared read flags cannot prove who read a notice. Leave them untouched.
+    for row in rows:
+        row.recipient_is_read = row.id in receipts and receipts[row.id].read_at is not None
+    return rows
 
 
 def log(db, user, action, entity_type, entity_id=None, details=""):
@@ -1287,10 +1296,10 @@ async def submission_decision(submission_id: int, request: Request, db: Session 
 def notifications_api(db: Session = Depends(get_db), user: User = Depends(require_user)):
     rows = user_notifications(db, user, 50)
     return {
-        "unread": sum(1 for row in rows if not row.is_read),
+        "unread": sum(1 for row in rows if not row.recipient_is_read),
         "items": [{
             "id": row.id, "event_type": row.event_type, "message": row.message,
-            "link": row.link, "is_read": row.is_read, "created_at": row.created_at.isoformat(),
+            "link": row.link, "is_read": row.recipient_is_read, "created_at": row.created_at.isoformat(),
         } for row in rows],
     }
 
@@ -1300,7 +1309,19 @@ def notification_read(notification_id: int, db: Session = Depends(get_db), user:
     row = db.scalar(notification_query(user).where(Notification.id == notification_id))
     if not row:
         raise HTTPException(404)
-    row.is_read = True
+    from .authorization_service import server_now
+    receipt = db.scalar(select(NotificationRecipient).where(
+        NotificationRecipient.notification_id == row.id, NotificationRecipient.user_id == user.id))
+    if receipt is None:
+        # Dialect upsert makes concurrent repeat reads idempotent.
+        if db.get_bind().dialect.name == 'postgresql':
+            from sqlalchemy.dialects.postgresql import insert
+        else:
+            from sqlalchemy.dialects.sqlite import insert
+        db.execute(insert(NotificationRecipient).values(notification_id=row.id, user_id=user.id,
+            read_at=server_now(db)).on_conflict_do_nothing(index_elements=['notification_id','user_id']))
+    elif receipt.read_at is None:
+        receipt.read_at = server_now(db)
     db.commit()
     return {"ok": True}
 
