@@ -316,3 +316,24 @@ def package_eligibility(db, actor, action, package, *, transition_time=None):
             resource_scope=package.resource_scope, workflow_state=package.state, delegation_at=transition_time)
     except HTTPException:
         return False
+
+
+def report_workflow_eligibility(db, actor, action, organization_id, state='assembling'):
+    """Internal backend only; runtime can()/routes remain database-disabled."""
+    try:
+        actor=active_actor(db,actor)
+        if not db.get(Organization,organization_id):return False
+        if action in {'assemble_candidate','request_final_review','publish_report'}:
+            if action=='publish_report' and db.scalar(select(FinalAuthorityAssignment.id).where(
+                FinalAuthorityAssignment.organization_id==organization_id,FinalAuthorityAssignment.active.is_(True),FinalAuthorityAssignment.user_id==actor.id)):
+                return False
+            return actor.role=='strategy' and state in {'assemble_candidate':{'assembling'},
+                'request_final_review':{'assembling'},'publish_report':{'final_approved','published'}}[action]
+        if action not in {'view_candidate','final_approve','final_return'}:return False
+        if state not in {'assembling','final_review','returned_to_strategy','final_approved','published'}:return False
+        if action=='view_candidate' and actor.role=='strategy':return True
+        assigned=db.scalar(select(FinalAuthorityAssignment).join(User,User.id==FinalAuthorityAssignment.user_id).where(
+            FinalAuthorityAssignment.organization_id==organization_id,FinalAuthorityAssignment.active.is_(True),User.is_active.is_(True)))
+        if not assigned or assigned.user_id!=actor.id:return False
+        return action=='view_candidate' or (action=='final_return' and state=='final_review') or (action=='final_approve' and state in {'final_review','final_approved'})
+    except HTTPException:return False

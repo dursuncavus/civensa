@@ -452,3 +452,5 @@ from .authorization_models import (AuthorizationConfiguration, DirectorateMember
 
 # Disabled Phase 3 backend package history; legacy models retain their semantics.
 from .package_models import DirectoratePackage, PackageRevision, PackageDecision
+from .report_workflow_models import (ReportCandidate, ReportCandidateState, CandidatePackage,
+    ReportDecision, ReportRelease, ReportArtifact)
