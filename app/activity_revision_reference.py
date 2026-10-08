@@ -280,6 +280,7 @@ class IndicatorContext:
     """
     organization_id: int
     activity_report_id: int
+    reporting_period_id: int
     report_revision_id: int
     report_revision_number: int
     report_indicator_id: int
@@ -292,7 +293,7 @@ class IndicatorContext:
     contract_version: str
 
     def __post_init__(self):
-        for name in ('organization_id', 'activity_report_id', 'report_revision_id', 'report_revision_number',
+        for name in ('organization_id', 'activity_report_id', 'reporting_period_id', 'report_revision_id', 'report_revision_number',
                      'report_indicator_id', 'definition_revision_id', 'publication_id'):
             _positive_int(getattr(self, name), name)
         _identity(self.persistent_indicator_id, 'persistent_indicator_id')
@@ -305,6 +306,8 @@ class IndicatorContext:
         definition = _loads(self.definition_json, 'definition_json')
         if not isinstance(definition, dict) or not isinstance(definition.get('targets'), list):
             _fail('definition_integrity', 'Gösterge tanımının hedef yapısı doğrulanamadı.', 'definition_json')
+        if type(definition.get('year')) is not int or definition['year'] <= 0:
+            _fail('definition_integrity', 'Gösterge tanımının raporlama yılı doğrulanamadı.', 'definition_json')
         # v1 definitions carry no marker; v2/v3 must carry their own contract version.
         marker = definition.get('definition_contract_version')
         if (self.contract_version == '1.0' and marker is not None) or (self.contract_version != '1.0' and marker != self.contract_version):
@@ -314,6 +317,10 @@ class IndicatorContext:
     @property
     def targets(self):
         return json.loads(self.definition_json)['targets']
+
+    @property
+    def reporting_year(self):
+        return json.loads(self.definition_json)['year']
 
     @property
     def effective_target(self):
@@ -326,7 +333,8 @@ class IndicatorContext:
         return sha256_hex(canonical_json(_target_semantics(self.targets)))
 
     def binding(self):
-        return {'organization_id': self.organization_id, 'persistent_indicator_id': self.persistent_indicator_id,
+        return {'organization_id': self.organization_id, 'reporting_year': self.reporting_year,
+                'persistent_indicator_id': self.persistent_indicator_id,
                 'definition_revision_id': self.definition_revision_id, 'definition_sha256': self.definition_sha256,
                 'target_semantics_sha256': self.target_semantics_sha256, 'publication_id': self.publication_id,
                 'publication_sha256': self.publication_sha256, 'contract_version': self.contract_version}
@@ -401,6 +409,7 @@ class SourceRealization:
 
     def section(self):
         return {'activity_report_id': self.context.activity_report_id,
+                'reporting_period_id': self.context.reporting_period_id,
                 'report_revision_id': self.context.report_revision_id,
                 'report_revision_number': self.context.report_revision_number,
                 'report_indicator_id': self.context.report_indicator_id,
@@ -441,6 +450,8 @@ _NEW_RECORD = ' Değişmeyen değer referansı kullanılamaz; yeni gerçekleşme
 _CONTEXT_CHECKS = (
     ('organization_id', 'organization_mismatch', 'Kaynak gösterge başka bir kuruma ait.'),
     ('activity_report_id', 'report_mismatch', 'Kaynak gösterge başka bir Faaliyet Raporuna ait.'),
+    ('reporting_period_id', 'reporting_period_mismatch', 'Kaynak gösterge başka bir raporlama dönemine ait.'),
+    ('reporting_year', 'reporting_period_mismatch', 'Gösterge tanımının raporlama yılı kaynaktan farklı.'),
     ('persistent_indicator_id', 'identity_mismatch', 'Kalıcı gösterge kimliği kaynakla aynı değil.'),
     ('definition_revision_id', 'definition_revision_mismatch', 'Gösterge tanım sürümü değişmiş.'),
     ('definition_sha256', 'definition_hash_mismatch', 'Gösterge tanımının içeriği değişmiş.'),
@@ -500,18 +511,19 @@ def require_reference_eligibility(source, successor, proposed):
 
 # ---------------------------------------------------------------- reference provenance
 
-_SUCCESSOR_KEYS = frozenset({'organization_id', 'activity_report_id', 'report_revision_id', 'report_revision_number',
-                             'report_indicator_id'})
-_SOURCE_KEYS = frozenset({'activity_report_id', 'report_revision_id', 'report_revision_number', 'report_indicator_id',
+_SUCCESSOR_KEYS = frozenset({'organization_id', 'activity_report_id', 'reporting_period_id', 'report_revision_id',
+                             'report_revision_number', 'report_indicator_id'})
+_SOURCE_KEYS = frozenset({'activity_report_id', 'reporting_period_id', 'report_revision_id', 'report_revision_number', 'report_indicator_id',
                           'actual_revision_id', 'release_id', 'release_major', 'release_minor', 'candidate_id',
                           'candidate_sha256', 'activity_approval_id'})
-_BINDING_KEYS = frozenset({'organization_id', 'persistent_indicator_id', 'definition_revision_id', 'definition_sha256',
+_BINDING_KEYS = frozenset({'organization_id', 'reporting_year', 'persistent_indicator_id', 'definition_revision_id', 'definition_sha256',
                            'target_semantics_sha256', 'publication_id', 'publication_sha256', 'contract_version'})
 _TOP_KEYS = frozenset({'schema', 'calculation_rule_version', 'successor', 'source', 'binding', 'content_sha256'})
 
 
 def _successor_section(successor):
     return {'organization_id': successor.organization_id, 'activity_report_id': successor.activity_report_id,
+            'reporting_period_id': successor.reporting_period_id,
             'report_revision_id': successor.report_revision_id,
             'report_revision_number': successor.report_revision_number,
             'report_indicator_id': successor.report_indicator_id}

@@ -35,7 +35,7 @@ def definition(**changes):
 
 def context(definition_json=None, **changes):
     text = definition_json or definition()
-    data = dict(organization_id=1, activity_report_id=5, report_revision_id=21, report_revision_number=1,
+    data = dict(organization_id=1, activity_report_id=5, reporting_period_id=3, report_revision_id=21, report_revision_number=1,
                 report_indicator_id=31, persistent_indicator_id=IDENTITY, definition_revision_id=11,
                 definition_sha256=contract_digest(text), definition_json=text, publication_id=9,
                 publication_sha256=SHA_PUB, contract_version='3.0')
@@ -170,6 +170,46 @@ def test_cross_report_and_non_successor_rejected():
     assert 'not_a_successor' in codes(same) and 'not_a_successor' in codes(older)
     reused_slot = check_reference_eligibility(source(), successor_context(report_indicator_id=31), content())
     assert 'not_a_successor' in codes(reused_slot)
+
+
+# Red-team invariant: the reporting period must match exactly; cross-period inheritance fails closed.
+def test_cross_period_reference_rejected():
+    other_period = successor_context(reporting_period_id=4)
+    result = check_reference_eligibility(source(), other_period, content())
+    assert not result.eligible and 'reporting_period_mismatch' in codes(result)
+    expect('reporting_period_mismatch', build_reference, source(), other_period, content())
+    other_year = successor_context(definition(year=2028))
+    result = check_reference_eligibility(source(), other_year, content())
+    assert {'reporting_period_mismatch', 'definition_hash_mismatch'} <= codes(result)
+    assert build_reference(source(), successor_context(), content()).payload['source']['reporting_period_id'] == 3
+
+
+def test_cross_period_reference_injection_rejected():
+    src = source()
+    reference = build_reference(src, successor_context(), content())
+    # A source claiming another period cannot satisfy a reference bound to period 3.
+    foreign = source(ctx=context(reporting_period_id=4))
+    expect('reporting_period_mismatch', resolve_effective_realization, successor_context(),
+           reference=reference, source=foreign)
+    # Re-hashed provenance that rewrites either side's period is rejected against the real inputs.
+    for section in ('source', 'successor'):
+        payload = reference.payload
+        payload[section]['reporting_period_id'] = 4
+        text = canonical_json(payload)
+        forged = UnchangedValueReference(text, ref.sha256_hex(text))
+        code = 'source_provenance_mismatch' if section == 'source' else 'successor_mismatch'
+        expect(code, resolve_effective_realization, successor_context(), reference=forged, source=src)
+    payload = reference.payload
+    payload['binding']['reporting_year'] = 2028
+    text = canonical_json(payload)
+    expect('binding_mismatch', verify_reference, UnchangedValueReference(text, ref.sha256_hex(text)),
+           source=src, successor=successor_context())
+
+
+def test_definition_without_reporting_year_fails_closed():
+    no_year = contract_canonical({k: v for k, v in json.loads(definition()).items() if k != 'year'})
+    expect('definition_integrity', context, no_year)
+    expect('incomplete_provenance', context, reporting_period_id=None)
 
 
 # 13
@@ -398,7 +438,8 @@ def test_order_sensitive_content_follows_civensa_semantics():
 # 26
 @pytest.mark.parametrize('section,key', [('source', 'actual_revision_id'), ('source', 'candidate_sha256'),
     ('source', 'release_id'), ('successor', 'report_indicator_id'), ('binding', 'definition_sha256'),
-    ('binding', 'persistent_indicator_id'), ('binding', 'publication_sha256'), (None, 'content_sha256')])
+    ('binding', 'persistent_indicator_id'), ('binding', 'publication_sha256'), (None, 'content_sha256'),
+    ('source', 'reporting_period_id'), ('successor', 'reporting_period_id'), ('binding', 'reporting_year')])
 def test_incomplete_reference_provenance_fails_closed(section, key):
     payload = build_reference(source(), successor_context(), content()).payload
     (payload[section] if section else payload).pop(key)
@@ -508,6 +549,7 @@ def _real_rows_case(db, sample):
     activity = db.get(ActivityReport, revision.report_id)
     assert db.get(IndicatorIdentity, definition_row.indicator_id).organization_id == activity.organization_id
     real = IndicatorContext(organization_id=activity.organization_id, activity_report_id=activity.id,
+        reporting_period_id=activity.period_id,
         report_revision_id=revision.id, report_revision_number=revision.revision, report_indicator_id=item.id,
         persistent_indicator_id=definition_row.indicator_id, definition_revision_id=definition_row.id,
         definition_sha256=definition_row.sha256, definition_json=definition_row.definition_json,

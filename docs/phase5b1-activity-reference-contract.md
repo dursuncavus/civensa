@@ -24,7 +24,7 @@ only `hashlib`, `json`, `re`, `dataclasses`, `decimal` (asserted by a test).
 
 | field | source row |
 |---|---|
-| organization_id, activity_report_id | ActivityReport |
+| organization_id, activity_report_id, reporting_period_id | ActivityReport (.period_id) |
 | report_revision_id, report_revision_number | ActivityReportRevision.id / .revision |
 | report_indicator_id | ReportIndicator.id |
 | persistent_indicator_id | IndicatorDefinitionRevision.indicator_id (IndicatorIdentity) |
@@ -33,7 +33,8 @@ only `hashlib`, `json`, `re`, `dataclasses`, `decimal` (asserted by a test).
 
 Construction fails closed unless `sha256(definition_json) == definition_sha256`, the definition's
 `definition_contract_version` marker matches (absent for 1.0, equal for 2.0/3.0 — mirrors
-`activity_contract_service.definition_payload`, `app/activity_contract_service.py:104`), all IDs are
+`activity_contract_service.definition_payload`, `app/activity_contract_service.py:104`), the definition
+carries an integer `year` (exposed as `reporting_year`), all IDs are
 positive ints and targets parse without floats.
 
 `SourceProvenance` — release side of the source: release_id, release_major, release_minor,
@@ -81,6 +82,7 @@ Turkish message telling the user to create a new realization instead:
 |---|---|
 | same organization | organization_mismatch |
 | same ActivityReport | report_mismatch |
+| same reporting period id AND same definition `year` (cross-period inheritance) | reporting_period_mismatch |
 | successor is a newer revision, different revision/indicator row | not_a_successor |
 | same persistent indicator identity | identity_mismatch |
 | same IndicatorDefinitionRevision ID | definition_revision_mismatch |
@@ -101,11 +103,11 @@ gives a clearer message.
 ```json
 {"schema": "civensa.activity-unchanged-value-reference/v1",
  "calculation_rule_version": "difference-v1",
- "successor": {"organization_id", "activity_report_id", "report_revision_id", "report_revision_number", "report_indicator_id"},
- "source": {"activity_report_id", "report_revision_id", "report_revision_number", "report_indicator_id",
+ "successor": {"organization_id", "activity_report_id", "reporting_period_id", "report_revision_id", "report_revision_number", "report_indicator_id"},
+ "source": {"activity_report_id", "reporting_period_id", "report_revision_id", "report_revision_number", "report_indicator_id",
             "actual_revision_id", "release_id", "release_major", "release_minor",
             "candidate_id", "candidate_sha256", "activity_approval_id"},
- "binding": {"organization_id", "persistent_indicator_id", "definition_revision_id", "definition_sha256",
+ "binding": {"organization_id", "reporting_year", "persistent_indicator_id", "definition_revision_id", "definition_sha256",
              "target_semantics_sha256", "publication_id", "publication_sha256", "contract_version"},
  "content_sha256": "<source content hash>"}
 ```
@@ -162,6 +164,13 @@ The caller maps them to HTTP (suggested: invalid input/content 422, provenance/h
    `source_release_id`, `definition_revision_id`, `provenance_json`, `reference_sha256`, `created_by`,
    `created_at`; ORM/PG immutability guards like other history tables; a DB-level guard that a successor
    ReportIndicator has an ActualRevision XOR a reference; indexed ID columns must equal the JSON.
+   Cross-period guard: store `successor_reporting_period_id` and `source_reporting_period_id` as NOT NULL
+   FKs to `reporting_periods`, add `CHECK (successor_reporting_period_id = source_reporting_period_id)`,
+   and a BEFORE INSERT trigger that each equals `activity_reports.period_id` reached through its own
+   ReportIndicator → ActivityReportRevision → ActivityReport (a CHECK cannot join). Both values are
+   already separate keys in `provenance_json`, so the columns can be required to equal the JSON.
+   Future PostgreSQL test: insert a reference whose source ReportIndicator belongs to another period
+   (raw SQL, bypassing this engine) and expect an IntegrityError.
 5. `verify_materialization` currently requires exactly one ActualRevision per materialized indicator
    (`app/report_workflow_service.py:203`). It must learn the reference branch; the candidate payload
    schema (`activity-candidate-1`) needs a reference entry form (e.g. `reference_sha256` instead of
