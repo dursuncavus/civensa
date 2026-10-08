@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block page_title %}{{ department.name }}{% endblock %}
+{% block page_subtitle %}{{ period.year }} Performans Programı · {{ 'Strateji inceleme görünümü' if user.role=='strategy' else 'Müdürlük veri giriş alanı' }}{% endblock %}
+{% block content %}
+<datalist id="unitOptions">{% for unit in ['Adet','Yüzde (%)','Oran (%)','Türk Lirası (₺)','Gün','Kişi','m2','Ton','Lt','Saat','Dakika'] %}<option value="{{ unit }}">{% endfor %}</datalist>
+<p><a class="button" href="/program/{{ department.id }}?period_id={{ period.id }}">Performans Kartları ve Ekonomik Tablolar</a></p>
+{% if submission.return_note %}<div class="return-note"><b>Strateji iade notu</b><p>{{ submission.return_note }}</p></div>{% endif %}
+<div class="workflow-strip"><span class="{{ 'active' if submission.status in ['draft','returned'] else 'done' }}">1 · Veri Girişi</span><span class="{{ 'active' if submission.status=='submitted' else ('done' if submission.status=='approved' else '') }}">2 · Strateji İncelemesi</span><span class="{{ 'active done' if submission.status=='approved' else '' }}">3 · Onay</span></div>
+{% if workflow_events %}<section class="workflow-history"><div class="section-head"><div><h2>İşlem Geçmişi</h2><p class="muted">Gönderim, iade ve onay kararları revizyon bazında saklanır.</p></div><span class="badge">Revizyon {{ submission.revision }}</span></div><div class="timeline">{% for event in workflow_events %}<div class="timeline-item {{ event.event_type }}"><div><b>Revizyon {{ event.revision }} · {{ 'İncelemeye gönderildi' if event.event_type=='submitted' else ('Onaylandı' if event.event_type=='approve' else 'Düzeltme için iade edildi') }}</b><span>{{ event.created_at.strftime('%d.%m.%Y %H:%M') }}</span></div>{% if event.note %}<p>{{ event.note }}</p>{% endif %}</div>{% endfor %}</div></section>{% endif %}
+<div class="tabs"><button class="tab active" data-tab="indicators">Performans Göstergeleri</button><button class="tab" data-tab="activities">Faaliyet Maliyetleri</button></div>
+
+<div id="indicators" class="tabpane active">
+  <div class="record-list">
+  {% for i in indicators %}
+    <article class="record {{ 'has-issue' if issue_map[i.id] else 'validated' }}" data-id="{{ i.id }}">
+      <div class="record-head"><div><span class="eyebrow">{{ i.subprogram.program.name }} / {{ i.subprogram.name }}</span><h3>{{ i.name }}</h3></div><span class="badge {{ 'bad' if issue_map[i.id] else 'ok' }}">{{ issue_map[i.id]|length }} kontrol</span></div>
+      {% if issue_map[i.id] %}<div class="issue-list">{% for issue in issue_map[i.id] %}<button type="button" class="issue-jump" data-issue="{{ issue }}">{{ issue }}</button>{% endfor %}</div>{% endif %}
+      <div class="editor-grid">
+        <label>Gösterge adı<input data-field="name" value="{{ i.name }}" {{ 'readonly' if user.role!='department' or submission.status in ['submitted','approved'] else '' }}></label>
+        <label>Ölçü birimi<input data-field="unit" value="{{ i.unit }}" list="unitOptions" {{ 'readonly' if user.role!='department' or submission.status in ['submitted','approved'] else '' }}></label>
+      </div>
+      <div class="year-grid dynamic" style="--year-cols:{{ indicator_columns|length }}">
+        {% for c in indicator_columns %}{% set key=c.year|string ~ ':' ~ c.kind %}
+        <label><span>{{ c.label }}</span><input data-field="value_{{ c.year }}_{{ c.kind }}" value="{{ indicator_value_maps[i.id][key]|trnum if key in indicator_value_maps[i.id] else '' }}" {{ 'readonly' if user.role!='department' or submission.status in ['submitted','approved'] else '' }}></label>
+        {% endfor %}
+      </div>
+      <div class="editor-grid two"><label>Göstergeye İlişkin Açıklama<textarea data-field="explanation" {{ 'readonly' if user.role!='department' or submission.status in ['submitted','approved'] else '' }}>{{ i.explanation }}</textarea></label><label>Hesaplama Yöntemi<textarea data-field="calculation_method" {{ 'readonly' if user.role!='department' or submission.status in ['submitted','approved'] else '' }}>{{ i.calculation_method }}</textarea></label></div>
+      <label>Verinin Kaynağı<textarea data-field="data_source" {{ 'readonly' if user.role!='department' or submission.status in ['submitted','approved'] else '' }}>{{ i.data_source }}</textarea></label>
+      {% if user.role=='department' and submission.status not in ['submitted','approved'] %}<div class="actions"><button class="button primary save-indicator">Kaydet ve Kontrol Et</button></div>{% endif %}
+    </article>
+  {% else %}<div class="empty-state">Bu dönem için müdürlüğe atanmış performans göstergesi bulunmuyor.</div>{% endfor %}
+  </div>
+  {% if user.role=='department' and submission.status not in ['submitted','approved'] %}<div class="submit-bar"><div><b>Müdürlük paketi</b><span>Göndermeden önce tüm zorunlu alanlar ve Civensa kontrolleri temizlenmelidir.</span></div><button class="button primary" id="submitDepartment" data-department="{{ department.id }}">Stratejiye Gönder</button></div>{% endif %}
+</div>
+
+<div id="activities" class="tabpane">
+  <div class="section-head"><div><h2>Faaliyet Maliyetleri</h2><p class="muted">Bakanlık tablosundaki bütçe, ara dönem harcama, yıl sonu tahmini ve ileri yıl tahminleri dönemden otomatik türetilir.</p></div>{% if user.role=='department' and submission.status not in ['submitted','approved'] %}<button class="button orange" id="addActivity">Faaliyet Ekle</button>{% endif %}</div>
+  <select id="subprogramPrototype" hidden><option value="">Program / Alt Program seçin</option>{% for sp in subprograms %}<option value="{{ sp.id }}">{{ sp.program.name }} / {{ sp.name }}</option>{% endfor %}</select><div class="table-wrap activity-scroll"><table class="cost-table"><thead><tr><th class="program-col">Program / Alt Program</th><th class="activity-col">Faaliyet</th>{% for c in activity_columns %}<th>{{ c.label }}</th>{% endfor %}<th></th></tr></thead>
+  <tbody id="activityBody">
+  {% for a in activities %}<tr data-activity="{{ a.id }}" class="{{ 'has-issue' if not a.subprogram_id else '' }}"><td><select class="activity-subprogram {{ 'field-attention' if not a.subprogram_id else '' }}" disabled><option value="" {{ 'selected' if not a.subprogram_id else '' }}>Program / Alt Program seçin</option>{% for sp in subprograms %}<option value="{{ sp.id }}" {{ 'selected' if a.subprogram_id==sp.id else '' }}>{{ sp.program.name }} / {{ sp.name }}</option>{% endfor %}</select>{% if not a.subprogram_id %}<div class="smallnote">İçe aktarılan faaliyet için Program / Alt Program eşleştirmesi gerekli.</div>{% endif %}</td><td><input class="activity-name" value="{{ a.name }}" readonly><textarea class="activity-explanation" rows="2" placeholder="Faaliyet açıklaması" readonly>{{ a.explanation }}</textarea></td>{% for c in activity_columns %}{% set key=c.year|string ~ ':' ~ c.kind %}<td>{% for funding,label in [('inside','İçi'),('outside','Dışı')] %}{% set fk=key ~ ':' ~ funding %}<label>Bütçe {{ label }}<input class="money activity-cost" data-year="{{ c.year }}" data-kind="{{ c.kind }}" data-funding="{{ funding }}" value="{{ funding_maps[a.id][fk]|trmoney if funding_maps[a.id].get(fk) is not none else '' }}" readonly></label>{% endfor %}</td>{% endfor %}<td>{% if user.role=='department' and submission.status not in ['submitted','approved'] %}<div class="rowbuttons"><button class="button small edit-activity">Düzenle</button><button class="button small danger delete-activity">Sil</button></div>{% else %}<span class="muted">Salt okunur</span>{% endif %}</td></tr>{% endfor %}
+  </tbody>
+  <tfoot>
+    <tr class="summary-row"><td colspan="2"><b>Faaliyetler Toplamı</b></td>{% for c in activity_columns %}{% set key=c.year|string ~ ':' ~ c.kind %}<td><b data-activity-total="{{ key }}">{{ activity_totals[key]|trmoney if activity_totals[key] is not none else "Eksik veri" }}</b></td>{% endfor %}<td></td></tr>
+    <tr class="summary-row personnel-row"><td colspan="2"><b>Personel ve SGK Giderleri Toplamı</b></td>{% for c in activity_columns %}{% set key=c.year|string ~ ':' ~ c.kind %}<td><input class="money personnel-cost" data-year="{{ c.year }}" data-kind="{{ c.kind }}" value="{{ personnel_map[key]|trmoney if key in personnel_map else '' }}" {{ 'readonly' if user.role!='department' or submission.status in ['submitted','approved'] else '' }}></td>{% endfor %}<td>{% if user.role=='department' and submission.status not in ['submitted','approved'] %}<button class="button small" id="savePersonnel" data-department="{{ department.id }}">Kaydet</button>{% endif %}</td></tr>
+    <tr class="summary-row grand-total"><td colspan="2"><b>Genel Bütçe Toplamı</b></td>{% for c in activity_columns %}{% set key=c.year|string ~ ':' ~ c.kind %}<td><b data-general-total="{{ key }}">{{ general_totals[key]|trmoney if general_totals[key] is not none else "Eksik veri" }}</b></td>{% endfor %}<td></td></tr>
+  </tfoot></table></div>
+</div>
+{% endblock %}
