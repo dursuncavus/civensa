@@ -454,3 +454,5 @@ from .authorization_models import (AuthorizationConfiguration, DirectorateMember
 from .package_models import DirectoratePackage, PackageRevision, PackageDecision
 from .report_workflow_models import (ReportCandidate, ReportCandidateState, CandidatePackage,
     ReportDecision, ReportRelease, ReportArtifact)
+
+from .revision_workflow_models import RevisionRequest, RevisionRequestState, RevisionRequestEvent, RevisionCorrectionCycle, RevisionEditGrant

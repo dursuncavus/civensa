@@ -132,6 +132,7 @@ class FieldChangeEvent(Base):
     field_type: Mapped[str] = mapped_column(String(40))
     previous_json: Mapped[str] = mapped_column(Text)
     new_json: Mapped[str] = mapped_column(Text)
+    revision_request_id: Mapped[int | None] = mapped_column(ForeignKey('revision_requests.id'), nullable=True)
 
 
 class NotificationRecipient(Base):
