@@ -115,9 +115,9 @@ def test_approval_gate_and_same_base_correction(client, db, sample):
     assert client.post(url).status_code == 409
     client.post(f'/api/activity-reports/indicators/{slot}/actuals', json=actual_payload(evidence=[]))
     assert client.post(url).status_code == 409
-    client.post(f'/api/activity-reports/indicators/{slot}/actuals', json=actual_payload(expected_revision=1, explanation=''))
+    client.post(f'/api/activity-reports/indicators/{slot}/actuals', json=actual_payload(expected_revision=0, explanation=''))
     assert client.post(url).status_code == 409
-    client.post(f'/api/activity-reports/indicators/{slot}/actuals', json=actual_payload(expected_revision=2))
+    client.post(f'/api/activity-reports/indicators/{slot}/actuals', json=actual_payload(expected_revision=1))
     assert client.post(url).status_code == 200
     assert client.post(url).status_code == 409
     assert client.post(f'/api/activity-reports/indicators/{slot}/actuals', json=actual_payload(expected_revision=3)).status_code == 409

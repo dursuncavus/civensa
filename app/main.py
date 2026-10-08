@@ -187,6 +187,8 @@ def parse_optional_nonnegative_money(raw, field="Tutar"):
         raise HTTPException(422, f"{field}: {exc}") from None
 
 
+from .time_display import turkey_time
+templates.env.filters['turkey_time'] = turkey_time
 templates.env.filters["trnum"] = lambda v: format_number(v)
 templates.env.filters['contract_targets'] = format_contract_targets
 templates.env.filters["trmoney"] = lambda v: format_number(v, True)

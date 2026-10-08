@@ -107,7 +107,7 @@ def register(app):
 
     def ui_error(request, user, error, back):
         return templates.TemplateResponse(request, 'activity_contract_error.html',
-            {'user': user, 'message': error.detail, 'back': back}, status_code=error.status_code)
+            {'user': user, 'message': error.detail.get('message') if isinstance(error.detail, dict) else error.detail, 'blockers': error.detail.get('blockers', []) if isinstance(error.detail, dict) else [], 'back': back}, status_code=error.status_code)
 
     def integer(value):
         try:
@@ -166,6 +166,7 @@ def register(app):
     async def actual_form(report_indicator_id: int, request: Request, db: Session = Depends(get_db), user=Depends(require_user)):
         data = await request.form()
         back = '/activity-reports'
+        item = None
         try:
             from .models import ReportIndicator
             item = db.get(ReportIndicator, report_indicator_id)
@@ -181,7 +182,7 @@ def register(app):
             try:
                 parsed = parse_number(raw)
             except ValueError as error:
-                raise HTTPException(422, str(error)) from None
+                raise HTTPException(422, 'Gerçekleşme alanındaki sayı okunamadı. Sayısal bir değer girin; örneğin 12.500,23. Ondalık için virgül kullanın.') from None
             evidence = []
             if any(data.get(k, '').strip() for k in ('source_title', 'source_locator', 'source_revision')):
                 evidence = [{'title': data.get('source_title', ''), 'locator': data.get('source_locator', ''),
@@ -192,6 +193,15 @@ def register(app):
                 {**(json.loads(latest.deviation_json) if item and latest else {}), 'corrective_action': data.get('corrective_action', '')}))
             return RedirectResponse(back, 303)
         except HTTPException as error:
+            if item and error.status_code in {422, 409}:
+                report = service.report_data(db, user, item.report_revision_id)
+                row = next(r for r in report['indicators'] if r['report_indicator_id'] == report_indicator_id)
+                pubs = db.scalars(select(Publication).where(Publication.period_id == db.get(ActivityReport, report['report_id']).period_id).order_by(Publication.version.desc())).all() if user.role == 'strategy' else []
+                return templates.TemplateResponse(request, 'activity_contract_detail.html',
+                    {'user': user, 'report': report, 'publications': pubs,
+                     'attempted_slot': report_indicator_id, 'attempted': dict(data),
+                     'form_error': f"{row['definition']['name']} — Gerçekleşme / veri durumu / kaynak: {error.detail}",
+                     'error_field': 'value' if 'sayı' in str(error.detail).lower() or 'ondalık' in str(error.detail).lower() else ('source_title' if 'kaynak' in str(error.detail).lower() or 'kanıt' in str(error.detail).lower() else 'state')}, status_code=error.status_code)
             return ui_error(request, user, error, back)
 
     @app.post('/activity-reports/revisions/{revision_id}/approve')

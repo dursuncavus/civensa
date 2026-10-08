@@ -33,7 +33,7 @@ def test_card_method_and_source_are_frozen_and_diffed(client, db, sample):
     definition = report['indicators'][0]['definition']
     assert definition['calculation_method'] == sample['card'].calculation_method
     assert definition['data_source'] == sample['card'].data_source
-    assert definition['definition_contract_version'] == report['contract_version'] == '2.0'
+    assert definition['definition_contract_version'] == report['contract_version'] == '3.0'
     original = (first.snapshot_json, first.sha256)
     sample['card'].calculation_method = 'Yeni kart yöntemi'
     sample['card'].data_source = 'Yeni kart kaynağı';db.commit()
@@ -61,7 +61,7 @@ def test_indicator_override_wins_over_card_inheritance(client, db, sample):
     assert definition['data_source'] == 'Gösterge kaynağı'
 
 
-def test_exact_v1_checkpoint_survives_v2_and_keeps_all_history(client, db, sample):
+def test_exact_v1_checkpoint_survives_current_contract_and_keeps_all_history(client, db, sample):
     from app.main import app, require_user
     app.dependency_overrides[require_user] = lambda: sample['strategy']
     pub, definition, binding, frozen = load_v1(db, sample)
@@ -77,7 +77,7 @@ def test_exact_v1_checkpoint_survives_v2_and_keeps_all_history(client, db, sampl
     checked, payload = service.checked_publication(db, pub.id)
     assert service.publication_bindings(db, checked, payload, sample['department'].organization_id)
     revised = new_report(client, new_pub, sample, report_id=report['report_id'], expected_revision=1)
-    assert revised['contract_version'] == '2.0'
+    assert revised['contract_version'] == '3.0'
     assert revised['differences'][0]['before']['calculation_method'] == ''
     assert revised['differences'][0]['after']['calculation_method'] == 'Yeni canlı kart'
     assert client.get(f"/activity-reports/revisions/{report['revision_id']}").status_code == 200

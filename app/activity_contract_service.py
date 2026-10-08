@@ -10,16 +10,16 @@ from sqlalchemy import select, func, update
 
 from .models import (Indicator, Department, ReportingPeriod, Publication, IndicatorIdentity,
                      IndicatorDefinitionRevision, PublicationIndicatorBinding, ActivityReport,
-                     ActivityReportRevision, ReportIndicator, ActualRevision, ActivityReportApproval)
+                     ActivityReportRevision, ReportIndicator, ActualRevision, ActivityReportApproval, User)
 from .serialization import json_dumps
 
-CURRENT_DEFINITION_CONTRACT = '2.0'
+CURRENT_DEFINITION_CONTRACT = '3.0'
 
 
 def publication_contract_version(payload):
     # Missing markers are the original v1 semantics, including legacy publications.
     version = payload.get('activity_contract_version', '1.0')
-    if version not in {'1.0', '2.0'} or payload.get('definition_contract_version', version) != version:
+    if version not in {'1.0', '2.0', '3.0'} or payload.get('definition_contract_version', version) != version:
         raise HTTPException(409, 'Bu yayın veri sözleşmesinin desteklenmeyen bir sürümünü kullanıyor.')
     return version
 
@@ -105,14 +105,14 @@ def definition_payload(row, year, contract_version='1.0'):
     # Keep the checkpoint's v1 builder unchanged; never reinterpret old snapshots.
     if contract_version == '1.0':
         return _definition_payload_v1(row, year)
-    if contract_version != '2.0':
+    if contract_version not in {'2.0', '3.0'}:
         raise HTTPException(409, 'Gösterge tanım sözleşmesinin sürümü desteklenmiyor.')
     data = _definition_payload_v1(row, year)
     card = row.get('_report_card')
     if row.get('card_id') is not None:
         if not card or card['department_id'] != row['department_id'] or card['subprogram_id'] != row['subprogram_id']:
             raise HTTPException(409, 'Gösterge tanımı için yayın içindeki kart bağlantısı doğrulanamadı.')
-    for field in ('calculation_method', 'data_source'):
+    for field in (('calculation_method', 'data_source', 'explanation') if contract_version == '3.0' else ('calculation_method', 'data_source')):
         own = row.get(field)
         data[field] = own if own and own.strip() else (card or {}).get(field, '')
     data['definition_contract_version'] = contract_version
@@ -314,6 +314,8 @@ def create_report_revision(db, user, publication_id, organization_id, report_id=
             if not predecessor_approved:
                 raise HTTPException(409, 'Rapor zaten bu yayın sürümüne bağlı; taslakta gerçekleşmeleri düzenleyebilirsiniz.')
     else:
+        if db.scalar(select(ActivityReport.id).where(ActivityReport.organization_id == organization_id, ActivityReport.period_id == pub.period_id)):
+            raise HTTPException(409, 'Bu kurum ve yıl için Faaliyet Raporu zaten var. Rapor listesinden mevcut raporu açıp yeni revizyon oluşturun.')
         report = ActivityReport(organization_id=organization_id, period_id=pub.period_id, current_revision=0, lock_version=0)
         db.add(report); db.flush()
     bindings = publication_bindings(db, pub, payload, organization_id)
@@ -370,12 +372,14 @@ def save_actual(db, user, report_indicator_id, expected_revision, value, state, 
         raise HTTPException(409, 'Bu gerçekleşme başka bir kullanıcı tarafından güncellendi. Son sürümü açın.')
     number = parse_actual(value)
     if state not in {'verified', 'needs_review', 'missing'} or (state == 'verified' and number is None) or (state == 'missing' and number is not None):
-        raise HTTPException(422, 'Değer ve doğrulama durumu birbiriyle uyumlu olmalı; boş değer sıfır değildir.')
+        raise HTTPException(422, 'Gerçekleşme ve veri durumu uyumsuz. Doğrulanmış için sayı girin; veri yoksa Eksik seçip alanı boş bırakın. Boş değer sıfır değildir.')
     if not isinstance(evidence, list) or len(evidence) > 30:
         raise HTTPException(422, 'Kanıtlar en fazla 30 kaynak kaydı içermeli.')
     for source in evidence:
         if not isinstance(source, dict) or not all(isinstance(source.get(k), str) and source[k].strip() for k in ('title', 'locator', 'source_revision')):
-            raise HTTPException(422, 'Her kanıt için kaynak adı, konumu ve sabit kaynak sürümü gerekir.')
+            raise HTTPException(422, 'Eksik kaynak kaydı: kaynak adı, konumu ve sabit kaynak sürümünü doldurun.')
+    if state == 'verified' and not evidence:
+        raise HTTPException(422, 'Doğrulanmış gerçekleşme için kaynak bulunmuyor. En az bir tam kaynak ekleyin veya veri durumunu İncelenmeli seçin.')
     if not isinstance(explanation, str) or not isinstance(deviation, dict):
         raise HTTPException(422, 'Açıklama metin, sapma kaydı bir nesne olmalı.')
     if len(canonical(evidence)) > 50000 or len(explanation) > 10000 or len(canonical(deviation)) > 10000:
@@ -404,15 +408,20 @@ def approve_report(db, user, revision_id):
         raise HTTPException(409, 'Yalnız güncel rapor revizyonu onaylanabilir.')
     if db.scalar(select(ActivityReportApproval.id).where(ActivityReportApproval.report_revision_id == revision.id)):
         raise HTTPException(409, 'Bu rapor revizyonu zaten onaylı.')
-    for item in db.scalars(select(ReportIndicator).where(ReportIndicator.report_revision_id == revision.id)):
+    blockers = []
+    for item in db.scalars(select(ReportIndicator).where(ReportIndicator.report_revision_id == revision.id).order_by(ReportIndicator.id)):
         actual = db.scalar(select(ActualRevision).where(ActualRevision.report_indicator_id == item.id).order_by(ActualRevision.revision.desc()))
         binding = db.get(PublicationIndicatorBinding, item.publication_binding_id)
         name = snapshot_rows(payload)[binding.snapshot_indicator_id]['name']
         if not actual or actual.state != 'verified' or not json.loads(actual.evidence_json):
-            raise HTTPException(409, f'{name}: doğrulanmış gerçekleşme ve dayanak kaynağı gerekir.')
+            blockers.append({'indicator': name, 'report_indicator_id': item.id, 'message': 'Doğrulanmış gerçekleşme ve tam dayanak kaynağı girin.'})
+            if not actual:
+                continue
         delta = json.loads(actual.deviation_json)['delta']
         if delta is not None and Decimal(delta) != 0 and not actual.explanation.strip():
-            raise HTTPException(409, f'{name}: hedef ile gerçekleşme farkı için açıklama girin.')
+            blockers.append({'indicator': name, 'report_indicator_id': item.id, 'message': 'Hedef ile gerçekleşme farkı için açıklama girin.'})
+    if blockers:
+        raise HTTPException(409, {'message': 'Rapor onaylanmadı. Aşağıdaki göstergelerde belirtilen eksikleri giderip yeniden onaylayın.', 'blockers': blockers})
     approval = ActivityReportApproval(report_revision_id=revision.id, created_by=user.id)
     db.add(approval); db.flush()
     return approval
@@ -443,14 +452,15 @@ def report_data(db, user, revision_id):
         result.append({'report_indicator_id': item.id, 'snapshot_indicator_id': binding.snapshot_indicator_id,
             'indicator_id': definition.indicator_id, 'definition_revision_id': definition.id,
             'definition': json.loads(definition.definition_json), 'department': rows[binding.snapshot_indicator_id]['department'],
-            'actuals': [actual_data(a) for a in actuals]})
+            'actuals': [dict(actual_data(a), entered_by_name=(db.get(User, a.created_by).full_name)) for a in actuals]})
     latest = db.scalar(select(func.max(Publication.version)).where(Publication.period_id == pub.period_id))
     differences = json.loads(revision.diff_json)
     if user.role == 'department':
         differences = [d for d in differences if any((d.get(side) or {}).get('department_id') == user.department_id for side in ('before', 'after'))]
         # A transfer must not disclose the other department's definition.
         differences = [dict(d, **{side: d.get(side) if (d.get(side) or {}).get('department_id') == user.department_id else None for side in ('before', 'after')}) for d in differences]
-    return {'report_id': report.id, 'organization_id': report.organization_id, 'revision_id': revision.id,
+    approval = db.scalar(select(ActivityReportApproval).where(ActivityReportApproval.report_revision_id == revision.id))
+    return {'approval': {'created_by': approval.created_by, 'name': db.get(User, approval.created_by).full_name, 'created_at': approval.created_at.isoformat()} if approval else None, 'report_id': report.id, 'organization_id': report.organization_id, 'revision_id': revision.id,
         'revision': revision.revision, 'current_revision': report.current_revision, 'year': payload['period'],
         'publication_id': pub.id, 'publication_version': pub.version, 'publication_sha256': revision.publication_sha256,
         'newer_publication_available': latest > pub.version, 'previous_revision_id': revision.previous_revision_id,
