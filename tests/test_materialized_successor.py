@@ -207,12 +207,13 @@ def test_atomic_assembly_failure_no_orphans(foundation_db,people,released,ready,
     db.expire_all();assert counts(db)==before and (report.current_revision,report.lock_version)==version
 
 
-def test_successor_publication_is_explicitly_disabled(foundation_db,people,released,ready):
+def test_successor_publication_records_lineage(foundation_db,people,released,ready):
     db=foundation_db;x=people;r=released;p,rev,q,g=ready
     c=assemble(db,x,r,p);db.commit();review(db,x,c);approve(db,x,c)
-    before=counts(db)
-    rejects(409,lambda:publish(db,x,c))
-    assert counts(db)==before and db.get(ReportCandidateState,c.id).state=='final_approved'
+    successor=publish(db,x,c)
+    assert successor.minor==1 and db.get(ReportCandidateState,c.id).state=='published'
+    assert db.get(RevisionRequestState,q.id).state=='applied'
+    assert db.scalar(select(ReportReleaseSuccession).where(ReportReleaseSuccession.successor_release_id==successor.id)).predecessor_release_id==r.id
 
 
 @pytest.mark.parametrize('field',['predecessor_release_id','predecessor_candidate_sha256','source_id','correction_cycle_ids'])

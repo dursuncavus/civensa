@@ -25,7 +25,7 @@ class RevisionRequestState(Base):
     request_id: Mapped[int]=mapped_column(ForeignKey('revision_requests.id'),primary_key=True)
     state: Mapped[str]=mapped_column(String(20),default='requested')
     version: Mapped[int]=mapped_column(default=0)
-    __table_args__=(CheckConstraint("state IN ('requested','accepted','rejected','cancelled','editing','stale')",name='ck_revision_request_state'),)
+    __table_args__=(CheckConstraint("state IN ('requested','accepted','rejected','cancelled','editing','stale','applied','closed_no_change')",name='ck_revision_request_state'),)
 
 class RevisionRequestEvent(Base):
     __tablename__='revision_request_events'

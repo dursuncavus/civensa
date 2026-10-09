@@ -252,6 +252,8 @@ def assemble_candidate(db,actor,organization_id,resource_scope,source_id,package
         source=db.get(ActivityReportRevision,source_id);report=db.get(ActivityReport,source.report_id) if source else None
         if not report or report.organization_id!=organization_id:auth.fail('Faaliyet raporu bu kuruma ait değil.')
         period=db.get(ReportingPeriod,report.period_id);key=str(report.id)
+        if db.scalar(select(ReportRelease.id).where(ReportRelease.organization_id==organization_id,ReportRelease.resource_scope=='activity_report',ReportRelease.report_key==key)):
+            auth.fail('Bu faaliyet raporu yayımlandı. Tam öncül yayını seçerek assemble_activity_successor yolunu kullanın.',409)
         required=set(db.scalars(select(PublicationIndicatorBinding.department_id).join(ReportIndicator,ReportIndicator.publication_binding_id==PublicationIndicatorBinding.id).where(ReportIndicator.report_revision_id==source.id)))
     else:auth.fail('Rapor türü tanınmıyor.',403)
     if not period or not required:auth.fail('Geçerli dönem ve zorunlu müdürlük kapsamı bulunamadı.',409)
@@ -344,7 +346,7 @@ def verify_activity_successor(db,candidate,manifest):
 
 
 def assemble_activity_successor(db,actor,organization_id,report_id,predecessor_release_id,package_ids):
-    """Disabled S3A: materialized-only assembly, caller owns commit; no publishing."""
+    """Disabled workflow: materialized-only successor assembly; caller owns commit."""
     organization_lock(db,organization_id)
     allowed(db,actor,'assemble_candidate',organization_id,'assembling')
     from .revision_workflow_service import current_source
@@ -389,10 +391,12 @@ def assemble_activity_successor(db,actor,organization_id,report_id,predecessor_r
     if departments!=set(parent['required_department_ids']) or not set(corrected)<=set(package_ids):packages.conflict()
     pending=db.execute(select(RevisionRequest,RevisionRequestState).join(RevisionRequestState,RevisionRequestState.request_id==RevisionRequest.id)
         .where(RevisionRequest.source_release_id==release.id,RevisionRequestState.state.in_(['requested','accepted','editing']))).all()
+    participant_grants=[]
     for request,state in pending:
         grant=db.scalar(select(RevisionEditGrant).where(RevisionEditGrant.request_id==request.id))
         if state.state!='editing' or not grant or grant.cycle_id not in {c.id for c in cycles}:
             auth.fail(f'Düzeltme talebi #{request.id} henüz ardıl adaya hazır değil. Talebi sonuçlandırın veya izin/düzeltme/onay adımlarını tamamlayın; otomatik taşıma yapılmaz.',409)
+        participant_grants.append({'request_id':request.id,'grant_id':grant.id,'cycle_id':grant.cycle_id})
     with db.begin_nested():
         db.scalar(select(User).where(User.id==actor.id).with_for_update().execution_options(populate_existing=True))
         allowed(db,actor,'assemble_candidate',organization_id,'assembling')
@@ -405,6 +409,7 @@ def assemble_activity_successor(db,actor,organization_id,report_id,predecessor_r
             'resource_scope':'activity_report','source_id':parent['source_id'],'required_department_ids':parent['required_department_ids'],
             'predecessor_release_id':release.id,'predecessor_candidate_sha256':previous.sha256,
             'successor_contract':'materialized-successor-1','correction_cycle_ids':sorted(c.id for c in cycles),
+            'correction_request_grants':sorted(participant_grants,key=lambda entry:entry['request_id']),
             'packages':[{'package_id':p.id,'department_id':p.department_id,'revision_id':r.id,'sha256':r.sha256,
                 'decision_id':d.id,'strategy_event_id':d.workflow_event_id} for p,r,d in selected]}
         raw=canonical(payload);mraw=canonical(manifest)
@@ -447,12 +452,60 @@ def final_decision(db,actor,org,candidate_id,action,version,sha,reason=''):
     return decision
 
 
+def successor_publication_context(db,candidate,manifest):
+    """Current gates only: historical verification deliberately stays immutable."""
+    from . import revision_workflow_service as corrections
+    predecessor,previous=corrections.current_source(db,manifest['predecessor_release_id'])
+    verify_activity_successor(db,candidate,manifest)
+    cycles=set(db.scalars(select(RevisionCorrectionCycle.id).where(RevisionCorrectionCycle.source_release_id==predecessor.id)))
+    if cycles!=set(manifest['correction_cycle_ids']):
+        auth.fail('Öncülün düzeltme döngüleri aday oluşturulduktan sonra değişti; tam döngü kümesi eşleşmelidir.',409)
+    bound={}
+    for binding in db.scalars(select(CandidatePackage).where(CandidatePackage.candidate_id==candidate.id)):
+        revision=db.get(PackageRevision,binding.package_revision_id)
+        pkg=db.get(DirectoratePackage,revision.package_id,populate_existing=True)
+        current=packages.revision(db,pkg)
+        if pkg.state!='strategy_approved' or current.id!=revision.id or current.sha256!=binding.sha256:
+            auth.fail('Paket aday oluşturulduktan sonra değişti. Tam güncel yeniden onaylı revizyonla açıkça yeni ardıl aday oluşturun.',409)
+        bound[pkg.id]=revision
+    participants=manifest.get('correction_request_grants')
+    if not isinstance(participants,list) or not participants:packages.conflict()
+    represented={}
+    for entry in participants:
+        if not isinstance(entry,dict) or set(entry)!={'request_id','grant_id','cycle_id'} or any(type(v) is not int for v in entry.values()):packages.conflict()
+        if entry['request_id'] in represented:packages.conflict()
+        represented[entry['request_id']]=entry
+    pending=db.execute(select(RevisionRequest,RevisionRequestState).join(RevisionRequestState,RevisionRequestState.request_id==RevisionRequest.id)
+        .where(RevisionRequest.source_release_id==predecessor.id,RevisionRequestState.state.not_in(['rejected','cancelled','stale','closed_no_change']))).all()
+    represented_open=set()
+    for rid in represented:
+        request=db.get(RevisionRequest,rid);state=db.get(RevisionRequestState,rid,populate_existing=True)
+        if not request or request.source_release_id!=predecessor.id or not state:packages.conflict()
+        if state.state!='closed_no_change':represented_open.add(rid)
+    if not pending or {q.id for q,s in pending}!=represented_open:
+        auth.fail('Öncüle bağlı yeni veya temsil edilmeyen düzeltme işleri var. Her talebi açıkça sonuçlandırın; otomatik taşıma yapılmaz.',409)
+    result=[]
+    for request,state in pending:
+        entry=represented[request.id];grant=db.get(RevisionEditGrant,entry['grant_id']);cycle=db.get(RevisionCorrectionCycle,entry['cycle_id'])
+        if (state.state!='editing' or not grant or not cycle or grant.request_id!=request.id or grant.cycle_id!=cycle.id
+            or grant.source_release_id!=predecessor.id or cycle.source_release_id!=predecessor.id
+            or cycle.id not in manifest['correction_cycle_ids'] or cycle.package_id not in bound):packages.conflict()
+        if not corrections.has_net_correction(db,request,grant,cycle,bound[cycle.package_id]):
+            auth.fail(f'Talep #{request.id} için izinli alanda net değişiklik ve tam düzeltme kökeni yok. Strateji talebi gerekçeyle closed_no_change olarak kapatmalıdır.',409)
+        result.append((request,state,grant))
+    return predecessor,previous,result
+
+
 def publish(db,actor,org,candidate_id,version,sha):
     candidate,state=locked(db,actor,org,candidate_id,'publish_report',version,sha)
-    if 'predecessor_release_id' in json.loads(candidate.manifest_json):
-        auth.fail('S3A ardıl adayı yayımlama kapalıdır; S3B yayınlama dilimi gereklidir.',409)
+    manifest=json.loads(candidate.manifest_json)
     if state.state=='published':
         release=db.scalar(select(ReportRelease).where(ReportRelease.candidate_id==candidate.id));verify_artifact(db,release);return release
+    predecessor=previous=None;participants=[]
+    if 'predecessor_release_id' in manifest:
+        predecessor,previous,participants=successor_publication_context(db,candidate,manifest)
+    elif candidate.resource_scope=='activity_report' and db.scalar(select(ReportRelease.id).where(ReportRelease.organization_id==org,ReportRelease.resource_scope=='activity_report',ReportRelease.report_key==candidate.report_key)):
+        auth.fail('Yayımlanmış faaliyet raporu için tam ardıl soy bağı gerekir; assemble_activity_successor kullanın.',409)
     current=assignment(db,org)
     decision=db.scalar(select(ReportDecision).where(ReportDecision.candidate_id==candidate.id,ReportDecision.action=='final_approve').order_by(ReportDecision.id.desc()))
     if not current or not decision or decision.assignment_id!=current.id or decision.candidate_sha256!=candidate.sha256:auth.fail('Güncel nihai onaycı bu değişmemiş adayı yeniden onaylamalı.',409)
@@ -471,15 +524,32 @@ def publish(db,actor,org,candidate_id,version,sha):
             if not approval or approval.report_revision_id!=candidate.activity_revision_id:packages.conflict()
         event=event_notice(db,actor,candidate,'publish_report',state.state,'published',state.version+1)
         release=ReportRelease(candidate_id=candidate.id,final_decision_id=decision.id,organization_id=org,
-            resource_scope=candidate.resource_scope,report_key=candidate.report_key,major=1,minor=0,
+            resource_scope=candidate.resource_scope,report_key=candidate.report_key,major=predecessor.major if predecessor else 1,minor=predecessor.minor+1 if predecessor else 0,
             publication_id=pub.id if pub else None,activity_approval_id=approval.id if approval else None,workflow_event_id=event.id)
         db.add(release);db.flush()
-        raw=canonical({'release_id':release.id,'version':'1.0','candidate_sha256':candidate.sha256,
+        release_version=f'{release.major}.{release.minor}'
+        if predecessor:
+            db.add(ReportReleaseSuccession(predecessor_release_id=predecessor.id,successor_release_id=release.id,
+                predecessor_candidate_sha256=previous.sha256,successor_candidate_sha256=candidate.sha256,workflow_event_id=event.id))
+            db.flush()
+        raw=canonical({'release_id':release.id,'version':release_version,'candidate_sha256':candidate.sha256,
             'final_decision_id':decision.id,'payload':json.loads(candidate.payload_json),'manifest':json.loads(candidate.manifest_json),
             'publication_id':release.publication_id,'activity_approval_id':release.activity_approval_id})
         db.add(ReportArtifact(release_id=release.id,artifact_type='canonical_json',object_version='1.0',serialization_version='canonical-json-utf8-v1',
             content_json=raw,sha256=contract.digest(raw),byte_size=len(raw.encode('utf-8'))))
         db.flush();move(db,state,'published');verify_artifact(db,release)
+        from . import revision_workflow_service as corrections
+        for request,projection,grant in participants:
+            context={'predecessor_release_id':predecessor.id,'successor_release_id':release.id,
+                'successor_candidate_id':candidate.id,'successor_candidate_sha256':candidate.sha256,'correction_cycle_id':grant.cycle_id,
+                'grant_id':grant.id,'from_state':'editing','to_state':'applied','version':projection.version+1}
+            applied=corrections.history(db,actor,request,'revision_applied',context)
+            db.add(RevisionRequestEvent(request_id=request.id,workflow_event_id=applied.id,from_state='editing',to_state='applied',version=projection.version+1));db.flush()
+            changed=db.execute(update(RevisionRequestState).where(RevisionRequestState.request_id==request.id,RevisionRequestState.version==projection.version,RevisionRequestState.state=='editing').values(state='applied',version=projection.version+1))
+            if changed.rowcount!=1:packages.conflict()
+            db.refresh(projection)
+            recipients=corrections.active_participants(db,request,grant)
+            corrections.notify(db,request,'revision_applied',recipients)
     return release
 
 
@@ -492,6 +562,14 @@ def verify_artifact(db,release):
         'final_decision_id':release.final_decision_id,'payload':json.loads(candidate.payload_json),'manifest':json.loads(candidate.manifest_json),
         'publication_id':release.publication_id,'activity_approval_id':release.activity_approval_id})
     if artifact.content_json!=expected or artifact.artifact_type!='canonical_json' or artifact.object_version!='1.0' or artifact.serialization_version!='canonical-json-utf8-v1':packages.conflict()
+    manifest=json.loads(candidate.manifest_json)
+    if 'predecessor_release_id' in manifest:
+        lineage=db.scalar(select(ReportReleaseSuccession).where(ReportReleaseSuccession.successor_release_id==release.id))
+        predecessor=db.get(ReportRelease,manifest['predecessor_release_id'])
+        previous=db.get(ReportCandidate,predecessor.candidate_id) if predecessor else None
+        if (not lineage or not previous or lineage.predecessor_release_id!=predecessor.id
+            or lineage.predecessor_candidate_sha256!=previous.sha256 or lineage.successor_candidate_sha256!=candidate.sha256
+            or lineage.workflow_event_id!=release.workflow_event_id or release.major!=predecessor.major or release.minor!=predecessor.minor+1):packages.conflict()
     return artifact
 
 

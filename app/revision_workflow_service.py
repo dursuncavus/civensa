@@ -166,6 +166,79 @@ def decide_request(db,actor,request_id,action,expected_version,reason=''):
     return r
 
 
+def active_participants(db,request,grant=None):
+    """Mandatory recipients are active participants; a director is not required."""
+    ids=set(db.scalars(select(User.id).join(DirectorateMembership,DirectorateMembership.user_id==User.id).where(
+        DirectorateMembership.organization_id==request.organization_id,DirectorateMembership.department_id==request.department_id,
+        DirectorateMembership.active.is_(True),User.is_active.is_(True))))
+    if db.scalar(select(User.id).where(User.id==request.requester_user_id,User.is_active.is_(True))):ids.add(request.requester_user_id)
+    if grant:
+        ids.update(db.scalars(select(DirectorateMembership.user_id).join(User,User.id==DirectorateMembership.user_id).where(
+            DirectorateMembership.id.in_(json.loads(grant.membership_ids_json)),DirectorateMembership.active.is_(True),User.is_active.is_(True))))
+    return ids
+
+
+def close_no_change(db,actor,request_id,expected_version,reason):
+    """Explicit Strategy resolution; never reuse requester cancellation or stale."""
+    request,state=locked(db,actor,request_id,expected_version);strategy(db,actor)
+    reason=auth.required(reason,'Değişikliksiz kapatma gerekçesi')
+    if state.state not in {'accepted','editing'}:auth.fail('Yalnız kabul edilmiş veya düzenlenen talep değişikliksiz kapatılabilir.',409)
+    with db.begin_nested():
+        transition(db,actor,request,state,'closed_no_change',reason)
+        notify(db,request,'revision_closed_no_change',active_participants(db,request))
+    return request
+
+
+def value_at(content,path):
+    value=content
+    try:
+        for part in path:value=value[part]
+    except (KeyError,IndexError,TypeError):return None
+    return value
+
+
+def net_changed(before,after,path):
+    old=value_at(before,path);new=value_at(after,path)
+    if len(path)==3 and path[0]=='entries' and path[2]=='value':
+        # Equivalent decimal spellings are not a real changed actual. Preserve
+        # blank/null versus zero; do not coerce missing values into zero.
+        return packages.parse_actual(old)!=packages.parse_actual(new)
+    return old!=new
+
+
+def has_net_correction(db,request,grant,cycle,bound):
+    """A granted business path must change net AND have this grant's edit proof."""
+    source=db.get(PackageRevision,cycle.source_package_revision_id)
+    before=json.loads(source.content_json);after=json.loads(bound.content_json)
+    paths=[p for p in json.loads(grant.paths_json) if 'deviation' not in p and net_changed(before,after,p)]
+    if not paths:return False
+    lineage={};row=bound
+    while row and row.id!=cycle.opening_revision_id:
+        if row.id in lineage or row.package_id!=cycle.package_id:packages.conflict()
+        lineage[row.id]=row;row=db.get(PackageRevision,row.previous_revision_id)
+    if not row or row.previous_revision_id!=source.id:packages.conflict()
+    changes=db.execute(select(WorkflowEvent,FieldChangeEvent).join(FieldChangeEvent,FieldChangeEvent.workflow_event_id==WorkflowEvent.id)
+        .where(WorkflowEvent.event_type=='correction_edit',WorkflowEvent.resource_type=='revision_request',WorkflowEvent.resource_id==str(request.id),
+            WorkflowEvent.organization_id==request.organization_id,WorkflowEvent.department_id==request.department_id,
+            FieldChangeEvent.revision_request_id==request.id)).all()
+    for event,change in changes:
+        context=json.loads(event.context_json);path=json.loads(change.field_key)
+        if not any(path[:len(p)]==p for p in paths) or 'deviation' in path or not net_changed(before,after,path) or context.get('grant_id')!=grant.id or context.get('package_id')!=cycle.package_id:continue
+        if context.get('request_id')!=request.id or context.get('source_release_id')!=request.source_release_id:continue
+        for revision in lineage.values():
+            if (revision.previous_revision_id!=context.get('previous_revision_id') or revision.revision!=context.get('next_revision')
+                or revision.sha256!=context.get('next_sha256')):continue
+            membership=db.get(DirectorateMembership,context.get('membership_id'))
+            if (event.actor_user_id!=revision.created_by or event.created_at>revision.created_at
+                or not membership or membership.id not in json.loads(grant.membership_ids_json)
+                or membership.user_id!=event.actor_user_id or membership.organization_id!=request.organization_id
+                or membership.department_id!=request.department_id):continue
+            prior=db.get(PackageRevision,revision.previous_revision_id)
+            old=json.loads(change.previous_json);new=json.loads(change.new_json)
+            if old!=new and old==value_at(json.loads(prior.content_json),path) and new==value_at(json.loads(revision.content_json),path):return True
+    return False
+
+
 def open_grant(db,actor,request_id,expected_version,allowlist,membership_ids,start_at,end_at,formal_basis):
     r,state=locked(db,actor,request_id,expected_version);strategy(db,actor)
     if state.state!='accepted':auth.fail('Düzenleme izni için önce talebi kabul edin.',409)
