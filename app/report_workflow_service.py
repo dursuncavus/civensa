@@ -72,6 +72,7 @@ def verify(db,candidate):
     activity_payload=activity_candidate_payload(candidate) if candidate.resource_scope=='activity_report' else None
     if contract.digest(candidate.payload_json)!=candidate.payload_sha256 or hash_content(candidate.payload_json,candidate.manifest_json)!=candidate.sha256:packages.conflict()
     manifest=json.loads(candidate.manifest_json)
+    if 'predecessor_release_id' in manifest:verify_activity_successor(db,candidate,manifest)
     bindings=db.scalars(select(CandidatePackage).where(CandidatePackage.candidate_id==candidate.id).order_by(CandidatePackage.id)).all()
     if len(bindings)!=len(manifest['packages']):packages.conflict()
     sources=[];departments=set()
@@ -300,6 +301,124 @@ def assemble_candidate(db,actor,organization_id,resource_scope,source_id,package
     return candidate
 
 
+def verify_activity_successor(db,candidate,manifest):
+    """Historical lineage verification never substitutes a newer release/package."""
+    try:
+        predecessor_id=manifest['predecessor_release_id']
+        if type(predecessor_id) is not int or not 0<predecessor_id<=2147483647:packages.conflict()
+        release=db.get(ReportRelease,predecessor_id)
+        previous=db.get(ReportCandidate,release.candidate_id) if release else None
+        if not previous or candidate.resource_scope!='activity_report':packages.conflict()
+        parent=json.loads(previous.manifest_json)
+        source=db.get(ActivityReportRevision,previous.activity_revision_id)
+        revision=db.get(ActivityReportRevision,candidate.activity_revision_id)
+        if (manifest['successor_contract']!='materialized-successor-1'
+            or manifest['predecessor_candidate_sha256']!=previous.sha256
+            or candidate.predecessor_candidate_id!=previous.id or candidate.sequence!=previous.sequence+1
+            or (candidate.organization_id,candidate.resource_scope,candidate.report_key,candidate.period_id)
+               !=(release.organization_id,release.resource_scope,release.report_key,previous.period_id)
+            or manifest['source_id']!=parent['source_id'] or manifest['required_department_ids']!=parent['required_department_ids']
+            or revision.previous_revision_id!=source.id or revision.report_id!=source.report_id or revision.revision!=source.revision+1
+            or revision.publication_id!=source.publication_id or revision.publication_sha256!=source.publication_sha256):packages.conflict()
+        old={b['package_id']:b for b in parent['packages']}
+        current={b['package_id']:b for b in manifest['packages']}
+        if len(current)!=len(manifest['packages']) or set(current)!=set(old):packages.conflict()
+        ids=manifest['correction_cycle_ids']
+        if not isinstance(ids,list) or not ids or any(type(i) is not int for i in ids) or len(set(ids))!=len(ids):packages.conflict()
+        cycles=list(db.scalars(select(RevisionCorrectionCycle).where(RevisionCorrectionCycle.id.in_(ids))))
+        if len(cycles)!=len(ids) or any(c.source_release_id!=release.id or c.package_id not in current
+            or c.source_package_revision_id!=old[c.package_id]['revision_id'] for c in cycles):packages.conflict()
+        corrected={c.package_id:c for c in cycles}
+        for pid,binding in current.items():
+            if pid not in corrected:
+                if binding!=old[pid]:packages.conflict()
+                continue
+            # Follow only immutable explicit parents back to this cycle's opening copy.
+            cycle=corrected[pid];row=db.get(PackageRevision,binding['revision_id']);seen=set()
+            while row and row.id!=cycle.opening_revision_id:
+                if row.id in seen or row.package_id!=pid:packages.conflict()
+                seen.add(row.id);row=db.get(PackageRevision,row.previous_revision_id)
+            if not row or row.package_id!=pid or row.previous_revision_id!=cycle.source_package_revision_id:packages.conflict()
+        verify(db,previous);verify_artifact(db,release)
+    except (KeyError,TypeError,AttributeError,ValueError):packages.conflict()
+
+
+def assemble_activity_successor(db,actor,organization_id,report_id,predecessor_release_id,package_ids):
+    """Disabled S3A: materialized-only assembly, caller owns commit; no publishing."""
+    organization_lock(db,organization_id)
+    allowed(db,actor,'assemble_candidate',organization_id,'assembling')
+    from .revision_workflow_service import current_source
+    explicit=db.get(ReportRelease,predecessor_release_id)
+    if not explicit or (explicit.organization_id,explicit.resource_scope,explicit.report_key)!=(organization_id,'activity_report',str(report_id)):
+        auth.fail('Ardıl aday için aynı kurum ve raporun tam yayımlanmış öncül sürümünü seçin.',409)
+    release,previous=current_source(db,predecessor_release_id)
+    source=db.get(ActivityReportRevision,previous.activity_revision_id)
+    report=db.get(ActivityReport,report_id,populate_existing=True)
+    if not report or report.organization_id!=organization_id or report.period_id!=previous.period_id or source.report_id!=report.id or report.current_revision!=source.revision:packages.conflict()
+    latest=db.scalar(select(ReportCandidate.id).where(ReportCandidate.organization_id==organization_id,
+        ReportCandidate.resource_scope=='activity_report',ReportCandidate.report_key==str(report_id)).order_by(ReportCandidate.sequence.desc()))
+    if latest!=previous.id:auth.fail('Bu öncül için ardıl aday zaten var; mevcut adayı inceleyin.',409)
+    parent=json.loads(previous.manifest_json);old={b['package_id']:b for b in parent['packages']}
+    if not isinstance(package_ids,list) or any(type(i) is not int for i in package_ids) or len(set(package_ids))!=len(package_ids) or set(package_ids)!=set(old):
+        auth.fail('Öncül yayının tüm müdürlük paketlerini tam kimlikleriyle seçin.',409)
+    cycles=list(db.scalars(select(RevisionCorrectionCycle).where(RevisionCorrectionCycle.source_release_id==release.id)))
+    if not cycles:auth.fail('Ardıl aday için öncüle bağlı düzeltme ve yeniden onay gerekir.',409)
+    corrected={c.package_id:c for c in cycles};selected=[];departments=set()
+    for pid in sorted(package_ids):
+        pkg=db.get(DirectoratePackage,pid)
+        if not pkg or (pkg.organization_id,pkg.resource_scope,pkg.period_id,pkg.source_key)!=(organization_id,'activity_report',previous.period_id,str(parent['source_id'])):packages.conflict()
+        auth.scope_department(db,organization_id,pkg.department_id,lock=True)
+        pkg=db.scalar(select(DirectoratePackage).where(DirectoratePackage.id==pid).with_for_update().execution_options(populate_existing=True))
+        if pkg.state!='strategy_approved' or pkg.department_id in departments:
+            auth.fail('Açık düzeltmeler hazır değil. Her seçilen paketi önce Müdür ve Strateji onayından geçirin.',409)
+        departments.add(pkg.department_id);rev=packages.revision(db,pkg)
+        if pid not in corrected and rev.id!=old[pid]['revision_id']:packages.conflict()
+        if pid in corrected and corrected[pid].source_package_revision_id!=old[pid]['revision_id']:packages.conflict()
+        decision=db.scalar(select(PackageDecision).where(PackageDecision.package_revision_id==rev.id,
+            PackageDecision.action=='strategy_approve',PackageDecision.snapshot_sha256==rev.sha256).order_by(PackageDecision.id.desc()))
+        if not decision:auth.fail('Tam güncel paket revizyonu/hash için Strateji kararı bulunamadı.',409)
+        strategy_event=db.get(WorkflowEvent,decision.workflow_event_id)
+        if (decision.package_revision_id!=rev.id or decision.snapshot_sha256!=rev.sha256 or decision.action!='strategy_approve'
+            or not strategy_event or strategy_event.event_type!='strategy_approve'
+            or strategy_event.resource_type!='directorate_package' or strategy_event.resource_id!=str(pkg.id)
+            or strategy_event.organization_id!=pkg.organization_id or strategy_event.department_id!=pkg.department_id):packages.conflict()
+        try:context=json.loads(strategy_event.context_json)
+        except (TypeError,ValueError):packages.conflict()
+        if not isinstance(context,dict) or context.get('revision_id')!=rev.id or context.get('sha256')!=rev.sha256:packages.conflict()
+        packages.validate_package_approval(db,pkg,rev);selected.append((pkg,rev,decision))
+    if departments!=set(parent['required_department_ids']) or not set(corrected)<=set(package_ids):packages.conflict()
+    pending=db.execute(select(RevisionRequest,RevisionRequestState).join(RevisionRequestState,RevisionRequestState.request_id==RevisionRequest.id)
+        .where(RevisionRequest.source_release_id==release.id,RevisionRequestState.state.in_(['requested','accepted','editing']))).all()
+    for request,state in pending:
+        grant=db.scalar(select(RevisionEditGrant).where(RevisionEditGrant.request_id==request.id))
+        if state.state!='editing' or not grant or grant.cycle_id not in {c.id for c in cycles}:
+            auth.fail(f'Düzeltme talebi #{request.id} henüz ardıl adaya hazır değil. Talebi sonuçlandırın veya izin/düzeltme/onay adımlarını tamamlayın; otomatik taşıma yapılmaz.',409)
+    with db.begin_nested():
+        db.scalar(select(User).where(User.id==actor.id).with_for_update().execution_options(populate_existing=True))
+        allowed(db,actor,'assemble_candidate',organization_id,'assembling')
+        # Match initial assembly: org -> department/package/user -> report.
+        report=db.scalar(select(ActivityReport).where(ActivityReport.id==report_id).with_for_update().execution_options(populate_existing=True))
+        if report.current_revision!=source.revision:packages.conflict()
+        new,payload=materialize(db,actor,source,[json.loads(r.content_json) for p,r,d in selected])
+        if new.previous_revision_id!=source.id:packages.conflict()
+        manifest={'version':'report-manifest-1','organization_id':organization_id,'period_id':previous.period_id,
+            'resource_scope':'activity_report','source_id':parent['source_id'],'required_department_ids':parent['required_department_ids'],
+            'predecessor_release_id':release.id,'predecessor_candidate_sha256':previous.sha256,
+            'successor_contract':'materialized-successor-1','correction_cycle_ids':sorted(c.id for c in cycles),
+            'packages':[{'package_id':p.id,'department_id':p.department_id,'revision_id':r.id,'sha256':r.sha256,
+                'decision_id':d.id,'strategy_event_id':d.workflow_event_id} for p,r,d in selected]}
+        raw=canonical(payload);mraw=canonical(manifest)
+        candidate=ReportCandidate(organization_id=organization_id,period_id=previous.period_id,resource_scope='activity_report',
+            report_key=str(report.id),sequence=previous.sequence+1,predecessor_candidate_id=previous.id,activity_revision_id=new.id,
+            payload_json=raw,payload_sha256=contract.digest(raw),manifest_json=mraw,sha256=hash_content(raw,mraw),created_by=actor.id)
+        db.add(candidate);db.flush();db.add(ReportCandidateState(candidate_id=candidate.id,state='assembling',version=0))
+        for pkg,rev,decision in selected:
+            db.add(CandidatePackage(candidate_id=candidate.id,package_revision_id=rev.id,strategy_decision_id=decision.id,sha256=rev.sha256))
+        db.flush();event_notice(db,actor,candidate,'candidate_assembled','assembling','assembling',0)
+        verify(db,candidate)
+    return candidate
+
+
 def request_final_review(db,actor,org,candidate_id,version,sha):
     candidate,state=locked(db,actor,org,candidate_id,'request_final_review',version,sha)
     with db.begin_nested():
@@ -330,6 +449,8 @@ def final_decision(db,actor,org,candidate_id,action,version,sha,reason=''):
 
 def publish(db,actor,org,candidate_id,version,sha):
     candidate,state=locked(db,actor,org,candidate_id,'publish_report',version,sha)
+    if 'predecessor_release_id' in json.loads(candidate.manifest_json):
+        auth.fail('S3A ardıl adayı yayımlama kapalıdır; S3B yayınlama dilimi gereklidir.',409)
     if state.state=='published':
         release=db.scalar(select(ReportRelease).where(ReportRelease.candidate_id==candidate.id));verify_artifact(db,release);return release
     current=assignment(db,org)
