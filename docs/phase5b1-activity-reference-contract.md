@@ -1,187 +1,186 @@
-# Phase 5B1 — Activity Report unchanged-value reference contract
+# Phase 5B1 — Activity Report unchanged-value reference contract (engine v2 / S2)
 
 Status: IMPLEMENTED + focused-TESTED as an isolated, side-effect-free component
 (`app/activity_revision_reference.py`, `tests/test_activity_revision_reference.py`).
 NOT integrated: no existing file, migration, model, route or service was changed.
-Base: `a919981874a3bfe5b309e659be51007ca67511f6`, branch `task/phase5b1-claude-activity-reference`.
+Branch `task/phase5b1-claude-activity-reference`; S2 builds on `a4e8a7a`. The v1 reference
+schema of `8427b7d` / `a4e8a7a` is replaced and must not be used as an integration contract.
 
 ## Purpose
 
-In a Phase 5B1 successor Activity Report revision (corrected PackageRevision → successor
-ReportCandidate → successor ReportRelease v1.1 / v1.2), most indicators keep the value that was
-already released. The effective realization of every successor ReportIndicator must be exactly one of:
+In a Phase 5B1 successor Activity Report revision (v1.1, v1.2, …) the effective realization of every
+successor ReportIndicator is exactly one of:
 
-- **A — materialized**: new content the caller writes as a new ActualRevision, or
-- **B — reference**: an explicit immutable reference to one historical source ActualRevision.
+- **A — materialized**: new content the host writes as a new ActualRevision, or
+- **B — reference**: an immutable reference that is **flattened** to the terminal materialized source
+  ActualRevision and **bound to the immediate predecessor release**.
 
-Never both, never neither. The engine never searches: no "latest ActualRevision", no global
-fallback, no name/code identity matching, no automatic rebase, no mutable live-row reads. It imports
-only `hashlib`, `json`, `re`, `dataclasses`, `decimal` (asserted by a test).
+Never both, never neither. The engine never searches: no "latest ActualRevision", no global fallback,
+no name/code identity, no automatic rebase. It imports only `hashlib`, `json`, `re`, `dataclasses`,
+`decimal` (asserted by a test).
 
-## Inputs (all built by the caller from immutable rows)
+## Inputs (built by the host from immutable rows)
 
-`IndicatorContext` — one ReportIndicator bound to its report revision, definition and Program base:
+| object | fields | host source |
+|---|---|---|
+| `IndicatorContext` | organization_id, activity_report_id, reporting_period_id, report_revision_id, report_revision_number, report_indicator_id, persistent_indicator_id, identity_organization_id, definition_revision_id, definition_sha256, definition_json, publication_id, publication_sha256, contract_version | ActivityReport, ActivityReportRevision, ReportIndicator, PublicationIndicatorBinding, IndicatorDefinitionRevision, IndicatorIdentity |
+| `ReleaseRecord` | release_id, organization_id, resource_scope, report_key, release_major, release_minor, candidate_id, activity_approval_id, approval_report_revision_id | ReportRelease + ActivityReportApproval.report_revision_id |
+| `CandidateSnapshot` | candidate_id, organization_id, period_id, resource_scope, report_key, activity_revision_id, payload_json, payload_sha256, manifest_json, sha256 | ReportCandidate |
+| `ReleasedIndicator` | context, release, candidate, content, reference (only for a reference entry) | one indicator as a published release holds it |
+| `SuccessorTarget` | context, predecessor_release_id, predecessor_candidate_id, predecessor_candidate_sha256 (all None for a first release) | successor ReportIndicator + host succession lineage |
+| `RealizationContent` | canonical value, state, evidence, explanation, deviation | `content_from_fields`, `content_from_actual_revision(row)`, `content_from_entry(entry)` |
 
-| field | source row |
+### Pure provenance checks (no DB)
+
+`IndicatorContext`: positive int IDs; `sha256(definition_json) == definition_sha256`; definition has an
+integer `year` (`reporting_year`) and the right `definition_contract_version` marker
+(`app/activity_contract_service.py:104`); `identity_organization_id == organization_id`.
+
+`CandidateSnapshot`: `sha256(payload_json) == payload_sha256` and
+`sha256(canonical({'manifest', 'payload'})) == sha256`, i.e. `report_workflow_service.hash_content`
+(`app/report_workflow_service.py:14`; byte parity tested). Manifest `report-manifest-1` names the
+same organization, period and `activity_report` scope. Payload `schema_version` is
+`activity-candidate-1` or the PROPOSED `activity-candidate-2`, and its `report_revision_id` equals
+`activity_revision_id`. A v2 payload carries `predecessor_release_id / _candidate_id / _candidate_sha256`
+(all set or all null).
+
+`ReleasedIndicator`: release.candidate_id = candidate id; release, candidate and context share
+organization and report key; candidate period = context reporting period;
+`candidate.activity_revision_id = release.approval_report_revision_id = context.report_revision_id`;
+payload publication/base equals the context. The indicator's entry is found by explicit key
+(`materialized_report_indicator_id` in v1, `successor_report_indicator_id` in v2) and must occur exactly
+once with the same `definition_revision_id`. The supplied content must equal the entry content.
+**Entry mode and materialized ActualRevision ID come from the hash-verified payload, never from the
+caller.** A materialized entry must not carry a reference; a reference entry must carry its
+`UnchangedValueReference`, whose hash, successor section, binding, content hash, source ids and
+predecessor id must equal the entry's realization record and the payload predecessor fields. That
+predecessor must have an older release version.
+
+What the engine cannot prove without DB access, and the host must: that the supplied rows are the ones
+stored (IDs/hashes really belong to those rows), that the declared predecessor is the current release
+in the succession lineage, and that the approval row exists and belongs to that revision.
+
+## Content semantics (unchanged except numeric hardening)
+
+- Value: `parse_actual` text form **restricted to ASCII digits** (`[0-9]`, `re.ASCII`), or `Decimal`.
+  Arabic-Indic, Persian, Devanagari and full-width digits are rejected (the repository's `parse_actual`
+  still uses Unicode `\d`, `app/activity_contract_service.py:348`; changing it is outside S2). Floats,
+  booleans, ints, exponents, Turkish display text, NaN/Inf and > 6 decimals are rejected. `''`/`None` =
+  blank; blank is never zero.
+- All Decimal arithmetic (`abs`, `quantize`, `normalize`, difference-v1 subtraction) runs in an explicit
+  local context (prec 50, ROUND_HALF_EVEN, traps InvalidOperation/DivisionByZero/Overflow). Results do not
+  depend on the ambient decimal context (tested with prec 1/3/28, ROUND_DOWN, Inexact trapped).
+- Canonical value text removes trailing zeros: `'12.5'`, `'12.500000'`, `Decimal('12.500000')` are one value.
+- State rules, evidence rules (order significant, key order not), exact explanation, difference-v1
+  deviation checks and size limits as in `save_actual` / `validate_actual`.
+- **`raw_text` is not part of content identity** (unchanged decision; tested).
+- Content hash = SHA-256 of canonical `{"schema": "civensa.activity-realization-content/v1", value, state, evidence, explanation, deviation}`.
+
+## Eligibility: immediate predecessor only
+
+`check_reference_eligibility(successor, predecessor, source, proposed)` reports every mismatch:
+
+| rule | code |
 |---|---|
-| organization_id, activity_report_id, reporting_period_id | ActivityReport (.period_id) |
-| report_revision_id, report_revision_number | ActivityReportRevision.id / .revision |
-| report_indicator_id | ReportIndicator.id |
-| persistent_indicator_id | IndicatorDefinitionRevision.indicator_id (IndicatorIdentity) |
-| definition_revision_id, definition_sha256, definition_json | IndicatorDefinitionRevision (via PublicationIndicatorBinding) |
-| publication_id, publication_sha256, contract_version | ActivityReportRevision (pinned base) |
+| successor declares a predecessor (first release can only materialize) | predecessor_missing |
+| supplied predecessor release / candidate id / candidate sha = successor's declared immediate predecessor | predecessor_mismatch |
+| source entry is materialized (terminal row) | source_not_materialized |
+| predecessor's flattened source = source (materialized predecessor ⇒ source is the predecessor itself) | lineage_mismatch |
+| predecessor content = source content | lineage_mismatch |
+| predecessor release newer than source release, same report key | release_order_invalid |
+| same organization / ActivityReport / reporting period id / reporting year / persistent identity / definition revision / definition hash / target semantics / publication id+sha / contract version, against **both** predecessor and source | organization_mismatch, report_mismatch, reporting_period_mismatch, identity_mismatch, definition_revision_mismatch, definition_hash_mismatch, target_mismatch, program_base_mismatch |
+| successor is a newer revision with its own revision and indicator rows | not_a_successor |
+| proposed value / state / evidence / explanation / deviation = **immediate predecessor's** effective content | value_changed, state_changed, evidence_changed, explanation_changed, deviation_changed |
+| proposed content valid for the successor definition | deviation_mismatch, deviation_definition_mismatch |
 
-Construction fails closed unless `sha256(definition_json) == definition_sha256`, the definition's
-`definition_contract_version` marker matches (absent for 1.0, equal for 2.0/3.0 — mirrors
-`activity_contract_service.definition_payload`, `app/activity_contract_service.py:104`), the definition
-carries an integer `year` (exposed as `reporting_year`), all IDs are
-positive ints and targets parse without floats.
+Skip-over is closed by three independent rules: the predecessor must be the declared immediate one;
+content is compared with that predecessor; the source must be exactly that predecessor's flattened source.
+For v1.0 X=5 → v1.1 X=6 → v1.2 X=5: passing v1.0 as predecessor fails `predecessor_mismatch`; passing
+v1.1 with v1.0 as source fails `lineage_mismatch` + `value_changed`; v1.1 with itself as source fails
+`value_changed`. If v1.1 re-entered X=5 as a new ActualRevision, v1.2 may reference v1.1's row only.
 
-`SourceProvenance` — release side of the source: release_id, release_major, release_minor,
-candidate_id, candidate_sha256 (ReportCandidate.sha256), activity_approval_id, actual_revision_id.
-All required. A legacy approval-only source with no ReportRelease is therefore NOT referenceable in v1.
+Chain: v1.1 references v1.0 (R1). v1.2 unchanged from v1.1 gets R2 with `source` = v1.0's ActualRevision
+(flattened, one-hop reads) and `predecessor` = v1.1 with `entry_mode = reference` and
+`predecessor_reference_sha256 = R1`. A reference cannot move forward: when v1.2 exists, a v1.3 successor
+declares v1.2, so R2 (bound to v1.1) fails `predecessor_mismatch`.
 
-`SourceRealization(context, provenance, content)` — the explicit historical source. Its content must
-itself be difference-v1-consistent with its own definition.
+## Reference schema v2
 
-`RealizationContent` — canonical value / state / evidence / explanation / deviation. Build with
-`content_from_fields`, `content_from_actual_revision(row)` or `content_from_entry(package_or_candidate_entry)`.
-
-## Content semantics (unchanged from Civensa)
-
-- Value: accepted forms are the `parse_actual` text form (`app/activity_contract_service.py:342`) and
-  `Decimal` (Numeric(26, 6) reads, `app/models.py:406`). Floats, booleans, ints, exponents, Turkish
-  display text and > 6 decimals are rejected (parity with `parse_actual` is tested). `''`/`None` = blank;
-  blank is never zero.
-- Canonical value text removes trailing zeros with Decimal arithmetic only: `'12.5'`, `'12.500000'` and
-  `Decimal('12.500000')` are one value. Reason: package copies carry Numeric text (`actual_data`
-  formats with `'f'`), while the source row was saved from typed text; `verify_materialization`
-  already compares values numerically (`app/report_workflow_service.py:203`).
-- State rules: verified needs a number and ≥ 1 complete evidence item; missing must be blank;
-  needs_review is free. Same limits as `save_actual` / `validate_actual` (30 evidence items,
-  50 000 / 10 000 / 10 000 characters).
-- Evidence: each item needs non-blank `title`, `locator`, `source_revision`. List order IS significant
-  (stored as entered; existing comparisons use list equality). Object key order is not (sorted keys).
-- Explanation: compared exactly (no trimming).
-- Deviation: must carry `calculation_rule_version = 'difference-v1'`, `target_definition_revision_id`,
-  `delta`, `achievement_percent = None`. `delta` is canonicalized like the value. Against a context,
-  `target_definition_revision_id` must equal the context definition revision and
-  `delta == value − effective_target` (or `None` when unverified / no single verified target), exactly as
-  `save_actual` derives it (`app/activity_contract_service.py:388-395`). Other deviation keys are compared
-  exactly. `raw_text` is NOT part of the content (display/input text only).
-- Canonical JSON: sorted keys, `(',', ':')`, `ensure_ascii=False`, list order kept; byte-identical to
-  `activity_contract_service.canonical` for float-free input (tested). Content hash =
-  SHA-256 of `{"schema": "civensa.activity-realization-content/v1", value, state, evidence, explanation, deviation}`.
-
-## Eligibility (`check_reference_eligibility(source, successor, proposed)`)
-
-All must hold; every failure is reported (not only the first), each with a stable code and an actionable
-Turkish message telling the user to create a new realization instead:
-
-| check | code |
-|---|---|
-| same organization | organization_mismatch |
-| same ActivityReport | report_mismatch |
-| same reporting period id AND same definition `year` (cross-period inheritance) | reporting_period_mismatch |
-| successor is a newer revision, different revision/indicator row | not_a_successor |
-| same persistent indicator identity | identity_mismatch |
-| same IndicatorDefinitionRevision ID | definition_revision_mismatch |
-| same definition SHA-256 | definition_hash_mismatch |
-| same target semantics (year, kind, state, canonical value, effective target; not raw_text) | target_mismatch |
-| same publication id / SHA-256 / contract version | program_base_mismatch |
-| value / state / evidence / explanation / deviation unchanged | value_changed, state_changed, evidence_changed, explanation_changed, deviation_changed |
-| proposed content valid under the successor definition | deviation_mismatch, deviation_definition_mismatch |
-
-Target semantics are also covered by the definition hash; the separate check is defence in depth and
-gives a clearer message.
-
-## Reference provenance (`build_reference` → `UnchangedValueReference`)
-
-`UnchangedValueReference(provenance_json, reference_sha256)`, `reference_sha256 = sha256(provenance_json)`,
-`provenance_json` canonical:
+`UnchangedValueReference(provenance_json, reference_sha256)`, `reference_sha256 = sha256(provenance_json)`:
 
 ```json
-{"schema": "civensa.activity-unchanged-value-reference/v1",
+{"schema": "civensa.activity-unchanged-value-reference/v2",
  "calculation_rule_version": "difference-v1",
- "successor": {"organization_id", "activity_report_id", "reporting_period_id", "report_revision_id", "report_revision_number", "report_indicator_id"},
- "source": {"activity_report_id", "reporting_period_id", "report_revision_id", "report_revision_number", "report_indicator_id",
-            "actual_revision_id", "release_id", "release_major", "release_minor",
-            "candidate_id", "candidate_sha256", "activity_approval_id"},
- "binding": {"organization_id", "reporting_year", "persistent_indicator_id", "definition_revision_id", "definition_sha256",
-             "target_semantics_sha256", "publication_id", "publication_sha256", "contract_version"},
+ "successor":   {"organization_id", "activity_report_id", "reporting_period_id",
+                 "report_revision_id", "report_revision_number", "report_indicator_id"},
+ "predecessor": {"release_id", "release_major", "release_minor", "candidate_id", "candidate_sha256",
+                 "activity_approval_id", "report_revision_id", "report_revision_number", "report_indicator_id",
+                 "entry_mode", "materialized_actual_revision_id|null", "predecessor_reference_sha256|null",
+                 "content_sha256"},
+ "source":      {"release_id", "release_major", "release_minor", "candidate_id", "candidate_sha256",
+                 "activity_approval_id", "report_revision_id", "report_revision_number", "report_indicator_id",
+                 "actual_revision_id"},
+ "binding":     {"organization_id", "activity_report_id", "reporting_period_id", "reporting_year",
+                 "persistent_indicator_id", "definition_revision_id", "definition_sha256",
+                 "target_semantics_sha256", "publication_id", "publication_sha256", "contract_version"},
  "content_sha256": "<source content hash>"}
 ```
 
-Loading (`UnchangedValueReference(...)`) fails closed on missing/extra/null keys, wrong types, invalid
-hashes, non-canonical JSON or hash mismatch. `verify_reference(reference, source=..., successor=...)`
-re-checks the hash, re-runs the context checks and requires every section to equal what the supplied
-source and successor imply.
+Loading fails closed on missing/extra/null keys, wrong types, invalid hashes, non-canonical JSON, hash
+mismatch, and these internal invariants: successor org/report/period = binding; predecessor content hash =
+content hash; successor revision number > predecessor ≥ source; `entry_mode = materialized` ⇒ no
+predecessor reference hash, predecessor release/candidate/approval/revision/indicator = source and
+`materialized_actual_revision_id = source.actual_revision_id`; `entry_mode = reference` ⇒ predecessor
+reference hash set, no materialized id, different and newer release than the source.
+
+`verify_reference(reference, successor=, predecessor=, source=)` re-checks hash and structure, re-runs the
+lineage and context rules, and requires every section to equal what the supplied objects imply.
 
 ## Resolution
 
-`resolve_effective_realization(successor, materialized=..., reference=..., source=...)` returns
-`EffectiveRealization(mode, content, content_sha256, actual_revision_id, reference_sha256, source_report_indicator_id, source_release_id)`
-with `value / state / evidence / explanation / deviation` accessors.
+`resolve_effective_realization(successor, materialized=…, reference=…, predecessor=…, source=…)`:
 
 | input | result |
 |---|---|
-| materialized only (same report_indicator_id, difference-v1 valid) | mode `materialized` |
-| reference + source, verified | mode `reference`, content = source content |
-| materialized + reference or source | `ambiguous_realization` |
-| source without reference | `reference_missing` |
-| reference without source | `reference_source_missing` |
-| neither | `missing_realization` |
+| materialized only (same indicator, difference-v1 valid) | mode `materialized` |
+| reference + predecessor + source, verified | mode `reference`; content and `actual_revision_id` = flattened source; `predecessor_release_id` set |
+| materialized + anything else | `ambiguous_realization` |
+| predecessor/source without reference | `reference_missing` |
+| reference without predecessor or source | `reference_source_missing` |
+| nothing | `missing_realization` |
 
-`resolve_successor_realizations(contexts, materialized={ri_id: ...}, references={ri_id: (reference, source)})`
-resolves every required successor indicator exactly once and rejects gaps, overlaps, duplicates and
-unknown indicators.
-
-`verify_source_against_candidate_entry(source, entry)` checks the source against the released
-ReportCandidate payload entry (`materialized_report_indicator_id`, `materialized_actual_revision_id`,
-`definition_revision_id`, content), i.e. the `activity-candidate-1` entries written by
-`report_workflow_service.materialize` (`app/report_workflow_service.py:173`).
+`resolve_successor_realizations(targets, materialized={ri: …}, references={ri: (reference, predecessor, source)})`
+resolves each required indicator exactly once (gaps, overlaps, duplicates, unknown ids fail).
 
 Errors: `ActivityReferenceError(ValueError)` with `.code`, `.message` (Turkish), `.field`, `.details`.
-The caller maps them to HTTP (suggested: invalid input/content 422, provenance/hash/mismatch 409).
 
-## Integration API for Codex / Nexa (PROPOSED — not implemented)
+## PROPOSED `activity-candidate-2` entry realization (engine reads it; nothing writes it yet)
 
-1. Successor materialization (Phase 5B1 equivalent of `materialize`): for each successor ReportIndicator,
-   build `IndicatorContext` for the successor and, when a reference is wanted, a `SourceRealization` from
-   the source release: ReportRelease → ReportCandidate (payload entry) → ReportIndicator → ActualRevision.
-   Call `verify_source_against_candidate_entry` first. The source ActualRevision must be the
-   `materialized_actual_revision_id` of that entry, never "the latest actual" (note: the Phase 3
-   `create_package` copy uses `item['actuals'][-1]`, `app/package_service.py:148`; that pattern must not be
-   reused for references).
-2. Unchanged entry → `build_reference(source, successor, content_from_entry(entry))`; persist it.
-   Changed entry, or any `ActivityReferenceError` → write a new ActualRevision (path A). Do not fall back silently.
-3. Any reader (approval blockers, candidate verification, export, Final Approver view) resolves via
-   `resolve_effective_realization` / `resolve_successor_realizations`, then applies the existing approval
-   rules (`approve_report`, `activity_package_approval_blockers`) to the effective content. The engine does
-   not decide approvability.
-4. Proposed persistence (needs a migration — out of scope here): append-only `revision_value_references`
-   with `successor_report_indicator_id` (unique), `source_report_indicator_id`, `source_actual_revision_id`,
-   `source_release_id`, `definition_revision_id`, `provenance_json`, `reference_sha256`, `created_by`,
-   `created_at`; ORM/PG immutability guards like other history tables; a DB-level guard that a successor
-   ReportIndicator has an ActualRevision XOR a reference; indexed ID columns must equal the JSON.
-   Cross-period guard: store `successor_reporting_period_id` and `source_reporting_period_id` as NOT NULL
-   FKs to `reporting_periods`, add `CHECK (successor_reporting_period_id = source_reporting_period_id)`,
-   and a BEFORE INSERT trigger that each equals `activity_reports.period_id` reached through its own
-   ReportIndicator → ActivityReportRevision → ActivityReport (a CHECK cannot join). Both values are
-   already separate keys in `provenance_json`, so the columns can be required to equal the JSON.
-   Future PostgreSQL test: insert a reference whose source ReportIndicator belongs to another period
-   (raw SQL, bypassing this engine) and expect an IntegrityError.
-5. `verify_materialization` currently requires exactly one ActualRevision per materialized indicator
-   (`app/report_workflow_service.py:203`). It must learn the reference branch; the candidate payload
-   schema (`activity-candidate-1`) needs a reference entry form (e.g. `reference_sha256` instead of
-   `materialized_actual_revision_id`). This is a Phase 5B1 integration decision.
+Payload adds `predecessor_release_id`, `predecessor_candidate_id`, `predecessor_candidate_sha256`.
+Each entry keeps the expanded package content and adds `successor_report_indicator_id` and either
+`{"mode": "materialized", "actual_revision_id", "content_sha256"}` or
+`{"mode": "reference", "reference_sha256", "source_release_id", "source_actual_revision_id", "predecessor_release_id", "content_sha256"}`.
+Integration slices S1/S5 own the final writer/verifier; changes there must be mirrored here.
+
+## Host integration requirements (not implemented here)
+
+1. Build `ReleasedIndicator`s only from stored rows; take the predecessor from the succession lineage under
+   the organization lock (`current_source`), never "latest". Never use a package entry's
+   `source_actual_revision_id` (draft revision's id, `app/package_service.py:148`) as a source.
+2. Persist references in an append-only table whose indexed columns equal `provenance_json`, with
+   composite FKs and triggers (integration review §C): single `reporting_period_id` column reached by
+   both successor and source sides, `predecessor_release_id`, `predecessor_reference_id`, XOR with
+   ActualRevision, seal after candidate creation, `UNIQUE(successor_report_indicator_id)`.
+3. `verify_materialization` must dispatch on `schema_version`; v1 behaviour unchanged.
+4. Readers/approval resolve the effective realization and then apply existing approval rules.
 
 ## Not verified / open
 
-- No integration exists; the real 5B1 flow (Director/Strategy re-review, successor candidate, release
-  v1.1) was not run. One focused test builds a real context from repository rows (SQLite and PostgreSQL 16).
-- Floats anywhere in legacy evidence/deviation JSON make that source non-referenceable (fail closed → new record).
-- `raw_text` exclusion from content identity is a design decision to confirm.
-- Whether a reference may cross ActivityReports (currently rejected) and whether legacy approval-only
-  sources should ever be referenceable (currently rejected) need product confirmation.
+- No integration exists; real successor releases were not run. Release/candidate objects in tests are
+  synthetic (built with the repository's `canonical`/`hash_content`); the repository-row test uses a real
+  context and ActualRevision on SQLite and PostgreSQL 16 (schema from `create_all`, no migration triggers).
+- Two lineage checks (`predecessor content = source content`, `release_order_invalid` across releases) are
+  defence in depth: other rules already reject every case found, so mutation tests cannot isolate them.
+- Open product decisions L1–L8 (integration review) are not decided here; S2 implements the L1
+  recommendation (flatten + bind immediate predecessor).
 - The complete Civensa suite was not run (by instruction).
