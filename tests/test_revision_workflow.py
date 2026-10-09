@@ -249,15 +249,16 @@ def test_narrow_grant_and_ungranted_proposal_not_applied(foundation_db,people,re
     assert resolve(doc,address(r,True))==resolve(json.loads(old.content_json),address(r,True))
 
 
-def test_normal_phase3_edit_and_submit_do_not_bypass_grant(foundation_db,people,released):
+def test_normal_phase3_edit_cannot_bypass_grant_but_audited_submit_allowed(foundation_db,people,released):
     db=foundation_db;x=people;r=released;q=request(db,x,r);accept(db,x,q);g=grant(db,x,q)
     cycle=db.get(RevisionCorrectionCycle,g.cycle_id);pkg=db.get(DirectoratePackage,cycle.package_id)
     rev=service.packages.revision(db,pkg)
-    # Internal Phase 3 operations are still present, but cannot bypass correction DB guards.
+    # Ordinary edits remain blocked; Phase 5B1 enables only audited reapproval.
     with pytest.raises((DBAPIError,service.auth.HTTPException)):
         with db.begin_nested():service.packages.edit_package(db,x['director'],pkg.id,pkg.version,rev.sha256,[{'path':address(r,True),'value':'Bypass'}],'Müdür')
-    with pytest.raises((DBAPIError,service.auth.HTTPException)):
-        with db.begin_nested():service.packages.transition(db,x['user'],pkg.id,'submit_to_director',pkg.version,rev.sha256)
+    service.packages.transition(db,x['user'],pkg.id,'submit_to_director',pkg.version,rev.sha256)
+    db.commit()
+    assert pkg.state=='director_review'
 
 @pytest.mark.parametrize('bad',['blank_verified','no_evidence','untrusted_delta'])
 def test_activity_correction_validation_preserved(foundation_db,people,released,bad):

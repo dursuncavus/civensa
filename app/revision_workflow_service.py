@@ -2,7 +2,7 @@
 import json
 from copy import deepcopy
 from uuid import uuid4
-from sqlalchemy import select, update
+from sqlalchemy import inspect, select, update
 from .models import *
 from . import authorization_service as auth, package_service as packages, report_workflow_service as reports
 
@@ -240,3 +240,23 @@ def edit_under_grant(db,actor,grant_id,expected_version,expected_hash,patches,re
         db.flush()
         new=packages.append_revision(db,pkg,actor,raw,current,reason);packages.move(db,pkg,expected_version,'returned',new.revision)
     return new
+
+
+def correction_context(db,package):
+    """Select an explicit current release cycle; never relax ordinary source gates."""
+    # Older populated checkpoints have no correction seam; ordinary source gates
+    # still apply. Never catch a failed authorization/integrity query as a fallback.
+    if not inspect(db.connection()).has_table('revision_correction_cycles'):return None
+    cycle=db.scalar(select(RevisionCorrectionCycle).where(RevisionCorrectionCycle.package_id==package.id)
+        .order_by(RevisionCorrectionCycle.id.desc()))
+    if not cycle:return None
+    release,candidate=current_source(db,cycle.source_release_id)
+    bound=db.scalar(select(CandidatePackage).where(CandidatePackage.candidate_id==candidate.id,
+        CandidatePackage.package_revision_id==cycle.source_package_revision_id))
+    if not bound:packages.conflict()
+    now=auth.server_now(db)
+    grants=db.scalars(select(RevisionEditGrant).join(RevisionRequestState,RevisionRequestState.request_id==RevisionEditGrant.request_id)
+        .where(RevisionEditGrant.cycle_id==cycle.id,RevisionRequestState.state=='editing',
+            RevisionEditGrant.start_at<=now,RevisionEditGrant.end_at>now)).all()
+    if not grants:auth.fail('Düzeltme izni etkin değil. Stratejiden güncel alan iznini kontrol etmesini isteyin.',409)
+    return cycle

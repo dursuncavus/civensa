@@ -42,6 +42,9 @@ def locked(db, actor, package_id, action, expected_version, expected_hash):
     package = db.get(DirectoratePackage, package_id)
     if not package:
         auth.fail('Müdürlük paketi bulunamadı.', 404)
+    # Correction operations take the organization lock before department/package locks.
+    from .report_workflow_service import organization_lock
+    organization_lock(db,package.organization_id)
     # Same lock order as membership/delegation changes; refresh after waiting.
     auth.scope_department(db, package.organization_id, package.department_id, lock=True)
     package = db.scalar(select(DirectoratePackage).where(DirectoratePackage.id == package_id)
@@ -58,6 +61,11 @@ def locked(db, actor, package_id, action, expected_version, expected_hash):
         conflict()
     if not auth.package_eligibility(db, actor, action, package):
         auth.fail('Bu paket aşamasında seçilen işlemi yapmaya yetkiniz yok. Güncel aşamayı ve görevlendirmenizi kontrol edin.')
+    from .revision_workflow_service import correction_context
+    cycle=correction_context(db,package)
+    if cycle:
+        if action=='edit_draft':auth.fail('Yayımlanmış düzeltmeleri yalnız alan izni üzerinden düzenleyin.')
+        return package,current
     if package.resource_scope == 'activity_report':
         source=db.get(ActivityReportRevision,package.report_revision_id)
         report=db.scalar(select(ActivityReport).where(ActivityReport.id==source.report_id).with_for_update().execution_options(populate_existing=True))
@@ -302,12 +310,21 @@ def transition(db, actor, package_id, action, expected_version, expected_hash, r
             auth.fail('İşlem anındaki görevlendirme / vekâlet yetkiniz geçerli değil. Güncel yetkiyi kontrol edin.')
         delegation=auth.active_delegation(db,package.organization_id,package.department_id,at=decision_time) if action.startswith('director_') else None
         state_before=package.state
-        next_revision=append_revision(db,package,actor,current.content_json,current,reason) if destination=='returned' else current
+        from .revision_workflow_service import correction_context
+        cycle=correction_context(db,package)
+        next_revision=current
+        if destination=='returned' and not cycle:
+            next_revision=append_revision(db,package,actor,current.content_json,current,reason)
         event=history_event(db,actor,package,action,{'revision_id':current.id,'sha256':current.sha256,
-            'next_revision_id':next_revision.id,'from_state':state_before,'to_state':destination,
-            'delegation_id':delegation.id if delegation else None,'decision_time':decision_time},reason)
+            'next_revision_id':None if cycle and destination=='returned' else next_revision.id,
+            'next_revision':current.revision+1 if destination=='returned' else current.revision,'next_sha256':current.sha256,'from_state':state_before,'to_state':destination,
+            'delegation_id':delegation.id if delegation else None,'decision_time':decision_time,
+            'correction_cycle_id':cycle.id if cycle else None,'expected_version':expected_version,'returned_revision':current.revision+1 if cycle and destination=='returned' else None},reason)
         db.add(PackageDecision(package_revision_id=current.id,snapshot_sha256=current.sha256,action=action,
             from_state=state_before,to_state=destination,workflow_event_id=event.id,delegation_id=delegation.id if delegation else None))
+        db.flush()
+        if cycle and destination=='returned':
+            next_revision=append_revision(db,package,actor,current.content_json,current,reason)
         move(db,package,expected_version,destination,next_revision.revision)
         notice(db,package,event,destination)
         db.flush()
