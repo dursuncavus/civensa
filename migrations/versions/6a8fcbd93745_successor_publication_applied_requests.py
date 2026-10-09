@@ -104,6 +104,8 @@ BEGIN
  AND cs.state='published' AND sr.organization_id=r.organization_id AND sr.resource_scope='activity_report'
  AND edge.predecessor_release_id=r.source_release_id AND edge.workflow_event_id=pe.id
  AND pe.event_type='publish_report' AND pe.actor_user_id=ev.actor_user_id
+ AND NOT EXISTS(SELECT 1 FROM final_authority_assignments current_authority
+ WHERE current_authority.organization_id=sr.organization_id AND current_authority.active AND current_authority.user_id=pe.actor_user_id)
  AND pe.resource_id=sc.id::text AND pe.resource_type='report_candidate'
  AND g.id=(ev.context_json::jsonb->>'grant_id')::integer
  AND g.cycle_id=(ev.context_json::jsonb->>'correction_cycle_id')::integer
@@ -132,6 +134,8 @@ BEGIN
  SELECT * INTO ev FROM workflow_events WHERE id=NEW.workflow_event_id;
  IF ev.id IS NULL OR ev.event_type<>'publish_report' OR ev.resource_type<>'report_candidate' OR ev.resource_id<>sc.id::text
  OR NOT EXISTS(SELECT 1 FROM users WHERE id=ev.actor_user_id AND is_active AND role='strategy')
+ OR EXISTS(SELECT 1 FROM final_authority_assignments current_authority
+ WHERE current_authority.organization_id=NEW.organization_id AND current_authority.active AND current_authority.user_id=ev.actor_user_id)
  OR NOT EXISTS(SELECT 1 FROM report_decisions d JOIN final_authority_assignments a ON a.id=d.assignment_id
  WHERE d.id=NEW.final_decision_id AND d.candidate_id=sc.id AND d.candidate_sha256=sc.sha256 AND d.action='final_approve'
  AND a.active AND a.organization_id=sc.organization_id)

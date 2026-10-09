@@ -479,3 +479,44 @@ def test_closed_work_does_not_enable_final_return_reassembly(foundation_db,peopl
     db=foundation_db;p=ready[0];before=all_counts(db)
     rejects(403,lambda:act(db,people,p,'director_reopen','director',reason='S3C kapsamı'))
     assert all_counts(db)==before
+
+
+def test_separate_final_authority_and_strategy_publisher_succeed(foundation_db,people,successor):
+    db=foundation_db;x=people
+    authority=reports.assignment(db,successor.organization_id)
+    assert authority.user_id==x['director'].id and authority.user_id!=x['strategy'].id
+    release=publish(db,x,successor)
+    assert db.get(WorkflowEvent,release.workflow_event_id).actor_user_id==x['strategy'].id
+    assert db.get(ReportDecision,release.final_decision_id).assignment_id==authority.id
+
+
+def test_strategy_final_authority_cannot_publish_app_or_database(foundation_db,people,successor,ready):
+    db=foundation_db;x=people;c=successor
+    auth.assign_final_authority(db,x['strategy'],c.organization_id,x['strategy'].id,'Resmî nihai görevlendirme');db.commit()
+    # Formal assignment remains allowed; the Strategy authority can approve.
+    decision=approve(db,x,c,'strategy')
+    assert decision.assignment_id==reports.assignment(db,c.organization_id).id
+    before=all_counts(db)
+    rejects(403,lambda:publish(db,x,c))
+    with pytest.raises(DBAPIError,match='Missing current authorized successor publication'):
+        with db.begin_nested():raw_release(db,x,c)
+    assert all_counts(db)==before
+    assert db.get(ReportCandidateState,c.id).state=='final_approved'
+    assert db.get(RevisionRequestState,ready[2].id).state=='editing'
+
+
+def test_applied_guard_rejects_publish_actor_who_becomes_final_authority(foundation_db,people,successor,ready,monkeypatch):
+    db=foundation_db;x=people;c=successor;original=corrections.history
+    authority_id=reports.assignment(db,c.organization_id).id;before=all_counts(db)
+    def forged_provenance(db,actor,request,action,context,reason=''):
+        if action=='revision_applied':
+            # The release insert passed under a separate authority. Reassign
+            # before the forged applied transition to exercise its own DB gate.
+            auth.assign_final_authority(db,x['strategy'],c.organization_id,x['strategy'].id,'Eşzamanlı nihai görevlendirme')
+        return original(db,actor,request,action,context,reason)
+    monkeypatch.setattr(corrections,'history',forged_provenance)
+    with pytest.raises(DBAPIError,match='Invalid applied publication provenance'):publish(db,x,c)
+    db.expire_all()
+    assert all_counts(db)==before and reports.assignment(db,c.organization_id).id==authority_id
+    assert db.get(RevisionRequestState,ready[2].id).state=='editing'
+    assert db.get(ReportCandidateState,c.id).state=='final_approved'
