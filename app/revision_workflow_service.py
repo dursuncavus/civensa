@@ -320,10 +320,23 @@ def correction_context(db,package,*,validate_grant=True):
     # Older populated checkpoints have no correction seam; ordinary source gates
     # still apply. Never catch a failed authorization/integrity query as a fallback.
     if not inspect(db.connection()).has_table('revision_correction_cycles'):return None
-    cycle=db.scalar(select(RevisionCorrectionCycle).where(RevisionCorrectionCycle.package_id==package.id)
-        .order_by(RevisionCorrectionCycle.id.desc()))
-    if not cycle:return None
-    release,candidate=current_source(db,cycle.source_release_id)
+    if not db.scalar(select(RevisionCorrectionCycle.id).where(RevisionCorrectionCycle.package_id==package.id).limit(1)):return None
+    # Historical cycles establish correction scope, never authorization. Resolve
+    # this package's report key before selecting a cycle under the org lock.
+    reports.organization_lock(db,package.organization_id)
+    if package.resource_scope=='activity_report':
+        source=db.get(ActivityReportRevision,package.report_revision_id)
+        if not source:packages.conflict()
+        report_key=str(source.report_id)
+    else:report_key=str(package.period_id)
+    release_id=db.scalar(select(ReportRelease.id).where(ReportRelease.organization_id==package.organization_id,
+        ReportRelease.resource_scope==package.resource_scope,ReportRelease.report_key==report_key)
+        .order_by(ReportRelease.major.desc(),ReportRelease.minor.desc(),ReportRelease.id.desc()))
+    if not release_id or not db.get(ReportRelease,release_id):packages.conflict()
+    release,candidate=current_source(db,release_id)
+    cycle=db.scalar(select(RevisionCorrectionCycle).where(RevisionCorrectionCycle.source_release_id==release.id,
+        RevisionCorrectionCycle.package_id==package.id))
+    if not cycle:auth.fail('Paket yayımlandı; güncel sürüm için yeni düzeltme talebi açın.',409)
     bound=db.scalar(select(CandidatePackage).where(CandidatePackage.candidate_id==candidate.id,
         CandidatePackage.package_revision_id==cycle.source_package_revision_id))
     if not bound:packages.conflict()
