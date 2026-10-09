@@ -69,6 +69,7 @@ def locked(db,actor,organization_id,candidate_id,action,expected_version,expecte
 
 
 def verify(db,candidate):
+    activity_payload=activity_candidate_payload(candidate) if candidate.resource_scope=='activity_report' else None
     if contract.digest(candidate.payload_json)!=candidate.payload_sha256 or hash_content(candidate.payload_json,candidate.manifest_json)!=candidate.sha256:packages.conflict()
     manifest=json.loads(candidate.manifest_json)
     bindings=db.scalars(select(CandidatePackage).where(CandidatePackage.candidate_id==candidate.id).order_by(CandidatePackage.id)).all()
@@ -96,7 +97,7 @@ def verify(db,candidate):
         departments.add(pkg.department_id);sources.append(json.loads(rev.content_json))
         packages.validate_package_approval(db,pkg,rev)
     if sorted(departments)!=manifest['required_department_ids']:packages.conflict()
-    assembled=json.loads(candidate.payload_json)
+    assembled=activity_payload if candidate.resource_scope=='activity_report' else json.loads(candidate.payload_json)
     if candidate.resource_scope=='performance_program':
         actual={d['department_id']:d for d in assembled['departments']}
         if len(actual)!=len(sources):packages.conflict()
@@ -110,7 +111,8 @@ def verify(db,candidate):
             if expected!=current:packages.conflict()
     else:
         expected=[e for source in sources for e in source['entries']]
-        current=[{k:v for k,v in e.items() if k not in {'materialized_report_indicator_id','materialized_actual_revision_id'}} for e in assembled['entries']]
+        realization_keys=activity_realization_keys(assembled)
+        current=[{k:v for k,v in e.items() if k not in realization_keys} for e in assembled['entries']]
         if current!=expected:packages.conflict()
     if candidate.resource_scope=='activity_report':verify_materialization(db,candidate)
     else:
@@ -190,8 +192,41 @@ def materialize(db,actor,source,contents):
         'publication_sha256':source.publication_sha256,'contract_version':source.contract_version,'entries':entries}
 
 
+def activity_realization_keys(payload):
+    """Only the existing v1 realization keys may be excluded from package comparison."""
+    if (not isinstance(payload,dict) or not isinstance(payload.get('schema_version'),str)
+        or payload['schema_version']!='activity-candidate-1'):packages.conflict()
+    return {'materialized_report_indicator_id','materialized_actual_revision_id'}
+
+
+def activity_candidate_payload(candidate):
+    """Validate the Activity verification boundary; no implicit schema default."""
+    try:payload=json.loads(candidate.payload_json)
+    except (TypeError,ValueError):packages.conflict()
+    activity_realization_keys(payload)
+    entries=payload.get('entries')
+    if not isinstance(entries,list) or any(not isinstance(entry,dict) for entry in entries):packages.conflict()
+    # Invalid identifiers must not reach database lookup/coercion as SQL errors.
+    if type(payload.get('report_revision_id')) is not int:packages.conflict()
+    for entry in entries:
+        for key in ('materialized_report_indicator_id','materialized_actual_revision_id','definition_revision_id'):
+            identifier=entry.get(key)
+            if type(identifier) is not int or not 0<identifier<=2147483647:packages.conflict()
+    return payload
+
+
 def verify_materialization(db,candidate):
-    payload=json.loads(candidate.payload_json);revision=db.get(ActivityReportRevision,candidate.activity_revision_id)
+    payload=activity_candidate_payload(candidate)
+    # Schema dispatch is intentionally v1-only; future schemas need their own path.
+    try:_verify_materialization_v1(db,candidate,payload)
+    except (KeyError,TypeError,AttributeError,ValueError):packages.conflict()
+    except auth.HTTPException as exc:
+        if exc.status_code==422:packages.conflict()
+        raise
+
+
+def _verify_materialization_v1(db,candidate,payload):
+    revision=db.get(ActivityReportRevision,candidate.activity_revision_id)
     report=db.get(ActivityReport,revision.report_id)
     if payload['report_revision_id']!=revision.id:packages.conflict()
     items=db.scalars(select(ReportIndicator).where(ReportIndicator.report_revision_id==revision.id)).all()
