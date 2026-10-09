@@ -242,7 +242,7 @@ def edit_under_grant(db,actor,grant_id,expected_version,expected_hash,patches,re
     return new
 
 
-def correction_context(db,package):
+def correction_context(db,package,*,validate_grant=True):
     """Select an explicit current release cycle; never relax ordinary source gates."""
     # Older populated checkpoints have no correction seam; ordinary source gates
     # still apply. Never catch a failed authorization/integrity query as a fallback.
@@ -254,9 +254,14 @@ def correction_context(db,package):
     bound=db.scalar(select(CandidatePackage).where(CandidatePackage.candidate_id==candidate.id,
         CandidatePackage.package_revision_id==cycle.source_package_revision_id))
     if not bound:packages.conflict()
+    if validate_grant:require_correction_grant(db,cycle)
+    return cycle
+
+
+def require_correction_grant(db,cycle):
+    """Recheck grant time without reacquiring the correction organization lock."""
     now=auth.server_now(db)
     grants=db.scalars(select(RevisionEditGrant).join(RevisionRequestState,RevisionRequestState.request_id==RevisionEditGrant.request_id)
         .where(RevisionEditGrant.cycle_id==cycle.id,RevisionRequestState.state=='editing',
             RevisionEditGrant.start_at<=now,RevisionEditGrant.end_at>now)).all()
     if not grants:auth.fail('Düzeltme izni etkin değil. Stratejiden güncel alan iznini kontrol etmesini isteyin.',409)
-    return cycle
