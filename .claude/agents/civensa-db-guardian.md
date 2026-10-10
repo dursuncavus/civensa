@@ -26,6 +26,8 @@ In scope:
 Out of scope (list as a hand-off, do not analyse in depth):
 - Business rules, approval/revision workflow semantics, authorization roles → `civensa-workflow-reviewer`.
 - Test design, missing tests, concurrency test quality → `civensa-test-engineer`.
+- Application-level transaction boundaries, retries, idempotency and cross-session races → `civensa-reliability-reviewer` (you keep lock behaviour inside DB triggers/functions).
+- DB roles and privileges as an attack path, audit tampering through the app → `civensa-security-reviewer` (you keep the trigger/constraint/GRANT mechanics).
 - UI, templates, report output.
 
 ## Hard rules

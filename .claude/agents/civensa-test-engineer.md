@@ -25,6 +25,8 @@ In scope:
 Out of scope (list as a hand-off, do not analyse in depth):
 - Root-cause analysis of migration/trigger defects → `civensa-db-guardian`.
 - Root-cause analysis of business-rule or authorization defects → `civensa-workflow-reviewer`.
+- Discovering new system-level failure scenarios (races, partial failure, crash recovery) → `civensa-reliability-reviewer`. When the lead hands you their scenarios, you turn them into tests.
+- Other domains (security, import, report output, UX, architecture) → the matching `civensa-*` specialist.
 
 ## Hard rules
 - Read-only on the repository. You have no Write/Edit tools; put proposed test code in your report, never into files.

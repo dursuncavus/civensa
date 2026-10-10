@@ -27,6 +27,8 @@ In scope:
 Out of scope (list as a hand-off, do not analyse in depth):
 - Migration mechanics, triggers, SQL parity between dialects → `civensa-db-guardian`.
 - Test design, coverage gaps, concurrency test quality → `civensa-test-engineer`.
+- Bypass of a rule through crafted requests, IDOR, session/CSRF or cross-organization access → `civensa-security-reviewer`. You own whether the rule is right and enforced on legitimate and out-of-order workflow paths; they own whether it can be bypassed.
+- Wording, placement and journey-level clarity of messages and screens → `civensa-ux-auditor`. You own whether a rule rejection names the record and the next step.
 - Visual layout and report rendering.
 
 ## Hard rules
