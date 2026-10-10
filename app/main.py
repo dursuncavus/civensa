@@ -11,6 +11,7 @@ import hmac
 import io
 import csv
 import time
+from functools import lru_cache
 from urllib.parse import quote
 
 from fastapi import FastAPI, Request, Depends, Form, HTTPException, UploadFile, File
@@ -23,6 +24,7 @@ from sqlalchemy.orm import Session, selectinload
 from starlette.middleware.sessions import SessionMiddleware
 from alembic import command as alembic_command
 from alembic.config import Config as AlembicConfig
+from alembic.script import ScriptDirectory
 
 from .db import Base, engine, get_db, SessionLocal
 from .models import (
@@ -41,7 +43,14 @@ from .report_export import build_department_docx
 
 BASE_DIR = Path(__file__).resolve().parent
 APP_VERSION = "5.0.0"
-MIGRATION_HEAD = "375cefa60412"
+
+
+@lru_cache(maxsize=1)
+def migration_head() -> str:
+    """Current Alembic script head; read from migrations/ so readiness follows new revisions."""
+    alembic_config = AlembicConfig(str(BASE_DIR.parent / "alembic.ini"))
+    alembic_config.set_main_option("script_location", str(BASE_DIR.parent / "migrations"))
+    return ScriptDirectory.from_config(alembic_config).get_current_head()
 
 
 @asynccontextmanager
@@ -1692,7 +1701,7 @@ def release_readiness(request: Request, db: Session = Depends(get_db), user: Use
     ).all()
     checks = {
         "database": operations["database"]["status"] == "ok",
-        "migration_head": migration == MIGRATION_HEAD,
+        "migration_head": migration == migration_head(),
         "period_active": operations["period"]["status"] == "active",
         "departments_present": operations["records"]["departments"] > 0,
         "indicators_present": operations["records"]["indicators"] > 0,
