@@ -306,6 +306,8 @@ def package_eligibility(db, actor, action, package, *, transition_time=None):
         if action == 'read_package':
             return actor.role == 'strategy' or (actor.department_id == package.department_id and
                 active_membership(db, actor.id, package.organization_id, package.department_id) is not None)
+        if action=='strategy_reopen':
+            return actor.role=='strategy' and package.state=='strategy_approved'
         if action in {'strategy_approve', 'strategy_return'}:
             return actor.role == 'strategy' and package.state == 'strategy_review'
         if actor.role != 'department' or actor.department_id != package.department_id:

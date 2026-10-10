@@ -455,4 +455,4 @@ from .package_models import DirectoratePackage, PackageRevision, PackageDecision
 from .report_workflow_models import (ReportCandidate, ReportCandidateState, CandidatePackage,
     ReportDecision, ReportRelease, ReportReleaseSuccession, ReportArtifact)
 
-from .revision_workflow_models import RevisionRequest, RevisionRequestState, RevisionRequestEvent, RevisionCorrectionCycle, RevisionEditGrant
+from .revision_workflow_models import RevisionRequest, RevisionRequestState, RevisionRequestEvent, RevisionCorrectionCycle, RevisionEditGrant, RevisionEditGrantRenewal

@@ -435,7 +435,7 @@ def test_net_change_needs_exact_request_grant_provenance(foundation_db,people,re
     assert not corrections.has_net_correction(db,same,unmodified,cycle,rev)
     assert not db.scalar(select(func.civensa_successor_request_participates(c.id,same.id)))
     rejects(409,lambda:publish(db,x,c))
-    with pytest.raises(DBAPIError,match='Unresolved or unedited'):
+    with pytest.raises(DBAPIError,match='closed_no_change request participates'):
         with db.begin_nested():raw_release(db,x,c)
 
 

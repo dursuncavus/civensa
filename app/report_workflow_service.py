@@ -312,11 +312,17 @@ def verify_activity_successor(db,candidate,manifest):
         previous=db.get(ReportCandidate,release.candidate_id) if release else None
         if not previous or candidate.resource_scope!='activity_report':packages.conflict()
         parent=json.loads(previous.manifest_json)
-        source=db.get(ActivityReportRevision,previous.activity_revision_id)
+        attempt=previous
+        if 'reworks_candidate_id' in manifest:
+            attempt=db.get(ReportCandidate,manifest['reworks_candidate_id'])
+            if not attempt or attempt.sequence>=candidate.sequence or attempt.sha256!=manifest.get('reworks_candidate_sha256'):packages.conflict()
+            returned_attempt_proof(db,attempt,release);verify(db,attempt)
+        elif 'reworks_candidate_sha256' in manifest:packages.conflict()
+        source=db.get(ActivityReportRevision,attempt.activity_revision_id)
         revision=db.get(ActivityReportRevision,candidate.activity_revision_id)
         if (manifest['successor_contract']!='materialized-successor-1'
             or manifest['predecessor_candidate_sha256']!=previous.sha256
-            or candidate.predecessor_candidate_id!=previous.id or candidate.sequence!=previous.sequence+1
+            or candidate.predecessor_candidate_id!=previous.id or candidate.sequence!=attempt.sequence+1
             or (candidate.organization_id,candidate.resource_scope,candidate.report_key,candidate.period_id)
                !=(release.organization_id,release.resource_scope,release.report_key,previous.period_id)
             or manifest['source_id']!=parent['source_id'] or manifest['required_department_ids']!=parent['required_department_ids']
@@ -345,6 +351,32 @@ def verify_activity_successor(db,candidate,manifest):
     except (KeyError,TypeError,AttributeError,ValueError):packages.conflict()
 
 
+def latest_successor_attempt(db,release):
+    return db.scalar(select(ReportCandidate).where(ReportCandidate.organization_id==release.organization_id,
+        ReportCandidate.resource_scope==release.resource_scope,ReportCandidate.report_key==release.report_key)
+        .order_by(ReportCandidate.sequence.desc()))
+
+
+def returned_attempt_proof(db,attempt,release):
+    manifest=json.loads(attempt.manifest_json)
+    state=db.get(ReportCandidateState,attempt.id,populate_existing=True)
+    decision=db.scalar(select(ReportDecision).where(ReportDecision.candidate_id==attempt.id,ReportDecision.action=='final_return'))
+    ev=db.get(WorkflowEvent,decision.workflow_event_id) if decision else None
+    if (manifest.get('predecessor_release_id')!=release.id or not state or state.state!='returned_to_strategy'
+        or not decision or decision.candidate_sha256!=attempt.sha256 or not ev or ev.event_type!='final_return'
+        or ev.resource_type!='report_candidate' or ev.resource_id!=str(attempt.id) or ev.organization_id!=attempt.organization_id
+        or not ev.reason.strip() or json.loads(ev.context_json).get('sha256')!=attempt.sha256):packages.conflict()
+    return attempt
+
+
+def require_returned_attempt(db,release_id):
+    from .revision_workflow_service import current_source
+    release,previous=current_source(db,release_id)
+    attempt=latest_successor_attempt(db,release)
+    if not attempt or attempt.id==previous.id:auth.fail('Yeniden çalışma için nihai iade edilmiş son ardıl aday gerekir.',409)
+    return returned_attempt_proof(db,attempt,release)
+
+
 def assemble_activity_successor(db,actor,organization_id,report_id,predecessor_release_id,package_ids):
     """Disabled workflow: materialized-only successor assembly; caller owns commit."""
     organization_lock(db,organization_id)
@@ -354,12 +386,11 @@ def assemble_activity_successor(db,actor,organization_id,report_id,predecessor_r
     if not explicit or (explicit.organization_id,explicit.resource_scope,explicit.report_key)!=(organization_id,'activity_report',str(report_id)):
         auth.fail('Ardıl aday için aynı kurum ve raporun tam yayımlanmış öncül sürümünü seçin.',409)
     release,previous=current_source(db,predecessor_release_id)
-    source=db.get(ActivityReportRevision,previous.activity_revision_id)
+    attempt=latest_successor_attempt(db,release)
+    rework=returned_attempt_proof(db,attempt,release) if attempt.id!=previous.id else None
+    source=db.get(ActivityReportRevision,(rework or previous).activity_revision_id)
     report=db.get(ActivityReport,report_id,populate_existing=True)
     if not report or report.organization_id!=organization_id or report.period_id!=previous.period_id or source.report_id!=report.id or report.current_revision!=source.revision:packages.conflict()
-    latest=db.scalar(select(ReportCandidate.id).where(ReportCandidate.organization_id==organization_id,
-        ReportCandidate.resource_scope=='activity_report',ReportCandidate.report_key==str(report_id)).order_by(ReportCandidate.sequence.desc()))
-    if latest!=previous.id:auth.fail('Bu öncül için ardıl aday zaten var; mevcut adayı inceleyin.',409)
     parent=json.loads(previous.manifest_json);old={b['package_id']:b for b in parent['packages']}
     if not isinstance(package_ids,list) or any(type(i) is not int for i in package_ids) or len(set(package_ids))!=len(package_ids) or set(package_ids)!=set(old):
         auth.fail('Öncül yayının tüm müdürlük paketlerini tam kimlikleriyle seçin.',409)
@@ -412,9 +443,10 @@ def assemble_activity_successor(db,actor,organization_id,report_id,predecessor_r
             'correction_request_grants':sorted(participant_grants,key=lambda entry:entry['request_id']),
             'packages':[{'package_id':p.id,'department_id':p.department_id,'revision_id':r.id,'sha256':r.sha256,
                 'decision_id':d.id,'strategy_event_id':d.workflow_event_id} for p,r,d in selected]}
+        if rework:manifest.update(reworks_candidate_id=rework.id,reworks_candidate_sha256=rework.sha256)
         raw=canonical(payload);mraw=canonical(manifest)
         candidate=ReportCandidate(organization_id=organization_id,period_id=previous.period_id,resource_scope='activity_report',
-            report_key=str(report.id),sequence=previous.sequence+1,predecessor_candidate_id=previous.id,activity_revision_id=new.id,
+            report_key=str(report.id),sequence=(rework or previous).sequence+1,predecessor_candidate_id=previous.id,activity_revision_id=new.id,
             payload_json=raw,payload_sha256=contract.digest(raw),manifest_json=mraw,sha256=hash_content(raw,mraw),created_by=actor.id)
         db.add(candidate);db.flush();db.add(ReportCandidateState(candidate_id=candidate.id,state='assembling',version=0))
         for pkg,rev,decision in selected:
@@ -468,6 +500,12 @@ def successor_publication_context(db,candidate,manifest):
         if pkg.state!='strategy_approved' or current.id!=revision.id or current.sha256!=binding.sha256:
             auth.fail('Paket aday oluşturulduktan sonra değişti. Tam güncel yeniden onaylı revizyonla açıkça yeni ardıl aday oluşturun.',409)
         bound[pkg.id]=revision
+    for closed in db.scalars(select(RevisionRequest).join(RevisionRequestState,RevisionRequestState.request_id==RevisionRequest.id)
+        .where(RevisionRequest.source_release_id==predecessor.id,RevisionRequestState.state=='closed_no_change')):
+        grant=db.scalar(select(RevisionEditGrant).where(RevisionEditGrant.request_id==closed.id))
+        cycle=db.get(RevisionCorrectionCycle,grant.cycle_id) if grant else None
+        if cycle and cycle.package_id in bound and corrections.has_net_correction(db,closed,grant,cycle,bound[cycle.package_id]):
+            auth.fail('closed_no_change talebi ardıl içeriğe katkı yapamaz.',409)
     participants=manifest.get('correction_request_grants')
     if not isinstance(participants,list) or not participants:packages.conflict()
     represented={}
@@ -481,7 +519,13 @@ def successor_publication_context(db,candidate,manifest):
     for rid in represented:
         request=db.get(RevisionRequest,rid);state=db.get(RevisionRequestState,rid,populate_existing=True)
         if not request or request.source_release_id!=predecessor.id or not state:packages.conflict()
-        if state.state!='closed_no_change':represented_open.add(rid)
+        if state.state=='closed_no_change':
+            grant=db.get(RevisionEditGrant,represented[rid]['grant_id'])
+            cycle=db.get(RevisionCorrectionCycle,represented[rid]['cycle_id'])
+            if not grant or not cycle or grant.request_id!=rid or grant.cycle_id!=cycle.id or cycle.package_id not in bound:packages.conflict()
+            if corrections.has_net_correction(db,request,grant,cycle,bound[cycle.package_id]):
+                auth.fail('closed_no_change talebi ardıl içeriğe katkı yapamaz.',409)
+        else:represented_open.add(rid)
     if not pending or {q.id for q,s in pending}!=represented_open:
         auth.fail('Öncüle bağlı yeni veya temsil edilmeyen düzeltme işleri var. Her talebi açıkça sonuçlandırın; otomatik taşıma yapılmaz.',409)
     result=[]

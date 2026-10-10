@@ -21,6 +21,7 @@ TRANSITIONS = {
     'director_approve': ('director_review', 'strategy_review'),
     'director_return': ('director_review', 'returned'),
     'director_reopen': ('director_review', 'returned'),
+    'strategy_reopen': ('strategy_approved', 'returned'),
     'strategy_return': ('strategy_review', 'returned'),
     'strategy_approve': ('strategy_review', 'strategy_approved'),
 }
@@ -64,7 +65,7 @@ def locked(db, actor, package_id, action, expected_version, expected_hash):
         auth.fail('Bu paket aşamasında seçilen işlemi yapmaya yetkiniz yok. Güncel aşamayı ve görevlendirmenizi kontrol edin.')
     if cycle:
         # Keep stale-version/authority checks ahead of grant validity as before.
-        require_correction_grant(db,cycle)
+        if action!='strategy_reopen':require_correction_grant(db,cycle)
         if action=='edit_draft':auth.fail('Yayımlanmış düzeltmeleri yalnız alan izni üzerinden düzenleyin.')
         return package,current
     if package.resource_scope == 'activity_report':
@@ -294,10 +295,18 @@ def edit_package(db, actor, package_id, expected_version, expected_hash, patches
 
 def transition(db, actor, package_id, action, expected_version, expected_hash, reason=''):
     if action not in TRANSITIONS:auth.fail('Paket işlemi tanınmıyor.',403)
+    if action=='strategy_reopen':
+        from .revision_workflow_service import correction_context
+        target=db.get(DirectoratePackage,package_id)
+        if not target:auth.fail('Paket bulunamadı.',404)
+        cycle=correction_context(db,target,validate_grant=False)
+        if not cycle:conflict()
+        from .report_workflow_service import require_returned_attempt
+        require_returned_attempt(db,cycle.source_release_id)
     package,current=locked(db,actor,package_id,action,expected_version,expected_hash)
     origin,destination=TRANSITIONS[action]
     if (origin=='editable' and package.state not in {'draft','returned'}) or (origin!='editable' and package.state!=origin):conflict()
-    if action in {'director_return','director_reopen','strategy_return'}:reason=auth.required(reason,'Paket iade / düzeltme gerekçesi')
+    if action in {'director_return','director_reopen','strategy_return','strategy_reopen'}:reason=auth.required(reason,'Paket iade / düzeltme gerekçesi')
     content=json.loads(current.content_json)
     if action=='submit_to_director' and package.resource_scope=='activity_report':
         for entry in content['entries']:validate_actual(entry)
@@ -312,7 +321,7 @@ def transition(db, actor, package_id, action, expected_version, expected_hash, r
         delegation=auth.active_delegation(db,package.organization_id,package.department_id,at=decision_time) if action.startswith('director_') else None
         state_before=package.state
         from .revision_workflow_service import correction_context
-        cycle=correction_context(db,package)
+        cycle=correction_context(db,package,validate_grant=action!='strategy_reopen')
         next_revision=current
         if destination=='returned' and not cycle:
             next_revision=append_revision(db,package,actor,current.content_json,current,reason)

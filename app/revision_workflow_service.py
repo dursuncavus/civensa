@@ -241,6 +241,7 @@ def has_net_correction(db,request,grant,cycle,bound):
 
 def open_grant(db,actor,request_id,expected_version,allowlist,membership_ids,start_at,end_at,formal_basis):
     r,state=locked(db,actor,request_id,expected_version);strategy(db,actor)
+    ensure_no_live_successor(db,r.source_release_id)
     if state.state!='accepted':auth.fail('Düzenleme izni için önce talebi kabul edin.',409)
     if (not allowlist or len({auth.encode(p) for p in allowlist})!=len(allowlist)
         or not set(map(auth.encode,allowlist))<=set(map(auth.encode,paths(r)))):auth.fail('İzin yalnız talep edilen alanları veya bir alt kümesini kapsayabilir.',422)
@@ -274,12 +275,12 @@ def edit_under_grant(db,actor,grant_id,expected_version,expected_hash,patches,re
     r,state=locked(db,actor,grant.request_id);cycle=db.get(RevisionCorrectionCycle,grant.cycle_id)
     pkg=db.get(DirectoratePackage,cycle.package_id);m=member(db,actor,r.organization_id,r.department_id)
     db.scalar(select(DirectorateMembership).where(DirectorateMembership.id==m.id).with_for_update().execution_options(populate_existing=True))
-    now=auth.server_now(db)
-    if state.state!='editing' or not m.active or m.id not in json.loads(grant.membership_ids_json) or not grant.start_at<=now<grant.end_at:auth.fail('Düzenleme izni henüz başlamadı, sona erdi veya görevlendirmeniz kapsam dışında. Stratejiyle izin durumunu kontrol edin.')
+    now=auth.server_now(db);effective=effective_grant(db,grant,now)
+    if state.state!='editing' or not m.active or m.id not in json.loads(grant.membership_ids_json) or not effective:auth.fail('Düzenleme izni henüz başlamadı, sona erdi veya görevlendirmeniz kapsam dışında. Stratejiyle izin durumunu kontrol edin.')
     current=packages.revision(db,pkg)
     if pkg.state!='returned' or pkg.version!=expected_version or current.sha256!=expected_hash:packages.conflict()
     validated=fields(json.loads(current.content_json),pkg.resource_scope,patches)
-    if any('value' not in p for p in validated) or not set(auth.encode(p['path']) for p in validated)<=set(map(auth.encode,json.loads(grant.paths_json))):auth.fail('Yalnız bu izinde belirtilen alanları düzenleyebilirsiniz.',403)
+    if any('value' not in p for p in validated) or not set(auth.encode(p['path']) for p in validated)<=set(map(auth.encode,json.loads(effective.paths_json))):auth.fail('Yalnız bu izinde belirtilen alanları düzenleyebilirsiniz.',403)
     if m.role_code=='department_director':reason=auth.required(reason,'Müdür düzeltme gerekçesi')
     before=json.loads(current.content_json);after=deepcopy(before)
     for patch in validated:packages.apply_patch(after,pkg.resource_scope,patch['path'],patch['value'])
@@ -306,7 +307,7 @@ def edit_under_grant(db,actor,grant_id,expected_version,expected_hash,patches,re
     if not changes:auth.fail('Kaydedilecek alan değişikliği yok.',422)
     raw=auth.encode(after)
     with db.begin_nested():
-        e=history(db,actor,r,'correction_edit',{'grant_id':grant.id,'membership_id':m.id,'package_id':pkg.id,
+        e=history(db,actor,r,'correction_edit',{'grant_id':grant.id,'renewal_id':effective.id if isinstance(effective,RevisionEditGrantRenewal) else None,'membership_id':m.id,'package_id':pkg.id,
             'previous_revision_id':current.id,'next_revision':pkg.current_revision+1,'next_sha256':packages.digest(raw)},reason)
         for path,old,new in changes:
             db.add(FieldChangeEvent(workflow_event_id=e.id,revision_request_id=r.id,field_key=auth.encode(path),field_type='json',previous_json=auth.encode(old),new_json=auth.encode(new)))
@@ -348,6 +349,43 @@ def require_correction_grant(db,cycle):
     """Recheck grant time without reacquiring the correction organization lock."""
     now=auth.server_now(db)
     grants=db.scalars(select(RevisionEditGrant).join(RevisionRequestState,RevisionRequestState.request_id==RevisionEditGrant.request_id)
-        .where(RevisionEditGrant.cycle_id==cycle.id,RevisionRequestState.state=='editing',
-            RevisionEditGrant.start_at<=now,RevisionEditGrant.end_at>now)).all()
-    if not grants:auth.fail('Düzeltme izni etkin değil. Stratejiden güncel alan iznini kontrol etmesini isteyin.',409)
+        .where(RevisionEditGrant.cycle_id==cycle.id,RevisionRequestState.state=='editing')).all()
+    if not any(effective_grant(db,g,now) for g in grants):auth.fail('Düzeltme izni etkin değil. Stratejiden güncel alan iznini kontrol etmesini isteyin.',409)
+
+
+def ensure_no_live_successor(db,release_id):
+    from sqlalchemy import cast
+    from sqlalchemy.dialects.postgresql import JSONB
+    if db.scalar(select(ReportCandidate.id).join(ReportCandidateState,ReportCandidateState.candidate_id==ReportCandidate.id)
+        .where(ReportCandidateState.state.in_(['assembling','final_review','final_approved']),
+            cast(ReportCandidate.manifest_json,JSONB)['predecessor_release_id'].as_integer()==release_id)):
+        auth.fail('Canlı ardıl aday varken yeni düzeltme döngüsü açılamaz.',409)
+
+
+def effective_grant(db,grant,now):
+    if grant.start_at<=now<grant.end_at:return grant
+    return db.scalar(select(RevisionEditGrantRenewal).where(RevisionEditGrantRenewal.original_grant_id==grant.id,
+        RevisionEditGrantRenewal.start_at<=now,RevisionEditGrantRenewal.end_at>now).order_by(RevisionEditGrantRenewal.id.desc()))
+
+
+def renew_grant(db,actor,grant_id,paths,start_at,end_at,reason):
+    grant=db.get(RevisionEditGrant,grant_id)
+    if not grant:auth.fail('Düzeltme izni bulunamadı.',404)
+    request,state=locked(db,actor,grant.request_id);strategy(db,actor)
+    reports.require_returned_attempt(db,grant.source_release_id)
+    cycle=db.get(RevisionCorrectionCycle,grant.cycle_id);pkg=db.get(DirectoratePackage,cycle.package_id)
+    now=auth.server_now(db)
+    if state.state!='editing' or pkg.state not in {'returned','director_review','strategy_review','strategy_approved'} or grant.end_at>now or effective_grant(db,grant,now):packages.conflict()
+    if not paths or len(set(map(auth.encode,paths)))!=len(paths) or not set(map(auth.encode,paths))<=set(map(auth.encode,json.loads(grant.paths_json))):auth.fail('Yenileme özgün alan iznini genişletemez.',422)
+    if start_at.tzinfo is None or end_at.tzinfo is None or start_at>=end_at:auth.fail('Saat dilimiyle geçerli izin aralığı belirtin.',422)
+    if db.scalar(select(RevisionEditGrantRenewal.id).where(RevisionEditGrantRenewal.original_grant_id==grant.id,
+        RevisionEditGrantRenewal.start_at<end_at,RevisionEditGrantRenewal.end_at>start_at)):packages.conflict()
+    reason=auth.required(reason,'Yenileme gerekçesi')
+    with db.begin_nested():
+        e=history(db,actor,request,'correction_grant_renewed',{'original_grant_id':grant.id,'cycle_id':cycle.id,
+            'paths':paths,'start_at':start_at,'end_at':end_at},reason)
+        renewal=RevisionEditGrantRenewal(original_grant_id=grant.id,request_id=request.id,cycle_id=cycle.id,
+            source_release_id=grant.source_release_id,paths_json=auth.encode(paths),start_at=start_at,end_at=end_at,
+            created_by=actor.id,reason=reason,workflow_event_id=e.id)
+        db.add(renewal);db.flush();notify(db,request,'correction_grant_renewed',active_participants(db,request,grant))
+    return renewal

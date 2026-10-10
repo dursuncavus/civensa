@@ -63,6 +63,23 @@ class RevisionEditGrant(Base):
     created_at: Mapped[datetime]=mapped_column(DateTime(timezone=True),server_default=func.now())
     __table_args__=(CheckConstraint('start_at<end_at',name='ck_revision_grant_time'),CheckConstraint('length(trim(formal_basis))>0',name='ck_revision_grant_basis'))
 
-for model in (RevisionRequest,RevisionRequestState,RevisionRequestEvent,RevisionCorrectionCycle,RevisionEditGrant):
+class RevisionEditGrantRenewal(Base):
+    """Explicit append-only windows; the primary grant remains unique/immutable."""
+    __tablename__='revision_edit_grant_renewals'
+    id: Mapped[int]=mapped_column(primary_key=True)
+    original_grant_id: Mapped[int]=mapped_column(ForeignKey('revision_edit_grants.id'))
+    request_id: Mapped[int]=mapped_column(ForeignKey('revision_requests.id'))
+    cycle_id: Mapped[int]=mapped_column(ForeignKey('revision_correction_cycles.id'))
+    source_release_id: Mapped[int]=mapped_column(ForeignKey('report_releases.id'))
+    paths_json: Mapped[str]=mapped_column(Text)
+    start_at: Mapped[datetime]=mapped_column(DateTime(timezone=True))
+    end_at: Mapped[datetime]=mapped_column(DateTime(timezone=True))
+    created_by: Mapped[int]=mapped_column(ForeignKey('users.id'))
+    reason: Mapped[str]=mapped_column(Text)
+    workflow_event_id: Mapped[int]=mapped_column(ForeignKey('workflow_events.id'),unique=True)
+    created_at: Mapped[datetime]=mapped_column(DateTime(timezone=True),server_default=func.now())
+    __table_args__=(CheckConstraint('start_at<end_at',name='ck_renewal_time'),CheckConstraint('length(trim(reason))>0',name='ck_renewal_reason'))
+
+for model in (RevisionRequest,RevisionRequestState,RevisionRequestEvent,RevisionCorrectionCycle,RevisionEditGrant,RevisionEditGrantRenewal):
     event.listen(model,'before_update',reject_history_change)
     event.listen(model,'before_delete',reject_history_change)

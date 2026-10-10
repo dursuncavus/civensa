@@ -164,7 +164,7 @@ def test_opening_without_exact_cycle_fails_at_commit(foundation_db,people,ready,
         db.execute(text("UPDATE directorate_packages SET state='returned',version=version+1,current_revision=current_revision+1 WHERE id=:id"),{'id':p.id})
     # Immediate statement guards admit the complete protocol; commit must reject
     # the missing cycle even if the projection was never moved.
-    with pytest.raises(DBAPIError,match='requires its exact current-release cycle at commit'):db.commit()
+    with pytest.raises(DBAPIError,match='requires its exact current-release cycle at commit' if projection else 'Correction opening projection left behind'):db.commit()
     db.rollback();db.expire_all()
     assert all_counts(db)==before and db.scalar(select(func.count(PackageRevision.id)))==revision_count
     assert (p.state,p.version,p.current_revision)==('strategy_approved',version,current)
@@ -317,4 +317,4 @@ def test_first_ever_cycle_opens_against_published_one_one(foundation_db,people):
     assert opening.revision==source.revision+1 and opening.content_json==source.content_json and opening.sha256==source.sha256==binding.sha256
     assert (untouched.state,untouched.current_revision)==('returned',opening.revision)
     assert db.scalar(select(func.count(RevisionCorrectionCycle.id)).where(RevisionCorrectionCycle.package_id==untouched.id))==1
-    assert db.execute(text('SELECT version_num FROM alembic_version')).scalar_one()=='7b90cde04856'
+    assert db.execute(text('SELECT version_num FROM alembic_version')).scalar_one()=='8ca1def15967'

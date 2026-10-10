@@ -51,7 +51,7 @@ class PackageDecision(Base):
     workflow_event_id: Mapped[int] = mapped_column(ForeignKey('workflow_events.id'), unique=True)
     delegation_id: Mapped[int | None] = mapped_column(ForeignKey('authority_delegations.id'), nullable=True)
     # Actor, reason and DB timestamp belong to the immutable linked WorkflowEvent.
-    __table_args__ = (CheckConstraint("action IN ('submit_to_director','director_approve','director_return','director_reopen','strategy_approve','strategy_return')", name='ck_package_decision_action'),)
+    __table_args__ = (CheckConstraint("action IN ('submit_to_director','director_approve','director_return','director_reopen','strategy_approve','strategy_return','strategy_reopen')", name='ck_package_decision_action'),)
 
 
 for model in (PackageRevision, PackageDecision):
