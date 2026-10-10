@@ -1,6 +1,6 @@
 {
   "version": "5.0.0",
-  "sha256": "b2df94864b8b4c41f09a73a8136ace78d3a28c0620967142244d89d715c306cc",
+  "sha256": "85fb57476bd4f0306d1a07376fe8b515c2f537ca4b45b7ec52d55f9dda8a10f5",
   "parts": [
     "bundle.part01",
     "bundle.part02",
@@ -38,9 +38,9 @@
     "app/program_service.py": "c2150d2aedebfd7dd0df2b709120fa7e1c149eefcb840a84b2998bec43b40ef2",
     "app/report_export.py": "9e56d2d7c2aaa4d969c904a71644d86c8e873fdba1c8ed5a124eda3a3aa58271",
     "app/report_workflow_models.py": "8f49a3f6e693c9322bae55274614b7f35a01c509820fd810b0afdb1e1be9da81",
-    "app/report_workflow_service.py": "e9d64bdfc62ce3eda1ca7291ae642ffcac521d63bff730aac07ab996ef9e7954",
+    "app/report_workflow_service.py": "ce02ecf9b9db411ab10a888b32114964483c70c80b9d024a2679612f9cb37027",
     "app/revision_workflow_models.py": "89a93434d17438efbdd7cbfffef5c7917856a2208a6eb0e2bb381c10cdcf9f41",
-    "app/revision_workflow_service.py": "106b80f44839337a1d1a7f0ed2891865dba256d371313e65288564df9ca3425a",
+    "app/revision_workflow_service.py": "5862b5e6ae2f8de89d2fdf2e0b5eca0b168d5aa9769661fabe14ec2c72f855f5",
     "app/security.py": "ea0fd5452a72604f9cda774ecfdb19eb7a502b2fffb8f6b518bc6d3eafee9132",
     "app/seed.py": "113e221f145921120ea8b31ed06e9a46b571654dc5cc2633faaf5a82ee05c268",
     "app/serialization.py": "16899a4a704d5c6ac09afd614bc1f601f6986f44b88430912588ce1805e3e3f1",
@@ -73,6 +73,7 @@
     "migrations/versions/264bdce59301_immutable_report_candidates_and_release.py": "77adfd680387447faa6755f8a0e02ed70b570612b89c8ca3a65d7d926f212a00",
     "migrations/versions/290ef7e62102_initial_civensa_schema.py": "7148f5a53b5829be849f1c70bbd0a55174185cb38e313c01a09cc0ecb7283179",
     "migrations/versions/375cefa60412_scoped_published_revision_requests_and_.py": "ba59b1708a96f770e8768beb6249a1e354fef18a4411ce703994be392eb1e8a1",
+    "migrations/versions/3942a5669b80_s3c2_package_decision_guards_and_closed_survival.py": "f8a1c54fcf4a10746a71bd2a7ae70695f316dfbf16cc70a1cf754318569ff070",
     "migrations/versions/486dfab71523_correction_package_reapproval.py": "0cb3699a9322acd221c36ac07b7c4cc400ee6968208e4776d2e5cb7eaef47817",
     "migrations/versions/597efbc82634_materialized_successor_lineage.py": "1a36f9b322b2c1b1bc40cb6e694b884e2c06b974c9d0a5d859877f0f2ed3f8a4",
     "migrations/versions/6a8fcbd93745_successor_publication_applied_requests.py": "780a1a091442515ab22af75fcfa12f9eec5a63dfa694792d92d8e4dee73f3d01",
