@@ -206,8 +206,10 @@ def net_changed(before,after,path):
     return old!=new
 
 
-def has_net_correction(db,request,grant,cycle,bound):
-    """A granted business path must change net AND have this grant's edit proof."""
+def has_net_correction(db,request,grant,cycle,bound,*,survives=False):
+    """A granted business path must change net AND have this grant's edit proof.
+
+    survives=True is only for closed_no_change checks (closed_request_survives)."""
     source=db.get(PackageRevision,cycle.source_package_revision_id)
     before=json.loads(source.content_json);after=json.loads(bound.content_json)
     paths=[p for p in json.loads(grant.paths_json) if 'deviation' not in p and net_changed(before,after,p)]
@@ -235,8 +237,20 @@ def has_net_correction(db,request,grant,cycle,bound):
                 or membership.department_id!=request.department_id):continue
             prior=db.get(PackageRevision,revision.previous_revision_id)
             old=json.loads(change.previous_json);new=json.loads(change.new_json)
-            if old!=new and old==value_at(json.loads(prior.content_json),path) and new==value_at(json.loads(revision.content_json),path):return True
+            if old!=new and old==value_at(json.loads(prior.content_json),path) and new==value_at(json.loads(revision.content_json),path):
+                # Container-level edits keep the conservative touch rule: a later
+                # child edit would otherwise hide the rest of this closed value.
+                if not survives or isinstance(old,(dict,list)) or isinstance(new,(dict,list)):return True
+                content=json.loads(revision.content_json)
+                if not net_changed(content,after,path) and not any(later.revision>revision.revision
+                    and net_changed(content,json.loads(later.content_json),path) for later in lineage.values()):return True
     return False
+
+
+def closed_request_survives(db,request,grant,cycle,bound):
+    """A closed_no_change scalar edit still stands only if it is the last lineage
+    change at its address and equals the bound value; a later change supersedes it."""
+    return has_net_correction(db,request,grant,cycle,bound,survives=True)
 
 
 def open_grant(db,actor,request_id,expected_version,allowlist,membership_ids,start_at,end_at,formal_basis):

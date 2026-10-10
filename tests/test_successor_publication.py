@@ -439,6 +439,93 @@ def test_net_change_needs_exact_request_grant_provenance(foundation_db,people,re
         with db.begin_nested():raw_release(db,x,c)
 
 
+def closed_history(db,q):
+    rows=[db.get(RevisionRequestState,q.id,populate_existing=True),db.scalar(select(RevisionEditGrant).where(RevisionEditGrant.request_id==q.id))]
+    rows+=list(db.scalars(select(RevisionRequestEvent).where(RevisionRequestEvent.request_id==q.id).order_by(RevisionRequestEvent.id)))
+    rows+=list(db.scalars(select(FieldChangeEvent).where(FieldChangeEvent.revision_request_id==q.id).order_by(FieldChangeEvent.id)))
+    rows+=list(db.scalars(select(WorkflowEvent).where(WorkflowEvent.resource_type=='revision_request',WorkflowEvent.resource_id==str(q.id)).order_by(WorkflowEvent.id)))
+    return [tuple(getattr(row,c.name) for c in row.__table__.columns) for row in rows]
+
+
+def source_value(db,g,path):
+    cycle=db.get(RevisionCorrectionCycle,g.cycle_id)
+    return corrections.value_at(json.loads(db.get(PackageRevision,cycle.source_package_revision_id).content_json),path)
+
+
+@pytest.mark.parametrize('case',['roundtrip','superseded','restored_by_later'])
+def test_closed_request_superseded_by_later_correction_publishes(foundation_db,people,released,case):
+    """B2: a closed_no_change edit blocks only while it is still the surviving value."""
+    db=foundation_db;x=people;r=request(db,x,released);accept(db,x,r);g=grant(db,x,r)
+    original=source_value(db,g,['entries',0,'value']);assert original not in (None,'2.50','3.50')
+    edit(db,x,g,value='2.50')
+    if case=='roundtrip':edit(db,x,g,value=original)  # net zero: legitimately closed_no_change
+    close(db,x,r)
+    s=request(db,x,released);accept(db,x,s);h=grant(db,x,s)  # allowed: the closed request no longer overlaps
+    bound=edit(db,x,h,value='3.50')
+    if case=='restored_by_later':bound=edit(db,x,h,value='2.50')  # S itself writes the value last
+    p=db.get(DirectoratePackage,bound.package_id);reapprove(db,x,p)
+    c=assemble(db,x,released,p);db.commit();review(db,x,c);approve(db,x,c);cycle=db.get(RevisionCorrectionCycle,g.cycle_id)
+    # Non-vacuous: the old touch-provenance predicates still match R in both layers.
+    assert corrections.has_net_correction(db,r,g,cycle,bound)
+    assert db.scalar(select(func.civensa_successor_request_participates(c.id,r.id)))
+    assert not corrections.closed_request_survives(db,r,g,cycle,bound)
+    assert not db.scalar(select(func.civensa_closed_request_survives(c.id,r.id)))
+    # Applied provenance for the editing request is unchanged.
+    assert corrections.has_net_correction(db,s,h,cycle,bound) and db.scalar(select(func.civensa_successor_request_participates(c.id,s.id)))
+    history=closed_history(db,r)
+    sp=db.begin_nested();raw_release(db,x,c);sp.rollback()  # DB guard alone accepts the row
+    release=publish(db,x,c);assert (release.major,release.minor)==(1,1)
+    db.expire_all()
+    assert db.get(RevisionRequestState,s.id).state=='applied' and db.get(RevisionRequestState,r.id).state=='closed_no_change'
+    assert closed_history(db,r)==history
+    with pytest.raises(DBAPIError):
+        with db.begin_nested():db.execute(text("UPDATE revision_request_states SET state='applied',version=version+1 WHERE request_id=:id"),{'id':r.id})
+
+
+@pytest.mark.parametrize('case',['other_path','same_path_unchanged','equivalent_spelling','container'])
+def test_closed_request_value_still_standing_blocks_app_and_db(foundation_db,people,released,case):
+    """B2 negative: the closed request's own value is still the final bound value."""
+    db=foundation_db;x=people
+    if case=='container':
+        path=['entries',0,'evidence']
+        r=corrections.create_request(db,x['user'],released.id,x['department'].id,[{'path':path}],'Kanıt ekleme');db.commit()
+    else:path=['entries',0,'value'];r=request(db,x,released)
+    accept(db,x,r);g=grant(db,x,r);cycle=db.get(RevisionCorrectionCycle,g.cycle_id)
+    pkg=db.get(DirectoratePackage,cycle.package_id)
+    def write(grant,patches):
+        current=reports.packages.revision(db,pkg)
+        rev=corrections.edit_under_grant(db,x['user'],grant.id,pkg.version,current.sha256,patches,'');db.commit();return rev
+    if case=='container':
+        evidence=source_value(db,g,path)+[{'title':'Kapalı talebin eki','locator':'s9','source_revision':'r9'}]
+        write(g,[{'path':path,'value':evidence}])  # list length change: one container-level edit
+    else:edit(db,x,g,value='2.50')
+    close(db,x,r)
+    if case=='other_path':
+        s=request(db,x,released,other=True);accept(db,x,s);h=grant(db,x,s);bound=edit(db,x,h,other=True,value='Yeni açıklama')
+    elif case=='same_path_unchanged':
+        s=corrections.create_request(db,x['user'],released.id,x['department'].id,[{'path':['entries',0,'value']},{'path':['entries',0,'explanation']}],'İki alan');db.commit()
+        accept(db,x,s);h=grant(db,x,s);bound=edit(db,x,h,other=True,value='Yeni açıklama')  # granted X but leaves it
+    elif case=='equivalent_spelling':
+        s=request(db,x,released);accept(db,x,s);h=grant(db,x,s);bound=edit(db,x,h,value='2.5')  # same number, new spelling
+    else:
+        s=corrections.create_request(db,x['user'],released.id,x['department'].id,[{'path':path}],'Kanıt adı');db.commit()
+        accept(db,x,s);h=grant(db,x,s)
+        evidence=json.loads(reports.packages.revision(db,pkg).content_json)['entries'][0]['evidence'];evidence[0]['title']='Doğru defter adı'
+        bound=write(h,[{'path':path,'value':evidence}])  # same length: a leaf edit inside R's container
+    reapprove(db,x,pkg);c=assemble(db,x,released,pkg);db.commit();review(db,x,c);approve(db,x,c)
+    assert corrections.closed_request_survives(db,r,g,cycle,bound)
+    assert db.scalar(select(func.civensa_closed_request_survives(c.id,r.id)))
+    assert corrections.has_net_correction(db,s,h,cycle,bound)  # the successor is otherwise publishable
+    history=closed_history(db,r);before=all_counts(db)
+    rejects(409,lambda:publish(db,x,c))
+    with pytest.raises(DBAPIError,match='closed_no_change request participates'):
+        with db.begin_nested():raw_release(db,x,c)  # Python bypassed: the DB backstop alone rejects
+    db.expire_all();assert all_counts(db)==before and closed_history(db,r)==history
+    assert db.get(RevisionRequestState,s.id).state=='editing' and db.get(ReportCandidateState,c.id).state=='final_approved'
+    names={n for (n,) in db.execute(text("SELECT tgname FROM pg_trigger WHERE tgrelid='package_decisions'::regclass AND NOT tgisinternal"))}
+    assert {'immutable_package_decisions','package_decision_binding','strategy_reopen_decision_guard'}<=names
+
+
 def test_derived_deviation_alone_never_counts(foundation_db,people,released):
     db=foundation_db;x=people;q=request(db,x,released);accept(db,x,q);g=grant(db,x,q)
     edit(db,x,g,value='2.50');rev=edit(db,x,g,value='1.75');cycle=db.get(RevisionCorrectionCycle,g.cycle_id)

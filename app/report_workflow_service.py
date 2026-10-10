@@ -504,7 +504,7 @@ def successor_publication_context(db,candidate,manifest):
         .where(RevisionRequest.source_release_id==predecessor.id,RevisionRequestState.state=='closed_no_change')):
         grant=db.scalar(select(RevisionEditGrant).where(RevisionEditGrant.request_id==closed.id))
         cycle=db.get(RevisionCorrectionCycle,grant.cycle_id) if grant else None
-        if cycle and cycle.package_id in bound and corrections.has_net_correction(db,closed,grant,cycle,bound[cycle.package_id]):
+        if cycle and cycle.package_id in bound and corrections.closed_request_survives(db,closed,grant,cycle,bound[cycle.package_id]):
             auth.fail('closed_no_change talebi ardıl içeriğe katkı yapamaz.',409)
     participants=manifest.get('correction_request_grants')
     if not isinstance(participants,list) or not participants:packages.conflict()
@@ -523,7 +523,7 @@ def successor_publication_context(db,candidate,manifest):
             grant=db.get(RevisionEditGrant,represented[rid]['grant_id'])
             cycle=db.get(RevisionCorrectionCycle,represented[rid]['cycle_id'])
             if not grant or not cycle or grant.request_id!=rid or grant.cycle_id!=cycle.id or cycle.package_id not in bound:packages.conflict()
-            if corrections.has_net_correction(db,request,grant,cycle,bound[cycle.package_id]):
+            if corrections.closed_request_survives(db,request,grant,cycle,bound[cycle.package_id]):
                 auth.fail('closed_no_change talebi ardıl içeriğe katkı yapamaz.',409)
         else:represented_open.add(rid)
     if not pending or {q.id for q,s in pending}!=represented_open:
