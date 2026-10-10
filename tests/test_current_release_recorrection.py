@@ -89,13 +89,13 @@ def test_old_grant_and_request_never_reactivate(foundation_db,people,released,re
     # An old source copy with a forged old correction_opened audit cannot bypass
     # either stale protection or the current-cycle grant protocol.
     old_source=db.get(PackageRevision,q.source_package_revision_id)
-    with pytest.raises(DBAPIError):
+    with pytest.raises(DBAPIError,match='Stale correction cycle|Missing active scoped correction authorization/audit'):
         with db.begin_nested():
             corrections.history(db,x['strategy'],q,'correction_opened',{'package_id':p.id,'source_package_revision_id':old_source.id},'Eski yayın')
             db.execute(PackageRevision.__table__.insert().values(package_id=p.id,revision=p.current_revision+1,
                 previous_revision_id=old_source.id,content_json=old_source.content_json,sha256=old_source.sha256,created_by=x['strategy'].id,reason='Eski'))
     assert all_counts(db)==before
-    with pytest.raises(DBAPIError):
+    with pytest.raises(DBAPIError,match='Stale correction cycle|Missing exact correction transition decision/audit'):
         with db.begin_nested():
             current=reports.packages.revision(db,p)
             e=reports.packages.history_event(db,x['director'],p,'submit_to_director',{'from_state':p.state,'to_state':'director_review',
@@ -139,7 +139,7 @@ def test_forged_one_one_opening_fails_closed(foundation_db,people,released,ready
     source=db.get(PackageRevision,q.source_package_revision_id)
     if bad=='existing_cycle':grant(db,x,q)
     before=all_counts(db);revision_count=db.scalar(select(func.count(PackageRevision.id)))
-    with pytest.raises(DBAPIError):
+    with pytest.raises(DBAPIError,match='Missing active scoped correction authorization/audit' if bad=='existing_cycle' else 'Stale correction cycle'):
         with db.begin_nested():
             if bad!='no_event':opening_protocol(db,x,one_one,p,q,actor=x['user'] if bad=='actor' else None,
                 event_source=db.get(PackageRevision,old_request.source_package_revision_id) if bad=='event_source' else None)
@@ -262,3 +262,59 @@ def test_opening_completion_survives_atomic_reapproval_and_publication(foundatio
     assert r.minor==2 and db.get(RevisionRequestState,q.id).state=='applied'
     assert db.get(RevisionCorrectionCycle,g.cycle_id).source_release_id==one_one.id
     assert corrections.current_source(db,r.id)[0].id==r.id
+
+
+@pytest.mark.parametrize('validate',[False,True])
+def test_never_corrected_package_context_is_ordinary(foundation_db,package,validate):
+    db=foundation_db
+    assert db.scalar(select(func.count(RevisionCorrectionCycle.id)).where(RevisionCorrectionCycle.package_id==package.id))==0
+    assert corrections.correction_context(db,package,validate_grant=validate) is None
+
+
+def test_first_ever_cycle_opens_against_published_one_one(foundation_db,people):
+    """An unchanged second package has no 1.0 cycle; its first opening commits."""
+    from tests.test_authorization_foundation import established
+    db=foundation_db;x=people
+    dept=Department(organization_id=x['department'].organization_id,name='İlk düzeltmesi 1.1 birimi')
+    db.add(dept);db.flush()
+    user=User(email='first-cycle-editor@example.invalid',full_name='İkinci editör',role='department',department_id=dept.id,password_hash='unused')
+    director=User(email='first-cycle-director@example.invalid',full_name='İkinci müdür',role='department',department_id=dept.id,password_hash='unused')
+    card=ReportCard(**{col.name:getattr(x['card'],col.name) for col in ReportCard.__table__.columns if col.name not in {'id','department_id'}},department_id=dept.id)
+    db.add(card);db.flush()
+    indicator=Indicator(period_id=x['period'].id,department_id=dept.id,subprogram_id=x['subprogram'].id,
+        card_id=card.id,name='Değişmeyen ikinci birim göstergesi',unit='Adet')
+    db.add_all([user,director,indicator]);db.flush()
+    db.add_all([IndicatorValue(indicator_id=indicator.id,year=2027,value_kind='target',value='1.75'),
+        DepartmentScope(period_id=x['period'].id,department_id=dept.id,status='required')]);db.commit()
+    other={**x,'department':dept,'user':user,'director':director};established(db,other)
+    first=package.__wrapped__(db,x)
+    slot=db.scalar(select(ReportIndicator).join(PublicationIndicatorBinding,ReportIndicator.publication_binding_id==PublicationIndicatorBinding.id).where(PublicationIndicatorBinding.snapshot_indicator_id==indicator.id))
+    reports.contract.save_actual(db,user,slot.id,0,'1.75','verified',
+        [{'title':'Defter','locator':'ikinci-birim','source_revision':'r1'}],'Hedef gerçekleşti',{});db.commit()
+    untouched=reports.packages.create_package(db,user,dept.organization_id,dept.id,'activity_report',first.report_revision_id);db.commit()
+    for pkg,actors in ((first,x),(untouched,other)):
+        act(db,actors,pkg,'submit_to_director','user');act(db,actors,pkg,'director_approve');act(db,actors,pkg,'strategy_approve','strategy')
+    auth.assign_final_authority(db,x['strategy'],dept.organization_id,x['director'].id,'Nihai yetki');db.commit()
+    c=reports.assemble_candidate(db,x['strategy'],dept.organization_id,'activity_report',first.report_revision_id,[first.id,untouched.id]);db.commit()
+    review(db,x,c);approve(db,x,c);initial=publish(db,x,c)
+    q=request(db,x,initial,'director');accept(db,x,q);g=grant(db,x,q,key='director');edit(db,x,g,'director',reason='1.0 gerçek düzeltme')
+    act(db,x,first,'submit_to_director','director');act(db,x,first,'director_approve');act(db,x,first,'strategy_approve','strategy')
+    c=reports.assemble_activity_successor(db,x['strategy'],dept.organization_id,int(initial.report_key),initial.id,[first.id,untouched.id]);db.commit()
+    review(db,x,c);approve(db,x,c);r=publish(db,x,c)
+    assert (r.major,r.minor)==(1,1)
+    assert db.scalar(select(func.count(RevisionCorrectionCycle.id)).where(RevisionCorrectionCycle.package_id==untouched.id))==0
+    for validate in (False,True):assert corrections.correction_context(db,untouched,validate_grant=validate) is None
+    binding=db.scalar(select(CandidatePackage).join(PackageRevision,CandidatePackage.package_revision_id==PackageRevision.id)
+        .where(CandidatePackage.candidate_id==r.candidate_id,PackageRevision.package_id==untouched.id))
+    source=db.get(PackageRevision,binding.package_revision_id)
+    q=request(db,other,r);assert q.source_package_revision_id==source.id
+    accept(db,x,q)
+    g=grant(db,other,q)  # commits and executes the deferred opening constraint
+    cycle=db.get(RevisionCorrectionCycle,g.cycle_id);opening=db.get(PackageRevision,cycle.opening_revision_id)
+    db.expire_all()
+    assert (cycle.source_release_id,cycle.source_package_revision_id,cycle.opening_revision_id)==(r.id,source.id,opening.id)
+    assert cycle.package_id==untouched.id and opening.previous_revision_id==source.id
+    assert opening.revision==source.revision+1 and opening.content_json==source.content_json and opening.sha256==source.sha256==binding.sha256
+    assert (untouched.state,untouched.current_revision)==('returned',opening.revision)
+    assert db.scalar(select(func.count(RevisionCorrectionCycle.id)).where(RevisionCorrectionCycle.package_id==untouched.id))==1
+    assert db.execute(text('SELECT version_num FROM alembic_version')).scalar_one()=='7b90cde04856'
