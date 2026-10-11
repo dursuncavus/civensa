@@ -1,6 +1,6 @@
 """Phase 4 immutable report content and separate audited state projection."""
 from datetime import datetime
-from sqlalchemy import CheckConstraint, DateTime, ForeignKey, Integer, String, Text, UniqueConstraint, event, func
+from sqlalchemy import CheckConstraint, DateTime, ForeignKey, Index, Integer, String, Text, UniqueConstraint, event, func
 from sqlalchemy.orm import Mapped, mapped_column
 from .db import Base
 from .authorization_models import reject_history_change
@@ -92,7 +92,42 @@ class ReportArtifact(Base):
     created_at: Mapped[datetime]=mapped_column(DateTime(timezone=True),server_default=func.now())
     __table_args__=(UniqueConstraint('release_id','artifact_type','object_version',name='uq_release_artifact'),CheckConstraint('byte_size>=0',name='ck_artifact_size'))
 
-IMMUTABLE_REPORT_MODELS=(ReportCandidate,CandidatePackage,ReportDecision,ReportRelease,ReportReleaseSuccession,ReportArtifact)
+class ActivityRealizationReference(Base):
+    """S4 append-only unchanged-value reference of one successor ReportIndicator.
+
+    The successor indicator has NO ActualRevision; its effective realization is the
+    terminal materialized source ActualRevision, bound to the IMMEDIATE predecessor
+    release. provenance_json/reference_sha256 come from activity_revision_reference;
+    every ID column is an indexed copy that must equal the JSON (DB-guarded).
+    """
+    __tablename__='activity_realization_references'
+    id: Mapped[int]=mapped_column(primary_key=True)
+    organization_id: Mapped[int]=mapped_column(ForeignKey('organizations.id'))
+    activity_report_id: Mapped[int]=mapped_column(ForeignKey('activity_reports.id'))
+    reporting_period_id: Mapped[int]=mapped_column(ForeignKey('reporting_periods.id'))
+    successor_report_revision_id: Mapped[int]=mapped_column(ForeignKey('activity_report_revisions.id'))
+    successor_report_indicator_id: Mapped[int]=mapped_column(ForeignKey('report_indicators.id'),unique=True)
+    predecessor_release_id: Mapped[int]=mapped_column(ForeignKey('report_releases.id'))
+    predecessor_candidate_id: Mapped[int]=mapped_column(ForeignKey('report_candidates.id'))
+    predecessor_report_indicator_id: Mapped[int]=mapped_column(ForeignKey('report_indicators.id'))
+    predecessor_reference_id: Mapped[int|None]=mapped_column(ForeignKey('activity_realization_references.id'),nullable=True)
+    source_release_id: Mapped[int]=mapped_column(ForeignKey('report_releases.id'))
+    source_report_indicator_id: Mapped[int]=mapped_column(ForeignKey('report_indicators.id'))
+    source_actual_revision_id: Mapped[int]=mapped_column(ForeignKey('actual_revisions.id'))
+    persistent_indicator_id: Mapped[str]=mapped_column(ForeignKey('indicator_identities.indicator_id'))
+    definition_revision_id: Mapped[int]=mapped_column(ForeignKey('indicator_definition_revisions.id'))
+    content_sha256: Mapped[str]=mapped_column(String(64))
+    provenance_json: Mapped[str]=mapped_column(Text)
+    reference_sha256: Mapped[str]=mapped_column(String(64),unique=True)
+    created_by: Mapped[int]=mapped_column(ForeignKey('users.id'))
+    created_at: Mapped[datetime]=mapped_column(DateTime(timezone=True),server_default=func.now())
+    __table_args__=(Index('ix_activity_reference_successor_revision','successor_report_revision_id'),
+        CheckConstraint('length(content_sha256)=64 AND length(reference_sha256)=64',name='ck_activity_reference_hashes'),
+        CheckConstraint('successor_report_indicator_id<>source_report_indicator_id AND successor_report_indicator_id<>predecessor_report_indicator_id',name='ck_activity_reference_successor'),
+        # A materialized predecessor is its own source; a referencing predecessor is flattened to an older source.
+        CheckConstraint('(predecessor_reference_id IS NULL AND source_release_id=predecessor_release_id AND source_report_indicator_id=predecessor_report_indicator_id) OR (predecessor_reference_id IS NOT NULL AND source_release_id<>predecessor_release_id AND source_report_indicator_id<>predecessor_report_indicator_id)',name='ck_activity_reference_chain'))
+
+IMMUTABLE_REPORT_MODELS=(ReportCandidate,CandidatePackage,ReportDecision,ReportRelease,ReportReleaseSuccession,ReportArtifact,ActivityRealizationReference)
 for model in IMMUTABLE_REPORT_MODELS+(ReportCandidateState,):
     event.listen(model,'before_update',reject_history_change)
     event.listen(model,'before_delete',reject_history_change)

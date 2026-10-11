@@ -7,7 +7,11 @@ from uuid import uuid4
 from sqlalchemy import select, update, func
 from .models import *
 from . import authorization_service as auth, package_service as packages, activity_contract_service as contract
+from . import activity_reference_service as references
 from .program_service import record
+
+# S4: reference-aware successors stay OFF until readers resolve references (separate slice).
+ACTIVITY_REFERENCE_SUCCESSORS=False
 
 
 def canonical(value):return contract.canonical(value)
@@ -173,7 +177,9 @@ def program_payload(db,actor,period,departments):
     return payload
 
 
-def materialize(db,actor,source,contents):
+def materialize(db,actor,source,contents,lineage=None):
+    """lineage=(predecessor release, its candidate) writes activity-candidate-2; None keeps v1 exactly."""
+    if lineage and not references.canonical_contents(contents):lineage=None
     report=db.scalar(select(ActivityReport).where(ActivityReport.id==source.report_id).with_for_update().execution_options(populate_existing=True))
     new=ActivityReportRevision(report_id=report.id,revision=report.current_revision+1,publication_id=source.publication_id,
         publication_sha256=source.publication_sha256,contract_version=source.contract_version,previous_revision_id=db.scalar(select(ActivityReportRevision.id).where(ActivityReportRevision.report_id==report.id,ActivityReportRevision.revision==report.current_revision)),
@@ -184,20 +190,22 @@ def materialize(db,actor,source,contents):
         for entry in content['entries']:
             old=db.get(ReportIndicator,entry['report_indicator_id'])
             ri=ReportIndicator(report_revision_id=new.id,publication_binding_id=old.publication_binding_id);db.add(ri);db.flush()
+            if lineage:
+                entries.append(references.realize(db,actor,new,ri,entry,*lineage));continue
             actual=ActualRevision(report_indicator_id=ri.id,revision=1,supersedes_id=None,value=contract.parse_actual(entry['value']),
                 raw_text=entry['value'] or '',state=entry['state'],evidence_json=canonical(entry['evidence']),
                 explanation=entry['explanation'],deviation_json=canonical(entry['deviation']),created_by=actor.id)
             db.add(actual);db.flush()
             entries.append(dict(entry,materialized_report_indicator_id=ri.id,materialized_actual_revision_id=actual.id))
-    return new,{'schema_version':'activity-candidate-1','report_revision_id':new.id,'publication_id':source.publication_id,
+    return new,{'schema_version':references.CANDIDATE_V2 if lineage else references.CANDIDATE_V1,'report_revision_id':new.id,'publication_id':source.publication_id,
         'publication_sha256':source.publication_sha256,'contract_version':source.contract_version,'entries':entries}
 
 
 def activity_realization_keys(payload):
-    """Only the existing v1 realization keys may be excluded from package comparison."""
+    """Only the schema's own realization keys may be excluded from package comparison."""
     if (not isinstance(payload,dict) or not isinstance(payload.get('schema_version'),str)
-        or payload['schema_version']!='activity-candidate-1'):packages.conflict()
-    return {'materialized_report_indicator_id','materialized_actual_revision_id'}
+        or payload['schema_version'] not in references.REALIZATION_KEYS):packages.conflict()
+    return set(references.REALIZATION_KEYS[payload['schema_version']])
 
 
 def activity_candidate_payload(candidate):
@@ -209,6 +217,8 @@ def activity_candidate_payload(candidate):
     if not isinstance(entries,list) or any(not isinstance(entry,dict) for entry in entries):packages.conflict()
     # Invalid identifiers must not reach database lookup/coercion as SQL errors.
     if type(payload.get('report_revision_id')) is not int:packages.conflict()
+    if payload['schema_version']==references.CANDIDATE_V2:
+        references.validate_v2_entries(candidate,payload);return payload
     for entry in entries:
         for key in ('materialized_report_indicator_id','materialized_actual_revision_id','definition_revision_id'):
             identifier=entry.get(key)
@@ -218,8 +228,10 @@ def activity_candidate_payload(candidate):
 
 def verify_materialization(db,candidate):
     payload=activity_candidate_payload(candidate)
-    # Schema dispatch is intentionally v1-only; future schemas need their own path.
-    try:_verify_materialization_v1(db,candidate,payload)
+    # Explicit schema dispatch; unknown schemas already failed in activity_candidate_payload.
+    try:
+        if payload['schema_version']==references.CANDIDATE_V2:references.verify_v2(db,candidate,payload)
+        else:_verify_materialization_v1(db,candidate,payload)
     except (KeyError,TypeError,AttributeError,ValueError):packages.conflict()
     except auth.HTTPException as exc:
         if exc.status_code==422:packages.conflict()
@@ -320,7 +332,7 @@ def verify_activity_successor(db,candidate,manifest):
         elif 'reworks_candidate_sha256' in manifest:packages.conflict()
         source=db.get(ActivityReportRevision,attempt.activity_revision_id)
         revision=db.get(ActivityReportRevision,candidate.activity_revision_id)
-        if (manifest['successor_contract']!='materialized-successor-1'
+        if (manifest['successor_contract']!=references.SUCCESSOR_CONTRACTS[activity_candidate_payload(candidate)['schema_version']]
             or manifest['predecessor_candidate_sha256']!=previous.sha256
             or candidate.predecessor_candidate_id!=previous.id or candidate.sequence!=attempt.sequence+1
             or (candidate.organization_id,candidate.resource_scope,candidate.report_key,candidate.period_id)
@@ -378,7 +390,7 @@ def require_returned_attempt(db,release_id):
 
 
 def assemble_activity_successor(db,actor,organization_id,report_id,predecessor_release_id,package_ids):
-    """Disabled workflow: materialized-only successor assembly; caller owns commit."""
+    """Disabled workflow: successor assembly (references only behind ACTIVITY_REFERENCE_SUCCESSORS); caller owns commit."""
     organization_lock(db,organization_id)
     allowed(db,actor,'assemble_candidate',organization_id,'assembling')
     from .revision_workflow_service import current_source
@@ -434,12 +446,14 @@ def assemble_activity_successor(db,actor,organization_id,report_id,predecessor_r
         # Match initial assembly: org -> department/package/user -> report.
         report=db.scalar(select(ActivityReport).where(ActivityReport.id==report_id).with_for_update().execution_options(populate_existing=True))
         if report.current_revision!=source.revision:packages.conflict()
-        new,payload=materialize(db,actor,source,[json.loads(r.content_json) for p,r,d in selected])
+        # References bind to the published predecessor release only, never the returned attempt.
+        new,payload=materialize(db,actor,source,[json.loads(r.content_json) for p,r,d in selected],
+            (release,previous) if ACTIVITY_REFERENCE_SUCCESSORS else None)
         if new.previous_revision_id!=source.id:packages.conflict()
         manifest={'version':'report-manifest-1','organization_id':organization_id,'period_id':previous.period_id,
             'resource_scope':'activity_report','source_id':parent['source_id'],'required_department_ids':parent['required_department_ids'],
             'predecessor_release_id':release.id,'predecessor_candidate_sha256':previous.sha256,
-            'successor_contract':'materialized-successor-1','correction_cycle_ids':sorted(c.id for c in cycles),
+            'successor_contract':references.SUCCESSOR_CONTRACTS[payload['schema_version']],'correction_cycle_ids':sorted(c.id for c in cycles),
             'correction_request_grants':sorted(participant_grants,key=lambda entry:entry['request_id']),
             'packages':[{'package_id':p.id,'department_id':p.department_id,'revision_id':r.id,'sha256':r.sha256,
                 'decision_id':d.id,'strategy_event_id':d.workflow_event_id} for p,r,d in selected]}

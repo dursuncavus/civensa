@@ -282,9 +282,10 @@ def test_populated_migration_preserves_returned_history(foundation_db,people,rel
     for _ in range(2):
         run=subprocess.run([sys.executable,'-m','alembic','upgrade','head'],cwd=ROOT,env={**os.environ,'DATABASE_URL':url},capture_output=True,text=True);assert run.returncode==0,run.stderr
     down=subprocess.run([sys.executable,'-m','alembic','downgrade','-1'],cwd=ROOT,env={**os.environ,'DATABASE_URL':url},capture_output=True,text=True)
-    assert down.returncode!=0 and 'Package decision guards and closed_no_change survival cannot be discarded' in down.stderr
+    # S4: the newest revision (e69c04e721a5) refuses first; history below it stays unreachable.
+    assert down.returncode!=0 and 'Activity reference history cannot be discarded' in down.stderr
     db.expire_all();assert_sealed(db,before)
-    assert db.execute(text('SELECT version_num FROM alembic_version')).scalar_one()=='3942a5669b80'
+    assert db.execute(text('SELECT version_num FROM alembic_version')).scalar_one()=='e69c04e721a5'
     act(db,people,ready[0],'strategy_reopen','strategy',reason='Migration sonrası');db.commit()
 
 
