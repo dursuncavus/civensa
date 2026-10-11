@@ -112,12 +112,13 @@ def test_image_upload_and_csrf(db,sample):
     from app.main import app
     from app.db import get_db
     from app.config import session_secret
+    from app.main import password_fingerprint
     from PIL import Image
     def database():yield db
     app.dependency_overrides[get_db]=database
     try:
         client=TestClient(app)
-        cookie=TimestampSigner(session_secret()).sign(base64.b64encode(json.dumps({'user_id':sample['strategy'].id,'csrf_token':'test-token'}).encode())).decode()
+        cookie=TimestampSigner(session_secret()).sign(base64.b64encode(json.dumps({'user_id':sample['strategy'].id,'csrf_token':'test-token','password_fp':password_fingerprint(sample['strategy'].password_hash)}).encode())).decode()
         client.cookies.set('session',cookie)
         content=io.BytesIO();Image.new('RGB',(100,50),'white').save(content,format='PNG')
         data={'period_id':1,'kind':'image','title':'Kaynak Görsel','content':'Açıklama'}

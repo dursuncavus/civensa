@@ -1,6 +1,6 @@
 {
   "version": "5.0.0",
-  "sha256": "ca0adb2e8ee5ee42c8a309dc8b1beb96172f675f10d1c5354ca54e0d832dca96",
+  "sha256": "ec1cf22ec82dbce34020fd994774b2295669ab9e4f204ce42a9b49a8580cf465",
   "parts": [
     "bundle.part01",
     "bundle.part02",
@@ -24,6 +24,7 @@
     "app/authorization_service.py": "6cef589119ad79f75ab756250db82b15f342c16ea0b9e1e4d85cee93dbfb111c",
     "app/book_export.py": "97f01dd5efdfdaaa3c8057e41d63e891bcf776258b707fde5c273de7b049df59",
     "app/config.py": "610a80447e708c0f04470bb1ceef382e8a7d4a53ab2e2007364961ee2b37530d",
+    "app/csv_safety.py": "7391f2d0ec84745bcc0297d9cb38e9924a30fa352f28b0d169ac5fd16bca3ad3",
     "app/data_importer.py": "eb9479c80705712750023eb367aa5f21f04c5cf1b449b2edb565ebb832c01e92",
     "app/db.py": "c47ce4f6f30704861ff0623ff24b59b9a4a7e564e092890c476511c174f58cc2",
     "app/file_security.py": "21f051e773d4c5fe949a1e996c6d3868a1fff2359b096ea651f894571061bdfe",
@@ -31,7 +32,7 @@
     "app/fonts/DejaVuSans.ttf": "7da195a74c55bef988d0d48f9508bd5d849425c1770dba5d7bfc6ce9ed848954",
     "app/fonts/LICENSE.txt": "24da3dd89c4ff4815a6a7bb0178c2fcd86e9b548d35d17564839c3fbb57bccd8",
     "app/import_service.py": "15c7603da330bd59e6e88f14805217a0ad01e7e035e1874c0ef37d599e755bbd",
-    "app/main.py": "fd3fac3d0b267f9a54e9501c3dbecd1c243af8f4bcbe4aff808890dbb9c02ad8",
+    "app/main.py": "af030c60aa19049b527fd7957ad9ddcc261432b8ed334ab4dca59df20d40b4cb",
     "app/models.py": "d3389d46a2235da727226ee0cf8a0bc48fe61ac63977c30851800794281462ed",
     "app/numbers.py": "8d3a55e540322e9f320189d5a8d52e23e130b7e9ec793e071f3e9e5e8735ea5e",
     "app/package_models.py": "97d8d9ab794767239d4b14e91c343d95983a58ad944a61336aadb413ac24f71c",
