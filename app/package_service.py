@@ -45,7 +45,7 @@ def locked(db, actor, package_id, action, expected_version, expected_hash):
         auth.fail('Müdürlük paketi bulunamadı.', 404)
     # Only published corrections acquire the organization lock, via current_source.
     # Resolve that context before the ordinary department/package/user lock path.
-    from .revision_workflow_service import correction_context, require_correction_grant
+    from .revision_workflow_service import correction_context, require_correction_authority
     cycle=correction_context(db,package,validate_grant=False)
     # Same lock order as membership/delegation changes; refresh after waiting.
     auth.scope_department(db, package.organization_id, package.department_id, lock=True)
@@ -64,8 +64,8 @@ def locked(db, actor, package_id, action, expected_version, expected_hash):
     if not auth.package_eligibility(db, actor, action, package):
         auth.fail('Bu paket aşamasında seçilen işlemi yapmaya yetkiniz yok. Güncel aşamayı ve görevlendirmenizi kontrol edin.')
     if cycle:
-        # Keep stale-version/authority checks ahead of grant validity as before.
-        if action!='strategy_reopen':require_correction_grant(db,cycle)
+        # Keep stale-version/authority checks ahead of correction authority as before.
+        if action!='strategy_reopen':require_correction_authority(db,cycle,package)
         if action=='edit_draft':auth.fail('Yayımlanmış düzeltmeleri yalnız alan izni üzerinden düzenleyin.')
         return package,current
     if package.resource_scope == 'activity_report':

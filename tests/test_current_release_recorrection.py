@@ -178,7 +178,9 @@ def test_raw_complete_opening_protocol_can_commit(foundation_db,people,ready,one
     cycle=RevisionCorrectionCycle(source_release_id=one_one.id,package_id=p.id,source_package_revision_id=source.id,opening_revision_id=rid,workflow_event_id=proof.id)
     db.add(cycle);db.commit();db.refresh(p)
     assert corrections.correction_context(db,p,validate_grant=False).id==cycle.id
-    rejects(409,lambda:corrections.correction_context(db,p))
+    # A1-P1 K-7: review checks historical lineage, not a live grant; an
+    # unedited opening copy is trivially within its own lineage.
+    assert corrections.correction_context(db,p).id==cycle.id
 
 
 def test_shared_cycle_nonoverlap_and_overlap_rejection(foundation_db,people,ready,one_one):
@@ -317,4 +319,4 @@ def test_first_ever_cycle_opens_against_published_one_one(foundation_db,people):
     assert opening.revision==source.revision+1 and opening.content_json==source.content_json and opening.sha256==source.sha256==binding.sha256
     assert (untouched.state,untouched.current_revision)==('returned',opening.revision)
     assert db.scalar(select(func.count(RevisionCorrectionCycle.id)).where(RevisionCorrectionCycle.package_id==untouched.id))==1
-    assert db.execute(text('SELECT version_num FROM alembic_version')).scalar_one()=='e69c04e721a5'
+    assert db.execute(text('SELECT version_num FROM alembic_version')).scalar_one()=='c5e8a1f0b247'

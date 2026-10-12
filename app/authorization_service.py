@@ -9,6 +9,7 @@ from decimal import Decimal
 import json
 from uuid import uuid4
 from sqlalchemy import select, func, exists, text
+from sqlalchemy.orm import aliased
 from fastapi import HTTPException
 from .models import (User, Department, Organization, DirectorateMembership, MembershipEvent,
     AuthorityDelegation, DelegationRevocation, DelegationEvent, FinalAuthorityAssignment,
@@ -106,7 +107,40 @@ def deactivate_membership(db, actor, membership_id, reason):
     db.add(MembershipEvent(membership_id=row.id,actor_user_id=actor.id,
         actor_snapshot_json=actor_snapshot(db,actor,row.organization_id),event_type='deactivated',
         previous_json=previous,new_json=encode(updated),reason=reason));db.flush()
+    # A1-F5: a delegation derives from this director membership; end it in the
+    # same transaction, before the membership changes (DB-enforced). It never
+    # transfers to the next director.
+    if row.role_code=='department_director':
+        terminate_director_delegations(db,actor,row.organization_id,row.department_id,reason,director_membership_id=row.id)
     db.execute(text('UPDATE directorate_memberships SET active=false WHERE id=:id'),{'id':row.id});db.expire(row)
+
+
+DIRECTOR_CHANGE_TERMINATION='terminated_due_to_director_change'
+
+
+def terminate_director_delegations(db, actor, organization_id, department_id, reason, director_membership_id=None):
+    """End unrevoked active delegations whose director membership is (being) inactive.
+
+    Immutable revocation + 'revoked' DelegationEvent whose cause/reason is
+    terminated_due_to_director_change (the existing PG/SQLite delegation guards
+    accept only this audited revocation); interval/basis stay untouched.
+    Caller holds the department lock."""
+    query=select(AuthorityDelegation).where(
+        AuthorityDelegation.organization_id==organization_id,AuthorityDelegation.department_id==department_id,
+        AuthorityDelegation.active.is_(True),~exists().where(DelegationRevocation.delegation_id==AuthorityDelegation.id))
+    director=aliased(DirectorateMembership);person=aliased(User)
+    query=query.where(AuthorityDelegation.director_membership_id==director_membership_id) if director_membership_id is not None else query.where(
+        ~exists().where(director.id==AuthorityDelegation.director_membership_id,director.active.is_(True),
+            person.id==director.user_id,person.is_active.is_(True)))
+    rows=db.scalars(query.order_by(AuthorityDelegation.id).with_for_update(of=AuthorityDelegation)).all()
+    for delegation in rows:
+        db.add(DelegationRevocation(delegation_id=delegation.id,actor_user_id=actor.id,reason=f'{DIRECTOR_CHANGE_TERMINATION}: {reason}'));db.flush()
+        db.add(DelegationEvent(delegation_id=delegation.id,actor_user_id=actor.id,
+            actor_snapshot_json=actor_snapshot(db,actor,organization_id),event_type='revoked',
+            context_json=encode({'delegation_id':delegation.id,'director_membership_id':delegation.director_membership_id,
+                'delegate_membership_id':delegation.delegate_membership_id,'cause':DIRECTOR_CHANGE_TERMINATION}),reason=reason));db.flush()
+        db.execute(text('UPDATE authority_delegations SET active=false WHERE id=:id'),{'id':delegation.id});db.expire(delegation)
+    return rows
 
 
 def active_membership(db, user_id, org_id, dep_id):
@@ -117,9 +151,14 @@ def active_membership(db, user_id, org_id, dep_id):
 
 def active_delegation(db, org_id, dep_id, *, at=None):
     now=at if at is not None else server_now(db)
-    return db.scalar(select(AuthorityDelegation).where(AuthorityDelegation.organization_id==org_id,
+    # A1-F5 defense in depth: authority derives from the delegating director's
+    # active membership; a stale active row of a replaced director grants nothing.
+    return db.scalar(select(AuthorityDelegation).join(DirectorateMembership,DirectorateMembership.id==AuthorityDelegation.director_membership_id)
+        .join(User,User.id==DirectorateMembership.user_id).where(AuthorityDelegation.organization_id==org_id,
         AuthorityDelegation.department_id==dep_id,AuthorityDelegation.active.is_(True),
         AuthorityDelegation.start_at<=now,AuthorityDelegation.end_at>now,
+        DirectorateMembership.active.is_(True),DirectorateMembership.role_code=='department_director',
+        DirectorateMembership.organization_id==org_id,DirectorateMembership.department_id==dep_id,User.is_active.is_(True),
         ~exists().where(DelegationRevocation.delegation_id==AuthorityDelegation.id)))
 
 
@@ -195,6 +234,8 @@ def create_delegation(db, actor, organization_id, department_id, delegate_user_i
         fail('Yalnız asıl müdür yetki devri oluşturabilir; vekil yeniden devir yapamaz.')
     if any(t.tzinfo is None for t in (start_at,end_at)) or start_at>=end_at or end_at<=server_now(db):
         fail('Saat dilimi belirtilmiş geçerli başlangıç ve bitiş girin.',422)
+    # A stale active row of a replaced director must not block the new director.
+    terminate_director_delegations(db,actor,organization_id,department_id,'Yeni müdür yetki devri öncesi önceki müdürün devri sonlandırıldı.')
     director=active_membership(db,actor.id,organization_id,department_id)
     delegate=active_membership(db,delegate_user_id,organization_id,department_id)
     if not delegate or delegate.role_code!='department_editor':fail('Vekil, müdürlüğün mevcut aktif veri girişçisi olmalıdır.')
@@ -337,5 +378,7 @@ def report_workflow_eligibility(db, actor, action, organization_id, state='assem
         assigned=db.scalar(select(FinalAuthorityAssignment).join(User,User.id==FinalAuthorityAssignment.user_id).where(
             FinalAuthorityAssignment.organization_id==organization_id,FinalAuthorityAssignment.active.is_(True),User.is_active.is_(True)))
         if not assigned or assigned.user_id!=actor.id:return False
-        return action=='view_candidate' or (action=='final_return' and state=='final_review') or (action=='final_approve' and state in {'final_review','final_approved'})
+        # A1-F1: the current final authority may also return a final_approved,
+        # unpublished candidate (controlled recovery); Strategy never may.
+        return action=='view_candidate' or (action in {'final_approve','final_return'} and state in {'final_review','final_approved'})
     except HTTPException:return False

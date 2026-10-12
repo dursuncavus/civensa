@@ -177,10 +177,13 @@ def program_payload(db,actor,period,departments):
     return payload
 
 
-def materialize(db,actor,source,contents,lineage=None):
+def materialize(db,actor,source,contents,lineage=None,expected_revision=None):
     """lineage=(predecessor release, its candidate) writes activity-candidate-2; None keeps v1 exactly."""
     if lineage and not references.canonical_contents(contents):lineage=None
     report=db.scalar(select(ActivityReport).where(ActivityReport.id==source.report_id).with_for_update().execution_options(populate_existing=True))
+    # A1-F2: re-check under the report lock; a legacy write that committed
+    # after the caller's unlocked check must not become this candidate's base.
+    if expected_revision is not None and report.current_revision!=expected_revision:packages.conflict()
     new=ActivityReportRevision(report_id=report.id,revision=report.current_revision+1,publication_id=source.publication_id,
         publication_sha256=source.publication_sha256,contract_version=source.contract_version,previous_revision_id=db.scalar(select(ActivityReportRevision.id).where(ActivityReportRevision.report_id==report.id,ActivityReportRevision.revision==report.current_revision)),
         diff_json='[]',revision_reason='Onaylı müdürlük paketlerinden nihai rapor adayı oluşturuldu.',created_by=actor.id)
@@ -298,7 +301,9 @@ def assemble_candidate(db,actor,organization_id,resource_scope,source_id,package
             if any(c['period']!=period.year or c['scope']!=frozen_scopes.get(c['department_id']) for c in contents):
                 auth.fail('Paket kapsamı / dönem metaverisi değişmiş. Güncel kapsamın onaylı paketini seçin.',409)
         if source:
-            new,payload=materialize(db,actor,source,contents);activity_revision_id=new.id
+            new,payload=materialize(db,actor,source,contents,expected_revision=expected_revision)
+            if not previous and db.scalar(select(ActivityReportApproval.id).where(ActivityReportApproval.report_revision_id==source.id)):packages.conflict()
+            activity_revision_id=new.id
         else:payload=program_payload(db,actor,period,contents);activity_revision_id=None
         manifest={'version':'report-manifest-1','organization_id':organization_id,'period_id':period.id,'resource_scope':resource_scope,
             'source_id':source_id,'required_department_ids':sorted(required),'packages':[{'package_id':p.id,'department_id':p.department_id,
@@ -440,6 +445,7 @@ def assemble_activity_successor(db,actor,organization_id,report_id,predecessor_r
         if state.state!='editing' or not grant or grant.cycle_id not in {c.id for c in cycles}:
             auth.fail(f'Düzeltme talebi #{request.id} henüz ardıl adaya hazır değil. Talebi sonuçlandırın veya izin/düzeltme/onay adımlarını tamamlayın; otomatik taşıma yapılmaz.',409)
         participant_grants.append({'request_id':request.id,'grant_id':grant.id,'cycle_id':grant.cycle_id})
+    successor_participation_gate(db,release,cycles,{p.id:r for p,r,d in selected},pending)
     with db.begin_nested():
         db.scalar(select(User).where(User.id==actor.id).with_for_update().execution_options(populate_existing=True))
         allowed(db,actor,'assemble_candidate',organization_id,'assembling')
@@ -470,6 +476,29 @@ def assemble_activity_successor(db,actor,organization_id,report_id,predecessor_r
     return candidate
 
 
+def successor_participation_gate(db,release,cycles,bound,pending):
+    """A1-F1 primary prevention: never create a successor around a net-zero participant.
+
+    Every listed participant must carry its own semantic net correction. Strategy
+    closes net-zero requests explicitly BEFORE assembly; nothing is closed automatically."""
+    from . import revision_workflow_service as corrections
+    by_id={c.id:c for c in cycles}
+    for cycle in cycles:
+        if cycle.package_id in bound:corrections.verify_correction_lineage(db,cycle,bound[cycle.package_id])
+    empty=[]
+    for request,state in pending:
+        grant=db.scalar(select(RevisionEditGrant).where(RevisionEditGrant.request_id==request.id))
+        cycle=by_id[grant.cycle_id]
+        if cycle.package_id not in bound:packages.conflict()
+        if not corrections.has_net_correction(db,request,grant,cycle,bound[cycle.package_id]):empty.append(request.id)
+    if empty:
+        names=', '.join(f'#{rid}' for rid in sorted(empty))
+        auth.fail(f'Düzeltme talebi {names} izinli alanlarda net değişiklik içermiyor; ardıl aday oluşturulmadı. '
+            'Talep sahibi düzeltmeyi tamamlamalı veya Strateji bu talepleri aday oluşturmadan önce gerekçeyle değişikliksiz kapatmalıdır.',409)
+    # A surviving closed_no_change edit is refused at publication (S3C-2 B2),
+    # not here: the returned candidate is the exit that reopens and reverts it.
+
+
 def request_final_review(db,actor,org,candidate_id,version,sha):
     candidate,state=locked(db,actor,org,candidate_id,'request_final_review',version,sha)
     with db.begin_nested():
@@ -482,16 +511,36 @@ def final_decision(db,actor,org,candidate_id,action,version,sha,reason=''):
     if action not in {'final_approve','final_return'}:auth.fail('Nihai işlem tanınmıyor.')
     candidate,state=locked(db,actor,org,candidate_id,action,version,sha);current=assignment(db,org)
     if action=='final_return':reason=auth.required(reason,'Nihai iade gerekçesi')
-    if state.state=='final_approved' and db.scalar(select(ReportDecision.id).where(ReportDecision.candidate_id==candidate.id,ReportDecision.action=='final_approve',ReportDecision.assignment_id==current.id)):auth.fail('Bu yetkili aynı adayı zaten onayladı.',409)
+    # A1-F1: Strategy never exercises the recovery exit, even when it formally
+    # holds the assignment (same separation as publication).
+    if action=='final_return' and state.state=='final_approved' and actor.role=='strategy':
+        auth.fail('Nihai onaylı adayı yalnız görevli nihai onaycı iade edebilir; Strateji bu işlemi yapamaz.')
+    # The exit exists for correction successors, whose rework continues on the
+    # S3C-2 lineage. A first candidate's frozen revision cannot be reworked.
+    if action=='final_return' and state.state=='final_approved' and 'predecessor_release_id' not in json.loads(candidate.manifest_json):
+        auth.fail('Nihai onaylı ilk yayın adayı iade edilemez; yalnız düzeltme ardılı aday nihai onaydan sonra iade edilebilir. '
+            'İlk sürümü yayımlayıp düzeltme talebi açın.',409)
+    if action=='final_approve' and state.state=='final_approved' and db.scalar(select(ReportDecision.id).where(ReportDecision.candidate_id==candidate.id,ReportDecision.action=='final_approve',ReportDecision.assignment_id==current.id)):auth.fail('Bu yetkili aynı adayı zaten onayladı.',409)
+    # A1-F1 recovery exit: final_approved -> final_return only before publication.
+    if action=='final_return' and db.scalar(select(ReportRelease.id).where(ReportRelease.candidate_id==candidate.id)):
+        auth.fail('Yayımlanmış rapor adayı iade edilemez. Yayımlanmış sürüm için düzeltme talebi açın.',409)
+    approval=None
+    if action=='final_approve' and candidate.activity_revision_id:
+        # A1-F2: only this candidate's own earlier final approval may be reused
+        # (same candidate, changed assignment); any other freeze fails closed.
+        approval=db.scalar(select(ActivityReportApproval).where(ActivityReportApproval.report_revision_id==candidate.activity_revision_id))
+        if approval and not db.scalar(select(ReportDecision.id).where(ReportDecision.candidate_id==candidate.id,
+                ReportDecision.action=='final_approve',ReportDecision.activity_approval_id==approval.id)):
+            auth.fail('Aday rapor revizyonunda nihai onaycı kararı dışında oluşturulmuş bir onay kaydı var; bu onay devralınmaz. '
+                'Adayı nihai onaycı iade etsin ve Strateji yeni aday oluştursun.',409)
     with db.begin_nested():
         allowed(db,actor,action,org,state.state)
-        approval=None
-        if action=='final_approve' and candidate.activity_revision_id:
-            approval=db.scalar(select(ActivityReportApproval).where(ActivityReportApproval.report_revision_id==candidate.activity_revision_id))
-            if not approval:
-                approval=ActivityReportApproval(report_revision_id=candidate.activity_revision_id,created_by=actor.id);db.add(approval);db.flush()
         destination='final_approved' if action=='final_approve' else 'returned_to_strategy'
+        # The freeze is created after its exact final_approve event so the
+        # database can bind it to the current final authority (A1-F2).
         event=event_notice(db,actor,candidate,action,state.state,destination,state.version+1,reason)
+        if action=='final_approve' and candidate.activity_revision_id and not approval:
+            approval=ActivityReportApproval(report_revision_id=candidate.activity_revision_id,created_by=actor.id);db.add(approval);db.flush()
         decision=ReportDecision(candidate_id=candidate.id,action=action,candidate_sha256=candidate.sha256,
             assignment_id=current.id,workflow_event_id=event.id,activity_approval_id=approval.id if approval else None)
         db.add(decision);db.flush();move(db,state,destination)

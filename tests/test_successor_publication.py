@@ -6,6 +6,7 @@ import sys
 from concurrent.futures import ThreadPoolExecutor
 from threading import Barrier
 import pytest
+from fastapi import HTTPException
 from sqlalchemy import select,func,text,event,update
 from sqlalchemy.orm import Session
 from sqlalchemy.orm.attributes import set_committed_value
@@ -92,15 +93,21 @@ def test_new_work_after_assembly_blocks(foundation_db,people,released,ready,succ
     assert db.get(RevisionRequestState,q.id).state=='editing'
 
 
-def test_unedited_represented_request_blocks(foundation_db,people,released):
+def test_unedited_represented_request_blocks(foundation_db,people,released,monkeypatch):
     db=foundation_db;x=people
     q=request(db,x,released);other=request(db,x,released,other=True)
     accept(db,x,q);accept(db,x,other);g=grant(db,x,q);grant(db,x,other)
     rev=edit(db,x,g);p=db.get(DirectoratePackage,rev.package_id)
     act(db,x,p,'submit_to_director','user');act(db,x,p,'director_approve');act(db,x,p,'strategy_approve','strategy')
-    c=assemble(db,x,released,p);db.commit();review(db,x,c);approve(db,x,c);before=all_counts(db)
-    rejects(409,lambda:publish(db,x,c))
-    assert all_counts(db)==before and db.get(RevisionRequestState,other.id).state=='editing'
+    # A1-P1 F1: assembly, not publication, refuses the unedited participant.
+    before=all_counts(db)
+    with pytest.raises(HTTPException) as caught:assemble(db,x,released,p)
+    assert caught.value.status_code==409 and f'#{other.id}' in caught.value.detail and f'#{q.id}' not in caught.value.detail
+    db.rollback();assert all_counts(db)==before and db.get(RevisionRequestState,other.id).state=='editing'
+    monkeypatch.setattr(reports,'successor_participation_gate',lambda *args:None)
+    assemble(db,x,released,p)
+    with pytest.raises(DBAPIError,match='Successor participant has no semantic net correction'):db.commit()
+    db.rollback();assert all_counts(db)==before
 
 
 def test_multiple_edited_requests_apply_together(foundation_db,people,released):
@@ -251,13 +258,15 @@ def test_no_net_change_blocks_until_explicit_closure(foundation_db,people,releas
     if bad=='roundtrip':
         edit(db,x,h,other=True,value='Geçici açıklama');edit(db,x,h,other=True,value='Hedef gerçekleşti')
     p=db.get(DirectoratePackage,db.get(RevisionCorrectionCycle,g.cycle_id).package_id);reapprove(db,x,p)
-    c=assemble(db,x,released,p);db.commit();review(db,x,c);approve(db,x,c);before=all_counts(db)
-    assert not db.scalar(select(func.civensa_successor_request_participates(c.id,other.id)))
-    with pytest.raises(DBAPIError,match='Unresolved or unedited'):
-        with db.begin_nested():raw_release(db,x,c)
-    rejects(409,lambda:publish(db,x,c));assert all_counts(db)==before
+    # A1-P1 F1: assembly (not publication) refuses the net-zero participant and names it; nothing is written.
+    before=all_counts(db)
+    with pytest.raises(HTTPException) as caught:assemble(db,x,released,p)
+    assert caught.value.status_code==409 and f'#{other.id}' in caught.value.detail and f'#{q.id}' not in caught.value.detail
+    db.rollback();assert all_counts(db)==before
     assert db.get(RevisionRequestState,other.id).state=='editing'
     close(db,x,other);assert db.get(RevisionRequestState,other.id).state=='closed_no_change'
+    c=assemble(db,x,released,p);db.commit();review(db,x,c);approve(db,x,c)
+    assert not db.scalar(select(func.civensa_successor_request_participates(c.id,other.id)))
     publication=publish(db,x,c);assert publication.minor==1
     assert db.get(RevisionRequestState,q.id).state=='applied'
     closure=db.scalar(select(RevisionRequestEvent).where(RevisionRequestEvent.request_id==other.id,RevisionRequestEvent.to_state=='closed_no_change'))
@@ -416,13 +425,19 @@ def test_successor_minor_uses_existing_predecessor_version(foundation_db,people,
     assert edge.predecessor_release_id==predecessor.id
 
 
-def test_net_change_needs_exact_request_grant_provenance(foundation_db,people,released):
+def test_net_change_needs_exact_request_grant_provenance(foundation_db,people,released,monkeypatch):
     db=foundation_db;x=people;first=request(db,x,released);other=request(db,x,released,other=True)
     accept(db,x,first);accept(db,x,other);g=grant(db,x,first);h=grant(db,x,other)
     edit(db,x,g);close(db,x,first)
     same=request(db,x,released);accept(db,x,same);unmodified=grant(db,x,same)
     rev=edit(db,x,h,other=True,value='Kalıcı açıklama');p=db.get(DirectoratePackage,rev.package_id);reapprove(db,x,p)
-    c=assemble(db,x,released,p);db.commit();review(db,x,c);approve(db,x,c)
+    before=all_counts(db)
+    with pytest.raises(HTTPException) as caught:assemble(db,x,released,p)
+    assert caught.value.status_code==409 and f'#{same.id}' in caught.value.detail  # A1-P1 F1: refused at assembly
+    db.rollback();assert all_counts(db)==before
+    # Exercise the forged-provenance backstops on a candidate built past the Python gate.
+    monkeypatch.setattr(reports,'successor_participation_gate',lambda *args:None)
+    c=assemble(db,x,released,p);db.flush()
     cycle=db.get(RevisionCorrectionCycle,unmodified.cycle_id)
     assert corrections.value_at(json.loads(db.get(PackageRevision,cycle.source_package_revision_id).content_json),['entries',0,'value'])!=corrections.value_at(json.loads(rev.content_json),['entries',0,'value'])
     # A fabricated edit recorded AFTER an already-existing revision is not
@@ -431,6 +446,16 @@ def test_net_change_needs_exact_request_grant_provenance(foundation_db,people,re
     proof=json.loads(original.context_json);proof['grant_id']=unmodified.id
     forged=corrections.history(db,x['user'],same,'correction_edit',proof,'Sahte sonradan eklenen köken')
     field=db.scalar(select(FieldChangeEvent).where(FieldChangeEvent.workflow_event_id==original.id,FieldChangeEvent.field_key.like('%value%')))
+    db.add(FieldChangeEvent(workflow_event_id=forged.id,revision_request_id=same.id,field_key=field.field_key,field_type=field.field_type,previous_json=field.previous_json,new_json=field.new_json));db.flush()
+    assert not corrections.has_net_correction(db,same,unmodified,cycle,rev)
+    assert not db.scalar(select(func.civensa_successor_request_participates(c.id,same.id)))
+    with pytest.raises(DBAPIError,match='Successor participant has no semantic net correction'):db.commit()
+    db.rollback();assert all_counts(db)==before
+    # Publication-time guards still hold: close the unedited request, assemble normally,
+    # then forge provenance; first's surviving closed edit keeps publication refused.
+    monkeypatch.undo();close(db,x,same)
+    c=assemble(db,x,released,p);db.commit();review(db,x,c);approve(db,x,c)
+    forged=corrections.history(db,x['user'],same,'correction_edit',proof,'Sahte sonradan eklenen köken')
     db.add(FieldChangeEvent(workflow_event_id=forged.id,revision_request_id=same.id,field_key=field.field_key,field_type=field.field_type,previous_json=field.previous_json,new_json=field.new_json));db.commit()
     assert not corrections.has_net_correction(db,same,unmodified,cycle,rev)
     assert not db.scalar(select(func.civensa_successor_request_participates(c.id,same.id)))

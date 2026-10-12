@@ -143,8 +143,13 @@ def test_activity_package_values_not_latest_source(foundation_db,people,approved
         payload=json.loads(c.payload_json);e=payload['entries'][0]
         assert Decimal(e['value'])==Decimal('1.75')
         assert db.get(ActualRevision,e['materialized_actual_revision_id']).value==Decimal('1.75')
-        with pytest.raises(DBAPIError):
-            with db.begin_nested():contract.save_actual(db,x['user'],e['materialized_report_indicator_id'],1,'8.75','needs_review',[],'',{})
+        # A1-F2: the workflow-managed report refuses legacy actuals first; the seal still holds below it.
+        with pytest.raises(HTTPException) as caught:contract.save_actual(db,x['user'],e['materialized_report_indicator_id'],1,'8.75','needs_review',[],'',{})
+        assert caught.value.status_code==409 and 'aday/yayın iş akışı' in caught.value.detail
+        db.rollback()
+        with pytest.raises(DBAPIError,match='Candidate materialization is sealed'):
+            with db.begin_nested():db.add(ActualRevision(report_indicator_id=e['materialized_report_indicator_id'],revision=2,value=Decimal('8.75'),
+                raw_text='8.75',state='needs_review',evidence_json='[]',explanation='',deviation_json='{}',created_by=x['user'].id));db.flush()
     else:assert Decimal(json.loads(c.payload_json)['departments'][0]['indicators'][0]['values'][0]['value'])==Decimal('1.75')
 
 @pytest.mark.parametrize('table',['report_decisions','report_releases','report_artifacts'])

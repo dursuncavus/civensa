@@ -172,8 +172,12 @@ def test_forged_attempt_manifest_fails(foundation_db,people,released,ready,retur
 
 def test_unrelated_report_revision_after_return_fails(foundation_db,people,released,ready,returned):
     db=foundation_db;source=db.get(ActivityReportRevision,returned.activity_revision_id)
-    reports.materialize(db,people['strategy'],source,[json.loads(reports.packages.revision(db,ready[0]).content_json)]);db.commit()
-    rejects(409,lambda:assemble(db,people,released,ready[0]))
+    report=db.get(ActivityReport,source.report_id);current=report.current_revision;before=counts(db)
+    # A1-P1 F2: a returned candidate keeps the report workflow-managed, so an
+    # unbound revision cannot even commit (deferred owner guard).
+    reports.materialize(db,people['strategy'],source,[json.loads(reports.packages.revision(db,ready[0]).content_json)])
+    with pytest.raises(DBAPIError,match='Workflow-managed Activity report rejects legacy revision'):db.commit()
+    db.rollback();db.expire_all();assert counts(db)==before and db.get(ActivityReport,report.id).current_revision==current
 
 
 @pytest.mark.parametrize('bad',['broader','active','reason','time','stale'])
@@ -225,10 +229,17 @@ def test_closed_no_change_participating_request_blocks_app_and_db(foundation_db,
     other=request(db,x,released,other=True);accept(db,x,other);h=grant(db,x,other,key='director')
     edit(db,x,h,'director',other=True,value='Yeni açıklama',reason='İkinci alan');reapprove(db,x,p)
     b=reassemble(db,x,released,p);review(db,x,b);approve(db,x,b)
-    state=db.get(RevisionRequestState,q.id);corrections.close_no_change(db,x['strategy'],q.id,state.version,'Uygulanmayacak');db.commit()
-    rejects(409,lambda:publish(db,x,b))
-    with pytest.raises(DBAPIError,match='closed_no_change request participates'):
-        with db.begin_nested():raw_release(db,x,b)
+    # A1-P1 F1: a live successor lists q, so closure is refused in both layers.
+    state=db.get(RevisionRequestState,q.id);before=counts(db)
+    rejects(409,lambda:corrections.close_no_change(db,x['strategy'],q.id,state.version,'Uygulanmayacak'))
+    db.rollback();assert counts(db)==before and db.get(RevisionRequestState,q.id).state=='editing'
+    with pytest.raises(DBAPIError,match='Live successor lists this correction request'):
+        with db.begin_nested():
+            e=corrections.history(db,x['strategy'],q,'revision_closed_no_change',{'from_state':'editing','to_state':'closed_no_change','version':state.version+1},'Uygulanmayacak')
+            db.add(RevisionRequestEvent(request_id=q.id,workflow_event_id=e.id,from_state='editing',to_state='closed_no_change',version=state.version+1));db.flush()
+            db.execute(text("UPDATE revision_request_states SET state='closed_no_change',version=version+1 WHERE request_id=:id"),{'id':q.id})
+    db.rollback();assert publish(db,x,b).minor==1
+    assert db.get(RevisionRequestState,q.id).state==db.get(RevisionRequestState,other.id).state=='applied'
 
 
 @pytest.mark.parametrize('race',['reassembly','request','decision','reopen_publish','renewal','renewal_publish'])
@@ -282,10 +293,10 @@ def test_populated_migration_preserves_returned_history(foundation_db,people,rel
     for _ in range(2):
         run=subprocess.run([sys.executable,'-m','alembic','upgrade','head'],cwd=ROOT,env={**os.environ,'DATABASE_URL':url},capture_output=True,text=True);assert run.returncode==0,run.stderr
     down=subprocess.run([sys.executable,'-m','alembic','downgrade','-1'],cwd=ROOT,env={**os.environ,'DATABASE_URL':url},capture_output=True,text=True)
-    # S4: the newest revision (e69c04e721a5) refuses first; history below it stays unreachable.
-    assert down.returncode!=0 and 'Activity reference history cannot be discarded' in down.stderr
+    # A1-P1: the newest revision (c5e8a1f0b247) refuses first; history below it stays unreachable.
+    assert down.returncode!=0 and 'A1-P1 workflow activation guards cannot be discarded' in down.stderr
     db.expire_all();assert_sealed(db,before)
-    assert db.execute(text('SELECT version_num FROM alembic_version')).scalar_one()=='e69c04e721a5'
+    assert db.execute(text('SELECT version_num FROM alembic_version')).scalar_one()=='c5e8a1f0b247'
     act(db,people,ready[0],'strategy_reopen','strategy',reason='Migration sonrası');db.commit()
 
 
@@ -367,13 +378,20 @@ def test_closed_contribution_cannot_hide_from_manifest(foundation_db,people,rele
     a=reassemble(db,x,released,p);review(db,x,a);return_attempt(db,x,a);act(db,x,p,'strategy_reopen','strategy',reason='İkinci alan')
     other=request(db,x,released,other=True);accept(db,x,other);h=grant(db,x,other,key='director')
     edit(db,x,h,'director',other=True,value='İkinci talep katkısı',reason='Kaynak');reapprove(db,x,p)
-    if stage=='before_assembly':corrections.close_no_change(db,x['strategy'],q.id,db.get(RevisionRequestState,q.id).version,'Katılmayacak');db.commit()
-    b=reassemble(db,x,released,p);review(db,x,b);approve(db,x,b)
-    if stage=='after_assembly':corrections.close_no_change(db,x['strategy'],q.id,db.get(RevisionRequestState,q.id).version,'Katılmayacak');db.commit()
-    if stage=='before_assembly':assert q.id not in {e['request_id'] for e in json.loads(b.manifest_json)['correction_request_grants']}
-    rejects(409,lambda:publish(db,x,b))
-    with pytest.raises(DBAPIError,match='closed_no_change request participates'):
-        with db.begin_nested():raw_release(db,x,b)
+    if stage=='before_assembly':
+        # S3C-2 B2: a surviving closed edit is refused at publication, not at
+        # assembly, so this candidate can still be returned and reopened.
+        corrections.close_no_change(db,x['strategy'],q.id,db.get(RevisionRequestState,q.id).version,'Katılmayacak');db.commit()
+        b=reassemble(db,x,released,p);review(db,x,b);approve(db,x,b)
+        assert q.id not in {e['request_id'] for e in json.loads(b.manifest_json)['correction_request_grants']}
+        rejects(409,lambda:publish(db,x,b))
+        with pytest.raises(DBAPIError,match='closed_no_change request participates'):
+            with db.begin_nested():raw_release(db,x,b)
+    else:
+        # A1-P1 F1: a live successor lists q, so closing it is refused.
+        b=reassemble(db,x,released,p);review(db,x,b);approve(db,x,b)
+        rejects(409,lambda:corrections.close_no_change(db,x['strategy'],q.id,db.get(RevisionRequestState,q.id).version,'Katılmayacak'))
+        db.rollback();assert db.get(RevisionRequestState,q.id).state=='editing' and publish(db,x,b).minor==1
 
 
 @pytest.mark.parametrize('operation',['reopen','renew'])

@@ -127,18 +127,21 @@ def test_sql_projection_and_copy_fail_closed(foundation_db,people,released,bad):
             else:db.execute(text("UPDATE directorate_packages SET state=:state,version=version+1 WHERE id=:id"),{'state':'strategy_approved' if bad=='skip_director' else 'director_review','id':p.id})
 
 
-def test_expired_grant_and_stale_release_fail_closed(foundation_db,people,released,monkeypatch):
+def test_stale_release_fails_closed_and_expired_grant_does_not_block_review(foundation_db,people,released,monkeypatch):
     db=foundation_db;x=people;p,rev,g,q=correction(db,x,released)
-    now=auth.server_now(db)
-    monkeypatch.setattr(auth,'server_now',lambda db:g.end_at+timedelta(seconds=1))
-    rejects(409,lambda:act(db,x,p,'submit_to_director','user'))
-    monkeypatch.setattr(auth,'server_now',lambda db:now)
     original=db.scalar
     def scalar(statement,*args,**kw):
         if 'report_releases.major DESC' in str(statement):return released.id+1
         return original(statement,*args,**kw)
     monkeypatch.setattr(db,'scalar',scalar)
+    before=counts(db)
     rejects(409,lambda:act(db,x,p,'submit_to_director','user'))
+    assert counts(db)==before
+    monkeypatch.setattr(db,'scalar',original)
+    # A1-P1 K-7: the grant authorized the edit; its later expiry does not freeze submission/review.
+    monkeypatch.setattr(auth,'server_now',lambda db:g.end_at+timedelta(seconds=1))
+    act(db,x,p,'submit_to_director','user');assert p.state=='director_review'
+    assert db.scalar(select(func.count(RevisionEditGrantRenewal.id)))==0
 
 
 @pytest.mark.parametrize('bad',['inactive_director','removed_director','inactive_strategy','removed_delegate','expired_delegate'])

@@ -419,9 +419,10 @@ def test_populated_upgrade_then_v1_and_v2_successors(foundation_db, people, rele
         run = subprocess.run([sys.executable, '-m', 'alembic', 'upgrade', 'head'], cwd=ROOT, env={**os.environ, 'DATABASE_URL': url}, capture_output=True, text=True)
         assert run.returncode == 0, run.stderr
     down = subprocess.run([sys.executable, '-m', 'alembic', 'downgrade', '-1'], cwd=ROOT, env={**os.environ, 'DATABASE_URL': url}, capture_output=True, text=True)
-    assert down.returncode != 0 and 'Activity reference history cannot be discarded' in down.stderr
+    # A1-P1: the newest revision (c5e8a1f0b247) refuses first; S4 history below it stays unreachable.
+    assert down.returncode != 0 and 'A1-P1 workflow activation guards cannot be discarded' in down.stderr
     db.expire_all();assert_sealed(db, before)
-    assert db.execute(text('SELECT version_num FROM alembic_version')).scalar_one() == 'e69c04e721a5'
+    assert db.execute(text('SELECT version_num FROM alembic_version')).scalar_one() == 'c5e8a1f0b247'
     reports.verify(db, db.get(ReportCandidate, released.candidate_id))
     monkeypatch.setattr(reports, 'ACTIVITY_REFERENCE_SUCCESSORS', writer)
     c, r = published_successor(db, x, released, p)

@@ -183,6 +183,8 @@ def close_no_change(db,actor,request_id,expected_version,reason):
     request,state=locked(db,actor,request_id,expected_version);strategy(db,actor)
     reason=auth.required(reason,'Değişikliksiz kapatma gerekçesi')
     if state.state not in {'accepted','editing'}:auth.fail('Yalnız kabul edilmiş veya düzenlenen talep değişikliksiz kapatılabilir.',409)
+    live=live_successor_listing(db,request)
+    if live:auth.fail(f'Düzeltme talebi #{request.id}, canlı ardıl rapor adayı #{live.id} içinde yer alıyor. Önce nihai onaycının adayı gerekçeyle iade etmesi gerekir; ardından talebi değişikliksiz kapatabilirsiniz.',409)
     with db.begin_nested():
         transition(db,actor,request,state,'closed_no_change',reason)
         notify(db,request,'revision_closed_no_change',active_participants(db,request))
@@ -197,12 +199,21 @@ def value_at(content,path):
     return value
 
 
+# A1-F3: system-derived difference-v1 fields; never a user correction. Every
+# other deviation key (corrective_action) is correctable content. Mirrors
+# civensa_net_value() in PostgreSQL.
+DERIVED_DEVIATION_KEYS=('achievement_percent','calculation_rule_version','delta','target_definition_revision_id')
+
+
 def net_changed(before,after,path):
+    if len(path)>=4 and path[0]=='entries' and path[2]=='deviation' and path[3] in DERIVED_DEVIATION_KEYS:return False
     old=value_at(before,path);new=value_at(after,path)
     if len(path)==3 and path[0]=='entries' and path[2]=='value':
         # Equivalent decimal spellings are not a real changed actual. Preserve
         # blank/null versus zero; do not coerce missing values into zero.
         return packages.parse_actual(old)!=packages.parse_actual(new)
+    if len(path)==3 and path[0]=='entries' and path[2]=='deviation':
+        old,new=({k:v for k,v in side.items() if k not in DERIVED_DEVIATION_KEYS} if isinstance(side,dict) else side for side in (old,new))
     return old!=new
 
 
@@ -212,7 +223,7 @@ def has_net_correction(db,request,grant,cycle,bound,*,survives=False):
     survives=True is only for closed_no_change checks (closed_request_survives)."""
     source=db.get(PackageRevision,cycle.source_package_revision_id)
     before=json.loads(source.content_json);after=json.loads(bound.content_json)
-    paths=[p for p in json.loads(grant.paths_json) if 'deviation' not in p and net_changed(before,after,p)]
+    paths=[p for p in json.loads(grant.paths_json) if net_changed(before,after,p)]
     if not paths:return False
     lineage={};row=bound
     while row and row.id!=cycle.opening_revision_id:
@@ -225,7 +236,7 @@ def has_net_correction(db,request,grant,cycle,bound,*,survives=False):
             FieldChangeEvent.revision_request_id==request.id)).all()
     for event,change in changes:
         context=json.loads(event.context_json);path=json.loads(change.field_key)
-        if not any(path[:len(p)]==p for p in paths) or 'deviation' in path or not net_changed(before,after,path) or context.get('grant_id')!=grant.id or context.get('package_id')!=cycle.package_id:continue
+        if not any(path[:len(p)]==p for p in paths) or not net_changed(before,after,path) or context.get('grant_id')!=grant.id or context.get('package_id')!=cycle.package_id:continue
         if context.get('request_id')!=request.id or context.get('source_release_id')!=request.source_release_id:continue
         for revision in lineage.values():
             if (revision.previous_revision_id!=context.get('previous_revision_id') or revision.revision!=context.get('next_revision')
@@ -319,6 +330,11 @@ def edit_under_grant(db,actor,grant_id,expected_version,expected_hash,patches,re
         else:changes.append((path,old,new))
     collect(before,after,[])
     if not changes:auth.fail('Kaydedilecek alan değişikliği yok.',422)
+    # A1-F3: inside deviation only corrective_action is user content; derived
+    # fields were recomputed above and no other key may be added/changed/removed.
+    if pkg.resource_scope=='activity_report' and any(len(path)>=4 and path[0]=='entries' and path[2]=='deviation'
+            and path[3] not in DERIVED_DEVIATION_KEYS+('corrective_action',) for path,old,new in changes):
+        auth.fail('Sapma kaydında yalnız düzeltici işlem düzeltilebilir; diğer sapma alanlarını değiştirmeyin veya eklemeyin.',422)
     raw=auth.encode(after)
     with db.begin_nested():
         e=history(db,actor,r,'correction_edit',{'grant_id':grant.id,'renewal_id':effective.id if isinstance(effective,RevisionEditGrantRenewal) else None,'membership_id':m.id,'package_id':pkg.id,
@@ -355,16 +371,89 @@ def correction_context(db,package,*,validate_grant=True):
     bound=db.scalar(select(CandidatePackage).where(CandidatePackage.candidate_id==candidate.id,
         CandidatePackage.package_revision_id==cycle.source_package_revision_id))
     if not bound:packages.conflict()
-    if validate_grant:require_correction_grant(db,cycle)
+    if validate_grant:require_correction_authority(db,cycle,package)
     return cycle
 
 
-def require_correction_grant(db,cycle):
-    """Recheck grant time without reacquiring the correction organization lock."""
-    now=auth.server_now(db)
-    grants=db.scalars(select(RevisionEditGrant).join(RevisionRequestState,RevisionRequestState.request_id==RevisionEditGrant.request_id)
-        .where(RevisionEditGrant.cycle_id==cycle.id,RevisionRequestState.state=='editing')).all()
-    if not any(effective_grant(db,g,now) for g in grants):auth.fail('Düzeltme izni etkin değil. Stratejiden güncel alan iznini kontrol etmesini isteyin.',409)
+def require_correction_authority(db,cycle,package):
+    """A1-P1 K-7: grant validity authorizes the edit, never the later review.
+
+    Review/return/approval transitions need a package lineage whose every
+    content change was authorized when it was made; a grant that expired (or a
+    request closed) afterwards does not freeze them. New edits still need a live
+    grant or renewal (edit_under_grant)."""
+    verify_correction_lineage(db,cycle,packages.revision(db,package))
+
+
+def verify_correction_lineage(db,cycle,revision):
+    """Every content change since the cycle opening must be a correction_edit made
+    inside its grant/renewal interval by a granted membership on granted paths.
+    Mirrors civensa_correction_lineage_authorized() in PostgreSQL."""
+    row=revision;seen=set()
+    while row.id!=cycle.opening_revision_id:
+        prior=db.get(PackageRevision,row.previous_revision_id)
+        if row.id in seen or row.package_id!=cycle.package_id or not prior or prior.package_id!=cycle.package_id or row.revision!=prior.revision+1:packages.conflict()
+        seen.add(row.id)
+        if row.content_json!=prior.content_json and not authorized_edit(db,cycle,prior,row):
+            auth.fail('Düzeltme paketindeki bir değişiklik, yapıldığı anda geçerli bir alan izni veya izin yenilemesine bağlanamadı. Paket incelemeye veya onaya ilerletilemez; Strateji ile izin geçmişini kontrol edin.',409)
+        row=prior
+    if row.previous_revision_id!=cycle.source_package_revision_id:packages.conflict()
+
+
+def change_paths(before,after,path=()):
+    """Leaf addresses that differ; same traversal as edit_under_grant/civensa_revision_changes."""
+    if before==after:return []
+    if isinstance(before,dict) and isinstance(after,dict):
+        return [c for key in sorted(before.keys()|after.keys()) for c in change_paths(before.get(key),after.get(key),path+(key,))]
+    if isinstance(before,list) and isinstance(after,list) and len(before)==len(after):
+        return [c for index,(left,right) in enumerate(zip(before,after)) for c in change_paths(left,right,path+(index,))]
+    return [list(path)]
+
+
+def authorized_edit(db,cycle,prior,row):
+    grants={g.id:g for g in db.scalars(select(RevisionEditGrant).where(RevisionEditGrant.cycle_id==cycle.id))}
+    requests={str(g.request_id):g for g in grants.values()}
+    if not requests:return False
+    before=json.loads(prior.content_json);after=json.loads(row.content_json)
+    for event in db.scalars(select(WorkflowEvent).where(WorkflowEvent.event_type=='correction_edit',WorkflowEvent.resource_type=='revision_request',
+            WorkflowEvent.resource_id.in_(list(requests)),WorkflowEvent.actor_user_id==row.created_by).order_by(WorkflowEvent.id)):
+        context=json.loads(event.context_json);grant=grants.get(context.get('grant_id'))
+        request=db.get(RevisionRequest,grant.request_id) if grant else None
+        if (not request or str(request.id)!=event.resource_id or context.get('request_id')!=request.id or context.get('package_id')!=cycle.package_id
+            or context.get('previous_revision_id')!=prior.id or context.get('next_revision')!=row.revision or context.get('next_sha256')!=row.sha256
+            or event.organization_id!=request.organization_id or event.department_id!=request.department_id or event.created_at>row.created_at):continue
+        membership=db.get(DirectorateMembership,context.get('membership_id'))
+        if (not membership or membership.id not in json.loads(grant.membership_ids_json) or membership.user_id!=event.actor_user_id
+            or membership.organization_id!=request.organization_id or membership.department_id!=request.department_id
+            or db.scalar(select(MembershipEvent.id).where(MembershipEvent.membership_id==membership.id,MembershipEvent.event_type=='deactivated',MembershipEvent.created_at<=event.created_at).limit(1))):continue
+        window=grant if context.get('renewal_id') is None else db.get(RevisionEditGrantRenewal,context['renewal_id'])
+        # A renewal never covers time before it existed (no backdated authority).
+        if not window or (window is not grant and window.original_grant_id!=grant.id):continue
+        start=window.start_at if window is grant else max(window.start_at,window.created_at)
+        # The event instant is the authorization instant: it precedes the edit
+        # guard's own clock check, so it lies inside the window whenever the edit
+        # was accepted; the revision timestamp may legitimately fall after end_at.
+        if not start<=event.created_at<window.end_at:continue
+        allowed=json.loads(window.paths_json)
+        recorded={(c.field_key,c.previous_json,c.new_json) for c in db.scalars(select(FieldChangeEvent).where(FieldChangeEvent.workflow_event_id==event.id,FieldChangeEvent.revision_request_id==request.id))}
+        if all((auth.encode(path),auth.encode(value_at(before,path)),auth.encode(value_at(after,path))) in recorded
+                and (any(path[:len(p)]==p for p in allowed) or (len(path)>=4 and path[0]=='entries' and path[2]=='deviation' and path[3] in DERIVED_DEVIATION_KEYS))
+                for path in change_paths(before,after)):return True
+    return False
+
+
+def live_successor_listing(db,request):
+    """A1-F1: the live successor (assembling/final_review/final_approved) that lists this request."""
+    # Manifests are read in Python so the check is dialect-independent; live candidates are few.
+    for candidate in db.scalars(select(ReportCandidate).join(ReportCandidateState,ReportCandidateState.candidate_id==ReportCandidate.id)
+            .where(ReportCandidateState.state.in_(['assembling','final_review','final_approved']),
+                ReportCandidate.organization_id==request.organization_id,ReportCandidate.resource_scope=='activity_report')
+            .order_by(ReportCandidate.id)):
+        manifest=json.loads(candidate.manifest_json)
+        if manifest.get('predecessor_release_id')==request.source_release_id and any(
+                isinstance(entry,dict) and entry.get('request_id')==request.id for entry in manifest.get('correction_request_grants') or []):
+            return candidate
+    return None
 
 
 def ensure_no_live_successor(db,release_id):
@@ -386,7 +475,11 @@ def renew_grant(db,actor,grant_id,paths,start_at,end_at,reason):
     grant=db.get(RevisionEditGrant,grant_id)
     if not grant:auth.fail('Düzeltme izni bulunamadı.',404)
     request,state=locked(db,actor,grant.request_id);strategy(db,actor)
-    reports.require_returned_attempt(db,grant.source_release_id)
+    # K-7: a returned package may need renewal before further edits whether or
+    # not a successor attempt ever existed; a live successor still freezes it.
+    if state.state=='closed_no_change':
+        auth.fail('Düzeltme talebi değişikliksiz kapatıldı; izni yenilenemez. Gerekirse yeni bir düzeltme talebi açın.',409)
+    ensure_no_live_successor(db,grant.source_release_id)
     cycle=db.get(RevisionCorrectionCycle,grant.cycle_id);pkg=db.get(DirectoratePackage,cycle.package_id)
     now=auth.server_now(db)
     if state.state!='editing' or pkg.state not in {'returned','director_review','strategy_review','strategy_approved'} or grant.end_at>now or effective_grant(db,grant,now):packages.conflict()
