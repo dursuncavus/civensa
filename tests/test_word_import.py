@@ -98,6 +98,7 @@ def word_document(*, year='2027', department='Park Bahçeler Müdürlüğü',
     if variant == 'nested':
         outer = doc.add_table(rows=1, cols=1)
         outer.cell(0, 0)._tc.append(table._tbl)
+        outer.cell(0, 0).add_paragraph()
     costs = doc.add_table(rows=0, cols=4)
     for texts in [
         ('Faaliyetler', '2027 Bütçe', '2028 Tahmin', '2029 Tahmin'),
@@ -406,7 +407,14 @@ def test_safe_rollback_restores_legacy_indicator(db, import_client, import_conte
     assert response.status_code == 200, response.text
     assert response.json()['status'] == 'reverted'
     db.expire_all()
-    assert db.scalar(select(Indicator)).name == 'Eski gösterge'
+    restored = db.scalar(select(Indicator))
+    assert (restored.id, restored.name, restored.unit) == (ind.id, 'Eski gösterge', 'Adet')
+    restored_value = db.scalar(select(IndicatorValue))
+    assert (restored_value.value, restored_value.raw_text, restored_value.state) == (
+        Decimal('5'), '5', 'verified')
+    assert db.get(Department, dept.id).name == 'Park ve Bahçeler Müdürlüğü'
+    assert db.get(SubProgram, sp.id).name == 'Eski alt program'
+    assert db.scalar(select(func.count()).select_from(ReportCard)) == 0
 
 
 def test_safe_rollback_removes_new_department(db, import_client, import_context):
@@ -435,7 +443,7 @@ def test_d7_safe_rollback_preserves_submission_history(db, import_client, import
     db.flush()
     event = SubmissionEvent(submission_id=submission.id, department_id=dept.id,
                             period_id=import_context.period.id, actor_user_id=import_context.user.id,
-                            event_type='returned', revision=1, note='Hedef değerini düzeltin.')
+                            event_type='return', revision=1, note='Hedef değerini düzeltin.')
     db.add(event)
     db.commit()
     batch_id = preview(import_client, import_context)['batch_id']
