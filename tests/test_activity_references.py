@@ -10,6 +10,7 @@ from sqlalchemy import select, func, text, event, insert
 from sqlalchemy.orm import Session
 from sqlalchemy.orm.attributes import set_committed_value
 from sqlalchemy.exc import DBAPIError
+from app.main import migration_head
 from app.models import *
 from app import report_workflow_service as reports, activity_reference_service as references, activity_revision_reference as engine
 from app import authorization_service as auth, revision_workflow_service as corrections
@@ -418,11 +419,11 @@ def test_populated_upgrade_then_v1_and_v2_successors(foundation_db, people, rele
     for _ in range(2):
         run = subprocess.run([sys.executable, '-m', 'alembic', 'upgrade', 'head'], cwd=ROOT, env={**os.environ, 'DATABASE_URL': url}, capture_output=True, text=True)
         assert run.returncode == 0, run.stderr
-    down = subprocess.run([sys.executable, '-m', 'alembic', 'downgrade', '-1'], cwd=ROOT, env={**os.environ, 'DATABASE_URL': url}, capture_output=True, text=True)
-    # A1-P1.1: the newest revision (f2b7c4d91e08) refuses first; S4 history below it stays unreachable.
+    down = subprocess.run([sys.executable, '-m', 'alembic', 'downgrade', 'c5e8a1f0b247'], cwd=ROOT, env={**os.environ, 'DATABASE_URL': url}, capture_output=True, text=True)
+    # A1-P1.1 refuses downgrade past its guards; S4 history below it stays unreachable.
     assert down.returncode != 0 and 'A1-P1.1 recovery guards cannot be discarded' in down.stderr
     db.expire_all();assert_sealed(db, before)
-    assert db.execute(text('SELECT version_num FROM alembic_version')).scalar_one() == 'f2b7c4d91e08'
+    assert db.execute(text('SELECT version_num FROM alembic_version')).scalar_one() == migration_head()
     reports.verify(db, db.get(ReportCandidate, released.candidate_id))
     monkeypatch.setattr(reports, 'ACTIVITY_REFERENCE_SUCCESSORS', writer)
     c, r = published_successor(db, x, released, p)

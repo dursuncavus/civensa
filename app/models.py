@@ -456,3 +456,5 @@ from .report_workflow_models import (ReportCandidate, ReportCandidateState, Cand
     ReportDecision, ReportRelease, ReportReleaseSuccession, ReportArtifact, ActivityRealizationReference)
 
 from .revision_workflow_models import RevisionRequest, RevisionRequestState, RevisionRequestEvent, RevisionCorrectionCycle, RevisionEditGrant, RevisionEditGrantRenewal
+
+from .login_throttling import LoginAttempt

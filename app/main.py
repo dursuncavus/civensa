@@ -33,6 +33,7 @@ from .models import (
     SubProgram, TemplateSnapshot, ImportBatch, SubmissionEvent, Notification, NotificationRecipient,
 )
 from .security import verify_password, hash_password
+from . import login_throttling
 from .seed import seed
 from .template_parser import analyze_template
 from .data_importer import parse_performance_docx
@@ -395,9 +396,22 @@ def login_page(request: Request):
 
 @app.post("/login", response_class=HTMLResponse)
 def login(request: Request, email: str = Form(...), password: str = Form(...), db: Session = Depends(get_db)):
+    # Use the ASGI client accepted by the server's existing proxy trust policy.
+    # Never parse X-Forwarded-For here. Missing client addresses share one bucket.
+    client_ip = request.client.host if request.client else "unknown"
+    email_key, ip_key, now, locked = login_throttling.begin_attempt(db, email, client_ip)
     user = db.scalar(select(User).where(User.email == email.strip().lower()))
-    if not user or not user.is_active or not verify_password(password, user.password_hash):
-        return templates.TemplateResponse(request, "login.html", {"error": "E-posta veya parola hatalı."}, status_code=400)
+    # Exactly one PBKDF2 check for ordinary failures, unknown/inactive users and
+    # locked requests (including correct passwords); no user existence shortcut.
+    stored = user.password_hash if user and user.is_active and not locked else login_throttling.DUMMY_PASSWORD_HASH
+    valid_password = verify_password(password, stored)
+    if locked or not user or not user.is_active or not valid_password:
+        if not locked:
+            locked = login_throttling.record_failure(db, email_key, ip_key, now)
+        db.commit()
+        error = login_throttling.LOCK_MESSAGE if locked else "E-posta veya parola hatalı."
+        return templates.TemplateResponse(request, "login.html", {"error": error}, status_code=400)
+    login_throttling.clear_email_failures(db, email_key, now)
     # Never carry role/period context from a previous session into a new login.
     request.session.clear()
     start_user_session(request, user.id, user.password_hash)

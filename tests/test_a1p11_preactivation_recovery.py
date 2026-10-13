@@ -24,7 +24,8 @@ from tests.test_package_workflow import act, package as base_package, edit as pa
 from tests.test_a1p1_workflow_activation import state, final_return, package_of, reapprove, raw, source_content
 pytestmark=pytest.mark.postgres
 
-HEAD='f2b7c4d91e08'
+from app.main import migration_head
+HEAD = migration_head()
 
 
 def rows(db,*objects):return [tuple(getattr(db.get(type(o),inspect(o).identity,populate_existing=True),c.name) for c in o.__table__.columns) for o in objects]
@@ -898,7 +899,7 @@ def test_populated_upgrade_keeps_history_and_refuses_downgrade(foundation_db,peo
     for _ in range(2):
         run=subprocess.run([sys.executable,'-m','alembic','upgrade','head'],cwd=ROOT,env={**os.environ,'DATABASE_URL':url},capture_output=True,text=True)
         assert run.returncode==0,run.stderr
-    down=subprocess.run([sys.executable,'-m','alembic','downgrade','-1'],cwd=ROOT,env={**os.environ,'DATABASE_URL':url},capture_output=True,text=True)
+    down=subprocess.run([sys.executable,'-m','alembic','downgrade','c5e8a1f0b247'],cwd=ROOT,env={**os.environ,'DATABASE_URL':url},capture_output=True,text=True)
     assert down.returncode!=0 and 'A1-P1.1 recovery guards cannot be discarded' in down.stderr
     db.expire_all();assert_sealed(db,before);assert db.execute(text('SELECT version_num FROM alembic_version')).scalar_one()==HEAD
     reports.verify(db,c);new=rework(db,x,p,c);review(db,x,new);approve(db,x,new);assert publish(db,x,new).major==1
