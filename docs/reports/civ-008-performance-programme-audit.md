@@ -112,9 +112,11 @@ The command below requires a PostgreSQL URL to be configured; no connection stri
 | --- | --- | --- |
 | **T01** | `python -m pytest -q --require-postgres tests/test_program.py tests/test_submission_workflow.py tests/test_publication_gates.py tests/test_progress_readiness.py tests/test_review_errors.py tests/test_indicator_update.py tests/test_economic_form.py` | **81 passed**, 1 existing Starlette/httpx deprecation warning. These fixture-based module tests primarily use SQLite; E02–E10 supplied independent migrated-PostgreSQL, real-login HTTP coverage. |
 | **T02–T03** | `python -m pytest -q -rx --require-postgres tests/test_word_import.py tests/test_live_pilot_hardening.py` | **64 passed, 12 xfailed**, 1 existing deprecation warning; 27.78 seconds. All 12 strict expected failures reproduced the seven existing Word defect families. Word scenarios use PostgreSQL; hardening tests exercise mixed SQLite/PostgreSQL backends. |
-| **T04** | `python -m pytest -q --require-postgres` on a separate fresh disposable database | **In progress** at initial PR creation; final result will be recorded after the run completes. |
+| **T04** | `python -m pytest -q --require-postgres` on a separate fresh disposable database | **Not completed locally.** The broader run was stopped at approximately 41% after the scoped runs above passed; interruption during fixture setup emitted a pytest cleanup traceback. No local full-suite pass is claimed. Full repository validation is tracked in the [PR checks](https://github.com/dursuncavus/civensa/pull/21/checks). |
 
-Word test expected failures are product defects, not passes. The detailed gap rows below identify each family and distinguish HTTP tests from parser/service-only tests. Source bundle integrity (`python check_bundle.py`, 80 files), JavaScript syntax (`node --check app/static/app.js`) and documentation whitespace (`git diff --check`) checks passed.
+Word test expected failures are product defects, not passes. The complete repository CI workflow uses PostgreSQL 16 and executes the full suite, Python compile and JavaScript syntax checks; its final result is linked from [PR #21](https://github.com/dursuncavus/civensa/pull/21/checks). The scoped local results above and independent E/B/X executions are the report's direct execution evidence.
+
+The detailed gap rows below identify each family and distinguish HTTP tests from parser/service-only tests. Source bundle integrity (`python check_bundle.py`, 80 files), JavaScript syntax (`node --check app/static/app.js`) and documentation whitespace (`git diff --check`) checks passed.
 
 The documented repeat-run public-schema migration collision was avoided by using a fresh test database (`docs/issues/postgres-migration-test-repeat.md`); it was not repaired.
 
@@ -189,7 +191,7 @@ Schedule **PP-12** sibling draft preservation and **PP-13** period-context consi
 | Disabled authorization workflow as a released screen flow | It is deliberately disabled by configuration/schema and has no runtime UI. Existing backend tests do not mean editor/director/final-authority/delegation workflows can be used by staff. No flag or successor setting was changed. |
 | Newer CIV-005/CIV-006 changes outside the audited head | Audit is pinned to `960d62c`; concurrent work is a dependency, not credited as implemented. Repeat the affected acceptance scenarios after integration. |
 | Every route/error/CSV/import permutation and adversarial concurrency through a browser | Main flows and explicit failures were exercised; existing tests cover additional variants. The import concurrent-apply test is service-level PostgreSQL, not a two-browser run. Mapping CSV and account bulk UI were read/test-covered rather than clicked end to end. |
-| Reused populated-database migration-test behavior | Full test execution used a fresh disposable DB; the known repeat-run public-schema collision was not re-exercised or repaired. This does not invalidate fresh-schema HTTP execution. |
+| Reused populated-database migration-test behavior | Local PostgreSQL test execution used fresh disposable databases; the known repeat-run public-schema collision was not re-exercised or repaired. This does not invalidate fresh-schema HTTP execution. |
 
 ### Screenshot evidence attached to this PR
 
