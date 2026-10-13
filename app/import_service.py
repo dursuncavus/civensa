@@ -121,7 +121,7 @@ def consolidate_source_departments(parsed: dict) -> dict:
     summary["indicator_count"] = sum(len(b.get("indicators", [])) for d in departments for b in d["blocks"])
     summary["activity_count"] = sum(len(d["activities"]) for d in departments)
     warnings = list(parsed.get("warnings", [])) + normalization_notes
-    return {"departments": departments, "summary": summary, "warnings": warnings, "errors": list(parsed.get("errors", []))}
+    return {"departments": departments, "summary": summary, "warnings": warnings, "errors": list(parsed.get("errors", [])), "coverage_items": list(parsed.get("coverage_items", []))}
 
 
 def _similarity(a: str, b: str) -> float:

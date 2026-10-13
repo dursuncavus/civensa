@@ -1,0 +1,407 @@
+{
+  "parser_commit": "960d62c",
+  "fixture_sha256": "233b952beff1b72eb4d3e5f2b609811346cd3739d7bdb658c42e6b46e124d4c2",
+  "summary": {
+    "department_count": 39,
+    "indicator_table_count": 64,
+    "indicator_count": 324,
+    "activity_table_count": 33,
+    "activity_count": 288,
+    "table_count": 161,
+    "source_years": [
+      2027
+    ]
+  },
+  "departments": [
+    {
+      "name": "Sağlık İşleri Müdürlüğü",
+      "blocks": 4,
+      "indicators": 15,
+      "activities": 10,
+      "personnel_rows": 6,
+      "budget_years": [
+        2027
+      ]
+    },
+    {
+      "name": "Ruhsat ve Denetim Müdürlüğü",
+      "blocks": 1,
+      "indicators": 6,
+      "activities": 5,
+      "personnel_rows": 6,
+      "budget_years": [
+        2027
+      ]
+    },
+    {
+      "name": "ZABITA MÜDÜRLÜĞÜ",
+      "blocks": 2,
+      "indicators": 11,
+      "activities": 9,
+      "personnel_rows": 6,
+      "budget_years": [
+        2027
+      ]
+    },
+    {
+      "name": "VETERİNER İŞLERİ MÜDÜRLÜĞÜ",
+      "blocks": 1,
+      "indicators": 6,
+      "activities": 6,
+      "personnel_rows": 6,
+      "budget_years": [
+        2027
+      ]
+    },
+    {
+      "name": "Emlak ve İstimlak Müdürlüğü",
+      "blocks": 2,
+      "indicators": 9,
+      "activities": 11,
+      "personnel_rows": 6,
+      "budget_years": [
+        2027
+      ]
+    },
+    {
+      "name": "FEN İŞLERİ MÜDÜRLÜĞÜ",
+      "blocks": 3,
+      "indicators": 18,
+      "activities": 9,
+      "personnel_rows": 6,
+      "budget_years": [
+        2027
+      ]
+    },
+    {
+      "name": "İmar ve Şehircilik Müdürlüğü",
+      "blocks": 2,
+      "indicators": 9,
+      "activities": 13,
+      "personnel_rows": 6,
+      "budget_years": [
+        2027
+      ]
+    },
+    {
+      "name": "PARK VE BAHÇELER MÜDÜRLÜĞÜ",
+      "blocks": 1,
+      "indicators": 6,
+      "activities": 0,
+      "personnel_rows": 0,
+      "budget_years": [
+        2027
+      ]
+    },
+    {
+      "name": "Park Ve Bahçeler Müdürlüğü",
+      "blocks": 1,
+      "indicators": 3,
+      "activities": 13,
+      "personnel_rows": 6,
+      "budget_years": [
+        2027
+      ]
+    },
+    {
+      "name": "Etüt Proje Müdürlüğü",
+      "blocks": 1,
+      "indicators": 3,
+      "activities": 0,
+      "personnel_rows": 0,
+      "budget_years": [
+        2027
+      ]
+    },
+    {
+      "name": "Büyükçekmece Belediye Başkanlığı, Etüt Proje Müdürlüğü",
+      "blocks": 1,
+      "indicators": 5,
+      "activities": 12,
+      "personnel_rows": 6,
+      "budget_years": [
+        2027
+      ]
+    },
+    {
+      "name": "Harita ve Planlama Müdürlüğü",
+      "blocks": 1,
+      "indicators": 6,
+      "activities": 1,
+      "personnel_rows": 6,
+      "budget_years": [
+        2027
+      ]
+    },
+    {
+      "name": "KENTSEL DÖNÜŞÜM MÜDÜRLÜĞÜ",
+      "blocks": 1,
+      "indicators": 6,
+      "activities": 5,
+      "personnel_rows": 6,
+      "budget_years": [
+        2027
+      ]
+    },
+    {
+      "name": "Afet İşleri Ve Risk Yönetimi Müdürlüğü",
+      "blocks": 1,
+      "indicators": 6,
+      "activities": 0,
+      "personnel_rows": 0,
+      "budget_years": [
+        2027
+      ]
+    },
+    {
+      "name": "AFET İŞLERİ VE RİSK YÖNETİMİ MÜDÜRLÜĞÜ",
+      "blocks": 1,
+      "indicators": 6,
+      "activities": 16,
+      "personnel_rows": 6,
+      "budget_years": [
+        2027
+      ]
+    },
+    {
+      "name": "Temizlik İşleri Müdürlüğü",
+      "blocks": 1,
+      "indicators": 5,
+      "activities": 8,
+      "personnel_rows": 6,
+      "budget_years": [
+        2027
+      ]
+    },
+    {
+      "name": "Çevre Koruma Ve Kontrol Müdürlüğü",
+      "blocks": 1,
+      "indicators": 4,
+      "activities": 3,
+      "personnel_rows": 6,
+      "budget_years": [
+        2027
+      ]
+    },
+    {
+      "name": "Tarımsal Hizmetle Müdürlüğü",
+      "blocks": 1,
+      "indicators": 6,
+      "activities": 0,
+      "personnel_rows": 0,
+      "budget_years": [
+        2027
+      ]
+    },
+    {
+      "name": "Tarımsal Hizmetler Müdürlüğü",
+      "blocks": 1,
+      "indicators": 5,
+      "activities": 11,
+      "personnel_rows": 6,
+      "budget_years": [
+        2027
+      ]
+    },
+    {
+      "name": "İklim Değişikliği ve Sıfır Atık Müdürlüğü",
+      "blocks": 1,
+      "indicators": 4,
+      "activities": 5,
+      "personnel_rows": 6,
+      "budget_years": [
+        2027
+      ]
+    },
+    {
+      "name": "Kültür Sanat ve Sosyal İşler Müdürlüğü",
+      "blocks": 5,
+      "indicators": 29,
+      "activities": 17,
+      "personnel_rows": 6,
+      "budget_years": [
+        2027
+      ]
+    },
+    {
+      "name": "Gençlik ve Spor Hizmetleri Müdürlüğü",
+      "blocks": 2,
+      "indicators": 12,
+      "activities": 10,
+      "personnel_rows": 6,
+      "budget_years": [
+        2027
+      ]
+    },
+    {
+      "name": "Sosyal Hizmetler Müdürlüğü",
+      "blocks": 4,
+      "indicators": 24,
+      "activities": 19,
+      "personnel_rows": 6,
+      "budget_years": [
+        2027
+      ]
+    },
+    {
+      "name": "Dış İlişkiler Müdürlüğü",
+      "blocks": 1,
+      "indicators": 4,
+      "activities": 10,
+      "personnel_rows": 6,
+      "budget_years": [
+        2027
+      ]
+    },
+    {
+      "name": "Basın Yayın ve Halkla İlişkiler Müdürlüğü",
+      "blocks": 4,
+      "indicators": 20,
+      "activities": 10,
+      "personnel_rows": 6,
+      "budget_years": [
+        2027
+      ]
+    },
+    {
+      "name": "Araştırma ve Geliştirme Müdürlüğü",
+      "blocks": 1,
+      "indicators": 5,
+      "activities": 8,
+      "personnel_rows": 6,
+      "budget_years": [
+        2027
+      ]
+    },
+    {
+      "name": "Özel Kalem Müdürlüğü",
+      "blocks": 1,
+      "indicators": 6,
+      "activities": 5,
+      "personnel_rows": 0,
+      "budget_years": [
+        2027
+      ]
+    },
+    {
+      "name": "İnsan Kaynakları ve Eğitim Müdürlüğü",
+      "blocks": 2,
+      "indicators": 8,
+      "activities": 10,
+      "personnel_rows": 6,
+      "budget_years": [
+        2027
+      ]
+    },
+    {
+      "name": "Bilgi İşlem Müdürlüğü",
+      "blocks": 1,
+      "indicators": 6,
+      "activities": 5,
+      "personnel_rows": 6,
+      "budget_years": [
+        2027
+      ]
+    },
+    {
+      "name": "Rehberlik ve Teftiş Kurulu Müdürlüğü",
+      "blocks": 1,
+      "indicators": 5,
+      "activities": 3,
+      "personnel_rows": 6,
+      "budget_years": [
+        2027
+      ]
+    },
+    {
+      "name": "Hukuk İşleri Müdürlüğü",
+      "blocks": 1,
+      "indicators": 5,
+      "activities": 3,
+      "personnel_rows": 6,
+      "budget_years": [
+        2027
+      ]
+    },
+    {
+      "name": "Strateji Geliştirme Müdürlüğü",
+      "blocks": 1,
+      "indicators": 6,
+      "activities": 8,
+      "personnel_rows": 6,
+      "budget_years": [
+        2027
+      ]
+    },
+    {
+      "name": "Destek Hizmetleri Müdürlüğü",
+      "blocks": 1,
+      "indicators": 5,
+      "activities": 0,
+      "personnel_rows": 0,
+      "budget_years": [
+        2027
+      ]
+    },
+    {
+      "name": "DESTEK HİZMETLERİ MÜDÜRLÜĞÜ",
+      "blocks": 1,
+      "indicators": 4,
+      "activities": 7,
+      "personnel_rows": 6,
+      "budget_years": [
+        2027
+      ]
+    },
+    {
+      "name": "Mali Hizmetler Müdürlüğü",
+      "blocks": 1,
+      "indicators": 3,
+      "activities": 5,
+      "personnel_rows": 6,
+      "budget_years": [
+        2027
+      ]
+    },
+    {
+      "name": "Yazı İşleri Müdürlüğü",
+      "blocks": 3,
+      "indicators": 17,
+      "activities": 0,
+      "personnel_rows": 0,
+      "budget_years": [
+        2027
+      ]
+    },
+    {
+      "name": "Büyükçekmece Belediyesi",
+      "blocks": 1,
+      "indicators": 6,
+      "activities": 11,
+      "personnel_rows": 6,
+      "budget_years": [
+        2027
+      ]
+    },
+    {
+      "name": "Gelirler Müdürlüğü",
+      "blocks": 4,
+      "indicators": 14,
+      "activities": 15,
+      "personnel_rows": 6,
+      "budget_years": [
+        2027
+      ]
+    },
+    {
+      "name": "Makine İkmal Bakım Ve Onarım Müdürlüğü",
+      "blocks": 1,
+      "indicators": 6,
+      "activities": 5,
+      "personnel_rows": 6,
+      "budget_years": [
+        2027
+      ]
+    }
+  ]
+}

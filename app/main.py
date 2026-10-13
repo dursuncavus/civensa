@@ -1486,6 +1486,7 @@ async def data_import_preview(period_id: int, file: UploadFile = File(...), db: 
     return {
         "ok": True, "batch_id": batch.id, "status": batch.status,
         "summary": plan["summary"], "warnings": warnings,
+        "errors": errors, "coverage_items": plan["parsed"].get("coverage_items", []),
         "departments": preview_departments, "mappings": plan["mappings"],
         "can_apply": not plan["unresolved"] and not year_mismatch and not errors,
     }
@@ -1509,6 +1510,7 @@ def import_batch_detail(batch_id: int, db: Session = Depends(get_db), user: User
     return {
         "id": batch.id, "filename": batch.filename, "status": batch.status,
         "summary": plan["summary"], "warnings": warnings,
+        "errors": errors, "coverage_items": plan["parsed"].get("coverage_items", []),
         "departments": [{
             "name": d["name"], "block_count": len(d["blocks"]),
             "indicator_count": sum(len(b["indicators"]) for b in d["blocks"]),
