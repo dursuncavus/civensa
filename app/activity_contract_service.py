@@ -278,7 +278,7 @@ def workflow_owner(db, report):
     if live:
         return f'#{live[0]} numaralı rapor adayı ({live[1]})', 'değişiklik için aday nihai onaycı tarafından iade edilmeli ve Strateji yeni aday oluşturmalıdır'
     if candidates:
-        return f'#{candidates[0][0]} numaralı iade edilmiş rapor adayı', 'yeniden çalışma yalnız aday iş akışıyla yapılır'
+        return f'#{candidates[0][0]} numaralı iade edilmiş rapor adayı', 'yeniden çalışma yalnız aday iş akışıyla yapılır: Strateji ilgili müdürlük paketini gerekçeyle yeniden açar ve düzeltilen paketle yeni aday oluşturur'
     return None
 
 

@@ -77,6 +77,7 @@ def verify(db,candidate):
     if contract.digest(candidate.payload_json)!=candidate.payload_sha256 or hash_content(candidate.payload_json,candidate.manifest_json)!=candidate.sha256:packages.conflict()
     manifest=json.loads(candidate.manifest_json)
     if 'predecessor_release_id' in manifest:verify_activity_successor(db,candidate,manifest)
+    elif 'reworks_candidate_id' in manifest or 'reworks_candidate_sha256' in manifest:verify_initial_rework(db,candidate,manifest)
     bindings=db.scalars(select(CandidatePackage).where(CandidatePackage.candidate_id==candidate.id).order_by(CandidatePackage.id)).all()
     if len(bindings)!=len(manifest['packages']):packages.conflict()
     sources=[];departments=set()
@@ -275,6 +276,11 @@ def assemble_candidate(db,actor,organization_id,resource_scope,source_id,package
     previous=db.scalar(select(ReportCandidate).where(ReportCandidate.organization_id==organization_id,ReportCandidate.resource_scope==resource_scope,ReportCandidate.report_key==key).order_by(ReportCandidate.sequence.desc()))
     if (previous.id if previous else None)!=predecessor_candidate_id:packages.conflict()
     if previous and db.get(ReportCandidateState,previous.id).state!='returned_to_strategy':auth.fail('Mevcut aday sonuçlanmadan yeni aday oluşturulamaz.',409)
+    # A1-P1.1 R10: an initial Activity rework records the exact returned attempt it
+    # reworks and continues the same source revision; the attempt stays immutable.
+    rework=returned_initial_proof(db,previous) if previous and resource_scope=='activity_report' else None
+    if rework and json.loads(rework.manifest_json).get('source_id')!=source_id:
+        auth.fail('Yeniden çalışma, iade edilen adayın kaynak rapor revizyonundan yapılmalıdır. Aynı kaynağın onaylı müdürlük paketlerini seçin.',409)
     if source:
         current=db.get(ActivityReport,source.report_id)
         expected_revision=db.get(ActivityReportRevision,previous.activity_revision_id).revision if previous else source.revision
@@ -308,6 +314,7 @@ def assemble_candidate(db,actor,organization_id,resource_scope,source_id,package
         manifest={'version':'report-manifest-1','organization_id':organization_id,'period_id':period.id,'resource_scope':resource_scope,
             'source_id':source_id,'required_department_ids':sorted(required),'packages':[{'package_id':p.id,'department_id':p.department_id,
                 'revision_id':r.id,'sha256':r.sha256,'decision_id':d.id,'strategy_event_id':d.workflow_event_id} for p,r,d in selected]}
+        if rework:manifest.update(reworks_candidate_id=rework.id,reworks_candidate_sha256=rework.sha256)
         raw=canonical(payload);mraw=canonical(manifest)
         candidate=ReportCandidate(organization_id=organization_id,period_id=period.id,resource_scope=resource_scope,report_key=key,
             sequence=previous.sequence+1 if previous else 1,predecessor_candidate_id=previous.id if previous else None,
@@ -375,15 +382,68 @@ def latest_successor_attempt(db,release):
 
 
 def returned_attempt_proof(db,attempt,release):
-    manifest=json.loads(attempt.manifest_json)
+    if json.loads(attempt.manifest_json).get('predecessor_release_id')!=release.id or not final_return_proof(db,attempt):packages.conflict()
+    return attempt
+
+
+def final_return_proof(db,attempt):
+    """The attempt's exact, reasoned final_return decision (shared by both rework lineages)."""
     state=db.get(ReportCandidateState,attempt.id,populate_existing=True)
     decision=db.scalar(select(ReportDecision).where(ReportDecision.candidate_id==attempt.id,ReportDecision.action=='final_return'))
     ev=db.get(WorkflowEvent,decision.workflow_event_id) if decision else None
-    if (manifest.get('predecessor_release_id')!=release.id or not state or state.state!='returned_to_strategy'
-        or not decision or decision.candidate_sha256!=attempt.sha256 or not ev or ev.event_type!='final_return'
-        or ev.resource_type!='report_candidate' or ev.resource_id!=str(attempt.id) or ev.organization_id!=attempt.organization_id
-        or not ev.reason.strip() or json.loads(ev.context_json).get('sha256')!=attempt.sha256):packages.conflict()
+    return bool(state and state.state=='returned_to_strategy' and decision and decision.candidate_sha256==attempt.sha256 and ev
+        and ev.event_type=='final_return' and ev.resource_type=='report_candidate' and ev.resource_id==str(attempt.id)
+        and ev.organization_id==attempt.organization_id and ev.reason.strip() and json.loads(ev.context_json).get('sha256')==attempt.sha256)
+
+
+def returned_initial_proof(db,attempt):
+    """A1-P1.1 R10: a returned, never-published initial Activity attempt (no predecessor release)."""
+    if (not attempt or attempt.resource_scope!='activity_report' or 'predecessor_release_id' in json.loads(attempt.manifest_json)
+        or not final_return_proof(db,attempt)):packages.conflict()
     return attempt
+
+
+def verify_initial_rework(db,candidate,manifest):
+    """Historical lineage of an initial Activity rework: exactly the returned attempt it reworks."""
+    try:
+        attempt=db.get(ReportCandidate,manifest['reworks_candidate_id']) if type(manifest.get('reworks_candidate_id')) is int else None
+        if not attempt or candidate.resource_scope!='activity_report' or attempt.sha256!=manifest.get('reworks_candidate_sha256'):packages.conflict()
+        returned_initial_proof(db,attempt)
+        parent=json.loads(attempt.manifest_json)
+        source=db.get(ActivityReportRevision,attempt.activity_revision_id);revision=db.get(ActivityReportRevision,candidate.activity_revision_id)
+        if (candidate.predecessor_candidate_id!=attempt.id or candidate.sequence!=attempt.sequence+1
+            or (candidate.organization_id,candidate.resource_scope,candidate.report_key,candidate.period_id)
+               !=(attempt.organization_id,attempt.resource_scope,attempt.report_key,attempt.period_id)
+            or manifest['source_id']!=parent['source_id'] or manifest['required_department_ids']!=parent['required_department_ids']
+            or {b['package_id'] for b in manifest['packages']}!={b['package_id'] for b in parent['packages']}
+            or revision.previous_revision_id!=source.id or revision.report_id!=source.report_id or revision.revision!=source.revision+1
+            or revision.publication_id!=source.publication_id or revision.publication_sha256!=source.publication_sha256):packages.conflict()
+        verify(db,attempt)
+    except (KeyError,TypeError,AttributeError,ValueError):packages.conflict()
+
+
+def initial_rework_attempt(db,package):
+    """A1-P1.1 R10: the latest returned initial attempt whose packages may be reworked, or None.
+
+    Only before any release, only while that attempt is the report's latest
+    candidate and its materialization is still the current report revision, and
+    only for a package that attempt bound."""
+    if package.resource_scope!='activity_report':return None
+    source=db.get(ActivityReportRevision,package.report_revision_id)
+    report=db.get(ActivityReport,source.report_id) if source else None
+    if not report or report.organization_id!=package.organization_id:return None
+    key=str(report.id)
+    if db.scalar(select(ReportRelease.id).where(ReportRelease.organization_id==report.organization_id,
+            ReportRelease.resource_scope=='activity_report',ReportRelease.report_key==key)):return None
+    latest=db.scalar(select(ReportCandidate).where(ReportCandidate.organization_id==report.organization_id,
+        ReportCandidate.resource_scope=='activity_report',ReportCandidate.report_key==key).order_by(ReportCandidate.sequence.desc()))
+    if not latest:return None
+    manifest=json.loads(latest.manifest_json)
+    if ('predecessor_release_id' in manifest or manifest.get('source_id')!=source.id
+        or package.id not in {b['package_id'] for b in manifest['packages']} or not final_return_proof(db,latest)):return None
+    materialized=db.get(ActivityReportRevision,latest.activity_revision_id)
+    if not materialized or report.current_revision!=materialized.revision:return None
+    return latest
 
 
 def require_returned_attempt(db,release_id):
@@ -515,11 +575,17 @@ def final_decision(db,actor,org,candidate_id,action,version,sha,reason=''):
     # holds the assignment (same separation as publication).
     if action=='final_return' and state.state=='final_approved' and actor.role=='strategy':
         auth.fail('Nihai onaylı adayı yalnız görevli nihai onaycı iade edebilir; Strateji bu işlemi yapamaz.')
-    # The exit exists for correction successors, whose rework continues on the
-    # S3C-2 lineage. A first candidate's frozen revision cannot be reworked.
-    if action=='final_return' and state.state=='final_approved' and 'predecessor_release_id' not in json.loads(candidate.manifest_json):
-        auth.fail('Nihai onaylı ilk yayın adayı iade edilemez; yalnız düzeltme ardılı aday nihai onaydan sonra iade edilebilir. '
-            'İlk sürümü yayımlayıp düzeltme talebi açın.',409)
+    # A1-P1.1 R10: the exit serves Activity candidates only. A first candidate is
+    # reworked on the initial lineage (reworks_candidate_id), a successor on S3C-2.
+    if action=='final_return' and state.state=='final_approved':
+        if candidate.resource_scope!='activity_report':
+            auth.fail('Nihai onaylı Performans Programı adayı iade edilemez; yalnız Faaliyet Raporu adayı nihai onaydan sonra iade edilebilir.',409)
+        # WF-3: the rework needs the PostgreSQL-only package reopen; never strand a returned first candidate elsewhere.
+        if 'predecessor_release_id' not in json.loads(candidate.manifest_json) and db.get_bind().dialect.name!='postgresql':
+            auth.fail('Nihai onaylı ilk adayın iadesi ve yeniden çalışması PostgreSQL güvenlik denetimleri gerektirir.',409)
+        if 'predecessor_release_id' not in json.loads(candidate.manifest_json) and db.scalar(select(ReportRelease.id).where(
+                ReportRelease.organization_id==org,ReportRelease.resource_scope=='activity_report',ReportRelease.report_key==candidate.report_key)):
+            auth.fail('Bu Faaliyet Raporu yayımlandı; yayımlanmamış ilk aday artık iade edilemez. Yayımlanmış sürüm için düzeltme talebi açın.',409)
     if action=='final_approve' and state.state=='final_approved' and db.scalar(select(ReportDecision.id).where(ReportDecision.candidate_id==candidate.id,ReportDecision.action=='final_approve',ReportDecision.assignment_id==current.id)):auth.fail('Bu yetkili aynı adayı zaten onayladı.',409)
     # A1-F1 recovery exit: final_approved -> final_return only before publication.
     if action=='final_return' and db.scalar(select(ReportRelease.id).where(ReportRelease.candidate_id==candidate.id)):

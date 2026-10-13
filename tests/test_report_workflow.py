@@ -333,12 +333,22 @@ def test_assigned_executive_return_requires_reason(foundation_db,people,candidat
 
 
 def simulate_later_package_projection(db,x,p):
-    """Fixture only: audited later revision, no Phase 5 correction implementation."""
+    """Fixture only: audited later revision, no Phase 5 correction implementation.
+
+    A1-P1.1: PostgreSQL now refuses to move an unpublished, candidate-bound Activity
+    package out of strategy_approved without an audited initial-rework reopen, so
+    that projection is forged trigger-free here; verification must still read the
+    frozen revision (the refusal itself is covered in test_a1p11_preactivation_recovery)."""
     old=service.packages.revision(db,p)
     new=service.packages.append_revision(db,p,x['director'],old.content_json,old,'Sonraki revizyon simülasyonu')
     service.packages.history_event(db,x['director'],p,'test_later_projection',
         {'revision_id':old.id,'next_revision_id':new.id,'sha256':old.sha256},'Yalnız tarihsel doğrulama regresyonu')
-    service.packages.move(db,p,p.version,'returned',new.revision);db.commit()
+    forged=p.resource_scope=='activity_report' and not db.scalar(select(ReportRelease.id))
+    if forged:db.execute(text('SET session_replication_role=replica'))
+    try:service.packages.move(db,p,p.version,'returned',new.revision)
+    finally:
+        if forged:db.execute(text('SET session_replication_role=origin'))
+    db.commit()
     return old,new
 
 
