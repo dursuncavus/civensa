@@ -292,8 +292,6 @@ def test_d1_wrapped_visible_value_is_preserved(variant):
     assert (value['value'], value['raw_text'], value['state']) == ('12', '12', 'verified')
 
 
-@pytest.mark.xfail(strict=True, raises=AssertionError,
-                   reason='VERİ-01 D2: Çoğul başlık, kısa ve iç içe tablolar sessizce atlanmamalı.')
 @pytest.mark.parametrize('variant', ['plural', 'short', 'nested'])
 def test_d2_supported_table_variants_are_recognised(variant):
     parsed = parse_performance_docx(word_document(variant=variant))
@@ -309,8 +307,6 @@ def test_d3_two_row_header_retains_value_kinds():
         (2026, 'actual', '1234.50'), (2027, 'target', '12'), (2028, 'forecast', '0')]
 
 
-@pytest.mark.xfail(strict=True, raises=AssertionError,
-                   reason='VERİ-01 D4: Yılı eksik veya tanınan tablosu olmayan önizleme uygulanabilir olmamalı.')
 @pytest.mark.parametrize('options', [
     {'variant': 'missing_year_row'}, {'year': ''}, {'variant': 'unrecognised'},
 ], ids=['missing-year-row', 'empty-year', 'no-recognised-table'])
@@ -368,8 +364,6 @@ def test_d5_concurrent_apply_creates_department_once(db, import_client, import_c
     assert count == 1, f'Aynı müdürlük {count} kez oluşturuldu: {results}'
 
 
-@pytest.mark.xfail(strict=True, raises=AssertionError,
-                   reason='VERİ-01 D6: İade edilen müdürlüğün inceleme notu içe aktarmada korunmalı.')
 def test_d6_return_note_survives_import(db, import_client, import_context):
     dept = Department(organization_id=import_context.org.id, name='Park ve Bahçeler Müdürlüğü')
     db.add(dept)
@@ -431,8 +425,6 @@ def test_safe_rollback_removes_new_department(db, import_client, import_context)
     assert db.get(ImportBatch, batch_id).status == 'reverted'
 
 
-@pytest.mark.xfail(strict=True, raises=AssertionError,
-                   reason='VERİ-01 D7: İnceleme geçmişi olan güvenli geri alma HTTP 500 vermemeli.')
 def test_d7_safe_rollback_preserves_submission_history(db, import_client, import_context):
     dept = Department(organization_id=import_context.org.id, name='Park ve Bahçeler Müdürlüğü')
     db.add(dept)
@@ -458,3 +450,141 @@ def test_d7_safe_rollback_preserves_submission_history(db, import_client, import
     db.expire_all()
     assert db.get(SubmissionEvent, event.id).note == 'Hedef değerini düzeltin.'
     assert db.get(Submission, submission.id).return_note == 'Hedef değerini düzeltin.'
+
+
+@pytest.mark.parametrize('variant', ['plural', 'short', 'nested'])
+def test_d2_variants_preview_apply_and_template(import_client, import_context, db, variant):
+    result = preview(import_client, import_context, variant=variant)
+    assert result['can_apply'] is True
+    assert result['warnings'] == []
+    assert apply(import_client, result['batch_id'])['indicators'] == 1
+    assert db.scalar(select(IndicatorValue.value).where(IndicatorValue.year == 2027)) == Decimal('12')
+    template = analyze_template('sentetik.docx', word_document(variant=variant))
+    assert 'Performans Göstergeleri' in template['present']
+    assert 'Bütçe Yılı' in template['present']
+
+
+@pytest.mark.parametrize('options', [
+    {'variant': 'missing_year_row'}, {'year': ''}, {'variant': 'unrecognised'},
+])
+def test_d4_invalid_preview_explains_and_rejects_apply(db, import_client, import_context, options):
+    result = preview(import_client, import_context, **options)
+    detail = import_client.get(f"/api/import-batches/{result['batch_id']}").json()
+    assert result['warnings'] == detail['warnings']
+    assert any('yeniden yükleyin' in warning for warning in result['warnings'])
+    if options.get('variant') != 'unrecognised':
+        assert any('Tablo 1' in warning and 'Bütçe Yılı' in warning for warning in result['warnings'])
+    response = import_client.post(f"/api/import-batches/{result['batch_id']}/apply")
+    assert response.status_code == 409
+    assert 'yeniden yükleyin' in response.json()['detail']
+    assert db.get(ImportBatch, result['batch_id']).status == 'preview'
+    assert db.scalar(select(func.count()).select_from(Department)) == 0
+    assert db.scalar(select(func.count()).select_from(Indicator)) == 0
+
+
+def test_d4_mixed_valid_and_missing_year_blocks_entire_file(db, import_client, import_context):
+    doc = Document(io.BytesIO(word_document()))
+    invalid = Document(io.BytesIO(word_document(year='')))
+    doc.element.body.append(invalid.tables[0]._tbl)
+    stream = io.BytesIO()
+    doc.save(stream)
+    response = import_client.post(
+        f'/api/periods/{import_context.period.id}/data-import-preview',
+        files={'file': ('sentetik.docx', stream.getvalue())})
+    assert response.status_code == 200
+    result = response.json()
+    assert result['summary']['source_years'] == [2027]
+    assert result['can_apply'] is False
+    assert any('Tablo 3' in warning and 'Bütçe Yılı' in warning for warning in result['warnings'])
+    assert import_client.post(f"/api/import-batches/{result['batch_id']}/apply").status_code == 409
+
+
+def test_d7_entire_review_record_survives_apply_and_revert(db, import_client, import_context):
+    from datetime import datetime
+    dept = Department(organization_id=import_context.org.id, name='Park ve Bahçeler Müdürlüğü')
+    db.add(dept)
+    db.flush()
+    submission = Submission(department_id=dept.id, period_id=import_context.period.id,
+                            status='returned', revision=3, return_note='Hedef değerini düzeltin.',
+                            submitted_at=datetime(2026, 10, 10), reviewed_at=datetime(2026, 10, 11))
+    db.add(submission)
+    db.flush()
+    event = SubmissionEvent(submission_id=submission.id, department_id=dept.id,
+                            period_id=import_context.period.id, actor_user_id=import_context.user.id,
+                            event_type='return', revision=3, note=submission.return_note,
+                            snapshot_json='{"review":"retained"}')
+    db.add(event)
+    db.commit()
+    def record(row):
+        return {c.name: getattr(row, c.name) for c in row.__table__.columns}
+    before_submission, before_event = record(submission), record(event)
+    batch_id = preview(import_client, import_context)['batch_id']
+    apply(import_client, batch_id)
+    db.refresh(submission)
+    db.refresh(event)
+    assert record(submission) == before_submission
+    assert record(event) == before_event
+    assert import_client.get(f'/api/import-batches/{batch_id}').json()['can_revert'] is True
+    assert import_client.post(f'/api/import-batches/{batch_id}/revert').status_code == 200
+    db.refresh(submission)
+    db.refresh(event)
+    assert record(submission) == before_submission
+    assert record(event) == before_event
+
+
+@pytest.mark.parametrize('existing_department', [False, True])
+def test_d7_rollback_refuses_to_remove_new_submission_with_history(db, import_client, import_context, existing_department):
+    if existing_department:
+        db.add(Department(organization_id=import_context.org.id, name='Park ve Bahçeler Müdürlüğü'))
+        db.commit()
+    batch_id = preview(import_client, import_context)['batch_id']
+    apply(import_client, batch_id)
+    submission = db.scalar(select(Submission))
+    event = SubmissionEvent(submission_id=submission.id, department_id=submission.department_id,
+                            period_id=import_context.period.id, actor_user_id=import_context.user.id,
+                            event_type='return', revision=1, note='Geçmiş korunmalı.')
+    db.add(event)
+    db.commit()
+    detail = import_client.get(f'/api/import-batches/{batch_id}').json()
+    assert detail['can_revert'] is False
+    assert 'inceleme geçmişi' in detail['revert_reason']
+    assert 'kart ekranını kullanın' in detail['revert_reason']
+    response = import_client.post(f'/api/import-batches/{batch_id}/revert')
+    assert response.status_code == 409
+    assert response.json()['detail'] == detail['revert_reason']
+    db.refresh(event)
+    assert event.note == 'Geçmiş korunmalı.'
+    assert db.get(Submission, submission.id) is not None
+    assert db.get(ImportBatch, batch_id).status == 'applied'
+
+
+def test_d4_stored_preview_without_parser_errors_is_validated(db, import_client, import_context):
+    parsed = parse_performance_docx(word_document(year=''))
+    parsed.pop('errors')  # Payloads saved before CIV-005 have no errors field.
+    parsed['warnings'] = []
+    batch = ImportBatch(period_id=import_context.period.id, filename='eski-onizleme.docx',
+                        status='preview', payload_json=json.dumps(parsed), created_by=import_context.user.id)
+    db.add(batch)
+    db.commit()
+    detail = import_client.get(f'/api/import-batches/{batch.id}').json()
+    assert detail['can_apply'] is False
+    assert 'Bütçe Yılı' in detail['warnings'][0]
+    assert import_client.post(f'/api/import-batches/{batch.id}/apply').status_code == 409
+    assert db.scalar(select(func.count()).select_from(Department)) == 0
+
+
+def test_d2_unknown_table_alongside_valid_data_is_reported(import_client, import_context):
+    doc = Document(io.BytesIO(word_document()))
+    doc.add_table(rows=1, cols=1).cell(0, 0).text = 'Ek veri'
+    stream = io.BytesIO()
+    doc.save(stream)
+    response = import_client.post(
+        f'/api/periods/{import_context.period.id}/data-import-preview',
+        files={'file': ('sentetik.docx', stream.getvalue())})
+    assert response.status_code == 200
+    result = response.json()
+    assert result['summary']['indicator_count'] == 1
+    assert result['can_apply'] is False
+    assert 'Tablo 3' in result['warnings'][0]
+    assert 'yeniden yükleyin' in result['warnings'][0]
+    assert import_client.post(f"/api/import-batches/{result['batch_id']}/apply").status_code == 409

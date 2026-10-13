@@ -1,6 +1,7 @@
 import io, json, re
 from pathlib import Path
 from docx import Document
+from .data_importer import iter_document_tables
 from openpyxl import load_workbook
 
 CANONICAL_FIELDS = [
@@ -45,7 +46,7 @@ def _collect_docx(data: bytes):
     for p in doc.paragraphs:
         t=p.text.strip()
         if t: items.append(t)
-    for table in doc.tables:
+    for table in iter_document_tables(doc):
         for row in table.rows:
             for cell in row.cells:
                 t=" ".join(x.strip() for x in cell.text.splitlines() if x.strip())
