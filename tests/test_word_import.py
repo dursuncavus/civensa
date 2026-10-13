@@ -24,7 +24,7 @@ from app.main import app, require_strategy
 from app.models import (
     Activity, ActivityCostValue, Department, DepartmentCostValue, ImportBatch,
     Indicator, IndicatorValue, Organization, Program, ReportCard, ReportingPeriod,
-    Submission, SubProgram, User,
+    Submission, SubmissionEvent, SubProgram, User,
 )
 from app.template_parser import analyze_template
 
@@ -382,8 +382,6 @@ def test_d6_return_note_survives_import(db, import_client, import_context):
     assert sub.return_note == 'Hedef değerini düzeltin.'
 
 
-# D7 did not reproduce for either new departments or legacy data restoration.
-# Keep the successful case as characterization, not a fabricated xfail.
 def test_safe_rollback_restores_legacy_indicator(db, import_client, import_context):
     # Existing legacy indicator data has no ReportCard (accepted by apply).
     dept = Department(organization_id=import_context.org.id, name='Park ve Bahçeler Müdürlüğü')
@@ -423,3 +421,32 @@ def test_safe_rollback_removes_new_department(db, import_client, import_context)
                   DepartmentCostValue, ReportCard, Submission, SubProgram, Program):
         assert db.scalar(select(func.count()).select_from(model)) == 0
     assert db.get(ImportBatch, batch_id).status == 'reverted'
+
+
+@pytest.mark.xfail(strict=True, raises=AssertionError,
+                   reason='VERİ-01 D7: İnceleme geçmişi olan güvenli geri alma HTTP 500 vermemeli.')
+def test_d7_safe_rollback_preserves_submission_history(db, import_client, import_context):
+    dept = Department(organization_id=import_context.org.id, name='Park ve Bahçeler Müdürlüğü')
+    db.add(dept)
+    db.flush()
+    submission = Submission(department_id=dept.id, period_id=import_context.period.id,
+                            status='returned', revision=1, return_note='Hedef değerini düzeltin.')
+    db.add(submission)
+    db.flush()
+    event = SubmissionEvent(submission_id=submission.id, department_id=dept.id,
+                            period_id=import_context.period.id, actor_user_id=import_context.user.id,
+                            event_type='returned', revision=1, note='Hedef değerini düzeltin.')
+    db.add(event)
+    db.commit()
+    batch_id = preview(import_client, import_context)['batch_id']
+    apply(import_client, batch_id)
+    detail = import_client.get(f'/api/import-batches/{batch_id}').json()
+    assert detail['can_revert'] is True
+    response = import_client.post(f'/api/import-batches/{batch_id}/revert')
+    # The current implementation deletes Submission before restoring it, despite
+    # the retained SubmissionEvent FK; PostgreSQL rejects that deletion.
+    assert response.status_code == 200, response.text
+    assert response.json()['status'] == 'reverted'
+    db.expire_all()
+    assert db.get(SubmissionEvent, event.id).note == 'Hedef değerini düzeltin.'
+    assert db.get(Submission, submission.id).return_note == 'Hedef değerini düzeltin.'
