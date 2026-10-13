@@ -1,0 +1,189 @@
+name: Daily verified database backup
+
+on:
+  schedule:
+    - cron: '30 0 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: civensa-db-backup
+  cancel-in-progress: false
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    services:
+      restore:
+        image: postgres:18
+        env:
+          POSTGRES_DB: backup_verify
+          POSTGRES_USER: backup_verify
+          POSTGRES_PASSWORD: disposable_restore_only
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U backup_verify -d backup_verify"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    steps:
+      - name: Require backup secret
+        env:
+          NEON_BACKUP_DATABASE_URL: ${{ secrets.NEON_BACKUP_DATABASE_URL }}
+        run: |
+          if [ -z "$NEON_BACKUP_DATABASE_URL" ]; then
+            echo "::error::Repository secret NEON_BACKUP_DATABASE_URL is empty. The owner must configure it before running backups."
+            exit 1
+          fi
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Prepare PostgreSQL 18 tools
+        run: |
+          docker pull postgres:18
+          python -m pip install 'psycopg[binary]==3.2.10'
+
+      - name: Dump, create manifest, and prove restore
+        id: backup
+        env:
+          NEON_BACKUP_DATABASE_URL: ${{ secrets.NEON_BACKUP_DATABASE_URL }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python <<'PY'
+          import hashlib
+          import json
+          import os
+          from datetime import datetime, timezone
+          from pathlib import Path
+          import subprocess
+          import sys
+          from urllib.parse import parse_qs, urlsplit
+
+          import psycopg
+          from psycopg import sql
+
+          def fail(message):
+              print(f"::error::{message}", flush=True)
+              sys.exit(1)
+
+          def pg_tool(arguments, database=None, read_only=False):
+              # Pass the URI to Docker through the environment, never its arguments.
+              env = os.environ.copy()
+              command = ["docker", "run", "--rm", "--network", "host",
+                         "--volume", f"{Path.cwd() / 'backup'}:/backup"]
+              if database is not None:
+                  env["PGDATABASE"] = database
+                  command += ["--env", "PGDATABASE"]
+              if read_only:
+                  env["PGOPTIONS"] = "-c default_transaction_read_only=on"
+                  command += ["--env", "PGOPTIONS"]
+              command += ["postgres:18"]
+              if database is not None:
+                  # pg_dump does not expand a URI from PGDATABASE alone. Expand
+                  # inside the container; this command and its output stay private.
+                  command += ["sh", "-c", 'exec "$@" --dbname="$PGDATABASE"',
+                              "pg-client", *arguments]
+              else:
+                  command += arguments
+              # Connection errors can include URI components. Do not log stderr.
+              result = subprocess.run(command, env=env, capture_output=True, text=True)
+              if result.returncode:
+                  fail(f"{arguments[0]} failed; connection details suppressed. Check secret, connectivity, privileges, and PostgreSQL compatibility.")
+              return result.stdout.strip()
+
+          def database_state(connection):
+              tables = connection.execute("""
+                  SELECT c.relname FROM pg_catalog.pg_class c
+                  JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
+                  WHERE n.nspname = 'public' AND c.relkind IN ('r', 'p', 'f')
+                  ORDER BY c.relname
+              """).fetchall()
+              counts = {}
+              for (table,) in tables:
+                  query = sql.SQL("SELECT count(*) FROM {}.{}").format(
+                      sql.Identifier("public"), sql.Identifier(table))
+                  counts[table] = connection.execute(query).fetchone()[0]
+              versions = [row[0] for row in connection.execute(
+                  "SELECT version_num FROM public.alembic_version ORDER BY version_num")]
+              if not versions:
+                  fail("public.alembic_version has no version_num; backup verification failed.")
+              return {"public_table_row_counts": counts,
+                      "alembic_version": {"version_num": versions}}
+
+          # No parsed credentials are emitted, even on malformed input.
+          try:
+              live_url = os.environ["NEON_BACKUP_DATABASE_URL"]
+              parsed = urlsplit(live_url)
+              if parsed.scheme != "postgresql" or parse_qs(parsed.query).get("sslmode") != ["require"]:
+                  fail("Backup secret must be a plain postgresql:// direct URL with sslmode=require.")
+          except Exception:
+              fail("Invalid backup connection URL; details suppressed.")
+
+          backup = Path("backup")
+          backup.mkdir(mode=0o700)
+          timestamp = datetime.now(timezone.utc)
+          stamp = timestamp.strftime("%Y%m%d-%H%MZ")
+          dump = backup / f"civensa-neon-{stamp}.dump"
+          dump_version = pg_tool(["pg_dump", "--version"])
+          for tool in ("pg_restore", "psql"):
+              pg_tool([tool, "--version"])
+
+          try:
+              # Keep this read-only transaction open until pg_dump finishes.
+              # The dump and all manifest counts see exactly the same snapshot.
+              with psycopg.connect(live_url, autocommit=True, connect_timeout=30) as live:
+                  live.execute("BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY")
+                  server_version = int(live.execute("SHOW server_version_num").fetchone()[0])
+                  if server_version >= 190000:
+                      fail("Server requires client tools newer than PostgreSQL 18.")
+                  snapshot = live.execute("SELECT pg_export_snapshot()").fetchone()[0]
+                  pg_tool(["pg_dump", "-Fc", "--no-owner", "--no-privileges",
+                           f"--snapshot={snapshot}", f"--file=/backup/{dump.name}"],
+                          database=live_url, read_only=True)
+                  expected = database_state(live)
+                  live.execute("ROLLBACK")
+          except Exception:
+              fail("Read-only live dump or manifest query failed; connection details suppressed.")
+
+          digest = hashlib.file_digest(dump.open("rb"), "sha256").hexdigest()
+          manifest = {"utc_timestamp": timestamp.isoformat().replace("+00:00", "Z"),
+                      "file_name": dump.name, "file_size_bytes": dump.stat().st_size,
+                      "sha256": digest, "pg_dump_version": dump_version, **expected}
+          manifest_path = dump.with_suffix(".manifest.json")
+          manifest_path.write_text(json.dumps(manifest, indent=2, ensure_ascii=True) + "\n")
+
+          # This destination is only the disposable service container.
+          restore_url = "postgresql://backup_verify:disposable_restore_only@127.0.0.1:5432/backup_verify"
+          pg_tool(["pg_restore", "--exit-on-error", "--single-transaction",
+                   "--no-owner", "--no-privileges",
+                   f"/backup/{dump.name}"], database=restore_url)
+          try:
+              with psycopg.connect(restore_url, connect_timeout=30) as restored:
+                  restored.execute("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY")
+                  actual = database_state(restored)
+          except Exception:
+              fail("Disposable restore verification query failed.")
+          saved = json.loads(manifest_path.read_text())
+          if any(actual[key] != saved[key] for key in actual):
+              fail("Restored public table row counts or Alembic version differ from the manifest.")
+          print("Restore verified: all public table row counts and Alembic versions match.")
+          with open(os.environ["GITHUB_OUTPUT"], "a") as output:
+              output.write(f"timestamp={stamp}\n")
+          PY
+
+      - name: Upload verified backup
+        uses: actions/upload-artifact@v4
+        with:
+          name: civensa-db-backup-${{ steps.backup.outputs.timestamp }}
+          path: |
+            backup/*.dump
+            backup/*.manifest.json
+          if-no-files-found: error
+          retention-days: 90
