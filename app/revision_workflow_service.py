@@ -285,13 +285,60 @@ def open_grant(db,actor,request_id,expected_version,allowlist,membership_ids,sta
             packages.move(db,pkg,pkg.version,'returned',new.revision)
             cycle=RevisionCorrectionCycle(source_release_id=r.source_release_id,package_id=pkg.id,source_package_revision_id=source.id,
                 opening_revision_id=new.id,workflow_event_id=e.id);db.add(cycle);db.flush()
-        elif pkg.state!='returned':auth.fail('Düzeltme paketi artık düzenlenebilir aşamada değil.',409)
+        elif pkg.state=='strategy_approved':
+            auth.fail('Düzeltme paketi onaylı aşamada. Bu yeni talep için önce Strateji düzeltme döngüsünü gerekçeyle yeniden açmalıdır; kapatılmış talepler yeniden açılmaz.',409)
+        elif pkg.state!='returned':auth.fail('Düzeltme paketi incelemede. Müdür veya Strateji paketi iade ettikten sonra izin açın.',409)
         grant=RevisionEditGrant(request_id=r.id,source_release_id=r.source_release_id,department_id=r.department_id,cycle_id=cycle.id,
             membership_ids_json=auth.encode(sorted(membership_ids)),paths_json=auth.encode(sorted(allowlist,key=auth.encode)),
             start_at=start_at,end_at=end_at,created_by=actor.id,formal_basis=basis)
         db.add(grant);db.flush();transition(db,actor,r,state,'editing',basis)
         notify(db,r,'revision_granted',{m.user_id for m in members}|director_recipients(db,r))
     return grant
+
+
+def reopen_cycle(db,actor,request_id,expected_version,package_version,package_sha256,reason):
+    """A1-P1.1 TE-1: Strategy reopens an existing correction cycle's approved package
+    for a NEW accepted request, without a dummy candidate.
+
+    Closed requests, their grants and every package revision stay immutable: the
+    package gets an exact-copy append-only revision (not a semantic correction)
+    through strategy_reopen, and only a later new grant authorizes edits."""
+    r,state=locked(db,actor,request_id,expected_version);strategy(db,actor)
+    reason=auth.required(reason,'Döngüyü yeniden açma gerekçesi')
+    if state.state!='accepted':auth.fail('Döngü yalnız kabul edilmiş ve henüz izni açılmamış yeni bir düzeltme talebi için yeniden açılabilir.',409)
+    ensure_no_live_successor(db,r.source_release_id)
+    source=db.get(PackageRevision,r.source_package_revision_id)
+    pkg=db.scalar(select(DirectoratePackage).where(DirectoratePackage.id==source.package_id).with_for_update().execution_options(populate_existing=True))
+    cycle=db.scalar(select(RevisionCorrectionCycle).where(RevisionCorrectionCycle.source_release_id==r.source_release_id,RevisionCorrectionCycle.package_id==pkg.id))
+    if not cycle:auth.fail('Bu paket için açık bir düzeltme döngüsü yok; izin açma adımı döngüyü kendisi başlatır.',409)
+    if ((pkg.organization_id,pkg.department_id)!=(r.organization_id,r.department_id) or cycle.source_package_revision_id!=source.id
+        or db.scalar(select(RevisionEditGrant.id).where(RevisionEditGrant.request_id==r.id))):packages.conflict()
+    others=db.scalars(select(RevisionRequest).join(RevisionRequestState,RevisionRequestState.request_id==RevisionRequest.id).where(
+        RevisionRequest.source_release_id==r.source_release_id,RevisionRequest.department_id==r.department_id,RevisionRequest.id!=r.id,
+        RevisionRequestState.state.in_(['accepted','editing']))).all()
+    if any(set(map(auth.encode,paths(r)))&set(map(auth.encode,paths(other))) for other in others):
+        auth.fail('Bu alan için kabul edilmiş/açık başka bir düzeltme var. Çakışan talebi sonuçlandırmadan döngü yeniden açılamaz.',409)
+    # Non-overlapping editing requests keep their own grants; the reopen names the
+    # ones still in force so their resumed authority is recorded, never silent.
+    now=auth.server_now(db)
+    resumed=sorted(g.id for g in db.scalars(select(RevisionEditGrant).join(RevisionRequestState,RevisionRequestState.request_id==RevisionEditGrant.request_id).where(
+        RevisionEditGrant.cycle_id==cycle.id,RevisionEditGrant.request_id!=r.id,RevisionRequestState.state=='editing')) if effective_grant(db,g,now))
+    if pkg.state=='returned':auth.fail('Paket zaten düzenlenebilir; bu talep için doğrudan izin açın.',409)
+    if pkg.state!='strategy_approved':auth.fail('Paket incelemede. Müdür veya Strateji paketi iade ettikten sonra izin açın.',409)
+    current=packages.revision(db,pkg)
+    if pkg.version!=package_version or current.sha256!=package_sha256:packages.conflict()
+    require_correction_authority(db,cycle,pkg)
+    with db.begin_nested():
+        reopened=history(db,actor,r,'correction_cycle_reopened',{'cycle_id':cycle.id,'package_id':pkg.id,
+            'previous_revision_id':current.id,'previous_revision':current.revision,'previous_sha256':current.sha256,
+            'resulting_revision':current.revision+1,'resulting_sha256':current.sha256,'expected_package_version':pkg.version,
+            'from_state':'strategy_approved','to_state':'returned','resumed_grant_ids':resumed},reason)
+        copy=packages.reopen_correction_package(db,actor,pkg,current,cycle,reason,{'reopen_request_id':r.id,'reopen_event_id':reopened.id})
+        # SEC-2: holders of a resumed grant learn that their edit authority is live again.
+        recipients=director_recipients(db,r)
+        for g in resumed:recipients|=active_participants(db,db.get(RevisionRequest,db.get(RevisionEditGrant,g).request_id),db.get(RevisionEditGrant,g))
+        notify(db,r,'correction_cycle_reopened',recipients)
+    return copy
 
 
 def edit_under_grant(db,actor,grant_id,expected_version,expected_hash,patches,reason=''):

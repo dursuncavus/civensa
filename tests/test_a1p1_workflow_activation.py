@@ -25,7 +25,7 @@ from tests.test_package_workflow import act
 from tests.test_successor_publication import raw_release
 pytestmark=pytest.mark.postgres
 
-HEAD='c5e8a1f0b247'
+HEAD='f2b7c4d91e08'  # A1-P1.1 is the newest revision
 DEVIATION=['entries',0,'deviation']
 
 
@@ -307,22 +307,28 @@ def test_f2_legacy_revision_racing_assembly_never_deadlocks(foundation_db,people
     db.expire_all();c=db.scalar(select(ReportCandidate));assert c and db.get(ActivityReport,report_id).current_revision==db.get(ActivityReportRevision,c.activity_revision_id).revision
 
 
-@pytest.mark.parametrize('stage',['assembling','released','returned','forged_candidate'])
+@pytest.mark.parametrize('stage',['assembling','released','returned','forged_candidate','forged_candidate_with_state'])
 def test_f2_raw_revision_insert_on_managed_report_rejected(foundation_db,people,candidate,stage):
-    db=foundation_db;x=people;c=candidate
+    db=foundation_db;x=people;c=candidate;forged=stage.startswith('forged')
     if stage=='released':review(db,x,c);approve(db,x,c);publish(db,x,c)
-    if stage in {'returned','forged_candidate'}:review(db,x,c);final_return(db,x,c)  # only the deferred check sees this
+    if stage=='returned' or forged:review(db,x,c);final_return(db,x,c)  # only the deferred checks see this
     report,revision,slot=current(db,db.get(ActivityReportRevision,c.activity_revision_id).report_id);before=legacy_counts(db,report.id)
-    with pytest.raises(DBAPIError,match='Workflow-managed Activity report rejects legacy revision'):
+    # DB-1 (A1-P1) and WF-1 (A1-P1.1): even a lineage-valid forged rework row cannot launder the legacy revision,
+    # without a workflow state (owner check) or with one but no audited assembly (completeness check).
+    match='Initial Activity candidate is incomplete at commit' if stage=='forged_candidate_with_state' else 'Workflow-managed Activity report rejects legacy revision'
+    with pytest.raises(DBAPIError,match=match):
         legacy=ActivityReportRevision(report_id=report.id,revision=report.current_revision+1,publication_id=revision.publication_id,
             publication_sha256=revision.publication_sha256,contract_version=revision.contract_version,previous_revision_id=revision.id,
             diff_json='[]',revision_reason='Ham eski revizyon',created_by=x['strategy'].id)
         db.add(legacy);db.flush()
-        if stage=='forged_candidate':
-            # DB-1: a bare candidate row (no workflow state) cannot launder the legacy revision.
-            db.add(ReportCandidate(organization_id=c.organization_id,period_id=c.period_id,resource_scope='activity_report',report_key=c.report_key,
-                sequence=c.sequence+100,activity_revision_id=legacy.id,payload_json='{}',payload_sha256=contract.digest('{}'),
-                manifest_json='{}',sha256=reports.hash_content('{}','{}'),created_by=x['strategy'].id));db.flush()
+        if forged:
+            manifest=json.loads(c.manifest_json);manifest.update(reworks_candidate_id=c.id,reworks_candidate_sha256=c.sha256)
+            mraw=reports.canonical(manifest)
+            forgery=ReportCandidate(organization_id=c.organization_id,period_id=c.period_id,resource_scope='activity_report',report_key=c.report_key,
+                sequence=c.sequence+1,predecessor_candidate_id=c.id,activity_revision_id=legacy.id,payload_json=c.payload_json,
+                payload_sha256=c.payload_sha256,manifest_json=mraw,sha256=reports.hash_content(c.payload_json,mraw),created_by=x['strategy'].id)
+            db.add(forgery);db.flush()  # the insert-time lineage guard accepts it
+            if stage=='forged_candidate_with_state':db.add(ReportCandidateState(candidate_id=forgery.id,state='assembling',version=0));db.flush()
         db.commit()
     db.rollback();assert legacy_counts(db,report.id)==before
 
@@ -403,18 +409,19 @@ def test_f1_surviving_closed_edit_keeps_return_and_reopen_exit(foundation_db,peo
     assert db.get(RevisionRequestState,other.id).state=='applied' and db.get(RevisionRequestState,q.id).state=='closed_no_change'
 
 
-def test_f1_first_candidate_cannot_use_final_approved_return(foundation_db,people,candidate):
-    """WF-2: the recovery exit is for correction successors; a first candidate's frozen revision cannot be reworked."""
-    db=foundation_db;x=people;c=candidate;review(db,x,c);approve(db,x,c);s=state(db,c);before=counts(db)
-    with pytest.raises(HTTPException) as caught:
-        reports.final_decision(db,x['director'],c.organization_id,c.id,'final_return',s.version,c.sha256,'İlk aday iadesi')
-    assert caught.value.status_code==409 and 'ilk yayın adayı' in caught.value.detail
-    db.rollback();assert counts(db)==before and state(db,c).state=='final_approved'
+def test_f1_first_candidate_final_approved_return_needs_exact_decision(foundation_db,people,candidate):
+    """WF-2, superseded by A1-P1.1 R10: an unpublished first candidate may be returned, but only with an exact authority decision."""
+    db=foundation_db;x=people;c=candidate;review(db,x,c);approve(db,x,c);s=state(db,c)
     with pytest.raises(DBAPIError,match='Unaudited/invalid report state transition'):
         with db.begin_nested():
-            e=reports.event_notice(db,x['director'],c,'final_return','final_approved','returned_to_strategy',s.version+1,'Ham iade')
+            e=reports.event_notice(db,x['director'],c,'final_return','final_approved','returned_to_strategy',s.version+1,'')
             db.add(ReportDecision(candidate_id=c.id,action='final_return',candidate_sha256=c.sha256,
                 assignment_id=reports.assignment(db,c.organization_id).id,workflow_event_id=e.id));db.flush()
+            reports.move(db,s,'returned_to_strategy')
+    db.rollback();assert state(db,c).state=='final_approved'
+    with pytest.raises(DBAPIError,match='Unaudited/invalid report state transition'):  # an audited event without the decision row
+        with db.begin_nested():
+            reports.event_notice(db,x['director'],c,'final_return','final_approved','returned_to_strategy',s.version+1,'Ham iade')
             reports.move(db,s,'returned_to_strategy')
     db.rollback();assert publish(db,x,c).major==1
 
@@ -716,7 +723,7 @@ def test_populated_upgrade_keeps_history_and_refuses_downgrade(foundation_db,peo
         run=subprocess.run([sys.executable,'-m','alembic','upgrade','head'],cwd=ROOT,env={**os.environ,'DATABASE_URL':url},capture_output=True,text=True)
         assert run.returncode==0,run.stderr
     down=subprocess.run([sys.executable,'-m','alembic','downgrade','-1'],cwd=ROOT,env={**os.environ,'DATABASE_URL':url},capture_output=True,text=True)
-    assert down.returncode!=0 and 'A1-P1 workflow activation guards cannot be discarded' in down.stderr
+    assert down.returncode!=0 and 'A1-P1.1 recovery guards cannot be discarded' in down.stderr
     db.expire_all();assert_sealed(db,before)
     assert db.execute(text('SELECT version_num FROM alembic_version')).scalar_one()==HEAD
     reports.verify(db,db.get(ReportCandidate,released.candidate_id));reports.verify_artifact(db,released)
@@ -772,7 +779,9 @@ def test_sqlite_parity_guards(sqlite_head,owner):
             db.execute(f'DROP TRIGGER {name}')
         for state in ['final_review']+(['returned_to_strategy'] if owner=='returned' else []):
             db.execute('UPDATE report_candidate_states SET state=?,version=version+1 WHERE candidate_id=?',(state,c))
-    if owner=='release':insert(db,'report_releases',organization_id=1,resource_scope='activity_report',report_key=str(report),candidate_id=1,activity_approval_id=1,major=1,minor=0)
+    if owner=='release':  # A1-P1.1: a release must carry its final decision's freeze, even in this throwaway database
+        d=insert(db,'report_decisions',candidate_id=1,action='final_approve',activity_approval_id=1)
+        insert(db,'report_releases',organization_id=1,resource_scope='activity_report',report_key=str(report),candidate_id=1,final_decision_id=d,activity_approval_id=1,major=1,minor=0)
     legacy=lambda:insert(db,'activity_report_revisions',report_id=report,revision=2,publication_id=1,previous_revision_id=revision)
     if owner in {'live','release'}:
         with pytest.raises(sqlite3.IntegrityError,match='Workflow-managed Activity report rejects legacy revision'):legacy()

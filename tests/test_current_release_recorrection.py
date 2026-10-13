@@ -319,4 +319,4 @@ def test_first_ever_cycle_opens_against_published_one_one(foundation_db,people):
     assert opening.revision==source.revision+1 and opening.content_json==source.content_json and opening.sha256==source.sha256==binding.sha256
     assert (untouched.state,untouched.current_revision)==('returned',opening.revision)
     assert db.scalar(select(func.count(RevisionCorrectionCycle.id)).where(RevisionCorrectionCycle.package_id==untouched.id))==1
-    assert db.execute(text('SELECT version_num FROM alembic_version')).scalar_one()=='c5e8a1f0b247'
+    assert db.execute(text('SELECT version_num FROM alembic_version')).scalar_one()=='f2b7c4d91e08'
