@@ -47,6 +47,8 @@ def test_sidebar_controls_separate_and_clickable(browser, db, sample, role, view
                 'email': user.email, 'password': 'sidebar-test-only'
             }, follow_redirects=False).status_code == 303
 
+            logout_redirects = []
+
             def serve(route):
                 request = route.request
                 response = client.request(
@@ -58,6 +60,13 @@ def test_sidebar_controls_separate_and_clickable(browser, db, sample, role, view
                 # TestClient maintains the signed session cookie across requests.
                 headers = dict(response.headers)
                 headers.pop('set-cookie', None)
+                if request.url.endswith('/logout'):
+                    # The real handler has already cleared TestClient's signed
+                    # session. Finish this synthetic browser navigation without
+                    # following a DNS request to the fake testserver hostname.
+                    logout_redirects.append((response.status_code, headers.pop('location', None)))
+                    route.fulfill(status=200, headers=headers, body=b'logged out')
+                    return
                 route.fulfill(status=response.status_code, headers=headers, body=response.content)
 
             context.route('http://testserver/**', serve)
@@ -88,10 +97,9 @@ def test_sidebar_controls_separate_and_clickable(browser, db, sample, role, view
             assert client.get('/modules').status_code == 200
             page.get_by_role('button', name='Vazgeç', exact=True).click()
             expect(page.locator('#passwordModal')).to_be_hidden()
-            # Register the navigation wait before submitting. On a fast CI
-            # runner the redirect can finish before a later wait_for_url call.
-            with page.expect_navigation(url='**/login'):
-                logout.click()
+            logout.click()
+            assert page.url == 'http://testserver/logout'
+            assert logout_redirects == [(303, '/login')]
             assert client.get('/modules').status_code == 401
     finally:
         app.dependency_overrides.clear()
