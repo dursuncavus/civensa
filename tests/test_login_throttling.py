@@ -37,6 +37,7 @@ def clock(monkeypatch):
 def browsers(db, sample):
     credential = secrets.token_urlsafe(24)
     sample["user"].password_hash = hash_password(credential)
+    sample["strategy"].password_hash = hash_password(credential)
     db.commit()
     main.app.dependency_overrides[get_db] = lambda: db
     clients = []
@@ -148,7 +149,21 @@ def test_success_resets_only_email_count(db, sample, browsers, clock):
     assert len(lock_audits(db)) == 1
 
 
-def test_ip_limit_survives_success_and_blocks_other_email(db, sample, browsers, clock):
+def test_ip_limit_is_disabled_by_default_but_ip_keys_are_recorded(db, sample, browsers, clock, monkeypatch):
+    monkeypatch.delenv("CIVENSA_LOGIN_IP_LIMIT", raising=False)
+    make, credential = browsers
+    browser = make()
+    for index in range(25):
+        response = submit(browser, f"unknown-{index}@example.invalid")
+        assert response.status_code == 400 and throttle.LOCK_MESSAGE not in response.text
+    assert submit(browser, sample["strategy"].email, credential).status_code == 303
+    assert len(attempts(db)) == 25
+    assert not lock_audits(db)
+    assert {row.ip_key for row in attempts(db)} == {throttle.identity_key("ip", "192.0.2.1")}
+
+
+def test_ip_limit_survives_success_and_blocks_other_email(db, sample, browsers, clock, monkeypatch):
+    monkeypatch.setenv("CIVENSA_LOGIN_IP_LIMIT", "20")
     make, credential = browsers
     browser = make()
     email = sample["user"].email
@@ -196,7 +211,8 @@ def test_all_identities_share_failure_status_timing_work_and_limits(db, sample, 
     assert len(attempts(db)) == 5 and len(lock_audits(db)) == 1
 
 
-def test_forwarded_header_cannot_change_ip_bucket(db, browsers, clock):
+def test_forwarded_header_cannot_change_ip_bucket(db, browsers, clock, monkeypatch):
+    monkeypatch.setenv("CIVENSA_LOGIN_IP_LIMIT", "20")
     make, _ = browsers
     browser = make()
     for index in range(20):
@@ -224,7 +240,9 @@ def test_cleanup_runs_even_on_locked_login_and_preserves_audit(db, sample, brows
 
 
 @pytest.mark.parametrize("scope,prior", [("email", 0), ("email", 3), ("email", 4), ("ip", 18), ("ip", 19)])
-def test_concurrent_failures_count_once_per_attempt(db, sample, browsers, clock, scope, prior):
+def test_concurrent_failures_count_once_per_attempt(db, sample, browsers, clock, scope, prior, monkeypatch):
+    if scope == "ip":
+        monkeypatch.setenv("CIVENSA_LOGIN_IP_LIMIT", "20")
     make, _ = browsers
     browser = make()
     email = sample["user"].email
@@ -248,7 +266,7 @@ def test_concurrent_failures_count_once_per_attempt(db, sample, browsers, clock,
     with ThreadPoolExecutor(max_workers=2) as pool:
         results = list(pool.map(fail, range(2)))
     db.expire_all()
-    limit = throttle.EMAIL_LIMIT if scope == "email" else throttle.IP_LIMIT
+    limit = throttle.EMAIL_LIMIT if scope == "email" else 20
     assert all(status == 400 for status, _ in results)
     assert len(attempts(db)) == min(prior + 2, limit)
     assert len(lock_audits(db)) == int(prior + 2 >= limit)

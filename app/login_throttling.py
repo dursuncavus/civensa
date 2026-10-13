@@ -13,13 +13,13 @@ from sqlalchemy import Boolean, DateTime, Index, String, delete, func, select, u
 from sqlalchemy.orm import Mapped, Session, mapped_column
 
 from .db import Base
+from .config import login_ip_limit
 from .security import hash_password
 
 
 WINDOW = timedelta(minutes=15)
 RETENTION = timedelta(hours=24)
 EMAIL_LIMIT = 5
-IP_LIMIT = 20
 LOCK_MESSAGE = "Çok sayıda hatalı giriş denemesi yapıldı. Lütfen 15 dakika sonra tekrar deneyin."
 DUMMY_PASSWORD_HASH = hash_password(secrets.token_hex(32))
 
@@ -59,10 +59,12 @@ def server_now(db: Session) -> datetime:
 def begin_attempt(db: Session, email: str, client_ip: str) -> tuple[str, str, datetime, bool]:
     email_key = identity_key("email", email.strip().lower())
     ip_key = identity_key("ip", client_ip)
+    ip_limit = login_ip_limit()
     postgres = db.get_bind().dialect.name == "postgresql"
     if postgres:
-        # One stable order even when e-mail and IP overlap across requests.
-        for number in sorted({_lock_number(email_key), _lock_number(ip_key)}):
+        # One stable order even when e-mail and an enabled IP limit overlap.
+        lock_keys = {email_key, ip_key} if ip_limit > 0 else {email_key}
+        for number in sorted(_lock_number(key) for key in lock_keys):
             db.execute(select(func.pg_advisory_xact_lock(number)))
     now = server_now(db)
     # Cleanup never touches recent counters/locks. A nonblocking global lock
@@ -71,29 +73,32 @@ def begin_attempt(db: Session, email: str, client_ip: str) -> tuple[str, str, da
         _lock_number(identity_key("cleanup", "login_attempts")))))
     if cleanup:
         db.execute(delete(LoginAttempt).where(LoginAttempt.failed_at < now - RETENTION))
-    locked = db.scalar(select(LoginAttempt.id).where(
-        ((LoginAttempt.email_key == email_key) & (LoginAttempt.email_locked_until > now))
-        | ((LoginAttempt.ip_key == ip_key) & (LoginAttempt.ip_locked_until > now))
-    ).limit(1)) is not None
+    lock_filter = ((LoginAttempt.email_key == email_key) & (LoginAttempt.email_locked_until > now))
+    if ip_limit > 0:
+        lock_filter |= ((LoginAttempt.ip_key == ip_key) & (LoginAttempt.ip_locked_until > now))
+    locked = db.scalar(select(LoginAttempt.id).where(lock_filter).limit(1)) is not None
     return email_key, ip_key, now, locked
 
 
 def record_failure(db: Session, email_key: str, ip_key: str, now: datetime) -> bool:
     from .models import AuditLog
 
+    ip_limit = login_ip_limit()
     email_count = db.scalar(select(func.count(LoginAttempt.id)).where(
         LoginAttempt.email_key == email_key,
         LoginAttempt.failed_at > now - WINDOW,
         LoginAttempt.email_cleared.is_(False),
     )) + 1
-    ip_count = db.scalar(select(func.count(LoginAttempt.id)).where(
-        LoginAttempt.ip_key == ip_key, LoginAttempt.failed_at > now - WINDOW,
-    )) + 1
+    ip_count = 0
+    if ip_limit > 0:
+        ip_count = db.scalar(select(func.count(LoginAttempt.id)).where(
+            LoginAttempt.ip_key == ip_key, LoginAttempt.failed_at > now - WINDOW,
+        )) + 1
     row = LoginAttempt(email_key=email_key, ip_key=ip_key, failed_at=now)
-    for scope, count, limit, key in (
-        ("email", email_count, EMAIL_LIMIT, email_key),
-        ("ip", ip_count, IP_LIMIT, ip_key),
-    ):
+    limits = [("email", email_count, EMAIL_LIMIT, email_key)]
+    if ip_limit > 0:
+        limits.append(("ip", ip_count, ip_limit, ip_key))
+    for scope, count, limit, key in limits:
         if count >= limit:
             until = now + WINDOW
             setattr(row, scope + "_locked_until", until)
@@ -105,7 +110,7 @@ def record_failure(db: Session, email_key: str, ip_key: str, now: datetime) -> b
             ))
     db.add(row)
     db.flush()
-    return email_count >= EMAIL_LIMIT or ip_count >= IP_LIMIT
+    return email_count >= EMAIL_LIMIT or (ip_limit > 0 and ip_count >= ip_limit)
 
 
 def clear_email_failures(db: Session, email_key: str, now: datetime) -> None:
