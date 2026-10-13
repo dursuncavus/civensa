@@ -88,8 +88,10 @@ def test_sidebar_controls_separate_and_clickable(browser, db, sample, role, view
             assert client.get('/modules').status_code == 200
             page.get_by_role('button', name='Vazgeç', exact=True).click()
             expect(page.locator('#passwordModal')).to_be_hidden()
-            logout.click()
-            page.wait_for_url('**/login')
+            # Register the navigation wait before submitting. On a fast CI
+            # runner the redirect can finish before a later wait_for_url call.
+            with page.expect_navigation(url='**/login'):
+                logout.click()
             assert client.get('/modules').status_code == 401
     finally:
         app.dependency_overrides.clear()
