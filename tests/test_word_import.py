@@ -584,7 +584,12 @@ def test_d2_unknown_table_alongside_valid_data_is_reported(import_client, import
     assert response.status_code == 200
     result = response.json()
     assert result['summary']['indicator_count'] == 1
-    assert result['can_apply'] is False
-    assert 'Tablo 3' in result['warnings'][0]
-    assert 'yeniden yükleyin' in result['warnings'][0]
-    assert import_client.post(f"/api/import-batches/{result['batch_id']}/apply").status_code == 409
+    # This table contains only "Ek veri", without indicator/activity labels.
+    assert result['can_apply'] is True
+    assert result['errors'] == result['warnings'] == []
+    assert len(result['coverage_items']) == 1
+    item = result['coverage_items'][0]
+    assert item['table_number'] == 3
+    assert item['first_cell_text'] == 'Ek veri'
+    assert 'Tablo 3: Ek veri' in item['message']
+    assert import_client.post(f"/api/import-batches/{result['batch_id']}/apply").status_code == 200
