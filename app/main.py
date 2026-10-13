@@ -36,7 +36,7 @@ from .security import verify_password, hash_password
 from .seed import seed
 from .template_parser import analyze_template
 from .data_importer import parse_performance_docx
-from .import_service import build_department_plan, apply_import_batch, import_revert_status, revert_import_batch
+from .import_service import build_department_plan, apply_import_batch, import_revert_status, revert_import_batch, import_validation_errors
 from .config import validate_runtime_settings, session_secret, cookie_secure, demo_seed_enabled, is_production
 from .file_security import read_upload_limited, validate_office_zip
 from .report_export import build_department_docx
@@ -1461,14 +1461,15 @@ async def data_import_preview(period_id: int, file: UploadFile = File(...), db: 
     } for d in plan["parsed"]["departments"][:12]]
     source_years = plan["summary"].get("source_years", [])
     year_mismatch = bool(source_years and source_years != [period.year])
-    warnings = list(plan["parsed"]["warnings"])
+    errors = import_validation_errors(parsed)
+    warnings = list(dict.fromkeys([*plan["parsed"]["warnings"], *errors]))
     if year_mismatch:
         warnings.insert(0, f"Dosya bütçe yılı {source_years}; seçilen Civensa dönemi {period.year}. Uygulama engellendi.")
     return {
         "ok": True, "batch_id": batch.id, "status": batch.status,
         "summary": plan["summary"], "warnings": warnings,
         "departments": preview_departments, "mappings": plan["mappings"],
-        "can_apply": not plan["unresolved"] and not year_mismatch,
+        "can_apply": not plan["unresolved"] and not year_mismatch and not errors,
     }
 
 
@@ -1482,7 +1483,8 @@ def import_batch_detail(batch_id: int, db: Session = Depends(get_db), user: User
     period = db.get(ReportingPeriod, batch.period_id)
     source_years = plan["summary"].get("source_years", [])
     year_mismatch = bool(period and source_years and source_years != [period.year])
-    warnings = list(plan["parsed"].get("warnings", []))
+    errors = import_validation_errors(parsed)
+    warnings = list(dict.fromkeys([*plan["parsed"].get("warnings", []), *errors]))
     if year_mismatch:
         warnings.insert(0, f"Dosya bütçe yılı {source_years}; seçilen Civensa dönemi {period.year}. Uygulama engellendi.")
     can_revert, revert_reason = import_revert_status(db, batch)
@@ -1494,7 +1496,7 @@ def import_batch_detail(batch_id: int, db: Session = Depends(get_db), user: User
             "indicator_count": sum(len(b["indicators"]) for b in d["blocks"]),
             "activity_count": len(d["activities"]),
         } for d in plan["parsed"].get("departments", [])],
-        "mappings": plan["mappings"], "can_apply": batch.status == "preview" and not plan["unresolved"] and not year_mismatch,
+        "mappings": plan["mappings"], "can_apply": batch.status == "preview" and not plan["unresolved"] and not year_mismatch and not errors,
         "can_revert": can_revert, "revert_reason": revert_reason,
     }
 

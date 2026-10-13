@@ -3,6 +3,8 @@ import re
 import unicodedata
 from collections import OrderedDict
 from docx import Document
+from docx.table import Table
+from docx.oxml.ns import qn
 from .numbers import source_cell
 
 
@@ -67,24 +69,34 @@ def _value_kind(header: str):
     return year,kind
 
 
+def iter_document_tables(doc):
+    """Visit each table once in document order, including nested tables."""
+    for element in doc.element.body.iter():
+        if element.tag == qn("w:tbl"):
+            yield Table(element, doc)
+
+
 def _parse_indicator_table(table):
     rows=table.rows
-    if len(rows)<10 or not _key(rows[0].cells[0].text).startswith("butce yili"):
-        return None
-    budget_year_text=_field_value(rows[0])
-    year_match=re.search(r"20\d{2}", budget_year_text)
-    budget_year=int(year_match.group(0)) if year_match else None
-    program=_field_value(rows[1])
-    department=_department_name(_field_value(rows[2]))
-    subprogram=_field_value(rows[3])
-    rationale=_field_value(rows[4])
-    goal=next((_field_value(r) for r in rows if _key(r.cells[0].text).startswith("alt programin hedefi")), "")
-    header_idx=None
-    for idx,row in enumerate(rows):
-        if _key(row.cells[0].text).startswith("performans gostergesi"):
-            header_idx=idx; break
+    header_idx = next((idx for idx, row in enumerate(rows)
+                       if _key(row.cells[0].text).startswith(
+                           ("performans gostergesi", "performans gostergeleri"))), None)
     if header_idx is None:
         return None
+
+    def label_value(label):
+        return next((_field_value(row) for row in rows[:header_idx]
+                     if _key(row.cells[0].text).startswith(label)), "")
+
+    budget_year_text = label_value("butce yili")
+    year_match = re.fullmatch(r"20\d{2}", budget_year_text)
+    budget_year = int(year_match.group(0)) if year_match else None
+    program = label_value("program adi")
+    administration = label_value("idare birim adi")
+    department = _department_name(administration)
+    subprogram = label_value("alt program adi")
+    rationale = label_value("gerekce ve aciklamalar")
+    goal = label_value("alt programin hedefi")
     headers=[_clean(c.text) for c in rows[header_idx].cells]
     value_columns=[]
     for col,h in enumerate(headers):
@@ -121,7 +133,7 @@ def _parse_indicator_table(table):
             metadata["responsible"]=val
     for ind in indicators:
         ind.update(metadata)
-    return {"department":department,"budget_year":budget_year,"program":program,"subprogram":subprogram,"rationale":rationale,"goal":goal,"source_title":budget_year_text,"administration":_field_value(rows[2]),"metadata":metadata,"indicators":indicators}
+    return {"department":department,"budget_year":budget_year,"program":program,"subprogram":subprogram,"rationale":rationale,"goal":goal,"source_title":budget_year_text,"administration":administration,"metadata":metadata,"indicators":indicators}
 
 
 def _parse_activity_table(table):
@@ -187,14 +199,17 @@ def _parse_activity_table(table):
 
 def parse_performance_docx(data: bytes):
     doc=Document(io.BytesIO(data))
-    departments=OrderedDict(); current_department=None; warnings=[]
+    departments=OrderedDict(); current_department=None; errors=[]
     indicator_table_count=0; activity_table_count=0
-    for index,table in enumerate(doc.tables):
+    tables = list(iter_document_tables(doc))
+    for index,table in enumerate(tables):
         perf=_parse_indicator_table(table)
         if perf:
-            indicator_table_count+=1; current_department=perf["department"] or current_department
+            indicator_table_count+=1; current_department=perf["department"]
+            if perf["budget_year"] is None:
+                errors.append(f"Tablo {index+1}: Bütçe Yılı satırı eksik, boş veya geçersiz. Bütçe Yılı alanına dört haneli yılı yazıp dosyayı yeniden yükleyin.")
             if not current_department:
-                warnings.append(f"Tablo {index+1}: müdürlük adı bulunamadı."); continue
+                errors.append(f"Tablo {index+1}: İdare Birim Adı alanında müdürlük adı bulunamadı. Müdürlük adını yazıp dosyayı yeniden yükleyin."); continue
             dept=departments.setdefault(current_department,{"name":current_department,"blocks":[],"activities":[],"personnel":[]})
             dept["blocks"].append({k:perf[k] for k in ("budget_year","program","subprogram","rationale","goal","source_title","administration","metadata","indicators")})
             continue
@@ -202,15 +217,22 @@ def parse_performance_docx(data: bytes):
         if cost:
             activity_table_count+=1
             if not current_department:
-                warnings.append(f"Tablo {index+1}: faaliyet tablosu bir müdürlükle eşleştirilemedi."); continue
+                errors.append(f"Tablo {index+1}: faaliyet tablosu bir müdürlükle eşleştirilemedi. Önüne İdare Birim Adı içeren gösterge tablosunu ekleyip dosyayı yeniden yükleyin."); continue
             dept=departments.setdefault(current_department,{"name":current_department,"blocks":[],"activities":[],"personnel":[]})
             dept["activities"].extend(cost["activities"]); dept["personnel"].extend(cost["personnel"])
+            continue
+        # Empty outer tables only contain nested tables, which are visited separately.
+        if any(_clean(cell.text) for row in table.rows for cell in row.cells):
+            errors.append(f"Tablo {index+1}: tablo biçimi tanınmadığı için veriler içe aktarılamadı. Tabloyu Bakanlık gösterge veya faaliyet şablonuna uygun düzenleyip dosyayı yeniden yükleyin.")
+    if not indicator_table_count:
+        errors.append("Dosyada tanınan performans göstergesi tablosu bulunamadı. Bakanlık gösterge şablonunu ve Performans Göstergeleri başlığını kontrol edip dosyayı yeniden yükleyin.")
     result=list(departments.values())
     indicator_count=sum(len(b["indicators"]) for d in result for b in d["blocks"])
     activity_count=sum(len(d["activities"]) for d in result)
     source_years=sorted({b.get("budget_year") for d in result for b in d["blocks"] if b.get("budget_year")})
     return {
         "departments":result,
-        "summary":{"department_count":len(result),"indicator_table_count":indicator_table_count,"indicator_count":indicator_count,"activity_table_count":activity_table_count,"activity_count":activity_count,"table_count":len(doc.tables),"source_years":source_years},
-        "warnings":warnings,
+        "summary":{"department_count":len(result),"indicator_table_count":indicator_table_count,"indicator_count":indicator_count,"activity_table_count":activity_table_count,"activity_count":activity_count,"table_count":len(tables),"source_years":source_years},
+        "warnings":list(errors),
+        "errors":errors,
     }
