@@ -366,3 +366,48 @@ def test_invalid_record_ids_show_turkish_form_errors(db, sample, live_client, ur
     response = post(browser, token, url, period_id=sample['period'].id, name='Deneme', active='0')
     assert response.status_code == 422
     assert 'geçersiz' in response.text and 'mevcut bir kayıt seçin' in response.text
+
+
+def test_existing_scope_route_records_old_new_and_respects_subprogramme_assignments(db, sample, live_client):
+    browser, token = strategy(live_client, sample)
+    pid = sample['period'].id; did = sample['department'].id
+    assert post(browser, token, '/report-builder/scope', period_id=pid, department_id=did, status='required', position='7', display_name='Dönem Müdürlüğü', reason='Yeni kapsam açıklaması').status_code == 303
+    log = db.scalar(select(AuditLog).where(AuditLog.action == 'scope_save'))
+    assert json.loads(log.details)['new'] == {'status': 'required', 'position': 7, 'display_name': 'Dönem Müdürlüğü', 'reason': 'Yeni kapsam açıklaması'}
+    assert json.loads(log.details)['old']['display_name'] == ''
+    assert post(browser, token, f'/structure/subprograms/{sample["subprogram"].id}/responsibilities', period_id=pid, department_ids=[did]).status_code == 303
+    result = post(browser, token, '/report-builder/scope', period_id=pid, department_id=did, status='excluded', reason='Test')
+    assert result.status_code == 422 and 'sorumluluğu kaldırıp' in result.text
+
+
+def test_inactive_history_stays_visible_but_does_not_require_new_period_scope(db, sample, live_client):
+    from app.models import OfficialActivity
+    from app.program_service import book_snapshot
+    browser, token = strategy(live_client, sample)
+    pid = sample['period'].id; did = sample['department'].id
+    active = Department(organization_id=sample['department'].organization_id, name='Etkin Müdürlüğü')
+    db.add(active); db.commit()
+    assert post(browser, token, f'/structure/departments/{did}/active', active='0').status_code == 303
+    sample['user'].is_active = False; db.commit()
+    progress = browser.get('/api/progress').json()
+    assert progress['summary']['missing_accounts'] == 1  # Only the active new department.
+    assert any(r['department_id'] == did and not r['is_active'] for r in progress['rows'])
+    assert 'Pasif müdürlük' in browser.get('/dashboard').text
+    # History is still available in the original period, including live previews.
+    assert did in {d['department_id'] for d in book_snapshot(db, pid)['departments']}
+    before = {model: db.scalar(select(func.count()).select_from(model).where(model.period_id == pid)) for model in (ReportCard, Indicator, Activity, DepartmentScope, Submission)}
+    response = browser.post('/api/periods', headers={'X-CSRF-Token': token}, json={'year': 2028, 'base_period_id': pid})
+    assert response.status_code == 200, response.text
+    new_pid = response.json()['id']
+    for model, count in before.items():
+        assert db.scalar(select(func.count()).select_from(model).where(model.period_id == pid)) == count
+        assert not db.scalar(select(model.id).where(model.period_id == new_pid, model.department_id == did))
+    assert did not in {d['department_id'] for d in book_snapshot(db, new_pid)['departments']}
+    assert post(browser, token, '/structure/scopes', period_id=new_pid, department_id=active.id, status='excluded', reason='Yeni dönem veri kapsamı yok').status_code == 303
+    db.add_all([ReportSection(period_id=new_pid, title='Genel Bilgiler', content_json='{"text":"Yeni dönem"}'),
+                OfficialActivity(period_id=new_pid, program_name='Katalog', subprogram_name='Alt', code='1', name='Faaliyet')]); db.commit()
+    # Publication never demands a forbidden new scope for an inactive department.
+    response = post(browser, token, '/report-builder/publish', period_id=new_pid)
+    assert response.status_code == 303, response.text
+    payload = json.loads(db.scalar(select(Publication).where(Publication.period_id == new_pid)).snapshot_json)
+    assert did not in {d['department_id'] for d in payload['departments']}

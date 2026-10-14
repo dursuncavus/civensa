@@ -1,7 +1,7 @@
 """Report cards, exact finance, completeness checks and immutable snapshots."""
 from decimal import Decimal
 from collections import defaultdict
-from sqlalchemy import select
+from sqlalchemy import select, or_
 from fastapi import HTTPException
 from .models import (ReportCard, Indicator, IndicatorValue, Activity, ActivityCostValue,
     DepartmentCostValue, EconomicValue, DepartmentScope, Department, Program, SubProgram,
@@ -200,9 +200,18 @@ def _validate_department_records(period_id, department_id, year, scope, indicato
     return errors, warnings
 
 
+def period_departments(db, period_id):
+    """Active departments plus inactive departments with history in this period."""
+    historical = [Department.id.in_(select(model.department_id).where(model.period_id == period_id))
+                  for model in (DepartmentScope, ReportCard, Indicator, Activity, DepartmentCostValue, EconomicValue, Submission)]
+    historical.append(Department.id.in_(select(ActivityResponsibility.department_id).join(
+        OfficialActivity, OfficialActivity.id == ActivityResponsibility.official_activity_id).where(OfficialActivity.period_id == period_id)))
+    return db.scalars(select(Department).where(or_(Department.is_active.is_(True), *historical)).order_by(Department.name)).all()
+
+
 def book_snapshot(db, period_id):
     period = db.get(ReportingPeriod, period_id)
-    departments = db.scalars(select(Department).order_by(Department.name)).all()
+    departments = period_departments(db, period_id)
     snapshots = [department_snapshot(db,period_id,d.id) for d in departments]
     snapshots.sort(key=lambda d: ((d['scope'] or {}).get('position',0),d['department_id']))
     catalogue = []

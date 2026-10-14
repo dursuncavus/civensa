@@ -6,10 +6,10 @@ Strategy can maintain departments, period programmes/subprogrammes, rationale/go
 
 - Department names are compared within their institution after Unicode NFC, Turkish `İ/i` and `I/ı` case conversion, and whitespace collapse. Institution row locks serialize application create/rename requests. Existing matching records are named in Turkish validation errors.
 - Existing duplicate departments appear under **Aynı müdürlük olabilecek kayıtlar**. They are neither merged nor rewritten.
-- Departments can exist with no strategic-plan link or period scope. Disabling a department preserves accounts, scopes, report data and history. New accounts (single/CSV), reactivated accounts, new scopes and new subprogramme responsibilities require an active department. Existing inactive scope/responsibility history remains available.
+- Departments can exist with no strategic-plan link or period scope. Disabling a department preserves accounts, scopes, report data and history. New accounts (single/CSV), reactivated accounts, new scopes and new subprogramme responsibilities require an active department. Existing inactive scope/responsibility history remains available. New-period copying skips inactive departments; previews and publication gates include their existing period history but do not demand a forbidden new scope in future periods. Historical inactive departments do not trigger new-account warnings.
 - Role/department changes use account closure and a new account, as explained on the users screen. No account reassignment feature was added.
 - `SubProgramScope` connects a subprogramme to the existing `DepartmentScope`; no second department/period scope model was introduced. Responsibility assignment creates missing required scopes atomically, and zero/excluded scopes require an explicit change before assignment. Removing a responsibility preserves the department scope and records old/new assignment IDs in the audit log.
-- Each new master-data mutation commits its audit entry, actor, database record timestamp and old/new JSON values in the same transaction. Renames never rewrite publication JSON or approved submission snapshots; HTTP regression tests compare their exact frozen contents.
+- The existing report-builder scope route shares the same period lock and also records old/new values atomically. Each new master-data mutation commits its audit entry, actor, stored timestamp and old/new JSON values in the same transaction. Renames never rewrite publication JSON or approved submission snapshots; HTTP regression tests compare their exact frozen contents.
 
 ## Migration
 
@@ -36,7 +36,7 @@ Synthetic, disposable PostgreSQL data; actual application templates, Chromium, l
 All pytest commands used `--require-postgres` and a disposable PostgreSQL **16.2** server. The full suite is left to PR CI, as requested.
 
 - Focused master-data, Word-import, programme, login-throttling, migration-head/readiness and publication-gate tests: **141 passed, 4 xfailed**. The xfails are existing Word-import regressions.
-- Final master-data HTTP/CSRF, lifecycle, Turkish normalization, concurrency, old-schema migration/downgrade, frozen-name and real-source safety tests: **52 passed**.
+- Final focused master-data HTTP/CSRF/lifecycle/migration, programme, progress and publication regression tests: **105 passed**. An additional final inactive-history/progress check: **1 passed**.
 - Final Chromium form/error retention, responsibility persistence and first-period flow tests: **2 passed**.
 - Historical authorization and login-throttling migration compatibility checks: **2 passed**.
 - `python -m compileall -q app`, `node --check app/static/app.js`, `git diff --check`: passed.

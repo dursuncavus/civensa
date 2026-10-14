@@ -465,7 +465,8 @@ def dashboard(request: Request, db: Session = Depends(get_db), user: User = Depe
             "indicators": indicators, "issues": issues, "notifications": user_notifications(db, user),
         })
 
-    departments = db.scalars(select(Department).order_by(Department.name)).all()
+    from .program_service import period_departments
+    departments = period_departments(db, period.id)
     periods = db.scalars(select(ReportingPeriod).order_by(ReportingPeriod.year.desc())).all()
     snapshots = db.scalars(select(TemplateSnapshot).where(TemplateSnapshot.period_id == period.id).order_by(TemplateSnapshot.created_at.desc())).all()
     imports = db.scalars(select(ImportBatch).where(ImportBatch.period_id == period.id).order_by(ImportBatch.created_at.desc())).all()
@@ -1591,6 +1592,7 @@ def create_period_record(db: Session, user: User, data):
     period = ReportingPeriod(year=year, status="draft", template_status="pending")
     db.add(period); db.flush()
     program_map = {}; sub_map = {}
+    active_department_ids = select(Department.id).where(Department.is_active.is_(True))
     if base:
         programs = db.scalars(select(Program).where(Program.period_id == base.id)).all()
         for old in programs:
@@ -1601,22 +1603,22 @@ def create_period_record(db: Session, user: User, data):
             db.add(new); db.flush(); sub_map[old.id] = new.id
         from .models import ReportCard
         card_map = {}
-        for old in db.scalars(select(ReportCard).where(ReportCard.period_id==base.id)).all():
+        for old in db.scalars(select(ReportCard).where(ReportCard.period_id==base.id, ReportCard.department_id.in_(active_department_ids))).all():
             fields = {c.name:getattr(old,c.name) for c in ReportCard.__table__.columns if c.name not in {'id','period_id','subprogram_id','source_title'}}
             card=ReportCard(period_id=period.id,subprogram_id=sub_map[old.subprogram_id],source_title=f'{year}/{old.position}',**fields)
             db.add(card);db.flush();card_map[old.id]=card.id
-        inds = db.scalars(select(Indicator).where(Indicator.period_id == base.id)).all()
+        inds = db.scalars(select(Indicator).where(Indicator.period_id == base.id, Indicator.department_id.in_(active_department_ids))).all()
         for old in inds:
             from .activity_contract_service import ensure_identity
             identity_id = ensure_identity(db, old)
             new = Indicator(period_id=period.id, department_id=old.department_id, subprogram_id=sub_map[old.subprogram_id], card_id=card_map.get(old.card_id), code=old.code, position=old.position, name=old.name, unit=old.unit, explanation=old.explanation, calculation_method=old.calculation_method, data_source=old.data_source, status="draft")
             new.persistent_indicator_id = identity_id
             db.add(new); db.flush()
-        acts = db.scalars(select(Activity).where(Activity.period_id == base.id)).all()
+        acts = db.scalars(select(Activity).where(Activity.period_id == base.id, Activity.department_id.in_(active_department_ids))).all()
         for old in acts:
             new_act = Activity(period_id=period.id, department_id=old.department_id, subprogram_id=sub_map.get(old.subprogram_id), card_id=card_map.get(old.card_id), code=old.code, position=old.position, name=old.name, explanation=old.explanation)
             db.add(new_act); db.flush()
-        depts = db.scalars(select(Department)).all()
+        depts = db.scalars(select(Department).where(Department.is_active.is_(True))).all()
         for dept in depts:
             db.add(Submission(department_id=dept.id, period_id=period.id, status="draft"))
     from .master_data_service import audit_change
@@ -1934,8 +1936,8 @@ PROGRESS_LABELS = {
 
 
 def department_progress_overview(db: Session, period: ReportingPeriod):
-    from .program_service import validate_department
-    departments = db.scalars(select(Department).order_by(Department.name)).all()
+    from .program_service import validate_department, period_departments
+    departments = period_departments(db, period.id)
     submissions = db.scalars(select(Submission).where(Submission.period_id == period.id)).all()
     submission_by_department = {item.department_id: item for item in submissions}
     indicators = db.scalars(
@@ -2016,11 +2018,11 @@ def department_progress_overview(db: Session, period: ReportingPeriod):
 
         has_department_user = department.id in departments_with_users
         summary[state] += 1
-        if not has_department_user:
+        if department.is_active and not has_department_user:
             summary["missing_accounts"] += 1
         rows.append({
             "department_id": department.id,
-            "department_name": department.name,
+            "department_name": department.name, "is_active": department.is_active,
             "state": state,
             "label": PROGRESS_LABELS[state],
             "progress_percent": progress_percent,
