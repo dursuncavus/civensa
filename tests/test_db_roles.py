@@ -113,6 +113,8 @@ def test_role_sql_defaults_idempotence_and_read_only_audit(roles_db):
     assert snapshot['role'] == snapshot['session_role'] == 'civensa_app'
     assert snapshot['unsafe_runtime_privileges'] == []
     assert snapshot['memberships'] == []
+    assert snapshot['database']['connect'] is True
+    assert snapshot['database']['create'] is snapshot['database']['temporary'] is False
     assert {r['owner'] for r in snapshot['relations']} == {'civensa_owner'}
     assert snapshot['schemas'] == [dict(name='public', owner='civensa_owner', usage=True, create=False)]
     assert all(not snapshot['roles'][0][flag] for flag in ('superuser', 'createdb', 'createrole', 'replication', 'bypassrls', 'inherit'))
@@ -186,7 +188,7 @@ def test_production_lifespan_migrates_as_owner_and_requests_use_app(roles_db, mo
 
 
 @pytest.mark.parametrize('misconfiguration', [
-    'owner', 'superuser', 'schema_create', 'public_create', 'database_create',
+    'owner', 'superuser', 'schema_create', 'public_create', 'database_create', 'temporary',
     'truncate', 'table_owner', 'membership', 'indirect_membership', 'security_definer', 'replication_setting',
     'schema_owner', 'type_owner', 'server_files',
 ])
@@ -197,6 +199,7 @@ def test_startup_guard_fails_before_migration(roles_db, monkeypatch, caplog, mis
         'schema_create': 'GRANT CREATE ON SCHEMA public TO civensa_app',
         'public_create': 'GRANT CREATE ON SCHEMA public TO PUBLIC',
         'database_create': f'GRANT CREATE ON DATABASE {db.app_url.database} TO civensa_app',
+        'temporary': f'GRANT TEMPORARY ON DATABASE {db.app_url.database} TO civensa_app',
         'truncate': 'GRANT TRUNCATE ON publications TO civensa_app',
         'table_owner': 'ALTER TABLE login_attempts OWNER TO civensa_app',
         'membership': 'GRANT civensa_owner TO civensa_app WITH INHERIT FALSE',
@@ -324,6 +327,7 @@ def test_restricted_http_flows_and_immutable_history(roles_db, monkeypatch):
         denied(db.runtime, f'DROP TRIGGER {name} ON {table}')
         denied(db.runtime, f'ALTER TABLE {table} OWNER TO civensa_app')
     denied(db.runtime, 'CREATE TABLE public.forbidden (id integer)')
+    denied(db.runtime, 'CREATE TEMP TABLE forbidden (id integer)')
     denied(db.runtime, 'ALTER SCHEMA public OWNER TO civensa_app')
     denied(db.runtime, 'SET ROLE civensa_owner')
     denied(db.runtime, "SET session_replication_role = 'replica'")

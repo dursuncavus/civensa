@@ -29,8 +29,9 @@ BEGIN
        OR EXISTS (SELECT FROM pg_proc WHERE proowner = 'civensa_app'::regrole) THEN
         RAISE EXCEPTION 'civensa_app still owns objects; transfer ownership before applying db_roles.sql';
     END IF;
-    EXECUTE format('REVOKE CREATE ON DATABASE %I FROM PUBLIC, civensa_app', current_database());
+    EXECUTE format('REVOKE CREATE, TEMPORARY ON DATABASE %I FROM PUBLIC, civensa_app', current_database());
     EXECUTE format('GRANT CONNECT ON DATABASE %I TO civensa_owner, civensa_app', current_database());
+    EXECUTE format('GRANT TEMPORARY ON DATABASE %I TO civensa_owner', current_database());
 END $$;
 ALTER SCHEMA public OWNER TO civensa_owner;
 REVOKE ALL ON SCHEMA public FROM PUBLIC, civensa_app;

@@ -32,6 +32,13 @@ def privilege_snapshot(connection):
                     "current_setting('server_version') AS server_version, "
                     "current_setting('transaction_read_only') AS read_only")[0]
     roles = rows(ROLES)
+    database = rows("""
+        SELECT pg_catalog.pg_get_userbyid(d.datdba) AS owner,
+               pg_catalog.has_database_privilege(d.oid, 'CONNECT') AS connect,
+               pg_catalog.has_database_privilege(d.oid, 'CREATE') AS create,
+               pg_catalog.has_database_privilege(d.oid, 'TEMPORARY') AS temporary
+        FROM pg_catalog.pg_database d WHERE d.datname = current_database()
+    """)[0]
     members = rows("""
         SELECT parent.rolname AS role, child.rolname AS member, m.admin_option,
                m.inherit_option, m.set_option
@@ -90,9 +97,9 @@ def privilege_snapshot(connection):
                     'pg_read_server_files'} or any(role[k] for k in ('superuser','createdb','createrole','replication','bypassrls')):
             risks.append(f"privileged role: {name}")
         for risk in rows(f"""
-            SELECT 'database ownership/CREATE' AS reason FROM pg_catalog.pg_database d
+            SELECT 'database ownership/CREATE/TEMPORARY' AS reason FROM pg_catalog.pg_database d
               WHERE d.datname = current_database() AND
-              (d.datdba = :oid OR pg_catalog.has_database_privilege(:oid, d.oid, 'CREATE'))
+              (d.datdba = :oid OR pg_catalog.has_database_privilege(:oid, d.oid, 'CREATE,TEMPORARY'))
             UNION ALL
             SELECT 'schema ownership/CREATE: ' || n.nspname FROM pg_catalog.pg_namespace n
               WHERE {USER_SCHEMA} AND (n.nspowner = :oid OR pg_catalog.has_schema_privilege(:oid, n.oid, 'CREATE'))
@@ -121,7 +128,7 @@ def privilege_snapshot(connection):
             risks.append(f"{name}: {risk['reason']}")
     for role in roles:
         role.pop('oid')
-    return dict(**identity, roles=roles, memberships=members, schemas=schemas,
+    return dict(**identity, database=database, roles=roles, memberships=members, schemas=schemas,
                 relations=relations, routines=routines, triggers=triggers,
                 default_privileges=defaults, unsafe_runtime_privileges=sorted(set(risks)))
 

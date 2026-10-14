@@ -26,8 +26,9 @@ Function EXECUTE is needed by invoker trigger helpers and trigger WHEN expressio
 no SECURITY DEFINER functions exist in the current migration chain. Future ones
 require review and will be rejected by the startup guard if runtime can call them.
 PostgreSQL built-in functions retain their standard grants (including advisory
-locks used by login throttling). Database TEMPORARY is left at its standard
-setting; temporary objects do not give ownership of application tables.
+locks used by login throttling). Runtime receives database CONNECT only; CREATE
+and TEMPORARY are revoked from runtime and PUBLIC. Only the migration owner is
+granted TEMPORARY, preventing runtime DDL even in temporary schemas.
 
 `ops/db_roles.sql` creates missing roles without passwords, normalizes role
 attributes, removes runtime memberships, makes `civensa_owner` the schema owner,
@@ -56,7 +57,7 @@ privileges in other schemas. The audit and startup guard expose remaining risks.
   passwords and raw connection exceptions are not logged by the guard.
 
 The guard reads PostgreSQL catalogs in a read-only transaction. It rejects unsafe
-role attributes, owner-role membership, database ownership/CREATE, persistent
+role attributes, owner-role membership, database ownership/CREATE/TEMPORARY, persistent
 schema ownership/CREATE, relation/routine/type ownership, table TRUNCATE/TRIGGER
 (and MAINTAIN on PostgreSQL 17+), callable SECURITY DEFINER routines, predefined
 server-file/program roles, and SET/ALTER SYSTEM on `session_replication_role`. It follows
