@@ -17,6 +17,11 @@ def _key(text: str) -> str:
     return "".join(c for c in unicodedata.normalize("NFKD",text) if not unicodedata.combining(c))
 
 
+def _label_key(text: str) -> str:
+    """Compare Turkish labels independently of punctuation and all whitespace."""
+    return re.sub(r"[^\w]", "", _key(text))
+
+
 def _number(text: str):
     cell = source_cell(text)
     if cell['state'] == 'needs_review':
@@ -79,24 +84,25 @@ def iter_document_tables(doc):
 def _parse_indicator_table(table):
     rows=table.rows
     header_idx = next((idx for idx, row in enumerate(rows)
-                       if _key(row.cells[0].text).startswith(
-                           ("performans gostergesi", "performans gostergeleri"))), None)
+                       if _label_key(row.cells[0].text).startswith(
+                           ("performansgostergesi", "performansgostergeleri"))
+                       and any(_value_kind(cell.text) for cell in row.cells[1:])), None)
     if header_idx is None:
         return None
 
     def label_value(label):
         return next((_field_value(row) for row in rows[:header_idx]
-                     if _key(row.cells[0].text).startswith(label)), "")
+                     if _label_key(row.cells[0].text).startswith(label)), "")
 
-    budget_year_text = label_value("butce yili")
-    year_match = re.fullmatch(r"20\d{2}", budget_year_text)
-    budget_year = int(year_match.group(0)) if year_match else None
-    program = label_value("program adi")
-    administration = label_value("idare birim adi")
+    budget_year_text = label_value("butceyili")
+    budget_years = {int(year) for year in re.findall(r"(?<!\d)20\d{2}(?!\d)", budget_year_text)}
+    budget_year = next(iter(budget_years)) if len(budget_years) == 1 else None
+    program = label_value("programadi")
+    administration = label_value("idarebirimadi")
     department = _department_name(administration)
-    subprogram = label_value("alt program adi")
-    rationale = label_value("gerekce ve aciklamalar")
-    goal = label_value("alt programin hedefi")
+    subprogram = label_value("altprogramadi")
+    rationale = label_value("gerekceveaciklamalar")
+    goal = label_value("altprograminhedefi")
     headers=[_clean(c.text) for c in rows[header_idx].cells]
     value_columns=[]
     for col,h in enumerate(headers):
@@ -107,7 +113,7 @@ def _parse_indicator_table(table):
     stop_idx=len(rows)
     for idx in range(header_idx+1,len(rows)):
         first=_clean(rows[idx].cells[0].text)
-        lower=_key(first)
+        lower=_label_key(first)
         if lower.startswith(("gostergeye", "gostergelere")):
             stop_idx=idx; metadata["explanation"]=_field_value(rows[idx],1); break
         if not first:
@@ -123,13 +129,13 @@ def _parse_indicator_table(table):
             values.append({"year":year,"kind":kind,**_source_value(cells[col] if col<len(cells) else "", "value")})
         indicators.append({"name":first,"unit":unit,"values":values})
     for row in rows[stop_idx+1:]:
-        first=_key(row.cells[0].text)
+        first=_label_key(row.cells[0].text)
         val=_field_value(row,1)
-        if first.startswith("hesaplama yontemi"):
+        if first.startswith("hesaplamayontemi"):
             metadata["calculation_method"]=val
-        elif first.startswith("verinin kaynagi"):
+        elif first.startswith("verininkaynagi"):
             metadata["data_source"]=val
-        elif first.startswith("sorumlu idare"):
+        elif first.startswith("sorumluidare"):
             metadata["responsible"]=val
     for ind in indicators:
         ind.update(metadata)
@@ -138,7 +144,7 @@ def _parse_indicator_table(table):
 
 def _parse_activity_table(table):
     rows=table.rows
-    if not rows or _key(rows[0].cells[0].text)!="faaliyetler":
+    if not rows or _label_key(rows[0].cells[0].text)!="faaliyetler":
         return None
     headers=[_clean(c.text) for c in rows[0].cells]
     value_columns=[]
@@ -149,22 +155,22 @@ def _parse_activity_table(table):
     i=1
     while i<len(rows):
         cells=[_clean(c.text) for c in rows[i].cells]
-        first=cells[0] if cells else ""; lower=_key(first)
-        if lower.startswith("faaliyetlere iliskin aciklamalar"):
+        first=cells[0] if cells else ""; lower=_label_key(first)
+        if lower.startswith("faaliyetlereiliskinaciklamalar"):
             explanation_start=i+1; break
-        if lower.startswith("toplam") or lower.startswith("genel toplam") or lower.startswith("genel butce"):
+        if lower.startswith("toplam") or lower.startswith("geneltoplam") or lower.startswith("genelbutce"):
             i+=1; continue
-        if lower.startswith("personel ve sgk"):
+        if lower.startswith("personelvesgk"):
             for col,year,kind in value_columns:
                 personnel.append({"year":year,"kind":kind,**_source_value(cells[col] if col<len(cells) else "", "amount")})
             i+=1; continue
-        if not first or lower in {"butce ici","butce disi"}:
+        if not first or lower in {"butceici","butcedisi"}:
             i+=1; continue
         # A real activity budget row is followed by its Bütçe İçi / Bütçe Dışı detail rows.
         # Do not assume every row comes in triples; otherwise the explanation section can be
         # accidentally consumed as activity data when a total row shifts the index.
-        next_inside = i+1 < len(rows) and _key(rows[i+1].cells[0].text) == "butce ici"
-        next_outside = i+2 < len(rows) and _key(rows[i+2].cells[0].text) == "butce disi"
+        next_inside = i+1 < len(rows) and _label_key(rows[i+1].cells[0].text) == "butceici"
+        next_outside = i+2 < len(rows) and _label_key(rows[i+2].cells[0].text) == "butcedisi"
         if not (next_inside and next_outside):
             i += 1
             continue
@@ -184,7 +190,7 @@ def _parse_activity_table(table):
         pairs=[]; j=explanation_start
         while j<len(rows):
             title=_clean(rows[j].cells[0].text)
-            if _key(title).startswith("faaliyet adi"):
+            if _label_key(title).startswith("faaliyetadi"):
                 official=title.split(":",1)[1].strip() if ":" in title else title
                 desc=_clean(rows[j+1].cells[0].text) if j+1<len(rows) else ""
                 pairs.append((official,desc)); j+=2
@@ -199,31 +205,53 @@ def _parse_activity_table(table):
 
 def parse_performance_docx(data: bytes):
     doc=Document(io.BytesIO(data))
-    departments=OrderedDict(); current_department=None; errors=[]
+    departments=OrderedDict(); current_department=None; errors=[]; coverage_items=[]
     indicator_table_count=0; activity_table_count=0
     tables = list(iter_document_tables(doc))
     for index,table in enumerate(tables):
         perf=_parse_indicator_table(table)
-        if perf:
-            indicator_table_count+=1; current_department=perf["department"]
+        if perf and perf["indicators"]:
+            indicator_table_count+=1; current_department=None
             if perf["budget_year"] is None:
-                errors.append(f"Tablo {index+1}: Bütçe Yılı satırı eksik, boş veya geçersiz. Bütçe Yılı alanına dört haneli yılı yazıp dosyayı yeniden yükleyin.")
-            if not current_department:
-                errors.append(f"Tablo {index+1}: İdare Birim Adı alanında müdürlük adı bulunamadı. Müdürlük adını yazıp dosyayı yeniden yükleyin."); continue
+                errors.append(f"Tablo {index+1}: Bütçe Yılı alanında tek bir yıl bulunamadı (alan eksik, boş veya birden fazla farklı yıl içeriyor). Bütçe Yılı alanına tek bir dört haneli yıl yazıp dosyayı yeniden yükleyin.")
+            required_fields = (
+                ("Program Adı", perf["program"]),
+                ("İdare/Birim Adı", perf["department"]),
+                ("Alt Program Adı", perf["subprogram"]),
+            )
+            missing_fields = [label for label, value in required_fields if not value]
+            for label in missing_fields:
+                errors.append(f"Tablo {index+1}: {label} alanı eksik veya boş. {label} alanını doldurup dosyayı yeniden yükleyin.")
+            if missing_fields:
+                continue
+            current_department=perf["department"]
             dept=departments.setdefault(current_department,{"name":current_department,"blocks":[],"activities":[],"personnel":[]})
             dept["blocks"].append({k:perf[k] for k in ("budget_year","program","subprogram","rationale","goal","source_title","administration","metadata","indicators")})
             continue
         cost=_parse_activity_table(table)
-        if cost:
+        if cost and cost["columns"] and cost["activities"]:
             activity_table_count+=1
             if not current_department:
                 errors.append(f"Tablo {index+1}: faaliyet tablosu bir müdürlükle eşleştirilemedi. Önüne İdare Birim Adı içeren gösterge tablosunu ekleyip dosyayı yeniden yükleyin."); continue
             dept=departments.setdefault(current_department,{"name":current_department,"blocks":[],"activities":[],"personnel":[]})
             dept["activities"].extend(cost["activities"]); dept["personnel"].extend(cost["personnel"])
             continue
-        # Empty outer tables only contain nested tables, which are visited separately.
-        if any(_clean(cell.text) for row in table.rows for cell in row.cells):
-            errors.append(f"Tablo {index+1}: tablo biçimi tanınmadığı için veriler içe aktarılamadı. Tabloyu Bakanlık gösterge veya faaliyet şablonuna uygun düzenleyip dosyayı yeniden yükleyin.")
+        # Empty wrapper tables are visited separately from their nested tables.
+        texts = [_clean(cell.text) for row in table.rows for cell in row.cells]
+        if any(texts):
+            labels = [_label_key(text) for text in texts]
+            carries_data = any(
+                label.startswith(("butceyili", "programadi", "performansgostergesi",
+                                  "performansgostergeleri"))
+                or label in {"faaliyetler", "faaliyetmaliyeti", "faaliyetmaliyetleri"}
+                for label in labels
+            )
+            if carries_data:
+                errors.append(f"Tablo {index+1}: gösterge veya faaliyet tablosu okunamadı. Başlık, yıl/değer sütunları ve veri satırlarını Bakanlık şablonuna uygun düzenleyip dosyayı yeniden yükleyin.")
+            else:
+                first_cell = texts[0] if texts else ""
+                coverage_items.append({"table_number": index+1, "first_cell_text": first_cell,
+                    "message": f"Tablo {index+1}: {first_cell} — gösterge/faaliyet verisi içermeyen tablo bilgi amaçlı listelendi; içe aktarmaya dahil edilmedi."})
     if not indicator_table_count:
         errors.append("Dosyada tanınan performans göstergesi tablosu bulunamadı. Bakanlık gösterge şablonunu ve Performans Göstergeleri başlığını kontrol edip dosyayı yeniden yükleyin.")
     result=list(departments.values())
@@ -235,4 +263,5 @@ def parse_performance_docx(data: bytes):
         "summary":{"department_count":len(result),"indicator_table_count":indicator_table_count,"indicator_count":indicator_count,"activity_table_count":activity_table_count,"activity_count":activity_count,"table_count":len(tables),"source_years":source_years},
         "warnings":list(errors),
         "errors":errors,
+        "coverage_items":coverage_items,
     }
