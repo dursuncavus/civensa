@@ -31,5 +31,11 @@ Civensa is an institutional reporting platform for Turkish municipalities (perfo
 - Prefer a small failing regression test before fixing a confirmed bug.
 - A change is not done until the pull request's CI is green.
 
+## Release packaging
+- The source bundle is generated on demand for release packaging only; Dockerfile and Render deployments use source directly.
+- Task PRs must not add `bundle.part*`, `bundle-manifest.json`, or generated bundle output. When rebasing old branches, delete bundle changes instead of regenerating them.
+- Build with `python tools/build_bundle.py [OUTPUT_DIR]` and verify with `python check_bundle.py [BUNDLE_DIR]` (or `python qa_bundle_check.py [BUNDLE_DIR]`). Both directories default to ignored `dist/bundle/`; the builder rejects the repository root.
+- Bundle and integration-runtime tests build into temporary directories; they must not depend on committed artifacts or skip when a bundle is absent.
+
 ## Reporting back
 In the pull request description list: files changed, tests run with results, what could not be verified, and assumptions. Do not claim anything you did not actually run.
