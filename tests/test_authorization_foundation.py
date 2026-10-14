@@ -40,7 +40,7 @@ def foundation_db(request, monkeypatch):
             # Historical migration probes must use the columns that actually
             # existed at their starting revision, while current tests use the full model.
             from sqlalchemy import inspect, MetaData, Table
-            from sqlalchemy.orm import defer
+            from sqlalchemy.orm import defer, defaultload
             columns = {c['name'] for c in inspect(engine).get_columns('activity_cost_values')}
             if 'source_amount' not in columns:
                 legacy_table = Table('activity_cost_values', MetaData(), autoload_with=engine)
@@ -48,9 +48,14 @@ def foundation_db(request, monkeypatch):
                 @event.listens_for(db, 'do_orm_execute')
                 def historical_cost_reads(state):
                     if state.is_select and any(m.class_ is ActivityCostValue for m in state.all_mappers):
-                        state.statement = state.statement.options(
-                            defer(ActivityCostValue.source_amount), defer(ActivityCostValue.source_raw_text),
-                            defer(ActivityCostValue.source_resolution_json))
+                        if state.is_relationship_load:
+                            state.statement = state.statement.options(defaultload(Activity.cost_values)
+                                .defer(ActivityCostValue.source_amount).defer(ActivityCostValue.source_raw_text)
+                                .defer(ActivityCostValue.source_resolution_json))
+                        else:
+                            state.statement = state.statement.options(
+                                defer(ActivityCostValue.source_amount), defer(ActivityCostValue.source_raw_text),
+                                defer(ActivityCostValue.source_resolution_json))
                 from app import program_service
                 original_record = program_service.record
                 def historical_record(obj):
