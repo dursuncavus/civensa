@@ -1,4 +1,6 @@
 """Report cards, exact finance, completeness checks and immutable snapshots."""
+from datetime import datetime, UTC
+from .serialization import json_dumps
 from decimal import Decimal
 from collections import defaultdict
 from sqlalchemy import select, or_
@@ -6,8 +8,8 @@ from fastapi import HTTPException
 from .models import (ReportCard, Indicator, IndicatorValue, Activity, ActivityCostValue,
     DepartmentCostValue, EconomicValue, DepartmentScope, Department, Program, SubProgram,
     ReportingPeriod, ReportSection, OfficialActivity, ActivityResponsibility, ActivityCatalogueLink,
-    Submission)
-from .numbers import parse_number
+    Submission, AuditLog)
+from .numbers import parse_number, format_number
 
 ECONOMIC_CATEGORIES = {
     'personnel': 'Personel Giderleri', 'sgk': 'Sosyal Güvenlik Kurumuna Devlet Primi Giderleri',
@@ -26,11 +28,46 @@ def economic_columns(year):
     return [c for c in cost_columns(year) if c[1] != 'year_end_estimate']
 
 
-def save_activity_costs(db, activity, year, data):
+VALUE_KIND_LABELS = {"budget": "Bütçe", "midyear_spend": "Haziran Sonu Harcama",
+                     "year_end_estimate": "Yıl Sonu Harcama Tahmini", "forecast": "Tahmin"}
+
+
+def activity_source_disagreements(activity):
+    rows = {(v.year, v.value_kind, v.funding_type): v for v in activity.cost_values}
+    result = {}
+    for total in activity.cost_values:
+        if total.funding_type != "total" or total.source_amount is None or total.source_resolution_json not in (None, "", "{}"):
+            continue
+        inside = rows.get((total.year, total.value_kind, "inside"))
+        outside = rows.get((total.year, total.value_kind, "outside"))
+        computed = inside.amount + outside.amount if inside and outside and inside.amount is not None and outside.amount is not None else None
+        if total.source_amount != computed:
+            result[f"{total.year}:{total.value_kind}"] = {"source_total": total.source_amount, "computed_total": computed}
+    return result
+
+
+def mark_source_disagreements(activity):
+    conflicts = activity_source_disagreements(activity)
+    for total in activity.cost_values:
+        if total.funding_type == "total" and f"{total.year}:{total.value_kind}" in conflicts:
+            total.state = "needs_review"
+
+
+def source_total_message(activity, year, kind, source, computed):
+    return (f"{activity.name} · {year} · {VALUE_KIND_LABELS.get(kind, kind)}: "
+            f"kaynak toplamı {format_number(source, money=True)}, "
+            f"hesaplanan toplam {format_number(computed, money=True)}. "
+            "Kaynak toplamı korunuyor. Bütçe içi ve dışını kaynakla eşitleyin veya ‘Hesaplanan toplamı kullan’ "
+            "seçeneğini en az 10 karakterlik gerekçeyle onaylayın.")
+
+
+def save_activity_costs(db, activity, year, data, actor=None):
     existing = {(v.year, v.value_kind, v.funding_type): v for v in activity.cost_values}
+    pending = []
+    # Validate the entire request before changing any finance row or adding audit entries.
     for y, kind in cost_columns(year):
         prefix = f'cost_{y}_{kind}'
-        if not any(k in data for k in [prefix, prefix+'_inside', prefix+'_outside']):
+        if not any(k in data for k in [prefix, prefix+'_inside', prefix+'_outside', prefix+'_use_computed']):
             continue
         values = {}
         for funding in ['inside', 'outside']:
@@ -43,7 +80,6 @@ def save_activity_costs(db, activity, year, data):
             else:
                 row = existing.get((y, kind, funding))
                 values[funding] = row.amount if row else None
-        # An old total-only client cannot silently fabricate a financing split.
         if prefix in data and prefix+'_inside' not in data and prefix+'_outside' not in data:
             try:
                 total = parse_number(data[prefix], money=True)
@@ -56,11 +92,36 @@ def save_activity_costs(db, activity, year, data):
                 values = {'inside': None, 'outside': None}
         if (values['inside'] is None) != (values['outside'] is None):
             raise HTTPException(422, f'{y}: Bütçe içi ve dışını birlikte girin; kaynak yoksa açıkça 0 yazın.')
-        values['total'] = (values['inside'] + values['outside']) if values['inside'] is not None else None
+        values['total'] = values['inside'] + values['outside'] if values['inside'] is not None else None
+        total_row = existing.get((y, kind, 'total'))
+        decision = None
+        if total_row and total_row.source_amount is not None and total_row.source_resolution_json in (None, '', '{}') and values['total'] != total_row.source_amount:
+            message = source_total_message(activity, y, kind, total_row.source_amount, values['total'])
+            confirmation = data.get(prefix+'_use_computed')
+            if confirmation is not True and confirmation not in ('true', 'on'):
+                raise HTTPException(422, message)
+            reason = data.get(prefix+'_reason')
+            if not isinstance(reason, str) or len(reason.strip()) < 10:
+                raise HTTPException(422, message + ' Karar gerekçesi en az 10 karakter olmalı.')
+            if actor is None or values['total'] is None:
+                raise HTTPException(422, message)
+            decision = {"actor": actor.id, "time": datetime.now(UTC).isoformat(), "activity": activity.id,
+                        "activity_name": activity.name, "year": y, "kind": kind,
+                        "source_total": str(total_row.source_amount), "source_raw_text": total_row.source_raw_text,
+                        "new_total": str(values['total']), "reason": reason.strip()}
+        pending.append((y, kind, values, decision))
+    for y, kind, values, decision in pending:
+        if decision:
+            total_row = existing[y, kind, 'total']
+            total_row.source_resolution_json = json_dumps(decision, ensure_ascii=False)
+            db.add(AuditLog(user_id=actor.id, action='activity_source_total_decision', entity_type='activity',
+                            entity_id=activity.id, details=json_dumps(decision, ensure_ascii=False)))
         for funding, amount in values.items():
             row = existing.get((y, kind, funding))
             if row and row.state != "verified" and (amount is None or amount == row.amount):
-                continue
+                # A matching source split or an explicit decision verifies its total.
+                if funding != 'total' or row.source_amount is None or (amount != row.source_amount and not decision):
+                    continue
             if amount is None:
                 if row: db.delete(row)
             elif row:

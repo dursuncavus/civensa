@@ -142,7 +142,7 @@ def _parse_indicator_table(table):
     return {"department":department,"budget_year":budget_year,"program":program,"subprogram":subprogram,"rationale":rationale,"goal":goal,"source_title":budget_year_text,"administration":administration,"metadata":metadata,"indicators":indicators}
 
 
-def _parse_activity_table(table):
+def _parse_activity_table(table, table_number=None):
     rows=table.rows
     if not rows or _label_key(rows[0].cells[0].text)!="faaliyetler":
         return None
@@ -162,7 +162,7 @@ def _parse_activity_table(table):
             i+=1; continue
         if lower.startswith("personelvesgk"):
             for col,year,kind in value_columns:
-                personnel.append({"year":year,"kind":kind,**_source_value(cells[col] if col<len(cells) else "", "amount")})
+                personnel.append({"year":year,"kind":kind,"table_number":table_number,"row_number":i+1,**_source_value(cells[col] if col<len(cells) else "", "amount")})
             i+=1; continue
         if not first or lower in {"butceici","butcedisi"}:
             i+=1; continue
@@ -176,14 +176,14 @@ def _parse_activity_table(table):
             continue
         total=[]
         for col,year,kind in value_columns:
-            total.append({"year":year,"kind":kind,"funding_type":"total",**_source_value(cells[col] if col<len(cells) else "", "amount")})
+            total.append({"year":year,"kind":kind,"funding_type":"total","table_number":table_number,"row_number":i+1,**_source_value(cells[col] if col<len(cells) else "", "amount")})
         inside=[]; outside=[]
         icells=[_clean(c.text) for c in rows[i+1].cells]
         for col,year,kind in value_columns:
-            inside.append({"year":year,"kind":kind,"funding_type":"inside",**_source_value(icells[col] if col<len(icells) else "", "amount")})
+            inside.append({"year":year,"kind":kind,"funding_type":"inside","table_number":table_number,"row_number":i+2,**_source_value(icells[col] if col<len(icells) else "", "amount")})
         ocells=[_clean(c.text) for c in rows[i+2].cells]
         for col,year,kind in value_columns:
-            outside.append({"year":year,"kind":kind,"funding_type":"outside",**_source_value(ocells[col] if col<len(ocells) else "", "amount")})
+            outside.append({"year":year,"kind":kind,"funding_type":"outside","table_number":table_number,"row_number":i+3,**_source_value(ocells[col] if col<len(ocells) else "", "amount")})
         activities.append({"name":first,"explanation":"","official_name":"","costs":total+inside+outside})
         i+=3
     if explanation_start is not None:
@@ -228,7 +228,7 @@ def parse_performance_docx(data: bytes):
             dept=departments.setdefault(current_department,{"name":current_department,"blocks":[],"activities":[],"personnel":[]})
             dept["blocks"].append({k:perf[k] for k in ("budget_year","program","subprogram","rationale","goal","source_title","administration","metadata","indicators")})
             continue
-        cost=_parse_activity_table(table)
+        cost=_parse_activity_table(table, index+1)
         if cost and cost["columns"] and cost["activities"]:
             activity_table_count+=1
             if not current_department:

@@ -331,8 +331,8 @@ def test_d5_concurrent_apply_creates_department_once(db, import_client, import_c
     rendezvous = threading.Barrier(2, timeout=10)
     original = service.build_department_plan
 
-    def synchronized_plan(session, parsed):
-        plan = original(session, parsed)
+    def synchronized_plan(session, parsed, decisions=()):
+        plan = original(session, parsed, decisions)
         rendezvous.wait()
         return plan
 

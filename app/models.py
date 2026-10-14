@@ -130,6 +130,9 @@ class ActivityCostValue(Base):
     value_kind: Mapped[str] = mapped_column(String(50))
     funding_type: Mapped[str] = mapped_column(String(30), default="total")
     amount: Mapped[float | None] = mapped_column(Numeric(22, 2), nullable=True)
+    source_amount: Mapped[Decimal | None] = mapped_column(Numeric(22, 2), nullable=True)
+    source_raw_text: Mapped[str] = mapped_column(Text, default="")
+    source_resolution_json: Mapped[str] = mapped_column(Text, default="{}")
     raw_text: Mapped[str] = mapped_column(Text, default="")
     state: Mapped[str] = mapped_column(String(30), default="verified")
     activity: Mapped[Activity] = relationship(back_populates="cost_values")
@@ -213,6 +216,7 @@ class ImportBatch(Base):
     filename: Mapped[str] = mapped_column(String(255))
     status: Mapped[str] = mapped_column(String(30), default="preview")
     payload_json: Mapped[str] = mapped_column(Text, default="{}")
+    decisions_json: Mapped[str] = mapped_column(Text, default="[]")
     # Snapshot of affected departments before applying the import. Used only for a
     # guarded rollback; never exposed to department users.
     snapshot_json: Mapped[str] = mapped_column(Text, default="{}")

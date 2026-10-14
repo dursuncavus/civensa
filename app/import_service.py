@@ -6,13 +6,14 @@ import re
 import unicodedata
 from datetime import datetime, UTC
 from difflib import SequenceMatcher
+from copy import deepcopy
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
 from .models import (
     Organization, Department, ReportingPeriod, Program, SubProgram,
     Indicator, IndicatorValue, Activity, ActivityCostValue,
-    DepartmentCostValue, Submission, ImportBatch, User, ReportCard, EconomicValue, ActivityCatalogueLink, DepartmentScope, SubmissionEvent,
+    DepartmentCostValue, Submission, ImportBatch, User, ReportCard, EconomicValue, ActivityCatalogueLink, DepartmentScope, SubmissionEvent, AuditLog,
 )
 
 # Only obvious spelling/title variants observed in the supplied 2026 source are normalized.
@@ -73,17 +74,98 @@ def department_display(text: str) -> str:
 
 
 def _merge_unique_costs(existing: list, incoming: list):
-    """Merge cost/personnel values without silently adding duplicate rows.
-
-    When the same key appears twice, retain the last non-null amount. Repeated values occur
-    in some Word tables because merged cells are serialized more than once.
-    """
+    """Keep distinct source candidates and every repeated-cell location."""
     keyed = {}
     for row in [*existing, *incoming]:
         key = (row.get("year"), row.get("kind"), row.get("funding_type", ""))
-        if key not in keyed or row.get("amount") is not None:
-            keyed[key] = row
+        target = keyed.setdefault(key, {**row, "candidates": []})
+        candidates = row.get("candidates")
+        if candidates is None:
+            candidates = [] if row.get("amount") is None else [{
+                "amount": str(Decimal(str(row["amount"]))),
+                "locations": [{"table_number": row.get("table_number"),
+                               "row_number": row.get("row_number"), "raw_text": row.get("raw_text", "")}],
+            }]
+        for candidate in candidates:
+            amount = Decimal(candidate["amount"])
+            same = next((c for c in target["candidates"] if Decimal(c["amount"]) == amount), None)
+            if same is None:
+                same = {"amount": str(amount), "locations": []}
+                target["candidates"].append(same)
+            for location in candidate["locations"]:
+                if location not in same["locations"]:
+                    same["locations"].append(dict(location))
+        if len(target["candidates"]) == 1:
+            chosen = target["candidates"][0]
+            target.update(amount=chosen["amount"], raw_text=chosen["locations"][0]["raw_text"], state="verified")
+        elif len(target["candidates"]) > 1:
+            target.update(amount=None, state="source_conflict")
     return list(keyed.values())
+
+
+def source_conflicts(parsed, decisions=()):
+    """Attach validated batch decisions to a fresh plan, never to the source payload."""
+    from .numbers import format_number
+    kinds = {"budget": "Bütçe", "midyear_spend": "Haziran Sonu Harcama",
+             "year_end_estimate": "Yıl Sonu Harcama Tahmini", "forecast": "Tahmin"}
+    funding_labels = {"": "Personel ve SGK / Toplam", "total": "Toplam", "inside": "Bütçe İçi", "outside": "Bütçe Dışı"}
+    conflicts = []
+    for dept in parsed["departments"]:
+        groups = [("personnel", dept["personnel"])]
+        for index, activity in enumerate(dept["activities"]):
+            activity["costs"] = _merge_unique_costs([], activity.get("costs", []))
+            groups.append((f"activity:{index}", activity["costs"]))
+        for scope, rows in groups:
+            for row in rows:
+                if len(row.get("candidates", [])) < 2:
+                    continue
+                identity = [department_key(dept["name"]), scope, row["year"], row["kind"], row.get("funding_type", "")]
+                conflict_id = hashlib.sha256(json_dumps(identity).encode()).hexdigest()[:24]
+                candidates = row["candidates"]
+                decision = next((d for d in reversed(decisions) if d["conflict_id"] == conflict_id
+                                 and d["candidates"] == candidates), None)
+                locations = "; ".join(
+                    format_number(c["amount"], money=True) + " (" + ", ".join(
+                        f"Tablo {loc['table_number']}, satır {loc['row_number']}" for loc in c["locations"]) + ")"
+                    for c in candidates)
+                conflict = {"id": conflict_id, "department": dept["name"], "year": row["year"],
+                            "kind": row["kind"], "funding_type": row.get("funding_type", "total"),
+                            "candidates": candidates, "decision": decision,
+                            "message": f"{dept['name']} · {row['year']} · {kinds.get(row['kind'], row['kind'])} · "
+                                       f"{funding_labels.get(row.get('funding_type', ''), row.get('funding_type'))}: {locations}. "
+                                       "Kaynak tutarını seçip en az 10 karakterlik gerekçe yazın."}
+                conflicts.append(conflict)
+                if decision:
+                    chosen = next(c for c in candidates if Decimal(c["amount"]) == Decimal(decision["chosen_amount"]))
+                    row.update(amount=chosen["amount"], raw_text=chosen["locations"][0]["raw_text"], state="verified")
+    return conflicts
+
+
+def decide_import_conflict(db, batch, conflict_id, chosen_amount, reason, actor):
+    from .numbers import parse_number
+    if batch.status != "preview":
+        raise ValueError("Karar yalnızca önizlemede verilebilir. Yeni bir önizleme oluşturun.")
+    if not isinstance(reason, str) or len(reason.strip()) < 10:
+        raise ValueError("Kaynak tutarı kararı için en az 10 karakterlik gerekçe yazın.")
+    decisions = json.loads(batch.decisions_json or "[]")
+    plan = build_department_plan(db, json.loads(batch.payload_json), decisions)
+    conflict = next((c for c in plan["conflicts"] if c["id"] == conflict_id), None)
+    if not conflict:
+        raise ValueError("Kaynak çelişkisi bulunamadı. Önizlemeyi yenileyin.")
+    # Candidate amounts are serialized as decimal strings; also accept Turkish input.
+    exact = next((c for c in conflict["candidates"] if c["amount"] == chosen_amount), None)
+    amount = Decimal(exact["amount"]) if exact else parse_number(chosen_amount, money=True)
+    candidate = next((c for c in conflict["candidates"] if Decimal(c["amount"]) == amount), None)
+    if not candidate:
+        raise ValueError("Önizlemede listelenen kaynak tutarlarından birini seçin.")
+    decision = {"conflict_id": conflict_id, "actor": actor.id, "time": datetime.now(UTC).isoformat(),
+                "department": conflict["department"], "year": conflict["year"], "kind": conflict["kind"],
+                "funding_type": conflict["funding_type"], "chosen_amount": candidate["amount"],
+                "candidates": conflict["candidates"], "reason": reason.strip()}
+    batch.decisions_json = json_dumps([*decisions, decision], ensure_ascii=False)
+    db.add(AuditLog(user_id=actor.id, action="import_source_conflict_decision", entity_type="import_batch",
+                    entity_id=batch.id, details=json_dumps(decision, ensure_ascii=False)))
+    return decision
 
 
 def consolidate_source_departments(parsed: dict) -> dict:
@@ -111,7 +193,7 @@ def consolidate_source_departments(parsed: dict) -> dict:
                 )
         target = grouped[key]
         target["blocks"].extend(dept.get("blocks", []))
-        target["activities"].extend(dept.get("activities", []))
+        target["activities"].extend(deepcopy(dept.get("activities", [])))
         target["personnel"] = _merge_unique_costs(target["personnel"], dept.get("personnel", []))
 
     departments = [grouped[k] for k in order]
@@ -152,8 +234,9 @@ def _link_subprograms(block_subprograms: list, activity_count: int):
         return [unique[0]] * activity_count
     return [None] * activity_count
 
-def build_department_plan(db: Session, parsed: dict) -> dict:
+def build_department_plan(db: Session, parsed: dict, decisions=()) -> dict:
     consolidated = consolidate_source_departments(parsed)
+    conflicts = source_conflicts(consolidated, decisions)
     existing = db.scalars(select(Department).order_by(Department.name)).all()
     existing_by_key = {}
     for dept in existing:
@@ -207,6 +290,8 @@ def build_department_plan(db: Session, parsed: dict) -> dict:
 
     return {
         "parsed": consolidated,
+        "conflicts": conflicts,
+        "unresolved_conflicts": [c for c in conflicts if not c["decision"]],
         "mappings": mappings,
         "unresolved": unresolved,
         "summary": {
@@ -333,8 +418,10 @@ def _serialize_department_state(db: Session, department_id: int, period_id: int)
                     {
                         "id": v.id, "year": v.year, "value_kind": v.value_kind,
                         "funding_type": v.funding_type, "amount": v.amount, "raw_text": v.raw_text, "state": v.state,
+                        "source_amount": v.source_amount, "source_raw_text": v.source_raw_text,
+                        "source_resolution_json": v.source_resolution_json,
                     }
-                    for v in a.cost_values
+                    for v in sorted(a.cost_values, key=lambda v: (v.year, v.id))
                 ],
             }
             for a in acts
@@ -353,8 +440,14 @@ def _serialize_department_state(db: Session, department_id: int, period_id: int)
     }
 
 
-def _state_hash(db: Session, department_ids: list[int], period_id: int) -> str:
+def _state_hash(db: Session, department_ids: list[int], period_id: int, include_source=True) -> str:
     state = [_serialize_department_state(db, did, period_id) for did in sorted(set(department_ids)) if db.get(Department, did)]
+    if not include_source:
+        for department in state:
+            for activity in department["activities"]:
+                for cost in activity["cost_values"]:
+                    for field in ("source_amount", "source_raw_text", "source_resolution_json"):
+                        cost.pop(field, None)
     raw = json_dumps(state, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
     return hashlib.sha256(raw.encode("utf-8")).hexdigest()
 
@@ -362,6 +455,7 @@ def _state_hash(db: Session, department_ids: list[int], period_id: int) -> str:
 def _build_preimport_snapshot(db: Session, plan: dict, period_id: int) -> dict:
     matched_ids = sorted({m["department_id"] for m in plan["mappings"] if m["action"] == "match"})
     return {
+        "source_conflict_version": 1,
         "period_id": period_id,
         "preexisting_program_ids": list(db.scalars(select(Program.id).where(Program.period_id == period_id)).all()),
         "preexisting_subprogram_ids": list(db.scalars(select(SubProgram.id).where(SubProgram.period_id == period_id)).all()),
@@ -380,7 +474,7 @@ def import_revert_status(db: Session, batch: ImportBatch) -> tuple[bool, str]:
     affected = [d["department_id"] for d in snapshot.get("departments", [])] + snapshot.get("created_department_ids", [])
     if not affected or not batch.applied_hash:
         return False, "Bu içe aktarma için güvenli geri alma verisi yok."
-    current = _state_hash(db, affected, batch.period_id)
+    current = _state_hash(db, affected, batch.period_id, include_source=bool(snapshot.get("source_conflict_version")))
     if current != batch.applied_hash:
         return False, "İçe aktarma sonrasında veriler değiştiği için otomatik geri alma güvenli değil."
     existing_submissions = {d["department_id"]: d.get("submission") for d in snapshot.get("departments", [])}
@@ -425,6 +519,8 @@ def _restore_department_state(db: Session, state: dict, period_id: int) -> None:
             db.add(ActivityCostValue(
                 id=value["id"], activity_id=act.id, year=value["year"], value_kind=value["value_kind"],
                 funding_type=value.get("funding_type", "total"), amount=value.get("amount"), raw_text=value.get("raw_text", ""), state=value.get("state", "verified"),
+                source_amount=value.get("source_amount"), source_raw_text=value.get("source_raw_text", ""),
+                source_resolution_json=value.get("source_resolution_json", "{}"),
             ))
     db.flush()
     for link in state.get("catalogue_links", []):db.add(ActivityCatalogueLink(**link))
@@ -522,7 +618,9 @@ def apply_import_batch(db: Session, batch: ImportBatch, preserve_existing: bool 
     source_years = raw.get("summary", {}).get("source_years", [])
     if source_years and source_years != [period.year]:
         raise ValueError(f"Word dosyasındaki bütçe yılı {source_years}; seçilen Civensa dönemi {period.year}. Yanlış döneme veri yazılması engellendi.")
-    plan = build_department_plan(db, raw)
+    plan = build_department_plan(db, raw, json.loads(batch.decisions_json or "[]"))
+    if plan["unresolved_conflicts"]:
+        raise ValueError("Kaynak tutarı çelişkileri çözülmeden içe aktarma uygulanamaz. Önizlemede her çelişki için tutar seçip gerekçe yazın.")
     for mapping in plan['mappings']:
         did = mapping.get('department_id')
         if did and not preserve_existing and db.scalar(select(Indicator.id).where(
@@ -630,6 +728,7 @@ def apply_import_batch(db: Session, batch: ImportBatch, preserve_existing: bool 
                 explanation=_clean(item.get("explanation", "")),
             )
             db.add(act); db.flush(); result["activities"] += 1
+            from .program_service import mark_source_disagreements
             seen_costs = set()
             for cost in item.get("costs", []):
                 key = (cost.get("year"), cost.get("kind"), cost.get("funding_type", "total"))
@@ -640,7 +739,13 @@ def apply_import_batch(db: Session, batch: ImportBatch, preserve_existing: bool 
                 db.add(ActivityCostValue(
                     activity_id=act.id, year=int(key[0]), value_kind=str(key[1]),
                     funding_type=str(key[2]), amount=Decimal(str(amount)) if amount is not None else None, raw_text=cost.get("raw_text", str(amount)), state=cost.get("state", "verified"),
+                    source_amount=Decimal(str(amount)) if key[2] == "total" and amount is not None else None,
+                    source_raw_text=cost.get("raw_text", "") if key[2] == "total" else "",
                 ))
+
+            db.flush()
+            db.expire(act, ["cost_values"])
+            mark_source_disagreements(act)
 
         seen_personnel = set()
         for row in src.get("personnel", []):

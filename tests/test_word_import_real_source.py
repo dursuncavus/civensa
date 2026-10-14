@@ -129,11 +129,13 @@ def test_real_source_preview_is_applicable(import_client, import_context, real_s
     result = response.json()
     assert result['summary']['unresolved_department_count'] == 0
     assert result['can_apply'] is True
+    assert result['conflicts'] == []
     assert result['errors'] == []
     assert result['coverage_items'] == real_parsed['coverage_items']
     assert not any('Tablo ' in warning for warning in result['warnings'])
     detail = import_client.get(f"/api/import-batches/{result['batch_id']}").json()
     assert detail['can_apply'] is True
+    assert detail['conflicts'] == []
     assert detail['coverage_items'] == result['coverage_items']
     assert detail['errors'] == []
 

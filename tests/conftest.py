@@ -91,7 +91,12 @@ def sample(db):
     official=OfficialActivity(period_id=p.id,program_code='1',program_name='Test Programı',subprogram_code='1.1',subprogram_name='Test Alt Programı',code='1.1.1',name='Resmî faaliyet');db.add(official);db.flush()
     db.add_all([ActivityResponsibility(official_activity_id=official.id,department_id=d.id),ActivityCatalogueLink(activity_id=a.id,official_activity_id=official.id)])
     for y,k in [(2027,'budget'),(2028,'forecast'),(2029,'forecast')]:
-        for fund,amount in [('inside','123.45'),('outside','10.05'),('total','133.50')]:db.add(ActivityCostValue(activity_id=a.id,year=y,value_kind=k,funding_type=fund,amount=amount))
+        for fund,amount in [('inside','123.45'),('outside','10.05'),('total','133.50')]:
+            if db.info.get('historical_cost_table') is not None:
+                db.execute(db.info['historical_cost_table'].insert().values(activity_id=a.id,year=y,
+                    value_kind=k,funding_type=fund,amount=amount,raw_text='',state='verified'))
+            else:
+                db.add(ActivityCostValue(activity_id=a.id,year=y,value_kind=k,funding_type=fund,amount=amount))
         db.add(DepartmentCostValue(period_id=p.id,department_id=d.id,year=y,value_kind=k,category='personnel_sgk',amount='20.00'))
         for category,amount in [('goods_services','123.45'),('personnel','15.00'),('sgk','5.00')]:db.add(EconomicValue(period_id=p.id,department_id=d.id,year=y,value_kind=k,category=category,program_group='service',funding_type='inside',amount=amount))
         db.add(EconomicValue(period_id=p.id,department_id=d.id,year=y,value_kind=k,category='goods_services',program_group='service',funding_type='outside',amount='10.05'))

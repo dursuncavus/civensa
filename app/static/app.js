@@ -212,8 +212,64 @@ document.addEventListener('click',event=>{const btn=event.target.closest('.issue
 
 const submit=document.getElementById('submitDepartment');if(submit)submit.addEventListener('click',async()=>{const {r,j}=await jsonFetch(`/api/departments/${submit.dataset.department}/submit`,{method:'POST'});if(!r.ok){toast(j.message||j.detail||'Gönderim yapılamadı.');if(j.errors?.length){const box=document.createElement('div');box.className='return-note';const list=document.createElement('ul');j.errors.forEach(message=>{const li=document.createElement('li');li.textContent=message;list.append(li)});box.append(list);submit.after(box);box.scrollIntoView({behavior:'smooth',block:'center'});return}const first=j.problems&&Object.keys(j.problems)[0];if(first){const card=document.querySelector(`.record[data-id="${first}"]`);card?.scrollIntoView({behavior:'smooth',block:'center'});return}const firstActivity=j.activity_problems&&Object.keys(j.activity_problems)[0];if(firstActivity){document.querySelector('.tab[data-tab="activities"]')?.click();setTimeout(()=>{const row=document.querySelector(`tr[data-activity="${firstActivity}"]`);row?.scrollIntoView({behavior:'smooth',block:'center'});row?.querySelector('.activity-subprogram')?.classList.add('field-attention')},120)}return}toast('Paket Strateji Geliştirme incelemesine gönderildi.');setTimeout(()=>location.reload(),700)});
 
-function setActivityEditMode(tr,editing){tr.classList.toggle('editing-row',editing);tr.querySelectorAll('input,textarea').forEach(i=>i.readOnly=!editing);const sub=tr.querySelector('.activity-subprogram');if(sub)sub.disabled=!editing;const edit=tr.querySelector('.edit-activity');const del=tr.querySelector('.delete-activity');if(edit){edit.textContent=editing?'Kaydet':'Düzenle';edit.classList.toggle('primary',editing)}if(del){del.textContent=editing?'Vazgeç':'Sil';del.dataset.mode=editing?'cancel':''}}
-async function saveActivity(tr){const name=tr.querySelector('.activity-name');if(!name.value.trim()){name.focus();name.classList.add('field-attention');toast('Faaliyet adı boş bırakılamaz.');return}const sub=tr.querySelector('.activity-subprogram');if(!sub?.value){sub?.focus();sub?.classList.add('field-attention');toast('Program / Alt Program seçimi zorunlu.');return}const body={subprogram_id:sub.value,name:name.value,explanation:tr.querySelector('.activity-explanation')?.value||''};tr.querySelectorAll('.activity-cost').forEach(i=>body[`cost_${i.dataset.year}_${i.dataset.kind}${i.dataset.funding?"_"+i.dataset.funding:""}`]=i.value);const {r,j}=await jsonFetch(`/api/activities/${tr.dataset.activity}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});if(!r.ok){toast(j.detail||'Faaliyet kaydedilemedi.');return}tr.querySelectorAll('.activity-cost').forEach(i=>i.value=trNumber(i.value,true));setActivityEditMode(tr,false);toast('Faaliyet güncellendi.');setTimeout(()=>location.reload(),450)}
+function setActivityEditMode(tr,editing){tr.classList.toggle('editing-row',editing);tr.querySelectorAll('.activity-name,.activity-explanation,.activity-cost').forEach(i=>i.readOnly=!editing);const sub=tr.querySelector('.activity-subprogram');if(sub)sub.disabled=!editing;const edit=tr.querySelector('.edit-activity');const del=tr.querySelector('.delete-activity');if(edit){edit.textContent=editing?'Kaydet':'Düzenle';edit.classList.toggle('primary',editing)}if(del){del.textContent=editing?'Vazgeç':'Sil';del.dataset.mode=editing?'cancel':''}}
+async function saveActivity(tr){const name=tr.querySelector('.activity-name');if(!name.value.trim()){name.focus();name.classList.add('field-attention');toast('Faaliyet adı boş bırakılamaz.');return}const sub=tr.querySelector('.activity-subprogram');if(!sub?.value){sub?.focus();sub?.classList.add('field-attention');toast('Program / Alt Program seçimi zorunlu.');return}const body={subprogram_id:sub.value,name:name.value,explanation:tr.querySelector('.activity-explanation')?.value||''};tr.querySelectorAll('.activity-cost').forEach(i=>body[`cost_${i.dataset.year}_${i.dataset.kind}${i.dataset.funding?"_"+i.dataset.funding:""}`]=i.value);const {r,j}=await jsonFetch(`/api/activities/${tr.dataset.activity}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});if(!r.ok){toast(j.detail||'Faaliyet kaydedilemedi.');return}tr.querySelectorAll('.activity-cost').forEach(i=>i.value=trNumber(i.value,true));applySavedActivityTotals(tr,j);setActivityEditMode(tr,false);toast('Faaliyet güncellendi.');return true}
+
+// Exact cents for live source comparison; no floating point money arithmetic.
+function sourceMoneyCents(raw){
+  let text=String(raw??'').trim();
+  if(!text)return null;
+  if(!/^(?:\d+|\d{1,3}(?:\.\d{3})+)(?:,\d{1,2})?$/.test(text))return null;
+  const [whole,fraction='']=text.replaceAll('.','').split(',');
+  return BigInt(whole)*100n+BigInt(fraction.padEnd(2,'0'));
+}
+function sourceDecimalCents(raw){const [whole,fraction=""]=String(raw).split(".");return BigInt(whole)*100n+BigInt(fraction.padEnd(2,"0"))}
+function displaySourceCents(value){
+  if(value===null)return 'Belirlenmedi';
+  const digits=value.toString().padStart(3,'0');
+  return digits.slice(0,-2).replace(/\B(?=(\d{3})+(?!\d))/g,'.')+','+digits.slice(-2);
+}
+function applySavedActivityTotals(tr,result){
+  tr.querySelectorAll('[data-cost-key]').forEach(cell=>cell.dataset.savedTotal=result.cost_totals?.[cell.dataset.costKey]??'');
+  refreshSavedActivityTotals();
+}
+async function confirmActivitySourceTotal(box){
+  const tr=box.closest('tr'),prefix=`cost_${box.dataset.year}_${box.dataset.kind}`;
+  const body={[prefix+'_use_computed']:true,[prefix+'_reason']:box.querySelector('.source-total-reason').value};
+  tr.querySelectorAll('.activity-cost').forEach(field=>{
+    if(field.dataset.year===box.dataset.year&&field.dataset.kind===box.dataset.kind)body[prefix+'_'+field.dataset.funding]=field.value;
+  });
+  const {r,j}=await jsonFetch(`/api/activities/${tr.dataset.activity}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  if(!r.ok){toast(j.detail||'Kaynak toplamı kararı kaydedilemedi.');return}
+  applySavedActivityTotals(tr,j);box.remove();toast('Hesaplanan toplam gerekçesiyle kaydedildi.');
+}
+function refreshSavedActivityTotals(){
+  document.querySelectorAll('[data-activity-total]').forEach(label=>{
+    const key=label.dataset.activityTotal;
+    const amounts=[...document.querySelectorAll('#activityBody [data-cost-key]')].filter(cell=>cell.dataset.costKey===key).map(cell=>cell.dataset.savedTotal?sourceDecimalCents(cell.dataset.savedTotal):null);
+    const total=amounts.length&&amounts.every(v=>v!==null)?amounts.reduce((a,b)=>a+b,0n):null;
+    label.textContent=total===null?'Eksik veri':displaySourceCents(total);
+    const personnel=[...document.querySelectorAll('.personnel-cost')].find(field=>`${field.dataset.year}:${field.dataset.kind}`===key);
+    const general=[...document.querySelectorAll('[data-general-total]')].find(el=>el.dataset.generalTotal===key);
+    if(general)general.textContent=total!==null&&personnel?.dataset.savedAmount?displaySourceCents(total+sourceDecimalCents(personnel.dataset.savedAmount)):'Eksik veri';
+  });
+}
+function refreshSourceDisagreements(tr){
+  tr.querySelectorAll('.source-disagreement').forEach(box=>{
+    const fields=[...tr.querySelectorAll('.activity-cost')].filter(i=>i.dataset.year===box.dataset.year&&i.dataset.kind===box.dataset.kind);
+    const amounts=fields.map(i=>sourceMoneyCents(i.value));
+    const computed=amounts.length===2&&amounts.every(v=>v!==null)?amounts[0]+amounts[1]:null;
+    const source=sourceDecimalCents(box.dataset.source);
+    box.hidden=computed===source;box.querySelector('.computed-total').textContent=displaySourceCents(computed);
+  });
+}
+document.addEventListener('input',e=>{if(e.target.matches('.activity-cost'))refreshSourceDisagreements(e.target.closest('tr'))});
+document.addEventListener('click',async e=>{
+  const button=e.target.closest('.confirm-source-total');if(!button)return;
+  const box=button.closest('.source-disagreement'),reason=box.querySelector('.source-total-reason');
+  if(reason.value.trim().length<10){reason.focus();toast('Karar gerekçesi en az 10 karakter olmalı.');return}
+  button.disabled=true;try{await confirmActivitySourceTotal(box)}finally{button.disabled=false}
+});
 
 document.addEventListener('click',async(e)=>{const edit=e.target.closest('.edit-activity');if(edit){const tr=edit.closest('tr');if(edit.textContent.trim()==='Düzenle'){setActivityEditMode(tr,true);tr.querySelector('.activity-name')?.focus()}else if(edit.textContent.trim()==='Kaydet'){await saveActivity(tr)}else if(edit.textContent.trim()==='Vazgeç'){location.reload()}return}const del=e.target.closest('.delete-activity');if(del){const tr=del.closest('tr');if(del.dataset.mode==='cancel'){location.reload();return}if(del.dataset.mode!=='confirm'){del.dataset.mode='confirm';del.textContent='Evet, sil';const editBtn=tr.querySelector('.edit-activity');if(editBtn){editBtn.textContent='Vazgeç';editBtn.classList.remove('primary')}toast('Silmek için “Evet, sil”e tekrar basın.');return}const {r,j}=await jsonFetch(`/api/activities/${tr.dataset.activity}`,{method:'DELETE'});if(!r.ok){toast(j.detail||'Faaliyet silinemedi.');return}tr.remove();toast('Faaliyet silindi.');setTimeout(()=>location.reload(),350);return}});
 
@@ -250,7 +306,17 @@ function renderImportReport(j){
   const mappingHtml=mappings.length?`<div class="import-preview"><h4>Müdürlük eşleştirmesi</h4>${mappings.map(m=>`<div class="import-dept"><b>${escapeHtml(m.source_name)}</b><span>${m.action==='match'?`→ ${escapeHtml(m.target_name)} · eşleşti`:m.action==='create'?`→ ${escapeHtml(m.target_name)} · yeni kayıt`:`⚠ ${escapeHtml(m.reason||'eşleştirme gerekli')}`}</span></div>`).join('')}</div>`:'';
   const linkWarning=s.unlinked_activity_estimate?`<p class="smallnote">${s.unlinked_activity_estimate} faaliyet için Program / Alt Program bağlantısı kaynak dosyadan güvenle belirlenemiyor. Kayıtlar içe aktarılır; müdürlük gönderiminden önce eşleştirme zorunludur.</p>`:'';
   const applyHtml=batchId&&j.can_apply&&status==='preview'?`<div class="import-apply"><button class="button primary" id="applyImport" data-batch="${batchId}">Önizlemeyi Veritabanına Uygula</button><span>Yalnız taslak/iadedeki müdürlükler güncellenir; incelemede veya onaylı paketlerin üzerine yazılmaz.</span></div>`:status==='applied'?(j.can_revert?`<div class="import-apply"><span class="ok-text">Bu içe aktarma paketi veritabanına uygulandı.</span><button class="button danger" id="revertImport" data-batch="${batchId}">İçe Aktarmayı Geri Al</button></div>`:`<p class="smallnote">Bu paket uygulandı. Otomatik geri alma kullanılamıyor: ${escapeHtml(j.revert_reason||'veri sonradan değişmiş olabilir.')}</p>`):status==='reverted'?'<p class="muted">Bu içe aktarma paketi güvenli biçimde geri alındı.</p>':(s.unresolved_department_count?`<p class="smallnote">${s.unresolved_department_count} müdürlük eşleştirmesi netleşmeden içe aktarma uygulanamaz.</p>`:'');
-  box.innerHTML=`<div class="cards import-cards"><div class="card"><span>Müdürlük</span><b>${s.department_count||0}</b></div><div class="card"><span>Gösterge</span><b>${s.indicator_count||0}</b></div><div class="card"><span>Faaliyet</span><b>${s.activity_count||0}</b></div><div class="card"><span>Word tablosu</span><b>${s.table_count||0}</b></div></div><div class="import-preview"><h4>İlk müdürlükler</h4>${(j.departments||[]).slice(0,12).map(d=>`<div class="import-dept"><b>${escapeHtml(d.name)}</b><span>${Number(d.indicator_count)||0} gösterge · ${Number(d.activity_count)||0} faaliyet · ${Number(d.block_count)||0} program bloğu</span></div>`).join('')||'<p>Veri bloğu bulunamadı.</p>'}</div>${mappingHtml}${j.warnings&&j.warnings.length?`<div class="issue-list">${j.warnings.slice(0,20).map(w=>`<div>${escapeHtml(w)}</div>`).join('')}</div>`:'<p class="ok-text">Yapısal eşleştirme uyarısı oluşmadı.</p>'}${j.coverage_items&&j.coverage_items.length?`<details class="import-coverage"><summary>Bilgi amaçlı tablolar (${j.coverage_items.length})</summary>${j.coverage_items.map(item=>`<p>${escapeHtml(item.message)}</p>`).join('')}</details>`:''}${linkWarning}${applyHtml}<p class="muted">Önizleme tek başına veritabanındaki performans kayıtlarını değiştirmez.</p>`;
+  const conflictsHtml=(j.conflicts||[]).length?`<div class="import-conflicts"><h3>Kaynak tutarı çelişkileri</h3><p>Her çelişki için kaynak tutarı seçilip gerekçe kaydedilmeden içe aktarma uygulanamaz.</p>${j.conflicts.map(c=>`<div class="issue-list import-conflict" data-conflict="${escapeHtml(c.id)}"><p>${escapeHtml(c.message)}</p>${c.decision?`<p class="ok-text">Karar: ${escapeHtml(displaySourceCents(sourceDecimalCents(c.decision.chosen_amount)))} · ${escapeHtml(c.decision.reason)}</p>`:status==='preview'?`<label>Kaynak tutarı<select class="conflict-amount"><option value="">Tutar seçin</option>${c.candidates.map(candidate=>`<option value="${escapeHtml(candidate.amount)}">${escapeHtml(displaySourceCents(sourceDecimalCents(candidate.amount)))} · ${candidate.locations.map(loc=>`Tablo ${loc.table_number}, satır ${loc.row_number}`).join(' · ')}</option>`).join('')}</select></label><label>Karar gerekçesi<input class="conflict-reason" minlength="10" placeholder="En az 10 karakter"></label><button type="button" class="button save-conflict">Kararı Kaydet</button>`:''}</div>`).join('')}</div>`:'';
+  box.innerHTML=`<div class="cards import-cards"><div class="card"><span>Müdürlük</span><b>${s.department_count||0}</b></div><div class="card"><span>Gösterge</span><b>${s.indicator_count||0}</b></div><div class="card"><span>Faaliyet</span><b>${s.activity_count||0}</b></div><div class="card"><span>Word tablosu</span><b>${s.table_count||0}</b></div></div><div class="import-preview"><h4>İlk müdürlükler</h4>${(j.departments||[]).slice(0,12).map(d=>`<div class="import-dept"><b>${escapeHtml(d.name)}</b><span>${Number(d.indicator_count)||0} gösterge · ${Number(d.activity_count)||0} faaliyet · ${Number(d.block_count)||0} program bloğu</span></div>`).join('')||'<p>Veri bloğu bulunamadı.</p>'}</div>${mappingHtml}${j.warnings&&j.warnings.length?`<div class="issue-list">${j.warnings.slice(0,20).map(w=>`<div>${escapeHtml(w)}</div>`).join('')}</div>`:'<p class="ok-text">Yapısal eşleştirme uyarısı oluşmadı.</p>'}${j.coverage_items&&j.coverage_items.length?`<details class="import-coverage"><summary>Bilgi amaçlı tablolar (${j.coverage_items.length})</summary>${j.coverage_items.map(item=>`<p>${escapeHtml(item.message)}</p>`).join('')}</details>`:''}${linkWarning}${conflictsHtml}${applyHtml}<p class="muted">Önizleme tek başına veritabanındaki performans kayıtlarını değiştirmez.</p>`;
+  box.querySelectorAll('.save-conflict').forEach(button=>button.addEventListener('click',async()=>{
+    const item=button.closest('.import-conflict');const amount=item.querySelector('.conflict-amount').value;
+    const reason=item.querySelector('.conflict-reason').value.trim();
+    if(!amount||reason.length<10){toast('Kaynak tutarı seçip en az 10 karakterlik gerekçe yazın.');return}
+    button.disabled=true;
+    const {r,j:result}=await jsonFetch(`/api/import-batches/${batchId}/conflicts/${item.dataset.conflict}/decision`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({chosen_amount:amount.replace('.',','),reason})});
+    if(!r.ok){button.disabled=false;toast(result.detail||'Karar kaydedilemedi.');return}
+    renderImportReport(result);toast('Kaynak tutarı kararı gerekçesiyle kaydedildi.');
+  }));
   document.getElementById('applyImport')?.addEventListener('click',async(e)=>{
     const btn=e.currentTarget;btn.disabled=true;btn.textContent='İçe aktarılıyor...';
     const {r,j:result}=await jsonFetch(`/api/import-batches/${btn.dataset.batch}/apply`,{method:'POST'});
