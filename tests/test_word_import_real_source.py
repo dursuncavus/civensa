@@ -2,6 +2,7 @@
 import hashlib
 import io
 import json
+from copy import deepcopy
 from pathlib import Path
 
 import pytest
@@ -15,6 +16,77 @@ from test_word_import import import_client, import_context, word_document
 
 pytestmark = pytest.mark.postgres
 FIXTURES = Path(__file__).parent / 'fixtures'
+ALLOWED_BASELINE_DIFFERENCES = ({
+    'department': 'Strateji Geliştirme Müdürlüğü',
+    'block_index': 0,
+    'field': 'rationale',
+    'baseline': '',
+    'actual': (
+        "5018 ve 5393 sayılı kanunların yasal zorunlulukları doğrultusunda; belediyemizin "
+        "mali ve idari yönetim kapasitesini artırmak, kaynakları verimli kullanmak ve hesap "
+        "verebilirliği sağlamak amaçlanmaktadır .Bu doğrultuda, 2027-2029 döneminde stratejik "
+        "hedeflere ulaşma oranını %90'ın üzerine çıkarmak ve iç kontrol sistemine tam uyum "
+        "sağlamak hedeflenmiştir. Belirlenen amaçlara ulaşmak için; dijital takip sistemi "
+        "(ERP) üzerinden üçer aylık performans ve risk analizleri yapılacak, süreçler "
+        "güncellenecek, harcamacı birimlere düzenli eğitimler verilecek ve bütçe-performans "
+        "uyumu tam kapasiteyle işletilecektir. Yürütülecek bu çalışmalar, belediyemizin "
+        "mevcut öz kaynakları, personeli ve ilgili hizmet alımı bütçe kalemleri bünyesinde "
+        "koordine edilecektir."
+    ),
+    'reason': (
+        'Tablo 134 gerekçesi etiket tabanlı okuyucuyla artık okunuyor; 960d62c konumsal '
+        'okuyucusu bu alanı boş bırakıyordu.'
+    ),
+},)
+
+
+def source_snapshot(parsed):
+    """Retain every source field whose loss or drift would change imported programme data."""
+    return [{
+        'name': department['name'],
+        'blocks': [{
+            **{field: block[field] for field in (
+                'budget_year', 'program', 'administration', 'subprogram', 'rationale', 'goal',
+            )},
+            'indicators': [{
+                'name': indicator['name'],
+                'values': [{
+                    field: value.get(field) for field in ('year', 'kind', 'raw_text')
+                } for value in indicator['values']],
+            } for indicator in block['indicators']],
+        } for block in department['blocks']],
+        'activities': [{
+            'name': activity['name'],
+            'costs': [{
+                field: cost.get(field)
+                for field in ('year', 'kind', 'funding_type', 'raw_text')
+            } for cost in activity['costs']],
+        } for activity in department['activities']],
+        'personnel': [{
+            field: value.get(field) for field in ('year', 'kind', 'raw_text')
+        } for value in department['personnel']],
+    } for department in parsed['departments']]
+
+
+def apply_documented_baseline_allowlist(actual, expected):
+    """Verify and mask only reviewed field improvements before exact snapshot comparison."""
+    adjusted = deepcopy(actual)
+    for allowed in ALLOWED_BASELINE_DIFFERENCES:
+        actual_departments = [
+            department for department in adjusted
+            if department['name'] == allowed['department']
+        ]
+        expected_departments = [
+            department for department in expected
+            if department['name'] == allowed['department']
+        ]
+        assert len(actual_departments) == len(expected_departments) == 1, allowed['reason']
+        actual_block = actual_departments[0]['blocks'][allowed['block_index']]
+        expected_block = expected_departments[0]['blocks'][allowed['block_index']]
+        assert expected_block[allowed['field']] == allowed['baseline'], allowed['reason']
+        assert actual_block[allowed['field']] == allowed['actual'], allowed['reason']
+        actual_block[allowed['field']] = allowed['baseline']
+    return adjusted
 
 
 @pytest.fixture(scope='module')
@@ -35,12 +107,13 @@ def test_real_source_matches_960d62c_baseline(real_source, real_parsed):
     assert summary.pop('table_count') == baseline['summary']['table_count'] + 1 == 162
     assert summary == {k: v for k, v in baseline['summary'].items() if k != 'table_count'}
     assert real_parsed['errors'] == real_parsed['warnings'] == []
-    actual = [dict(name=d['name'], blocks=len(d['blocks']),
-                   indicators=sum(len(b['indicators']) for b in d['blocks']),
-                   activities=len(d['activities']), personnel_rows=len(d['personnel']),
-                   budget_years=sorted({b['budget_year'] for b in d['blocks']}))
-              for d in real_parsed['departments']]
-    assert actual == baseline['departments']
+    actual = source_snapshot(real_parsed)
+    assert apply_documented_baseline_allowlist(actual, baseline['departments']) == baseline['departments']
+    human_resources = next(
+        department for department in actual
+        if department['name'] == 'İnsan Kaynakları ve Eğitim Müdürlüğü'
+    )
+    assert human_resources['blocks'][1]['subprogram'] == 'Üst Yönetim, İdari ve Mali Hizmetler'
     coverage = real_parsed['coverage_items']
     assert len(coverage) == 65
     assert [item['table_number'] for item in coverage[:28]] == list(range(1, 29))
@@ -100,6 +173,7 @@ def test_punctuated_labels_and_section_title_before_plural_header():
     table.cell(0, 0).text = 'BÜTÇE / YILI :'
     table.cell(1, 0).text = 'PROGRAM-ADI.'
     table.cell(2, 0).text = 'İdare/Birim   Adı:'
+    table.cell(3, 0).text = 'Altprogram Adı:'
     title = table.add_row()
     title.cells[0].merge(title.cells[-1]).text = 'PERFORMANS GÖSTERGELERİ'
     table.rows[6]._tr.addprevious(title._tr)
@@ -109,6 +183,28 @@ def test_punctuated_labels_and_section_title_before_plural_header():
     assert parsed['errors'] == []
     assert parsed['summary']['indicator_count'] == 1
     assert parsed['departments'][0]['blocks'][0]['program'] == 'Çevre Programı'
+    assert parsed['departments'][0]['blocks'][0]['subprogram'] == 'Yeşil Alanlar'
+
+
+@pytest.mark.parametrize(('row_index', 'field_name'), [
+    (1, 'Program Adı'),
+    (2, 'İdare/Birim Adı'),
+    (3, 'Alt Program Adı'),
+])
+def test_missing_required_indicator_field_is_blocking(row_index, field_name):
+    doc = Document(io.BytesIO(word_document()))
+    for cell in doc.tables[0].rows[row_index].cells[2:]:
+        cell.text = ''
+    stream = io.BytesIO()
+    doc.save(stream)
+
+    parsed = parse_performance_docx(stream.getvalue())
+
+    assert parsed['departments'] == []
+    assert any(
+        f'Tablo 1: {field_name} alanı eksik veya boş.' in error
+        for error in parsed['errors']
+    )
 
 
 @pytest.mark.parametrize('label', ['Bütçe Yılı:', 'Program Adı', 'Performans Göstergesi', 'Faaliyetler'])
