@@ -2,7 +2,7 @@ import os
 from uuid import uuid4
 
 import pytest
-from sqlalchemy import create_engine, event, select
+from sqlalchemy import create_engine, event, select, inspect, text
 from sqlalchemy.schema import CreateSchema, DropSchema
 from sqlalchemy.orm import Session
 from sqlalchemy.pool import StaticPool
@@ -68,6 +68,14 @@ def db(request):
 
 @pytest.fixture
 def sample(db):
+    # Historical migration checkpoints predate the current Department model.
+    # Adapt only model-based fixtures; raw migration tests seed the exact old
+    # schema separately and verify CIV-018's real column addition.
+    if not db.bind.get_execution_options().get('schema_translate_map') and 'is_active' not in {
+        c['name'] for c in inspect(db.bind).get_columns('departments')
+    }:
+        db.execute(text('ALTER TABLE departments ADD COLUMN is_active BOOLEAN NOT NULL DEFAULT TRUE'))
+        db.commit()
     org=Organization(name='Test Belediyesi');p=ReportingPeriod(year=2027,status='active');db.add_all([org,p]);db.flush()
     d=Department(organization_id=org.id,name='Test Müdürlüğü');db.add(d);db.flush()
     u=User(email='test@example.invalid',full_name='Test',role='department',password_hash='unused',department_id=d.id)

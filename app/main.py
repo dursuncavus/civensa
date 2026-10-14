@@ -161,7 +161,7 @@ async def require_user(request: Request, db: Session = Depends(get_db)):
 
 def require_strategy(user: User = Depends(require_user)):
     if user.role != "strategy":
-        raise HTTPException(status_code=403)
+        raise HTTPException(403, "Bu işlem yalnızca Strateji Geliştirme kullanıcılarına açıktır. Yetkili hesabınızla giriş yapın veya Strateji Geliştirme ile iletişime geçin.")
     return user
 
 
@@ -453,7 +453,7 @@ def activity_report_workspace(request: Request, year: int = 2026, db: Session = 
 def dashboard(request: Request, db: Session = Depends(get_db), user: User = Depends(require_user)):
     period = active_period(db) if user.role == "department" else session_period(request, db)
     if not period:
-        raise HTTPException(409, "Raporlama dönemi bulunamadı.")
+        return templates.TemplateResponse(request, "first_period.html", {"user": user, "attempted_year": datetime.now(UTC).year, "error": ""})
     if user.role == "department":
         dept = db.get(Department, user.department_id)
         submission = ensure_submission(db, dept.id, period.id)
@@ -1048,7 +1048,7 @@ def users_page(request: Request, db: Session = Depends(get_db), user: User = Dep
     users = db.scalars(select(User).order_by(User.full_name)).all()
     departments = db.scalars(select(Department).order_by(Department.name)).all()
     assigned_department_ids = {item.department_id for item in users if item.role == "department" and item.department_id and item.is_active}
-    missing_departments = [item for item in departments if item.id not in assigned_department_ids]
+    missing_departments = [item for item in departments if item.is_active and item.id not in assigned_department_ids]
     return templates.TemplateResponse(request, "users.html", {
         "user": user, "users": users, "departments": departments,
         "missing_departments": missing_departments,
@@ -1066,7 +1066,7 @@ def missing_department_accounts_csv(db: Session = Depends(get_db), user: User = 
     writer = csv.writer(output)
     writer.writerow(csv_row(ACCOUNT_CSV_HEADERS))
     for department in departments:
-        if department.id not in assigned:
+        if department.is_active and department.id not in assigned:
             writer.writerow(csv_row([department.id, department.name, "", "", ""]))
     data = ("\ufeff" + output.getvalue()).encode("utf-8")
     headers = {"Content-Disposition": 'attachment; filename="civensa-eksik-mudurluk-hesaplari.csv"'}
@@ -1122,6 +1122,8 @@ def validate_account_csv(data: bytes, db: Session):
             errors.append(prefix + "Müdürlük bulunamadı.")
             continue
         row_errors = []
+        if not department.is_active:
+            row_errors.append(f"{department.name}: müdürlük pasif; Kurum Yapısı ekranında etkinleştirin veya etkin bir müdürlük seçin.")
         if not csv_cell_matches(department_name, department.name):
             row_errors.append("Müdürlük adı şablonla eşleşmiyor.")
         if department_id in assigned:
@@ -1176,6 +1178,8 @@ async def import_users_csv(file: UploadFile = File(...), db: Session = Depends(g
     batch_id = secrets.token_hex(8)
     try:
         for row in rows:
+            from .master_data_service import active_department
+            active_department(db, row["department_id"])
             new_user = User(
                 email=row["email"], full_name=row["full_name"], role="department",
                 department_id=row["department_id"], password_hash=hash_password(row["password"]),
@@ -1207,6 +1211,9 @@ async def set_user_active(user_id: int, request: Request, db: Session = Depends(
         raise HTTPException(422, "Etkinlik durumu true/false olmalı.")
     if target.id == user.id and not active:
         raise HTTPException(409, "Kendi hesabınızı devre dışı bırakamazsınız.")
+    if active and target.department_id:
+        from .master_data_service import active_department
+        active_department(db, target.department_id)
     target.is_active = active
     db.commit()
     log(db, user, "user_activate" if active else "user_deactivate", "user", target.id)
@@ -1277,8 +1284,9 @@ async def create_user(request: Request, db: Session = Depends(get_db), user: Use
     department_id = int(data["department_id"]) if role == "department" and data.get("department_id") else None
     if role == "department" and not department_id:
         raise HTTPException(422, "Müdürlük kullanıcısına müdürlük atanmalı.")
-    if department_id and not db.get(Department, department_id):
-        raise HTTPException(422, "Müdürlük bulunamadı.")
+    if department_id:
+        from .master_data_service import active_department
+        active_department(db, department_id)
     new = User(email=email, full_name=full_name, role=role, department_id=department_id, password_hash=hash_password(password))
     db.add(new); db.commit(); db.refresh(new)
     log(db, user, "user_create", "user", new.id, f"role={role}")
@@ -1566,19 +1574,20 @@ def select_period(period_id: int, request: Request, db: Session = Depends(get_db
     return RedirectResponse("/dashboard", 303)
 
 
-@app.post("/api/periods")
-async def create_period(request: Request, db: Session = Depends(get_db), user: User = Depends(require_strategy)):
-    data = await request.json()
-    try:
-        year = int(data.get("year"))
-    except (TypeError, ValueError):
-        raise HTTPException(422, "Dönem yılı geçersiz.")
-    if year < 2020 or year > 2100:
-        raise HTTPException(422, "Dönem yılı geçersiz.")
+def create_period_record(db: Session, user: User, data):
+    raw_year = str(data.get("year", "")).strip()
+    if not raw_year.isascii() or not raw_year.isdigit() or len(raw_year) != 4 or not 2020 <= int(raw_year) <= 2100:
+        raise HTTPException(422, "Dönem yılı geçersiz. Dönem yılı alanına 2020–2100 arasında dört haneli bir yıl girin.")
+    year = int(raw_year)
     if db.scalar(select(ReportingPeriod).where(ReportingPeriod.year == year)):
-        raise HTTPException(409, "Bu dönem zaten var.")
+        raise HTTPException(409, f"{year} dönemi zaten var. Genel Bakış ekranında mevcut dönemi seçin veya farklı bir yıl girin.")
     base_id = data.get("base_period_id")
-    base = db.get(ReportingPeriod, int(base_id)) if base_id else active_period(db)
+    base = active_period(db)
+    if base_id:
+        try: base = db.get(ReportingPeriod, int(base_id))
+        except (TypeError, ValueError): base = None
+        if not base:
+            raise HTTPException(422, "Başlangıç dönemi bulunamadı. Başlangıç yapısı alanından mevcut bir dönem seçin.")
     period = ReportingPeriod(year=year, status="draft", template_status="pending")
     db.add(period); db.flush()
     program_map = {}; sub_map = {}
@@ -1610,8 +1619,35 @@ async def create_period(request: Request, db: Session = Depends(get_db), user: U
         depts = db.scalars(select(Department)).all()
         for dept in depts:
             db.add(Submission(department_id=dept.id, period_id=period.id, status="draft"))
-    db.commit(); log(db, user, "period_create", "reporting_period", period.id, f"{year} dönemi; şablon doğrulaması bekleniyor")
-    return {"ok": True, "id": period.id, "year": year}
+    from .master_data_service import audit_change
+    audit_change(db, user, "period_create", period, None, {"year": year, "status": "draft", "template_status": "pending", "base_period_id": base.id if base else None})
+    db.commit()
+    return period
+
+
+@app.post("/api/periods")
+async def create_period(request: Request, db: Session = Depends(get_db), user: User = Depends(require_strategy)):
+    data = await request.json()
+    try:
+        period = create_period_record(db, user, data)
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(409, "Dönem başka bir işlemde oluşturuldu. Genel Bakış ekranında mevcut dönemi seçin veya farklı bir yıl girin.") from None
+    return {"ok": True, "id": period.id, "year": period.year}
+
+
+@app.post("/periods/create")
+async def create_period_form(request: Request, db: Session = Depends(get_db), user: User = Depends(require_strategy)):
+    data = await request.form()
+    try:
+        period = create_period_record(db, user, data)
+    except (HTTPException, IntegrityError) as exc:
+        db.rollback()
+        return templates.TemplateResponse(request, "first_period.html", {"user": user, "attempted_year": data.get("year", ""),
+            "error": exc.detail if isinstance(exc, HTTPException) else "Dönem başka bir işlemde oluşturuldu. Genel Bakış ekranından dönemi seçin."},
+            status_code=exc.status_code if isinstance(exc, HTTPException) else 409)
+    request.session["period_id"] = period.id
+    return RedirectResponse("/dashboard", 303)
 
 
 @app.post("/api/periods/{period_id}/verify-template")
@@ -2014,3 +2050,6 @@ from .program_routes import register as register_program_routes
 register_program_routes(app)
 from .activity_contract_routes import register as register_activity_contract_routes
 register_activity_contract_routes(app)
+
+from . import master_data_routes
+master_data_routes.register(app)

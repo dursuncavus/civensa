@@ -190,7 +190,12 @@ def register(app):
         status=data.get('status');reason=str(data.get('reason','')).strip()
         if status not in {'required','zero','excluded'} or (status!='required' and not reason):raise HTTPException(422,'Kapsam ve gerekçeyi kontrol edin.')
         obj=db.scalar(select(DepartmentScope).where(DepartmentScope.period_id==pid,DepartmentScope.department_id==did))
-        if not obj:obj=DepartmentScope(period_id=pid,department_id=did);db.add(obj)
+        if not obj:
+            from .master_data_service import active_department
+            active_department(db,did)
+            obj=DepartmentScope(period_id=pid,department_id=did);db.add(obj)
+        if status!='required' and obj.id and db.scalar(select(SubProgramScope.subprogram_id).where(SubProgramScope.scope_id==obj.id).limit(1)):
+            raise HTTPException(422,'Müdürlüğün alt program sorumluluğu var. Kurum Yapısı ekranında bu sorumluluğu kaldırıp kapsamı yeniden kaydedin.')
         obj.position=integer(data.get('position',0));obj.status=status;obj.reason=reason;obj.display_name=str(data.get('display_name','')).strip()
         db.commit();log(db,user,'scope_save','department',did)
         return RedirectResponse('/report-builder',303)

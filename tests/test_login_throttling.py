@@ -274,15 +274,19 @@ def test_concurrent_failures_count_once_per_attempt(db, sample, browsers, clock,
 
 
 @pytest.mark.parametrize("foundation_db", [BASE_REVISION], indirect=True)
-def test_one_additive_migration_and_downgrade_preserves_other_tables(foundation_db, people):
+def test_one_additive_migration_and_downgrade_preserves_other_tables(foundation_db):
     from alembic.config import Config
     from alembic.script import ScriptDirectory
 
     db = foundation_db
     scripts = ScriptDirectory.from_config(Config(str(ROOT / "alembic.ini")))
-    assert scripts.get_heads() == [REVISION]
+    assert len(scripts.get_heads()) == 1
+    assert REVISION in {r.revision for r in scripts.walk_revisions()}
     assert scripts.get_revision(REVISION).down_revision == BASE_REVISION
     before_tables = set(inspect(db.bind).get_table_names())
+    # This historical migration runs before later Department columns exist.
+    db.add(User(email="migration@example.invalid", full_name="Strateji", role="strategy", password_hash="unused"))
+    db.commit()
     before_users = db.execute(select(User.id, User.email, User.password_hash)).all()
     db.add(AuditLog(action="migration_probe", entity_type="test", details="Korunacak kayıt"))
     db.commit()
@@ -295,7 +299,7 @@ def test_one_additive_migration_and_downgrade_preserves_other_tables(foundation_
                                 env=env, capture_output=True, text=True)
         assert result.returncode == 0, result.stderr
 
-    migrate("upgrade", "head")
+    migrate("upgrade", REVISION)
     assert set(inspect(db.bind).get_table_names()) == before_tables | {"login_attempts"}
     assert {index["name"] for index in inspect(db.bind).get_indexes("login_attempts")} == {
         "ix_login_attempts_email_time", "ix_login_attempts_ip_time", "ix_login_attempts_failed_at"}
@@ -306,5 +310,5 @@ def test_one_additive_migration_and_downgrade_preserves_other_tables(foundation_
     assert db.execute(select(User.id, User.email, User.password_hash)).all() == before_users
     assert db.execute(select(AuditLog.id, AuditLog.details)).all() == before_audits
     db.commit()
-    migrate("upgrade", "head")
+    migrate("upgrade", REVISION)
     assert db.scalar(select(func.count(LoginAttempt.id))) == 0
