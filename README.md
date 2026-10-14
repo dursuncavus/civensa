@@ -17,14 +17,34 @@ For validation use a **fresh disposable** PostgreSQL database:
 CIVENSA_TEST_POSTGRES_URL=postgresql+psycopg://USER@localhost/TEST_DB python -m pytest -q --require-postgres
 python -m compileall -q app migrations tools
 node --check app/static/app.js
-python check_bundle.py
 ```
 
 `sitecustomize.py` maps provider URLs `postgres://` and `postgresql://` to the
 installed psycopg 3 driver. Launch with `PYTHONPATH` set to the checkout directory
 (the container sets `/app`). Explicit `postgresql+psycopg://` URLs also work.
-`tools/build_bundle.py` rebuilds the deterministic source bundle; both bundle
-check entry points verify hashes and exact source equality.
+
+The deterministic source bundle is generated on demand for release packaging
+only. Dockerfile and Render deployments use the source directly. Task PRs must
+not add `bundle.part*`, `bundle-manifest.json`, or generated bundle output.
+
+Build and verify a release bundle in the ignored default directory `dist/bundle/`:
+
+```
+python tools/build_bundle.py
+python check_bundle.py
+```
+
+Pass a directory to build or check elsewhere (the builder rejects the checkout root):
+
+```
+python tools/build_bundle.py /tmp/civensa-release-bundle
+python check_bundle.py /tmp/civensa-release-bundle
+python qa_bundle_check.py /tmp/civensa-release-bundle
+```
+
+Both check entry points default to `dist/bundle/` and verify checksums, the file
+list, exact source equality, and Python syntax. Bundle and integration-runtime
+tests build their own temporary bundles; no committed bundle is needed.
 
 Historical release notes are retained. Old manual pilot scripts are archived in
 `tools/legacy-qa`; they are not current release gates. The obsolete partial
