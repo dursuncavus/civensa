@@ -69,10 +69,146 @@ const escapeHtml=(value)=>String(value??'').replace(/[&<>'\"]/g,c=>({'&':'&amp;'
 function removeUnusedNewActivity(){const row=document.querySelector('#activityBody tr[data-new="1"]');if(!row)return;const hasText=[...row.querySelectorAll('input,textarea')].some(el=>el.value.trim());if(!hasText)row.remove();}
 document.querySelectorAll('.tab').forEach(btn=>btn.addEventListener('click',()=>{if(btn.dataset.tab!=='activities')removeUnusedNewActivity();document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));document.querySelectorAll('.tabpane').forEach(p=>p.classList.remove('active'));btn.classList.add('active');document.getElementById(btn.dataset.tab)?.classList.add('active')}));
 
-async function saveIndicatorCard(card){const data={};card.querySelectorAll('[data-field]').forEach(el=>data[el.dataset.field]=el.value);const {r,j}=await jsonFetch(`/api/indicators/${card.dataset.id}/save`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});if(!r.ok){toast(j.detail||'Kayıt yapılamadı.');return false}toast(j.issues.length?`Kaydedildi · ${j.issues.length} kontrol kaldı`:'Kaydedildi · kontrol temiz');setTimeout(()=>location.reload(),600);return true}
+// Drafts stay in the current DOM. Only a confirmed save advances that record's
+// baseline; edits made while a request is pending remain unsaved.
+const drafts=(()=>{
+  const states=new WeakMap();
+  const fields=record=>[...record.querySelectorAll('[data-field], [data-actual-form] input:not([type="hidden"]), [data-actual-form] textarea, [data-actual-form] select')];
+  const key=field=>field.dataset.field||field.name;
+  const values=record=>Object.fromEntries(fields(record).map(field=>[key(field),field.value]));
+  let navigationApproved=false;
+  function render(record){
+    const state=states.get(record);
+    if(!state)return;
+    state.dirty=state.failed||JSON.stringify(values(record))!==JSON.stringify(state.baseline);
+    record.classList.toggle('has-draft',state.dirty);
+    state.marker.hidden=!state.dirty&&!state.saving&&!state.saved;
+    state.marker.textContent=state.dirty?'Kaydedilmedi':(state.saving?'Kaydediliyor…':'Kaydedildi');
+    state.marker.classList.toggle('unsaved',state.dirty);
+  }
+  function register(record){
+    const marker=document.createElement('p');marker.className='draft-status';marker.setAttribute('role','status');
+    (record.querySelector('h2, h3')||record.firstElementChild).after(marker);
+    states.set(record,{baseline:values(record),marker,dirty:false,saving:false,saved:false,failed:!!record.querySelector('[role="alert"]')});
+    render(record);
+    ['input','change'].forEach(type=>record.addEventListener(type,()=>{navigationApproved=false;render(record)}));
+  }
+  function error(record,message,invalidFields=[]){
+    let box=record.querySelector('.draft-error');
+    if(!box){box=document.createElement('p');box.className='draft-error';box.id=`draft-error-${record.id||record.dataset.id}`;box.setAttribute('role','alert');record.append(box)}
+    box.textContent=errorMessage(message)||'Kayıt yapılamadı. Bu kaydın alanlarını kontrol edip tekrar deneyin.';
+    fields(record).forEach(field=>{if(invalidFields.includes(key(field))){field.setAttribute('aria-invalid','true');field.setAttribute('aria-describedby',box.id)}});
+    states.get(record).failed=true;render(record);
+  }
+  function begin(record){
+    const state=states.get(record);if(!state||state.saving)return null;
+    state.saving=true;
+    record.querySelectorAll('.save-indicator, [data-actual-form] button').forEach(button=>button.disabled=true);
+    render(record);return values(record);
+  }
+  function finish(record){
+    const state=states.get(record);state.saving=false;
+    record.querySelectorAll('.save-indicator, [data-actual-form] button').forEach(button=>button.disabled=false);
+    render(record);
+  }
+  function saved(record,baseline){
+    const state=states.get(record);state.baseline=baseline;state.failed=false;state.saved=true;
+    record.querySelectorAll('.draft-error, [id^="form-error-"]').forEach(box=>box.remove());
+    fields(record).forEach(field=>{field.removeAttribute('aria-invalid');field.removeAttribute('aria-describedby')});
+    render(record);
+  }
+  const records=()=>[...document.querySelectorAll('[data-draft-record]')];
+  const hasUnsaved=()=>records().some(record=>{render(record);const state=states.get(record);return state&&(state.dirty||state.saving)});
+  const initial=records();initial.forEach(register);
+  if(initial.length){
+    // Browsers ignore custom beforeunload text. In-app navigation uses this
+    // Turkish dialog; reload/tab-close also gets the browser's native warning.
+    const dialog=document.createElement('dialog');dialog.className='draft-confirm';dialog.setAttribute('aria-labelledby','draft-confirm-title');
+    dialog.innerHTML='<h2 id="draft-confirm-title">Kaydedilmemiş değişiklikler var</h2><p>Bu sayfadan ayrılırsanız kaydedilmemiş değişiklikler kaybolacak. Ayrılmak istiyor musunuz?</p><div class="actions"><button type="button" class="button primary" data-stay>Sayfada kal</button><button type="button" class="button" data-leave>Kaydetmeden ayrıl</button></div>';
+    document.body.append(dialog);
+    let leave=null;
+    function confirm(action){if(dialog.open)return;leave=action;dialog.showModal();dialog.querySelector('[data-stay]').focus()}
+    dialog.querySelector('[data-stay]').addEventListener('click',()=>{leave=null;dialog.close()});
+    dialog.addEventListener('cancel',()=>leave=null);
+    dialog.querySelector('[data-leave]').addEventListener('click',()=>{const action=leave;leave=null;dialog.close();navigationApproved=true;action?.()});
+    window.addEventListener('beforeunload',event=>{
+      if(navigationApproved||!hasUnsaved())return;
+      event.preventDefault();event.returnValue='Kaydedilmemiş değişiklikler var. Ayrılmak istiyor musunuz?';
+    });
+    document.addEventListener('click',event=>{
+      const link=event.target.closest('a[href]');
+      if(!link||navigationApproved||event.button!==0||event.ctrlKey||event.metaKey||event.shiftKey||event.altKey||link.hasAttribute('download')||(link.target&&link.target!=='_self'))return;
+      const destination=new URL(link.href,location.href);
+      if(destination.origin===location.origin&&destination.pathname===location.pathname&&destination.search===location.search)return;
+      if(!hasUnsaved())return;
+      event.preventDefault();event.stopImmediatePropagation();confirm(()=>link.click());
+    },true);
+    document.addEventListener('submit',event=>{
+      if(event.defaultPrevented||event.target.matches('[data-actual-form]')||navigationApproved||!hasUnsaved())return;
+      event.preventDefault();const form=event.target,button=event.submitter;confirm(()=>form.requestSubmit(button));
+    });
+  }
+  return {fields,key,values,register,render,error,begin,finish,saved};
+})();
+
+async function saveIndicatorCard(card){
+  const data=drafts.begin(card);if(!data)return false;
+  try{
+    const {r,j}=await jsonFetch(`/api/indicators/${card.dataset.id}/save`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
+    if(!r.ok){drafts.error(card,j.detail);return false}
+    drafts.saved(card,data);
+    card.querySelector('h3').textContent=data.name.trim();
+    const issues=j.issues||[],badge=card.querySelector('.record-head .badge');
+    badge.textContent=`${issues.length} kontrol`;badge.classList.toggle('bad',!!issues.length);badge.classList.toggle('ok',!issues.length);
+    card.classList.toggle('has-issue',!!issues.length);card.classList.toggle('validated',!issues.length);
+    card.querySelector('.issue-list')?.remove();
+    if(issues.length){const list=document.createElement('div');list.className='issue-list';issues.forEach(issue=>{const button=document.createElement('button');button.type='button';button.className='issue-jump';button.dataset.issue=issue;button.textContent=issue;list.append(button)});card.querySelector('.record-head').after(list)}
+    toast(issues.length?`Kaydedildi · ${issues.length} kontrol kaldı`:'Kaydedildi · kontrol temiz');return true;
+  }finally{drafts.finish(card)}
+}
+
+document.addEventListener('submit',async event=>{
+  const form=event.target;if(!form.matches('[data-actual-form]'))return;
+  event.preventDefault();
+  const record=form.closest('[data-draft-record]'),sent=drafts.begin(record);if(!sent)return;
+  try{
+    const token=document.querySelector('meta[name="csrf-token"]')?.content;
+    const response=await fetch(form.action,{method:'POST',headers:token?{'X-CSRF-Token':token}:{},body:new URLSearchParams(new FormData(form))});
+    if(response.status===401||(response.redirected&&new URL(response.url).pathname==='/login')){
+      drafts.error(record,'Oturumunuz sona ermiş veya giriş yapmanız gerekiyor. Yeniden giriş yapın; ardından kayıt durumunu kontrol edin.');return;
+    }
+    if(response.status>=500){drafts.error(record,'Sunucu isteği tamamlayamadı. '+requestFailure);return}
+    if(!response.headers.get('content-type')?.includes('text/html')){
+      let message;try{message=errorMessage(await response.json())}catch{}
+      drafts.error(record,message||'Sunucudan beklenen yanıt alınamadı. '+requestFailure);return;
+    }
+    const page=new DOMParser().parseFromString(await response.text(),'text/html');
+    const replacement=page.getElementById(record.id);
+    if(!response.ok){
+      const invalidFields=[...(replacement?.querySelectorAll('[aria-invalid="true"]')||[])].map(drafts.key);
+      drafts.error(record,replacement?.querySelector('[role="alert"]')?.textContent||page.querySelector('main [role="alert"]')?.textContent||'Gerçekleşme kaydedilemedi. Alanları kontrol edip tekrar deneyin.',invalidFields);return;
+    }
+    if(!replacement?.querySelector('[data-actual-form]')){drafts.error(record,'Kayıt sonucu ekranda doğrulanamadı. '+requestFailure);return}
+    const current=drafts.values(record),focused=document.activeElement;
+    const focusKey=record.contains(focused)?drafts.key(focused):null;
+    const selection=focused?.selectionStart;
+    const detailsOpen=record.querySelector('details')?.open;
+    record.replaceWith(replacement);drafts.register(replacement);
+    const baseline=drafts.values(replacement);
+    // The server response carries the new CAS revision and complete history.
+    // Preserve only changes made after submitting, atop the saved baseline.
+    drafts.fields(replacement).forEach(field=>{const key=drafts.key(field);if(current[key]!==sent[key])field.value=current[key]});
+    if(detailsOpen&&replacement.querySelector('details'))replacement.querySelector('details').open=true;
+    drafts.saved(replacement,baseline);
+    if(focusKey){const next=drafts.fields(replacement).find(field=>drafts.key(field)===focusKey);next?.focus();if(selection!=null&&next?.setSelectionRange)next.setSelectionRange(selection,selection)}
+    toast('Gerçekleşme kaydedildi.');
+  }catch{
+    drafts.error(record,'Sunucuya ulaşılamadı. İnternet bağlantınızı kontrol edin. '+requestFailure);
+  }finally{drafts.finish(record)}
+});
 document.querySelectorAll('.save-indicator').forEach(btn=>btn.addEventListener('click',()=>saveIndicatorCard(btn.closest('.record'))));
 document.querySelectorAll('.fix-unit').forEach(btn=>btn.addEventListener('click',async()=>{const card=btn.closest('.record');const unit=card.querySelector('[data-field="unit"]');unit.value='Adet';unit.focus();unit.classList.add('field-fixed');unit.scrollIntoView({behavior:'smooth',block:'center'});toast('Öneri uygulandı · kontrol ediliyor.');await saveIndicatorCard(card)}));
-document.querySelectorAll('.issue-jump').forEach(btn=>btn.addEventListener('click',()=>{const card=btn.closest('.record');const text=btn.dataset.issue||'';let field=null;if(text.includes('Ölçü')||text.includes('ölçü'))field=card.querySelector('[data-field="unit"]');else if(text.includes('Gösterge adı'))field=card.querySelector('[data-field="name"]');else if(text.includes('açıklama')||text.includes('Açıklama'))field=card.querySelector('[data-field="explanation"]');else if(text.includes('Hesaplama'))field=card.querySelector('[data-field="calculation_method"]');else if(text.includes('Verinin'))field=card.querySelector('[data-field="data_source"]');else if(text.includes('hedefi'))field=card.querySelector('[data-field$="_target"]');field?.scrollIntoView({behavior:'smooth',block:'center'});field?.focus();field?.classList.add('field-attention');setTimeout(()=>field?.classList.remove('field-attention'),1600)}));
+document.addEventListener('click',event=>{const btn=event.target.closest('.issue-jump');if(!btn)return;const card=btn.closest('.record');const text=btn.dataset.issue||'';let field=null;if(text.includes('Ölçü')||text.includes('ölçü'))field=card.querySelector('[data-field="unit"]');else if(text.includes('Gösterge adı'))field=card.querySelector('[data-field="name"]');else if(text.includes('açıklama')||text.includes('Açıklama'))field=card.querySelector('[data-field="explanation"]');else if(text.includes('Hesaplama'))field=card.querySelector('[data-field="calculation_method"]');else if(text.includes('Verinin'))field=card.querySelector('[data-field="data_source"]');else if(text.includes('hedefi'))field=card.querySelector('[data-field$="_target"]');field?.scrollIntoView({behavior:'smooth',block:'center'});field?.focus();field?.classList.add('field-attention');setTimeout(()=>field?.classList.remove('field-attention'),1600)});
 
 const submit=document.getElementById('submitDepartment');if(submit)submit.addEventListener('click',async()=>{const {r,j}=await jsonFetch(`/api/departments/${submit.dataset.department}/submit`,{method:'POST'});if(!r.ok){toast(j.message||j.detail||'Gönderim yapılamadı.');if(j.errors?.length){const box=document.createElement('div');box.className='return-note';const list=document.createElement('ul');j.errors.forEach(message=>{const li=document.createElement('li');li.textContent=message;list.append(li)});box.append(list);submit.after(box);box.scrollIntoView({behavior:'smooth',block:'center'});return}const first=j.problems&&Object.keys(j.problems)[0];if(first){const card=document.querySelector(`.record[data-id="${first}"]`);card?.scrollIntoView({behavior:'smooth',block:'center'});return}const firstActivity=j.activity_problems&&Object.keys(j.activity_problems)[0];if(firstActivity){document.querySelector('.tab[data-tab="activities"]')?.click();setTimeout(()=>{const row=document.querySelector(`tr[data-activity="${firstActivity}"]`);row?.scrollIntoView({behavior:'smooth',block:'center'});row?.querySelector('.activity-subprogram')?.classList.add('field-attention')},120)}return}toast('Paket Strateji Geliştirme incelemesine gönderildi.');setTimeout(()=>location.reload(),700)});
 

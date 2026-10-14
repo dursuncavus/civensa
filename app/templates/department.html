@@ -12,7 +12,7 @@
 <div id="indicators" class="tabpane active">
   <div class="record-list">
   {% for i in indicators %}
-    <article class="record {{ 'has-issue' if issue_map[i.id] else 'validated' }}" data-id="{{ i.id }}">
+    <article class="record {{ 'has-issue' if issue_map[i.id] else 'validated' }}" data-id="{{ i.id }}" {% if user.role=='department' and submission.status not in ['submitted','approved'] %}data-draft-record{% endif %}>
       <div class="record-head"><div><span class="eyebrow">{{ i.subprogram.program.name }} / {{ i.subprogram.name }}</span><h3>{{ i.name }}</h3></div><span class="badge {{ 'bad' if issue_map[i.id] else 'ok' }}">{{ issue_map[i.id]|length }} kontrol</span></div>
       {% if issue_map[i.id] %}<div class="issue-list">{% for issue in issue_map[i.id] %}<button type="button" class="issue-jump" data-issue="{{ issue }}">{{ issue }}</button>{% endfor %}</div>{% endif %}
       <div class="editor-grid">
