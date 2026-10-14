@@ -25,7 +25,8 @@ from tests.test_package_workflow import act
 from tests.test_successor_publication import raw_release
 pytestmark=pytest.mark.postgres
 
-HEAD='f2b7c4d91e08'  # A1-P1.1 is the newest revision
+from app.main import migration_head
+HEAD = migration_head()
 DEVIATION=['entries',0,'deviation']
 
 
@@ -722,7 +723,7 @@ def test_populated_upgrade_keeps_history_and_refuses_downgrade(foundation_db,peo
     for _ in range(2):
         run=subprocess.run([sys.executable,'-m','alembic','upgrade','head'],cwd=ROOT,env={**os.environ,'DATABASE_URL':url},capture_output=True,text=True)
         assert run.returncode==0,run.stderr
-    down=subprocess.run([sys.executable,'-m','alembic','downgrade','-1'],cwd=ROOT,env={**os.environ,'DATABASE_URL':url},capture_output=True,text=True)
+    down=subprocess.run([sys.executable,'-m','alembic','downgrade','c5e8a1f0b247'],cwd=ROOT,env={**os.environ,'DATABASE_URL':url},capture_output=True,text=True)
     assert down.returncode!=0 and 'A1-P1.1 recovery guards cannot be discarded' in down.stderr
     db.expire_all();assert_sealed(db,before)
     assert db.execute(text('SELECT version_num FROM alembic_version')).scalar_one()==HEAD

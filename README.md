@@ -31,6 +31,13 @@ Historical release notes are retained. Old manual pilot scripts are archived in
 `deploy/app` copy is available in staging history only; use the complete current
 application and migration chain.
 
+Failed login attempts are always limited per normalized e-mail. Per-IP locking
+is disabled by default because the current Render/Uvicorn setup exposes the
+shared proxy address as `request.client.host`. `CIVENSA_LOGIN_IP_LIMIT=0` keeps
+the IP lock disabled while failed attempts still store a hashed IP key. Set the
+variable to a positive integer only when `request.client.host` reliably contains
+distinct client addresses. The application does not parse `X-Forwarded-For`.
+
 ## Integration and deployment status
 
 See `docs/integration-staging-performance-bridge.md` for the deliberate history

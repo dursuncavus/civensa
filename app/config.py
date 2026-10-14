@@ -35,6 +35,18 @@ def demo_seed_enabled() -> bool:
     return raw in {"1", "true", "yes", "on"}
 
 
+def login_ip_limit() -> int:
+    raw = os.getenv("CIVENSA_LOGIN_IP_LIMIT", "0").strip()
+    try:
+        value = int(raw)
+    except ValueError as exc:
+        raise RuntimeError("CIVENSA_LOGIN_IP_LIMIT sıfır veya pozitif bir tam sayı olmalıdır.") from exc
+    if value < 0:
+        raise RuntimeError("CIVENSA_LOGIN_IP_LIMIT sıfır veya pozitif bir tam sayı olmalıdır.")
+    return value
+
+
 def validate_runtime_settings() -> None:
     session_secret()
     cookie_secure()
+    login_ip_limit()
