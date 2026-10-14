@@ -88,16 +88,19 @@ def register(app):
             audit_change(db, user, 'department_rename', obj, old, {'name': name})
         return await change(request, db, user, operation)
 
+    def set_department_active(form, db, user, department_id):
+        # The async wrapper reads the complete form before calling this synchronous
+        # mutation. No await can occur while the department row lock is held.
+        obj = db.scalar(select(Department).where(Department.id == integer(department_id, 'Müdürlük')).with_for_update().execution_options(populate_existing=True))
+        if not obj: raise HTTPException(404, 'Müdürlük bulunamadı. Kurum Yapısı listesini yenileyip kayıt seçin.')
+        if form.get('active') not in {'0', '1'}: raise HTTPException(422, 'Müdürlük durumu geçersiz. Etkinleştir veya Pasifleştir düğmesini kullanın.')
+        old = {'is_active': obj.is_active}
+        obj.is_active = form['active'] == '1'
+        audit_change(db, user, 'department_active', obj, old, {'is_active': obj.is_active})
+
     @app.post('/structure/departments/{department_id}/active')
     async def department_active(department_id: str, request: Request, db: Session = Depends(get_db), user: User = Depends(require_strategy)):
-        def operation(form):
-            obj = db.scalar(select(Department).where(Department.id == integer(department_id, 'Müdürlük')).with_for_update().execution_options(populate_existing=True))
-            if not obj: raise HTTPException(404, 'Müdürlük bulunamadı. Kurum Yapısı listesini yenileyip kayıt seçin.')
-            if form.get('active') not in {'0', '1'}: raise HTTPException(422, 'Müdürlük durumu geçersiz. Etkinleştir veya Pasifleştir düğmesini kullanın.')
-            old = {'is_active': obj.is_active}
-            obj.is_active = form['active'] == '1'
-            audit_change(db, user, 'department_active', obj, old, {'is_active': obj.is_active})
-        return await change(request, db, user, operation)
+        return await change(request, db, user, lambda form: set_department_active(form, db, user, department_id))
 
     async def save_hierarchy(request, db, user, model, record_id=None):
         def operation(form):
