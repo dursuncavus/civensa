@@ -27,6 +27,7 @@ from alembic.config import Config as AlembicConfig
 from alembic.script import ScriptDirectory
 
 from .db import Base, engine, get_db, SessionLocal
+from .db_privileges import assert_runtime_restricted
 from .models import (
     User, Department, ReportingPeriod, Indicator, IndicatorValue, Activity,
     ActivityCostValue, DepartmentCostValue, Submission, AuditLog, Program,
@@ -58,6 +59,9 @@ def migration_head() -> str:
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     validate_runtime_settings()
+    if os.getenv("MIGRATION_DATABASE_URL"):
+        # Check the request role before migration or traffic, using catalogs only.
+        assert_runtime_restricted(engine)
     if is_production():
         # Apply committed schema migrations before serving traffic; back up before upgrading.
         alembic_config = AlembicConfig(str(BASE_DIR.parent / "alembic.ini"))

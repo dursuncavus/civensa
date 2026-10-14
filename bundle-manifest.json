@@ -1,6 +1,6 @@
 {
   "version": "5.0.0",
-  "sha256": "d38a8c1b050b096a0b2019e06302651a57e585b44d152e1a2401e2e5c2dd01d7",
+  "sha256": "2f961a40b5657ae3cee6eb5500ab7917b4975a9b88bb0b44c1b5398278cbc9f8",
   "parts": [
     "bundle.part01",
     "bundle.part02",
@@ -26,14 +26,15 @@
     "app/config.py": "0589eabc30c5ab3baff41c006e1a8b2a6b19b63eeede29f51442d9821019c560",
     "app/csv_safety.py": "7391f2d0ec84745bcc0297d9cb38e9924a30fa352f28b0d169ac5fd16bca3ad3",
     "app/data_importer.py": "c703022703982f99f7495ea1d8d3035e028049eba8010e9157a42b62c85a8674",
-    "app/db.py": "c47ce4f6f30704861ff0623ff24b59b9a4a7e564e092890c476511c174f58cc2",
+    "app/db.py": "3d51914724c990ff65c686a08277b1446fa8db663d88fe4ba2d496c887dc6e64",
+    "app/db_privileges.py": "38476f07a20074d892e63dfbc7c69d222f69f7aaa68c93036ed724a30893db3e",
     "app/file_security.py": "21f051e773d4c5fe949a1e996c6d3868a1fff2359b096ea651f894571061bdfe",
     "app/fonts/DejaVuSans-Bold.ttf": "e6476c1b80502924294eed40894c5b18e06c181444ca953e5334262df9c27724",
     "app/fonts/DejaVuSans.ttf": "7da195a74c55bef988d0d48f9508bd5d849425c1770dba5d7bfc6ce9ed848954",
     "app/fonts/LICENSE.txt": "24da3dd89c4ff4815a6a7bb0178c2fcd86e9b548d35d17564839c3fbb57bccd8",
     "app/import_service.py": "f7fb42fd3f58dd0368a43aec2ffd00d86cc8b4b530b820043cfd2352f76e0042",
     "app/login_throttling.py": "314d68d7bba06933e1d074e771a2b8e104697ce1ce8f8f771fe065b03b3081be",
-    "app/main.py": "503e27da8feaa3e37a3b9f67fc01a5657ae1d8e6962afddbc84bfe30ebee3d50",
+    "app/main.py": "d01903d73f2a7bf340b981e47ce0b30c7f9fc85d78cf343c8877662d92fb1419",
     "app/models.py": "53e41c74dd49aa305c00705041728a789ca835d0d82ba9ab87c08baae822b6a3",
     "app/numbers.py": "8d3a55e540322e9f320189d5a8d52e23e130b7e9ec793e071f3e9e5e8735ea5e",
     "app/package_models.py": "97d8d9ab794767239d4b14e91c343d95983a58ad944a61336aadb413ac24f71c",
@@ -70,7 +71,7 @@
     "app/templates/users.html": "30b829de3ed60e42cdbc4ffcb342f046be567884ca5df4d2e4a73732bdece650",
     "app/time_display.py": "01eee2da360f99f34ce89473b1b75b601ebb684dd0489515bb9f6990d29737dd",
     "migrations/README": "31595cf53626af9ed16e15c44fa43183209cc163fbc3ebcb904b22ac436a8884",
-    "migrations/env.py": "c2863bf07d7f282c187a98cee0ccd35f0a7238e205ff938a41a94ed9b158b619",
+    "migrations/env.py": "30080ffcac8cfccba3c36188b64a97268796ea041a5e3e3c61838a0f462ee43e",
     "migrations/script.py.mako": "d38920781b4d31ae1c0a71bc09f41c2ade8feab9e5a087e3f30cb4bbf0c1c9d3",
     "migrations/versions/0429caba7123_authorization_and_immutable_field_.py": "ed3e36feed69e9e7edde5a458552b2cded4f78131793db3803b07c176846b3fa",
     "migrations/versions/153acbd48290_directorate_package_workflow.py": "32ce1cfb8d4d0fb653b5976f5cfb0a7139655482a2a8eb1596a2aaa76c97ec1c",
@@ -93,6 +94,6 @@
     "migrations/versions/f2b7c4d91e08_a1p11_preactivation_recovery_guards.py": "14432559757ebde727672c95cb460f813940b0174400971d455068c6f25ec69e",
     "migrations/versions/f6b1c2d3e4f5_activity_report_contract.py": "82de5aebed03a8b4794118ea58d9326e33dcc21e0719e112e60f1ba1253affc3",
     "requirements.txt": "f4f862da676e733a7e5de955a102eea7f291ec087b03cd7a59fad05285765874",
-    "sitecustomize.py": "0dc58af3196534b3211416866e22fa4b556c6cf3670826c3637900d067e82487"
+    "sitecustomize.py": "6c158d7e9d3346eb2c5c093f8d55a2091049a703e8b77611abd9a28f2c1d449e"
   }
 }
