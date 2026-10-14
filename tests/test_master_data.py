@@ -97,6 +97,8 @@ def test_deactivate_keeps_history_blocks_all_new_account_and_scope_paths(db, sam
     for url in ['/structure/scopes', '/report-builder/scope']:
         response = post(browser, token, url, period_id=future.id, department_id=did, status='required')
         assert response.status_code == 422 and 'pasif' in response.text
+        if url == '/structure/scopes':
+            assert re.search(r'<option value="' + str(did) + r'" selected>', response.text)
     sample['user'].is_active = False; db.commit()
     from app.main import ACCOUNT_CSV_HEADERS
     output = io.StringIO(); writer = csv.writer(output)
@@ -183,7 +185,10 @@ def test_inactive_responsibilities_cannot_be_new_but_existing_remain(db, sample,
     pid = sample['period'].id; did = sample['department'].id; spid = sample['subprogram'].id
     url = f'/structure/subprograms/{spid}/responsibilities'
     assert post(browser, token, f'/structure/departments/{did}/active', active='0').status_code == 303
-    assert post(browser, token, url, period_id=pid, department_ids=[did]).status_code == 422
+    response = post(browser, token, url, period_id=pid, department_ids=[did])
+    assert response.status_code == 422
+    assert re.search(r'name="department_ids" value="' + str(did) + r'" checked', response.text)
+    assert 'Pasif · yeni atama yapılamaz' in response.text
     assert post(browser, token, f'/structure/departments/{did}/active', active='1').status_code == 303
     assert post(browser, token, url, period_id=pid, department_ids=[did]).status_code == 303
     assert post(browser, token, f'/structure/departments/{did}/active', active='0').status_code == 303
