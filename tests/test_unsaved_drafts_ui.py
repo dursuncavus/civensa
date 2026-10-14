@@ -65,7 +65,7 @@ def editor(request, browser, client, db, sample):
                 # Follow it in TestClient to serve the real final HTML locally.
                 follow_redirects=req.resource_type in {'fetch', 'xhr'})
             requests.append((req.method, req.url, response.status_code))
-            if pending.pop('hold', False) and req.method == 'POST':
+            if req.method == 'POST' and pending.pop('hold', False):
                 pending['route'], pending['response'] = route, response
             else:
                 fulfill(route, response)
@@ -151,7 +151,9 @@ def test_turkish_navigation_confirmation_and_native_reload_guard(editor):
     expect(a.locator(editor.field)).to_have_value('22,5'); draft(a)
     dialogs = []
     editor.page.on('dialog', lambda native: (dialogs.append(native.type), native.dismiss()))
-    editor.page.evaluate('location.reload()')
+    with editor.page.expect_event('dialog') as reload_warning:
+        editor.page.evaluate('location.reload()')
+    assert reload_warning.value.type == 'beforeunload'
     assert dialogs == ['beforeunload']
     expect(a.locator(editor.field)).to_have_value('22,5'); draft(a)
     editor.page.get_by_role('link', name='Modüller', exact=True).click()
