@@ -618,12 +618,18 @@ async def create_activity(request: Request, db: Session = Depends(get_db), user:
 
 @app.put("/api/activities/{activity_id}")
 async def update_activity(activity_id: int, request: Request, db: Session = Depends(get_db), user: User = Depends(require_user)):
+    body = await request.body()
+    return _update_activity(activity_id, body, db, user)
+
+
+def _update_activity(activity_id: int, body: bytes, db: Session, user: User):
+    # Read the complete body before locking; keep the original validation order.
     act = db.scalar(select(Activity).where(Activity.id == activity_id).with_for_update().options(selectinload(Activity.cost_values)))
     if not act:
         raise HTTPException(404)
     ensure_department_editable(db, user, act.department_id, act.period_id)
     period = db.get(ReportingPeriod, act.period_id)
-    data = await request.json()
+    data = json.loads(body)
     name = str(data.get("name", act.name)).strip()
     if not name:
         raise HTTPException(422, "Faaliyet adı zorunlu.")
@@ -1541,10 +1547,16 @@ def import_batch_detail(batch_id: int, db: Session = Depends(get_db), user: User
 @app.post("/api/import-batches/{batch_id}/conflicts/{conflict_id}/decision")
 async def import_conflict_decision(batch_id: int, conflict_id: str, request: Request,
                                    db: Session = Depends(get_db), user: User = Depends(require_strategy)):
+    body = await request.body()
+    return _import_conflict_decision(batch_id, conflict_id, body, db, user)
+
+
+def _import_conflict_decision(batch_id: int, conflict_id: str, body: bytes, db: Session, user: User):
+    # No await can occur while the batch lock is held.
     batch = db.scalar(select(ImportBatch).where(ImportBatch.id == batch_id).with_for_update())
     if not batch:
         raise HTTPException(404)
-    data = await request.json()
+    data = json.loads(body)
     from .import_service import decide_import_conflict
     try:
         decide_import_conflict(db, batch, conflict_id, data.get("chosen_amount"), data.get("reason"), user)
