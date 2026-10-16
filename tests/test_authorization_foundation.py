@@ -371,7 +371,9 @@ def test_additive_upgrade_preserves_history_and_does_not_invent_assignments(foun
     payload,defs=contract.freeze_program_payload(db,1,x['strategy']);raw=contract.canonical(payload)
     pub=Publication(period_id=1,version=1,snapshot_json=raw,sha256=contract.digest(raw),created_by=x['strategy'].id)
     db.add(pub);db.flush();contract.attach_publication_definitions(db,pub,defs,x['strategy']);db.commit()
-    revision=contract.create_report_revision(db,x['strategy'],organization_id=1,publication_id=pub.id,report_id=None,expected_revision=0)
+    # The legacy approval fixture now separates revision author and approver.
+    x['editor2'].role='strategy';db.commit()
+    revision=contract.create_report_revision(db,x['editor2'],organization_id=1,publication_id=pub.id,report_id=None,expected_revision=0)
     db.commit();slot=db.scalar(select(ReportIndicator)).id
     contract.save_actual(db,x['user'],slot,0,'1.75','verified',
         [{'title':'Defter','locator':'Sayfa 1','source_revision':'r1'}],'Kaynak kontrolü',{})

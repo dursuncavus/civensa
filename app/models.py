@@ -1,6 +1,6 @@
 from datetime import datetime, UTC
 from decimal import Decimal
-from sqlalchemy import String, Integer, ForeignKey, Text, Float, Numeric, DateTime, UniqueConstraint, Boolean
+from sqlalchemy import String, Integer, ForeignKey, Text, Float, Numeric, DateTime, UniqueConstraint, Boolean, CheckConstraint, Index, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from .db import Base
 
@@ -40,6 +40,15 @@ class User(Base):
     password_hash: Mapped[str] = mapped_column(String(255))
     department_id: Mapped[int | None] = mapped_column(ForeignKey("departments.id"), nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, server_default="1")
+    position: Mapped[str] = mapped_column(String(20), default="staff", server_default="staff")
+    can_submit: Mapped[bool] = mapped_column(Boolean, default=False, server_default="0")
+    __table_args__ = (
+        CheckConstraint("position IN ('staff', 'director')", name="ck_user_position"),
+        CheckConstraint("position != 'director' OR department_id IS NOT NULL", name="ck_director_department"),
+        Index("uq_active_department_director", "department_id", unique=True,
+              postgresql_where=text("is_active AND position = 'director'"),
+              sqlite_where=text("is_active = 1 AND position = 'director'")),
+    )
 
 
 class Program(Base):

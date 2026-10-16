@@ -454,14 +454,20 @@ def save_actual(db, user, report_indicator_id, expected_revision, value, state, 
 
 
 def approve_report(db, user, revision_id):
+    from .released_permissions import require_strategy_director, SOD_ERROR
     strategy(user)
     report, revision, pub, payload = report_revision(db, user, revision_id)
     lock_report(db, report)
     ensure_legacy_writable(db, report, revision)
+    require_strategy_director(user)
     if revision.revision != report.current_revision:
         raise HTTPException(409, 'Yalnız güncel rapor revizyonu onaylanabilir.')
     if db.scalar(select(ActivityReportApproval.id).where(ActivityReportApproval.report_revision_id == revision.id)):
         raise HTTPException(409, 'Bu rapor revizyonu zaten onaylı.')
+    authored_actual = db.scalar(select(ActualRevision.id).join(ReportIndicator).where(
+        ReportIndicator.report_revision_id == revision.id, ActualRevision.created_by == user.id).limit(1))
+    if revision.created_by == user.id or authored_actual:
+        raise HTTPException(403, SOD_ERROR.format(record="Faaliyet Raporu revizyonu"))
     blockers = []
     for item in db.scalars(select(ReportIndicator).where(ReportIndicator.report_revision_id == revision.id).order_by(ReportIndicator.id)):
         actual = db.scalar(select(ActualRevision).where(ActualRevision.report_indicator_id == item.id).order_by(ActualRevision.revision.desc()))

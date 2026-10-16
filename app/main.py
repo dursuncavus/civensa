@@ -35,6 +35,7 @@ from .models import (
 )
 from .security import verify_password, hash_password
 from . import login_throttling
+from . import released_permissions
 from .seed import seed
 from .template_parser import analyze_template
 from .data_importer import parse_performance_docx
@@ -156,7 +157,12 @@ async def require_user(request: Request, db: Session = Depends(get_db)):
     if request.method in {"POST", "PUT", "PATCH", "DELETE"}:
         if not await csrf_valid(request):
             raise HTTPException(403, CSRF_ERROR)
-    return user
+    # Keep authorship request-scoped, including writes made by import services.
+    db.info["released_actor_id"] = user.id
+    try:
+        yield user
+    finally:
+        db.info.pop("released_actor_id", None)
 
 
 def require_strategy(user: User = Depends(require_user)):
@@ -700,12 +706,15 @@ async def save_personnel_costs(department_id: int, request: Request, db: Session
 @app.post("/api/departments/{department_id}/submit")
 def submit_department(department_id: int, db: Session = Depends(get_db), user: User = Depends(require_user)):
     if user.role != "department" or user.department_id != department_id:
-        raise HTTPException(403)
+        raise HTTPException(403, "Bu PP paketini gönderemezsiniz. Paketin müdürlüğüne ait Müdür veya gönderim yetkili Personel hesabıyla giriş yapın; yetki için Müdürünüze başvurun.")
+    released_permissions.require_submit(user)
     period = active_period(db)
     # Serialize submission creation and repeated sends for this department.
     department = db.scalar(select(Department).where(Department.id == department_id).with_for_update())
     if not department:
         raise HTTPException(404)
+    db.refresh(user)
+    released_permissions.require_submit(user)
     submission = ensure_submission(db, department_id, period.id)
     if submission.status == "approved":
         raise HTTPException(409, "Onaylanmış paket yeniden gönderilemez.")
@@ -1227,8 +1236,10 @@ async def set_user_active(user_id: int, request: Request, db: Session = Depends(
     if active and target.department_id:
         from .master_data_service import active_department
         active_department(db, target.department_id)
+    if active and target.position == "director":
+        released_permissions.check_director_available(db, target)
     target.is_active = active
-    db.commit()
+    released_permissions.commit_user_change(db)
     log(db, user, "user_activate" if active else "user_deactivate", "user", target.id)
     return {"ok": True, "active": target.is_active}
 
@@ -1294,14 +1305,26 @@ async def create_user(request: Request, db: Session = Depends(get_db), user: Use
         raise HTTPException(422, "Geçici parola en az 8 karakter olmalı.")
     if db.scalar(select(User).where(User.email == email)):
         raise HTTPException(409, "Bu e-posta zaten kayıtlı.")
-    department_id = int(data["department_id"]) if role == "department" and data.get("department_id") else None
+    try:
+        department_id = int(data["department_id"]) if data.get("department_id") else None
+    except (ValueError, TypeError):
+        raise HTTPException(422, "Müdürlük seçimi geçersiz. Kullanıcılar ekranından bir müdürlük seçin.") from None
+    if role == "strategy":
+        department_id = released_permissions.strategy_department(db).id
     if role == "department" and not department_id:
         raise HTTPException(422, "Müdürlük kullanıcısına müdürlük atanmalı.")
     if department_id:
         from .master_data_service import active_department
         active_department(db, department_id)
-    new = User(email=email, full_name=full_name, role=role, department_id=department_id, password_hash=hash_password(password))
-    db.add(new); db.commit(); db.refresh(new)
+    position = data.get("position", "staff")
+    released_permissions.validate_position(position)
+    new = User(email=email, full_name=full_name, role=role, department_id=department_id,
+               password_hash=hash_password(password), position=position, can_submit=False)
+    if position == "director":
+        released_permissions.check_director_available(db, new)
+    db.add(new); db.flush()
+    released_permissions.audit_user_change(db, user, new, "position", None, position)
+    released_permissions.commit_user_change(db); db.refresh(new)
     log(db, user, "user_create", "user", new.id, f"role={role}")
     return {"ok": True, "id": new.id}
 
@@ -1327,12 +1350,17 @@ def review(request: Request, db: Session = Depends(get_db), user: User = Depends
 
 @app.post("/api/submissions/{submission_id}/decision")
 async def submission_decision(submission_id: int, request: Request, db: Session = Depends(get_db), user: User = Depends(require_strategy)):
+    released_permissions.require_strategy_director(user)
     # Read the body before the row lock: no await may run while FOR UPDATE is held,
     # or a second request blocking on the same row freezes the event loop (A1-F4).
     try:
         data = await request.json()
     except ValueError:
         data = None
+    scope = db.get(Submission, submission_id)
+    if not scope:
+        raise HTTPException(404, "Paket bulunamadı. İnceleme kuyruğunu yenileyin.")
+    db.scalar(select(Department).where(Department.id == scope.department_id).with_for_update())
     sub = db.scalar(select(Submission).where(Submission.id == submission_id)
                     .with_for_update().execution_options(populate_existing=True))
     if not sub:
@@ -1345,6 +1373,7 @@ async def submission_decision(submission_id: int, request: Request, db: Session 
     decision = data.get("decision")
     note = str(data.get("note", "")).strip()
     if decision == "approve":
+        released_permissions.require_independent_pp_approver(db, user, sub)
         from .program_service import validate_department
         errors, warnings = validate_department(db, sub.period_id, sub.department_id)
         if errors:
@@ -2092,3 +2121,4 @@ register_activity_contract_routes(app)
 
 from . import master_data_routes
 master_data_routes.register(app)
+released_permissions.register(app)
