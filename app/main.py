@@ -705,6 +705,8 @@ async def save_personnel_costs(department_id: int, request: Request, db: Session
 
 @app.post("/api/departments/{department_id}/submit")
 def submit_department(department_id: int, db: Session = Depends(get_db), user: User = Depends(require_user)):
+    # Callers may pass an actor from another Session; use this transaction's copy.
+    user = db.get(User, user.id, populate_existing=True)
     if user.role != "department" or user.department_id != department_id:
         raise HTTPException(403, "Bu PP paketini gönderemezsiniz. Paketin müdürlüğüne ait Müdür veya gönderim yetkili Personel hesabıyla giriş yapın; yetki için Müdürünüze başvurun.")
     released_permissions.require_submit(user)
@@ -713,7 +715,8 @@ def submit_department(department_id: int, db: Session = Depends(get_db), user: U
     department = db.scalar(select(Department).where(Department.id == department_id).with_for_update())
     if not department:
         raise HTTPException(404)
-    db.refresh(user)
+    # Recheck permission after waiting for any concurrent grant/revoke.
+    user = db.get(User, user.id, populate_existing=True)
     released_permissions.require_submit(user)
     submission = ensure_submission(db, department_id, period.id)
     if submission.status == "approved":
@@ -1350,6 +1353,7 @@ def review(request: Request, db: Session = Depends(get_db), user: User = Depends
 
 @app.post("/api/submissions/{submission_id}/decision")
 async def submission_decision(submission_id: int, request: Request, db: Session = Depends(get_db), user: User = Depends(require_strategy)):
+    user = db.get(User, user.id, populate_existing=True)
     released_permissions.require_strategy_director(user)
     # Read the body before the row lock: no await may run while FOR UPDATE is held,
     # or a second request blocking on the same row freezes the event loop (A1-F4).
@@ -1357,9 +1361,13 @@ async def submission_decision(submission_id: int, request: Request, db: Session 
         data = await request.json()
     except ValueError:
         data = None
-    scope = db.get(Submission, submission_id)
+    scope = db.get(Submission, submission_id, populate_existing=True)
     if not scope:
         raise HTTPException(404, "Paket bulunamadı. İnceleme kuyruğunu yenileyin.")
+    # A decision cannot target a draft that becomes submitted while this request
+    # waits for the department lock. Recheck the state under the locks below too.
+    if scope.status != "submitted":
+        raise HTTPException(409, "Yalnızca incelemedeki paket için karar verilebilir.")
     db.scalar(select(Department).where(Department.id == scope.department_id).with_for_update())
     sub = db.scalar(select(Submission).where(Submission.id == submission_id)
                     .with_for_update().execution_options(populate_existing=True))
