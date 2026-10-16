@@ -323,26 +323,49 @@ def test_concurrent_equivalent_department_creation_is_serialized(db, sample):
     assert db.scalar(select(func.count(Department.id))) == 2
 
 
-def test_real_2027_source_keeps_existing_safe_rejection_and_master_data(db, sample, live_client):
-    """The base parser rejects this real layout; never silently apply zero records.
+def test_real_2027_preview_matches_base_and_preserves_master_data(db, sample, live_client):
+    """Keep the base's applicable preview and warnings without applying the import.
 
-    CIV-018 must not alter the importer. This regression records the existing
-    limitation rather than claiming a successful official-document import.
+    Preview must preserve row counts and every existing master/report value,
+    including CIV-018 lifecycle, rationale/goal and scope responsibilities.
     """
     source = ROOT / 'tests/fixtures/pp2027_source_no_media.docx'
-    if not source.exists(): source = ROOT / 'tests/pp2027_source_no_media.docx'
     assert source.exists(), 'Real 2027 fixture must be present'
     browser, token = strategy(live_client, sample)
-    before = {m: db.scalar(select(func.count()).select_from(m)) for m in (Department, Program, SubProgram, Indicator, Activity)}
+    db.add(Department(organization_id=sample['department'].organization_id,
+                      name='İşletme ve İştirakler Müdürlüğü', is_active=False))
+    sample['subprogram'].rationale = 'Kurum Yapısı gerekçesi'
+    sample['subprogram'].goal = 'Kurum Yapısı hedefi'
+    scope = db.scalar(select(DepartmentScope).where(
+        DepartmentScope.period_id == sample['period'].id,
+        DepartmentScope.department_id == sample['department'].id))
+    db.add(SubProgramScope(subprogram_id=sample['subprogram'].id, scope_id=scope.id))
+    db.commit()
+    models = (Department, Program, SubProgram, Indicator, Activity,
+              DepartmentScope, SubProgramScope)
+    before = {m: db.scalar(select(func.count()).select_from(m)) for m in models}
+
+    def stored_rows(model):
+        table = model.__table__
+        return db.execute(select(*table.columns).order_by(*table.primary_key.columns)).all()
+
+    values_before = {model: stored_rows(model) for model in models}
     preview = browser.post(f'/api/periods/{sample["period"].id}/data-import-preview',
         headers={'X-CSRF-Token': token}, files={'file': (source.name, source.read_bytes(),
         'application/vnd.openxmlformats-officedocument.wordprocessingml.document')})
     assert preview.status_code == 200, preview.text
     payload = preview.json()
-    assert payload['can_apply'] is False and payload['warnings']
-    response = post(browser, token, f'/api/import-batches/{payload["batch_id"]}/apply')
-    assert response.status_code in {409, 422}
-    for model, count in before.items(): assert db.scalar(select(func.count()).select_from(model)) == count
+    # Observed with the same sample/login/CSRF on the base branch at c29a13c,
+    # which includes CIV-010's restored real-source import support.
+    assert payload['can_apply'] is True
+    assert payload['warnings'] == [
+        "'Park Ve Bahçeler Müdürlüğü' başlığı 'Park ve Bahçeler Müdürlüğü' ile aynı müdürlük olarak birleştirildi.",
+        "'AFET İŞLERİ VE RİSK YÖNETİMİ MÜDÜRLÜĞÜ' başlığı 'Afet İşleri Ve Risk Yönetimi Müdürlüğü' ile aynı müdürlük olarak birleştirildi.",
+        "'DESTEK HİZMETLERİ MÜDÜRLÜĞÜ' başlığı 'Destek Hizmetleri Müdürlüğü' ile aynı müdürlük olarak birleştirildi.",
+    ]
+    for model, count in before.items():
+        assert db.scalar(select(func.count()).select_from(model)) == count
+        assert stored_rows(model) == values_before[model]
 
 
 def test_hierarchy_validation_keeps_attempted_fields_and_prevents_duplicates(db, sample, live_client):

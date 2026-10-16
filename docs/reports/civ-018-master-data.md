@@ -33,7 +33,7 @@ Synthetic, disposable PostgreSQL data; actual application templates, Chromium, l
 
 ## Local validation
 
-All pytest commands used `--require-postgres` and a disposable PostgreSQL **16.2** server. The full suite is left to PR CI, as requested.
+Initial implementation checks below used `--require-postgres` and a disposable PostgreSQL **16.2** server. The full suite is left to PR CI, as requested.
 
 - Focused master-data, Word-import, programme, login-throttling, migration-head/readiness and publication-gate tests: **141 passed, 4 xfailed**. The xfails are existing Word-import regressions.
 - Final focused master-data HTTP/CSRF/lifecycle/migration, programme, progress and publication regression tests: **105 passed**. An additional final inactive-history/progress check: **1 passed**.
@@ -43,10 +43,12 @@ All pytest commands used `--require-postgres` and a disposable PostgreSQL **16.2
 
 The browser tests can generate the screenshots again with `CIVENSA_UI_SCREENSHOTS` set to an output directory. Locally they use installed Chromium through `CIVENSA_CHROMIUM_PATH=/usr/bin/chromium`; CI uses its normal Playwright browser installation.
 
-## Existing real 2027 source limitation
+## Real 2027 source preview compatibility
 
-The supplied document is tracked on the base branch at `tests/pp2027_source_no_media.docx`, rather than `tests/fixtures/pp2027_source_no_media.docx`. The existing parser recognizes 64 indicator tables and 33 activity tables but produces **0 departments and 0 indicators**, with missing-label/unsupported-layout errors. A successful real-document import therefore cannot be claimed on this base branch.
+After rebasing onto the base containing CIV-010, the real source at `tests/fixtures/pp2027_source_no_media.docx` is legitimately applicable. A separate checkout of `feature/authorization-workflow-phase5` at `c29a13c` was checked with the same sample data, real login and CSRF: preview returned **200**, **`can_apply=True`** and three name-normalization warnings (Park Ve Bahçeler, AFET İŞLERİ VE RİSK YÖNETİMİ, DESTEK HİZMETLERİ).
 
-The added real-source regression exercises preview/apply with actual login and CSRF: preview remains non-applicable, apply is rejected, and existing master/report data is unchanged. This preserves current safety behavior. The importer files were left untouched as required; successful official-layout ingestion remains dependent on the separate import work.
+`test_real_2027_preview_matches_base_and_preserves_master_data` now compares that exact preview outcome and never applies the import. It verifies unchanged counts and all stored column values for Department, Program, SubProgram, Indicator, Activity, DepartmentScope and SubProgramScope, including a standalone inactive department, rationale/goal and an existing responsibility assignment. Word import code is unchanged.
+
+Validation after this correction: `python -m pytest -q --require-postgres tests/test_master_data.py tests/test_word_import_real_source.py tests/test_live_pilot_hardening.py` on disposable PostgreSQL **16.15**: **123 passed, 1 dependency deprecation warning** (55.67s). No full local suite or CI polling.
 
 No live database, deployment, rollout flag, indicator/activity JavaScript save function or generated bundle was changed. Assumption: the installation already has its institution and Strategy account, as in the audited bootstrap scenario.
