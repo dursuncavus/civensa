@@ -6,11 +6,12 @@ from decimal import Decimal, InvalidOperation
 from uuid import uuid4
 
 from fastapi import HTTPException
-from sqlalchemy import select, func, update
+from sqlalchemy import select, func, update, inspect
 
 from .models import (Indicator, Department, ReportingPeriod, Publication, IndicatorIdentity,
                      IndicatorDefinitionRevision, PublicationIndicatorBinding, ActivityReport,
-                     ActivityReportRevision, ReportIndicator, ActualRevision, ActivityReportApproval, User)
+                     ActivityReportRevision, ReportIndicator, ActualRevision, ActivityReportApproval, User,
+                     ReportCandidate, ReportCandidateState, ReportRelease)
 from .serialization import json_dumps
 
 CURRENT_DEFINITION_CONTRACT = '3.0'
@@ -252,6 +253,54 @@ def publication_bindings(db, pub, payload, organization_id):
     return result
 
 
+# A1-F2: a non-terminal candidate or any release makes the candidate/release
+# workflow the only writer of the report (current_revision, actuals, freeze).
+# A report whose candidates are all returned is no longer pre-workflow either:
+# its rework must stay on the S3C-2 candidate lineage, so it is refused too.
+LIVE_CANDIDATE_STATES = ('assembling', 'final_review', 'final_approved')
+
+
+def workflow_owner(db, report):
+    """Return (description, next step) of the workflow owning the report, or None."""
+    # Older populated checkpoints predate candidates/releases: nothing can own the report.
+    if not inspect(db.connection()).has_table('report_releases'):
+        return None
+    release = db.scalar(select(ReportRelease).where(ReportRelease.organization_id == report.organization_id,
+        ReportRelease.resource_scope == 'activity_report', ReportRelease.report_key == str(report.id))
+        .order_by(ReportRelease.major.desc(), ReportRelease.minor.desc(), ReportRelease.id.desc()))
+    if release:
+        return f'yayımlanmış {release.major}.{release.minor} sürümü', 'değişiklik için yayımlanmış sürüme düzeltme talebi açın'
+    candidates = db.execute(select(ReportCandidate.id, ReportCandidateState.state).join(ReportCandidateState,
+        ReportCandidateState.candidate_id == ReportCandidate.id).where(ReportCandidate.organization_id == report.organization_id,
+        ReportCandidate.resource_scope == 'activity_report', ReportCandidate.report_key == str(report.id))
+        .order_by(ReportCandidate.sequence.desc(), ReportCandidate.id.desc())).all()
+    live = next((row for row in candidates if row[1] in LIVE_CANDIDATE_STATES), None)
+    if live:
+        return f'#{live[0]} numaralı rapor adayı ({live[1]})', 'değişiklik için aday nihai onaycı tarafından iade edilmeli ve Strateji yeni aday oluşturmalıdır'
+    if candidates:
+        return f'#{candidates[0][0]} numaralı iade edilmiş rapor adayı', 'yeniden çalışma yalnız aday iş akışıyla yapılır: Strateji ilgili müdürlük paketini gerekçeyle yeniden açar ve düzeltilen paketle yeni aday oluşturur'
+    return None
+
+
+def ensure_legacy_writable(db, report, revision=None):
+    """Deterministic 409 before any legacy mutation of a workflow-managed report."""
+    owner = workflow_owner(db, report)
+    if owner:
+        raise HTTPException(409, f'Bu Faaliyet Raporu artık aday/yayın iş akışı tarafından yönetiliyor ({owner[0]}). '
+            f'Bu ekrandan yeni revizyon, gerçekleşme veya onay kaydı yapılamaz; {owner[1]}.')
+    if revision is not None and inspect(db.connection()).has_table('report_candidates') and db.scalar(select(ReportCandidate.id).where(ReportCandidate.activity_revision_id == revision.id)):
+        raise HTTPException(409, 'Bu rapor revizyonu bir nihai rapor adayına bağlı. Gerçekleşme eklenemez ve onayı yalnız görevli nihai onaycı verebilir; '
+            'güncel rapor revizyonunu açın veya Stratejiyle aday durumunu kontrol edin.')
+
+
+def returned_after_approval(db, revision):
+    """A1-F1: a successor returned from final_approved keeps its freeze as history; never show it as approved."""
+    if not inspect(db.connection()).has_table('report_candidates'):
+        return False
+    return bool(db.scalar(select(ReportCandidate.id).join(ReportCandidateState, ReportCandidateState.candidate_id == ReportCandidate.id)
+        .where(ReportCandidate.activity_revision_id == revision.id, ReportCandidateState.state == 'returned_to_strategy')))
+
+
 def lock_report(db, report):
     version = report.lock_version
     changed = db.execute(update(ActivityReport).where(ActivityReport.id == report.id,
@@ -294,13 +343,16 @@ def create_report_revision(db, user, publication_id, organization_id, report_id=
         raise HTTPException(422, 'Revizyon gerekçesi en fazla 10.000 karakterlik metin olmalı.')
     pub, payload = checked_publication(db, publication_id)
     # Serialize creation within a period without modifying the published snapshot.
-    db.scalar(select(ReportingPeriod).where(ReportingPeriod.id == pub.period_id).with_for_update())
+    # NO KEY UPDATE: still serializes creation, but lets a concurrent candidate insert take its
+    # foreign-key share lock on the period (A1-P1 REL-1: no legacy/assembly deadlock).
+    db.scalar(select(ReportingPeriod).where(ReportingPeriod.id == pub.period_id).with_for_update(key_share=True))
     previous = None
     if report_id:
         report = db.scalar(select(ActivityReport).where(ActivityReport.id == report_id).with_for_update())
         if not report or report.organization_id != organization_id or report.period_id != pub.period_id:
             raise HTTPException(422, 'Yeni yayın mevcut raporla aynı yıl ve kuruma ait olmalı.')
         lock_report(db, report)
+        ensure_legacy_writable(db, report)
         if report.current_revision != expected_revision:
             raise HTTPException(409, 'Rapor revizyonu değişti. Son sürümü açıp tekrar kontrol edin.')
         previous = db.scalar(select(ActivityReportRevision).where(ActivityReportRevision.report_id == report.id,
@@ -363,6 +415,7 @@ def save_actual(db, user, report_indicator_id, expected_revision, value, state, 
     authorize(user, binding.department_id)
     report, revision, pub, payload = report_revision(db, user, item.report_revision_id)
     lock_report(db, report)
+    ensure_legacy_writable(db, report, revision)
     if revision.revision != report.current_revision:
         raise HTTPException(409, 'Geçmiş rapor revizyonuna yazılamaz. Güncel revizyonu açın.')
     if db.scalar(select(ActivityReportApproval.id).where(ActivityReportApproval.report_revision_id == revision.id)):
@@ -404,6 +457,7 @@ def approve_report(db, user, revision_id):
     strategy(user)
     report, revision, pub, payload = report_revision(db, user, revision_id)
     lock_report(db, report)
+    ensure_legacy_writable(db, report, revision)
     if revision.revision != report.current_revision:
         raise HTTPException(409, 'Yalnız güncel rapor revizyonu onaylanabilir.')
     if db.scalar(select(ActivityReportApproval.id).where(ActivityReportApproval.report_revision_id == revision.id)):
@@ -466,4 +520,5 @@ def report_data(db, user, revision_id):
         'newer_publication_available': latest > pub.version, 'previous_revision_id': revision.previous_revision_id,
         'revision_reason': revision.revision_reason, 'contract_version': revision.contract_version,
         'approved': bool(db.scalar(select(ActivityReportApproval.id).where(ActivityReportApproval.report_revision_id == revision.id))),
+        'returned_after_approval': returned_after_approval(db, revision) if approval else False,
         'differences': differences, 'indicators': result}

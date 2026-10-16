@@ -313,13 +313,14 @@ def test_contract_api_requires_session_and_csrf(db, sample):
     from fastapi.testclient import TestClient
     from app.db import get_db
     from app.config import session_secret
+    from app.main import password_fingerprint
     def database(): yield db
     app.dependency_overrides[get_db] = database
     try:
         with TestClient(app) as session_client:
             body = {'publication_id': 999, 'organization_id': sample['department'].organization_id}
             assert session_client.post('/api/activity-reports/revisions', json=body).status_code == 401
-            cookie = TimestampSigner(session_secret()).sign(base64.b64encode(json.dumps({'user_id': sample['strategy'].id, 'csrf_token': 'test-token'}).encode())).decode()
+            cookie = TimestampSigner(session_secret()).sign(base64.b64encode(json.dumps({'user_id': sample['strategy'].id, 'csrf_token': 'test-token', 'password_fp': password_fingerprint(sample['strategy'].password_hash)}).encode())).decode()
             session_client.cookies.set('session', cookie)
             assert session_client.post('/api/activity-reports/revisions', json=body).status_code == 403
             assert session_client.post('/api/activity-reports/revisions', json=body, headers={'X-CSRF-Token': 'test-token'}).status_code == 404

@@ -21,6 +21,7 @@ TRANSITIONS = {
     'director_approve': ('director_review', 'strategy_review'),
     'director_return': ('director_review', 'returned'),
     'director_reopen': ('director_review', 'returned'),
+    'strategy_reopen': ('strategy_approved', 'returned'),
     'strategy_return': ('strategy_review', 'returned'),
     'strategy_approve': ('strategy_review', 'strategy_approved'),
 }
@@ -42,6 +43,10 @@ def locked(db, actor, package_id, action, expected_version, expected_hash):
     package = db.get(DirectoratePackage, package_id)
     if not package:
         auth.fail('Müdürlük paketi bulunamadı.', 404)
+    # Only published corrections acquire the organization lock, via current_source.
+    # Resolve that context before the ordinary department/package/user lock path.
+    from .revision_workflow_service import correction_context, require_correction_authority
+    cycle=correction_context(db,package,validate_grant=False)
     # Same lock order as membership/delegation changes; refresh after waiting.
     auth.scope_department(db, package.organization_id, package.department_id, lock=True)
     package = db.scalar(select(DirectoratePackage).where(DirectoratePackage.id == package_id)
@@ -58,10 +63,19 @@ def locked(db, actor, package_id, action, expected_version, expected_hash):
         conflict()
     if not auth.package_eligibility(db, actor, action, package):
         auth.fail('Bu paket aşamasında seçilen işlemi yapmaya yetkiniz yok. Güncel aşamayı ve görevlendirmenizi kontrol edin.')
+    if cycle:
+        # Keep stale-version/authority checks ahead of correction authority as before.
+        if action!='strategy_reopen':require_correction_authority(db,cycle,package)
+        if action=='edit_draft':auth.fail('Yayımlanmış düzeltmeleri yalnız alan izni üzerinden düzenleyin.')
+        return package,current
     if package.resource_scope == 'activity_report':
         source=db.get(ActivityReportRevision,package.report_revision_id)
         report=db.scalar(select(ActivityReport).where(ActivityReport.id==source.report_id).with_for_update().execution_options(populate_existing=True))
-        if not report or report.current_revision!=source.revision or db.scalar(select(ActivityReportApproval.id).where(ActivityReportApproval.report_revision_id==source.id)):
+        # A1-P1.1 R10: after a returned first attempt its own packages stay workflow-editable
+        # (explicit strategy_reopen, append-only revisions); nothing else reopens the source.
+        from .report_workflow_service import initial_rework_attempt
+        if not report or ((report.current_revision!=source.revision or db.scalar(select(ActivityReportApproval.id).where(ActivityReportApproval.report_revision_id==source.id)))
+                and not initial_rework_attempt(db,package)):
             auth.fail('Kaynak faaliyet raporu artık güncel veya düzenlenebilir değil. Güncel rapor revizyonu için yeni paket oluşturun.',409)
     else:
         period=db.scalar(select(ReportingPeriod).where(ReportingPeriod.id==package.period_id).with_for_update().execution_options(populate_existing=True))
@@ -139,6 +153,17 @@ def create_package(db, actor, organization_id, department_id, resource_scope, so
         from .activity_contract_service import report_data
         source = db.get(ActivityReportRevision, source_id)
         report = db.get(ActivityReport, source.report_id) if source else None
+        if not report or report.organization_id != organization_id:
+            auth.fail('Güncel, onaylanmamış faaliyet raporu revizyonunu seçin.',409)
+        # A1-P1.1 WF-2: a candidate's materialization is never a package source; its
+        # rework continues on the attempt's own packages (explicit strategy_reopen).
+        # A materialization always follows a revision, so a first revision is never one.
+        from .report_workflow_models import ReportCandidate
+        owner = source.previous_revision_id is not None and db.scalar(
+            select(ReportCandidate.id).where(ReportCandidate.activity_revision_id == source.id))
+        if owner:
+            auth.fail(f'Bu revizyon #{owner} numaralı rapor adayının içeriğidir; üzerinde paket açılamaz. '
+                'Aday iade edildiyse Strateji ilgili müdürlük paketini gerekçeyle yeniden açmalıdır.',409)
         if not report or report.organization_id != organization_id or report.current_revision != source.revision or db.scalar(select(ActivityReportApproval.id).where(ActivityReportApproval.report_revision_id == source.id)):
             auth.fail('Güncel, onaylanmamış faaliyet raporu revizyonunu seçin.',409)
         data = report_data(db, actor, source.id)
@@ -285,10 +310,31 @@ def edit_package(db, actor, package_id, expected_version, expected_hash, patches
 
 def transition(db, actor, package_id, action, expected_version, expected_hash, reason=''):
     if action not in TRANSITIONS:auth.fail('Paket işlemi tanınmıyor.',403)
+    rework=reopen_cycle=None
+    if action=='strategy_reopen':
+        from .revision_workflow_service import correction_context
+        target=db.get(DirectoratePackage,package_id)
+        if not target:auth.fail('Paket bulunamadı.',404)
+        cycle=reopen_cycle=correction_context(db,target,validate_grant=False)
+        if cycle:
+            from .report_workflow_service import require_returned_attempt
+            require_returned_attempt(db,cycle.source_release_id)
+        else:
+            # A1-P1.1 R10: reopen a package of a returned, unpublished first Activity attempt.
+            from .report_workflow_service import initial_rework_attempt, organization_lock
+            if db.get_bind().dialect.name!='postgresql':auth.fail('Paket yeniden açma PostgreSQL güvenlik denetimleri gerektirir.',409)
+            organization_lock(db,target.organization_id)
+            if not initial_rework_attempt(db,target):
+                auth.fail('Paket yalnız nihai onaycının iade ettiği, henüz yayımlanmamış son rapor adayına bağlıysa yeniden açılabilir. '
+                    'Aday iade edilmeden veya yayımlandıktan sonra yayımlanmış sürüm için düzeltme talebi açın.',409)
     package,current=locked(db,actor,package_id,action,expected_version,expected_hash)
+    if action=='strategy_reopen' and not reopen_cycle:
+        # Re-check under the package/report locks taken by locked().
+        rework=initial_rework_attempt(db,package)
+        if not rework:conflict()
     origin,destination=TRANSITIONS[action]
     if (origin=='editable' and package.state not in {'draft','returned'}) or (origin!='editable' and package.state!=origin):conflict()
-    if action in {'director_return','director_reopen','strategy_return'}:reason=auth.required(reason,'Paket iade / düzeltme gerekçesi')
+    if action in {'director_return','director_reopen','strategy_return','strategy_reopen'}:reason=auth.required(reason,'Paket iade / düzeltme gerekçesi')
     content=json.loads(current.content_json)
     if action=='submit_to_director' and package.resource_scope=='activity_report':
         for entry in content['entries']:validate_actual(entry)
@@ -302,16 +348,52 @@ def transition(db, actor, package_id, action, expected_version, expected_hash, r
             auth.fail('İşlem anındaki görevlendirme / vekâlet yetkiniz geçerli değil. Güncel yetkiyi kontrol edin.')
         delegation=auth.active_delegation(db,package.organization_id,package.department_id,at=decision_time) if action.startswith('director_') else None
         state_before=package.state
-        next_revision=append_revision(db,package,actor,current.content_json,current,reason) if destination=='returned' else current
+        from .revision_workflow_service import correction_context
+        cycle=correction_context(db,package,validate_grant=action!='strategy_reopen')
+        next_revision=current
+        if destination=='returned' and not cycle:
+            next_revision=append_revision(db,package,actor,current.content_json,current,reason)
         event=history_event(db,actor,package,action,{'revision_id':current.id,'sha256':current.sha256,
-            'next_revision_id':next_revision.id,'from_state':state_before,'to_state':destination,
-            'delegation_id':delegation.id if delegation else None,'decision_time':decision_time},reason)
+            'next_revision_id':None if cycle and destination=='returned' else next_revision.id,
+            'next_revision':current.revision+1 if destination=='returned' else current.revision,'next_sha256':current.sha256,'from_state':state_before,'to_state':destination,
+            'delegation_id':delegation.id if delegation else None,'decision_time':decision_time,
+            'correction_cycle_id':cycle.id if cycle else None,'expected_version':expected_version,'returned_revision':current.revision+1 if (cycle or rework) and destination=='returned' else None,
+            **({'initial_rework_candidate_id':rework.id,'initial_rework_candidate_sha256':rework.sha256} if rework else {})},reason)
         db.add(PackageDecision(package_revision_id=current.id,snapshot_sha256=current.sha256,action=action,
             from_state=state_before,to_state=destination,workflow_event_id=event.id,delegation_id=delegation.id if delegation else None))
+        db.flush()
+        if cycle and destination=='returned':
+            next_revision=append_revision(db,package,actor,current.content_json,current,reason)
         move(db,package,expected_version,destination,next_revision.revision)
         notice(db,package,event,destination)
         db.flush()
     return package
+
+
+def reopen_correction_package(db, actor, package, current, cycle, reason, provenance):
+    """A1-P1.1 TE-1: strategy_reopen of a correction package for a NEW accepted request.
+
+    The caller (revision_workflow_service.reopen_cycle) holds the organization,
+    department, package and request locks and owns the savepoint. Same decision,
+    exact-copy revision and projection shape as transition(); provenance names
+    the request and its correction_cycle_reopened event."""
+    decision_time = auth.server_now(db)
+    if package.state != 'strategy_approved' or not auth.package_eligibility(db, actor, 'strategy_reopen', package, transition_time=decision_time):
+        auth.fail('İşlem anındaki görevlendirme / vekâlet yetkiniz geçerli değil. Güncel yetkiyi kontrol edin.')
+    expected_version = package.version
+    event = history_event(db, actor, package, 'strategy_reopen', {'revision_id': current.id, 'sha256': current.sha256,
+        'next_revision_id': None, 'next_revision': current.revision + 1, 'next_sha256': current.sha256,
+        'from_state': 'strategy_approved', 'to_state': 'returned', 'delegation_id': None, 'decision_time': decision_time,
+        'correction_cycle_id': cycle.id, 'expected_version': expected_version, 'returned_revision': current.revision + 1,
+        **provenance}, reason)
+    db.add(PackageDecision(package_revision_id=current.id, snapshot_sha256=current.sha256, action='strategy_reopen',
+        from_state='strategy_approved', to_state='returned', workflow_event_id=event.id, delegation_id=None))
+    db.flush()
+    copy = append_revision(db, package, actor, current.content_json, current, reason)
+    move(db, package, expected_version, 'returned', copy.revision)
+    notice(db, package, event, 'returned')
+    db.flush()
+    return copy
 
 
 def package_detail(db, actor, package_id):

@@ -8,3 +8,8 @@ __pycache__/
 .DS_Store
 .env.*
 !.env.example
+
+# Generated release packaging; never commit bundle artifacts.
+bundle.part*
+bundle-manifest.json
+/dist/bundle/

@@ -27,6 +27,7 @@ def isolated_application_startup(tmp_path, monkeypatch):
     url = f"sqlite:///{tmp_path / 'application-startup.db'}"
     runtime_engine = create_engine(url)
     monkeypatch.setenv('DATABASE_URL', url)
+    monkeypatch.delenv('MIGRATION_DATABASE_URL', raising=False)
     monkeypatch.setenv('DEMO_SEED', '0')
     monkeypatch.setattr(main, 'engine', runtime_engine)
     yield

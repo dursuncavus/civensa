@@ -11,42 +11,57 @@ import hmac
 import io
 import csv
 import time
+from functools import lru_cache
 from urllib.parse import quote
 
 from fastapi import FastAPI, Request, Depends, Form, HTTPException, UploadFile, File
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from sqlalchemy import select, inspect, func, exists, false
+from sqlalchemy import select, inspect, func, exists, false, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, selectinload
 from starlette.middleware.sessions import SessionMiddleware
 from alembic import command as alembic_command
 from alembic.config import Config as AlembicConfig
+from alembic.script import ScriptDirectory
 
 from .db import Base, engine, get_db, SessionLocal
+from .db_privileges import assert_runtime_restricted
 from .models import (
     User, Department, ReportingPeriod, Indicator, IndicatorValue, Activity,
     ActivityCostValue, DepartmentCostValue, Submission, AuditLog, Program,
     SubProgram, TemplateSnapshot, ImportBatch, SubmissionEvent, Notification, NotificationRecipient,
 )
 from .security import verify_password, hash_password
+from . import login_throttling
 from .seed import seed
 from .template_parser import analyze_template
 from .data_importer import parse_performance_docx
-from .import_service import build_department_plan, apply_import_batch, import_revert_status, revert_import_batch
+from .import_service import build_department_plan, apply_import_batch, import_revert_status, revert_import_batch, import_validation_errors
 from .config import validate_runtime_settings, session_secret, cookie_secure, demo_seed_enabled, is_production
 from .file_security import read_upload_limited, validate_office_zip
 from .report_export import build_department_docx
+from .csv_safety import csv_row, csv_text, csv_cell_matches
 
 BASE_DIR = Path(__file__).resolve().parent
 APP_VERSION = "5.0.0"
-MIGRATION_HEAD = "264bdce59301"
+
+
+@lru_cache(maxsize=1)
+def migration_head() -> str:
+    """Current Alembic script head; read from migrations/ so readiness follows new revisions."""
+    alembic_config = AlembicConfig(str(BASE_DIR.parent / "alembic.ini"))
+    alembic_config.set_main_option("script_location", str(BASE_DIR.parent / "migrations"))
+    return ScriptDirectory.from_config(alembic_config).get_current_head()
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     validate_runtime_settings()
+    if os.getenv("MIGRATION_DATABASE_URL"):
+        # Check the request role before migration or traffic, using catalogs only.
+        assert_runtime_restricted(engine)
     if is_production():
         # Apply committed schema migrations before serving traffic; back up before upgrading.
         alembic_config = AlembicConfig(str(BASE_DIR.parent / "alembic.ini"))
@@ -98,9 +113,39 @@ app.mount("/static", StaticFiles(directory=BASE_DIR / "static"), name="static")
 templates = Jinja2Templates(directory=BASE_DIR / "templates")
 
 
+_PASSWORD_FINGERPRINT_KEY = session_secret().encode()
+
+
+def password_fingerprint(password_hash: str) -> str:
+    """Keyed digest of the stored hash; every reset/change re-salts the hash, so it changes."""
+    message = b"civensa-session-password-v1\x00" + str(password_hash or "").encode()
+    return hmac.new(_PASSWORD_FINGERPRINT_KEY, message, "sha256").hexdigest()[:32]
+
+
+def start_user_session(request: Request, user_id: int, password_hash: str) -> None:
+    request.session["user_id"] = user_id
+    request.session["password_fp"] = password_fingerprint(password_hash)
+
+
 def current_user(request: Request, db: Session):
     uid = request.session.get("user_id")
-    return db.get(User, uid) if uid else None
+    user = db.get(User, uid) if uid else None
+    # Sessions issued before the latest password reset/change are no longer valid (A1-F10).
+    if user and not hmac.compare_digest(str(request.session.get("password_fp", "")), password_fingerprint(user.password_hash)):
+        return None
+    return user
+
+
+async def csrf_valid(request: Request) -> bool:
+    expected = request.session.get("csrf_token", "")
+    supplied = request.headers.get("X-CSRF-Token", "")
+    if not supplied and request.headers.get("content-type", "").startswith(("application/x-www-form-urlencoded", "multipart/form-data")):
+        form = await request.form()
+        supplied = str(form.get("csrf_token", ""))
+    return bool(expected and supplied and hmac.compare_digest(str(expected), str(supplied)))
+
+
+CSRF_ERROR = "Güvenlik doğrulaması başarısız. Sayfayı yenileyip tekrar deneyin."
 
 
 async def require_user(request: Request, db: Session = Depends(get_db)):
@@ -109,13 +154,8 @@ async def require_user(request: Request, db: Session = Depends(get_db)):
         request.session.clear()
         raise HTTPException(status_code=401)
     if request.method in {"POST", "PUT", "PATCH", "DELETE"}:
-        expected = request.session.get("csrf_token", "")
-        supplied = request.headers.get("X-CSRF-Token", "")
-        if not supplied and request.headers.get("content-type", "").startswith(("application/x-www-form-urlencoded", "multipart/form-data")):
-            form = await request.form()
-            supplied = str(form.get("csrf_token", ""))
-        if not expected or not supplied or not hmac.compare_digest(str(expected), str(supplied)):
-            raise HTTPException(403, "Güvenlik doğrulaması başarısız. Sayfayı yenileyip tekrar deneyin.")
+        if not await csrf_valid(request):
+            raise HTTPException(403, CSRF_ERROR)
     return user
 
 
@@ -360,19 +400,35 @@ def login_page(request: Request):
 
 @app.post("/login", response_class=HTMLResponse)
 def login(request: Request, email: str = Form(...), password: str = Form(...), db: Session = Depends(get_db)):
+    # Use the ASGI client accepted by the server's existing proxy trust policy.
+    # Never parse X-Forwarded-For here. Missing client addresses share one bucket.
+    client_ip = request.client.host if request.client else "unknown"
+    email_key, ip_key, now, locked = login_throttling.begin_attempt(db, email, client_ip)
     user = db.scalar(select(User).where(User.email == email.strip().lower()))
-    if not user or not user.is_active or not verify_password(password, user.password_hash):
-        return templates.TemplateResponse(request, "login.html", {"error": "E-posta veya parola hatalı."}, status_code=400)
+    # Exactly one PBKDF2 check for ordinary failures, unknown/inactive users and
+    # locked requests (including correct passwords); no user existence shortcut.
+    stored = user.password_hash if user and user.is_active and not locked else login_throttling.DUMMY_PASSWORD_HASH
+    valid_password = verify_password(password, stored)
+    if locked or not user or not user.is_active or not valid_password:
+        if not locked:
+            locked = login_throttling.record_failure(db, email_key, ip_key, now)
+        db.commit()
+        error = login_throttling.LOCK_MESSAGE if locked else "E-posta veya parola hatalı."
+        return templates.TemplateResponse(request, "login.html", {"error": error}, status_code=400)
+    login_throttling.clear_email_failures(db, email_key, now)
     # Never carry role/period context from a previous session into a new login.
     request.session.clear()
-    request.session["user_id"] = user.id
+    start_user_session(request, user.id, user.password_hash)
     request.session["csrf_token"] = secrets.token_urlsafe(32)
     log(db, user, "login", "user", user.id)
     return RedirectResponse("/modules", 303)
 
 
 @app.post("/logout")
-def logout(request: Request):
+async def logout(request: Request):
+    # A signed-in session is only ended by a same-origin request carrying its CSRF token (A1-F11a).
+    if request.session.get("user_id") and not await csrf_valid(request):
+        raise HTTPException(403, CSRF_ERROR)
     request.session.clear()
     return RedirectResponse("/login", 303)
 
@@ -737,20 +793,17 @@ def export_activity_mapping_queue(request: Request, db: Session = Depends(get_db
         grouped.setdefault(activity.department_id, []).append(activity)
     output = io.StringIO()
     writer = csv.writer(output)
-    writer.writerow([
-        "Müdürlük", "Faaliyet ID", "Faaliyet", "Civensa Önerisi",
-        "Güven (%)", "Öneri Düzeyi", "Seçilecek Program / Alt Program",
-    ])
+    writer.writerow(csv_row(MAPPING_CSV_HEADERS))
     for department_id, pending in grouped.items():
         choices, by_sp = _department_mapping_choices(db, department_id, period.id)
         for activity in pending:
             suggested, score = _activity_mapping_suggestion(activity, choices, by_sp)
             suggestion = f"{suggested.program.name} / {suggested.name}" if suggested else ""
             level = "Güçlü" if suggested and score >= 0.50 else "Kontrol gerekli" if suggested else "Öneri yok"
-            writer.writerow([
+            writer.writerow(csv_row([
                 activity.department.name, activity.id, activity.name, suggestion,
                 round(score * 100), level, "",
-            ])
+            ]))
     data = ("\ufeff" + output.getvalue()).encode("utf-8")
     headers = {"Content-Disposition": 'attachment; filename="civensa-faaliyet-eslestirme-kuyrugu.csv"'}
     return StreamingResponse(io.BytesIO(data), media_type="text/csv; charset=utf-8", headers=headers)
@@ -804,13 +857,14 @@ def validate_mapping_csv(data: bytes, db: Session, period: ReportingPeriod):
         row_errors = []
         if activity.subprogram_id is not None:
             row_errors.append("Faaliyet artık eşleştirme kuyruğunda değil; güncel CSV'yi indirin.")
-        if activity.department.name.strip() != str(source.get("Müdürlük", "")).strip():
+        if not csv_cell_matches(source.get("Müdürlük", ""), activity.department.name):
             row_errors.append("Müdürlük adı güncel kayıtla eşleşmiyor.")
-        if activity.name.strip() != str(source.get("Faaliyet", "")).strip():
+        if not csv_cell_matches(source.get("Faaliyet", ""), activity.name):
             row_errors.append("Faaliyet adı güncel kayıtla eşleşmiyor.")
         choices, _ = _department_mapping_choices(db, activity.department_id, period.id)
         choice_map = {f"{sp.program.name} / {sp.name}": sp for sp in choices}
-        subprogram = choice_map.get(selection)
+        # A selection copied from the exported suggestion column may carry the formula guard.
+        subprogram = choice_map.get(selection) or {csv_text(key): sp for key, sp in choice_map.items()}.get(selection)
         if not subprogram:
             row_errors.append("Seçilen Program / Alt Program bu müdürlüğün göstergelerinde kullanılmıyor.")
         submission = editable_submission(db, activity.department_id, period.id)
@@ -1010,10 +1064,10 @@ def missing_department_accounts_csv(db: Session = Depends(get_db), user: User = 
     ).all())
     output = io.StringIO()
     writer = csv.writer(output)
-    writer.writerow(["Müdürlük ID", "Müdürlük", "Ad Soyad", "E-posta", "Geçici Parola"])
+    writer.writerow(csv_row(ACCOUNT_CSV_HEADERS))
     for department in departments:
         if department.id not in assigned:
-            writer.writerow([department.id, department.name, "", "", ""])
+            writer.writerow(csv_row([department.id, department.name, "", "", ""]))
     data = ("\ufeff" + output.getvalue()).encode("utf-8")
     headers = {"Content-Disposition": 'attachment; filename="civensa-eksik-mudurluk-hesaplari.csv"'}
     return StreamingResponse(io.BytesIO(data), media_type="text/csv; charset=utf-8", headers=headers)
@@ -1068,7 +1122,7 @@ def validate_account_csv(data: bytes, db: Session):
             errors.append(prefix + "Müdürlük bulunamadı.")
             continue
         row_errors = []
-        if department.name.strip() != department_name:
+        if not csv_cell_matches(department_name, department.name):
             row_errors.append("Müdürlük adı şablonla eşleşmiyor.")
         if department_id in assigned:
             row_errors.append("Bu müdürlüğün hesabı zaten var.")
@@ -1252,6 +1306,12 @@ def review(request: Request, db: Session = Depends(get_db), user: User = Depends
 
 @app.post("/api/submissions/{submission_id}/decision")
 async def submission_decision(submission_id: int, request: Request, db: Session = Depends(get_db), user: User = Depends(require_strategy)):
+    # Read the body before the row lock: no await may run while FOR UPDATE is held,
+    # or a second request blocking on the same row freezes the event loop (A1-F4).
+    try:
+        data = await request.json()
+    except ValueError:
+        data = None
     sub = db.scalar(select(Submission).where(Submission.id == submission_id)
                     .with_for_update().execution_options(populate_existing=True))
     if not sub:
@@ -1259,7 +1319,8 @@ async def submission_decision(submission_id: int, request: Request, db: Session 
     if sub.status != "submitted":
         raise HTTPException(409, "Yalnızca incelemedeki paket için karar verilebilir.")
     from .program_service import department_snapshot
-    data = await request.json()
+    if not isinstance(data, dict):
+        raise HTTPException(422, "Geçersiz karar.")
     decision = data.get("decision")
     note = str(data.get("note", "")).strip()
     if decision == "approve":
@@ -1340,8 +1401,18 @@ async def change_own_password(request: Request, db: Session = Depends(get_db), u
         raise HTTPException(422, "Yeni parola en az 12 karakter olmalı ve kenar boşluğu içermemeli.")
     if new_password == current_password:
         raise HTTPException(422, "Yeni parola mevcut paroladan farklı olmalı.")
-    user.password_hash = hash_password(new_password)
+    # Compare-and-set against the hash this request was authenticated with: an admin reset
+    # committed while this request waited for its body must win, not be overwritten.
+    new_hash = hash_password(new_password)
+    changed = db.execute(update(User).where(User.id == user.id, User.password_hash == user.password_hash)
+                         .values(password_hash=new_hash)).rowcount
+    if changed != 1:
+        db.rollback()
+        raise HTTPException(409, "Parolanız bu sırada başka bir işlemle değiştirildi. Yeniden giriş yapıp tekrar deneyin.")
     db.commit()
+    # Other sessions of this user are now rejected; keep only the session that made the change,
+    # stamped with the hash written here (a reset committed right after must still end it).
+    start_user_session(request, user.id, new_hash)
     log(db, user, "self_password_change", "user", user.id)
     return {"ok": True}
 
@@ -1408,14 +1479,16 @@ async def data_import_preview(period_id: int, file: UploadFile = File(...), db: 
     } for d in plan["parsed"]["departments"][:12]]
     source_years = plan["summary"].get("source_years", [])
     year_mismatch = bool(source_years and source_years != [period.year])
-    warnings = list(plan["parsed"]["warnings"])
+    errors = import_validation_errors(parsed)
+    warnings = list(dict.fromkeys([*plan["parsed"]["warnings"], *errors]))
     if year_mismatch:
         warnings.insert(0, f"Dosya bütçe yılı {source_years}; seçilen Civensa dönemi {period.year}. Uygulama engellendi.")
     return {
         "ok": True, "batch_id": batch.id, "status": batch.status,
         "summary": plan["summary"], "warnings": warnings,
+        "errors": errors, "coverage_items": plan["parsed"].get("coverage_items", []),
         "departments": preview_departments, "mappings": plan["mappings"],
-        "can_apply": not plan["unresolved"] and not year_mismatch,
+        "can_apply": not plan["unresolved"] and not year_mismatch and not errors,
     }
 
 
@@ -1429,19 +1502,21 @@ def import_batch_detail(batch_id: int, db: Session = Depends(get_db), user: User
     period = db.get(ReportingPeriod, batch.period_id)
     source_years = plan["summary"].get("source_years", [])
     year_mismatch = bool(period and source_years and source_years != [period.year])
-    warnings = list(plan["parsed"].get("warnings", []))
+    errors = import_validation_errors(parsed)
+    warnings = list(dict.fromkeys([*plan["parsed"].get("warnings", []), *errors]))
     if year_mismatch:
         warnings.insert(0, f"Dosya bütçe yılı {source_years}; seçilen Civensa dönemi {period.year}. Uygulama engellendi.")
     can_revert, revert_reason = import_revert_status(db, batch)
     return {
         "id": batch.id, "filename": batch.filename, "status": batch.status,
         "summary": plan["summary"], "warnings": warnings,
+        "errors": errors, "coverage_items": plan["parsed"].get("coverage_items", []),
         "departments": [{
             "name": d["name"], "block_count": len(d["blocks"]),
             "indicator_count": sum(len(b["indicators"]) for b in d["blocks"]),
             "activity_count": len(d["activities"]),
         } for d in plan["parsed"].get("departments", [])],
-        "mappings": plan["mappings"], "can_apply": batch.status == "preview" and not plan["unresolved"] and not year_mismatch,
+        "mappings": plan["mappings"], "can_apply": batch.status == "preview" and not plan["unresolved"] and not year_mismatch and not errors,
         "can_revert": can_revert, "revert_reason": revert_reason,
     }
 
@@ -1692,7 +1767,7 @@ def release_readiness(request: Request, db: Session = Depends(get_db), user: Use
     ).all()
     checks = {
         "database": operations["database"]["status"] == "ok",
-        "migration_head": migration == MIGRATION_HEAD,
+        "migration_head": migration == migration_head(),
         "period_active": operations["period"]["status"] == "active",
         "departments_present": operations["records"]["departments"] > 0,
         "indicators_present": operations["records"]["indicators"] > 0,
@@ -1803,10 +1878,10 @@ def audit_export(request: Request, db: Session = Depends(get_db), user: User = D
     users = {item.id: item for item in db.scalars(select(User).where(User.id.in_(user_ids))).all()} if user_ids else {}
     output = io.StringIO()
     writer = csv.writer(output)
-    writer.writerow(["Tarih", "Kullanıcı", "İşlem", "Varlık", "Varlık ID", "Ayrıntı"])
+    writer.writerow(csv_row(["Tarih", "Kullanıcı", "İşlem", "Varlık", "Varlık ID", "Ayrıntı"]))
     for row in rows:
         actor = users.get(row.user_id)
-        writer.writerow([row.created_at.isoformat(sep=" "), actor.email if actor else "sistem", row.action, row.entity_type, row.entity_id or "", safe_audit_details(row.details)])
+        writer.writerow(csv_row([row.created_at.isoformat(sep=" "), actor.email if actor else "sistem", row.action, row.entity_type, row.entity_id or "", safe_audit_details(row.details)]))
     data = ("\ufeff" + output.getvalue()).encode("utf-8")
     return StreamingResponse(io.BytesIO(data), media_type="text/csv; charset=utf-8", headers={"Content-Disposition": 'attachment; filename="civensa-denetim-gecmisi.csv"'})
 

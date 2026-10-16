@@ -1,13 +1,46 @@
+import base64
+import hashlib
+import io
+import json
 from pathlib import Path
-import base64,hashlib,io,json,zipfile
+import subprocess
+import sys
+import zipfile
 
-def test_bundle_matches_reviewable_source():
-    root=Path(__file__).resolve().parents[1];manifest=root/'bundle-manifest.json'
-    if not manifest.exists():return  # Source-only local checkout before packaging.
-    data=json.loads(manifest.read_text());raw=base64.b64decode(''.join((root/p).read_text() for p in data['parts']))
-    assert hashlib.sha256(raw).hexdigest()==data['sha256']
+ROOT = Path(__file__).resolve().parents[1]
+
+
+def test_bundle_matches_reviewable_source(tmp_path):
+    bundle_dir = tmp_path / "bundle"
+    subprocess.run([sys.executable, str(ROOT / "tools/build_bundle.py"), str(bundle_dir)],
+                   cwd=tmp_path, check=True)
+    data = json.loads((bundle_dir / "bundle-manifest.json").read_text())
+    raw = base64.b64decode("".join((bundle_dir / part).read_text() for part in data["parts"]),
+                          validate=True)
+    assert hashlib.sha256(raw).hexdigest() == data["sha256"]
     with zipfile.ZipFile(io.BytesIO(raw)) as archive:
-        assert set(archive.namelist())==set(data['files'])
-        for name,digest in data['files'].items():
-            assert hashlib.sha256(archive.read(name)).hexdigest()==digest
-            assert archive.read(name)==(root/name).read_bytes()
+        assert archive.testzip() is None
+        assert set(archive.namelist()) == set(data["files"])
+        for name, digest in data["files"].items():
+            assert hashlib.sha256(archive.read(name)).hexdigest() == digest
+            assert archive.read(name) == (ROOT / name).read_bytes()
+
+    # Both entry points verify the external bundle against the checkout, including syntax.
+    for checker in ["check_bundle.py", "qa_bundle_check.py"]:
+        result = subprocess.run([sys.executable, str(ROOT / checker), str(bundle_dir)],
+                                cwd=tmp_path, text=True, capture_output=True, check=True)
+        assert "BUNDLE_INTEGRITY_OK" in result.stdout
+
+    # Output location and a repeated build must not alter any artifact bytes.
+    second_dir = tmp_path / "second-bundle"
+    subprocess.run([sys.executable, str(ROOT / "tools/build_bundle.py"), str(second_dir)],
+                   cwd=tmp_path, check=True)
+    for name in [*data["parts"], "bundle-manifest.json"]:
+        assert (bundle_dir / name).read_bytes() == (second_dir / name).read_bytes()
+
+
+def test_bundle_builder_rejects_repository_root(tmp_path):
+    result = subprocess.run([sys.executable, str(ROOT / "tools/build_bundle.py"), str(ROOT)],
+                            cwd=tmp_path, text=True, capture_output=True)
+    assert result.returncode != 0
+    assert "Bundle output must be outside the repository root" in result.stderr

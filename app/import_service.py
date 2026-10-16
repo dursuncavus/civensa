@@ -12,7 +12,7 @@ from sqlalchemy.orm import Session, selectinload
 from .models import (
     Organization, Department, ReportingPeriod, Program, SubProgram,
     Indicator, IndicatorValue, Activity, ActivityCostValue,
-    DepartmentCostValue, Submission, ImportBatch, User, ReportCard, EconomicValue, ActivityCatalogueLink, DepartmentScope,
+    DepartmentCostValue, Submission, ImportBatch, User, ReportCard, EconomicValue, ActivityCatalogueLink, DepartmentScope, SubmissionEvent,
 )
 
 # Only obvious spelling/title variants observed in the supplied 2026 source are normalized.
@@ -121,7 +121,7 @@ def consolidate_source_departments(parsed: dict) -> dict:
     summary["indicator_count"] = sum(len(b.get("indicators", [])) for d in departments for b in d["blocks"])
     summary["activity_count"] = sum(len(d["activities"]) for d in departments)
     warnings = list(parsed.get("warnings", [])) + normalization_notes
-    return {"departments": departments, "summary": summary, "warnings": warnings}
+    return {"departments": departments, "summary": summary, "warnings": warnings, "errors": list(parsed.get("errors", [])), "coverage_items": list(parsed.get("coverage_items", []))}
 
 
 def _similarity(a: str, b: str) -> float:
@@ -217,6 +217,18 @@ def build_department_plan(db: Session, parsed: dict) -> dict:
             "unlinked_activity_estimate": sum(len(d.get("activities", [])) for d in consolidated["departments"] if not _source_activity_linkable(d)),
         },
     }
+
+
+def import_validation_errors(parsed: dict) -> list[str]:
+    errors = list(parsed.get("errors", []))
+    blocks = [block for dept in parsed.get("departments", []) for block in dept.get("blocks", [])]
+    if not blocks and not errors:
+        errors.append("Dosyada tanınan performans göstergesi tablosu bulunamadı. Bakanlık gösterge şablonunu ve Performans Göstergeleri başlığını kontrol edip dosyayı yeniden yükleyin.")
+    for dept in parsed.get("departments", []):
+        for index, block in enumerate(dept.get("blocks", []), 1):
+            if not block.get("budget_year") and not parsed.get("errors"):
+                errors.append(f"{dept['name']}, gösterge tablosu {index}: Bütçe Yılı eksik veya boş. Bütçe Yılı alanını doldurup dosyayı yeniden yükleyin.")
+    return errors
 
 
 def _get_or_create_program(db: Session, period_id: int, name: str) -> Program:
@@ -335,7 +347,7 @@ def _serialize_department_state(db: Session, department_id: int, period_id: int)
             for c in costs
         ],
         "submission": None if not submission else {
-            "id": submission.id, "status": submission.status, "return_note": submission.return_note,
+            "id": submission.id, "revision": submission.revision, "status": submission.status, "return_note": submission.return_note,
             "submitted_at": _dt(submission.submitted_at), "reviewed_at": _dt(submission.reviewed_at),
         },
     }
@@ -371,6 +383,11 @@ def import_revert_status(db: Session, batch: ImportBatch) -> tuple[bool, str]:
     current = _state_hash(db, affected, batch.period_id)
     if current != batch.applied_hash:
         return False, "İçe aktarma sonrasında veriler değiştiği için otomatik geri alma güvenli değil."
+    existing_submissions = {d["department_id"]: d.get("submission") for d in snapshot.get("departments", [])}
+    for did in affected:
+        if not existing_submissions.get(did) and db.scalar(select(SubmissionEvent.id).where(
+                SubmissionEvent.department_id == did, SubmissionEvent.period_id == batch.period_id).limit(1)):
+            return False, f"Müdürlük {did}: inceleme geçmişi bulunan teslim kaydı silinmeden geri alma yapılamıyor. İnceleme geçmişini koruyarak düzeltme yapmak için kart ekranını kullanın."
     for did in snapshot.get("created_department_ids", []):
         if db.scalar(select(User.id).where(User.department_id == did).limit(1)):
             return False, "İçe aktarmayla oluşan bir müdürlüğe kullanıcı atandığı için geri alma engellendi."
@@ -417,13 +434,20 @@ def _restore_department_state(db: Session, state: dict, period_id: int) -> None:
             value_kind=item["value_kind"], category=item.get("category", "personnel_sgk"), amount=item.get("amount"), raw_text=item.get("raw_text", ""), state=item.get("state", "verified"),
         ))
     sub = state.get("submission")
+    current = db.scalar(select(Submission).where(
+        Submission.department_id == department_id, Submission.period_id == period_id))
     if sub:
-        db.add(Submission(
-            id=sub["id"], department_id=department_id, period_id=period_id,
-            status=sub.get("status", "draft"), return_note=sub.get("return_note", ""),
-            submitted_at=datetime.fromisoformat(sub["submitted_at"]) if sub.get("submitted_at") else None,
-            reviewed_at=datetime.fromisoformat(sub["reviewed_at"]) if sub.get("reviewed_at") else None,
-        ))
+        if current is None:
+            current = Submission(id=sub["id"], department_id=department_id, period_id=period_id)
+            db.add(current)
+        current.status = sub.get("status", "draft")
+        current.return_note = sub.get("return_note", "")
+        if "revision" in sub:
+            current.revision = sub["revision"]
+        current.submitted_at = datetime.fromisoformat(sub["submitted_at"]) if sub.get("submitted_at") else None
+        current.reviewed_at = datetime.fromisoformat(sub["reviewed_at"]) if sub.get("reviewed_at") else None
+    elif current:
+        db.delete(current)
 
 
 def revert_import_batch(db: Session, batch: ImportBatch) -> dict:
@@ -436,13 +460,12 @@ def revert_import_batch(db: Session, batch: ImportBatch) -> dict:
     created_ids = [int(x) for x in snapshot.get("created_department_ids", [])]
     affected = existing_ids + created_ids
 
-    # Remove the imported state first. Submission is handled separately because it
-    # is not part of the department data helper.
+    # Retain existing submissions and their immutable history during restoration.
     for did in affected:
         if db.get(Department, did):
             _delete_department_period_data(db, did, batch.period_id)
             sub = db.scalar(select(Submission).where(Submission.department_id == did, Submission.period_id == batch.period_id))
-            if sub:
+            if sub and did in created_ids:
                 db.delete(sub)
     db.flush()
 
@@ -493,6 +516,9 @@ def apply_import_batch(db: Session, batch: ImportBatch, preserve_existing: bool 
         raise ValueError("Bakanlık şablonu doğrulanmadan veri içe aktarılamaz.")
 
     raw = json.loads(batch.payload_json)
+    errors = import_validation_errors(raw)
+    if errors:
+        raise ValueError(" ".join(errors))
     source_years = raw.get("summary", {}).get("source_years", [])
     if source_years and source_years != [period.year]:
         raise ValueError(f"Word dosyasındaki bütçe yılı {source_years}; seçilen Civensa dönemi {period.year}. Yanlış döneme veri yazılması engellendi.")
@@ -556,11 +582,6 @@ def apply_import_batch(db: Session, batch: ImportBatch, preserve_existing: bool 
         if not submission:
             submission = Submission(department_id=dept.id, period_id=period.id, status="draft")
             db.add(submission)
-        else:
-            submission.status = "draft"
-            submission.return_note = ""
-            submission.submitted_at = None
-            submission.reviewed_at = None
 
         block_subprograms = []
         block_cards = []
