@@ -262,6 +262,9 @@ def test_empty_installation_dashboard_and_first_period_creation(db):
 
 @pytest.mark.parametrize('foundation_db', [BASE_REVISION], indirect=True)
 def test_migration_with_case_duplicates_warning_and_non_destructive_downgrade(foundation_db):
+    from alembic.config import Config
+    from alembic.script import ScriptDirectory
+
     db = foundation_db
     # Raw SQL seeds the actual old schema: the model already has the new column.
     db.execute(text("INSERT INTO organizations (id,name) VALUES (1,'Pilot Belediyesi')"))
@@ -273,7 +276,8 @@ def test_migration_with_case_duplicates_warning_and_non_destructive_downgrade(fo
         result = subprocess.run([sys.executable, '-m', 'alembic', action, revision], cwd=ROOT, env=env, capture_output=True, text=True)
         assert result.returncode == 0, result.stderr
     migrate('upgrade', 'head')
-    assert db.execute(text('SELECT version_num FROM alembic_version')).scalar() == REVISION
+    scripts = ScriptDirectory.from_config(Config(str(ROOT / 'alembic.ini')))
+    assert db.execute(text('SELECT version_num FROM alembic_version')).scalar() == scripts.get_current_head()
     departments = db.scalars(select(Department).order_by(Department.id)).all()
     assert [d.name for d in departments] == ['PARK VE BAHÇELER MÜDÜRLÜĞÜ', 'Park Ve Bahçeler Müdürlüğü']
     assert all(d.is_active for d in departments)

@@ -1,13 +1,13 @@
 """CIV-011: preserve source totals and batch conflict decisions.
 
 Revision ID: b8d011e6f420
-Revises: a6c006e9b241
+Revises: b018a1c2d3e4
 """
 from alembic import op
 import sqlalchemy as sa
 
 revision = "b8d011e6f420"
-down_revision = "a6c006e9b241"
+down_revision = "b018a1c2d3e4"
 branch_labels = depends_on = None
 
 
