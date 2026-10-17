@@ -136,7 +136,20 @@ def test_legacy_activity_approval_still_blocks(foundation_db,people,package):
         return
     item=db.scalar(select(ReportIndicator).where(ReportIndicator.report_revision_id==p.report_revision_id))
     contract.save_actual(db,x['user'],item.id,1,'1.75','needs_review',[],'',{});db.commit()
-    error(409,lambda:contract.approve_report(db,x['strategy'],p.report_revision_id))
+    # The revision author cannot approve it; reach the original data-validation
+    # gate with an independent Strategy director instead.
+    strategy_department=Department(organization_id=x['department'].organization_id,name='Strateji Geliştirme Müdürlüğü')
+    db.add(strategy_department);db.flush()
+    approver=User(email='parity-approver@example.invalid',full_name='Strateji Müdürü',role='strategy',
+                  department_id=strategy_department.id,position='director',password_hash='unused')
+    db.add(approver);db.commit()
+    from fastapi import HTTPException
+    with pytest.raises(HTTPException) as caught:
+        contract.approve_report(db,approver,p.report_revision_id)
+    assert caught.value.status_code==409
+    assert any(blocker['report_indicator_id']==item.id and
+               blocker['message']=='Doğrulanmış gerçekleşme ve tam dayanak kaynağı girin.'
+               for blocker in caught.value.detail['blockers'])
     assert db.scalar(select(func.count(ActivityReportApproval.id)))==0
 
 

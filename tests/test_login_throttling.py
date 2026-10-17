@@ -10,7 +10,7 @@ from threading import Barrier
 
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import func, inspect, select
+from sqlalchemy import func, inspect, select, text
 from sqlalchemy.orm import Session
 from starlette.requests import Request
 
@@ -284,8 +284,9 @@ def test_one_additive_migration_and_downgrade_preserves_other_tables(foundation_
     assert REVISION in {r.revision for r in scripts.walk_revisions()}
     assert scripts.get_revision(REVISION).down_revision == BASE_REVISION
     before_tables = set(inspect(db.bind).get_table_names())
-    # This historical migration runs before later Department columns exist.
-    db.add(User(email="migration@example.invalid", full_name="Strateji", role="strategy", password_hash="unused"))
+    # Seed the exact historical schema, before CIV-025's User columns exist.
+    db.execute(text("INSERT INTO users (email, full_name, role, password_hash, is_active) "
+                    "VALUES ('migration@example.invalid', 'Strateji', 'strategy', 'unused', true)"))
     db.commit()
     before_users = db.execute(select(User.id, User.email, User.password_hash)).all()
     db.add(AuditLog(action="migration_probe", entity_type="test", details="Korunacak kayıt"))

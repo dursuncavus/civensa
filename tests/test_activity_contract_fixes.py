@@ -89,8 +89,12 @@ def test_exact_v1_checkpoint_survives_current_contract_and_keeps_all_history(cli
 
 def approved_report(client, db, sample):
     pub = publish(client, db, sample);report = new_report(client, pub, sample)
+    from tests.test_activity_contract import report_editor
+    from app.main import app, require_user
+    app.dependency_overrides[require_user] = lambda: report_editor(sample)
     slot = report['indicators'][0]['report_indicator_id']
     assert client.post(f'/api/activity-reports/indicators/{slot}/actuals', json=actual_payload()).status_code == 200
+    app.dependency_overrides[require_user] = lambda: sample['strategy']
     assert client.post(f"/api/activity-reports/revisions/{report['revision_id']}/approve").status_code == 200
     return pub, report
 

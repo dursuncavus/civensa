@@ -282,8 +282,15 @@ def test_f2_pre_workflow_legacy_report_unchanged(foundation_db,people,approved):
     for item in db.scalars(select(ReportIndicator).where(ReportIndicator.report_revision_id==revision.id).order_by(ReportIndicator.id)):
         last=db.scalar(select(func.max(ActualRevision.revision)).where(ActualRevision.report_indicator_id==item.id)) or 0
         contract.save_actual(db,x['user'],item.id,last,'2.25','verified',[{'title':'Defter','locator':'s3','source_revision':'r3'}],'Güncel',{'corrective_action':'İzle'});db.commit()
-    approval=contract.approve_report(db,x['strategy'],revision.id);db.commit()
-    assert approval.created_by==x['strategy'].id and db.scalar(select(func.count(ReportCandidate.id)))==0
+    # The released flow now requires a separate Strategy director.
+    strategy_department=Department(organization_id=x['department'].organization_id,name='Strateji Geliştirme Müdürlüğü')
+    db.add(strategy_department);db.flush()
+    approver=User(email='legacy-approver@example.invalid',full_name='Strateji Müdürü',role='strategy',
+                  department_id=strategy_department.id,
+                  position='director',password_hash='unused')
+    db.add(approver);db.commit()
+    approval=contract.approve_report(db,approver,revision.id);db.commit()
+    assert approval.created_by==approver.id and db.scalar(select(func.count(ReportCandidate.id)))==0
 
 
 def test_f2_legacy_revision_racing_assembly_never_deadlocks(foundation_db,people,approved):

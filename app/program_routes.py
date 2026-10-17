@@ -260,9 +260,12 @@ def register(app):
             linked_departments=set(db.scalars(select(Activity.department_id).join(ActivityCatalogueLink,ActivityCatalogueLink.activity_id==Activity.id).where(ActivityCatalogueLink.official_activity_id==obj.id)).all())
             if not linked_departments.issubset(ids):raise HTTPException(409,'Bağlı yerel faaliyetlerin sorumlu birimini kaldırmadan önce bağlantıyı düzenleyin.')
             for f,v in values.items():setattr(obj,f,v)
-            db.execute(delete(ActivityResponsibility).where(ActivityResponsibility.official_activity_id==obj.id))
-        else:obj=OfficialActivity(period_id=pid,**values);db.add(obj);db.flush()
-        for did in ids:db.add(ActivityResponsibility(official_activity_id=obj.id,department_id=did))
+            existing = {r.department_id: r for r in db.scalars(select(ActivityResponsibility).where(ActivityResponsibility.official_activity_id==obj.id))}
+            for did, responsibility in existing.items():
+                if did not in ids: db.delete(responsibility)
+        else:
+            obj=OfficialActivity(period_id=pid,**values);db.add(obj);db.flush();existing={}
+        for did in ids - existing.keys():db.add(ActivityResponsibility(official_activity_id=obj.id,department_id=did))
         db.commit();log(db,user,'catalogue_create','official_activity',obj.id)
         return RedirectResponse('/report-builder',303)
 
@@ -276,8 +279,10 @@ def register(app):
             official=db.get(OfficialActivity,oid)
             responsible=db.scalar(select(ActivityResponsibility.id).where(ActivityResponsibility.official_activity_id==oid,ActivityResponsibility.department_id==department_id))
             if not official or official.period_id!=pid or not responsible:raise HTTPException(422,'Katalog faaliyeti bu dönem ve sorumlu birime ait olmalı.')
-        db.execute(delete(ActivityCatalogueLink).where(ActivityCatalogueLink.activity_id==activity.id))
-        for oid in ids:db.add(ActivityCatalogueLink(activity_id=activity.id,official_activity_id=oid))
+        existing = {link.official_activity_id: link for link in db.scalars(select(ActivityCatalogueLink).where(ActivityCatalogueLink.activity_id==activity.id))}
+        for oid, link in existing.items():
+            if oid not in ids: db.delete(link)
+        for oid in ids - existing.keys():db.add(ActivityCatalogueLink(activity_id=activity.id,official_activity_id=oid))
         db.commit();log(db,user,'catalogue_link','activity',activity.id)
         return RedirectResponse(f'/program/{department_id}?period_id={pid}',303)
 

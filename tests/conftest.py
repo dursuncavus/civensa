@@ -76,10 +76,22 @@ def sample(db):
     }:
         db.execute(text('ALTER TABLE departments ADD COLUMN is_active BOOLEAN NOT NULL DEFAULT TRUE'))
         db.commit()
+    # Historical workflow-migration tests seed with today's ORM while deliberately
+    # retaining old workflow guards. Supply only the new User fields in those
+    # fixtures; CIV-025's own migration tests use raw pre-migration rows instead.
+    schema = db.get_bind().get_execution_options().get('schema_translate_map', {}).get(None)
+    user_columns = {column['name'] for column in inspect(db.get_bind()).get_columns('users', schema=schema)}
+    if 'position' not in user_columns:
+        db.execute(text("ALTER TABLE users ADD COLUMN position VARCHAR(20) NOT NULL DEFAULT 'staff' "
+                        "CONSTRAINT ck_user_position CHECK (position IN ('staff', 'director')) "
+                        "CONSTRAINT ck_director_department CHECK (position != 'director' OR department_id IS NOT NULL)"))
+    if 'can_submit' not in user_columns:
+        db.execute(text("ALTER TABLE users ADD COLUMN can_submit BOOLEAN NOT NULL DEFAULT false"))
+    db.commit()
     org=Organization(name='Test Belediyesi');p=ReportingPeriod(year=2027,status='active');db.add_all([org,p]);db.flush()
     d=Department(organization_id=org.id,name='Test Müdürlüğü');db.add(d);db.flush()
-    u=User(email='test@example.invalid',full_name='Test',role='department',password_hash='unused',department_id=d.id)
-    strategy=User(email='strategy@example.invalid',full_name='Strateji',role='strategy',password_hash='unused')
+    u=User(email='test@example.invalid',full_name='Test',role='department',password_hash='unused',department_id=d.id,can_submit=True)
+    strategy=User(email='strategy@example.invalid',full_name='Strateji',role='strategy',password_hash='unused',position='director',department_id=d.id)
     program=Program(period_id=p.id,name='Test Programı');db.add_all([u,strategy,program]);db.flush()
     sp=SubProgram(period_id=p.id,program_id=program.id,name='Test Alt Programı');db.add(sp);db.flush()
     card=ReportCard(period_id=p.id,department_id=d.id,subprogram_id=sp.id,source_title='2027/1',goal='Birinci hedef',rationale='Kaynak gerekçesi',responsible='Test Belediyesi',explanation='Ortak açıklama',calculation_method='Kaynak yöntemi',data_source='Kaynak kayıt')
