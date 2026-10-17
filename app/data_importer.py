@@ -206,16 +206,33 @@ def _parse_activity_table(table, table_number=None, budget_year=None):
         pairs=[]; j=explanation_start
         while j<len(rows):
             title=_clean(rows[j].cells[0].text)
-            if _label_key(re.sub(r"^\d+[.\s)]*", "", title)).startswith("faaliyetadi"):
-                official=title.split(":",1)[1].strip() if ":" in title else title
+            code = re.match(r'^\s*(\d+)[.\s)]', title)
+            body = re.sub(r'^\d+[.\s)]*', '', title)
+            labelled = _label_key(body).startswith('faaliyetadi')
+            # Some book headings omit “Faaliyet Adı:”. Accept only an exact,
+            # coded activity title, never arbitrary prose resembling a heading.
+            known_title = code and any(_label_key(body) == _label_key(
+                re.sub(r'^\d+[.\s)]*', '', a['name'])) for a in activities)
+            if labelled or known_title:
+                official=body.split(":",1)[1].strip() if labelled and ":" in body else body
                 desc=_clean(rows[j+1].cells[0].text) if j+1<len(rows) else ""
-                pairs.append((official,desc)); j+=2
+                pairs.append(dict(official=official, description=desc, code=code.group(1) if code else None,
+                                  table_number=table_number, title_row=j+1, row_number=j+2)); j+=2
             else:
                 j+=1
-        for idx,(official,desc) in enumerate(pairs):
-            if idx<len(activities):
-                activities[idx]["official_name"]=official
-                activities[idx]["explanation"]=desc
+        for idx, activity in enumerate(activities):
+            code = re.match(r'^\s*(\d+)[.\s)]', activity['name'])
+            if code:
+                candidates = [p for p in pairs if p['code'] == code.group(1)]
+                exact = [p for p in candidates if _label_key(p['official']) == _label_key(
+                    re.sub(r'^\d+[.\s)]*', '', activity['name']))]
+                candidates = exact or candidates
+            else:
+                candidates = pairs[idx:idx+1]  # Existing uncoded Ministry format.
+            if len(candidates) == 1:
+                pair = candidates[0]
+                activity.update(official_name=pair['official'], explanation=pair['description'],
+                                explanation_source={k: pair[k] for k in ('table_number', 'title_row', 'row_number')})
     return {"activities":activities,"personnel":personnel,"columns":[{"column":c,"year":y,"kind":k,"label":headers[c]} for c,y,k in value_columns]}
 
 

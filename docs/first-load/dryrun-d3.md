@@ -1,1250 +1,490 @@
-# 2027 PP ilk yükleme kuru denemesi
+# 2027 PP ilk yükleme — kaynak kontrol listesi
 
-Dosya: `pp2027_print_d3.idml` (taslak; nihai kitapla tekrar çalıştırılmalı).
+**Provada çıkarıldı — nihai kitapta düzeltilmeli: T195, kitap s.243; başlık: Ekonomik Ad &#124; Ekonomik Ad &#124; 2025 Bütçe &#124; 2025 Haziran Sonu Harcama &#124; 2025 Yıl Sonu Harcama &#124; 2026 Bütçe &#124; 2027 Tahmin &#124; 2028 Tahmin.**
 
-SHA256: `999a43b2c07074191a1e47622c544b9a53813f23d3bb6518e63b29979ca384cb`
+Gönderime hazır: **5/33** (yalnızca bu prova).
 
-## Çalıştırma ve kapsam
+Kaynak: `pp2027_print_d3.idml`; SHA256: `999a43b2c07074191a1e47622c544b9a53813f23d3bb6518e63b29979ca384cb`.
+
+Doğrulama: 482 SOURCE mesajı, 0 SYSTEM mesajı; 0 saklama aktarım sorunu; 22 engelleyici olmayan uyarı.
+
+Aynı kök nedenden üreyen mesajlar müdürlük listesinde tek kontrol maddesinde toplanır. Hazır = gerçek paket uygulandı ve validate_department hata listesi boş. Çıkarılan tablo ile ek üyelik/açıklama sorunları ayrıca nihai kitapta kontrol edilmelidir.
+
+## Çalıştırma
 
 ```sh
-# Yerel PostgreSQL 16+ test URL adresini CIVENSA_TEST_POSTGRES_URL olarak ayarlayın.
-python scripts/first_load_dryrun.py tests/fixtures/first_load/source/pp2027_print_d3.idml --out docs/first-load/dryrun-d3.md
+# CIVENSA_TEST_POSTGRES_URL: yerel, disposable PostgreSQL 16+; CREATE DATABASE yetkisi.
+python scripts/first_load_dryrun.py tests/fixtures/first_load/source/pp2027_print_d3.idml --exclude-source-table 195 --out docs/first-load/dryrun-d3.md
 ```
 
-Yalnızca CIVENSA_TEST_POSTGRES_URL okunur; yerel host ve sorgu parametresi kontrol edilir. Her çalıştırma ayrı bir veritabanı oluşturur, alembic upgrade head çalıştırır ve sonunda siler. Test kullanıcısının CREATE DATABASE yetkisi olmalıdır. Canlı veritabanı kullanılmaz.
+CIV-041 ekonomik tablo düzeltmeleri bu dala alındı. PR #43 önce birleşmelidir; PR #42 tabanı feature/authorization-workflow-phase5 olarak kalır. Yalnızca localhost test URL adresi okunur; her prova ayrı veritabanı oluşturur ve sonunda siler. Dışlama yalnızca prova betiğinde, geçici Word üzerinde yapılır; üretici ve canlı yükleyici tablo çıkarmaz. Dışlamasız kitapta s.243 tablosunu CIV-041 reddeder; kaynakta düzeltmeden nihai yükleme yapılamaz.
 
-Tek kurum, Strateji kullanıcısı, doğrulanmış şablonlu 2027 dönemi ve name_map.json hedef adları (ayrıca kitapta bulunan yerleşik ad eşlemeleri) ekilir. Kartların faaliyet üyeliği tablolarından resmî faaliyet kataloğu, tüm sorumlu müdürlükler ve yerel faaliyet bağlantıları ortak servislerle, denetim kaydı tutularak yüklenir. Kaynak tutarları düzeltilmez. Kitapta program/alt program kodu olmadığından bu kodlar boş kalır; kod uydurulmaz.
+Tek kurum, doğrulanmış dönem şablonu, ad eşlemesi ve denetimli/idempotent faaliyet kataloğu gerçek servislerle hazırlanır. Boş, çizgi ve sıfır ayrıdır. Kaynak sayıları değiştirilmedi; doğrulama kuralları gevşetilmedi. Sayfalar IDML hikâyesinin ilk basılı sayfasıdır. T numarası dışlamadan önce üretilen Word tablosunu; r/satır ve c/sütun 1 tabanlı hücreyi gösterir.
 
-name_map.json içinde teyit bekleyen kitap adları: Gençlik ve Spor Hizmetleri Müdürlüğü; Sosyal Hizmetler Müdürlüğü; Basın Yayın ve Halkla İlişkiler Müdürlüğü; Harita ve Planlama Müdürlüğü; Araştırma ve Geliştirme Müdürlüğü.
+Uygulama: 33 müdürlük, 64 kart, 264 gösterge, 288 faaliyet, 1300 ekonomik değer; alt programa bağlanamayan faaliyet: 0. Katalog: 289 faaliyet, 289 sorumluluk, 288 yerel bağlantı.
 
-## Genel sonuç
+İçe aktarma hatası: 0; kaynak çelişkisi: 0; çözümlenemeyen müdürlük: 0.
 
-- Kitap müdürlükleri: 33; ekili/uygulama sonrası müdürlükler: 33.
-- Kartlar: 64; göstergeler: 264; faaliyetler: 288; ekonomik tablolar: 34.
-- import_validation_errors: 0; source_conflicts: 0; çözümlenemeyen ad: 0.
-- Uygulama: başarılı; gönderime hazır: 5/33.
-- Doğrulama: 553 hata, 22 uyarı.
-- Ad taraması: 0 bulgu; çapraz toplam farkı: 63; eksik/belirsiz karşılaştırma: 7.
+## Yapılan SYSTEM düzeltmeleri
 
-| 2027 bütçesi | Faaliyetler | Ekonomik kaynak toplamları |
-| --- | ---: | ---: |
-| Bütçe içi | Bilinmiyor (bilinen: 7.314.587.310,00; eksik: 2) | Bilinmiyor (bilinen: 7.999.475.000,00; eksik: 1) |
-| Bütçe dışı | Bilinmiyor (bilinen: 0,00; eksik: 3) | Bilinmiyor (bilinen: 0,00; eksik: 1) |
-| Toplam | 7.313.587.310,00 | Bilinmiyor (bilinen: 7.999.475.000,00; eksik: 1) |
+- Para ayrıştırıcısı baştaki ₺ işaretini tanır; ham metin korunur. Veteriner s.107 ekonomik toplamı «₺10.424.938,95» artık 10424938.95 olarak okunur; rastgele ek metin kabul edilmez.
+- Kodlu faaliyet açıklamaları sıra yerine faaliyet kodu ve tekil başlık ile eşlenir. Halkla İlişkiler s.192’de 0006 başlığındaki “Faaliyet Adı:” eksikliği sonraki dört açıklamayı kaydırmaz. Kültür s.167’deki yanlış 0008/0009 sağlık başlıkları 0015/0016’ya taşınmaz; kaynakta uygun açıklama olmayan 0015–0017 aşağıda SOURCE olarak kalır.
+- CIV-041 ile s.243 ekonomik tablosunun son müdürlüğe yanlış bağlanması önlendi; ret listesi ile üyelik/sayfa kökeni birlikte korunur.
 
-## IDML dönüşümü ve kaynak üyelikleri
+## Bütün hata gruplarının sınıflandırması
 
-{"card": 64, "membership": 64, "cost": 33, "economic": 34}.
+| Grup | Sınıf | Doğrulama mesajı |
+| --- | --- | ---: |
+| Faaliyet finansman toplam farkı | SOURCE | 5 |
+| Faaliyet kaynak tutarı doğrulama | SOURCE | 22 |
+| Çapraz maliyet/toplam farkı | SOURCE | 52 |
+| Ekonomik kaynak/grup doğrulama | SOURCE | 160 |
+| Faaliyet açıklaması | SOURCE | 3 |
+| Eksik finansman | SOURCE | 87 |
+| Gösterge kaynak değeri | SOURCE | 12 |
+| Personel/SGK toplam farkı | SOURCE | 1 |
+| Program Grubu Belirlenmeli | SOURCE | 140 |
 
-Eşlenmeyen kitap adları (aynen korunur; yerleşik içe aktarıcı eşlemesi ayrıca uygulanır): Gelirler Müdürlüğü (Bütçe İşletme Şefliği).
+SYSTEM = üretilen Word, ayrıştırıcı, eşleme/ekim, saklama veya doğrulama kaynaklı hata. SOURCE = kitap hücresi/dağılımının kendisi. Tanınmayan hata veya kitap–Word/saklama farkı otomatik SOURCE sayılmaz; SYSTEM olarak raporlanır. Program Grubu Belirlenmeli üç müdürlükte (Fen, İnsan Kaynakları, Yazı) hem Hizmet hem Yönetim kartları varken yalnız tek toplu ekonomik kategori tablosu bulunmasından kaynaklanır. Kategori × program grubu dağılımı kitapta yoktur; grup eksik ekimi değildir. Paylaştırma oranı veya varsayılan grup uydurulmadı.
 
-Basılı sayfaya bağlı olmayan tablolar (yükleme dışında): [{"id": "ubbb4ibbe3", "type": "cost"}, {"id": "ubbb4ibbcb", "type": "economic"}, {"id": "ubb2aibb60", "type": "card"}, {"id": "ubb2aibb40", "type": "membership"}].
+## Her gruptan kitap → Word → saklanan değer kanıtı
 
-Sayfa numaraları IDML metin çerçevesinin ilk basılı sayfasından alınır; çok sayfalı hikâyede başlangıç sayfasını gösterir. Üyelik kodu müdürlük içinde tekil eşleştirilir; maliyet ve üyelik başlıklarının yazım farkları değiştirilmez. Aynı faaliyet/alt program birden fazla müdürlükte varsa tek katalog kaydına bütün sorumlu müdürlükler eklenir.
+### Faaliyet kaynak tutarı doğrulama — SOURCE
 
+Afet İşleri ve Risk Yönetimi Müdürlüğü
 
-## Kaynakta kalan üyelik sorunları
+- Kitap hücreleri: s.144 T69 r44c5 = «134.615,00»; s.144 T69 r45c5 = «134.615,00»; s.144 T69 r46c5 = «BOŞ»
+- Üretilen Word hücreleri: s.144 T69 r44c5 = «134.615,00»; s.144 T69 r45c5 = «134.615,00»; s.144 T69 r46c5 = «BOŞ»
+- Saklanan değerler (ondalık depolama gösterimi): [{"activity": "0015.Kurum Personelinin Afet Eğitim Projesi", "year": 2027, "value_kind": "budget", "funding_type": "total", "amount": "134615.00", "raw_text": "134.615,00", "state": "needs_review", "source_amount": "134615.00"}, {"activity": "0015.Kurum Personelinin Afet Eğitim Projesi", "year": 2027, "value_kind": "budget", "funding_type": "inside", "amount": "134615.00", "raw_text": "134.615,00", "state": "verified", "source_amount": null}, {"activity": "0015.Kurum Personelinin Afet Eğitim Projesi", "year": 2027, "value_kind": "budget", "funding_type": "outside", "amount": null, "state": "kayıt yok (kaynak boş)"}]
+- Neden: 0015.Kurum Personelinin Afet Eğitim Projesi: 2027 Bütçe / Toplam kaynak tutarı doğrulanmalı.
 
-- Tablo 136, satır 8: Özel Kalem Müdürlüğü / 0006.Sosyal Güvenlik Kurumuna 5434 Sayılı Kanun Kapsamında Emekli İkramiyeleri Karşılığı Yapılan Ödemeler: faaliyet maliyet kaydı tekil eşleşmedi. Kart üyeliği ile müdürlük maliyet tablosundaki faaliyet kod/adını kontrol edin. (kitap s. 198)
+### Eksik finansman — SOURCE
 
-## Korunan bilinen kitap sorunları ve CIV-041 sınırı
+Afet İşleri ve Risk Yönetimi Müdürlüğü
 
-- s.128 Park ve Bahçeler 0007: kaynak toplamı 44.333.709,00 TL; Bütçe İçi 45.333.709,00 TL. Tutarlar değiştirilmedi; kaynak toplamı ve fark doğrulamada korunur.
-- s.243: eski biçimli ekonomik tablo; 2025–2026 sütunları ve “2027 Tahmin”, 2027 Bütçe sütunu yok. Kaynak düzeltilmedi ve tablonun içeriği atılmadı.
-- Bu rapor CIV-042 dalındaki ekonomik ayrıştırıcıyla üretilir. CIV-041 ayrı PR’dır; ekonomik ayrıştırma bu dalda değiştirilmedi. Mevcut ayrıştırıcı s.243 tablosunu son müdürlüğe (Makine İkmal) bağlıyor ve kod/ad düzenindeki kategorileri okuyamıyor. Bu müdürlükteki ilgili ekonomik hatalar gerçek kaynak eksikliği olarak yorumlanmamalı; CIV-041 sonrası rapor yeniden çalıştırılmalıdır. Diğer hatalar ve ham kaynaklar aşağıda korunur.
+- Kitap hücreleri: s.144 T69 r44c5 = «134.615,00»; s.144 T69 r45c5 = «134.615,00»; s.144 T69 r46c5 = «BOŞ»
+- Üretilen Word hücreleri: s.144 T69 r44c5 = «134.615,00»; s.144 T69 r45c5 = «134.615,00»; s.144 T69 r46c5 = «BOŞ»
+- Saklanan değerler (ondalık depolama gösterimi): [{"activity": "0015.Kurum Personelinin Afet Eğitim Projesi", "year": 2027, "value_kind": "budget", "funding_type": "total", "amount": "134615.00", "raw_text": "134.615,00", "state": "needs_review", "source_amount": "134615.00"}, {"activity": "0015.Kurum Personelinin Afet Eğitim Projesi", "year": 2027, "value_kind": "budget", "funding_type": "inside", "amount": "134615.00", "raw_text": "134.615,00", "state": "verified", "source_amount": null}, {"activity": "0015.Kurum Personelinin Afet Eğitim Projesi", "year": 2027, "value_kind": "budget", "funding_type": "outside", "amount": null, "state": "kayıt yok (kaynak boş)"}]
+- Neden: 0015.Kurum Personelinin Afet Eğitim Projesi: 2027 Bütçe finansman bilgisi eksik.
 
+### Faaliyet finansman toplam farkı — SOURCE
 
-## Müdürlük bazında ayrıştırma
+Kültür, Sanat ve Sosyal İşler Müdürlüğü
 
-| Müdürlük | Kart | Gösterge | Gösterge değerleri / durum | Faaliyet | Faaliyet maliyet değerleri / durum | Personel değerleri / durum | Ekonomik tablo | Ekonomik değerler / durum |
-| --- | ---: | ---: | --- | ---: | --- | --- | ---: | --- |
-| Sağlık İşleri Müdürlüğü | 4 | 11 | verified: 66 | 10 | not_applicable: 90; verified: 90 | not_applicable: 3; verified: 3 | 1 | needs_review: 10; verified: 40 |
-| Ruhsat ve Denetim Müdürlüğü | 1 | 5 | verified: 30 | 5 | not_applicable: 45; verified: 45 | not_applicable: 3; verified: 3 | 1 | needs_review: 12; verified: 18 |
-| Zabıta Müdürlüğü | 2 | 9 | verified: 54 | 9 | not_applicable: 81; verified: 81 | not_applicable: 3; verified: 3 | 1 | needs_review: 8; verified: 32 |
-| Veteriner İşleri Müdürlüğü | 1 | 5 | verified: 30 | 6 | missing: 3; not_applicable: 54; verified: 51 | not_applicable: 3; verified: 3 | 1 | needs_review: 20; verified: 30 |
-| Emlak İstimlak Müdürlüğü | 2 | 7 | verified: 42 | 11 | missing: 3; not_applicable: 99; verified: 96 | not_applicable: 3; verified: 3 | 1 | needs_review: 10; verified: 40 |
-| Fen İşleri Müdürlüğü | 3 | 15 | verified: 90 | 9 | not_applicable: 81; verified: 81 | not_applicable: 3; verified: 3 | 1 | needs_review: 50 |
-| İmar ve Şehircilik Müdürlüğü | 2 | 7 | verified: 42 | 13 | not_applicable: 117; verified: 117 | not_applicable: 3; verified: 3 | 1 | needs_review: 6; verified: 24 |
-| Park ve Bahçeler Müdürlüğü | 2 | 7 | needs_review: 15; verified: 27 | 13 | not_applicable: 117; verified: 117 | not_applicable: 3; verified: 3 | 1 | verified: 40 |
-| Etüd Proje Müdürlüğü | 2 | 6 | verified: 36 | 12 | missing: 1; not_applicable: 108; verified: 107 | not_applicable: 3; verified: 3 | 1 | verified: 30 |
-| Plan Proje Müdürlüğü | 1 | 5 | needs_review: 1; verified: 29 | 1 | not_applicable: 9; verified: 9 | not_applicable: 3; verified: 3 | 1 | needs_review: 6; verified: 24 |
-| Kentsel Dönüşüm Müdürlüğü | 1 | 5 | verified: 30 | 5 | not_applicable: 45; verified: 45 | not_applicable: 3; verified: 3 | 1 | needs_review: 6; verified: 24 |
-| Afet İşleri ve Risk Yönetimi Müdürlüğü | 2 | 10 | verified: 60 | 16 | missing: 3; not_applicable: 144; verified: 141 | not_applicable: 3; verified: 3 | 1 | needs_review: 6; verified: 24 |
-| Temizlik İşleri Müdürlüğü | 1 | 4 | verified: 24 | 8 | not_applicable: 72; verified: 72 | not_applicable: 3; verified: 3 | 1 | verified: 40 |
-| Çevre Koruma ve Kontrol Müdürlüğü | 1 | 3 | verified: 18 | 3 | not_applicable: 27; verified: 27 | not_applicable: 3; verified: 3 | 1 | needs_review: 6; verified: 24 |
-| Tarımsal Hizmetler Müdürlüğü | 2 | 9 | needs_review: 6; verified: 48 | 11 | missing: 6; not_applicable: 99; verified: 93 | not_applicable: 3; verified: 3 | 1 | needs_review: 8; verified: 32 |
-| İklim Değişikliği ve Sıfır Atık Müdürlüğü | 1 | 3 | verified: 18 | 5 | not_applicable: 45; verified: 45 | not_applicable: 3; verified: 3 | 1 | verified: 30 |
-| Kültür, Sanat ve Sosyal İşler Müdürlüğü | 5 | 24 | verified: 144 | 17 | missing: 47; not_applicable: 108; verified: 151 | not_applicable: 3; verified: 3 | 1 | verified: 30 |
-| Gençlik ve Spor İşleri Müdürlüğü | 2 | 10 | verified: 60 | 10 | not_applicable: 90; verified: 90 | not_applicable: 3; verified: 3 | 1 | needs_review: 16; verified: 24 |
-| Sosyal Destek Müdürlüğü | 4 | 20 | needs_review: 5; verified: 115 | 19 | not_applicable: 171; verified: 171 | not_applicable: 3; verified: 3 | 1 | verified: 40 |
-| Dış İlişkiler Müdürlüğü | 1 | 3 | verified: 18 | 10 | missing: 3; not_applicable: 87; verified: 90 | not_applicable: 3; verified: 3 | 1 | verified: 40 |
-| Halkla İlişkiler Müdürlüğü | 4 | 16 | verified: 96 | 10 | not_applicable: 90; verified: 90 | not_applicable: 3; verified: 3 | 1 | needs_review: 8; verified: 32 |
-| Araştırma ve Geliştirme Müdürlüğü | 1 | 4 | verified: 24 | 8 | not_applicable: 72; verified: 72 | not_applicable: 3; verified: 3 | 1 | needs_review: 6; verified: 24 |
-| Özel Kalem Müdürlüğü | 1 | 5 | verified: 30 | 5 | not_applicable: 45; verified: 45 | not_applicable: 3; verified: 3 | 1 | verified: 40 |
-| İnsan Kaynakları ve Eğitim Müdürlüğü | 2 | 6 | verified: 36 | 10 | not_applicable: 90; verified: 90 | not_applicable: 3; verified: 3 | 1 | needs_review: 40 |
-| Bilgi İşlem Müdürlüğü | 1 | 5 | verified: 30 | 5 | not_applicable: 45; verified: 45 | not_applicable: 3; verified: 3 | 1 | verified: 40 |
-| Rehberlik ve Teftiş Kurulu Müdürlüğü | 1 | 5 | verified: 30 | 3 | not_applicable: 27; verified: 27 | not_applicable: 3; verified: 3 | 1 | needs_review: 8; verified: 32 |
-| Hukuk İşleri Müdürlüğü | 1 | 4 | verified: 24 | 3 | not_applicable: 27; verified: 27 | not_applicable: 3; verified: 3 | 1 | verified: 30 |
-| Strateji Geliştirme Müdürlüğü | 1 | 5 | verified: 30 | 8 | not_applicable: 72; verified: 72 | not_applicable: 3; verified: 3 | 1 | verified: 30 |
-| Destek Hizmetleri Müdürlüğü | 2 | 9 | verified: 54 | 7 | missing: 3; not_applicable: 60; verified: 63 | not_applicable: 3; verified: 3 | 1 | verified: 40 |
-| Mali Hizmetler Müdürlüğü | 1 | 2 | verified: 12 | 5 | not_applicable: 45; verified: 45 | not_applicable: 3; verified: 3 | 1 | needs_review: 18; verified: 72 |
-| Yazı İşleri Müdürlüğü | 4 | 20 | verified: 120 | 11 | missing: 18; not_applicable: 81; verified: 99 | not_applicable: 3; verified: 3 | 1 | needs_review: 50 |
-| Gelirler Müdürlüğü | 4 | 10 | verified: 60 | 15 | missing: 3; not_applicable: 132; verified: 135 | not_applicable: 3; verified: 3 | 1 | needs_review: 16; verified: 24 |
-| Makine İkmal Bakım ve Onarım Müdürlüğü | 1 | 5 | verified: 30 | 5 | not_applicable: 45; verified: 45 | not_applicable: 3; verified: 3 | 2 | needs_review: 36; verified: 40 |
+- Kitap hücreleri: s.167 T99 r8c6 = «4.912.500,00»; s.167 T99 r9c6 = «3.825.000,00»; s.167 T99 r10c6 = «0,00»
+- Üretilen Word hücreleri: s.167 T99 r8c6 = «4.912.500,00»; s.167 T99 r9c6 = «3.825.000,00»; s.167 T99 r10c6 = «0,00»
+- Saklanan değerler (ondalık depolama gösterimi): [{"activity": "0003.İş Birliği ve Ortaklıklar: Öğretim Kurumları, teknoloji transfer ofisleri, sivil toplum kuruluşları ve özel sektörle iş birliği yapmak.", "year": 2028, "value_kind": "forecast", "funding_type": "total", "amount": "4912500.00", "raw_text": "4.912.500,00", "state": "needs_review", "source_amount": "4912500.00"}, {"activity": "0003.İş Birliği ve Ortaklıklar: Öğretim Kurumları, teknoloji transfer ofisleri, sivil toplum kuruluşları ve özel sektörle iş birliği yapmak.", "year": 2028, "value_kind": "forecast", "funding_type": "outside", "amount": "0.00", "raw_text": "0,00", "state": "verified", "source_amount": null}, {"activity": "0003.İş Birliği ve Ortaklıklar: Öğretim Kurumları, teknoloji transfer ofisleri, sivil toplum kuruluşları ve özel sektörle iş birliği yapmak.", "year": 2028, "value_kind": "forecast", "funding_type": "inside", "amount": "3825000.00", "raw_text": "3.825.000,00", "state": "verified", "source_amount": null}]
+- Neden: 0003.İş Birliği ve Ortaklıklar: Öğretim Kurumları, teknoloji transfer ofisleri, sivil toplum kuruluşları ve özel sektörle iş birliği yapmak.: 2028 toplamı bütçe içi + dışı ile eşit değil. Kaynak: Toplam = «4.912.500,00»; Bütçe İçi = «3.825.000,00»; Bütçe Dışı = «0,00»
 
-Uygulanan kayıtlar: 33 müdürlük, 64 kart, 264 gösterge, 288 faaliyet, 1336 ekonomik değer, 198 ortak personel değeri. Alt programa bağlanamayan faaliyet: 0.
+### Gösterge kaynak değeri — SOURCE
 
-Katalog: 289 resmî faaliyet, 289 sorumluluk, 288 yerel faaliyet bağlantısı.
+Park ve Bahçeler Müdürlüğü
 
-## İçe aktarma hataları ve kaynak çelişkileri
+- Kitap hücreleri: s.125 T45 r11c4 = «132,915»
+- Üretilen Word hücreleri: s.125 T45 r11c4 = «132,915»
+- Saklanan değerler (ondalık depolama gösterimi): [{"year": 2025, "value_kind": "actual", "value": null, "raw_text": "132,915", "state": "needs_review"}]
+- Neden: SH016/PG03. Bitkisel peyzaj elemanlarının dikim ve bakım sayısı: 2025 Gerçekleşme: kaynak değeri doğrulanmalı (132,915).
 
-### import_validation_errors (0)
+### Faaliyet açıklaması — SOURCE
 
-Yok.
+Kültür, Sanat ve Sosyal İşler Müdürlüğü
 
-### source_conflicts (0)
+- Kitap hücreleri: s.167 T99 r44c1 = «0015.Örgün Eğitime Destek ve Sınavlara Hazırlık Kursları: Dezavantajlı bölgelerde yaşayan öğrenciler için örgün eğitimlerine destek ve sınavlara hazırlık kursları düzenlemek.»; s.167 T99 r58c1 = «Faaliyetlere İlişkin Açıklamalar»; s.167 T99 r90c1 = «Yaşlı, engelli, yatağa bağımlı, hareket kısıtlılığı bulunan ve sağlık kuruluşlarına kendi imkânlarıyla ulaşmakta güçlük çeken vatandaşların sağlık hizmetlerine erişiminin kolaylaştırılması amacıyla hasta nakil hizmetlerinin etkin, güvenli ve kesintisiz şekilde yürütülmesi hedeflenmektedir. Bu kapsamda hasta nakil ambulansları ile vatandaşların sağlık kuruluşlarına nakilleri sağlanacak; hizmet kapasitesinin artırılması amacıyla gerekli personel, araç, tıbbi cihaz, ekipman ve diğer ihtiyaçlara yönelik planlama yapılacaktır. Ambulansların ve tıbbi cihazların bakım, onarım ve kontrolleri düzenli olarak gerçekleştirilerek hizmet sürekliliği sağlanacak, ilgili sağlık kurum ve kuruluşlarıyla koordinasyon içerisinde hasta nakil hizmetlerinin erişilebilirliği ve hizmet kalitesi artırılacaktır.»
+- Üretilen Word hücreleri: s.167 T99 r44c1 = «0015.Örgün Eğitime Destek ve Sınavlara Hazırlık Kursları: Dezavantajlı bölgelerde yaşayan öğrenciler için örgün eğitimlerine destek ve sınavlara hazırlık kursları düzenlemek.»; s.167 T99 r58c1 = «Faaliyetlere İlişkin Açıklamalar»; s.167 T99 r90c1 = «Yaşlı, engelli, yatağa bağımlı, hareket kısıtlılığı bulunan ve sağlık kuruluşlarına kendi imkânlarıyla ulaşmakta güçlük çeken vatandaşların sağlık hizmetlerine erişiminin kolaylaştırılması amacıyla hasta nakil hizmetlerinin etkin, güvenli ve kesintisiz şekilde yürütülmesi hedeflenmektedir. Bu kapsamda hasta nakil ambulansları ile vatandaşların sağlık kuruluşlarına nakilleri sağlanacak; hizmet kapasitesinin artırılması amacıyla gerekli personel, araç, tıbbi cihaz, ekipman ve diğer ihtiyaçlara yönelik planlama yapılacaktır. Ambulansların ve tıbbi cihazların bakım, onarım ve kontrolleri düzenli olarak gerçekleştirilerek hizmet sürekliliği sağlanacak, ilgili sağlık kurum ve kuruluşlarıyla koordinasyon içerisinde hasta nakil hizmetlerinin erişilebilirliği ve hizmet kalitesi artırılacaktır.»
+- Saklanan değerler (ondalık depolama gösterimi): [{"activity": "0015.Örgün Eğitime Destek ve Sınavlara Hazırlık Kursları: Dezavantajlı bölgelerde yaşayan öğrenciler için örgün eğitimlerine destek ve sınavlara hazırlık kursları düzenlemek.", "explanation": ""}]
+- Neden: 0015.Örgün Eğitime Destek ve Sınavlara Hazırlık Kursları: Dezavantajlı bölgelerde yaşayan öğrenciler için örgün eğitimlerine destek ve sınavlara hazırlık kursları düzenlemek.: faaliyet açıklaması eksik. Bu kod için tekil ve uygun açıklama başlığı/metni kaynakta yok; başka faaliyetin metni taşınmadı.
 
-Yok.
+### Ekonomik kaynak/grup doğrulama — SOURCE
 
-## Sistem adına çözümlenemeyen kitap müdürlükleri
+Afet İşleri ve Risk Yönetimi Müdürlüğü
 
-Yok; tüm kitap müdürlükleri ekili sistem adlarıyla eşleşti.
+- Kitap hücreleri: s.144 T70 r2c3 = «5.091.250,40»; s.144 T70 r3c3 = «303.363,06»; s.144 T70 r4c3 = «1.159.908,75»; s.144 T70 r5c3 = «5.091.250,40»; s.144 T70 r6c3 = «0,00»; s.144 T70 r7c3 = «5.091.250,40»
+- Üretilen Word hücreleri: s.144 T70 r2c3 = «5.091.250,40»; s.144 T70 r3c3 = «303.363,06»; s.144 T70 r4c3 = «1.159.908,75»; s.144 T70 r5c3 = «5.091.250,40»; s.144 T70 r6c3 = «0,00»; s.144 T70 r7c3 = «5.091.250,40»
+- Saklanan değerler (ondalık depolama gösterimi): [{"year": 2026, "value_kind": "midyear_spend", "category": "goods_services", "funding_type": "outside", "amount": "0.00", "raw_text": "0,00", "state": "needs_review", "program_group": "service"}]
+- Neden: Tablo 70, 2026 Haziran Sonu Harcama: Bütçe İçi Toplam 5.091.250,40 TL, kategori satırlarının toplamı 6.554.522,21 TL; fark -1.463.271,81 TL. Kaynak tabloyu kontrol edin.
 
-## 2027 bütçesi çapraz tablo kontrolü
+### Program Grubu Belirlenmeli — SOURCE
 
-Faaliyet maliyet hücrelerinin toplamı, ekonomik tablodaki açık Bütçe İçi / Bütçe Dışı / Faaliyet Maliyeti Toplamı kaynak satırlarıyla doğrudan karşılaştırılır. Ekonomik toplamlar ortak personel/SGK giderlerini de içerebilir; bu nedenle FARK tek başına içe aktarıcı hatası değildir. Bu karşılaştırma personeli düşmez, tutarları değiştirmez. Gönderime hazırlık için mevcut validate_department kuralları ayrıca uygulanır. Boş/belirsiz hücreler sıfır sayılmaz.
+Fen İşleri Müdürlüğü
 
-| Müdürlük | Finansman | Faaliyet toplamı | Ekonomik kaynak toplamı | Sonuç |
-| --- | --- | ---: | ---: | --- |
-| Sağlık İşleri Müdürlüğü | Bütçe içi | 20.587.500,00 | 34.633.500,00 | FARK |
-| Sağlık İşleri Müdürlüğü | Bütçe dışı | 0,00 | 0,00 | Eşit |
-| Sağlık İşleri Müdürlüğü | Toplam | 20.587.500,00 | 34.633.500,00 | FARK |
-| Ruhsat ve Denetim Müdürlüğü | Bütçe içi | 2.343.147,00 | 14.548.599,00 | FARK |
-| Ruhsat ve Denetim Müdürlüğü | Bütçe dışı | 0,00 | 0,00 | Eşit |
-| Ruhsat ve Denetim Müdürlüğü | Toplam | 2.343.147,00 | 14.548.599,00 | FARK |
-| Zabıta Müdürlüğü | Bütçe içi | 8.000.000,00 | 117.786.161,00 | FARK |
-| Zabıta Müdürlüğü | Bütçe dışı | 0,00 | 0,00 | Eşit |
-| Zabıta Müdürlüğü | Toplam | 8.000.000,00 | 117.786.161,00 | FARK |
-| Veteriner İşleri Müdürlüğü | Bütçe içi | 72.675.000,00 | 78.383.750,00 | FARK |
-| Veteriner İşleri Müdürlüğü | Bütçe dışı | Bilinmiyor (bilinen: 0,00; eksik: 1) | 0,00 | Eksik/belirsiz |
-| Veteriner İşleri Müdürlüğü | Toplam | 72.675.000,00 | 78.383.750,00 | FARK |
-| Emlak İstimlak Müdürlüğü | Bütçe içi | 250.534.658,00 | 264.794.573,00 | FARK |
-| Emlak İstimlak Müdürlüğü | Bütçe dışı | Bilinmiyor (bilinen: 0,00; eksik: 1) | 0,00 | Eksik/belirsiz |
-| Emlak İstimlak Müdürlüğü | Toplam | 250.534.658,00 | 264.794.573,00 | FARK |
-| Fen İşleri Müdürlüğü | Bütçe içi | 1.189.138.909,00 | 1.236.438.909,00 | FARK |
-| Fen İşleri Müdürlüğü | Bütçe dışı | 0,00 | 0,00 | Eşit |
-| Fen İşleri Müdürlüğü | Toplam | 1.189.138.909,00 | 1.236.438.909,00 | FARK |
-| İmar ve Şehircilik Müdürlüğü | Bütçe içi | 2.400.000,00 | 55.357.116,00 | FARK |
-| İmar ve Şehircilik Müdürlüğü | Bütçe dışı | 0,00 | 0,00 | Eşit |
-| İmar ve Şehircilik Müdürlüğü | Toplam | 2.400.000,00 | 55.357.116,00 | FARK |
-| Park ve Bahçeler Müdürlüğü | Bütçe içi | 543.389.649,00 | 551.300.000,00 | FARK |
-| Park ve Bahçeler Müdürlüğü | Bütçe dışı | 0,00 | 0,00 | Eşit |
-| Park ve Bahçeler Müdürlüğü | Toplam | 542.389.649,00 | 551.300.000,00 | FARK |
-| Etüd Proje Müdürlüğü | Bütçe içi | 2.500.000,00 | 11.898.000,00 | FARK |
-| Etüd Proje Müdürlüğü | Bütçe dışı | 0,00 | 0,00 | Eşit |
-| Etüd Proje Müdürlüğü | Toplam | 2.500.000,00 | 11.898.000,00 | FARK |
-| Plan Proje Müdürlüğü | Bütçe içi | 4.134.625,00 | 32.917.972,00 | FARK |
-| Plan Proje Müdürlüğü | Bütçe dışı | 0,00 | 0,00 | Eşit |
-| Plan Proje Müdürlüğü | Toplam | 4.134.625,00 | 32.917.972,00 | FARK |
-| Kentsel Dönüşüm Müdürlüğü | Bütçe içi | 5.000.000,00 | 17.655.784,00 | FARK |
-| Kentsel Dönüşüm Müdürlüğü | Bütçe dışı | 0,00 | 0,00 | Eşit |
-| Kentsel Dönüşüm Müdürlüğü | Toplam | 5.000.000,00 | 17.655.784,00 | FARK |
-| Afet İşleri ve Risk Yönetimi Müdürlüğü | Bütçe içi | 20.269.229,00 | 30.704.229,00 | FARK |
-| Afet İşleri ve Risk Yönetimi Müdürlüğü | Bütçe dışı | Bilinmiyor (bilinen: 0,00; eksik: 1) | 0,00 | Eksik/belirsiz |
-| Afet İşleri ve Risk Yönetimi Müdürlüğü | Toplam | 20.269.229,00 | 30.704.229,00 | FARK |
-| Temizlik İşleri Müdürlüğü | Bütçe içi | 836.500.000,00 | 852.338.000,00 | FARK |
-| Temizlik İşleri Müdürlüğü | Bütçe dışı | 0,00 | 0,00 | Eşit |
-| Temizlik İşleri Müdürlüğü | Toplam | 836.500.000,00 | 852.338.000,00 | FARK |
-| Çevre Koruma ve Kontrol Müdürlüğü | Bütçe içi | 1.807.912,00 | 11.914.412,00 | FARK |
-| Çevre Koruma ve Kontrol Müdürlüğü | Bütçe dışı | 0,00 | 0,00 | Eşit |
-| Çevre Koruma ve Kontrol Müdürlüğü | Toplam | 1.807.912,00 | 11.914.412,00 | FARK |
-| Tarımsal Hizmetler Müdürlüğü | Bütçe içi | Bilinmiyor (bilinen: 9.171.747,00; eksik: 2) | 15.287.207,00 | Eksik/belirsiz |
-| Tarımsal Hizmetler Müdürlüğü | Bütçe dışı | 0,00 | 0,00 | Eşit |
-| Tarımsal Hizmetler Müdürlüğü | Toplam | 9.171.747,00 | 15.287.207,00 | FARK |
-| İklim Değişikliği ve Sıfır Atık Müdürlüğü | Bütçe içi | 590.000,00 | 2.251.000,00 | FARK |
-| İklim Değişikliği ve Sıfır Atık Müdürlüğü | Bütçe dışı | 0,00 | 0,00 | Eşit |
-| İklim Değişikliği ve Sıfır Atık Müdürlüğü | Toplam | 590.000,00 | 2.251.000,00 | FARK |
-| Kültür, Sanat ve Sosyal İşler Müdürlüğü | Bütçe içi | 80.000.000,00 | 95.133.171,00 | FARK |
-| Kültür, Sanat ve Sosyal İşler Müdürlüğü | Bütçe dışı | 0,00 | 0,00 | Eşit |
-| Kültür, Sanat ve Sosyal İşler Müdürlüğü | Toplam | 80.000.000,00 | 95.133.171,00 | FARK |
-| Gençlik ve Spor İşleri Müdürlüğü | Bütçe içi | 54.270.630,00 | 61.199.630,00 | FARK |
-| Gençlik ve Spor İşleri Müdürlüğü | Bütçe dışı | 0,00 | 0,00 | Eşit |
-| Gençlik ve Spor İşleri Müdürlüğü | Toplam | 54.270.630,00 | 61.199.630,00 | FARK |
-| Sosyal Destek Müdürlüğü | Bütçe içi | 61.510.974,00 | 72.380.474,00 | FARK |
-| Sosyal Destek Müdürlüğü | Bütçe dışı | 0,00 | 0,00 | Eşit |
-| Sosyal Destek Müdürlüğü | Toplam | 61.510.974,00 | 72.380.474,00 | FARK |
-| Dış İlişkiler Müdürlüğü | Bütçe içi | 4.039.548,00 | 6.514.548,00 | FARK |
-| Dış İlişkiler Müdürlüğü | Bütçe dışı | 0,00 | 0,00 | Eşit |
-| Dış İlişkiler Müdürlüğü | Toplam | 4.039.548,00 | 6.514.548,00 | FARK |
-| Halkla İlişkiler Müdürlüğü | Bütçe içi | 38.015.739,00 | 65.868.202,00 | FARK |
-| Halkla İlişkiler Müdürlüğü | Bütçe dışı | 0,00 | 0,00 | Eşit |
-| Halkla İlişkiler Müdürlüğü | Toplam | 38.015.739,00 | 65.868.202,00 | FARK |
-| Araştırma ve Geliştirme Müdürlüğü | Bütçe içi | 3.400.000,00 | 5.495.000,00 | FARK |
-| Araştırma ve Geliştirme Müdürlüğü | Bütçe dışı | 0,00 | 0,00 | Eşit |
-| Araştırma ve Geliştirme Müdürlüğü | Toplam | 3.400.000,00 | 5.495.000,00 | FARK |
-| Özel Kalem Müdürlüğü | Bütçe içi | 23.750.000,00 | 57.800.000,00 | FARK |
-| Özel Kalem Müdürlüğü | Bütçe dışı | 0,00 | 0,00 | Eşit |
-| Özel Kalem Müdürlüğü | Toplam | 23.750.000,00 | 57.800.000,00 | FARK |
-| İnsan Kaynakları ve Eğitim Müdürlüğü | Bütçe içi | 10.000.000,00 | 31.406.000,00 | FARK |
-| İnsan Kaynakları ve Eğitim Müdürlüğü | Bütçe dışı | 0,00 | 0,00 | Eşit |
-| İnsan Kaynakları ve Eğitim Müdürlüğü | Toplam | 10.000.000,00 | 31.406.000,00 | FARK |
-| Bilgi İşlem Müdürlüğü | Bütçe içi | 267.575.845,00 | 283.812.848,00 | FARK |
-| Bilgi İşlem Müdürlüğü | Bütçe dışı | 0,00 | 0,00 | Eşit |
-| Bilgi İşlem Müdürlüğü | Toplam | 267.575.845,00 | 283.812.848,00 | FARK |
-| Rehberlik ve Teftiş Kurulu Müdürlüğü | Bütçe içi | 149.343,00 | 1.799.343,00 | FARK |
-| Rehberlik ve Teftiş Kurulu Müdürlüğü | Bütçe dışı | 0,00 | 0,00 | Eşit |
-| Rehberlik ve Teftiş Kurulu Müdürlüğü | Toplam | 149.343,00 | 1.799.343,00 | FARK |
-| Hukuk İşleri Müdürlüğü | Bütçe içi | 32.925.000,00 | 49.482.284,00 | FARK |
-| Hukuk İşleri Müdürlüğü | Bütçe dışı | 0,00 | 0,00 | Eşit |
-| Hukuk İşleri Müdürlüğü | Toplam | 32.925.000,00 | 49.482.284,00 | FARK |
-| Strateji Geliştirme Müdürlüğü | Bütçe içi | 2.267.350,00 | 5.863.600,00 | FARK |
-| Strateji Geliştirme Müdürlüğü | Bütçe dışı | 0,00 | 0,00 | Eşit |
-| Strateji Geliştirme Müdürlüğü | Toplam | 2.267.350,00 | 5.863.600,00 | FARK |
-| Destek Hizmetleri Müdürlüğü | Bütçe içi | 2.608.868.429,00 | 2.634.147.337,00 | FARK |
-| Destek Hizmetleri Müdürlüğü | Bütçe dışı | 0,00 | 0,00 | Eşit |
-| Destek Hizmetleri Müdürlüğü | Toplam | 2.608.868.429,00 | 2.634.147.337,00 | FARK |
-| Mali Hizmetler Müdürlüğü | Bütçe içi | 864.524.835,00 | 888.224.210,00 | FARK |
-| Mali Hizmetler Müdürlüğü | Bütçe dışı | 0,00 | 0,00 | Eşit |
-| Mali Hizmetler Müdürlüğü | Toplam | 864.524.835,00 | 888.224.210,00 | FARK |
-| Yazı İşleri Müdürlüğü | Bütçe içi | 16.330.730,00 | 41.026.130,00 | FARK |
-| Yazı İşleri Müdürlüğü | Bütçe dışı | 0,00 | 0,00 | Eşit |
-| Yazı İşleri Müdürlüğü | Toplam | 16.330.730,00 | 41.026.130,00 | FARK |
-| Gelirler Müdürlüğü | Bütçe içi | 83.400.000,00 | 162.322.500,00 | FARK |
-| Gelirler Müdürlüğü | Bütçe dışı | 0,00 | 0,00 | Eşit |
-| Gelirler Müdürlüğü | Toplam | 83.400.000,00 | 162.322.500,00 | FARK |
-| Makine İkmal Bakım ve Onarım Müdürlüğü | Bütçe içi | 194.516.511,00 | Bilinmiyor (bilinen: 208.790.511,00; eksik: 1) | Eksik/belirsiz |
-| Makine İkmal Bakım ve Onarım Müdürlüğü | Bütçe dışı | 0,00 | Bilinmiyor (bilinen: 0,00; eksik: 1) | Eksik/belirsiz |
-| Makine İkmal Bakım ve Onarım Müdürlüğü | Toplam | 194.516.511,00 | Bilinmiyor (bilinen: 208.790.511,00; eksik: 1) | Eksik/belirsiz |
+- Kitap hücreleri: s.118 T38 r2c2 = «46.388.000,00»; s.118 T38 r3c2 = «2.300.000,00»; s.118 T38 r4c2 = «442.490.000,00»; s.118 T38 r5c2 = «4.600.000,00»; s.118 T38 r6c2 = «453.562.000,00»; s.118 T38 r7c2 = «950.000.000,00»; s.118 T38 r8c2 = «0,00»; s.118 T38 r9c2 = «950.000.000,00»; s.115 T31 r2c2 = «Yönetim ve Destek Programı»; s.116 T33 r2c2 = «Kent İçi Ulaşım»; s.117 T35 r2c2 = «Kent Güvenliği ve Sağlığı»
+- Üretilen Word hücreleri: s.118 T38 r2c2 = «46.388.000,00»; s.118 T38 r3c2 = «2.300.000,00»; s.118 T38 r4c2 = «442.490.000,00»; s.118 T38 r5c2 = «4.600.000,00»; s.118 T38 r6c2 = «453.562.000,00»; s.118 T38 r7c2 = «950.000.000,00»; s.118 T38 r8c2 = «0,00»; s.118 T38 r9c2 = «950.000.000,00»; s.115 T31 r2c2 = «Yönetim ve Destek Programı»; s.116 T33 r2c2 = «Kent İçi Ulaşım»; s.117 T35 r2c2 = «Kent Güvenliği ve Sağlığı»
+- Saklanan değerler (ondalık depolama gösterimi): [{"year": 2026, "value_kind": "budget", "category": "current_transfers", "funding_type": "outside", "amount": "0.00", "raw_text": "0,00", "state": "needs_review", "program_group": "unallocated"}]
+- Neden: Tablo 38, 2026 Bütçe: Bütçe İçi Toplam 950.000.000,00 TL, kategori satırlarının toplamı 949.340.000,00 TL; fark 660.000,00 TL. Kaynak tabloyu kontrol edin.<br>Tablo 38, 2026 Bütçe: Program grubu dağılımı kaynakta ayrılmamış. Programlar: Yönetim ve Destek Programı; Kent İçi Ulaşım; Kent Güvenliği ve Sağlığı. Tutarları program gruplarına göre doğrulayın. Kaynak tabloyu kontrol edin.
 
-## Ad düzeyinde tarama
+### Çapraz maliyet/toplam farkı — SOURCE
 
-Tarama ayrıştırılmış kaynak kayıtlarını inceler; ayrıştırıcının atladığı boş satırları yeni kayıt saymaz. Kod tekrarı müdürlük içinde taranır, kayıtlar birleştirilmez.
+Bilgi İşlem Müdürlüğü
 
-### Tablo başlığı adlı gösterge (0)
+- Kitap hücreleri: s.207 T147 r20c5 = «21.336.000,00»; s.207 T148 r2c4 = «20.346.000,00»; s.207 T148 r3c4 = «990.000,00»; s.207 T148 r4c4 = «236.000.000,00»; s.207 T148 r5c4 = «26.476.848,00»; s.207 T148 r6c4 = «283.812.848,00»; s.207 T148 r7c4 = «0,00»; s.207 T148 r8c4 = «283.812.848,00»; s.207 T147 r2c5 = «53.495.369,00»; s.207 T147 r3c5 = «53.495.369,00»; s.207 T147 r4c5 = «0,00»; s.207 T147 r5c5 = «53.594.369,00»; s.207 T147 r6c5 = «53.594.369,00»; s.207 T147 r7c5 = «0,00»; s.207 T147 r8c5 = «53.495.369,00»; s.207 T147 r9c5 = «53.495.369,00»; s.207 T147 r10c5 = «0,00»; s.207 T147 r11c5 = «53.495.369,00»; s.207 T147 r12c5 = «53.495.369,00»; s.207 T147 r13c5 = «0,00»; s.207 T147 r14c5 = «53.495.369,00»; s.207 T147 r15c5 = «53.495.369,00»; s.207 T147 r16c5 = «0,00»
+- Üretilen Word hücreleri: s.207 T147 r20c5 = «21.336.000,00»; s.207 T148 r2c4 = «20.346.000,00»; s.207 T148 r3c4 = «990.000,00»; s.207 T148 r4c4 = «236.000.000,00»; s.207 T148 r5c4 = «26.476.848,00»; s.207 T148 r6c4 = «283.812.848,00»; s.207 T148 r7c4 = «0,00»; s.207 T148 r8c4 = «283.812.848,00»; s.207 T147 r2c5 = «53.495.369,00»; s.207 T147 r3c5 = «53.495.369,00»; s.207 T147 r4c5 = «0,00»; s.207 T147 r5c5 = «53.594.369,00»; s.207 T147 r6c5 = «53.594.369,00»; s.207 T147 r7c5 = «0,00»; s.207 T147 r8c5 = «53.495.369,00»; s.207 T147 r9c5 = «53.495.369,00»; s.207 T147 r10c5 = «0,00»; s.207 T147 r11c5 = «53.495.369,00»; s.207 T147 r12c5 = «53.495.369,00»; s.207 T147 r13c5 = «0,00»; s.207 T147 r14c5 = «53.495.369,00»; s.207 T147 r15c5 = «53.495.369,00»; s.207 T147 r16c5 = «0,00»
+- Saklanan değerler (ondalık depolama gösterimi): [{"year": 2027, "activity_total": "267575845.00", "personnel": "21336000.00", "economic_total": "283812848.00", "economic_personnel": "21336000.00"}]
+- Neden: 2027: bütçe içi faaliyet ve ekonomik toplamları uyuşmuyor. Faaliyet toplamı 267.575.845,00; ortak personel/SGK 21.336.000,00; ekonomik kategori toplamı 283.812.848,00; ekonomik personel/SGK 21.336.000,00 TL.
 
-Yok.
+### Personel/SGK toplam farkı — SOURCE
 
-### Yıl biçimli gösterge (0)
+Yazı İşleri Müdürlüğü
 
-Yok.
+- Kitap hücreleri: s.227 T179 r38c6 = «30.875.000,00»; s.227 T180 r2c5 = «27.125.000,00»; s.227 T180 r3c5 = «3.757.000,00»; s.227 T180 r4c5 = «14.073.382,00»; s.227 T180 r5c5 = «2.197.650,00»; s.227 T180 r6c5 = «5.077.400,00»; s.227 T180 r7c5 = «52.223.432,00»; s.227 T180 r8c5 = «0,00»; s.227 T180 r9c5 = «52.223.432,00»
+- Üretilen Word hücreleri: s.227 T179 r38c6 = «30.875.000,00»; s.227 T180 r2c5 = «27.125.000,00»; s.227 T180 r3c5 = «3.757.000,00»; s.227 T180 r4c5 = «14.073.382,00»; s.227 T180 r5c5 = «2.197.650,00»; s.227 T180 r6c5 = «5.077.400,00»; s.227 T180 r7c5 = «52.223.432,00»; s.227 T180 r8c5 = «0,00»; s.227 T180 r9c5 = «52.223.432,00»
+- Saklanan değerler (ondalık depolama gösterimi): [{"year": 2028, "activity_total": "19452675.00", "personnel": "30875000.00", "economic_total": "52230432.00", "economic_personnel": "30882000.00"}]
+- Neden: 2028: ekonomik personel/SGK satırları ortak tablodan farklı. Faaliyet toplamı 19.452.675,00; ortak personel/SGK 30.875.000,00; ekonomik kategori toplamı 52.230.432,00; ekonomik personel/SGK 30.882.000,00 TL.
 
-### Boş gösterge adı (0)
+### SYSTEM düzeltmesinin saklama kanıtı
 
-Yok.
+- Kitap: s.192 T129 r48c1 = «0006.Personel Eğitim ve Yetkinlik Geliştirme Faaliyetleri»; s.192 T129 r49c1 = «Çözüm Masası bünyesinde görev yapan personelin vatandaşlarla etkili iletişim kurma, talep, öneri ve şikâyetleri doğru şekilde karşılama, kayıt altına alma, yönlendirme ve takip etme konularındaki bilgi, beceri ve yetkinliklerinin geliştirilmesi amacıyla eğitim faaliyetleri yürütülmektedir. Bu kapsamda; vatandaş iletişimi, etkili iletişim teknikleri, çözüm odaklı yaklaşım, başvuru ve çağrı yönetimi, dijital sistemlerin etkin kullanımı ile hizmet kalitesinin artırılmasına yönelik eğitim, seminer ve benzeri çalışmaların gerçekleştirilmesi amaçlanmaktadır.»
+- Word: s.192 T129 r48c1 = «0006.Personel Eğitim ve Yetkinlik Geliştirme Faaliyetleri»; s.192 T129 r49c1 = «Çözüm Masası bünyesinde görev yapan personelin vatandaşlarla etkili iletişim kurma, talep, öneri ve şikâyetleri doğru şekilde karşılama, kayıt altına alma, yönlendirme ve takip etme konularındaki bilgi, beceri ve yetkinliklerinin geliştirilmesi amacıyla eğitim faaliyetleri yürütülmektedir. Bu kapsamda; vatandaş iletişimi, etkili iletişim teknikleri, çözüm odaklı yaklaşım, başvuru ve çağrı yönetimi, dijital sistemlerin etkin kullanımı ile hizmet kalitesinin artırılmasına yönelik eğitim, seminer ve benzeri çalışmaların gerçekleştirilmesi amaçlanmaktadır.»
+- Saklanan Activity.explanation: Çözüm Masası bünyesinde görev yapan personelin vatandaşlarla etkili iletişim kurma, talep, öneri ve şikâyetleri doğru şekilde karşılama, kayıt altına alma, yönlendirme ve takip etme konularındaki bilgi, beceri ve yetkinliklerinin geliştirilmesi amacıyla eğitim faaliyetleri yürütülmektedir. Bu kapsamda; vatandaş iletişimi, etkili iletişim teknikleri, çözüm odaklı yaklaşım, başvuru ve çağrı yönetimi, dijital sistemlerin etkin kullanımı ile hizmet kalitesinin artırılmasına yönelik eğitim, seminer ve benzeri çalışmaların gerçekleştirilmesi amaçlanmaktadır.
 
-### Boş faaliyet adı (0)
+- Kitap: s.107 T24 r7c3 = «₺10.424.938,95»
+- Word: s.107 T24 r7c3 = «₺10.424.938,95»
+- Saklanan EconomicValue.source_context_json.totals.inside: {"year": 2026, "kind": "midyear_spend", "amount": "10424938.95", "raw_text": "₺10.424.938,95", "state": "verified"}
 
-Yok.
-
-### Tekrarlanan faaliyet kodu (0)
-
-Yok.
-
-## Uygulama sonrası gönderime hazırlık
-
-Hazır = paket uygulandı ve validate_department hata listesi boş. Uyarılar engelleyici değildir. Aşağıdaki hata ve uyarı metinleri doğrulayıcıdan aynen alınmıştır.
+## Pazartesi — müdürlük bazında yalnız SOURCE kontrol listesi
 
 ### Afet İşleri ve Risk Yönetimi Müdürlüğü
 
-Gönderime hazır: **Hayır**.
+Gönderime hazır: **Hayır**; 12 SOURCE mesajı / 4 kaynak kontrol maddesi.
 
-Kitap sayfaları: 141, 143, 144.
-
-Hatalar (12):
-
-- 0015.Kurum Personelinin Afet Eğitim Projesi: 2027 Bütçe / Toplam kaynak tutarı doğrulanmalı. (kitap s. 144)
-- 0015.Kurum Personelinin Afet Eğitim Projesi: 2028 Tahmin / Toplam kaynak tutarı doğrulanmalı. (kitap s. 144)
-- 0015.Kurum Personelinin Afet Eğitim Projesi: 2029 Tahmin / Toplam kaynak tutarı doğrulanmalı. (kitap s. 144)
-- 0015.Kurum Personelinin Afet Eğitim Projesi: 2029 Tahmin finansman bilgisi eksik. (kitap s. 144)
-- 0015.Kurum Personelinin Afet Eğitim Projesi: 2028 Tahmin finansman bilgisi eksik. (kitap s. 144)
-- 0015.Kurum Personelinin Afet Eğitim Projesi: 2027 Bütçe finansman bilgisi eksik. (kitap s. 144)
-- 2026 Haziran Sonu Harcama / Personel Giderleri / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 144)
-- 2026 Haziran Sonu Harcama / Personel Giderleri / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 144)
-- 2026 Haziran Sonu Harcama / Sosyal Güvenlik Kurumuna Devlet Primi Giderleri / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 144)
-- 2026 Haziran Sonu Harcama / Sosyal Güvenlik Kurumuna Devlet Primi Giderleri / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 144)
-- 2026 Haziran Sonu Harcama / Mal ve Hizmet Alım Giderleri / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 144)
-- 2026 Haziran Sonu Harcama / Mal ve Hizmet Alım Giderleri / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 144)
-
-Uyarılar (0):
-
-Yok.
+- [ ] 0015.Kurum Personelinin Afet Eğitim Projesi: 2027 Bütçe / Toplam kaynak tutarı doğrulanmalı. 0015.Kurum Personelinin Afet Eğitim Projesi: 2027 Bütçe finansman bilgisi eksik. **Hücreler:** s.144 / T69 / sütun 5 / satır 44,45,46
+- [ ] 0015.Kurum Personelinin Afet Eğitim Projesi: 2028 Tahmin / Toplam kaynak tutarı doğrulanmalı. 0015.Kurum Personelinin Afet Eğitim Projesi: 2028 Tahmin finansman bilgisi eksik. **Hücreler:** s.144 / T69 / sütun 6 / satır 44,45,46
+- [ ] 0015.Kurum Personelinin Afet Eğitim Projesi: 2029 Tahmin / Toplam kaynak tutarı doğrulanmalı. 0015.Kurum Personelinin Afet Eğitim Projesi: 2029 Tahmin finansman bilgisi eksik. **Hücreler:** s.144 / T69 / sütun 7 / satır 44,45,46
+- [ ] Tablo 70, 2026 Haziran Sonu Harcama: Bütçe İçi Toplam 5.091.250,40 TL, kategori satırlarının toplamı 6.554.522,21 TL; fark -1.463.271,81 TL. Kaynak tabloyu kontrol edin. **Hücreler:** s.144 / T70 / sütun 3 / satır 2,3,4,5,6,7
 
 ### Araştırma ve Geliştirme Müdürlüğü
 
-Gönderime hazır: **Hayır**.
+Gönderime hazır: **Hayır**; 6 SOURCE mesajı / 1 kaynak kontrol maddesi.
 
-Kitap sayfaları: 194, 195.
-
-Hatalar (6):
-
-- 2026 Haziran Sonu Harcama / Personel Giderleri / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 195)
-- 2026 Haziran Sonu Harcama / Personel Giderleri / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 195)
-- 2026 Haziran Sonu Harcama / Sosyal Güvenlik Kurumuna Devlet Primi Giderleri / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 195)
-- 2026 Haziran Sonu Harcama / Sosyal Güvenlik Kurumuna Devlet Primi Giderleri / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 195)
-- 2026 Haziran Sonu Harcama / Mal ve Hizmet Alım Giderleri / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 195)
-- 2026 Haziran Sonu Harcama / Mal ve Hizmet Alım Giderleri / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 195)
-
-Uyarılar (4):
-
-- SH45/PG01, Ulusal ve uluslararası hibe/fon programlarına yapılan proje başvuru sayısı: sayı/oran birimi müdürlükçe kontrol edilmeli.
-- SH45/PG02, Kurulan ulusal ve uluslararası iş birliğine yönelik protokol, iş birliği ve proje ortaklığı sayısı: sayı/oran birimi müdürlükçe kontrol edilmeli.
-- SH45/PG03, Belediye hizmetlerine yönelik tamamlanan iş analizi/ süreç analizi raporu sayısı: sayı/oran birimi müdürlükçe kontrol edilmeli.
-- SH45/PG04, Veri temeli çalışmalar kapsamında ilgili birimlerle yapılan koordinasyon/toplantı sayısı: sayı/oran birimi müdürlükçe kontrol edilmeli.
+- [ ] Tablo 134, 2026 Haziran Sonu Harcama: Bütçe İçi Toplam 832.400,90 TL, kategori satırlarının toplamı 813.893,90 TL; fark 18.507,00 TL. Kaynak tabloyu kontrol edin. **Hücreler:** s.195 / T134 / sütun 3 / satır 2,3,4,5,6,7
 
 ### Bilgi İşlem Müdürlüğü
 
-Gönderime hazır: **Hayır**.
+Gönderime hazır: **Hayır**; 6 SOURCE mesajı / 3 kaynak kontrol maddesi.
 
-Kitap sayfaları: 205, 207.
-
-Hatalar (6):
-
-- 2027: ortak maliyet ve ekonomik tablo toplamları uyuşmuyor. (kitap s. 207)
-- 2027: bütçe içi faaliyet ve ekonomik toplamları uyuşmuyor. (kitap s. 207)
-- 2028: ortak maliyet ve ekonomik tablo toplamları uyuşmuyor. (kitap s. 207)
-- 2028: bütçe içi faaliyet ve ekonomik toplamları uyuşmuyor. (kitap s. 207)
-- 2029: ortak maliyet ve ekonomik tablo toplamları uyuşmuyor. (kitap s. 207)
-- 2029: bütçe içi faaliyet ve ekonomik toplamları uyuşmuyor. (kitap s. 207)
-
-Uyarılar (0):
-
-Yok.
+- [ ] 2027: bütçe içi faaliyet ve ekonomik toplamları uyuşmuyor. Faaliyet toplamı 267.575.845,00; ortak personel/SGK 21.336.000,00; ekonomik kategori toplamı 283.812.848,00; ekonomik personel/SGK 21.336.000,00 TL. 2027: ortak maliyet ve ekonomik tablo toplamları uyuşmuyor. Faaliyet toplamı 267.575.845,00; ortak personel/SGK 21.336.000,00; ekonomik kategori toplamı 283.812.848,00; ekonomik personel/SGK 21.336.000,00 TL. **Hücreler:** s.207 / T147 / sütun 5 / satır 2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,20; s.207 / T148 / sütun 4 / satır 2,3,4,5,6,7,8
+- [ ] 2028: bütçe içi faaliyet ve ekonomik toplamları uyuşmuyor. Faaliyet toplamı 454.155.140,00; ortak personel/SGK 26.670.000,00; ekonomik kategori toplamı 480.825.142,00; ekonomik personel/SGK 26.670.000,00 TL. 2028: ortak maliyet ve ekonomik tablo toplamları uyuşmuyor. Faaliyet toplamı 454.155.140,00; ortak personel/SGK 26.670.000,00; ekonomik kategori toplamı 480.825.142,00; ekonomik personel/SGK 26.670.000,00 TL. **Hücreler:** s.207 / T147 / sütun 6 / satır 2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,20; s.207 / T148 / sütun 5 / satır 2,3,4,5,6,7,8
+- [ ] 2029: bütçe içi faaliyet ve ekonomik toplamları uyuşmuyor. Faaliyet toplamı 777.302.765,00; ortak personel/SGK 33.337.500,00; ekonomik kategori toplamı 810.640.269,00; ekonomik personel/SGK 33.337.500,00 TL. 2029: ortak maliyet ve ekonomik tablo toplamları uyuşmuyor. Faaliyet toplamı 777.302.765,00; ortak personel/SGK 33.337.500,00; ekonomik kategori toplamı 810.640.269,00; ekonomik personel/SGK 33.337.500,00 TL. **Hücreler:** s.207 / T147 / sütun 7 / satır 2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,20; s.207 / T148 / sütun 6 / satır 2,3,4,5,6,7,8
 
 ### Çevre Koruma ve Kontrol Müdürlüğü
 
-Gönderime hazır: **Hayır**.
+Gönderime hazır: **Hayır**; 6 SOURCE mesajı / 1 kaynak kontrol maddesi.
 
-Kitap sayfaları: 152, 153.
-
-Hatalar (6):
-
-- 2026 Haziran Sonu Harcama / Personel Giderleri / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 153)
-- 2026 Haziran Sonu Harcama / Personel Giderleri / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 153)
-- 2026 Haziran Sonu Harcama / Sosyal Güvenlik Kurumuna Devlet Primi Giderleri / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 153)
-- 2026 Haziran Sonu Harcama / Sosyal Güvenlik Kurumuna Devlet Primi Giderleri / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 153)
-- 2026 Haziran Sonu Harcama / Mal ve Hizmet Alım Giderleri / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 153)
-- 2026 Haziran Sonu Harcama / Mal ve Hizmet Alım Giderleri / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 153)
-
-Uyarılar (0):
-
-Yok.
+- [ ] Tablo 78, 2026 Haziran Sonu Harcama: Bütçe İçi Toplam 3.967.964,02 TL, kategori satırlarının toplamı 4.085.221,72 TL; fark -117.257,70 TL. Kaynak tabloyu kontrol edin. **Hücreler:** s.153 / T78 / sütun 3 / satır 2,3,4,5,6,7
 
 ### Destek Hizmetleri Müdürlüğü
 
-Gönderime hazır: **Hayır**.
+Gönderime hazır: **Hayır**; 3 SOURCE mesajı / 3 kaynak kontrol maddesi.
 
-Kitap sayfaları: 216, 217, 218.
-
-Hatalar (3):
-
-- 0007.İhtiyaç duyulan malzeme, ekipman ve hizmet alımlarının yasalara uygun, şeffaf ve rekabetçi bir şekilde gerçekleştirmek: 2026 Haziran Sonu Harcama finansman bilgisi eksik. (kitap s. 218)
-- 0007.İhtiyaç duyulan malzeme, ekipman ve hizmet alımlarının yasalara uygun, şeffaf ve rekabetçi bir şekilde gerçekleştirmek: 2026 Yıl Sonu Tahmini finansman bilgisi eksik. (kitap s. 218)
-- 0007.İhtiyaç duyulan malzeme, ekipman ve hizmet alımlarının yasalara uygun, şeffaf ve rekabetçi bir şekilde gerçekleştirmek: 2026 Bütçe finansman bilgisi eksik. (kitap s. 218)
-
-Uyarılar (0):
-
-Yok.
+- [ ] 0007.İhtiyaç duyulan malzeme, ekipman ve hizmet alımlarının yasalara uygun, şeffaf ve rekabetçi bir şekilde gerçekleştirmek: 2026 Bütçe finansman bilgisi eksik. **Hücreler:** s.218 / T165 / sütun 2 / satır 20,21,22
+- [ ] 0007.İhtiyaç duyulan malzeme, ekipman ve hizmet alımlarının yasalara uygun, şeffaf ve rekabetçi bir şekilde gerçekleştirmek: 2026 Haziran Sonu Harcama finansman bilgisi eksik. **Hücreler:** s.218 / T165 / sütun 3 / satır 20,21,22
+- [ ] 0007.İhtiyaç duyulan malzeme, ekipman ve hizmet alımlarının yasalara uygun, şeffaf ve rekabetçi bir şekilde gerçekleştirmek: 2026 Yıl Sonu Tahmini finansman bilgisi eksik. **Hücreler:** s.218 / T165 / sütun 4 / satır 20,21,22
 
 ### Dış İlişkiler Müdürlüğü
 
-Gönderime hazır: **Hayır**.
+Gönderime hazır: **Hayır**; 9 SOURCE mesajı / 6 kaynak kontrol maddesi.
 
-Kitap sayfaları: 184, 186.
-
-Hatalar (9):
-
-- 0006.Uluslararası kuruluşlar ve belediye ağları ile kurumsal ilişkilerin sürdürülmesi: 2026 Haziran Sonu Harcama finansman bilgisi eksik. (kitap s. 186)
-- 0006.Uluslararası kuruluşlar ve belediye ağları ile kurumsal ilişkilerin sürdürülmesi: 2026 Yıl Sonu Tahmini finansman bilgisi eksik. (kitap s. 186)
-- 0006.Uluslararası kuruluşlar ve belediye ağları ile kurumsal ilişkilerin sürdürülmesi: 2026 Bütçe finansman bilgisi eksik. (kitap s. 186)
-- 2027: ortak maliyet ve ekonomik tablo toplamları uyuşmuyor. (kitap s. 186)
-- 2027: bütçe içi faaliyet ve ekonomik toplamları uyuşmuyor. (kitap s. 186)
-- 2028: ortak maliyet ve ekonomik tablo toplamları uyuşmuyor. (kitap s. 186)
-- 2028: bütçe içi faaliyet ve ekonomik toplamları uyuşmuyor. (kitap s. 186)
-- 2029: ortak maliyet ve ekonomik tablo toplamları uyuşmuyor. (kitap s. 186)
-- 2029: bütçe içi faaliyet ve ekonomik toplamları uyuşmuyor. (kitap s. 186)
-
-Uyarılar (0):
-
-Yok.
+- [ ] 2027: bütçe içi faaliyet ve ekonomik toplamları uyuşmuyor. Faaliyet toplamı 4.039.548,00; ortak personel/SGK 1.475.000,00; ekonomik kategori toplamı 6.514.548,00; ekonomik personel/SGK 1.475.000,00 TL. 2027: ortak maliyet ve ekonomik tablo toplamları uyuşmuyor. Faaliyet toplamı 4.039.548,00; ortak personel/SGK 1.475.000,00; ekonomik kategori toplamı 6.514.548,00; ekonomik personel/SGK 1.475.000,00 TL. **Hücreler:** s.186 / T119 / sütun 5 / satır 2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,35; s.186 / T120 / sütun 4 / satır 2,3,4,5,6,7,8
+- [ ] 2028: bütçe içi faaliyet ve ekonomik toplamları uyuşmuyor. Faaliyet toplamı 4.570.481,00; ortak personel/SGK 1.843.750,00; ekonomik kategori toplamı 7.414.231,00; ekonomik personel/SGK 1.843.750,00 TL. 2028: ortak maliyet ve ekonomik tablo toplamları uyuşmuyor. Faaliyet toplamı 4.570.481,00; ortak personel/SGK 1.843.750,00; ekonomik kategori toplamı 7.414.231,00; ekonomik personel/SGK 1.843.750,00 TL. **Hücreler:** s.186 / T119 / sütun 6 / satır 2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,35; s.186 / T120 / sütun 5 / satır 2,3,4,5,6,7,8
+- [ ] 2029: bütçe içi faaliyet ve ekonomik toplamları uyuşmuyor. Faaliyet toplamı 4.605.000,00; ortak personel/SGK 2.304.688,00; ekonomik kategori toplamı 8.009.688,00; ekonomik personel/SGK 2.304.688,00 TL. 2029: ortak maliyet ve ekonomik tablo toplamları uyuşmuyor. Faaliyet toplamı 4.605.000,00; ortak personel/SGK 2.304.688,00; ekonomik kategori toplamı 8.009.688,00; ekonomik personel/SGK 2.304.688,00 TL. **Hücreler:** s.186 / T119 / sütun 7 / satır 2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,35; s.186 / T120 / sütun 6 / satır 2,3,4,5,6,7,8
+- [ ] 0006.Uluslararası kuruluşlar ve belediye ağları ile kurumsal ilişkilerin sürdürülmesi: 2026 Bütçe finansman bilgisi eksik. **Hücreler:** s.186 / T119 / sütun 2 / satır 17,18,19
+- [ ] 0006.Uluslararası kuruluşlar ve belediye ağları ile kurumsal ilişkilerin sürdürülmesi: 2026 Haziran Sonu Harcama finansman bilgisi eksik. **Hücreler:** s.186 / T119 / sütun 3 / satır 17,18,19
+- [ ] 0006.Uluslararası kuruluşlar ve belediye ağları ile kurumsal ilişkilerin sürdürülmesi: 2026 Yıl Sonu Tahmini finansman bilgisi eksik. **Hücreler:** s.186 / T119 / sütun 4 / satır 17,18,19
 
 ### Emlak İstimlak Müdürlüğü
 
-Gönderime hazır: **Hayır**.
+Gönderime hazır: **Hayır**; 16 SOURCE mesajı / 4 kaynak kontrol maddesi.
 
-Kitap sayfaları: 110, 111, 112.
-
-Hatalar (16):
-
-- 0005.4734 sayılı yasa kapsamında mal ve/veya hizmet alımı ihale işlemlerinin yapılması: 2027 Bütçe / Toplam kaynak tutarı doğrulanmalı. (kitap s. 112)
-- 0005.4734 sayılı yasa kapsamında mal ve/veya hizmet alımı ihale işlemlerinin yapılması: 2028 Tahmin / Toplam kaynak tutarı doğrulanmalı. (kitap s. 112)
-- 0005.4734 sayılı yasa kapsamında mal ve/veya hizmet alımı ihale işlemlerinin yapılması: 2029 Tahmin / Toplam kaynak tutarı doğrulanmalı. (kitap s. 112)
-- 0005.4734 sayılı yasa kapsamında mal ve/veya hizmet alımı ihale işlemlerinin yapılması: 2029 Tahmin finansman bilgisi eksik. (kitap s. 112)
-- 0005.4734 sayılı yasa kapsamında mal ve/veya hizmet alımı ihale işlemlerinin yapılması: 2028 Tahmin finansman bilgisi eksik. (kitap s. 112)
-- 0005.4734 sayılı yasa kapsamında mal ve/veya hizmet alımı ihale işlemlerinin yapılması: 2027 Bütçe finansman bilgisi eksik. (kitap s. 112)
-- 2026 Haziran Sonu Harcama / Personel Giderleri / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 112)
-- 2026 Haziran Sonu Harcama / Personel Giderleri / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 112)
-- 2026 Haziran Sonu Harcama / Sosyal Güvenlik Kurumuna Devlet Primi Giderleri / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 112)
-- 2026 Haziran Sonu Harcama / Sosyal Güvenlik Kurumuna Devlet Primi Giderleri / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 112)
-- 2026 Haziran Sonu Harcama / Mal ve Hizmet Alım Giderleri / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 112)
-- 2026 Haziran Sonu Harcama / Mal ve Hizmet Alım Giderleri / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 112)
-- 2026 Haziran Sonu Harcama / Cari Transferler / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 112)
-- 2026 Haziran Sonu Harcama / Cari Transferler / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 112)
-- 2026 Haziran Sonu Harcama / Sermaye Giderleri / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 112)
-- 2026 Haziran Sonu Harcama / Sermaye Giderleri / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 112)
-
-Uyarılar (0):
-
-Yok.
+- [ ] 0005.4734 sayılı yasa kapsamında mal ve/veya hizmet alımı ihale işlemlerinin yapılması: 2027 Bütçe / Toplam kaynak tutarı doğrulanmalı. 0005.4734 sayılı yasa kapsamında mal ve/veya hizmet alımı ihale işlemlerinin yapılması: 2027 Bütçe finansman bilgisi eksik. **Hücreler:** s.112 / T29 / sütun 5 / satır 14,15,16
+- [ ] 0005.4734 sayılı yasa kapsamında mal ve/veya hizmet alımı ihale işlemlerinin yapılması: 2028 Tahmin / Toplam kaynak tutarı doğrulanmalı. 0005.4734 sayılı yasa kapsamında mal ve/veya hizmet alımı ihale işlemlerinin yapılması: 2028 Tahmin finansman bilgisi eksik. **Hücreler:** s.112 / T29 / sütun 6 / satır 14,15,16
+- [ ] 0005.4734 sayılı yasa kapsamında mal ve/veya hizmet alımı ihale işlemlerinin yapılması: 2029 Tahmin / Toplam kaynak tutarı doğrulanmalı. 0005.4734 sayılı yasa kapsamında mal ve/veya hizmet alımı ihale işlemlerinin yapılması: 2029 Tahmin finansman bilgisi eksik. **Hücreler:** s.112 / T29 / sütun 7 / satır 14,15,16
+- [ ] Tablo 30, 2026 Haziran Sonu Harcama: Bütçe İçi Toplam 113.352.771,64 TL, kategori satırlarının toplamı 113.787.163,62 TL; fark -434.391,98 TL. Kaynak tabloyu kontrol edin. **Hücreler:** s.112 / T30 / sütun 3 / satır 2,3,4,5,6,7,8,9
 
 ### Etüd Proje Müdürlüğü
 
-Gönderime hazır: **Hayır**.
+Gönderime hazır: **Hayır**; 1 SOURCE mesajı / 1 kaynak kontrol maddesi.
 
-Kitap sayfaları: 131, 132, 133.
-
-Hatalar (1):
-
-- 0010.Tüm bölgede, Sigara İçme Alanı talep ve başvurularının değerlendirilerek sonuçlandırılması (102 adet): 2028 Tahmin finansman bilgisi eksik. (kitap s. 133)
-
-Uyarılar (0):
-
-Yok.
+- [ ] 0010.Tüm bölgede, Sigara İçme Alanı talep ve başvurularının değerlendirilerek sonuçlandırılması (102 adet): 2028 Tahmin finansman bilgisi eksik. **Hücreler:** s.133 / T55 / sütun 6 / satır 29,30,31
 
 ### Fen İşleri Müdürlüğü
 
-Gönderime hazır: **Hayır**.
+Gönderime hazır: **Hayır**; 54 SOURCE mesajı / 7 kaynak kontrol maddesi.
 
-Kitap sayfaları: 115, 116, 117, 118.
-
-Hatalar (54):
-
-- 2026 Bütçe / Personel Giderleri / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 118)
-- 2026 Bütçe / Personel Giderleri / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 118)
-- 2026 Bütçe / Sosyal Güvenlik Kurumuna Devlet Primi Giderleri / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 118)
-- 2026 Bütçe / Sosyal Güvenlik Kurumuna Devlet Primi Giderleri / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 118)
-- 2026 Bütçe / Mal ve Hizmet Alım Giderleri / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 118)
-- 2026 Bütçe / Mal ve Hizmet Alım Giderleri / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 118)
-- 2026 Bütçe / Cari Transferler / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 118)
-- 2026 Bütçe / Cari Transferler / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 118)
-- 2026 Bütçe / Sermaye Giderleri / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 118)
-- 2026 Bütçe / Sermaye Giderleri / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 118)
-- 2026 Haziran Sonu Harcama / Personel Giderleri / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 118)
-- 2026 Haziran Sonu Harcama / Personel Giderleri / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 118)
-- 2026 Haziran Sonu Harcama / Sosyal Güvenlik Kurumuna Devlet Primi Giderleri / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 118)
-- 2026 Haziran Sonu Harcama / Sosyal Güvenlik Kurumuna Devlet Primi Giderleri / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 118)
-- 2026 Haziran Sonu Harcama / Mal ve Hizmet Alım Giderleri / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 118)
-- 2026 Haziran Sonu Harcama / Mal ve Hizmet Alım Giderleri / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 118)
-- 2026 Haziran Sonu Harcama / Cari Transferler / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 118)
-- 2026 Haziran Sonu Harcama / Cari Transferler / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 118)
-- 2026 Haziran Sonu Harcama / Sermaye Giderleri / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 118)
-- 2026 Haziran Sonu Harcama / Sermaye Giderleri / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 118)
-- 2027 Bütçe / Personel Giderleri / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 118)
-- 2027 Bütçe / Personel Giderleri / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 118)
-- 2027 Bütçe / Sosyal Güvenlik Kurumuna Devlet Primi Giderleri / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 118)
-- 2027 Bütçe / Sosyal Güvenlik Kurumuna Devlet Primi Giderleri / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 118)
-- 2027 Bütçe / Mal ve Hizmet Alım Giderleri / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 118)
-- 2027 Bütçe / Mal ve Hizmet Alım Giderleri / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 118)
-- 2027 Bütçe / Cari Transferler / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 118)
-- 2027 Bütçe / Cari Transferler / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 118)
-- 2027 Bütçe / Sermaye Giderleri / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 118)
-- 2027 Bütçe / Sermaye Giderleri / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 118)
-- 2028 Tahmin / Personel Giderleri / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 118)
-- 2028 Tahmin / Personel Giderleri / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 118)
-- 2028 Tahmin / Sosyal Güvenlik Kurumuna Devlet Primi Giderleri / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 118)
-- 2028 Tahmin / Sosyal Güvenlik Kurumuna Devlet Primi Giderleri / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 118)
-- 2028 Tahmin / Mal ve Hizmet Alım Giderleri / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 118)
-- 2028 Tahmin / Mal ve Hizmet Alım Giderleri / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 118)
-- 2028 Tahmin / Cari Transferler / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 118)
-- 2028 Tahmin / Cari Transferler / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 118)
-- 2028 Tahmin / Sermaye Giderleri / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 118)
-- 2028 Tahmin / Sermaye Giderleri / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 118)
-- 2029 Tahmin / Personel Giderleri / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 118)
-- 2029 Tahmin / Personel Giderleri / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 118)
-- 2029 Tahmin / Sosyal Güvenlik Kurumuna Devlet Primi Giderleri / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 118)
-- 2029 Tahmin / Sosyal Güvenlik Kurumuna Devlet Primi Giderleri / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 118)
-- 2029 Tahmin / Mal ve Hizmet Alım Giderleri / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 118)
-- 2029 Tahmin / Mal ve Hizmet Alım Giderleri / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 118)
-- 2029 Tahmin / Cari Transferler / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 118)
-- 2029 Tahmin / Cari Transferler / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 118)
-- 2029 Tahmin / Sermaye Giderleri / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 118)
-- 2029 Tahmin / Sermaye Giderleri / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 118)
-- 2028: ortak maliyet ve ekonomik tablo toplamları uyuşmuyor. (kitap s. 118)
-- 2028: bütçe içi faaliyet ve ekonomik toplamları uyuşmuyor. (kitap s. 118)
-- 2029: ortak maliyet ve ekonomik tablo toplamları uyuşmuyor. (kitap s. 118)
-- 2029: bütçe içi faaliyet ve ekonomik toplamları uyuşmuyor. (kitap s. 118)
-
-Uyarılar (1):
-
-- SH12.PG04.Yeni Açılan ve Genişletilen Yol Sayısı: sayı/oran birimi müdürlükçe kontrol edilmeli.
+- [ ] 2028: bütçe içi faaliyet ve ekonomik toplamları uyuşmuyor. Faaliyet toplamı 2.021.870.002,00; ortak personel/SGK 59.125.000,00; ekonomik kategori toplamı 2.223.048.637,00; ekonomik personel/SGK 59.125.000,00 TL. 2028: ortak maliyet ve ekonomik tablo toplamları uyuşmuyor. Faaliyet toplamı 2.021.870.002,00; ortak personel/SGK 59.125.000,00; ekonomik kategori toplamı 2.223.048.637,00; ekonomik personel/SGK 59.125.000,00 TL. **Hücreler:** s.118 / T37 / sütun 6 / satır 2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,32; s.118 / T38 / sütun 5 / satır 2,3,4,5,6,7,8,9
+- [ ] 2029: bütçe içi faaliyet ve ekonomik toplamları uyuşmuyor. Faaliyet toplamı 2.493.022.422,00; ortak personel/SGK 73.906.250,00; ekonomik kategori toplamı 2.666.810.796,00; ekonomik personel/SGK 73.906.250,00 TL. 2029: ortak maliyet ve ekonomik tablo toplamları uyuşmuyor. Faaliyet toplamı 2.493.022.422,00; ortak personel/SGK 73.906.250,00; ekonomik kategori toplamı 2.666.810.796,00; ekonomik personel/SGK 73.906.250,00 TL. **Hücreler:** s.118 / T37 / sütun 7 / satır 2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,32; s.118 / T38 / sütun 6 / satır 2,3,4,5,6,7,8,9
+- [ ] Tablo 38, 2026 Bütçe: Bütçe İçi Toplam 950.000.000,00 TL, kategori satırlarının toplamı 949.340.000,00 TL; fark 660.000,00 TL. Kaynak tabloyu kontrol edin.<br>Tablo 38, 2026 Bütçe: Program grubu dağılımı kaynakta ayrılmamış. Programlar: Yönetim ve Destek Programı; Kent İçi Ulaşım; Kent Güvenliği ve Sağlığı. Tutarları program gruplarına göre doğrulayın. Kaynak tabloyu kontrol edin. **Hücreler:** s.118 / T38 / sütun 2 / satır 2,3,4,5,6,7,8,9; s.115 / T31 / sütun 2 / satır 2; s.116 / T33 / sütun 2 / satır 2; s.117 / T35 / sütun 2 / satır 2
+- [ ] Tablo 38, 2026 Haziran Sonu Harcama: Program grubu dağılımı kaynakta ayrılmamış. Programlar: Yönetim ve Destek Programı; Kent İçi Ulaşım; Kent Güvenliği ve Sağlığı. Tutarları program gruplarına göre doğrulayın. Kaynak tabloyu kontrol edin. **Hücreler:** s.118 / T38 / sütun 3 / satır 2,3,4,5,6,7,8,9; s.115 / T31 / sütun 2 / satır 2; s.116 / T33 / sütun 2 / satır 2; s.117 / T35 / sütun 2 / satır 2
+- [ ] Tablo 38, 2027 Bütçe: Program grubu dağılımı kaynakta ayrılmamış. Programlar: Yönetim ve Destek Programı; Kent İçi Ulaşım; Kent Güvenliği ve Sağlığı. Tutarları program gruplarına göre doğrulayın. Kaynak tabloyu kontrol edin. **Hücreler:** s.118 / T38 / sütun 4 / satır 2,3,4,5,6,7,8,9; s.115 / T31 / sütun 2 / satır 2; s.116 / T33 / sütun 2 / satır 2; s.117 / T35 / sütun 2 / satır 2
+- [ ] Tablo 38, 2028 Tahmin: Program grubu dağılımı kaynakta ayrılmamış. Programlar: Yönetim ve Destek Programı; Kent İçi Ulaşım; Kent Güvenliği ve Sağlığı. Tutarları program gruplarına göre doğrulayın. Kaynak tabloyu kontrol edin. **Hücreler:** s.118 / T38 / sütun 5 / satır 2,3,4,5,6,7,8,9; s.115 / T31 / sütun 2 / satır 2; s.116 / T33 / sütun 2 / satır 2; s.117 / T35 / sütun 2 / satır 2
+- [ ] Tablo 38, 2029 Tahmin: Program grubu dağılımı kaynakta ayrılmamış. Programlar: Yönetim ve Destek Programı; Kent İçi Ulaşım; Kent Güvenliği ve Sağlığı. Tutarları program gruplarına göre doğrulayın. Kaynak tabloyu kontrol edin. **Hücreler:** s.118 / T38 / sütun 6 / satır 2,3,4,5,6,7,8,9; s.115 / T31 / sütun 2 / satır 2; s.116 / T33 / sütun 2 / satır 2; s.117 / T35 / sütun 2 / satır 2
 
 ### Gelirler Müdürlüğü
 
-Gönderime hazır: **Hayır**.
+Gönderime hazır: **Hayır**; 25 SOURCE mesajı / 8 kaynak kontrol maddesi.
 
-Kitap sayfaları: 229, 231, 232, 233, 234.
-
-Hatalar (25):
-
-- 0015.Vergi beyannameleri, müşavirlik, eğitim vb. çeşitli ödemeleri zamanında eksiksiz ve tam olarak yürütmek.: 2026 Haziran Sonu Harcama finansman bilgisi eksik. (kitap s. 234)
-- 0015.Vergi beyannameleri, müşavirlik, eğitim vb. çeşitli ödemeleri zamanında eksiksiz ve tam olarak yürütmek.: 2026 Yıl Sonu Tahmini finansman bilgisi eksik. (kitap s. 234)
-- 0015.Vergi beyannameleri, müşavirlik, eğitim vb. çeşitli ödemeleri zamanında eksiksiz ve tam olarak yürütmek.: 2026 Bütçe finansman bilgisi eksik. (kitap s. 234)
-- 2026 Bütçe / Personel Giderleri / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 234)
-- 2026 Bütçe / Personel Giderleri / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 234)
-- 2026 Bütçe / Sosyal Güvenlik Kurumuna Devlet Primi Giderleri / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 234)
-- 2026 Bütçe / Sosyal Güvenlik Kurumuna Devlet Primi Giderleri / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 234)
-- 2026 Bütçe / Mal ve Hizmet Alım Giderleri / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 234)
-- 2026 Bütçe / Mal ve Hizmet Alım Giderleri / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 234)
-- 2026 Bütçe / Cari Transferler / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 234)
-- 2026 Bütçe / Cari Transferler / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 234)
-- 2026 Haziran Sonu Harcama / Personel Giderleri / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 234)
-- 2026 Haziran Sonu Harcama / Personel Giderleri / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 234)
-- 2026 Haziran Sonu Harcama / Sosyal Güvenlik Kurumuna Devlet Primi Giderleri / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 234)
-- 2026 Haziran Sonu Harcama / Sosyal Güvenlik Kurumuna Devlet Primi Giderleri / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 234)
-- 2026 Haziran Sonu Harcama / Mal ve Hizmet Alım Giderleri / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 234)
-- 2026 Haziran Sonu Harcama / Mal ve Hizmet Alım Giderleri / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 234)
-- 2026 Haziran Sonu Harcama / Cari Transferler / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 234)
-- 2026 Haziran Sonu Harcama / Cari Transferler / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 234)
-- 2027: ortak maliyet ve ekonomik tablo toplamları uyuşmuyor. (kitap s. 234)
-- 2027: bütçe içi faaliyet ve ekonomik toplamları uyuşmuyor. (kitap s. 234)
-- 2028: ortak maliyet ve ekonomik tablo toplamları uyuşmuyor. (kitap s. 234)
-- 2028: bütçe içi faaliyet ve ekonomik toplamları uyuşmuyor. (kitap s. 234)
-- 2029: ortak maliyet ve ekonomik tablo toplamları uyuşmuyor. (kitap s. 234)
-- 2029: bütçe içi faaliyet ve ekonomik toplamları uyuşmuyor. (kitap s. 234)
-
-Uyarılar (1):
-
-- Kadın kooperatifleri sayısının toplam tedarikçiye oranı: sayı/oran birimi müdürlükçe kontrol edilmeli.
+- [ ] 2027: bütçe içi faaliyet ve ekonomik toplamları uyuşmuyor. Faaliyet toplamı 83.400.000,00; ortak personel/SGK 81.910.000,00; ekonomik kategori toplamı 162.322.500,00; ekonomik personel/SGK 81.910.000,00 TL. 2027: ortak maliyet ve ekonomik tablo toplamları uyuşmuyor. Faaliyet toplamı 83.400.000,00; ortak personel/SGK 81.910.000,00; ekonomik kategori toplamı 162.322.500,00; ekonomik personel/SGK 81.910.000,00 TL. **Hücreler:** s.234 / T189 / sütun 5 / satır 2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,50; s.234 / T190 / sütun 4 / satır 2,3,4,5,6,7,8
+- [ ] 2028: bütçe içi faaliyet ve ekonomik toplamları uyuşmuyor. Faaliyet toplamı 104.272.200,00; ortak personel/SGK 102.387.500,00; ekonomik kategori toplamı 204.036.734,00; ekonomik personel/SGK 102.387.500,00 TL. 2028: ortak maliyet ve ekonomik tablo toplamları uyuşmuyor. Faaliyet toplamı 104.272.200,00; ortak personel/SGK 102.387.500,00; ekonomik kategori toplamı 204.036.734,00; ekonomik personel/SGK 102.387.500,00 TL. **Hücreler:** s.234 / T189 / sütun 6 / satır 2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,50; s.234 / T190 / sütun 5 / satır 2,3,4,5,6,7,8
+- [ ] 2029: bütçe içi faaliyet ve ekonomik toplamları uyuşmuyor. Faaliyet toplamı 121.674.592,00; ortak personel/SGK 127.984.375,00; ekonomik kategori toplamı 235.437.102,00; ekonomik personel/SGK 127.984.375,00 TL. 2029: ortak maliyet ve ekonomik tablo toplamları uyuşmuyor. Faaliyet toplamı 121.674.592,00; ortak personel/SGK 127.984.375,00; ekonomik kategori toplamı 235.437.102,00; ekonomik personel/SGK 127.984.375,00 TL. **Hücreler:** s.234 / T189 / sütun 7 / satır 2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,50; s.234 / T190 / sütun 6 / satır 2,3,4,5,6,7,8
+- [ ] Tablo 190, 2026 Bütçe: Bütçe İçi Toplam 130.725.430,00 TL, kategori satırlarının toplamı 132.225.430,00 TL; fark -1.500.000,00 TL. Kaynak tabloyu kontrol edin. **Hücreler:** s.234 / T190 / sütun 2 / satır 2,3,4,5,6,7,8
+- [ ] Tablo 190, 2026 Haziran Sonu Harcama: Bütçe İçi Toplam 52.551.283,30 TL, kategori satırlarının toplamı 52.551.283,13 TL; fark 0,17 TL. Kaynak tabloyu kontrol edin. **Hücreler:** s.234 / T190 / sütun 3 / satır 2,3,4,5,6,7,8
+- [ ] 0015.Vergi beyannameleri, müşavirlik, eğitim vb. çeşitli ödemeleri zamanında eksiksiz ve tam olarak yürütmek.: 2026 Bütçe finansman bilgisi eksik. **Hücreler:** s.234 / T189 / sütun 2 / satır 44,45,46
+- [ ] 0015.Vergi beyannameleri, müşavirlik, eğitim vb. çeşitli ödemeleri zamanında eksiksiz ve tam olarak yürütmek.: 2026 Haziran Sonu Harcama finansman bilgisi eksik. **Hücreler:** s.234 / T189 / sütun 3 / satır 44,45,46
+- [ ] 0015.Vergi beyannameleri, müşavirlik, eğitim vb. çeşitli ödemeleri zamanında eksiksiz ve tam olarak yürütmek.: 2026 Yıl Sonu Tahmini finansman bilgisi eksik. **Hücreler:** s.234 / T189 / sütun 4 / satır 44,45,46
 
 ### Gençlik ve Spor İşleri Müdürlüğü
 
-Gönderime hazır: **Hayır**.
+Gönderime hazır: **Hayır**; 20 SOURCE mesajı / 4 kaynak kontrol maddesi.
 
-Kitap sayfaları: 170, 172, 173.
-
-Hatalar (20):
-
-- 2026 Haziran Sonu Harcama / Personel Giderleri / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 173)
-- 2026 Haziran Sonu Harcama / Personel Giderleri / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 173)
-- 2026 Haziran Sonu Harcama / Sosyal Güvenlik Kurumuna Devlet Primi Giderleri / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 173)
-- 2026 Haziran Sonu Harcama / Sosyal Güvenlik Kurumuna Devlet Primi Giderleri / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 173)
-- 2026 Haziran Sonu Harcama / Mal ve Hizmet Alım Giderleri / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 173)
-- 2026 Haziran Sonu Harcama / Mal ve Hizmet Alım Giderleri / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 173)
-- 2026 Haziran Sonu Harcama / Cari Transferler / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 173)
-- 2026 Haziran Sonu Harcama / Cari Transferler / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 173)
-- 2028 Tahmin / Personel Giderleri / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 173)
-- 2028 Tahmin / Personel Giderleri / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 173)
-- 2028 Tahmin / Sosyal Güvenlik Kurumuna Devlet Primi Giderleri / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 173)
-- 2028 Tahmin / Sosyal Güvenlik Kurumuna Devlet Primi Giderleri / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 173)
-- 2028 Tahmin / Mal ve Hizmet Alım Giderleri / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 173)
-- 2028 Tahmin / Mal ve Hizmet Alım Giderleri / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 173)
-- 2028 Tahmin / Cari Transferler / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 173)
-- 2028 Tahmin / Cari Transferler / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 173)
-- 2028: ortak maliyet ve ekonomik tablo toplamları uyuşmuyor. (kitap s. 173)
-- 2028: bütçe içi faaliyet ve ekonomik toplamları uyuşmuyor. (kitap s. 173)
-- 2029: ortak maliyet ve ekonomik tablo toplamları uyuşmuyor. (kitap s. 173)
-- 2029: bütçe içi faaliyet ve ekonomik toplamları uyuşmuyor. (kitap s. 173)
-
-Uyarılar (0):
-
-Yok.
+- [ ] 2028: bütçe içi faaliyet ve ekonomik toplamları uyuşmuyor. Faaliyet toplamı 77.148.000,00; ortak personel/SGK 8.661.250,00; ekonomik kategori toplamı 89.807.672,00; ekonomik personel/SGK 8.661.250,00 TL. 2028: ortak maliyet ve ekonomik tablo toplamları uyuşmuyor. Faaliyet toplamı 77.148.000,00; ortak personel/SGK 8.661.250,00; ekonomik kategori toplamı 89.807.672,00; ekonomik personel/SGK 8.661.250,00 TL. **Hücreler:** s.173 / T105 / sütun 6 / satır 2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,35; s.173 / T106 / sütun 5 / satır 2,3,4,5,6,7,8
+- [ ] 2029: bütçe içi faaliyet ve ekonomik toplamları uyuşmuyor. Faaliyet toplamı 88.367.100,00; ortak personel/SGK 10.826.563,00; ekonomik kategori toplamı 102.973.097,00; ekonomik personel/SGK 10.826.563,00 TL. 2029: ortak maliyet ve ekonomik tablo toplamları uyuşmuyor. Faaliyet toplamı 88.367.100,00; ortak personel/SGK 10.826.563,00; ekonomik kategori toplamı 102.973.097,00; ekonomik personel/SGK 10.826.563,00 TL. **Hücreler:** s.173 / T105 / sütun 7 / satır 2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,35; s.173 / T106 / sütun 6 / satır 2,3,4,5,6,7,8
+- [ ] Tablo 106, 2026 Haziran Sonu Harcama: Bütçe İçi Toplam 15.375.121,93 TL, kategori satırlarının toplamı 16.195.121,93 TL; fark -820.000,00 TL. Kaynak tabloyu kontrol edin. **Hücreler:** s.173 / T106 / sütun 3 / satır 2,3,4,5,6,7,8
+- [ ] Tablo 106, 2028 Tahmin: Bütçe İçi Toplam 89.807.692,00 TL, kategori satırlarının toplamı 89.807.672,00 TL; fark 20,00 TL. Kaynak tabloyu kontrol edin. **Hücreler:** s.173 / T106 / sütun 5 / satır 2,3,4,5,6,7,8
 
 ### Halkla İlişkiler Müdürlüğü
 
-Gönderime hazır: **Hayır**.
+Gönderime hazır: **Hayır**; 10 SOURCE mesajı / 2 kaynak kontrol maddesi.
 
-Kitap sayfaları: 188, 189, 190, 191, 192.
-
-Hatalar (11):
-
-- 0010.Basın ve Medya İletişimi ile Haber Duyuru Faaliyetleri: faaliyet açıklaması eksik. (kitap s. 192)
-- 2026 Haziran Sonu Harcama / Personel Giderleri / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 192)
-- 2026 Haziran Sonu Harcama / Personel Giderleri / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 192)
-- 2026 Haziran Sonu Harcama / Sosyal Güvenlik Kurumuna Devlet Primi Giderleri / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 192)
-- 2026 Haziran Sonu Harcama / Sosyal Güvenlik Kurumuna Devlet Primi Giderleri / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 192)
-- 2026 Haziran Sonu Harcama / Mal ve Hizmet Alım Giderleri / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 192)
-- 2026 Haziran Sonu Harcama / Mal ve Hizmet Alım Giderleri / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 192)
-- 2026 Haziran Sonu Harcama / Sermaye Giderleri / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 192)
-- 2026 Haziran Sonu Harcama / Sermaye Giderleri / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 192)
-- 2028: ortak maliyet ve ekonomik tablo toplamları uyuşmuyor. (kitap s. 192)
-- 2028: bütçe içi faaliyet ve ekonomik toplamları uyuşmuyor. (kitap s. 192)
-
-Uyarılar (0):
-
-Yok.
+- [ ] 2028: bütçe içi faaliyet ve ekonomik toplamları uyuşmuyor. Faaliyet toplamı 60.269.674,00; ortak personel/SGK 34.815.579,00; ekonomik kategori toplamı 94.835.253,00; ekonomik personel/SGK 34.815.579,00 TL. 2028: ortak maliyet ve ekonomik tablo toplamları uyuşmuyor. Faaliyet toplamı 60.269.674,00; ortak personel/SGK 34.815.579,00; ekonomik kategori toplamı 94.835.253,00; ekonomik personel/SGK 34.815.579,00 TL. **Hücreler:** s.192 / T129 / sütun 6 / satır 2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,35; s.192 / T130 / sütun 5 / satır 2,3,4,5,6,7,8
+- [ ] Tablo 130, 2026 Haziran Sonu Harcama: Bütçe İçi Toplam 18.478.993,34 TL, kategori satırlarının toplamı 18.477.280,34 TL; fark 1.713,00 TL. Kaynak tabloyu kontrol edin. **Hücreler:** s.192 / T130 / sütun 3 / satır 2,3,4,5,6,7,8
 
 ### Hukuk İşleri Müdürlüğü
 
-Gönderime hazır: **Evet**.
+Gönderime hazır: **Evet**; 0 SOURCE mesajı / 0 kaynak kontrol maddesi.
 
-Kitap sayfaları: 211, 212.
-
-Hatalar (0):
-
-Yok.
-
-Uyarılar (0):
-
-Yok.
+SOURCE engeli yok.
 
 ### İklim Değişikliği ve Sıfır Atık Müdürlüğü
 
-Gönderime hazır: **Evet**.
+Gönderime hazır: **Evet**; 0 SOURCE mesajı / 0 kaynak kontrol maddesi.
 
-Kitap sayfaları: 158, 159.
-
-Hatalar (0):
-
-Yok.
-
-Uyarılar (0):
-
-Yok.
+SOURCE engeli yok.
 
 ### İmar ve Şehircilik Müdürlüğü
 
-Gönderime hazır: **Hayır**.
+Gönderime hazır: **Hayır**; 6 SOURCE mesajı / 1 kaynak kontrol maddesi.
 
-Kitap sayfaları: 120, 121, 122.
-
-Hatalar (6):
-
-- 2026 Bütçe / Personel Giderleri / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 122)
-- 2026 Bütçe / Personel Giderleri / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 122)
-- 2026 Bütçe / Sosyal Güvenlik Kurumuna Devlet Primi Giderleri / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 122)
-- 2026 Bütçe / Sosyal Güvenlik Kurumuna Devlet Primi Giderleri / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 122)
-- 2026 Bütçe / Mal ve Hizmet Alım Giderleri / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 122)
-- 2026 Bütçe / Mal ve Hizmet Alım Giderleri / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 122)
-
-Uyarılar (0):
-
-Yok.
+- [ ] Tablo 44, 2026 Bütçe: Bütçe Dışı Toplam için beklenen doğrulanmış bir tutar; gözlenen boş/eksik hücre. Birleştirilmiş, boş veya belirsiz kaynak hücre; kaynağa göre doğrulayın. Kaynak tabloyu kontrol edin. **Hücreler:** s.122 / T44 / sütun 2 / satır 2,3,4,5,6,7
 
 ### İnsan Kaynakları ve Eğitim Müdürlüğü
 
-Gönderime hazır: **Hayır**.
+Gönderime hazır: **Hayır**; 42 SOURCE mesajı / 6 kaynak kontrol maddesi.
 
-Kitap sayfaları: 201, 202, 203.
-
-Hatalar (42):
-
-- 2026 Bütçe / Personel Giderleri / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 203)
-- 2026 Bütçe / Personel Giderleri / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 203)
-- 2026 Bütçe / Sosyal Güvenlik Kurumuna Devlet Primi Giderleri / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 203)
-- 2026 Bütçe / Sosyal Güvenlik Kurumuna Devlet Primi Giderleri / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 203)
-- 2026 Bütçe / Mal ve Hizmet Alım Giderleri / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 203)
-- 2026 Bütçe / Mal ve Hizmet Alım Giderleri / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 203)
-- 2026 Bütçe / Cari Transferler / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 203)
-- 2026 Bütçe / Cari Transferler / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 203)
-- 2026 Haziran Sonu Harcama / Personel Giderleri / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 203)
-- 2026 Haziran Sonu Harcama / Personel Giderleri / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 203)
-- 2026 Haziran Sonu Harcama / Sosyal Güvenlik Kurumuna Devlet Primi Giderleri / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 203)
-- 2026 Haziran Sonu Harcama / Sosyal Güvenlik Kurumuna Devlet Primi Giderleri / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 203)
-- 2026 Haziran Sonu Harcama / Mal ve Hizmet Alım Giderleri / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 203)
-- 2026 Haziran Sonu Harcama / Mal ve Hizmet Alım Giderleri / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 203)
-- 2026 Haziran Sonu Harcama / Cari Transferler / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 203)
-- 2026 Haziran Sonu Harcama / Cari Transferler / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 203)
-- 2027 Bütçe / Personel Giderleri / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 203)
-- 2027 Bütçe / Personel Giderleri / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 203)
-- 2027 Bütçe / Sosyal Güvenlik Kurumuna Devlet Primi Giderleri / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 203)
-- 2027 Bütçe / Sosyal Güvenlik Kurumuna Devlet Primi Giderleri / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 203)
-- 2027 Bütçe / Mal ve Hizmet Alım Giderleri / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 203)
-- 2027 Bütçe / Mal ve Hizmet Alım Giderleri / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 203)
-- 2027 Bütçe / Cari Transferler / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 203)
-- 2027 Bütçe / Cari Transferler / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 203)
-- 2028 Tahmin / Personel Giderleri / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 203)
-- 2028 Tahmin / Personel Giderleri / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 203)
-- 2028 Tahmin / Sosyal Güvenlik Kurumuna Devlet Primi Giderleri / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 203)
-- 2028 Tahmin / Sosyal Güvenlik Kurumuna Devlet Primi Giderleri / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 203)
-- 2028 Tahmin / Mal ve Hizmet Alım Giderleri / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 203)
-- 2028 Tahmin / Mal ve Hizmet Alım Giderleri / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 203)
-- 2028 Tahmin / Cari Transferler / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 203)
-- 2028 Tahmin / Cari Transferler / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 203)
-- 2029 Tahmin / Personel Giderleri / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 203)
-- 2029 Tahmin / Personel Giderleri / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 203)
-- 2029 Tahmin / Sosyal Güvenlik Kurumuna Devlet Primi Giderleri / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 203)
-- 2029 Tahmin / Sosyal Güvenlik Kurumuna Devlet Primi Giderleri / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 203)
-- 2029 Tahmin / Mal ve Hizmet Alım Giderleri / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 203)
-- 2029 Tahmin / Mal ve Hizmet Alım Giderleri / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 203)
-- 2029 Tahmin / Cari Transferler / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 203)
-- 2029 Tahmin / Cari Transferler / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 203)
-- 2028: ortak maliyet ve ekonomik tablo toplamları uyuşmuyor. (kitap s. 203)
-- 2028: bütçe içi faaliyet ve ekonomik toplamları uyuşmuyor. (kitap s. 203)
-
-Uyarılar (0):
-
-Yok.
+- [ ] 2028: bütçe içi faaliyet ve ekonomik toplamları uyuşmuyor. Faaliyet toplamı 12.577.220,00; ortak personel/SGK 26.757.500,00; ekonomik kategori toplamı 39.334.716,00; ekonomik personel/SGK 26.757.500,00 TL. 2028: ortak maliyet ve ekonomik tablo toplamları uyuşmuyor. Faaliyet toplamı 12.577.220,00; ortak personel/SGK 26.757.500,00; ekonomik kategori toplamı 39.334.716,00; ekonomik personel/SGK 26.757.500,00 TL. **Hücreler:** s.203 / T143 / sütun 6 / satır 2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,35; s.203 / T144 / sütun 5 / satır 2,3,4,5,6,7,8
+- [ ] Tablo 144, 2026 Bütçe: Program grubu dağılımı kaynakta ayrılmamış. Programlar: Araştırma, Geliştirme ve Yenilik; Yönetim ve Destek Programı. Tutarları program gruplarına göre doğrulayın. Kaynak tabloyu kontrol edin. **Hücreler:** s.203 / T144 / sütun 2 / satır 2,3,4,5,6,7,8; s.201 / T139 / sütun 2 / satır 2; s.202 / T141 / sütun 2 / satır 2
+- [ ] Tablo 144, 2026 Haziran Sonu Harcama: Bütçe İçi Toplam 13.287.541,43 TL, kategori satırlarının toplamı 18.811.107,22 TL; fark -5.523.565,79 TL. Kaynak tabloyu kontrol edin.<br>Tablo 144, 2026 Haziran Sonu Harcama: Program grubu dağılımı kaynakta ayrılmamış. Programlar: Araştırma, Geliştirme ve Yenilik; Yönetim ve Destek Programı. Tutarları program gruplarına göre doğrulayın. Kaynak tabloyu kontrol edin. **Hücreler:** s.203 / T144 / sütun 3 / satır 2,3,4,5,6,7,8; s.201 / T139 / sütun 2 / satır 2; s.202 / T141 / sütun 2 / satır 2
+- [ ] Tablo 144, 2027 Bütçe: Program grubu dağılımı kaynakta ayrılmamış. Programlar: Araştırma, Geliştirme ve Yenilik; Yönetim ve Destek Programı. Tutarları program gruplarına göre doğrulayın. Kaynak tabloyu kontrol edin. **Hücreler:** s.203 / T144 / sütun 4 / satır 2,3,4,5,6,7,8; s.201 / T139 / sütun 2 / satır 2; s.202 / T141 / sütun 2 / satır 2
+- [ ] Tablo 144, 2028 Tahmin: Program grubu dağılımı kaynakta ayrılmamış. Programlar: Araştırma, Geliştirme ve Yenilik; Yönetim ve Destek Programı. Tutarları program gruplarına göre doğrulayın. Kaynak tabloyu kontrol edin. **Hücreler:** s.203 / T144 / sütun 5 / satır 2,3,4,5,6,7,8; s.201 / T139 / sütun 2 / satır 2; s.202 / T141 / sütun 2 / satır 2
+- [ ] Tablo 144, 2029 Tahmin: Program grubu dağılımı kaynakta ayrılmamış. Programlar: Araştırma, Geliştirme ve Yenilik; Yönetim ve Destek Programı. Tutarları program gruplarına göre doğrulayın. Kaynak tabloyu kontrol edin. **Hücreler:** s.203 / T144 / sütun 6 / satır 2,3,4,5,6,7,8; s.201 / T139 / sütun 2 / satır 2; s.202 / T141 / sütun 2 / satır 2
 
 ### Kentsel Dönüşüm Müdürlüğü
 
-Gönderime hazır: **Hayır**.
+Gönderime hazır: **Hayır**; 6 SOURCE mesajı / 1 kaynak kontrol maddesi.
 
-Kitap sayfaları: 138, 139.
-
-Hatalar (6):
-
-- 2026 Haziran Sonu Harcama / Personel Giderleri / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 139)
-- 2026 Haziran Sonu Harcama / Personel Giderleri / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 139)
-- 2026 Haziran Sonu Harcama / Sosyal Güvenlik Kurumuna Devlet Primi Giderleri / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 139)
-- 2026 Haziran Sonu Harcama / Sosyal Güvenlik Kurumuna Devlet Primi Giderleri / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 139)
-- 2026 Haziran Sonu Harcama / Mal ve Hizmet Alım Giderleri / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 139)
-- 2026 Haziran Sonu Harcama / Mal ve Hizmet Alım Giderleri / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 139)
-
-Uyarılar (0):
-
-Yok.
+- [ ] Tablo 64, 2026 Haziran Sonu Harcama: Bütçe İçi Toplam 4.920.160,55 TL, kategori satırlarının toplamı 5.124.271,48 TL; fark -204.110,93 TL. Kaynak tabloyu kontrol edin. **Hücreler:** s.139 / T64 / sütun 3 / satır 2,3,4,5,6,7
 
 ### Kültür, Sanat ve Sosyal İşler Müdürlüğü
 
-Gönderime hazır: **Hayır**.
+Gönderime hazır: **Hayır**; 57 SOURCE mesajı / 51 kaynak kontrol maddesi.
 
-Kitap sayfaları: 162, 163, 164, 165, 166, 167.
-
-Hatalar (55):
-
-- 0003.İş Birliği ve Ortaklıklar: Öğretim Kurumları, teknoloji transfer ofisleri, sivil toplum kuruluşları ve özel sektörle iş birliği yapmak.: 2028 Tahmin / Toplam kaynak tutarı doğrulanmalı. (kitap s. 167)
-- 0003.İş Birliği ve Ortaklıklar: Öğretim Kurumları, teknoloji transfer ofisleri, sivil toplum kuruluşları ve özel sektörle iş birliği yapmak.: 2029 Tahmin / Toplam kaynak tutarı doğrulanmalı. (kitap s. 167)
-- 0003.İş Birliği ve Ortaklıklar: Öğretim Kurumları, teknoloji transfer ofisleri, sivil toplum kuruluşları ve özel sektörle iş birliği yapmak.: 2029 toplamı bütçe içi + dışı ile eşit değil. (kitap s. 167)
-- 0003.İş Birliği ve Ortaklıklar: Öğretim Kurumları, teknoloji transfer ofisleri, sivil toplum kuruluşları ve özel sektörle iş birliği yapmak.: 2028 toplamı bütçe içi + dışı ile eşit değil. (kitap s. 167)
-- 0004.Ulusal ve Uluslararası Etkinlikler: Ulusal ve uluslararası festivaller, fuarlar ve etkinliklere katılım ve düzenleme.: 2026 Haziran Sonu Harcama finansman bilgisi eksik. (kitap s. 167)
-- 0004.Ulusal ve Uluslararası Etkinlikler: Ulusal ve uluslararası festivaller, fuarlar ve etkinliklere katılım ve düzenleme.: 2026 Yıl Sonu Tahmini finansman bilgisi eksik. (kitap s. 167)
-- 0004.Ulusal ve Uluslararası Etkinlikler: Ulusal ve uluslararası festivaller, fuarlar ve etkinliklere katılım ve düzenleme.: 2026 Bütçe finansman bilgisi eksik. (kitap s. 167)
-- 0005.Sanatsal Eğitimler: Sahne sanatları eğitimleri, el sanatları, güzel sanatlar, unutulmaya yüz tutmuş görsel-dramatik sanatlar (fotoğraf, sinema vb.) alanında atölye, çalıştay ve gösteriler düzenleme.: 2026 Haziran Sonu Harcama finansman bilgisi eksik. (kitap s. 167)
-- 0005.Sanatsal Eğitimler: Sahne sanatları eğitimleri, el sanatları, güzel sanatlar, unutulmaya yüz tutmuş görsel-dramatik sanatlar (fotoğraf, sinema vb.) alanında atölye, çalıştay ve gösteriler düzenleme.: 2026 Yıl Sonu Tahmini finansman bilgisi eksik. (kitap s. 167)
-- 0005.Sanatsal Eğitimler: Sahne sanatları eğitimleri, el sanatları, güzel sanatlar, unutulmaya yüz tutmuş görsel-dramatik sanatlar (fotoğraf, sinema vb.) alanında atölye, çalıştay ve gösteriler düzenleme.: 2026 Bütçe finansman bilgisi eksik. (kitap s. 167)
-- 0006.Sanatsal Etkinlikler: Kültürel ve sanatsal etkinlikler düzenlemek (Büyükçekmece Gölü, Kültür Park, Büyükçekmece Kordon ve Albatros sahili): 2026 Haziran Sonu Harcama finansman bilgisi eksik. (kitap s. 167)
-- 0006.Sanatsal Etkinlikler: Kültürel ve sanatsal etkinlikler düzenlemek (Büyükçekmece Gölü, Kültür Park, Büyükçekmece Kordon ve Albatros sahili): 2026 Yıl Sonu Tahmini finansman bilgisi eksik. (kitap s. 167)
-- 0006.Sanatsal Etkinlikler: Kültürel ve sanatsal etkinlikler düzenlemek (Büyükçekmece Gölü, Kültür Park, Büyükçekmece Kordon ve Albatros sahili): 2026 Bütçe finansman bilgisi eksik. (kitap s. 167)
-- 0007.Uluslararası Fotoğraf Yarışması: Dünyanın farklı coğrafyalarından fotoğrafçılarının özgün bakış açılarını ve yaratıcı anlatımı teşvik etmek, profesyonel ve amatör tüm fotoğrafçılara kendilerini ifade etme fırsatı sunmak için platform oluşturmak.: 2028 Tahmin / Toplam kaynak tutarı doğrulanmalı. (kitap s. 167)
-- 0007.Uluslararası Fotoğraf Yarışması: Dünyanın farklı coğrafyalarından fotoğrafçılarının özgün bakış açılarını ve yaratıcı anlatımı teşvik etmek, profesyonel ve amatör tüm fotoğrafçılara kendilerini ifade etme fırsatı sunmak için platform oluşturmak.: 2029 Tahmin / Toplam kaynak tutarı doğrulanmalı. (kitap s. 167)
-- 0007.Uluslararası Fotoğraf Yarışması: Dünyanın farklı coğrafyalarından fotoğrafçılarının özgün bakış açılarını ve yaratıcı anlatımı teşvik etmek, profesyonel ve amatör tüm fotoğrafçılara kendilerini ifade etme fırsatı sunmak için platform oluşturmak.: 2029 Tahmin finansman bilgisi eksik. (kitap s. 167)
-- 0007.Uluslararası Fotoğraf Yarışması: Dünyanın farklı coğrafyalarından fotoğrafçılarının özgün bakış açılarını ve yaratıcı anlatımı teşvik etmek, profesyonel ve amatör tüm fotoğrafçılara kendilerini ifade etme fırsatı sunmak için platform oluşturmak.: 2026 Haziran Sonu Harcama finansman bilgisi eksik. (kitap s. 167)
-- 0007.Uluslararası Fotoğraf Yarışması: Dünyanın farklı coğrafyalarından fotoğrafçılarının özgün bakış açılarını ve yaratıcı anlatımı teşvik etmek, profesyonel ve amatör tüm fotoğrafçılara kendilerini ifade etme fırsatı sunmak için platform oluşturmak.: 2026 Yıl Sonu Tahmini finansman bilgisi eksik. (kitap s. 167)
-- 0007.Uluslararası Fotoğraf Yarışması: Dünyanın farklı coğrafyalarından fotoğrafçılarının özgün bakış açılarını ve yaratıcı anlatımı teşvik etmek, profesyonel ve amatör tüm fotoğrafçılara kendilerini ifade etme fırsatı sunmak için platform oluşturmak.: 2028 Tahmin finansman bilgisi eksik. (kitap s. 167)
-- 0007.Uluslararası Fotoğraf Yarışması: Dünyanın farklı coğrafyalarından fotoğrafçılarının özgün bakış açılarını ve yaratıcı anlatımı teşvik etmek, profesyonel ve amatör tüm fotoğrafçılara kendilerini ifade etme fırsatı sunmak için platform oluşturmak.: 2026 Bütçe finansman bilgisi eksik. (kitap s. 167)
-- 0008.Toplumsal Etkinlikler: Önemli gün ve bayramlarda etkinlikler düzenlemek: 2026 Haziran Sonu Harcama finansman bilgisi eksik. (kitap s. 167)
-- 0008.Toplumsal Etkinlikler: Önemli gün ve bayramlarda etkinlikler düzenlemek: 2026 Yıl Sonu Tahmini finansman bilgisi eksik. (kitap s. 167)
-- 0008.Toplumsal Etkinlikler: Önemli gün ve bayramlarda etkinlikler düzenlemek: 2026 Bütçe finansman bilgisi eksik. (kitap s. 167)
-- 0009.Sanatsal Etkinlikler: Marmara Denizi kıyısında kültürel ve sanatsal etkinlikler düzenlemek (Büyükçekmece Gölü, Kıyı Marina ve Albatros sahili): 2026 Haziran Sonu Harcama finansman bilgisi eksik. (kitap s. 167)
-- 0009.Sanatsal Etkinlikler: Marmara Denizi kıyısında kültürel ve sanatsal etkinlikler düzenlemek (Büyükçekmece Gölü, Kıyı Marina ve Albatros sahili): 2026 Yıl Sonu Tahmini finansman bilgisi eksik. (kitap s. 167)
-- 0009.Sanatsal Etkinlikler: Marmara Denizi kıyısında kültürel ve sanatsal etkinlikler düzenlemek (Büyükçekmece Gölü, Kıyı Marina ve Albatros sahili): 2026 Bütçe finansman bilgisi eksik. (kitap s. 167)
-- 0010.Kent Tiyatroları Sezon Programı: Her yaş grubu için yıl boyunca düzenli tiyatro oyunlarının sergilenmesi: 2026 Haziran Sonu Harcama finansman bilgisi eksik. (kitap s. 167)
-- 0010.Kent Tiyatroları Sezon Programı: Her yaş grubu için yıl boyunca düzenli tiyatro oyunlarının sergilenmesi: 2026 Yıl Sonu Tahmini finansman bilgisi eksik. (kitap s. 167)
-- 0010.Kent Tiyatroları Sezon Programı: Her yaş grubu için yıl boyunca düzenli tiyatro oyunlarının sergilenmesi: 2026 Bütçe finansman bilgisi eksik. (kitap s. 167)
-- 0011.Okullara Yönelik Rehberli Müze Turları: İlçemizdeki okullarla iş birliği içerisinde yürütülen rehberli müze gezileri: 2026 Haziran Sonu Harcama finansman bilgisi eksik. (kitap s. 167)
-- 0011.Okullara Yönelik Rehberli Müze Turları: İlçemizdeki okullarla iş birliği içerisinde yürütülen rehberli müze gezileri: 2026 Yıl Sonu Tahmini finansman bilgisi eksik. (kitap s. 167)
-- 0011.Okullara Yönelik Rehberli Müze Turları: İlçemizdeki okullarla iş birliği içerisinde yürütülen rehberli müze gezileri: 2026 Bütçe finansman bilgisi eksik. (kitap s. 167)
-- 0012.Atölye Çalışmaları: Çocuk, Genç ve yetişkinlere yönelik atölye çalışmaları: 2026 Haziran Sonu Harcama finansman bilgisi eksik. (kitap s. 167)
-- 0012.Atölye Çalışmaları: Çocuk, Genç ve yetişkinlere yönelik atölye çalışmaları: 2026 Yıl Sonu Tahmini finansman bilgisi eksik. (kitap s. 167)
-- 0012.Atölye Çalışmaları: Çocuk, Genç ve yetişkinlere yönelik atölye çalışmaları: 2026 Bütçe finansman bilgisi eksik. (kitap s. 167)
-- 0013.Meslek Kursları: Yabancı dil eğitimleri, teknoloji eğitimleri, güzellik hizmetleri eğitimleri, mutfak sanatları eğitimleri vb. kurslar düzenlemek.: 2026 Haziran Sonu Harcama finansman bilgisi eksik. (kitap s. 167)
-- 0013.Meslek Kursları: Yabancı dil eğitimleri, teknoloji eğitimleri, güzellik hizmetleri eğitimleri, mutfak sanatları eğitimleri vb. kurslar düzenlemek.: 2026 Yıl Sonu Tahmini finansman bilgisi eksik. (kitap s. 167)
-- 0013.Meslek Kursları: Yabancı dil eğitimleri, teknoloji eğitimleri, güzellik hizmetleri eğitimleri, mutfak sanatları eğitimleri vb. kurslar düzenlemek.: 2026 Bütçe finansman bilgisi eksik. (kitap s. 167)
-- 0014.Sahne Sanatları Kursları: Türk Halk Oyunları, modern dans, bale, tiyatro, enstrüman vb. kurslar düzenlemek.: 2026 Haziran Sonu Harcama finansman bilgisi eksik. (kitap s. 167)
-- 0014.Sahne Sanatları Kursları: Türk Halk Oyunları, modern dans, bale, tiyatro, enstrüman vb. kurslar düzenlemek.: 2026 Yıl Sonu Tahmini finansman bilgisi eksik. (kitap s. 167)
-- 0014.Sahne Sanatları Kursları: Türk Halk Oyunları, modern dans, bale, tiyatro, enstrüman vb. kurslar düzenlemek.: 2026 Bütçe finansman bilgisi eksik. (kitap s. 167)
-- 0015.Örgün Eğitime Destek ve Sınavlara Hazırlık Kursları: Dezavantajlı bölgelerde yaşayan öğrenciler için örgün eğitimlerine destek ve sınavlara hazırlık kursları düzenlemek.: 2026 Haziran Sonu Harcama finansman bilgisi eksik. (kitap s. 167)
-- 0015.Örgün Eğitime Destek ve Sınavlara Hazırlık Kursları: Dezavantajlı bölgelerde yaşayan öğrenciler için örgün eğitimlerine destek ve sınavlara hazırlık kursları düzenlemek.: 2026 Yıl Sonu Tahmini finansman bilgisi eksik. (kitap s. 167)
-- 0015.Örgün Eğitime Destek ve Sınavlara Hazırlık Kursları: Dezavantajlı bölgelerde yaşayan öğrenciler için örgün eğitimlerine destek ve sınavlara hazırlık kursları düzenlemek.: 2026 Bütçe finansman bilgisi eksik. (kitap s. 167)
-- 0016.Teknoloji Eğitimleri: Yapay zeka, yazılım, kodlama, web sayfası ve grafik tasarım gibi alanlarda kurslar düzenlemek.: 2028 Tahmin / Toplam kaynak tutarı doğrulanmalı. (kitap s. 167)
-- 0016.Teknoloji Eğitimleri: Yapay zeka, yazılım, kodlama, web sayfası ve grafik tasarım gibi alanlarda kurslar düzenlemek.: 2029 Tahmin / Toplam kaynak tutarı doğrulanmalı. (kitap s. 167)
-- 0016.Teknoloji Eğitimleri: Yapay zeka, yazılım, kodlama, web sayfası ve grafik tasarım gibi alanlarda kurslar düzenlemek.: 2029 toplamı bütçe içi + dışı ile eşit değil. (kitap s. 167)
-- 0016.Teknoloji Eğitimleri: Yapay zeka, yazılım, kodlama, web sayfası ve grafik tasarım gibi alanlarda kurslar düzenlemek.: 2026 Haziran Sonu Harcama finansman bilgisi eksik. (kitap s. 167)
-- 0016.Teknoloji Eğitimleri: Yapay zeka, yazılım, kodlama, web sayfası ve grafik tasarım gibi alanlarda kurslar düzenlemek.: 2026 Yıl Sonu Tahmini finansman bilgisi eksik. (kitap s. 167)
-- 0016.Teknoloji Eğitimleri: Yapay zeka, yazılım, kodlama, web sayfası ve grafik tasarım gibi alanlarda kurslar düzenlemek.: 2028 toplamı bütçe içi + dışı ile eşit değil. (kitap s. 167)
-- 0016.Teknoloji Eğitimleri: Yapay zeka, yazılım, kodlama, web sayfası ve grafik tasarım gibi alanlarda kurslar düzenlemek.: 2026 Bütçe finansman bilgisi eksik. (kitap s. 167)
-- 0017. Sanatsal Eğitimler: El sanatları, güzel sanatlar, unutulmaya yüz tutmuş görsel-dramatik sanatlar (fotoğraf, sinema vb.) alanında gösteriler ve yaz okulları düzenleme.: faaliyet açıklaması eksik. (kitap s. 167)
-- 0017. Sanatsal Eğitimler: El sanatları, güzel sanatlar, unutulmaya yüz tutmuş görsel-dramatik sanatlar (fotoğraf, sinema vb.) alanında gösteriler ve yaz okulları düzenleme.: 2026 Haziran Sonu Harcama finansman bilgisi eksik. (kitap s. 167)
-- 0017. Sanatsal Eğitimler: El sanatları, güzel sanatlar, unutulmaya yüz tutmuş görsel-dramatik sanatlar (fotoğraf, sinema vb.) alanında gösteriler ve yaz okulları düzenleme.: 2026 Yıl Sonu Tahmini finansman bilgisi eksik. (kitap s. 167)
-- 0017. Sanatsal Eğitimler: El sanatları, güzel sanatlar, unutulmaya yüz tutmuş görsel-dramatik sanatlar (fotoğraf, sinema vb.) alanında gösteriler ve yaz okulları düzenleme.: 2026 Bütçe finansman bilgisi eksik. (kitap s. 167)
-
-Uyarılar (0):
-
-Yok.
+- [ ] 0003.İş Birliği ve Ortaklıklar: Öğretim Kurumları, teknoloji transfer ofisleri, sivil toplum kuruluşları ve özel sektörle iş birliği yapmak.: 2028 toplamı bütçe içi + dışı ile eşit değil. Kaynak: Toplam = «4.912.500,00»; Bütçe İçi = «3.825.000,00»; Bütçe Dışı = «0,00» 0003.İş Birliği ve Ortaklıklar: Öğretim Kurumları, teknoloji transfer ofisleri, sivil toplum kuruluşları ve özel sektörle iş birliği yapmak.: 2028 Tahmin / Toplam kaynak tutarı doğrulanmalı. **Hücreler:** s.167 / T99 / sütun 6 / satır 8,9,10
+- [ ] 0003.İş Birliği ve Ortaklıklar: Öğretim Kurumları, teknoloji transfer ofisleri, sivil toplum kuruluşları ve özel sektörle iş birliği yapmak.: 2029 toplamı bütçe içi + dışı ile eşit değil. Kaynak: Toplam = «6.215.625,00»; Bütçe İçi = «3.825.000,00»; Bütçe Dışı = «0,00» 0003.İş Birliği ve Ortaklıklar: Öğretim Kurumları, teknoloji transfer ofisleri, sivil toplum kuruluşları ve özel sektörle iş birliği yapmak.: 2029 Tahmin / Toplam kaynak tutarı doğrulanmalı. **Hücreler:** s.167 / T99 / sütun 7 / satır 8,9,10
+- [ ] 0016.Teknoloji Eğitimleri: Yapay zeka, yazılım, kodlama, web sayfası ve grafik tasarım gibi alanlarda kurslar düzenlemek.: 2028 toplamı bütçe içi + dışı ile eşit değil. Kaynak: Toplam = «32.373.570,00»; Bütçe İçi = «1.775.000,00»; Bütçe Dışı = «0,00» 0016.Teknoloji Eğitimleri: Yapay zeka, yazılım, kodlama, web sayfası ve grafik tasarım gibi alanlarda kurslar düzenlemek.: 2028 Tahmin / Toplam kaynak tutarı doğrulanmalı. **Hücreler:** s.167 / T99 / sütun 6 / satır 47,48,49
+- [ ] 0016.Teknoloji Eğitimleri: Yapay zeka, yazılım, kodlama, web sayfası ve grafik tasarım gibi alanlarda kurslar düzenlemek.: 2029 toplamı bütçe içi + dışı ile eşit değil. Kaynak: Toplam = «46.275.725,00»; Bütçe İçi = «1.976.250,00»; Bütçe Dışı = «0,00» 0016.Teknoloji Eğitimleri: Yapay zeka, yazılım, kodlama, web sayfası ve grafik tasarım gibi alanlarda kurslar düzenlemek.: 2029 Tahmin / Toplam kaynak tutarı doğrulanmalı. **Hücreler:** s.167 / T99 / sütun 7 / satır 47,48,49
+- [ ] 0007.Uluslararası Fotoğraf Yarışması: Dünyanın farklı coğrafyalarından fotoğrafçılarının özgün bakış açılarını ve yaratıcı anlatımı teşvik etmek, profesyonel ve amatör tüm fotoğrafçılara kendilerini ifade etme fırsatı sunmak için platform oluşturmak.: 2028 Tahmin / Toplam kaynak tutarı doğrulanmalı. 0007.Uluslararası Fotoğraf Yarışması: Dünyanın farklı coğrafyalarından fotoğrafçılarının özgün bakış açılarını ve yaratıcı anlatımı teşvik etmek, profesyonel ve amatör tüm fotoğrafçılara kendilerini ifade etme fırsatı sunmak için platform oluşturmak.: 2028 Tahmin finansman bilgisi eksik. **Hücreler:** s.167 / T99 / sütun 6 / satır 20,21,22
+- [ ] 0007.Uluslararası Fotoğraf Yarışması: Dünyanın farklı coğrafyalarından fotoğrafçılarının özgün bakış açılarını ve yaratıcı anlatımı teşvik etmek, profesyonel ve amatör tüm fotoğrafçılara kendilerini ifade etme fırsatı sunmak için platform oluşturmak.: 2029 Tahmin / Toplam kaynak tutarı doğrulanmalı. 0007.Uluslararası Fotoğraf Yarışması: Dünyanın farklı coğrafyalarından fotoğrafçılarının özgün bakış açılarını ve yaratıcı anlatımı teşvik etmek, profesyonel ve amatör tüm fotoğrafçılara kendilerini ifade etme fırsatı sunmak için platform oluşturmak.: 2029 Tahmin finansman bilgisi eksik. **Hücreler:** s.167 / T99 / sütun 7 / satır 20,21,22
+- [ ] 0015.Örgün Eğitime Destek ve Sınavlara Hazırlık Kursları: Dezavantajlı bölgelerde yaşayan öğrenciler için örgün eğitimlerine destek ve sınavlara hazırlık kursları düzenlemek.: faaliyet açıklaması eksik. Bu kod için tekil ve uygun açıklama başlığı/metni kaynakta yok; başka faaliyetin metni taşınmadı. **Hücreler:** s.167 / T99 / sütun 1 / satır 44,58,90
+- [ ] 0016.Teknoloji Eğitimleri: Yapay zeka, yazılım, kodlama, web sayfası ve grafik tasarım gibi alanlarda kurslar düzenlemek.: faaliyet açıklaması eksik. Bu kod için tekil ve uygun açıklama başlığı/metni kaynakta yok; başka faaliyetin metni taşınmadı. **Hücreler:** s.167 / T99 / sütun 1 / satır 47,58,90
+- [ ] 0017. Sanatsal Eğitimler: El sanatları, güzel sanatlar, unutulmaya yüz tutmuş görsel-dramatik sanatlar (fotoğraf, sinema vb.) alanında gösteriler ve yaz okulları düzenleme.: faaliyet açıklaması eksik. Bu kod için tekil ve uygun açıklama başlığı/metni kaynakta yok; başka faaliyetin metni taşınmadı. **Hücreler:** s.167 / T99 / sütun 1 / satır 50,58,90
+- [ ] 0004.Ulusal ve Uluslararası Etkinlikler: Ulusal ve uluslararası festivaller, fuarlar ve etkinliklere katılım ve düzenleme.: 2026 Bütçe finansman bilgisi eksik. **Hücreler:** s.167 / T99 / sütun 2 / satır 11,12,13
+- [ ] 0004.Ulusal ve Uluslararası Etkinlikler: Ulusal ve uluslararası festivaller, fuarlar ve etkinliklere katılım ve düzenleme.: 2026 Haziran Sonu Harcama finansman bilgisi eksik. **Hücreler:** s.167 / T99 / sütun 3 / satır 11,12,13
+- [ ] 0004.Ulusal ve Uluslararası Etkinlikler: Ulusal ve uluslararası festivaller, fuarlar ve etkinliklere katılım ve düzenleme.: 2026 Yıl Sonu Tahmini finansman bilgisi eksik. **Hücreler:** s.167 / T99 / sütun 4 / satır 11,12,13
+- [ ] 0005.Sanatsal Eğitimler: Sahne sanatları eğitimleri, el sanatları, güzel sanatlar, unutulmaya yüz tutmuş görsel-dramatik sanatlar (fotoğraf, sinema vb.) alanında atölye, çalıştay ve gösteriler düzenleme.: 2026 Bütçe finansman bilgisi eksik. **Hücreler:** s.167 / T99 / sütun 2 / satır 14,15,16
+- [ ] 0005.Sanatsal Eğitimler: Sahne sanatları eğitimleri, el sanatları, güzel sanatlar, unutulmaya yüz tutmuş görsel-dramatik sanatlar (fotoğraf, sinema vb.) alanında atölye, çalıştay ve gösteriler düzenleme.: 2026 Haziran Sonu Harcama finansman bilgisi eksik. **Hücreler:** s.167 / T99 / sütun 3 / satır 14,15,16
+- [ ] 0005.Sanatsal Eğitimler: Sahne sanatları eğitimleri, el sanatları, güzel sanatlar, unutulmaya yüz tutmuş görsel-dramatik sanatlar (fotoğraf, sinema vb.) alanında atölye, çalıştay ve gösteriler düzenleme.: 2026 Yıl Sonu Tahmini finansman bilgisi eksik. **Hücreler:** s.167 / T99 / sütun 4 / satır 14,15,16
+- [ ] 0006.Sanatsal Etkinlikler: Kültürel ve sanatsal etkinlikler düzenlemek (Büyükçekmece Gölü, Kültür Park, Büyükçekmece Kordon ve Albatros sahili): 2026 Bütçe finansman bilgisi eksik. **Hücreler:** s.167 / T99 / sütun 2 / satır 17,18,19
+- [ ] 0006.Sanatsal Etkinlikler: Kültürel ve sanatsal etkinlikler düzenlemek (Büyükçekmece Gölü, Kültür Park, Büyükçekmece Kordon ve Albatros sahili): 2026 Haziran Sonu Harcama finansman bilgisi eksik. **Hücreler:** s.167 / T99 / sütun 3 / satır 17,18,19
+- [ ] 0006.Sanatsal Etkinlikler: Kültürel ve sanatsal etkinlikler düzenlemek (Büyükçekmece Gölü, Kültür Park, Büyükçekmece Kordon ve Albatros sahili): 2026 Yıl Sonu Tahmini finansman bilgisi eksik. **Hücreler:** s.167 / T99 / sütun 4 / satır 17,18,19
+- [ ] 0007.Uluslararası Fotoğraf Yarışması: Dünyanın farklı coğrafyalarından fotoğrafçılarının özgün bakış açılarını ve yaratıcı anlatımı teşvik etmek, profesyonel ve amatör tüm fotoğrafçılara kendilerini ifade etme fırsatı sunmak için platform oluşturmak.: 2026 Bütçe finansman bilgisi eksik. **Hücreler:** s.167 / T99 / sütun 2 / satır 20,21,22
+- [ ] 0007.Uluslararası Fotoğraf Yarışması: Dünyanın farklı coğrafyalarından fotoğrafçılarının özgün bakış açılarını ve yaratıcı anlatımı teşvik etmek, profesyonel ve amatör tüm fotoğrafçılara kendilerini ifade etme fırsatı sunmak için platform oluşturmak.: 2026 Haziran Sonu Harcama finansman bilgisi eksik. **Hücreler:** s.167 / T99 / sütun 3 / satır 20,21,22
+- [ ] 0007.Uluslararası Fotoğraf Yarışması: Dünyanın farklı coğrafyalarından fotoğrafçılarının özgün bakış açılarını ve yaratıcı anlatımı teşvik etmek, profesyonel ve amatör tüm fotoğrafçılara kendilerini ifade etme fırsatı sunmak için platform oluşturmak.: 2026 Yıl Sonu Tahmini finansman bilgisi eksik. **Hücreler:** s.167 / T99 / sütun 4 / satır 20,21,22
+- [ ] 0008.Toplumsal Etkinlikler: Önemli gün ve bayramlarda etkinlikler düzenlemek: 2026 Bütçe finansman bilgisi eksik. **Hücreler:** s.167 / T99 / sütun 2 / satır 23,24,25
+- [ ] 0008.Toplumsal Etkinlikler: Önemli gün ve bayramlarda etkinlikler düzenlemek: 2026 Haziran Sonu Harcama finansman bilgisi eksik. **Hücreler:** s.167 / T99 / sütun 3 / satır 23,24,25
+- [ ] 0008.Toplumsal Etkinlikler: Önemli gün ve bayramlarda etkinlikler düzenlemek: 2026 Yıl Sonu Tahmini finansman bilgisi eksik. **Hücreler:** s.167 / T99 / sütun 4 / satır 23,24,25
+- [ ] 0009.Sanatsal Etkinlikler: Marmara Denizi kıyısında kültürel ve sanatsal etkinlikler düzenlemek (Büyükçekmece Gölü, Kıyı Marina ve Albatros sahili): 2026 Bütçe finansman bilgisi eksik. **Hücreler:** s.167 / T99 / sütun 2 / satır 26,27,28
+- [ ] 0009.Sanatsal Etkinlikler: Marmara Denizi kıyısında kültürel ve sanatsal etkinlikler düzenlemek (Büyükçekmece Gölü, Kıyı Marina ve Albatros sahili): 2026 Haziran Sonu Harcama finansman bilgisi eksik. **Hücreler:** s.167 / T99 / sütun 3 / satır 26,27,28
+- [ ] 0009.Sanatsal Etkinlikler: Marmara Denizi kıyısında kültürel ve sanatsal etkinlikler düzenlemek (Büyükçekmece Gölü, Kıyı Marina ve Albatros sahili): 2026 Yıl Sonu Tahmini finansman bilgisi eksik. **Hücreler:** s.167 / T99 / sütun 4 / satır 26,27,28
+- [ ] 0010.Kent Tiyatroları Sezon Programı: Her yaş grubu için yıl boyunca düzenli tiyatro oyunlarının sergilenmesi: 2026 Bütçe finansman bilgisi eksik. **Hücreler:** s.167 / T99 / sütun 2 / satır 29,30,31
+- [ ] 0010.Kent Tiyatroları Sezon Programı: Her yaş grubu için yıl boyunca düzenli tiyatro oyunlarının sergilenmesi: 2026 Haziran Sonu Harcama finansman bilgisi eksik. **Hücreler:** s.167 / T99 / sütun 3 / satır 29,30,31
+- [ ] 0010.Kent Tiyatroları Sezon Programı: Her yaş grubu için yıl boyunca düzenli tiyatro oyunlarının sergilenmesi: 2026 Yıl Sonu Tahmini finansman bilgisi eksik. **Hücreler:** s.167 / T99 / sütun 4 / satır 29,30,31
+- [ ] 0011.Okullara Yönelik Rehberli Müze Turları: İlçemizdeki okullarla iş birliği içerisinde yürütülen rehberli müze gezileri: 2026 Bütçe finansman bilgisi eksik. **Hücreler:** s.167 / T99 / sütun 2 / satır 32,33,34
+- [ ] 0011.Okullara Yönelik Rehberli Müze Turları: İlçemizdeki okullarla iş birliği içerisinde yürütülen rehberli müze gezileri: 2026 Haziran Sonu Harcama finansman bilgisi eksik. **Hücreler:** s.167 / T99 / sütun 3 / satır 32,33,34
+- [ ] 0011.Okullara Yönelik Rehberli Müze Turları: İlçemizdeki okullarla iş birliği içerisinde yürütülen rehberli müze gezileri: 2026 Yıl Sonu Tahmini finansman bilgisi eksik. **Hücreler:** s.167 / T99 / sütun 4 / satır 32,33,34
+- [ ] 0012.Atölye Çalışmaları: Çocuk, Genç ve yetişkinlere yönelik atölye çalışmaları: 2026 Bütçe finansman bilgisi eksik. **Hücreler:** s.167 / T99 / sütun 2 / satır 35,36,37
+- [ ] 0012.Atölye Çalışmaları: Çocuk, Genç ve yetişkinlere yönelik atölye çalışmaları: 2026 Haziran Sonu Harcama finansman bilgisi eksik. **Hücreler:** s.167 / T99 / sütun 3 / satır 35,36,37
+- [ ] 0012.Atölye Çalışmaları: Çocuk, Genç ve yetişkinlere yönelik atölye çalışmaları: 2026 Yıl Sonu Tahmini finansman bilgisi eksik. **Hücreler:** s.167 / T99 / sütun 4 / satır 35,36,37
+- [ ] 0013.Meslek Kursları: Yabancı dil eğitimleri, teknoloji eğitimleri, güzellik hizmetleri eğitimleri, mutfak sanatları eğitimleri vb. kurslar düzenlemek.: 2026 Bütçe finansman bilgisi eksik. **Hücreler:** s.167 / T99 / sütun 2 / satır 38,39,40
+- [ ] 0013.Meslek Kursları: Yabancı dil eğitimleri, teknoloji eğitimleri, güzellik hizmetleri eğitimleri, mutfak sanatları eğitimleri vb. kurslar düzenlemek.: 2026 Haziran Sonu Harcama finansman bilgisi eksik. **Hücreler:** s.167 / T99 / sütun 3 / satır 38,39,40
+- [ ] 0013.Meslek Kursları: Yabancı dil eğitimleri, teknoloji eğitimleri, güzellik hizmetleri eğitimleri, mutfak sanatları eğitimleri vb. kurslar düzenlemek.: 2026 Yıl Sonu Tahmini finansman bilgisi eksik. **Hücreler:** s.167 / T99 / sütun 4 / satır 38,39,40
+- [ ] 0014.Sahne Sanatları Kursları: Türk Halk Oyunları, modern dans, bale, tiyatro, enstrüman vb. kurslar düzenlemek.: 2026 Bütçe finansman bilgisi eksik. **Hücreler:** s.167 / T99 / sütun 2 / satır 41,42,43
+- [ ] 0014.Sahne Sanatları Kursları: Türk Halk Oyunları, modern dans, bale, tiyatro, enstrüman vb. kurslar düzenlemek.: 2026 Haziran Sonu Harcama finansman bilgisi eksik. **Hücreler:** s.167 / T99 / sütun 3 / satır 41,42,43
+- [ ] 0014.Sahne Sanatları Kursları: Türk Halk Oyunları, modern dans, bale, tiyatro, enstrüman vb. kurslar düzenlemek.: 2026 Yıl Sonu Tahmini finansman bilgisi eksik. **Hücreler:** s.167 / T99 / sütun 4 / satır 41,42,43
+- [ ] 0015.Örgün Eğitime Destek ve Sınavlara Hazırlık Kursları: Dezavantajlı bölgelerde yaşayan öğrenciler için örgün eğitimlerine destek ve sınavlara hazırlık kursları düzenlemek.: 2026 Bütçe finansman bilgisi eksik. **Hücreler:** s.167 / T99 / sütun 2 / satır 44,45,46
+- [ ] 0015.Örgün Eğitime Destek ve Sınavlara Hazırlık Kursları: Dezavantajlı bölgelerde yaşayan öğrenciler için örgün eğitimlerine destek ve sınavlara hazırlık kursları düzenlemek.: 2026 Haziran Sonu Harcama finansman bilgisi eksik. **Hücreler:** s.167 / T99 / sütun 3 / satır 44,45,46
+- [ ] 0015.Örgün Eğitime Destek ve Sınavlara Hazırlık Kursları: Dezavantajlı bölgelerde yaşayan öğrenciler için örgün eğitimlerine destek ve sınavlara hazırlık kursları düzenlemek.: 2026 Yıl Sonu Tahmini finansman bilgisi eksik. **Hücreler:** s.167 / T99 / sütun 4 / satır 44,45,46
+- [ ] 0016.Teknoloji Eğitimleri: Yapay zeka, yazılım, kodlama, web sayfası ve grafik tasarım gibi alanlarda kurslar düzenlemek.: 2026 Bütçe finansman bilgisi eksik. **Hücreler:** s.167 / T99 / sütun 2 / satır 47,48,49
+- [ ] 0016.Teknoloji Eğitimleri: Yapay zeka, yazılım, kodlama, web sayfası ve grafik tasarım gibi alanlarda kurslar düzenlemek.: 2026 Haziran Sonu Harcama finansman bilgisi eksik. **Hücreler:** s.167 / T99 / sütun 3 / satır 47,48,49
+- [ ] 0016.Teknoloji Eğitimleri: Yapay zeka, yazılım, kodlama, web sayfası ve grafik tasarım gibi alanlarda kurslar düzenlemek.: 2026 Yıl Sonu Tahmini finansman bilgisi eksik. **Hücreler:** s.167 / T99 / sütun 4 / satır 47,48,49
+- [ ] 0017. Sanatsal Eğitimler: El sanatları, güzel sanatlar, unutulmaya yüz tutmuş görsel-dramatik sanatlar (fotoğraf, sinema vb.) alanında gösteriler ve yaz okulları düzenleme.: 2026 Bütçe finansman bilgisi eksik. **Hücreler:** s.167 / T99 / sütun 2 / satır 50,51,52
+- [ ] 0017. Sanatsal Eğitimler: El sanatları, güzel sanatlar, unutulmaya yüz tutmuş görsel-dramatik sanatlar (fotoğraf, sinema vb.) alanında gösteriler ve yaz okulları düzenleme.: 2026 Haziran Sonu Harcama finansman bilgisi eksik. **Hücreler:** s.167 / T99 / sütun 3 / satır 50,51,52
+- [ ] 0017. Sanatsal Eğitimler: El sanatları, güzel sanatlar, unutulmaya yüz tutmuş görsel-dramatik sanatlar (fotoğraf, sinema vb.) alanında gösteriler ve yaz okulları düzenleme.: 2026 Yıl Sonu Tahmini finansman bilgisi eksik. **Hücreler:** s.167 / T99 / sütun 4 / satır 50,51,52
 
 ### Makine İkmal Bakım ve Onarım Müdürlüğü
 
-Gönderime hazır: **Hayır**.
+Gönderime hazır: **Hayır**; 2 SOURCE mesajı / 1 kaynak kontrol maddesi.
 
-Kitap sayfaları: 238, 239, 243.
-
-Hatalar (64):
-
-- Ekonomik tablo boyut/tutar bilgisi geçersiz. (kitap s. 238, 239, 243)
-- 2025 Bütçe / Personel Giderleri / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 239, 243)
-- Ekonomik tablo boyut/tutar bilgisi geçersiz. (kitap s. 238, 239, 243)
-- 2025 Bütçe / Personel Giderleri / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 239, 243)
-- Ekonomik tablo boyut/tutar bilgisi geçersiz. (kitap s. 238, 239, 243)
-- 2025 Bütçe / Sosyal Güvenlik Kurumuna Devlet Primi Giderleri / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 239, 243)
-- Ekonomik tablo boyut/tutar bilgisi geçersiz. (kitap s. 238, 239, 243)
-- 2025 Bütçe / Sosyal Güvenlik Kurumuna Devlet Primi Giderleri / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 239, 243)
-- Ekonomik tablo boyut/tutar bilgisi geçersiz. (kitap s. 238, 239, 243)
-- 2025 Bütçe / Mal ve Hizmet Alım Giderleri / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 239, 243)
-- Ekonomik tablo boyut/tutar bilgisi geçersiz. (kitap s. 238, 239, 243)
-- 2025 Bütçe / Mal ve Hizmet Alım Giderleri / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 239, 243)
-- Ekonomik tablo boyut/tutar bilgisi geçersiz. (kitap s. 238, 239, 243)
-- 2025 Haziran Sonu Harcama / Personel Giderleri / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 239, 243)
-- Ekonomik tablo boyut/tutar bilgisi geçersiz. (kitap s. 238, 239, 243)
-- 2025 Haziran Sonu Harcama / Personel Giderleri / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 239, 243)
-- Ekonomik tablo boyut/tutar bilgisi geçersiz. (kitap s. 238, 239, 243)
-- 2025 Haziran Sonu Harcama / Sosyal Güvenlik Kurumuna Devlet Primi Giderleri / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 239, 243)
-- Ekonomik tablo boyut/tutar bilgisi geçersiz. (kitap s. 238, 239, 243)
-- 2025 Haziran Sonu Harcama / Sosyal Güvenlik Kurumuna Devlet Primi Giderleri / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 239, 243)
-- Ekonomik tablo boyut/tutar bilgisi geçersiz. (kitap s. 238, 239, 243)
-- 2025 Haziran Sonu Harcama / Mal ve Hizmet Alım Giderleri / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 239, 243)
-- Ekonomik tablo boyut/tutar bilgisi geçersiz. (kitap s. 238, 239, 243)
-- 2025 Haziran Sonu Harcama / Mal ve Hizmet Alım Giderleri / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 239, 243)
-- Ekonomik tablo boyut/tutar bilgisi geçersiz. (kitap s. 238, 239, 243)
-- 2025 Yıl Sonu Tahmini / Personel Giderleri / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 239, 243)
-- Ekonomik tablo boyut/tutar bilgisi geçersiz. (kitap s. 238, 239, 243)
-- 2025 Yıl Sonu Tahmini / Personel Giderleri / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 239, 243)
-- Ekonomik tablo boyut/tutar bilgisi geçersiz. (kitap s. 238, 239, 243)
-- 2025 Yıl Sonu Tahmini / Sosyal Güvenlik Kurumuna Devlet Primi Giderleri / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 239, 243)
-- Ekonomik tablo boyut/tutar bilgisi geçersiz. (kitap s. 238, 239, 243)
-- 2025 Yıl Sonu Tahmini / Sosyal Güvenlik Kurumuna Devlet Primi Giderleri / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 239, 243)
-- Ekonomik tablo boyut/tutar bilgisi geçersiz. (kitap s. 238, 239, 243)
-- 2025 Yıl Sonu Tahmini / Mal ve Hizmet Alım Giderleri / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 239, 243)
-- Ekonomik tablo boyut/tutar bilgisi geçersiz. (kitap s. 238, 239, 243)
-- 2025 Yıl Sonu Tahmini / Mal ve Hizmet Alım Giderleri / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 239, 243)
-- 2026 Bütçe / Personel Giderleri / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 239, 243)
-- 2026 Bütçe / Personel Giderleri / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 239, 243)
-- 2026 Bütçe / Sosyal Güvenlik Kurumuna Devlet Primi Giderleri / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 239, 243)
-- 2026 Bütçe / Sosyal Güvenlik Kurumuna Devlet Primi Giderleri / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 239, 243)
-- 2026 Bütçe / Mal ve Hizmet Alım Giderleri / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 239, 243)
-- 2026 Bütçe / Mal ve Hizmet Alım Giderleri / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 239, 243)
-- Ekonomik tablo boyut/tutar bilgisi geçersiz. (kitap s. 238, 239, 243)
-- 2027 Tahmin / Personel Giderleri / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 239, 243)
-- Ekonomik tablo boyut/tutar bilgisi geçersiz. (kitap s. 238, 239, 243)
-- 2027 Tahmin / Personel Giderleri / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 239, 243)
-- Ekonomik tablo boyut/tutar bilgisi geçersiz. (kitap s. 238, 239, 243)
-- 2027 Tahmin / Sosyal Güvenlik Kurumuna Devlet Primi Giderleri / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 239, 243)
-- Ekonomik tablo boyut/tutar bilgisi geçersiz. (kitap s. 238, 239, 243)
-- 2027 Tahmin / Sosyal Güvenlik Kurumuna Devlet Primi Giderleri / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 239, 243)
-- Ekonomik tablo boyut/tutar bilgisi geçersiz. (kitap s. 238, 239, 243)
-- 2027 Tahmin / Mal ve Hizmet Alım Giderleri / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 239, 243)
-- Ekonomik tablo boyut/tutar bilgisi geçersiz. (kitap s. 238, 239, 243)
-- 2027 Tahmin / Mal ve Hizmet Alım Giderleri / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 239, 243)
-- 2028 Tahmin / Personel Giderleri / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 239, 243)
-- 2028 Tahmin / Personel Giderleri / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 239, 243)
-- 2028 Tahmin / Sosyal Güvenlik Kurumuna Devlet Primi Giderleri / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 239, 243)
-- 2028 Tahmin / Sosyal Güvenlik Kurumuna Devlet Primi Giderleri / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 239, 243)
-- 2028 Tahmin / Mal ve Hizmet Alım Giderleri / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 239, 243)
-- 2028 Tahmin / Mal ve Hizmet Alım Giderleri / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 239, 243)
-- 2027: Program Grubu Belirlenmeli / Bütçe İçi: 9 ekonomik gider hücresi eksik (yoksa 0 girin). (kitap s. 239, 243)
-- 2027: Program Grubu Belirlenmeli / Bütçe Dışı: 9 ekonomik gider hücresi eksik (yoksa 0 girin). (kitap s. 239, 243)
-- 2029: Program Grubu Belirlenmeli / Bütçe İçi: 9 ekonomik gider hücresi eksik (yoksa 0 girin). (kitap s. 239, 243)
-- 2029: Program Grubu Belirlenmeli / Bütçe Dışı: 9 ekonomik gider hücresi eksik (yoksa 0 girin). (kitap s. 239, 243)
-
-Uyarılar (0):
-
-Yok.
+- [ ] 2028: bütçe içi faaliyet ve ekonomik toplamları uyuşmuyor. Faaliyet toplamı 265.909.182,00; ortak personel/SGK 17.842.500,00; ekonomik kategori toplamı 283.751.680,00; ekonomik personel/SGK 17.842.500,00 TL. 2028: ortak maliyet ve ekonomik tablo toplamları uyuşmuyor. Faaliyet toplamı 265.909.182,00; ortak personel/SGK 17.842.500,00; ekonomik kategori toplamı 283.751.680,00; ekonomik personel/SGK 17.842.500,00 TL. **Hücreler:** s.239 / T193 / sütun 6 / satır 2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,20; s.239 / T194 / sütun 5 / satır 2,3,4,5,6,7,8
 
 ### Mali Hizmetler Müdürlüğü
 
-Gönderime hazır: **Hayır**.
+Gönderime hazır: **Hayır**; 20 SOURCE mesajı / 2 kaynak kontrol maddesi.
 
-Kitap sayfaları: 220, 221.
-
-Hatalar (20):
-
-- 2027 Bütçe / Personel Giderleri / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 221)
-- 2027 Bütçe / Personel Giderleri / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 221)
-- 2027 Bütçe / Sosyal Güvenlik Kurumuna Devlet Primi Giderleri / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 221)
-- 2027 Bütçe / Sosyal Güvenlik Kurumuna Devlet Primi Giderleri / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 221)
-- 2027 Bütçe / Mal ve Hizmet Alım Giderleri / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 221)
-- 2027 Bütçe / Mal ve Hizmet Alım Giderleri / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 221)
-- 2027 Bütçe / Faiz Giderleri / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 221)
-- 2027 Bütçe / Faiz Giderleri / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 221)
-- 2027 Bütçe / Cari Transferler / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 221)
-- 2027 Bütçe / Cari Transferler / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 221)
-- 2027 Bütçe / Sermaye Giderleri / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 221)
-- 2027 Bütçe / Sermaye Giderleri / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 221)
-- 2027 Bütçe / Sermaye Transferleri / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 221)
-- 2027 Bütçe / Sermaye Transferleri / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 221)
-- 2027 Bütçe / Borç Verme / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 221)
-- 2027 Bütçe / Borç Verme / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 221)
-- 2027 Bütçe / Yedek Ödenekler / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 221)
-- 2027 Bütçe / Yedek Ödenekler / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 221)
-- 2028: ortak maliyet ve ekonomik tablo toplamları uyuşmuyor. (kitap s. 221)
-- 2028: bütçe içi faaliyet ve ekonomik toplamları uyuşmuyor. (kitap s. 221)
-
-Uyarılar (0):
-
-Yok.
+- [ ] 2028: bütçe içi faaliyet ve ekonomik toplamları uyuşmuyor. Faaliyet toplamı 1.075.992.302,00; ortak personel/SGK 29.625.000,00; ekonomik kategori toplamı 1.075.992.302,00; ekonomik personel/SGK 29.625.000,00 TL. 2028: ortak maliyet ve ekonomik tablo toplamları uyuşmuyor. Faaliyet toplamı 1.075.992.302,00; ortak personel/SGK 29.625.000,00; ekonomik kategori toplamı 1.075.992.302,00; ekonomik personel/SGK 29.625.000,00 TL. **Hücreler:** s.221 / T169 / sütun 6 / satır 2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,20; s.221 / T170 / sütun 5 / satır 2,3,4,5,6,7,8,9,10,11,12,13
+- [ ] Tablo 170, 2027 Bütçe: Bütçe İçi Toplam 888.224.210,00 TL, kategori satırlarının toplamı 888.224.835,00 TL; fark -625,00 TL. Kaynak tabloyu kontrol edin. **Hücreler:** s.221 / T170 / sütun 4 / satır 2,3,4,5,6,7,8,9,10,11,12,13
 
 ### Özel Kalem Müdürlüğü
 
-Gönderime hazır: **Evet**.
+Gönderime hazır: **Evet**; 0 SOURCE mesajı / 0 kaynak kontrol maddesi.
 
-Kitap sayfaları: 198, 199.
-
-Hatalar (0):
-
-Yok.
-
-Ek kaynak sorunu (validate_department dışında; maliyet kaydı üretilmedi):
-
-- Tablo 136, satır 8: Özel Kalem Müdürlüğü / 0006.Sosyal Güvenlik Kurumuna 5434 Sayılı Kanun Kapsamında Emekli İkramiyeleri Karşılığı Yapılan Ödemeler: faaliyet maliyet kaydı tekil eşleşmedi. Kart üyeliği ile müdürlük maliyet tablosundaki faaliyet kod/adını kontrol edin.
-
-Uyarılar (0):
-
-Yok.
+- [ ] SOURCE (validate_department dışında): Tablo 136, satır 8: Özel Kalem Müdürlüğü / 0006.Sosyal Güvenlik Kurumuna 5434 Sayılı Kanun Kapsamında Emekli İkramiyeleri Karşılığı Yapılan Ödemeler: faaliyet maliyet kaydı tekil eşleşmedi. Kart üyeliği ile müdürlük maliyet tablosundaki faaliyet kod/adını kontrol edin. **Hücre:** s.198 / T136 / sütun 1 / satır 8
 
 ### Park ve Bahçeler Müdürlüğü
 
-Gönderime hazır: **Hayır**.
+Gönderime hazır: **Hayır**; 20 SOURCE mesajı / 16 kaynak kontrol maddesi.
 
-Kitap sayfaları: 125, 127, 128.
-
-Hatalar (20):
-
-- SH16.PG01. Bitkisel ve yapısal peyzaj düzenlemelerinin yapımı: 2025 Gerçekleşme: kaynak değeri doğrulanmalı (17,840). (kitap s. 125)
-- SH16.PG01. Bitkisel ve yapısal peyzaj düzenlemelerinin yapımı: 2026 Planlanan: kaynak değeri doğrulanmalı (50,000). (kitap s. 125)
-- SH16.PG01. Bitkisel ve yapısal peyzaj düzenlemelerinin yapımı: 2026 Yıl Sonu Tahmini: kaynak değeri doğrulanmalı (50,000). (kitap s. 125)
-- SH16.PG01. Bitkisel ve yapısal peyzaj düzenlemelerinin yapımı: 2027 Hedef: kaynak değeri doğrulanmalı (50,000). (kitap s. 125)
-- SH16.PG01. Bitkisel ve yapısal peyzaj düzenlemelerinin yapımı: 2028 Tahmin: kaynak değeri doğrulanmalı (60,000). (kitap s. 125)
-- SH16.PG01. Bitkisel ve yapısal peyzaj düzenlemelerinin yapımı: 2029 Tahmin: kaynak değeri doğrulanmalı (60,000). (kitap s. 125)
-- SH016/PG03. Bitkisel peyzaj elemanlarının dikim ve bakım sayısı: 2025 Gerçekleşme: kaynak değeri doğrulanmalı (132,915). (kitap s. 125)
-- SH016/PG03. Bitkisel peyzaj elemanlarının dikim ve bakım sayısı: 2026 Planlanan: kaynak değeri doğrulanmalı (250,000). (kitap s. 125)
-- SH016/PG03. Bitkisel peyzaj elemanlarının dikim ve bakım sayısı: 2026 Yıl Sonu Tahmini: kaynak değeri doğrulanmalı (250,000). (kitap s. 125)
-- SH016/PG03. Bitkisel peyzaj elemanlarının dikim ve bakım sayısı: 2027 Hedef: kaynak değeri doğrulanmalı (200,000). (kitap s. 125)
-- SH016/PG03. Bitkisel peyzaj elemanlarının dikim ve bakım sayısı: 2029 Tahmin: kaynak değeri doğrulanmalı (300,000). (kitap s. 125)
-- SH016/PG05. Onaylanan Peyzaj Proje ve İskân Sayısı: 2026 Yıl Sonu Tahmini: kaynak değeri doğrulanmalı (650,000). (kitap s. 125)
-- 0007.Kırılgan grupların da rahatlıkla kullanabileceği ortak alanların oluşturulması, bakımı ve onarımı.: 2027 Bütçe / Toplam kaynak tutarı doğrulanmalı. (kitap s. 128)
-- 0007.Kırılgan grupların da rahatlıkla kullanabileceği ortak alanların oluşturulması, bakımı ve onarımı.: 2027 toplamı bütçe içi + dışı ile eşit değil. (kitap s. 128)
-- 2027: ortak maliyet ve ekonomik tablo toplamları uyuşmuyor. (kitap s. 128)
-- 2027: bütçe içi faaliyet ve ekonomik toplamları uyuşmuyor. (kitap s. 128)
-- 2028: ortak maliyet ve ekonomik tablo toplamları uyuşmuyor. (kitap s. 128)
-- 2028: bütçe içi faaliyet ve ekonomik toplamları uyuşmuyor. (kitap s. 128)
-- 2029: ortak maliyet ve ekonomik tablo toplamları uyuşmuyor. (kitap s. 128)
-- 2029: bütçe içi faaliyet ve ekonomik toplamları uyuşmuyor. (kitap s. 128)
-
-Uyarılar (3):
-
-- SH17/PG02. Kullanıma sunulan ve bakım onarımı yapılan kent donatısı hakkında vatandaş memnuniyeti: 2025 Gerçekleşme kaynakta çizgi; müdürlükçe kontrol edilmeli.
-- SH17/PG02. Kullanıma sunulan ve bakım onarımı yapılan kent donatısı hakkında vatandaş memnuniyeti: 2026 Planlanan kaynakta çizgi; müdürlükçe kontrol edilmeli.
-- SH17/PG02. Kullanıma sunulan ve bakım onarımı yapılan kent donatısı hakkında vatandaş memnuniyeti: 2026 Yıl Sonu Tahmini kaynakta çizgi; müdürlükçe kontrol edilmeli.
+- [ ] 0007.Kırılgan grupların da rahatlıkla kullanabileceği ortak alanların oluşturulması, bakımı ve onarımı.: 2027 toplamı bütçe içi + dışı ile eşit değil. Kaynak: Toplam = «44.333.709,00»; Bütçe İçi = «45.333.709,00»; Bütçe Dışı = «0,00» 0007.Kırılgan grupların da rahatlıkla kullanabileceği ortak alanların oluşturulması, bakımı ve onarımı.: 2027 Bütçe / Toplam kaynak tutarı doğrulanmalı. **Hücreler:** s.128 / T49 / sütun 5 / satır 20,21,22
+- [ ] 2027: bütçe içi faaliyet ve ekonomik toplamları uyuşmuyor. Faaliyet toplamı 542.389.649,00; ortak personel/SGK 23.223.750,00; ekonomik kategori toplamı 551.300.000,00; ekonomik personel/SGK 23.223.750,00 TL. 2027: ortak maliyet ve ekonomik tablo toplamları uyuşmuyor. Faaliyet toplamı 542.389.649,00; ortak personel/SGK 23.223.750,00; ekonomik kategori toplamı 551.300.000,00; ekonomik personel/SGK 23.223.750,00 TL. **Hücreler:** s.128 / T49 / sütun 5 / satır 2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,44; s.128 / T50 / sütun 4 / satır 2,3,4,5,6,7,8
+- [ ] 2028: bütçe içi faaliyet ve ekonomik toplamları uyuşmuyor. Faaliyet toplamı 923.777.553,00; ortak personel/SGK 29.029.688,00; ekonomik kategori toplamı 850.652.032,00; ekonomik personel/SGK 29.029.688,00 TL. 2028: ortak maliyet ve ekonomik tablo toplamları uyuşmuyor. Faaliyet toplamı 923.777.553,00; ortak personel/SGK 29.029.688,00; ekonomik kategori toplamı 850.652.032,00; ekonomik personel/SGK 29.029.688,00 TL. **Hücreler:** s.128 / T49 / sütun 6 / satır 2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,44; s.128 / T50 / sütun 5 / satır 2,3,4,5,6,7,8
+- [ ] 2029: bütçe içi faaliyet ve ekonomik toplamları uyuşmuyor. Faaliyet toplamı 957.173.928,00; ortak personel/SGK 36.287.110,00; ekonomik kategori toplamı 1.020.978.440,00; ekonomik personel/SGK 36.287.110,00 TL. 2029: ortak maliyet ve ekonomik tablo toplamları uyuşmuyor. Faaliyet toplamı 957.173.928,00; ortak personel/SGK 36.287.110,00; ekonomik kategori toplamı 1.020.978.440,00; ekonomik personel/SGK 36.287.110,00 TL. **Hücreler:** s.128 / T49 / sütun 7 / satır 2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,44; s.128 / T50 / sütun 6 / satır 2,3,4,5,6,7,8
+- [ ] SH016/PG03. Bitkisel peyzaj elemanlarının dikim ve bakım sayısı: 2025 Gerçekleşme: kaynak değeri doğrulanmalı (132,915). **Hücreler:** s.125 / T45 / sütun 4 / satır 11
+- [ ] SH016/PG03. Bitkisel peyzaj elemanlarının dikim ve bakım sayısı: 2026 Planlanan: kaynak değeri doğrulanmalı (250,000). **Hücreler:** s.125 / T45 / sütun 5 / satır 11
+- [ ] SH016/PG03. Bitkisel peyzaj elemanlarının dikim ve bakım sayısı: 2026 Yıl Sonu Tahmini: kaynak değeri doğrulanmalı (250,000). **Hücreler:** s.125 / T45 / sütun 6 / satır 11
+- [ ] SH016/PG03. Bitkisel peyzaj elemanlarının dikim ve bakım sayısı: 2027 Hedef: kaynak değeri doğrulanmalı (200,000). **Hücreler:** s.125 / T45 / sütun 7 / satır 11
+- [ ] SH016/PG03. Bitkisel peyzaj elemanlarının dikim ve bakım sayısı: 2029 Tahmin: kaynak değeri doğrulanmalı (300,000). **Hücreler:** s.125 / T45 / sütun 9 / satır 11
+- [ ] SH016/PG05. Onaylanan Peyzaj Proje ve İskân Sayısı: 2026 Yıl Sonu Tahmini: kaynak değeri doğrulanmalı (650,000). **Hücreler:** s.125 / T45 / sütun 6 / satır 13
+- [ ] SH16.PG01. Bitkisel ve yapısal peyzaj düzenlemelerinin yapımı: 2025 Gerçekleşme: kaynak değeri doğrulanmalı (17,840). **Hücreler:** s.125 / T45 / sütun 4 / satır 9
+- [ ] SH16.PG01. Bitkisel ve yapısal peyzaj düzenlemelerinin yapımı: 2026 Planlanan: kaynak değeri doğrulanmalı (50,000). **Hücreler:** s.125 / T45 / sütun 5 / satır 9
+- [ ] SH16.PG01. Bitkisel ve yapısal peyzaj düzenlemelerinin yapımı: 2026 Yıl Sonu Tahmini: kaynak değeri doğrulanmalı (50,000). **Hücreler:** s.125 / T45 / sütun 6 / satır 9
+- [ ] SH16.PG01. Bitkisel ve yapısal peyzaj düzenlemelerinin yapımı: 2027 Hedef: kaynak değeri doğrulanmalı (50,000). **Hücreler:** s.125 / T45 / sütun 7 / satır 9
+- [ ] SH16.PG01. Bitkisel ve yapısal peyzaj düzenlemelerinin yapımı: 2028 Tahmin: kaynak değeri doğrulanmalı (60,000). **Hücreler:** s.125 / T45 / sütun 8 / satır 9
+- [ ] SH16.PG01. Bitkisel ve yapısal peyzaj düzenlemelerinin yapımı: 2029 Tahmin: kaynak değeri doğrulanmalı (60,000). **Hücreler:** s.125 / T45 / sütun 9 / satır 9
 
 ### Plan Proje Müdürlüğü
 
-Gönderime hazır: **Hayır**.
+Gönderime hazır: **Hayır**; 6 SOURCE mesajı / 1 kaynak kontrol maddesi.
 
-Kitap sayfaları: 135, 136.
-
-Hatalar (6):
-
-- 2026 Haziran Sonu Harcama / Personel Giderleri / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 136)
-- 2026 Haziran Sonu Harcama / Personel Giderleri / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 136)
-- 2026 Haziran Sonu Harcama / Sosyal Güvenlik Kurumuna Devlet Primi Giderleri / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 136)
-- 2026 Haziran Sonu Harcama / Sosyal Güvenlik Kurumuna Devlet Primi Giderleri / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 136)
-- 2026 Haziran Sonu Harcama / Mal ve Hizmet Alım Giderleri / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 136)
-- 2026 Haziran Sonu Harcama / Mal ve Hizmet Alım Giderleri / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 136)
-
-Uyarılar (1):
-
-- SH20.PG05. Vatandaşların memnuniyet: 2025 Gerçekleşme kaynakta çizgi; müdürlükçe kontrol edilmeli.
+- [ ] Tablo 60, 2026 Haziran Sonu Harcama: Bütçe İçi Toplam 11.501.713,28 TL, kategori satırlarının toplamı 12.362.364,94 TL; fark -860.651,66 TL. Kaynak tabloyu kontrol edin. **Hücreler:** s.136 / T60 / sütun 3 / satır 2,3,4,5,6,7
 
 ### Rehberlik ve Teftiş Kurulu Müdürlüğü
 
-Gönderime hazır: **Hayır**.
+Gönderime hazır: **Hayır**; 10 SOURCE mesajı / 2 kaynak kontrol maddesi.
 
-Kitap sayfaları: 209, 210.
-
-Hatalar (10):
-
-- 2026 Haziran Sonu Harcama / Personel Giderleri / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 210)
-- 2026 Haziran Sonu Harcama / Personel Giderleri / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 210)
-- 2026 Haziran Sonu Harcama / Sosyal Güvenlik Kurumuna Devlet Primi Giderleri / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 210)
-- 2026 Haziran Sonu Harcama / Sosyal Güvenlik Kurumuna Devlet Primi Giderleri / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 210)
-- 2026 Haziran Sonu Harcama / Mal ve Hizmet Alım Giderleri / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 210)
-- 2026 Haziran Sonu Harcama / Mal ve Hizmet Alım Giderleri / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 210)
-- 2026 Haziran Sonu Harcama / Cari Transferler / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 210)
-- 2026 Haziran Sonu Harcama / Cari Transferler / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 210)
-- 2029: ortak maliyet ve ekonomik tablo toplamları uyuşmuyor. (kitap s. 210)
-- 2029: bütçe dışı faaliyet ve ekonomik toplamları uyuşmuyor. (kitap s. 210)
-
-Uyarılar (0):
-
-Yok.
+- [ ] 2029: bütçe dışı faaliyet ve ekonomik toplamları uyuşmuyor. Faaliyet toplamı 333.750,00; ortak personel/SGK 2.578.125,00; ekonomik kategori toplamı 2.811.875,00; ekonomik personel/SGK 2.578.125,00 TL. 2029: ortak maliyet ve ekonomik tablo toplamları uyuşmuyor. Faaliyet toplamı 333.750,00; ortak personel/SGK 2.578.125,00; ekonomik kategori toplamı 2.811.875,00; ekonomik personel/SGK 2.578.125,00 TL. **Hücreler:** s.210 / T151 / sütun 7 / satır 2,3,4,5,6,7,8,9,10,14; s.210 / T152 / sütun 6 / satır 2,3,4,5,6,7,8
+- [ ] Tablo 152, 2026 Haziran Sonu Harcama: Bütçe İçi Toplam 955.735,48 TL, kategori satırlarının toplamı 936.918,72 TL; fark 18.816,76 TL. Kaynak tabloyu kontrol edin. **Hücreler:** s.210 / T152 / sütun 3 / satır 2,3,4,5,6,7,8
 
 ### Ruhsat ve Denetim Müdürlüğü
 
-Gönderime hazır: **Hayır**.
+Gönderime hazır: **Hayır**; 12 SOURCE mesajı / 2 kaynak kontrol maddesi.
 
-Kitap sayfaları: 100, 101.
-
-Hatalar (12):
-
-- 2026 Bütçe / Personel Giderleri / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 101)
-- 2026 Bütçe / Personel Giderleri / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 101)
-- 2026 Bütçe / Sosyal Güvenlik Kurumuna Devlet Primi Giderleri / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 101)
-- 2026 Bütçe / Sosyal Güvenlik Kurumuna Devlet Primi Giderleri / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 101)
-- 2026 Bütçe / Mal ve Hizmet Alım Giderleri / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 101)
-- 2026 Bütçe / Mal ve Hizmet Alım Giderleri / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 101)
-- 2026 Haziran Sonu Harcama / Personel Giderleri / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 101)
-- 2026 Haziran Sonu Harcama / Personel Giderleri / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 101)
-- 2026 Haziran Sonu Harcama / Sosyal Güvenlik Kurumuna Devlet Primi Giderleri / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 101)
-- 2026 Haziran Sonu Harcama / Sosyal Güvenlik Kurumuna Devlet Primi Giderleri / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 101)
-- 2026 Haziran Sonu Harcama / Mal ve Hizmet Alım Giderleri / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 101)
-- 2026 Haziran Sonu Harcama / Mal ve Hizmet Alım Giderleri / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 101)
-
-Uyarılar (0):
-
-Yok.
+- [ ] Tablo 14, 2026 Bütçe: Bütçe İçi Toplam 11.623.833,00 TL, kategori satırlarının toplamı 11.386.500,16 TL; fark 237.332,84 TL. Kaynak tabloyu kontrol edin. **Hücreler:** s.101 / T14 / sütun 2 / satır 2,3,4,5,6,7
+- [ ] Tablo 14, 2026 Haziran Sonu Harcama: Bütçe İçi Toplam 4.815.578,31 TL, kategori satırlarının toplamı 5.151.457,55 TL; fark -335.879,24 TL. Kaynak tabloyu kontrol edin. **Hücreler:** s.101 / T14 / sütun 3 / satır 2,3,4,5,6,7
 
 ### Sağlık İşleri Müdürlüğü
 
-Gönderime hazır: **Hayır**.
+Gönderime hazır: **Hayır**; 12 SOURCE mesajı / 2 kaynak kontrol maddesi.
 
-Kitap sayfaları: 94, 95, 96, 97, 98.
-
-Hatalar (12):
-
-- 2026 Haziran Sonu Harcama / Personel Giderleri / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 98)
-- 2026 Haziran Sonu Harcama / Personel Giderleri / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 98)
-- 2026 Haziran Sonu Harcama / Sosyal Güvenlik Kurumuna Devlet Primi Giderleri / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 98)
-- 2026 Haziran Sonu Harcama / Sosyal Güvenlik Kurumuna Devlet Primi Giderleri / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 98)
-- 2026 Haziran Sonu Harcama / Mal ve Hizmet Alım Giderleri / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 98)
-- 2026 Haziran Sonu Harcama / Mal ve Hizmet Alım Giderleri / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 98)
-- 2026 Haziran Sonu Harcama / Cari Transferler / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 98)
-- 2026 Haziran Sonu Harcama / Cari Transferler / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 98)
-- 2026 Haziran Sonu Harcama / Sermaye Giderleri / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 98)
-- 2026 Haziran Sonu Harcama / Sermaye Giderleri / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 98)
-- 2029: ortak maliyet ve ekonomik tablo toplamları uyuşmuyor. (kitap s. 98)
-- 2029: bütçe içi faaliyet ve ekonomik toplamları uyuşmuyor. (kitap s. 98)
-
-Uyarılar (1):
-
-- SH03/PG01 Sunulan Hasta Nakil Hizmet Sayısı Sağlık Hizmetlerinden yararlanan vatandaşların memnuniyet oranı: sayı/oran birimi müdürlükçe kontrol edilmeli.
+- [ ] 2029: bütçe içi faaliyet ve ekonomik toplamları uyuşmuyor. Faaliyet toplamı 24.931.292,00; ortak personel/SGK 21.946.875,00; ekonomik kategori toplamı 47.049.588,00; ekonomik personel/SGK 21.946.875,00 TL. 2029: ortak maliyet ve ekonomik tablo toplamları uyuşmuyor. Faaliyet toplamı 24.931.292,00; ortak personel/SGK 21.946.875,00; ekonomik kategori toplamı 47.049.588,00; ekonomik personel/SGK 21.946.875,00 TL. **Hücreler:** s.98 / T9 / sütun 7 / satır 2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,35; s.98 / T10 / sütun 6 / satır 2,3,4,5,6,7,8,9
+- [ ] Tablo 10, 2026 Haziran Sonu Harcama: Bütçe İçi Toplam 6.721.207,36 TL, kategori satırlarının toplamı 6.721.207,46 TL; fark -0,10 TL. Kaynak tabloyu kontrol edin. **Hücreler:** s.98 / T10 / sütun 3 / satır 2,3,4,5,6,7,8,9
 
 ### Sosyal Destek Müdürlüğü
 
-Gönderime hazır: **Evet**.
+Gönderime hazır: **Evet**; 0 SOURCE mesajı / 0 kaynak kontrol maddesi.
 
-Kitap sayfaları: 175, 176, 177, 178, 179.
-
-Hatalar (0):
-
-Yok.
-
-Uyarılar (5):
-
-- SH39/PG01. Sosyal incelemesi yapılan çocuk sayısı: 2025 Gerçekleşme kaynakta çizgi; müdürlükçe kontrol edilmeli.
-- SH39/PG02. Rehberlik ve Danışmanlık desteği verilen çocuk sayısı: 2025 Gerçekleşme kaynakta çizgi; müdürlükçe kontrol edilmeli.
-- SH39/PG03. Dezavantajlı Çocukların güçlendirilmesine yönelik eğitim ve farkındalık çalışma sayısı: 2025 Gerçekleşme kaynakta çizgi; müdürlükçe kontrol edilmeli.
-- SH39/PG04. Ailelere yönelik rehberlik çalışması: 2025 Gerçekleşme kaynakta çizgi; müdürlükçe kontrol edilmeli.
-- SH39/PG05. Gerçekleştirilen görüşmelerden duyulan memnuniyet oranı: 2025 Gerçekleşme kaynakta çizgi; müdürlükçe kontrol edilmeli.
+SOURCE engeli yok.
 
 ### Strateji Geliştirme Müdürlüğü
 
-Gönderime hazır: **Hayır**.
+Gönderime hazır: **Hayır**; 2 SOURCE mesajı / 1 kaynak kontrol maddesi.
 
-Kitap sayfaları: 213, 214.
-
-Hatalar (2):
-
-- 2028: ortak maliyet ve ekonomik tablo toplamları uyuşmuyor. (kitap s. 214)
-- 2028: bütçe içi faaliyet ve ekonomik toplamları uyuşmuyor. (kitap s. 214)
-
-Uyarılar (0):
-
-Yok.
+- [ ] 2028: bütçe içi faaliyet ve ekonomik toplamları uyuşmuyor. Faaliyet toplamı 2.325.528,00; ortak personel/SGK 4.495.313,00; ekonomik kategori toplamı 6.770.841,00; ekonomik personel/SGK 4.495.313,00 TL. 2028: ortak maliyet ve ekonomik tablo toplamları uyuşmuyor. Faaliyet toplamı 2.325.528,00; ortak personel/SGK 4.495.313,00; ekonomik kategori toplamı 6.770.841,00; ekonomik personel/SGK 4.495.313,00 TL. **Hücreler:** s.214 / T159 / sütun 6 / satır 2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,29; s.214 / T160 / sütun 5 / satır 2,3,4,5,6,7
 
 ### Tarımsal Hizmetler Müdürlüğü
 
-Gönderime hazır: **Hayır**.
+Gönderime hazır: **Hayır**; 20 SOURCE mesajı / 7 kaynak kontrol maddesi.
 
-Kitap sayfaları: 154, 155, 156.
-
-Hatalar (20):
-
-- 0008.Üretim alanlarının hazırlanması, üretim materyal ve ekipmanlarının temini: 2027 Bütçe / Toplam kaynak tutarı doğrulanmalı. (kitap s. 156)
-- 0008.Üretim alanlarının hazırlanması, üretim materyal ve ekipmanlarının temini: 2028 Tahmin / Toplam kaynak tutarı doğrulanmalı. (kitap s. 156)
-- 0008.Üretim alanlarının hazırlanması, üretim materyal ve ekipmanlarının temini: 2029 Tahmin / Toplam kaynak tutarı doğrulanmalı. (kitap s. 156)
-- 0008.Üretim alanlarının hazırlanması, üretim materyal ve ekipmanlarının temini: 2029 Tahmin finansman bilgisi eksik. (kitap s. 156)
-- 0008.Üretim alanlarının hazırlanması, üretim materyal ve ekipmanlarının temini: 2028 Tahmin finansman bilgisi eksik. (kitap s. 156)
-- 0008.Üretim alanlarının hazırlanması, üretim materyal ve ekipmanlarının temini: 2027 Bütçe finansman bilgisi eksik. (kitap s. 156)
-- 0009.Üretimin zehirsiz gıda, toprak kirliliği önleyici ve çevre korunma etmenlerinin önemi çevre korunma etmenlerinin önemi çerçevesinde tasarruflu ve sürdürülebilir olarak yürütülmesi: 2027 Bütçe / Toplam kaynak tutarı doğrulanmalı. (kitap s. 156)
-- 0009.Üretimin zehirsiz gıda, toprak kirliliği önleyici ve çevre korunma etmenlerinin önemi çevre korunma etmenlerinin önemi çerçevesinde tasarruflu ve sürdürülebilir olarak yürütülmesi: 2028 Tahmin / Toplam kaynak tutarı doğrulanmalı. (kitap s. 156)
-- 0009.Üretimin zehirsiz gıda, toprak kirliliği önleyici ve çevre korunma etmenlerinin önemi çevre korunma etmenlerinin önemi çerçevesinde tasarruflu ve sürdürülebilir olarak yürütülmesi: 2029 Tahmin / Toplam kaynak tutarı doğrulanmalı. (kitap s. 156)
-- 0009.Üretimin zehirsiz gıda, toprak kirliliği önleyici ve çevre korunma etmenlerinin önemi çevre korunma etmenlerinin önemi çerçevesinde tasarruflu ve sürdürülebilir olarak yürütülmesi: 2029 Tahmin finansman bilgisi eksik. (kitap s. 156)
-- 0009.Üretimin zehirsiz gıda, toprak kirliliği önleyici ve çevre korunma etmenlerinin önemi çevre korunma etmenlerinin önemi çerçevesinde tasarruflu ve sürdürülebilir olarak yürütülmesi: 2028 Tahmin finansman bilgisi eksik. (kitap s. 156)
-- 0009.Üretimin zehirsiz gıda, toprak kirliliği önleyici ve çevre korunma etmenlerinin önemi çevre korunma etmenlerinin önemi çerçevesinde tasarruflu ve sürdürülebilir olarak yürütülmesi: 2027 Bütçe finansman bilgisi eksik. (kitap s. 156)
-- 2026 Bütçe / Personel Giderleri / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 156)
-- 2026 Bütçe / Personel Giderleri / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 156)
-- 2026 Bütçe / Sosyal Güvenlik Kurumuna Devlet Primi Giderleri / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 156)
-- 2026 Bütçe / Sosyal Güvenlik Kurumuna Devlet Primi Giderleri / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 156)
-- 2026 Bütçe / Mal ve Hizmet Alım Giderleri / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 156)
-- 2026 Bütçe / Mal ve Hizmet Alım Giderleri / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 156)
-- 2026 Bütçe / Sermaye Giderleri / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 156)
-- 2026 Bütçe / Sermaye Giderleri / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 156)
-
-Uyarılar (6):
-
-- SH27/PG03. Dikey ve topraksız tarım yöntemleriyle yapılan çalışma sayısı: 2025 Gerçekleşme kaynakta çizgi; müdürlükçe kontrol edilmeli.
-- SH27/PG03. Dikey ve topraksız tarım yöntemleriyle yapılan çalışma sayısı: 2026 Planlanan kaynakta çizgi; müdürlükçe kontrol edilmeli.
-- SH27/PG03. Dikey ve topraksız tarım yöntemleriyle yapılan çalışma sayısı: 2026 Yıl Sonu Tahmini kaynakta çizgi; müdürlükçe kontrol edilmeli.
-- SH27/PG04. Desteklenen çiftçi sayısı: 2025 Gerçekleşme kaynakta çizgi; müdürlükçe kontrol edilmeli.
-- SH27/PG04. Desteklenen çiftçi sayısı: 2026 Planlanan kaynakta çizgi; müdürlükçe kontrol edilmeli.
-- SH27/PG04. Desteklenen çiftçi sayısı: 2026 Yıl Sonu Tahmini kaynakta çizgi; müdürlükçe kontrol edilmeli.
+- [ ] 0008.Üretim alanlarının hazırlanması, üretim materyal ve ekipmanlarının temini: 2027 Bütçe / Toplam kaynak tutarı doğrulanmalı. 0008.Üretim alanlarının hazırlanması, üretim materyal ve ekipmanlarının temini: 2027 Bütçe finansman bilgisi eksik. **Hücreler:** s.156 / T83 / sütun 5 / satır 23,24,25
+- [ ] 0008.Üretim alanlarının hazırlanması, üretim materyal ve ekipmanlarının temini: 2028 Tahmin / Toplam kaynak tutarı doğrulanmalı. 0008.Üretim alanlarının hazırlanması, üretim materyal ve ekipmanlarının temini: 2028 Tahmin finansman bilgisi eksik. **Hücreler:** s.156 / T83 / sütun 6 / satır 23,24,25
+- [ ] 0008.Üretim alanlarının hazırlanması, üretim materyal ve ekipmanlarının temini: 2029 Tahmin / Toplam kaynak tutarı doğrulanmalı. 0008.Üretim alanlarının hazırlanması, üretim materyal ve ekipmanlarının temini: 2029 Tahmin finansman bilgisi eksik. **Hücreler:** s.156 / T83 / sütun 7 / satır 23,24,25
+- [ ] 0009.Üretimin zehirsiz gıda, toprak kirliliği önleyici ve çevre korunma etmenlerinin önemi çevre korunma etmenlerinin önemi çerçevesinde tasarruflu ve sürdürülebilir olarak yürütülmesi: 2027 Bütçe / Toplam kaynak tutarı doğrulanmalı. 0009.Üretimin zehirsiz gıda, toprak kirliliği önleyici ve çevre korunma etmenlerinin önemi çevre korunma etmenlerinin önemi çerçevesinde tasarruflu ve sürdürülebilir olarak yürütülmesi: 2027 Bütçe finansman bilgisi eksik. **Hücreler:** s.156 / T83 / sütun 5 / satır 26,27,28
+- [ ] 0009.Üretimin zehirsiz gıda, toprak kirliliği önleyici ve çevre korunma etmenlerinin önemi çevre korunma etmenlerinin önemi çerçevesinde tasarruflu ve sürdürülebilir olarak yürütülmesi: 2028 Tahmin / Toplam kaynak tutarı doğrulanmalı. 0009.Üretimin zehirsiz gıda, toprak kirliliği önleyici ve çevre korunma etmenlerinin önemi çevre korunma etmenlerinin önemi çerçevesinde tasarruflu ve sürdürülebilir olarak yürütülmesi: 2028 Tahmin finansman bilgisi eksik. **Hücreler:** s.156 / T83 / sütun 6 / satır 26,27,28
+- [ ] 0009.Üretimin zehirsiz gıda, toprak kirliliği önleyici ve çevre korunma etmenlerinin önemi çevre korunma etmenlerinin önemi çerçevesinde tasarruflu ve sürdürülebilir olarak yürütülmesi: 2029 Tahmin / Toplam kaynak tutarı doğrulanmalı. 0009.Üretimin zehirsiz gıda, toprak kirliliği önleyici ve çevre korunma etmenlerinin önemi çevre korunma etmenlerinin önemi çerçevesinde tasarruflu ve sürdürülebilir olarak yürütülmesi: 2029 Tahmin finansman bilgisi eksik. **Hücreler:** s.156 / T83 / sütun 7 / satır 26,27,28
+- [ ] Tablo 84, 2026 Bütçe: Bütçe İçi Toplam 16.565.381,00 TL, kategori satırlarının toplamı 16.365.381,00 TL; fark 200.000,00 TL. Kaynak tabloyu kontrol edin. **Hücreler:** s.156 / T84 / sütun 2 / satır 2,3,4,5,6,7,8
 
 ### Temizlik İşleri Müdürlüğü
 
-Gönderime hazır: **Evet**.
+Gönderime hazır: **Evet**; 0 SOURCE mesajı / 0 kaynak kontrol maddesi.
 
-Kitap sayfaları: 148, 150.
-
-Hatalar (0):
-
-Yok.
-
-Uyarılar (0):
-
-Yok.
+SOURCE engeli yok.
 
 ### Veteriner İşleri Müdürlüğü
 
-Gönderime hazır: **Hayır**.
+Gönderime hazır: **Hayır**; 16 SOURCE mesajı / 4 kaynak kontrol maddesi.
 
-Kitap sayfaları: 106, 107.
-
-Hatalar (26):
-
-- 0004.Mevcut barınak kapasitesinin artırılması ve teknik altyapının iyileştirilmesini sağlamak.: 2027 Bütçe / Toplam kaynak tutarı doğrulanmalı. (kitap s. 107)
-- 0004.Mevcut barınak kapasitesinin artırılması ve teknik altyapının iyileştirilmesini sağlamak.: 2028 Tahmin / Toplam kaynak tutarı doğrulanmalı. (kitap s. 107)
-- 0004.Mevcut barınak kapasitesinin artırılması ve teknik altyapının iyileştirilmesini sağlamak.: 2029 Tahmin / Toplam kaynak tutarı doğrulanmalı. (kitap s. 107)
-- 0004.Mevcut barınak kapasitesinin artırılması ve teknik altyapının iyileştirilmesini sağlamak.: 2029 Tahmin finansman bilgisi eksik. (kitap s. 107)
-- 0004.Mevcut barınak kapasitesinin artırılması ve teknik altyapının iyileştirilmesini sağlamak.: 2028 Tahmin finansman bilgisi eksik. (kitap s. 107)
-- 0004.Mevcut barınak kapasitesinin artırılması ve teknik altyapının iyileştirilmesini sağlamak.: 2027 Bütçe finansman bilgisi eksik. (kitap s. 107)
-- 2026 Bütçe / Personel Giderleri / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 107)
-- 2026 Bütçe / Personel Giderleri / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 107)
-- 2026 Bütçe / Sosyal Güvenlik Kurumuna Devlet Primi Giderleri / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 107)
-- 2026 Bütçe / Sosyal Güvenlik Kurumuna Devlet Primi Giderleri / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 107)
-- 2026 Bütçe / Mal ve Hizmet Alım Giderleri / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 107)
-- 2026 Bütçe / Mal ve Hizmet Alım Giderleri / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 107)
-- 2026 Bütçe / Cari Transferler / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 107)
-- 2026 Bütçe / Cari Transferler / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 107)
-- 2026 Bütçe / Sermaye Giderleri / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 107)
-- 2026 Bütçe / Sermaye Giderleri / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 107)
-- 2026 Haziran Sonu Harcama / Personel Giderleri / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 107)
-- 2026 Haziran Sonu Harcama / Personel Giderleri / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 107)
-- 2026 Haziran Sonu Harcama / Sosyal Güvenlik Kurumuna Devlet Primi Giderleri / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 107)
-- 2026 Haziran Sonu Harcama / Sosyal Güvenlik Kurumuna Devlet Primi Giderleri / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 107)
-- 2026 Haziran Sonu Harcama / Mal ve Hizmet Alım Giderleri / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 107)
-- 2026 Haziran Sonu Harcama / Mal ve Hizmet Alım Giderleri / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 107)
-- 2026 Haziran Sonu Harcama / Cari Transferler / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 107)
-- 2026 Haziran Sonu Harcama / Cari Transferler / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 107)
-- 2026 Haziran Sonu Harcama / Sermaye Giderleri / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 107)
-- 2026 Haziran Sonu Harcama / Sermaye Giderleri / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 107)
-
-Uyarılar (0):
-
-Yok.
+- [ ] 0004.Mevcut barınak kapasitesinin artırılması ve teknik altyapının iyileştirilmesini sağlamak.: 2027 Bütçe / Toplam kaynak tutarı doğrulanmalı. 0004.Mevcut barınak kapasitesinin artırılması ve teknik altyapının iyileştirilmesini sağlamak.: 2027 Bütçe finansman bilgisi eksik. **Hücreler:** s.107 / T23 / sütun 5 / satır 11,12,13
+- [ ] 0004.Mevcut barınak kapasitesinin artırılması ve teknik altyapının iyileştirilmesini sağlamak.: 2028 Tahmin / Toplam kaynak tutarı doğrulanmalı. 0004.Mevcut barınak kapasitesinin artırılması ve teknik altyapının iyileştirilmesini sağlamak.: 2028 Tahmin finansman bilgisi eksik. **Hücreler:** s.107 / T23 / sütun 6 / satır 11,12,13
+- [ ] 0004.Mevcut barınak kapasitesinin artırılması ve teknik altyapının iyileştirilmesini sağlamak.: 2029 Tahmin / Toplam kaynak tutarı doğrulanmalı. 0004.Mevcut barınak kapasitesinin artırılması ve teknik altyapının iyileştirilmesini sağlamak.: 2029 Tahmin finansman bilgisi eksik. **Hücreler:** s.107 / T23 / sütun 7 / satır 11,12,13
+- [ ] Tablo 24, 2026 Bütçe: Bütçe İçi Toplam 78.140.000,00 TL, kategori satırlarının toplamı 80.767.000,00 TL; fark -2.627.000,00 TL. Kaynak tabloyu kontrol edin. **Hücreler:** s.107 / T24 / sütun 2 / satır 2,3,4,5,6,7,8,9
 
 ### Yazı İşleri Müdürlüğü
 
-Gönderime hazır: **Hayır**.
+Gönderime hazır: **Hayır**; 75 SOURCE mesajı / 27 kaynak kontrol maddesi.
 
-Kitap sayfaları: 223, 224, 225, 226, 227.
-
-Hatalar (75):
-
-- 0002.Alınan Kararların İlgili Birimlere İletilmesi: 2026 Haziran Sonu Harcama finansman bilgisi eksik. (kitap s. 227)
-- 0002.Alınan Kararların İlgili Birimlere İletilmesi: 2026 Yıl Sonu Tahmini finansman bilgisi eksik. (kitap s. 227)
-- 0002.Alınan Kararların İlgili Birimlere İletilmesi: 2026 Bütçe finansman bilgisi eksik. (kitap s. 227)
-- 0007.Dijital Nikah Yönetim Sisteminin Kurulması ve İşletilmesi.: 2026 Haziran Sonu Harcama finansman bilgisi eksik. (kitap s. 227)
-- 0007.Dijital Nikah Yönetim Sisteminin Kurulması ve İşletilmesi.: 2026 Yıl Sonu Tahmini finansman bilgisi eksik. (kitap s. 227)
-- 0007.Dijital Nikah Yönetim Sisteminin Kurulması ve İşletilmesi.: 2026 Bütçe finansman bilgisi eksik. (kitap s. 227)
-- 0008.Nikah Akdi ve Tescil İşlemlerinin Yürütülmesi.: 2026 Haziran Sonu Harcama finansman bilgisi eksik. (kitap s. 227)
-- 0008.Nikah Akdi ve Tescil İşlemlerinin Yürütülmesi.: 2026 Yıl Sonu Tahmini finansman bilgisi eksik. (kitap s. 227)
-- 0008.Nikah Akdi ve Tescil İşlemlerinin Yürütülmesi.: 2026 Bütçe finansman bilgisi eksik. (kitap s. 227)
-- 0009.Nikah Salonlarının Teknolojik ve Fiziksel Modernizasyonu.: 2026 Haziran Sonu Harcama finansman bilgisi eksik. (kitap s. 227)
-- 0009.Nikah Salonlarının Teknolojik ve Fiziksel Modernizasyonu.: 2026 Yıl Sonu Tahmini finansman bilgisi eksik. (kitap s. 227)
-- 0009.Nikah Salonlarının Teknolojik ve Fiziksel Modernizasyonu.: 2026 Bütçe finansman bilgisi eksik. (kitap s. 227)
-- 0010.Saha Hizmetleri İçin Mobil Altyapı Desteği.: 2026 Haziran Sonu Harcama finansman bilgisi eksik. (kitap s. 227)
-- 0010.Saha Hizmetleri İçin Mobil Altyapı Desteği.: 2026 Yıl Sonu Tahmini finansman bilgisi eksik. (kitap s. 227)
-- 0010.Saha Hizmetleri İçin Mobil Altyapı Desteği.: 2026 Bütçe finansman bilgisi eksik. (kitap s. 227)
-- 0011.Evlilik Öncesi Bilgilendirme ve Rehberlik Hizmetleri: 2026 Haziran Sonu Harcama finansman bilgisi eksik. (kitap s. 227)
-- 0011.Evlilik Öncesi Bilgilendirme ve Rehberlik Hizmetleri: 2026 Yıl Sonu Tahmini finansman bilgisi eksik. (kitap s. 227)
-- 0011.Evlilik Öncesi Bilgilendirme ve Rehberlik Hizmetleri: 2026 Bütçe finansman bilgisi eksik. (kitap s. 227)
-- 2026 Bütçe / Personel Giderleri / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 227)
-- 2026 Bütçe / Personel Giderleri / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 227)
-- 2026 Bütçe / Sosyal Güvenlik Kurumuna Devlet Primi Giderleri / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 227)
-- 2026 Bütçe / Sosyal Güvenlik Kurumuna Devlet Primi Giderleri / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 227)
-- 2026 Bütçe / Mal ve Hizmet Alım Giderleri / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 227)
-- 2026 Bütçe / Mal ve Hizmet Alım Giderleri / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 227)
-- 2026 Bütçe / Cari Transferler / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 227)
-- 2026 Bütçe / Cari Transferler / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 227)
-- 2026 Bütçe / Sermaye Giderleri / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 227)
-- 2026 Bütçe / Sermaye Giderleri / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 227)
-- 2026 Haziran Sonu Harcama / Personel Giderleri / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 227)
-- 2026 Haziran Sonu Harcama / Personel Giderleri / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 227)
-- 2026 Haziran Sonu Harcama / Sosyal Güvenlik Kurumuna Devlet Primi Giderleri / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 227)
-- 2026 Haziran Sonu Harcama / Sosyal Güvenlik Kurumuna Devlet Primi Giderleri / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 227)
-- 2026 Haziran Sonu Harcama / Mal ve Hizmet Alım Giderleri / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 227)
-- 2026 Haziran Sonu Harcama / Mal ve Hizmet Alım Giderleri / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 227)
-- 2026 Haziran Sonu Harcama / Cari Transferler / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 227)
-- 2026 Haziran Sonu Harcama / Cari Transferler / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 227)
-- 2026 Haziran Sonu Harcama / Sermaye Giderleri / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 227)
-- 2026 Haziran Sonu Harcama / Sermaye Giderleri / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 227)
-- 2027 Bütçe / Personel Giderleri / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 227)
-- 2027 Bütçe / Personel Giderleri / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 227)
-- 2027 Bütçe / Sosyal Güvenlik Kurumuna Devlet Primi Giderleri / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 227)
-- 2027 Bütçe / Sosyal Güvenlik Kurumuna Devlet Primi Giderleri / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 227)
-- 2027 Bütçe / Mal ve Hizmet Alım Giderleri / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 227)
-- 2027 Bütçe / Mal ve Hizmet Alım Giderleri / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 227)
-- 2027 Bütçe / Cari Transferler / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 227)
-- 2027 Bütçe / Cari Transferler / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 227)
-- 2027 Bütçe / Sermaye Giderleri / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 227)
-- 2027 Bütçe / Sermaye Giderleri / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 227)
-- 2028 Tahmin / Personel Giderleri / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 227)
-- 2028 Tahmin / Personel Giderleri / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 227)
-- 2028 Tahmin / Sosyal Güvenlik Kurumuna Devlet Primi Giderleri / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 227)
-- 2028 Tahmin / Sosyal Güvenlik Kurumuna Devlet Primi Giderleri / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 227)
-- 2028 Tahmin / Mal ve Hizmet Alım Giderleri / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 227)
-- 2028 Tahmin / Mal ve Hizmet Alım Giderleri / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 227)
-- 2028 Tahmin / Cari Transferler / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 227)
-- 2028 Tahmin / Cari Transferler / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 227)
-- 2028 Tahmin / Sermaye Giderleri / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 227)
-- 2028 Tahmin / Sermaye Giderleri / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 227)
-- 2029 Tahmin / Personel Giderleri / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 227)
-- 2029 Tahmin / Personel Giderleri / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 227)
-- 2029 Tahmin / Sosyal Güvenlik Kurumuna Devlet Primi Giderleri / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 227)
-- 2029 Tahmin / Sosyal Güvenlik Kurumuna Devlet Primi Giderleri / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 227)
-- 2029 Tahmin / Mal ve Hizmet Alım Giderleri / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 227)
-- 2029 Tahmin / Mal ve Hizmet Alım Giderleri / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 227)
-- 2029 Tahmin / Cari Transferler / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 227)
-- 2029 Tahmin / Cari Transferler / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 227)
-- 2029 Tahmin / Sermaye Giderleri / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 227)
-- 2029 Tahmin / Sermaye Giderleri / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 227)
-- 2027: ortak maliyet ve ekonomik tablo toplamları uyuşmuyor. (kitap s. 227)
-- 2027: bütçe içi faaliyet ve ekonomik toplamları uyuşmuyor. (kitap s. 227)
-- 2028: ortak maliyet ve ekonomik tablo toplamları uyuşmuyor. (kitap s. 227)
-- 2028: ekonomik personel/SGK satırları ortak tablodan farklı. (kitap s. 227)
-- 2028: bütçe içi faaliyet ve ekonomik toplamları uyuşmuyor. (kitap s. 227)
-- 2029: ortak maliyet ve ekonomik tablo toplamları uyuşmuyor. (kitap s. 227)
-- 2029: bütçe içi faaliyet ve ekonomik toplamları uyuşmuyor. (kitap s. 227)
-
-Uyarılar (0):
-
-Yok.
+- [ ] 2027: bütçe içi faaliyet ve ekonomik toplamları uyuşmuyor. Faaliyet toplamı 16.330.730,00; ortak personel/SGK 24.700.000,00; ekonomik kategori toplamı 41.026.130,00; ekonomik personel/SGK 24.700.000,00 TL. 2027: ortak maliyet ve ekonomik tablo toplamları uyuşmuyor. Faaliyet toplamı 16.330.730,00; ortak personel/SGK 24.700.000,00; ekonomik kategori toplamı 41.026.130,00; ekonomik personel/SGK 24.700.000,00 TL. **Hücreler:** s.227 / T179 / sütun 5 / satır 2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,38; s.227 / T180 / sütun 4 / satır 2,3,4,5,6,7,8,9
+- [ ] 2028: bütçe içi faaliyet ve ekonomik toplamları uyuşmuyor. Faaliyet toplamı 19.452.675,00; ortak personel/SGK 30.875.000,00; ekonomik kategori toplamı 52.230.432,00; ekonomik personel/SGK 30.882.000,00 TL. 2028: ortak maliyet ve ekonomik tablo toplamları uyuşmuyor. Faaliyet toplamı 19.452.675,00; ortak personel/SGK 30.875.000,00; ekonomik kategori toplamı 52.230.432,00; ekonomik personel/SGK 30.882.000,00 TL. **Hücreler:** s.227 / T179 / sütun 6 / satır 2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,38; s.227 / T180 / sütun 5 / satır 2,3,4,5,6,7,8,9
+- [ ] 2029: bütçe içi faaliyet ve ekonomik toplamları uyuşmuyor. Faaliyet toplamı 19.555.001,00; ortak personel/SGK 38.593.750,00; ekonomik kategori toplamı 60.188.800,00; ekonomik personel/SGK 38.593.750,00 TL. 2029: ortak maliyet ve ekonomik tablo toplamları uyuşmuyor. Faaliyet toplamı 19.555.001,00; ortak personel/SGK 38.593.750,00; ekonomik kategori toplamı 60.188.800,00; ekonomik personel/SGK 38.593.750,00 TL. **Hücreler:** s.227 / T179 / sütun 7 / satır 2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,38; s.227 / T180 / sütun 6 / satır 2,3,4,5,6,7,8,9
+- [ ] 0002.Alınan Kararların İlgili Birimlere İletilmesi: 2026 Bütçe finansman bilgisi eksik. **Hücreler:** s.227 / T179 / sütun 2 / satır 5,6,7
+- [ ] 0002.Alınan Kararların İlgili Birimlere İletilmesi: 2026 Haziran Sonu Harcama finansman bilgisi eksik. **Hücreler:** s.227 / T179 / sütun 3 / satır 5,6,7
+- [ ] 0002.Alınan Kararların İlgili Birimlere İletilmesi: 2026 Yıl Sonu Tahmini finansman bilgisi eksik. **Hücreler:** s.227 / T179 / sütun 4 / satır 5,6,7
+- [ ] 0007.Dijital Nikah Yönetim Sisteminin Kurulması ve İşletilmesi.: 2026 Bütçe finansman bilgisi eksik. **Hücreler:** s.227 / T179 / sütun 2 / satır 20,21,22
+- [ ] 0007.Dijital Nikah Yönetim Sisteminin Kurulması ve İşletilmesi.: 2026 Haziran Sonu Harcama finansman bilgisi eksik. **Hücreler:** s.227 / T179 / sütun 3 / satır 20,21,22
+- [ ] 0007.Dijital Nikah Yönetim Sisteminin Kurulması ve İşletilmesi.: 2026 Yıl Sonu Tahmini finansman bilgisi eksik. **Hücreler:** s.227 / T179 / sütun 4 / satır 20,21,22
+- [ ] 0008.Nikah Akdi ve Tescil İşlemlerinin Yürütülmesi.: 2026 Bütçe finansman bilgisi eksik. **Hücreler:** s.227 / T179 / sütun 2 / satır 23,24,25
+- [ ] 0008.Nikah Akdi ve Tescil İşlemlerinin Yürütülmesi.: 2026 Haziran Sonu Harcama finansman bilgisi eksik. **Hücreler:** s.227 / T179 / sütun 3 / satır 23,24,25
+- [ ] 0008.Nikah Akdi ve Tescil İşlemlerinin Yürütülmesi.: 2026 Yıl Sonu Tahmini finansman bilgisi eksik. **Hücreler:** s.227 / T179 / sütun 4 / satır 23,24,25
+- [ ] 0009.Nikah Salonlarının Teknolojik ve Fiziksel Modernizasyonu.: 2026 Bütçe finansman bilgisi eksik. **Hücreler:** s.227 / T179 / sütun 2 / satır 26,27,28
+- [ ] 0009.Nikah Salonlarının Teknolojik ve Fiziksel Modernizasyonu.: 2026 Haziran Sonu Harcama finansman bilgisi eksik. **Hücreler:** s.227 / T179 / sütun 3 / satır 26,27,28
+- [ ] 0009.Nikah Salonlarının Teknolojik ve Fiziksel Modernizasyonu.: 2026 Yıl Sonu Tahmini finansman bilgisi eksik. **Hücreler:** s.227 / T179 / sütun 4 / satır 26,27,28
+- [ ] 0010.Saha Hizmetleri İçin Mobil Altyapı Desteği.: 2026 Bütçe finansman bilgisi eksik. **Hücreler:** s.227 / T179 / sütun 2 / satır 29,30,31
+- [ ] 0010.Saha Hizmetleri İçin Mobil Altyapı Desteği.: 2026 Haziran Sonu Harcama finansman bilgisi eksik. **Hücreler:** s.227 / T179 / sütun 3 / satır 29,30,31
+- [ ] 0010.Saha Hizmetleri İçin Mobil Altyapı Desteği.: 2026 Yıl Sonu Tahmini finansman bilgisi eksik. **Hücreler:** s.227 / T179 / sütun 4 / satır 29,30,31
+- [ ] 0011.Evlilik Öncesi Bilgilendirme ve Rehberlik Hizmetleri: 2026 Bütçe finansman bilgisi eksik. **Hücreler:** s.227 / T179 / sütun 2 / satır 32,33,34
+- [ ] 0011.Evlilik Öncesi Bilgilendirme ve Rehberlik Hizmetleri: 2026 Haziran Sonu Harcama finansman bilgisi eksik. **Hücreler:** s.227 / T179 / sütun 3 / satır 32,33,34
+- [ ] 0011.Evlilik Öncesi Bilgilendirme ve Rehberlik Hizmetleri: 2026 Yıl Sonu Tahmini finansman bilgisi eksik. **Hücreler:** s.227 / T179 / sütun 4 / satır 32,33,34
+- [ ] 2028: ekonomik personel/SGK satırları ortak tablodan farklı. Faaliyet toplamı 19.452.675,00; ortak personel/SGK 30.875.000,00; ekonomik kategori toplamı 52.230.432,00; ekonomik personel/SGK 30.882.000,00 TL. **Hücreler:** s.227 / T179 / sütun 6 / satır 38; s.227 / T180 / sütun 5 / satır 2,3,4,5,6,7,8,9
+- [ ] Tablo 180, 2026 Bütçe: Program grubu dağılımı kaynakta ayrılmamış. Programlar: Yönetim ve Destek Programı; Yoksullukla Mücadele Ve Sosyal Yardımlaşma Programı; Vatandaşlık ve Sivil Toplum Programı. Tutarları program gruplarına göre doğrulayın. Kaynak tabloyu kontrol edin. **Hücreler:** s.227 / T180 / sütun 2 / satır 2,3,4,5,6,7,8,9; s.223 / T171 / sütun 2 / satır 2; s.224 / T173 / sütun 2 / satır 2; s.225 / T175 / sütun 2 / satır 2; s.226 / T177 / sütun 2 / satır 2
+- [ ] Tablo 180, 2026 Haziran Sonu Harcama: Program grubu dağılımı kaynakta ayrılmamış. Programlar: Yönetim ve Destek Programı; Yoksullukla Mücadele Ve Sosyal Yardımlaşma Programı; Vatandaşlık ve Sivil Toplum Programı. Tutarları program gruplarına göre doğrulayın. Kaynak tabloyu kontrol edin. **Hücreler:** s.227 / T180 / sütun 3 / satır 2,3,4,5,6,7,8,9; s.223 / T171 / sütun 2 / satır 2; s.224 / T173 / sütun 2 / satır 2; s.225 / T175 / sütun 2 / satır 2; s.226 / T177 / sütun 2 / satır 2
+- [ ] Tablo 180, 2027 Bütçe: Program grubu dağılımı kaynakta ayrılmamış. Programlar: Yönetim ve Destek Programı; Yoksullukla Mücadele Ve Sosyal Yardımlaşma Programı; Vatandaşlık ve Sivil Toplum Programı. Tutarları program gruplarına göre doğrulayın. Kaynak tabloyu kontrol edin. **Hücreler:** s.227 / T180 / sütun 4 / satır 2,3,4,5,6,7,8,9; s.223 / T171 / sütun 2 / satır 2; s.224 / T173 / sütun 2 / satır 2; s.225 / T175 / sütun 2 / satır 2; s.226 / T177 / sütun 2 / satır 2
+- [ ] Tablo 180, 2028 Tahmin: Bütçe İçi Toplam 52.223.432,00 TL, kategori satırlarının toplamı 52.230.432,00 TL; fark -7.000,00 TL. Kaynak tabloyu kontrol edin.<br>Tablo 180, 2028 Tahmin: Program grubu dağılımı kaynakta ayrılmamış. Programlar: Yönetim ve Destek Programı; Yoksullukla Mücadele Ve Sosyal Yardımlaşma Programı; Vatandaşlık ve Sivil Toplum Programı. Tutarları program gruplarına göre doğrulayın. Kaynak tabloyu kontrol edin. Tablo 180, 2028 Tahmin: Bütçe İçi Toplam 52.223.432,00 TL, kategori satırlarının toplamı 52.230.432,00 TL; fark -7.000,00 TL. Kaynak tabloyu kontrol edin.<br>Tablo 180, 2028 Tahmin: Program grubu dağılımı kaynakta ayrılmamış. Programlar: Yönetim ve Destek Programı; Yoksullukla Mücadele Ve Sosyal Yardımlaşma Programı; Vatandaşlık ve Sivil Toplum Programı. Tutarları program gruplarına göre doğrulayın. Kaynak tabloyu kontrol edin.<br>Tablo 180, 2028 Tahmin: Personel ve SGK satırları ortak personel tablosundan farklı; ekonomik toplam 30.882.000,00 TL, ortak personel toplamı 30.875.000,00 TL; fark 7.000,00 TL. İki kaynağı karşılaştırın. **Hücreler:** s.227 / T180 / sütun 5 / satır 2,3,4,5,6,7,8,9; s.223 / T171 / sütun 2 / satır 2; s.224 / T173 / sütun 2 / satır 2; s.225 / T175 / sütun 2 / satır 2; s.226 / T177 / sütun 2 / satır 2; s.227 / T179 / sütun 6 / satır 38
+- [ ] Tablo 180, 2029 Tahmin: Program grubu dağılımı kaynakta ayrılmamış. Programlar: Yönetim ve Destek Programı; Yoksullukla Mücadele Ve Sosyal Yardımlaşma Programı; Vatandaşlık ve Sivil Toplum Programı. Tutarları program gruplarına göre doğrulayın. Kaynak tabloyu kontrol edin. **Hücreler:** s.227 / T180 / sütun 6 / satır 2,3,4,5,6,7,8,9; s.223 / T171 / sütun 2 / satır 2; s.224 / T173 / sütun 2 / satır 2; s.225 / T175 / sütun 2 / satır 2; s.226 / T177 / sütun 2 / satır 2
 
 ### Zabıta Müdürlüğü
 
-Gönderime hazır: **Hayır**.
+Gönderime hazır: **Hayır**; 8 SOURCE mesajı / 1 kaynak kontrol maddesi.
 
-Kitap sayfaları: 102, 103, 104.
+- [ ] Tablo 20, 2026 Haziran Sonu Harcama: Bütçe İçi Toplam 45.863.621,38 TL, kategori satırlarının toplamı 51.258.201,04 TL; fark -5.394.579,66 TL. Kaynak tabloyu kontrol edin. **Hücreler:** s.104 / T20 / sütun 3 / satır 2,3,4,5,6,7,8
 
-Hatalar (8):
+## Dönüşüm ve varsayımlar
 
-- 2026 Haziran Sonu Harcama / Personel Giderleri / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 104)
-- 2026 Haziran Sonu Harcama / Personel Giderleri / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 104)
-- 2026 Haziran Sonu Harcama / Sosyal Güvenlik Kurumuna Devlet Primi Giderleri / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 104)
-- 2026 Haziran Sonu Harcama / Sosyal Güvenlik Kurumuna Devlet Primi Giderleri / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 104)
-- 2026 Haziran Sonu Harcama / Mal ve Hizmet Alım Giderleri / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 104)
-- 2026 Haziran Sonu Harcama / Mal ve Hizmet Alım Giderleri / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 104)
-- 2026 Haziran Sonu Harcama / Cari Transferler / Bütçe İçi: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 104)
-- 2026 Haziran Sonu Harcama / Cari Transferler / Bütçe Dışı: ekonomik kaynak tutarı ve program grubu doğrulanmalı. (kitap s. 104)
+Eşlenmeyen ad (ham metin korundu, yerleşik müdürlük eşlemesi uygulandı): Gelirler Müdürlüğü (Bütçe İşletme Şefliği).
 
-Uyarılar (0):
+Basılı sayfaya bağlı olmayan tablolar (dışlama seçeneğinden bağımsız; yüklemeye alınmaz): [{"id": "ubbb4ibbe3", "type": "cost"}, {"id": "ubbb4ibbcb", "type": "economic"}, {"id": "ubb2aibb60", "type": "card"}, {"id": "ubb2aibb40", "type": "membership"}].
 
-Yok.
+Teyit bekleyen ad eşlemeleri: Gençlik ve Spor Hizmetleri Müdürlüğü; Sosyal Hizmetler Müdürlüğü; Basın Yayın ve Halkla İlişkiler Müdürlüğü; Harita ve Planlama Müdürlüğü; Araştırma ve Geliştirme Müdürlüğü. Program/alt program kodları kitapta yoktur ve boş bırakılır. Tekil müdürlük içi faaliyet kodu üyeliği belirler. Resmî katalog 0006 Özel Kalem gibi maliyet karşılığı bulunmayan üyelikleri korur; yeni maliyet üretilmez. Nihai kitap dışlamasız yeniden denenmelidir.

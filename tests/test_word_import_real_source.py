@@ -108,12 +108,24 @@ def test_real_source_matches_960d62c_baseline(real_source, real_parsed):
     summary = dict(real_parsed['summary'])
     # CIV-005 deliberately includes the one nested table, unlike 960d62c.
     assert summary.pop('table_count') == baseline['summary']['table_count'] + 1 == 162
-    assert summary == {k: v for k, v in baseline['summary'].items() if k != 'table_count'}
+    expected = {k: v for k, v in baseline['summary'].items() if k != 'table_count'}
+    # CIV-042: two valid ₺-prefixed totals no longer mark ten economic
+    # category/funding cells for review. The frozen source fixture stays intact.
+    assert expected['needs_review_count'] == 440
+    expected['needs_review_count'] = 430
+    assert summary == expected
     assert real_parsed['errors'] == real_parsed['warnings'] == []
     economic_snapshot = [{'department': d['name'], 'tables': d.get('economic_tables', [])}
                          for d in real_parsed['departments']]
     digest = hashlib.sha256(json.dumps(economic_snapshot, ensure_ascii=False, sort_keys=True).encode()).hexdigest()
-    assert digest == baseline['economic_snapshot_sha256']
+    # Approved semantic change only: valid currency-prefix amounts and their
+    # propagated review flags. Raw book cells and all other fields remain exact.
+    assert digest == '46c76bc9427a3fd491215a429860d9f5a2e544863c1464564ef4a42f7b5f16a9'
+    currency_totals = [v for d in real_parsed['departments'] for t in d.get('economic_tables', [])
+                       for values in t['totals'].values() for v in values if v['raw_text'].startswith('₺')]
+    assert len(currency_totals) == 2
+    assert all((v['amount'], v['state'], v['raw_text']) == ('10424938.95', 'verified', '₺10.424.938,95')
+               for v in currency_totals)
     headers = {'Performans Göstergesi', 'Performans Göstergeleri', 'Ölçü Birimi',
                '2025 Yılı Gerçekleşme', '2027 Hedef', '2028 Tahmin', '2029 Tahmini'}
     assert not any(i['name'] in headers for d in real_parsed['departments'] for b in d['blocks'] for i in b['indicators'])
@@ -151,7 +163,7 @@ def test_real_source_preview_is_applicable(import_client, import_context, real_s
     duplicates = [r for r in result['review_items'] if r.get('cause', '').startswith('duplicate_')]
     assert Counter(r['cause'] for r in duplicates) == {'duplicate_programme_block': 11, 'duplicate_indicator': 8}
     assert detail['review_items'] == result['review_items']
-    assert result['summary']['needs_review_count'] == len(result['review_items']) == 508
+    assert result['summary']['needs_review_count'] == len(result['review_items']) == 498
 
 
 def test_real_source_duplicate_evidence_and_economic_causes(real_parsed):
@@ -167,13 +179,13 @@ def test_real_source_duplicate_evidence_and_economic_causes(real_parsed):
     reasons = [c for v in values for c in v.get('review_causes', [])]
     # Counts overlap: one value/column can have several independent causes.
     assert Counter(c['cause'] for c in reasons) == {
-        'inside_total_mismatch': 180, 'source_cell_unverified': 150,
+        'inside_total_mismatch': 180, 'source_cell_unverified': 130,
         'program_group_unallocated': 140, 'personnel_total_mismatch': 8}
     assert Counter(cause for cause, message in {(c['cause'], c['message']) for c in reasons}) == {
-        'inside_total_mismatch': 22, 'source_cell_unverified': 21,
+        'inside_total_mismatch': 22, 'source_cell_unverified': 19,
         'program_group_unallocated': 15, 'personnel_total_mismatch': 2}
     assert Counter(cause for v in values for cause in {c['cause'] for c in v.get('review_causes', [])}) == {
-        'inside_total_mismatch': 180, 'source_cell_unverified': 100,
+        'inside_total_mismatch': 180, 'source_cell_unverified': 90,
         'program_group_unallocated': 140, 'personnel_total_mismatch': 8}
     assert all('Tablo ' in c['message'] and '202' in c['message'] for c in reasons)
     assert not any('Ekonomik satırlar, kaynak toplamları' in v.get('issue', '') for v in values)

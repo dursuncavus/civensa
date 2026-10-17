@@ -1,10 +1,12 @@
 """CIV-042: IDML -> Word -> real import -> audited first-load catalogue."""
 from copy import deepcopy
 import json
+import io
 from zipfile import ZipFile
 import xml.etree.ElementTree as ET
 
 from fastapi import HTTPException
+from docx import Document
 import pytest
 from sqlalchemy import func, select
 
@@ -243,3 +245,32 @@ def test_catalogue_link_route_uses_shared_service_with_audit(client, db, sample)
     audit = db.scalar(select(AuditLog).where(AuditLog.action == 'catalogue_link'))
     assert audit.user_id == sample['user'].id
     assert json.loads(audit.details)['official_ids'] == []
+
+
+def test_coded_explanations_do_not_shift_after_an_unlabelled_or_duplicate_title():
+    from test_word_import import word_document
+    doc = Document(io.BytesIO(word_document()))
+    table = doc.tables[1]
+    # Two activities, then explanations in reverse order. A duplicate wrong title
+    # must not consume the next activity's explanation by position.
+    for row in list(table.rows)[4:]:
+        table._tbl.remove(row._tr)
+    table.cell(1, 0).text = '0001.Park bakımı'
+    for texts in [
+        ('0002.Ağaç dikimi', '1', '1', '1'), ('Bütçe İçi', '1', '1', '1'), ('Bütçe Dışı', '0', '0', '0'),
+        ('Faaliyetlere İlişkin Açıklamalar', '', '', ''),
+        ('0002.Faaliyet Adı: Ağaç dikimi', '', '', ''), ('Ağaç açıklaması', '', '', ''),
+        ('0001.Park bakımı', '', '', ''), ('Park açıklaması', '', '', ''),
+        ('0002.Faaliyet Adı: Kaynaktan yanlış kopyalanmış başlık', '', '', ''), ('Yanlış açıklama', '', '', '')]:
+        for cell, text in zip(table.add_row().cells, texts):
+            cell.text = text
+    output = io.BytesIO(); doc.save(output)
+    activities = parse_performance_docx(output.getvalue())['departments'][0]['activities']
+    assert [a['explanation'] for a in activities] == ['Park açıklaması', 'Ağaç açıklaması']
+
+
+def test_money_source_accepts_lira_prefix_without_losing_raw_text():
+    from app.numbers import source_cell
+    assert source_cell('₺10.424.938,95', money=True) == dict(
+        number='10424938.95', raw_text='₺10.424.938,95', state='verified')
+    assert source_cell('₺10.424.938,95 bilinmeyen', money=True)['state'] == 'needs_review'
