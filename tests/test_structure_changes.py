@@ -217,7 +217,7 @@ def test_scope_budget_code_and_dates(db,sample,live_client):
     assert result.status_code==422 and 'başlangıç tarihi' in result.text
 
 
-@pytest.mark.parametrize('foundation_db',['b0262027a001'],indirect=True)
+@pytest.mark.parametrize('foundation_db',['c0292027a001'],indirect=True)
 def test_additive_migration_preserves_rows_names_and_guards_after_downgrade(foundation_db):
     db=foundation_db
     db.execute(text("INSERT INTO organizations (id,name) VALUES (1,'Pilot')"))
@@ -241,13 +241,14 @@ def test_additive_migration_preserves_rows_names_and_guards_after_downgrade(foun
         for mutation in (f'DELETE FROM {table}',f'UPDATE {table} SET id=id'):
             with pytest.raises(DBAPIError): db.execute(text(mutation));db.commit()
             db.rollback()
-    migrate('downgrade','b0262027a001')
+    migrate('downgrade','c0292027a001')
     assert db.execute(text('SELECT COUNT(*) FROM structure_changes')).scalar()==1
     assert db.execute(text('SELECT COUNT(*) FROM structure_change_links')).scalar()==1
     assert db.execute(text('SELECT display_name FROM department_scopes')).scalar()=='Eski Ad'
     db.commit();migrate('upgrade','head')
     scripts=ScriptDirectory.from_config(Config(str(ROOT/'alembic.ini')))
     assert scripts.get_heads()==['c0272027a001']
+    assert scripts.get_revision('c0272027a001').down_revision == 'c0292027a001'
     assert db.execute(text('SELECT COUNT(*) FROM departments')).scalar()==2
     assert db.execute(text('SELECT COUNT(*) FROM structure_change_transfers')).scalar()==1
     assert db.execute(text('SELECT COUNT(*) FROM structure_change_cancellations')).scalar()==1

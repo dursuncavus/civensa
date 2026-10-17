@@ -32,11 +32,11 @@ def test_assurance_migration_guards_and_lossless_downgrade(tmp_path, backend):
         return result.stderr
     try:
         migrate('upgrade', 'c0382027a001')
-        migrate('upgrade', 'head'); migrate('upgrade', 'head')
+        migrate('upgrade', 'c0292027a001'); migrate('upgrade', 'c0292027a001')
         assert 'ar_assurance_statements' in inspect(engine).get_table_names()
         migrate('downgrade', 'c0382027a001')
         assert 'ar_assurance_statements' not in inspect(engine).get_table_names()
-        migrate('upgrade', 'head')
+        migrate('upgrade', 'c0292027a001')
         with engine.begin() as conn:
             conn.execute(text("INSERT INTO organizations(id,name) VALUES (1,'Belediye')"))
             conn.execute(text("INSERT INTO reporting_periods(id,year,status,template_status) VALUES (1,2027,'active','verified')"))

@@ -91,7 +91,7 @@ def sample(db):
     # Historical checkpoints also predate CIV-027. Model-based fixtures need
     # today's nullable profile fields and empty journal tables so existing
     # workflow snapshot tests can still use the current ORM. The CIV-027
-    # migration regression seeds raw b026 rows without this adapter.
+    # migration regression seeds raw c029 rows without this adapter.
     schema = db.get_bind().get_execution_options().get('schema_translate_map', {}).get(None)
     scope_columns = {c['name'] for c in inspect(db.connection()).get_columns('department_scopes', schema=schema)}
     for column, kind in [('budget_code', 'TEXT'), ('active_from', 'DATE'), ('active_to', 'DATE')]:

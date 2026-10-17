@@ -14,6 +14,7 @@ from openpyxl import Workbook, load_workbook
 from openpyxl.utils.exceptions import InvalidFileException
 from sqlalchemy import select
 from . import activity_sections_service as sections
+from .structure_service import period_name
 from .models import (ARBudgetRow, ARFinancialPolicy, ARFinancialEntry, ARFinancialStatement,
     ARFinancialImport, ARDocument, Department, ReportingPeriod, Program, SubProgram, Publication)
 from .numbers import parse_number, format_number
@@ -344,9 +345,9 @@ def pp_references(db,doc):
     return result,pub.id
 
 
-def budget_label(db,item):
+def budget_label(db,item,period_id):
     dep=db.get(Department,item.get('department_id')) if item.get('department_id') else None
-    parts=[dep.name if dep else 'İdare']
+    parts=[period_name(db,period_id,dep) if dep else 'İdare']
     if item.get('economic_code'):parts.append(item['economic_code'])
     else:
         program=db.get(Program,item.get('program_id'))
@@ -380,11 +381,11 @@ def financial_data(db,doc):
             if doc.department_id and record.department_id!=doc.department_id:continue
             item=calculated(budget_raw(record),kind)
             item.update(id=record.id,import_id=record.import_id,
-                department=db.get(Department,record.department_id).name if record.department_id else 'İdare',
+                department=period_name(db,doc.period_id,db.get(Department,record.department_id)) if record.department_id else 'İdare',
                 pp_budget=refs.get((record.department_id,record.economic_code)),pp_publication_id=pub_id,
                 birim_explanation=overrides.get(record.row_key,''))
             rows.append(item)
-            label=budget_label(db,item)
+            label=budget_label(db,item,doc.period_id)
             rate=item['rate'];p=result['policy']
             if rate is not None and ((p['lower_rate'] is not None and rate<p['lower_rate']) or (p['upper_rate'] is not None and rate>p['upper_rate'])) and not (item['explanation'] or item['birim_explanation']):
                 result['missing']['III.A.1'].append(f"Sapma açıklaması gerekli: {label}, gerçekleşme %{format_number(rate)}. Satırın sapma açıklamasını doldurun.")
@@ -399,11 +400,11 @@ def financial_data(db,doc):
         expected=([doc.department_id] if doc.department_id else [u.department_id for u in units]) if kind!='revenue' else []
         missing_deps=[dep for dep in expected if dep not in groups]
         for dep in missing_deps:
-            name=db.get(Department,dep).name
+            name=period_name(db,doc.period_id,db.get(Department,dep))
             result['missing']['III.A.1'].append(f"{name}: {'Ekonomik kod' if kind=='expenditure' else 'Program / alt program'} gider satırları eksik. Mali Hizmetler ilgili müdürlüğün tutarlarını girmeli; gerçek tutar sıfırsa 0 kullanılmalı.")
             groups[dep]=[]
         result['tables'][kind]={'rows':rows,'totals':totals(rows,kind,len(missing_deps)),'by_department':[
-            {'department_id':dep,'department':group[0]['department'] if group else db.get(Department,dep).name,
+            {'department_id':dep,'department':group[0]['department'] if group else period_name(db,doc.period_id,db.get(Department,dep)),
              'totals':totals(group,kind,int(not group))} for dep,group in groups.items()]}
     for kind in ('expenditure','programme'):
         if not result['tables'][kind]['rows']:result['missing']['III.A.1'].append(f"{'Ekonomik kod' if kind=='expenditure' else 'Program / alt program'} gider tablosu boş. Mali Hizmetler verileri geldiğinde giriş veya XLSX içe aktarma yapın.")
@@ -413,7 +414,7 @@ def financial_data(db,doc):
     for dep_id in dep_ids+([None] if not doc.department_id else []):
         er=[r for r in exp if dep_id is None or r['department_id']==dep_id];pr=[r for r in prog if dep_id is None or r['department_id']==dep_id]
         et=totals(er,'expenditure');pt=totals(pr,'programme')
-        label='İdare' if dep_id is None else db.get(Department,dep_id).name
+        label='İdare' if dep_id is None else period_name(db,doc.period_id,db.get(Department,dep_id))
         for field in et:
             if field=='rate':continue
             a,b=et[field],pt[field]
@@ -425,7 +426,7 @@ def financial_data(db,doc):
     for kind in ('assets','aid','audit','explanations'):
         result['entries'][kind]=entries(db,doc,kind)
         if not doc.department_id and kind in {'aid','audit'}:
-            result['entries'][kind+'_directorates']=[{'department':db.get(Department,u.department_id).name,**item} for u in units for item in entries(db,u,kind)]
+            result['entries'][kind+'_directorates']=[{'department':period_name(db,doc.period_id,db.get(Department,u.department_id)),**item} for u in units for item in entries(db,u,kind)]
     if not doc.department_id:
         result['statements']=[statement_data(s) for s in db.scalars(select(ARFinancialStatement).where(ARFinancialStatement.document_id==doc.id).order_by(ARFinancialStatement.id))]
         names={s['name'] for s in result['statements']}
@@ -492,10 +493,10 @@ def preview_import(db,user,document_id,kind,data,expected_revision):
     old=stored_rows(db,doc,kind)
     manual={r.row_key for r in old if r.import_id is None}
     for item in normalized:
-        if item['row_key'] in manual:errors.append({'row':None,'message':f"{budget_label(db,item)}: Elle girilmiş satırla çakışıyor. Elle girilmiş kaydı korumak için dosyadaki satırı kaldırın."})
+        if item['row_key'] in manual:errors.append({'row':None,'message':f"{budget_label(db,item,doc.period_id)}: Elle girilmiş satırla çakışıyor. Elle girilmiş kaydı korumak için dosyadaki satırı kaldırın."})
     imported={r.row_key:budget_raw(r) for r in old if r.import_id is not None}
     new={r['row_key']:r for r in normalized}
-    diff=[{'row_key':key,'label':budget_label(db,new.get(key) or imported[key]),'action':'removed' if key not in new else 'added' if key not in imported else 'changed',
+    diff=[{'row_key':key,'label':budget_label(db,new.get(key) or imported[key],doc.period_id),'action':'removed' if key not in new else 'added' if key not in imported else 'changed',
         'before':imported.get(key),'after':new.get(key)} for key in sorted(imported.keys()|new.keys()) if imported.get(key)!=new.get(key)]
     preview={'rows':normalized,'errors':errors,'differences':diff}
     record=ARFinancialImport(document_id=doc.id,kind=kind,revision=doc.revision,source_sha256=hashlib.sha256(data).hexdigest(),

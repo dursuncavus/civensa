@@ -6,7 +6,7 @@ from alembic import op
 import sqlalchemy as sa
 
 revision = 'c0272027a001'
-down_revision = 'b0262027a001'
+down_revision = 'c0292027a001'
 branch_labels = depends_on = None
 
 TABLES = ('structure_changes', 'structure_change_links', 'structure_change_transfers', 'structure_change_cancellations')
