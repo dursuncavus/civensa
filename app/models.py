@@ -38,6 +38,7 @@ class User(Base):
     full_name: Mapped[str] = mapped_column(String(200))
     role: Mapped[str] = mapped_column(String(30))
     password_hash: Mapped[str] = mapped_column(String(255))
+    must_change_password: Mapped[bool] = mapped_column(Boolean, default=False, server_default=text("false"))
     department_id: Mapped[int | None] = mapped_column(ForeignKey("departments.id"), nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, server_default="1")
     position: Mapped[str] = mapped_column(String(20), default="staff", server_default="staff")

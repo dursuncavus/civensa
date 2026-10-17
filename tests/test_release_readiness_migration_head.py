@@ -91,6 +91,18 @@ def test_database_at_alembic_head_is_ready(readiness):
     assert payload["status"] == "ready"
 
 
+def test_personal_staff_accounts_do_not_block_readiness_or_hide_missing_directorates(readiness, db, sample):
+    from app.models import Department, User
+    db.add(User(email='personal-readiness@example.invalid', full_name='Kişisel Personel', role='department',
+                department_id=sample['department'].id, password_hash='unused'))
+    db.add(Department(organization_id=sample['department'].organization_id, name='Hesabı Olmayan Müdürlük'))
+    db.commit()
+    payload = readiness()
+    assert payload['checks']['no_duplicate_active_department_accounts']
+    assert '1 müdürlüğün etkin hesabı yok.' in payload['warnings']
+    assert payload["status"] == "ready"
+
+
 def test_database_behind_head_is_still_blocked(readiness):
     from app.main import migration_head
 

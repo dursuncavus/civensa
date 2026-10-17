@@ -92,6 +92,10 @@ def sample(db):
         db.execute(text("ALTER TABLE users ADD COLUMN position VARCHAR(20) NOT NULL DEFAULT 'staff' "
                         "CONSTRAINT ck_user_position CHECK (position IN ('staff', 'director')) "
                         "CONSTRAINT ck_director_department CHECK (position != 'director' OR department_id IS NOT NULL)"))
+    if 'must_change_password' not in user_columns:
+        # Only model-based historical workflow seeds use this adapter. The
+        # CIV-044 migration test inserts raw c031 rows to exercise the real upgrade.
+        db.execute(text('ALTER TABLE users ADD COLUMN must_change_password BOOLEAN NOT NULL DEFAULT false'))
     if 'can_submit' not in user_columns:
         db.execute(text("ALTER TABLE users ADD COLUMN can_submit BOOLEAN NOT NULL DEFAULT false"))
     # Historical checkpoints also predate CIV-027. Model-based fixtures need
