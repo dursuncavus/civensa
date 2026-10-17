@@ -318,6 +318,9 @@ def build_department_plan(db: Session, parsed: dict, decisions=()) -> dict:
 
 def import_validation_errors(parsed: dict) -> list[str]:
     errors = list(parsed.get("errors", []))
+    for table in parsed.get('rejected_economic_tables', []):
+        if table['error'] not in errors:
+            errors.append(table['error'])
     blocks = [block for dept in parsed.get("departments", []) for block in dept.get("blocks", [])]
     if not blocks and not errors:
         errors.append("Dosyada tanınan performans göstergesi tablosu bulunamadı. Bakanlık gösterge şablonunu ve Performans Göstergeleri başlığını kontrol edip dosyayı yeniden yükleyin.")
