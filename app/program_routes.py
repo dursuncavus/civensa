@@ -160,14 +160,14 @@ def register(app):
 
     @app.post('/program/{department_id}/verify-money/{kind}/{value_id}')
     async def verify_money(department_id:int,kind:str,value_id:int,request:Request,db:Session=Depends(get_db),user:User=Depends(require_user)):
-        model=ActivityCostValue if kind=='activity' else DepartmentCostValue if kind=='personnel' else None
+        data=await request.form()
+        model={'activity':ActivityCostValue,'personnel':DepartmentCostValue,'economic':EconomicValue}.get(kind)
         if not model:raise HTTPException(404)
         value=db.get(model,value_id)
         if not value:raise HTTPException(404)
         owner=value.activity if kind=='activity' else value
         context(db,user,department_id,owner.period_id,True)
         if owner.department_id!=department_id:raise HTTPException(403)
-        data=await request.form()
         try:amount=parse_number(data.get('amount'),money=True)
         except ValueError as exc:raise HTTPException(422,str(exc)) from None
         if amount is None:raise HTTPException(422,'Kaynakla doğruladığınız tutarı girin.')
@@ -176,6 +176,19 @@ def register(app):
             if disagreement or amount!=value.source_amount:
                 raise HTTPException(422,source_total_message(owner,value.year,value.value_kind,value.source_amount,
                     disagreement['computed_total'] if disagreement else value.amount))
+        if kind == 'economic':
+            group = str(data.get('program_group', value.program_group))
+            if group not in PROGRAM_GROUPS or group == 'unallocated':
+                raise HTTPException(422, 'Ekonomik giderin program grubunu seçin.')
+            conflict = db.scalar(select(EconomicValue.id).where(EconomicValue.period_id==value.period_id,
+                EconomicValue.department_id==department_id, EconomicValue.year==value.year,
+                EconomicValue.value_kind==value.value_kind, EconomicValue.category==value.category,
+                EconomicValue.funding_type==value.funding_type, EconomicValue.program_group==group,
+                EconomicValue.id!=value.id))
+            if conflict:
+                raise HTTPException(409, 'Bu program grubunda ekonomik hücre zaten var; kayıtları karşılaştırın.')
+            value.program_group = group
+            value.issue = ''
         value.amount=amount;value.state='verified'
         db.commit();log(db,user,'source_money_verified',model.__tablename__,value.id)
         return RedirectResponse(f'/program/{department_id}?period_id={owner.period_id}',303)

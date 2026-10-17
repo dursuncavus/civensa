@@ -2,6 +2,7 @@
 import hashlib
 import io
 import json
+from collections import Counter
 from copy import deepcopy
 from pathlib import Path
 
@@ -11,7 +12,9 @@ from sqlalchemy import func, select
 
 from app.data_importer import parse_performance_docx
 from app.import_service import apply_import_batch
-from app.models import Activity, ImportBatch, Indicator
+from app.import_service import consolidate_source_departments
+from app.models import Activity, ImportBatch, Indicator, EconomicValue, ReportCard, Department
+from app.program_service import validate_department, activity_source_disagreements
 from test_word_import import import_client, import_context, word_document
 
 pytestmark = pytest.mark.postgres
@@ -107,6 +110,13 @@ def test_real_source_matches_960d62c_baseline(real_source, real_parsed):
     assert summary.pop('table_count') == baseline['summary']['table_count'] + 1 == 162
     assert summary == {k: v for k, v in baseline['summary'].items() if k != 'table_count'}
     assert real_parsed['errors'] == real_parsed['warnings'] == []
+    economic_snapshot = [{'department': d['name'], 'tables': d.get('economic_tables', [])}
+                         for d in real_parsed['departments']]
+    digest = hashlib.sha256(json.dumps(economic_snapshot, ensure_ascii=False, sort_keys=True).encode()).hexdigest()
+    assert digest == baseline['economic_snapshot_sha256']
+    headers = {'Performans Göstergesi', 'Performans Göstergeleri', 'Ölçü Birimi',
+               '2025 Yılı Gerçekleşme', '2027 Hedef', '2028 Tahmin', '2029 Tahmini'}
+    assert not any(i['name'] in headers for d in real_parsed['departments'] for b in d['blocks'] for i in b['indicators'])
     actual = source_snapshot(real_parsed)
     assert apply_documented_baseline_allowlist(actual, baseline['departments']) == baseline['departments']
     human_resources = next(
@@ -115,7 +125,7 @@ def test_real_source_matches_960d62c_baseline(real_source, real_parsed):
     )
     assert human_resources['blocks'][1]['subprogram'] == 'Üst Yönetim, İdari ve Mali Hizmetler'
     coverage = real_parsed['coverage_items']
-    assert len(coverage) == 65
+    assert len(coverage) == 32
     assert [item['table_number'] for item in coverage[:28]] == list(range(1, 29))
     assert all(f"Tablo {item['table_number']}: {item['first_cell_text']}" in item['message']
                for item in coverage)
@@ -138,6 +148,35 @@ def test_real_source_preview_is_applicable(import_client, import_context, real_s
     assert detail['conflicts'] == []
     assert detail['coverage_items'] == result['coverage_items']
     assert detail['errors'] == []
+    duplicates = [r for r in result['review_items'] if r.get('cause', '').startswith('duplicate_')]
+    assert Counter(r['cause'] for r in duplicates) == {'duplicate_programme_block': 11, 'duplicate_indicator': 8}
+    assert detail['review_items'] == result['review_items']
+    assert result['summary']['needs_review_count'] == len(result['review_items']) == 508
+
+
+def test_real_source_duplicate_evidence_and_economic_causes(real_parsed):
+    plan = consolidate_source_departments(real_parsed)
+    social = [r for r in plan['review_items'] if r.get('cause', '').startswith('duplicate_')
+              and r['department']=='Sosyal Hizmetler Müdürlüğü']
+    assert len(social) == 6
+    assert social[0]['cause']=='duplicate_programme_block' and social[0]['table_numbers']==[100, 101]
+    for index, item in enumerate(social[1:], 1):
+        assert f'SH36/PG0{index}.' in item['record']
+        assert item['table_numbers'] == ([100, 101, 102] if index < 5 else [100, 101])
+    values = [v for d in real_parsed['departments'] for t in d.get('economic_tables', []) for v in t['values']]
+    reasons = [c for v in values for c in v.get('review_causes', [])]
+    # Counts overlap: one value/column can have several independent causes.
+    assert Counter(c['cause'] for c in reasons) == {
+        'inside_total_mismatch': 180, 'source_cell_unverified': 150,
+        'program_group_unallocated': 140, 'personnel_total_mismatch': 8}
+    assert Counter(cause for cause, message in {(c['cause'], c['message']) for c in reasons}) == {
+        'inside_total_mismatch': 22, 'source_cell_unverified': 21,
+        'program_group_unallocated': 15, 'personnel_total_mismatch': 2}
+    assert Counter(cause for v in values for cause in {c['cause'] for c in v.get('review_causes', [])}) == {
+        'inside_total_mismatch': 180, 'source_cell_unverified': 100,
+        'program_group_unallocated': 140, 'personnel_total_mismatch': 8}
+    assert all('Tablo ' in c['message'] and '202' in c['message'] for c in reasons)
+    assert not any('Ekonomik satırlar, kaynak toplamları' in v.get('issue', '') for v in values)
 
 
 def test_real_source_apply_persists_all_records(db, import_context, real_parsed):
@@ -151,11 +190,35 @@ def test_real_source_apply_persists_all_records(db, import_context, real_parsed)
     db.commit()
     result = apply_import_batch(db, batch)
     db.commit()
-    assert result['indicators'] == real_parsed['summary']['indicator_count'] == 324
+    assert result['indicators'] == real_parsed['summary']['indicator_count'] == 263
     assert result['activities'] == real_parsed['summary']['activity_count'] == 288
-    assert db.scalar(select(func.count()).select_from(Indicator)) == 324
+    assert db.scalar(select(func.count()).select_from(Indicator)) == 263
     assert db.scalar(select(func.count()).select_from(Activity)) == 288
     assert batch.status == 'applied'
+    assert result['cards'] == db.scalar(select(func.count()).select_from(ReportCard)) == 64
+    assert result['economic_values'] == db.scalar(select(func.count()).select_from(EconomicValue)) == 1290
+    assert all(row.source_card_id and json.loads(row.source_context_json)['card_ids']
+               for row in db.scalars(select(EconomicValue)))
+    sample = db.scalar(select(Department).where(Department.name == 'Özel Kalem Müdürlüğü'))
+    errors, warnings = validate_department(db, import_context.period.id, sample.id)
+    relevant = [e for e in errors if any(w in e.lower() for w in ['kart', 'doğrulan', 'ekonomik'])]
+    assert not relevant, '\n'.join(relevant)
+    assert len(errors) == 5 and all('kataloğu bağlantısı eksik' in e for e in errors), errors
+    # CIV-011's source totals and CIV-026's economic import coexist on D-23.
+    disagreements = Counter()
+    for activity in db.scalars(select(Activity)):
+        source_disagreements = activity_source_disagreements(activity)
+        for key in source_disagreements:
+            disagreements[key] += 1
+        for value in activity.cost_values:
+            if value.source_amount is not None:
+                assert value.amount == value.source_amount
+                if f'{value.year}:{value.value_kind}' in source_disagreements:
+                    if value.funding_type == 'total':
+                        assert value.state == 'needs_review'
+                        assert value.source_raw_text == value.raw_text
+    assert disagreements == {'2027:budget': 13, '2028:forecast': 14, '2029:forecast': 18}
+
 
 
 @pytest.mark.parametrize('year,valid', [('2027/1', True), ('2027 / 2027', True),

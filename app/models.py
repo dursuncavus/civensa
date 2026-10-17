@@ -279,7 +279,13 @@ class EconomicValue(Base):
     category: Mapped[str] = mapped_column(String(50))
     program_group: Mapped[str] = mapped_column(String(50))
     funding_type: Mapped[str] = mapped_column(String(30))
-    amount: Mapped[float] = mapped_column(Numeric(22, 2))
+    amount: Mapped[float | None] = mapped_column(Numeric(22, 2), nullable=True)
+    raw_text: Mapped[str] = mapped_column(Text, default="")
+    state: Mapped[str] = mapped_column(String(30), default="verified")
+    issue: Mapped[str] = mapped_column(Text, default="")
+    source_card_id: Mapped[int | None] = mapped_column(ForeignKey("report_cards.id", name="fk_economic_source_card"), nullable=True)
+    source_table_number: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    source_context_json: Mapped[str] = mapped_column(Text, default="{}")
     __table_args__ = (UniqueConstraint("period_id", "department_id", "year", "value_kind", "category", "program_group", "funding_type", name="uq_economic_cell"),)
 
 

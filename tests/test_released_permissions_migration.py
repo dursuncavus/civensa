@@ -19,7 +19,8 @@ def test_civ025_pilot_upgrade_downgrade_reupgrade(tmp_path, backend):
     from alembic.config import Config
     from alembic.script import ScriptDirectory
     scripts = ScriptDirectory.from_config(Config(str(ROOT / 'alembic.ini')))
-    assert scripts.get_heads() == ['c025a1b2c3d4']
+    assert len(scripts.get_heads()) == 1
+    assert 'c025a1b2c3d4' in {r.revision for r in scripts.iterate_revisions('head', 'b8d011e6f420')}
     assert scripts.get_revision('c025a1b2c3d4').down_revision == 'b8d011e6f420'
     admin = None
     if backend == 'postgres':

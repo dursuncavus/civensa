@@ -281,7 +281,7 @@ def test_one_additive_migration_and_downgrade_preserves_other_tables(foundation_
     db = foundation_db
     scripts = ScriptDirectory.from_config(Config(str(ROOT / "alembic.ini")))
     assert len(scripts.get_heads()) == 1
-    assert REVISION in {r.revision for r in scripts.walk_revisions()}
+    assert REVISION in {r.revision for r in scripts.iterate_revisions('head', BASE_REVISION)}
     assert scripts.get_revision(REVISION).down_revision == BASE_REVISION
     before_tables = set(inspect(db.bind).get_table_names())
     # Seed the exact historical schema, before CIV-025's User columns exist.
@@ -300,6 +300,7 @@ def test_one_additive_migration_and_downgrade_preserves_other_tables(foundation_
                                 env=env, capture_output=True, text=True)
         assert result.returncode == 0, result.stderr
 
+    # Exercise this historical migration independently of later additions.
     migrate("upgrade", REVISION)
     assert set(inspect(db.bind).get_table_names()) == before_tables | {"login_attempts"}
     assert {index["name"] for index in inspect(db.bind).get_indexes("login_attempts")} == {
