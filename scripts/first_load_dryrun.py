@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""CIV-040: inspect a PP Word book using a disposable, local PostgreSQL database.
+"""Inspect a PP print IDML or Word book in disposable, local PostgreSQL.
 
 Usage (from the repository root):
     python scripts/first_load_dryrun.py BOOK.docx --out docs/first-load/NAME.md
@@ -17,6 +17,7 @@ import hashlib
 import json
 import os
 from pathlib import Path
+from tempfile import TemporaryDirectory
 import re
 import sys
 import unicodedata
@@ -174,6 +175,7 @@ def inspect_import(db, parsed, filename):
                                     import_validation_errors)
     from app.models import Department, ImportBatch, Organization, ReportingPeriod, User
     from app.program_service import validate_department
+    from app.first_load_service import load_first_load_catalogue
 
     names = json.loads(NAME_MAP.read_text(encoding='utf-8'))
     system_names = set(names['map'].values())
@@ -198,17 +200,21 @@ def inspect_import(db, parsed, filename):
     db.add(batch)
     db.commit()
     applied = None
+    catalogue = None
     apply_error = None
     # Exercise the real gate even if preview reports blocking issues. Never choose
     # source candidates or remove a bad directorate to make the book applicable.
     try:
         applied = apply_import_batch(db, batch)
+        catalogue = load_first_load_catalogue(db, period.id, parsed, strategy)
         db.commit()
     except ValueError as exc:
         db.rollback()
+        applied = None
         apply_error = str(exc)
     except SQLAlchemyError as exc:
         db.rollback()
+        applied = None
         # SQL/driver messages can contain credentials or complete source payloads.
         apply_error = f'Veritabanı uygulama hatası ({type(exc).__name__}); paket uygulanmadı.'
     results = []
@@ -217,7 +223,8 @@ def inspect_import(db, parsed, filename):
         results.append({'name': department.name, 'ready': applied is not None and not validation_errors,
                         'errors': validation_errors, 'warnings': warnings})
     return {'plan': plan, 'errors': errors, 'unresolved': unresolved, 'applied': applied,
-            'apply_error': apply_error, 'results': results, 'pending': names.get('pending_ali', [])}
+            'apply_error': apply_error, 'results': results, 'pending': names.get('pending_ali', []),
+            'catalogue': catalogue}
 
 
 def budget_sum(rows, expected):
@@ -267,6 +274,31 @@ def state_counts(values):
     return '; '.join(f'{key}: {value}' for key, value in sorted(counts.items())) or '—'
 
 
+def source_pages(parsed, department_name, error=None):
+    from app.import_service import department_key
+    sources = parsed.get('source_tables', {})
+    departments = [d for d in parsed['departments']
+                   if department_key(d['name']) == department_key(department_name)]
+    tables = set()
+    if error:
+        for department in departments:
+            for activity in department['activities']:
+                if error.startswith(activity['name'] + ':'):
+                    tables.update(v.get('table_number') for v in activity['costs'])
+            for block in department['blocks']:
+                if any(error.startswith(i['name'] + ':') for i in block['indicators']):
+                    tables.add(block['table_number'])
+            if not tables and 'ekonomik' in error:
+                tables.update(t['table_number'] for t in department.get('economic_tables', []))
+                if 'toplam' in error or 'ortak' in error:
+                    tables.update(v.get('table_number') for a in department['activities'] for v in a['costs'])
+    pages = {str(sources[str(t)]['page']) for t in tables if str(t) in sources}
+    if not pages:
+        pages = {str(t['page']) for t in sources.values()
+                 if department_key(t.get('department', '')) == department_key(department_name)}
+    return sorted(pages, key=lambda p: int(p) if p.isdigit() else 10**6)
+
+
 def report(parsed, inspection, path, digest):
     findings = scan_names(parsed)
     checks = cross_tables(parsed)
@@ -284,8 +316,10 @@ def report(parsed, inspection, path, digest):
              'Her çalıştırma ayrı bir veritabanı oluşturur, alembic upgrade head çalıştırır ve sonunda siler. '
              'Test kullanıcısının CREATE DATABASE yetkisi olmalıdır. Canlı veritabanı kullanılmaz.', '',
              'Tek kurum, Strateji kullanıcısı, doğrulanmış şablonlu 2027 dönemi ve name_map.json hedef adları '
-             '(ayrıca kitapta bulunan yerleşik ad eşlemeleri) ekilir. Resmî faaliyet kataloğu, sorumluluklar '
-             've elle veri düzeltmesi ekilmez; katalog bağlantısı eksikleri doğrulama sonucuna dahildir.', '',
+             '(ayrıca kitapta bulunan yerleşik ad eşlemeleri) ekilir. Kartların faaliyet üyeliği tablolarından '
+             'resmî faaliyet kataloğu, tüm sorumlu müdürlükler ve yerel faaliyet bağlantıları ortak servislerle, '
+             'denetim kaydı tutularak yüklenir. Kaynak tutarları düzeltilmez. Kitapta program/alt program '
+             'kodu olmadığından bu kodlar boş kalır; kod uydurulmaz.', '',
              'name_map.json içinde teyit bekleyen kitap adları: ' + '; '.join(inspection['pending']) + '.', '',
              '## Genel sonuç', '',
              f'- Kitap müdürlükleri: {len(parsed["departments"])}; ekili/uygulama sonrası müdürlükler: {len(inspection["results"])}.',
@@ -311,6 +345,39 @@ def report(parsed, inspection, path, digest):
             unknown = sum(c[key][2] for c in group)
             return (subtotal if complete else None, subtotal, unknown)
         lines.append(f'| {label} | {amount_text(overall("activity"))} | {amount_text(overall("economic"))} |')
+    conversion = inspection.get('conversion')
+    if conversion:
+        lines.extend(['', '## IDML dönüşümü ve kaynak üyelikleri', '',
+                      cell(json.dumps(conversion['counts'], ensure_ascii=False)) + '.', '',
+                      'Eşlenmeyen kitap adları (aynen korunur; yerleşik içe aktarıcı eşlemesi ayrıca uygulanır): '
+                      + cell('; '.join(conversion['unmapped']) or 'Yok') + '.', '',
+                      'Basılı sayfaya bağlı olmayan tablolar (yükleme dışında): '
+                      + cell(json.dumps(conversion['unplaced'], ensure_ascii=False)) + '.', '',
+                      'Sayfa numaraları IDML metin çerçevesinin ilk basılı sayfasından alınır; çok sayfalı '
+                      'hikâyede başlangıç sayfasını gösterir. Üyelik kodu müdürlük içinde tekil eşleştirilir; '
+                      'maliyet ve üyelik başlıklarının yazım farkları değiştirilmez. Aynı faaliyet/alt program '
+                      'birden fazla müdürlükte varsa tek katalog kaydına bütün sorumlu müdürlükler eklenir.', ''])
+    lines.extend(['', '## Kaynakta kalan üyelik sorunları', ''])
+    for issue in parsed.get('membership_issues', []):
+        table = re.search(r'Tablo (\d+)', issue)
+        page = parsed.get('source_tables', {}).get(table.group(1), {}).get('page') if table else None
+        lines.append('- ' + cell(issue) + (f' (kitap s. {page})' if page else ''))
+    if not parsed.get('membership_issues'):
+        lines.append('Yok.')
+    if path.stem == 'pp2027_print_d3':
+        lines.extend(['', '## Korunan bilinen kitap sorunları ve CIV-041 sınırı', '',
+                      '- s.128 Park ve Bahçeler 0007: kaynak toplamı 44.333.709,00 TL; Bütçe İçi 45.333.709,00 TL. '
+                      'Tutarlar değiştirilmedi; kaynak toplamı ve fark doğrulamada korunur.',
+                      '- s.243: eski biçimli ekonomik tablo; 2025–2026 sütunları ve “2027 Tahmin”, '
+                      '2027 Bütçe sütunu yok. Kaynak düzeltilmedi ve tablonun içeriği atılmadı.',
+                      ('- CIV-041 ekonomik ayrıştırıcı bu çalıştırmada mevcut; kart bağlantısı olmayan '
+                       'ekonomik tablo engeli aşağıdaki içe aktarma hatalarında gösterilir.'
+                       if 'rejected_economic_tables' in parsed else
+                       '- Bu rapor CIV-042 dalındaki ekonomik ayrıştırıcıyla üretilir. CIV-041 ayrı PR’dır; '
+                      'ekonomik ayrıştırma bu dalda değiştirilmedi. Mevcut ayrıştırıcı s.243 tablosunu son '
+                      'müdürlüğe (Makine İkmal) bağlıyor ve kod/ad düzenindeki kategorileri okuyamıyor. '
+                      'Bu müdürlükteki ilgili ekonomik hatalar gerçek kaynak eksikliği olarak yorumlanmamalı; '
+                      'CIV-041 sonrası rapor yeniden çalıştırılmalıdır. Diğer hatalar ve ham kaynaklar aşağıda korunur.'), ''])
     lines.extend(['', '## Müdürlük bazında ayrıştırma', '',
                   '| Müdürlük | Kart | Gösterge | Gösterge değerleri / durum | Faaliyet | Faaliyet maliyet değerleri / durum | Personel değerleri / durum | Ekonomik tablo | Ekonomik değerler / durum |',
                   '| --- | ---: | ---: | --- | ---: | --- | --- | ---: | --- |'])
@@ -327,6 +394,10 @@ def report(parsed, inspection, path, digest):
                       f'{result["indicators"]} gösterge, {result["activities"]} faaliyet, '
                       f'{result["economic_values"]} ekonomik değer, {result["personnel_values"]} ortak personel değeri. '
                       f'Alt programa bağlanamayan faaliyet: {result["unlinked_activities"]}.'])
+        catalogue = inspection.get('catalogue')
+        if catalogue:
+            lines.extend(['', f'Katalog: {catalogue["entries"]} resmî faaliyet, '
+                          f'{catalogue["responsibilities"]} sorumluluk, {catalogue["links"]} yerel faaliyet bağlantısı.'])
     lines.extend(['', '## İçe aktarma hataları ve kaynak çelişkileri', '',
                   f'### import_validation_errors ({len(inspection["errors"])})', ''])
     # Parser errors carry table numbers; add the owning directorate/activity when known.
@@ -340,9 +411,11 @@ def report(parsed, inspection, path, digest):
         for t in d.get('economic_tables', []):
             owners[t['table_number']] = (d['name'], 'Ekonomik tablo')
     for error in inspection['errors']:
-        table = re.search(r'Tablo (\d+)', error)
+        table = re.search(r'Tablo (\d+)', error, re.IGNORECASE)
         owner = owners.get(int(table.group(1))) if table else None
-        lines.append(f'- {cell(" / ".join(owner) if owner else "Müdürlük/faaliyet: ayrıştırılamadı")}: {cell(error)}')
+        page = parsed.get('source_tables', {}).get(table.group(1), {}).get('page') if table else None
+        lines.append(f'- {cell(" / ".join(owner) if owner else "Müdürlük/faaliyet: ayrıştırılamadı")}: {cell(error)}'
+                     + (f' (kitap s. {page})' if page else ''))
     if not inspection['errors']:
         lines.append('Yok.')
     lines.extend(['', f'### source_conflicts ({len(plan["conflicts"])})', ''])
@@ -392,10 +465,18 @@ def report(parsed, inspection, path, digest):
                   'Aşağıdaki hata ve uyarı metinleri doğrulayıcıdan aynen alınmıştır.', ''])
     for result in inspection['results']:
         lines.extend([f'### {result["name"]}', '', f'Gönderime hazır: **{"Evet" if result["ready"] else "Hayır"}**.', '',
+                      'Kitap sayfaları: ' + ', '.join(source_pages(parsed, result['name']) or ['Word kaynağında yok']) + '.', '',
                       f'Hatalar ({len(result["errors"])}):', ''])
-        lines.extend('- ' + cell(e) for e in result['errors'])
+        for error in result['errors']:
+            pages = source_pages(parsed, result['name'], error)
+            lines.append('- ' + cell(error) + (f' (kitap s. {", ".join(pages)})' if pages else ''))
         if not result['errors']:
             lines.append('Yok.')
+        membership_issues = [issue for issue in parsed.get('membership_issues', [])
+                             if result['name'] + ' / ' in issue]
+        if membership_issues:
+            lines.extend(['', 'Ek kaynak sorunu (validate_department dışında; maliyet kaydı üretilmedi):', ''])
+            lines.extend('- ' + cell(issue) for issue in membership_issues)
         lines.extend(['', f'Uyarılar ({len(result["warnings"])}):', ''])
         lines.extend('- ' + cell(w) for w in result['warnings'])
         if not result['warnings']:
@@ -404,23 +485,35 @@ def report(parsed, inspection, path, digest):
     return '\n'.join(lines)
 
 
+def parse_book(path, name_map=NAME_MAP):
+    """Keep generated Word and mapping report temporary during a rehearsal."""
+    from app.data_importer import parse_performance_docx
+    if path.suffix.lower() != '.idml':
+        return parse_performance_docx(path.read_bytes()), None
+    from scripts.book_to_load_docx import generate_docx
+    with TemporaryDirectory(prefix='civensa_first_load_word_') as directory:
+        word = Path(directory) / 'book.docx'
+        conversion = generate_docx(path, name_map, word)
+        return parse_performance_docx(word.read_bytes()), conversion
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('docx', type=Path)
+    parser.add_argument('book', type=Path)
     parser.add_argument('--out', type=Path, help='Markdown çıktı dosyası; verilmezse stdout')
     args = parser.parse_args()
     sys.path.insert(0, str(ROOT))
     try:
         url = local_test_url()  # Refuse unsafe targets before any connection.
-        data = args.docx.read_bytes()
-        from app.data_importer import parse_performance_docx
+        data = args.book.read_bytes()
         from sqlalchemy.orm import Session
 
-        parsed = parse_performance_docx(data)
+        parsed, conversion = parse_book(args.book)
         with disposable_database(url) as engine:
             with Session(engine, expire_on_commit=False) as db:
-                inspection = inspect_import(db, deepcopy(parsed), args.docx.name)
-        content = report(parsed, inspection, args.docx, hashlib.sha256(data).hexdigest())
+                inspection = inspect_import(db, deepcopy(parsed), args.book.name)
+        inspection['conversion'] = conversion
+        content = report(parsed, inspection, args.book, hashlib.sha256(data).hexdigest())
         if args.out:
             args.out.parent.mkdir(parents=True, exist_ok=True)
             args.out.write_text(content, encoding='utf-8')
