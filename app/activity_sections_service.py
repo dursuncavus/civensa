@@ -63,6 +63,7 @@ def definitions(db, doc):
 
 
 def owner(definition, doc):
+    if doc.department_id and definition.code in {'III.A.3','III.A.4'}:return 'directorate'
     return definition.birim_owner if doc.department_id else definition.idare_owner
 
 
@@ -145,6 +146,8 @@ def create_year(db,user,organization_id,period_id,copy_previous=False):
                 blocks_json=canonical(old['blocks']) if copied else '[]',status='draft' if copied else 'empty',
                 reason=old['reason'] if copied else '',copied_from_id=previous.id if copied else None,
                 copied_needs_review=copied,edited_by=user.id if copied else None,edited_at=datetime.now(UTC) if copied else None))
+        from .activity_financial_service import seed_statements
+        seed_statements(db,doc)
         if dep_id:
             for kind,table in prior.get('resources',{}).items():
                 for i,row in enumerate(table['rows']):
@@ -350,6 +353,8 @@ def report_data(db,user,document_id,use_freeze=True):
         'department':db.get(Department,doc.department_id).name if doc.department_id else 'İdare',
         'definition_version':doc.definition_version,'revision':doc.revision,'frozen':False,
         'sections':[],'resources':resources(db,doc),'core':core}
+    from .activity_financial_service import financial_data, has_slot_data
+    result['financial']=financial_data(db,doc)
     contents={c.definition_id:c for c in db.scalars(select(ARSectionContent).where(ARSectionContent.document_id==doc.id))}
     for definition in definitions(db,doc):
         content=contents[definition.id]
@@ -363,6 +368,8 @@ def report_data(db,user,document_id,use_freeze=True):
         else:
             if content.status in {'empty','draft'}:missing.append('Bölüm içeriğini gözden geçirip Hazır veya gerekçeli Uygulanamaz seçin.')
             if content.copied_needs_review:missing.append('Geçen yıldan kopyalandı — gözden geçirin')
+        if content.status!='not_applicable' or has_slot_data(result['financial'],definition.code):
+            missing+=result['financial']['missing'].get(definition.code,[])
         row['missing']=missing
         row['editor_name']=db.get(User,content.edited_by).full_name if content.edited_by else '—'
         result['sections'].append(row)

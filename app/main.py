@@ -2158,3 +2158,6 @@ released_permissions.register(app)
 
 from .activity_sections_routes import register as register_activity_sections_routes
 register_activity_sections_routes(app)
+
+from .activity_financial_routes import register as register_activity_financial_routes
+register_activity_financial_routes(app)

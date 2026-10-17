@@ -80,7 +80,10 @@ class TurkishValidationRoute(APIRoute):
             except RequestValidationError as error:
                 labels={'expected_revision':'Rapor sürümü','organization_id':'Kurum','period_id':'Raporlama yılı',
                     'blocks':'Bölüm içeriği','status':'Durum','reason':'Gerekçe','rows':'Kaynak satırları',
-                    'copy_previous':'Önceki yıldan kopyalama','document_id':'Faaliyet raporu'}
+                    'copy_previous':'Önceki yıldan kopyalama','document_id':'Faaliyet raporu',
+                    'lower_rate':'Alt gerçekleşme oranı','upper_rate':'Üst gerçekleşme oranı',
+                    'metadata':'Malî tablo bilgileri','file':'Dosya','import_id':'İçe aktarma önizlemesi',
+                    'statement_id':'Malî tablo','kind':'Tablo türü'}
                 fields=[]
                 for issue in error.errors():
                     location=issue.get('loc',())
@@ -171,7 +174,8 @@ def register(app):
         definition=None
         if not report['frozen']:
             definition,_=service.section_pair(db,doc,code)
-        return {'user':user,'report':report,'section':section,'statuses':service.STATUSES,
+        from .activity_financial_routes import financial_context
+        return {**financial_context(db,user,doc,report), 'user':user,'report':report,'section':section,'statuses':service.STATUSES,
             'editable':not report['frozen'] and service.can_edit(db,user,doc,definition),
             'tables':{k:{**report['resources'][k],'kind':k} for k,v in service.TABLES.items() if v[0]==code},
             'employment':service.EMPLOYMENT,'owners':{'directorate':'Müdürlük','strategy':'Strateji','finance':'Mali Hizmetler'},

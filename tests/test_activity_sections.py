@@ -81,7 +81,9 @@ def ready_and_freeze(client,token,doc):
     data=client.get(f'/api/activity-sections/reports/{doc.id}').json()
     for section in data['sections']:
         if section['code']!=service.CORE:
-            result=save(client,token,doc,section['code'],status='ready')
+            financial_na=bool(data.get('financial',{}).get('missing',{}).get(section['code']))
+            result=save(client,token,doc,section['code'],status='not_applicable' if financial_na else 'ready',
+                reason='Bu testin örnek raporunda malî veri bulunmuyor.' if financial_na else '')
             assert result.status_code==200,result.text
     revision=client.get(f'/api/activity-sections/reports/{doc.id}').json()['revision']
     response=client.post(f'/api/activity-sections/reports/{doc.id}/freeze',headers={'X-CSRF-Token':token},json={'expected_revision':revision})

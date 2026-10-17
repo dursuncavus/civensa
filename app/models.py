@@ -488,3 +488,5 @@ from .login_throttling import LoginAttempt
 
 from .activity_sections_models import (ARSectionDefinition, ARDocument, ARSectionContent,
     ARResourceRow, ARDocumentFreeze, ARContentEvent)
+from .activity_financial_models import (ARBudgetRow, ARFinancialPolicy, ARFinancialEntry,
+    ARFinancialStatement, ARFinancialImport)
