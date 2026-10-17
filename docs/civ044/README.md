@@ -25,7 +25,7 @@ birden fazla Personel ve en fazla bir etkin Müdür bulunabilir.
    sütunlarını içerir ve yalnızca bir kez teslim edilir. Her kişiye yalnız kendi
    hesap bilgisini iletin. Sayfa kapanırsa, indirme kaybolursa veya işlem sonucu
    belirsizse Kullanıcılar listesini kontrol edip ilgili hesapta **Parola sıfırla**
-   seçin. Kullanıcı ilk girişte en az 10 karakterlik, geçici parolasından farklı
+   seçin. Kullanıcı ilk girişte en az 12 karakterlik, geçici parolasından farklı
    kendi parolasını belirlemeden diğer ekranlara devam edemez.
 6. **Paylaşılan hesapları pasifleştir:** Kullanıcı listesinden eski paylaşılan
    hesapları seçin. **Pasifleştirme gerekçesi** alanını doldurup **Seçilen

@@ -1521,8 +1521,8 @@ async def change_own_password(request: Request, db: Session = Depends(get_db), u
         raise HTTPException(422, "Mevcut parola hatalı.")
     if new_password != confirmation:
         raise HTTPException(422, "Yeni parola ve tekrarı eşleşmiyor.")
-    if new_password != new_password.strip() or len(new_password) < 10:
-        raise HTTPException(422, "Yeni parola en az 10 karakter olmalı ve kenar boşluğu içermemeli.")
+    if new_password != new_password.strip() or len(new_password) < 12:
+        raise HTTPException(422, "Yeni parola en az 12 karakter olmalı ve kenar boşluğu içermemeli.")
     if new_password == current_password:
         raise HTTPException(422, "Yeni parola mevcut paroladan farklı olmalı.")
     # Compare-and-set against the hash this request was authenticated with: an admin reset

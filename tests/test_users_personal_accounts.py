@@ -205,8 +205,9 @@ def test_first_login_blocks_navigation_and_writes_until_personal_password(db, sa
                                                            'confirmation': confirmation or new})
     assert change(temporary, temporary).status_code == 422
     assert change(temporary, 'short1234').status_code == 422
+    assert change(temporary, secrets.token_hex(5) + 'a').status_code == 422  # 11 characters: below the 12 minimum.
     assert change('wrong', secrets.token_urlsafe(18)).status_code == 422
-    personal = secrets.token_hex(5)  # Exactly the 10-character boundary.
+    personal = secrets.token_hex(6)  # Exactly the existing 12-character boundary.
     assert change(temporary, personal, 'different').status_code == 422
     token = person.headers.pop('X-CSRF-Token')
     assert change(temporary, personal).status_code == 403
