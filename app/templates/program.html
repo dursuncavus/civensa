@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-{% block page_title %}{{ department.name }} — Rapor Hazırlığı{% endblock %}
+{% block page_title %}{{ snapshot.department }} — Rapor Hazırlığı{% endblock %}
 {% block page_subtitle %}{{ period.year }} · Performans kartları, kaynak kontrolü ve ekonomik tablolar{% endblock %}
 {% macro token() %}<input type="hidden" name="csrf_token" value="{{ request.session.get('csrf_token') }}"><input type="hidden" name="period_id" value="{{ period.id }}">{% endmacro %}
 {% block content %}

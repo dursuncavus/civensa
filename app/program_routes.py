@@ -197,9 +197,11 @@ def register(app):
     def builder(request:Request,db:Session=Depends(get_db),user:User=Depends(require_strategy)):
         period=session_period(request,db)
         if not period:raise HTTPException(404)
+        from .structure_service import period_name
         scopes={r.department_id:r for r in rows(db,DepartmentScope,period.id)}
         return templates.TemplateResponse(request,'report_builder.html',dict(user=user,period=period,
-            departments=db.scalars(select(Department).order_by(Department.name)).all(),scopes=scopes,
+            departments=period_departments(db,period.id),scopes=scopes,
+            department_names={d.id:period_name(db,period.id,d) for d in period_departments(db,period.id)},
             sections=rows(db,ReportSection,period.id),catalogue=rows(db,OfficialActivity,period.id),responsibilities={i.id:[r.department_id for r in db.scalars(select(ActivityResponsibility).where(ActivityResponsibility.official_activity_id==i.id)).all()] for i in rows(db,OfficialActivity,period.id)},publications=rows(db,Publication,period.id)))
 
     @app.post('/report-builder/scope')
