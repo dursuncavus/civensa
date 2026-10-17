@@ -132,12 +132,13 @@ def test_legacy_ekler_writes_and_csrf_and_stale_revision(section_client):
         json={'expected_revision': 0, 'variables': variables(two=True)}).status_code == 409
 
 
-@pytest.mark.parametrize('kind', ['missing_name', 'bad_date', 'outside_year', 'overlap', 'identity_conflict', 'unjustified'])
+@pytest.mark.parametrize('kind', ['missing_name', 'bad_date', 'week_date', 'outside_year', 'overlap', 'identity_conflict', 'unjustified'])
 def test_variable_validation_atomic(section_client, db, kind):
     client, docs, _, _ = section_client
     token = login(client, 'strategy@example.invalid'); values = variables(two=True)
     if kind == 'missing_name': values['signatories'][0]['name'] = ''
     if kind == 'bad_date': values['date'] = '2028-02-30'
+    if kind == 'week_date': values['date'] = '2028-W01-1'
     if kind == 'outside_year': values['signatories'][0]['start_date'] = '2026-01-01'
     if kind == 'overlap': values['signatories'][1]['start_date'] = '2027-06-30'
     if kind == 'identity_conflict': values['signatories'][1]['person_ref'] = 'person-1'

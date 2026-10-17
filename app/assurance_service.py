@@ -79,7 +79,10 @@ def day(raw, label):
     try:
         if not isinstance(raw, str) or len(raw) != 10:
             raise ValueError
-        return date.fromisoformat(raw)
+        parsed = date.fromisoformat(raw)
+        if parsed.isoformat() != raw:
+            raise ValueError
+        return parsed
     except (TypeError, ValueError):
         sections.fail(f'{label}: Tarih okunamadı. Yıl-ay-gün biçiminde geçerli bir tarih girin.')
 
