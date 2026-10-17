@@ -1,6 +1,6 @@
-from datetime import datetime, UTC
+from datetime import date, datetime, UTC
 from decimal import Decimal
-from sqlalchemy import String, Integer, ForeignKey, Text, Float, Numeric, DateTime, UniqueConstraint, Boolean, CheckConstraint, Index, text
+from sqlalchemy import String, Integer, ForeignKey, Text, Float, Numeric, Date, DateTime, UniqueConstraint, Boolean, CheckConstraint, Index, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from .db import Base
 
@@ -296,6 +296,9 @@ class DepartmentScope(Base):
     department_id: Mapped[int] = mapped_column(ForeignKey("departments.id"))
     position: Mapped[int] = mapped_column(Integer, default=0)
     display_name: Mapped[str] = mapped_column(String(250), default="")
+    budget_code: Mapped[str | None] = mapped_column(Text, nullable=True)
+    active_from: Mapped[date | None] = mapped_column(Date, nullable=True)
+    active_to: Mapped[date | None] = mapped_column(Date, nullable=True)
     status: Mapped[str] = mapped_column(String(30), default="required")
     reason: Mapped[str] = mapped_column(Text, default="")
     __table_args__ = (UniqueConstraint("period_id", "department_id", name="uq_scope_department"),)
@@ -490,3 +493,52 @@ from .activity_sections_models import (ARSectionDefinition, ARDocument, ARSectio
     ARResourceRow, ARDocumentFreeze, ARContentEvent)
 from .activity_financial_models import (ARBudgetRow, ARFinancialPolicy, ARFinancialEntry,
     ARFinancialStatement, ARFinancialImport)
+
+class StructureChange(Base):
+    __tablename__ = 'structure_changes'
+    id: Mapped[int] = mapped_column(primary_key=True)
+    change_type: Mapped[str] = mapped_column(String(20))
+    effective_date: Mapped[date] = mapped_column(Date)
+    council_decision_no: Mapped[str] = mapped_column(String(200))
+    council_decision_date: Mapped[date] = mapped_column(Date)
+    note: Mapped[str] = mapped_column(Text, default='')
+    snapshot_json: Mapped[str] = mapped_column(Text)
+    created_by: Mapped[int] = mapped_column(ForeignKey('users.id'))
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(UTC).replace(tzinfo=None))
+    __table_args__ = (CheckConstraint("change_type IN ('RENAMED','MERGED','SPLIT','CLOSED','CREATED')", name='ck_structure_change_type'),)
+
+
+class StructureChangeLink(Base):
+    __tablename__ = 'structure_change_links'
+    id: Mapped[int] = mapped_column(primary_key=True)
+    change_id: Mapped[int] = mapped_column(ForeignKey('structure_changes.id'))
+    from_department_id: Mapped[int | None] = mapped_column(ForeignKey('departments.id'))
+    to_department_id: Mapped[int | None] = mapped_column(ForeignKey('departments.id'))
+    __table_args__ = (CheckConstraint('from_department_id IS NOT NULL OR to_department_id IS NOT NULL', name='ck_structure_link_endpoint'),)
+
+
+class StructureChangeTransfer(Base):
+    __tablename__ = 'structure_change_transfers'
+    id: Mapped[int] = mapped_column(primary_key=True)
+    change_id: Mapped[int] = mapped_column(ForeignKey('structure_changes.id'))
+    from_department_id: Mapped[int] = mapped_column(ForeignKey('departments.id'))
+    to_department_id: Mapped[int] = mapped_column(ForeignKey('departments.id'))
+    official_activity_id: Mapped[int | None] = mapped_column(ForeignKey('official_activities.id'))
+    indicator_id: Mapped[str | None] = mapped_column(ForeignKey('indicator_identities.indicator_id'))
+    activity_id: Mapped[int | None] = mapped_column(ForeignKey('activities.id'))
+    note: Mapped[str] = mapped_column(Text, default='')
+    __table_args__ = (
+        CheckConstraint('(CASE WHEN official_activity_id IS NULL THEN 0 ELSE 1 END + CASE WHEN indicator_id IS NULL THEN 0 ELSE 1 END + CASE WHEN activity_id IS NULL THEN 0 ELSE 1 END) = 1', name='ck_structure_transfer_one_record'),
+        CheckConstraint('from_department_id <> to_department_id', name='ck_structure_transfer_receiver'),
+        UniqueConstraint('change_id', 'from_department_id', 'official_activity_id', name='uq_structure_transfer_official'),
+        UniqueConstraint('change_id', 'from_department_id', 'indicator_id', name='uq_structure_transfer_indicator'),
+        UniqueConstraint('change_id', 'from_department_id', 'activity_id', name='uq_structure_transfer_activity'))
+
+
+class StructureChangeCancellation(Base):
+    __tablename__ = 'structure_change_cancellations'
+    id: Mapped[int] = mapped_column(primary_key=True)
+    change_id: Mapped[int] = mapped_column(ForeignKey('structure_changes.id'), unique=True)
+    note: Mapped[str] = mapped_column(Text)
+    created_by: Mapped[int] = mapped_column(ForeignKey('users.id'))
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(UTC).replace(tzinfo=None))

@@ -88,6 +88,17 @@ def sample(db):
                         "CONSTRAINT ck_director_department CHECK (position != 'director' OR department_id IS NOT NULL)"))
     if 'can_submit' not in user_columns:
         db.execute(text("ALTER TABLE users ADD COLUMN can_submit BOOLEAN NOT NULL DEFAULT false"))
+    # Historical checkpoints also predate CIV-027. Model-based fixtures need
+    # today's nullable profile fields and empty journal tables so existing
+    # workflow snapshot tests can still use the current ORM. The CIV-027
+    # migration regression seeds raw c029 rows without this adapter.
+    schema = db.get_bind().get_execution_options().get('schema_translate_map', {}).get(None)
+    scope_columns = {c['name'] for c in inspect(db.connection()).get_columns('department_scopes', schema=schema)}
+    for column, kind in [('budget_code', 'TEXT'), ('active_from', 'DATE'), ('active_to', 'DATE')]:
+        if column not in scope_columns:
+            db.execute(text(f'ALTER TABLE department_scopes ADD COLUMN {column} {kind}'))
+    for model in (StructureChange, StructureChangeLink, StructureChangeTransfer, StructureChangeCancellation):
+        model.__table__.create(db.connection(), checkfirst=True)
     db.commit()
     org=Organization(name='Test Belediyesi');p=ReportingPeriod(year=2027,status='active');db.add_all([org,p]);db.flush()
     d=Department(organization_id=org.id,name='Test Müdürlüğü');db.add(d);db.flush()

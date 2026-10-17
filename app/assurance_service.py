@@ -6,7 +6,8 @@ from pathlib import Path
 from sqlalchemy import select
 from . import activity_sections_service as sections
 from .assurance_models import AssuranceStatement
-from .models import ReportingPeriod
+from .models import Department, DepartmentScope, ReportingPeriod
+from .structure_service import period_name
 from .activity_contract_service import canonical
 
 ASSET_PATH = Path(__file__).parent / 'legal' / 'assurance_statements_2025.json'
@@ -133,17 +134,30 @@ def predecessor(variables, code):
     return code != 'EK-3' and len({p['person_ref'].casefold() for p in variables['signatories']}) > 1
 
 
-def missing_fields(variables, year):
+def missing_fields(variables, year, active_to=None, department_name=''):
     missing = []
     if not variables['place']: missing.append('Yer alanını doldurun.')
     if not variables['date']: missing.append('Beyan tarihini doldurun.')
     periods = variables['signatories']
-    if not periods:
-        missing.append('İmzalayanın Ad-Soyad, Ünvan ve rapor yılındaki görev dönemlerini girin.')
-    elif (periods[0]['start_date'] != f'{year}-01-01' or periods[-1]['end_date'] != f'{year}-12-31'
-          or any(day(a['end_date'], 'Görev bitişi') + timedelta(days=1) != day(b['start_date'], 'Görev başlangıcı')
-                 for a, b in zip(periods, periods[1:]))):
-        missing.append('İmzalayan görev dönemleri rapor yılının tamamını kapsamıyor. Eksik dönemleri tamamlayın.')
+    required_end = active_to or date(year, 12, 31)
+    next_day = date(year, 1, 1)
+    for person in periods:
+        start, end = day(person['start_date'], 'Görev başlangıcı'), day(person['end_date'], 'Görev bitişi')
+        if start > next_day:
+            break
+        next_day = max(next_day, end + timedelta(days=1))
+        if next_day > required_end:
+            break  # No signatory coverage is required after the closure day.
+    if next_day <= required_end:
+        if active_to:
+            missing.append(f'{department_name}: Müdürlük {active_to.strftime("%d.%m.%Y")} tarihinde kapandı/birleşti. '
+                f'EK-2 Harcama yetkilisi görev dönemleri {year} yılı başından kapanış tarihine kadar kesintisiz olmalıdır. '
+                f'EKLER → EK-2 beyan formunda 01.01.{year}–{active_to.strftime("%d.%m.%Y")} arasındaki eksik '
+                'görev dönemlerinin Ad-Soyad, Ünvan, başlangıç ve bitiş tarihlerini tamamlayın.')
+        elif not periods:
+            missing.append('İmzalayanın Ad-Soyad, Ünvan ve rapor yılındaki görev dönemlerini girin.')
+        else:
+            missing.append('İmzalayan görev dönemleri rapor yılının tamamını kapsamıyor. Eksik dönemleri tamamlayın.')
     return missing
 
 
@@ -156,6 +170,10 @@ def slot(db, doc, row, frozen=False):
     """Single EKLER hook for live completeness and the frozen variable snapshot."""
     error = integrity_error()
     year = db.get(ReportingPeriod, doc.period_id).year
+    scope = db.scalar(select(DepartmentScope).where(DepartmentScope.period_id == doc.period_id,
+        DepartmentScope.department_id == doc.department_id)) if doc.department_id else None
+    active_to = scope.active_to if scope and scope.active_to and scope.active_to.year == year else None
+    department_name = period_name(db, doc.period_id, db.get(Department, doc.department_id)) if active_to else ''
     if frozen:
         placed = {item['code']: item for item in row.get('assurances', [])}
     else:
@@ -170,7 +188,8 @@ def slot(db, doc, row, frozen=False):
             problems.append('Beyan henüz yerleştirilmedi. Yetkili birim beyan alanlarını kaydetmelidir.')
         elif item['version_id'] != VERSION_ID or item['file_sha256'] != FILE_SHA256:
             problems.append('Beyanın sürüm veya dosya doğrulama kodu uyuşmuyor. Sistem sorumlusuyla iletişime geçin.')
-        problems.extend(missing_fields(item['variables'], year))
+        problems.extend(missing_fields(item['variables'], year, active_to=active_to if code == 'EK-2' else None,
+                                       department_name=department_name))
         items.append(item)
         missing.extend(f'{code}: {problem}' for problem in problems)
     if error: missing.insert(0, error)

@@ -1,4 +1,5 @@
 """HTML forms for Strategy; attempted values survive all validation failures."""
+import json
 from fastapi import Depends, HTTPException, Request
 from fastapi.responses import RedirectResponse
 from sqlalchemy import select
@@ -6,6 +7,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from .db import get_db
+from . import structure_service as structure
 from .models import Department, DepartmentScope, Organization, Program, ReportingPeriod, SubProgram, SubProgramScope, User
 from .master_data_service import (active_department, audit_change, check_department_name,
                                 department_duplicates, name_value, normalized_name, period_record)
@@ -19,7 +21,7 @@ def integer(value, label):
 
 
 def register(app):
-    from .main import require_strategy, templates, session_period
+    from .main import require_strategy, templates, session_period, active_period
 
     def render(request, db, user, period_id=None, attempted=None, action='', error='', status=200):
         periods = db.scalars(select(ReportingPeriod).order_by(ReportingPeriod.year.desc())).all()
@@ -33,9 +35,23 @@ def register(app):
         for link in db.scalars(select(SubProgramScope).where(SubProgramScope.subprogram_id.in_(assigned))):
             if link.scope_id in scope_by_id:
                 assigned[link.subprogram_id].append(scope_by_id[link.scope_id].department_id)
+        changes = db.scalars(select(structure.StructureChange).order_by(structure.StructureChange.id.desc())).all()
+        cancellations = {c.change_id: c for c in db.scalars(select(structure.StructureChangeCancellation))}
+        closed_ids = {l.from_department_id for c in changes if c.change_type in {'CLOSED','MERGED','SPLIT'} and c.id not in cancellations for l in structure.links_for(db,c.id) if l.from_department_id}
+        warnings = db.scalars(select(User).where(User.department_id.in_(closed_ids), User.is_active.is_(True)).order_by(User.department_id, User.full_name)).all()
+        copy_log = db.scalar(select(structure.AuditLog).where(structure.AuditLog.action == 'structure_period_copy', structure.AuditLog.entity_id == period.id).order_by(structure.AuditLog.id.desc())) if period else None
+        missing = json.loads(copy_log.details)['new']['untransferred'] if copy_log else []
         return templates.TemplateResponse(request, 'structure.html', dict(user=user, period=period, periods=periods,
+            structure_kinds=structure.KINDS, structure_changes=changes, cancellations=cancellations,
+            copied_periods={c.id:[log.entity_id for log in db.scalars(select(structure.AuditLog).where(structure.AuditLog.action=='structure_period_copy')) if c.id in json.loads(log.details)['new']['change_ids']] for c in changes},
+            change_links={c.id:structure.links_for(db,c.id) for c in changes},
+            change_transfers={c.id:db.scalars(select(structure.StructureChangeTransfer).where(structure.StructureChangeTransfer.change_id==c.id)).all() for c in changes},
+            department_names={d.id:structure.period_name(db,period.id,d) if period else d.name for d in departments},
+            work_items=structure.work_items(db,period.id) if period else [], account_warnings=warnings,
+            untransferred=missing, next_untransferred=structure.unresolved_work(db,period.id,period.year+1) if period else [],
             organizations=db.scalars(select(Organization).order_by(Organization.name)).all(), departments=departments,
             duplicates=department_duplicates(departments), programs=programs, subprograms=subs,
+            profiles={s.department_id:structure.profile_data(s) for s in scopes},
             scopes={s.department_id: s for s in scopes}, assigned=assigned, attempted=attempted or {},
             attempted_action=action, error=error), status_code=status)
 
@@ -61,8 +77,23 @@ def register(app):
             message = exc.detail if isinstance(exc, HTTPException) else 'Bu ad veya kapsam başka bir işlemde kaydedildi. İlgili kaydı kontrol edip farklı bir adla tekrar deneyin.'
             status = exc.status_code if isinstance(exc, HTTPException) else 409
             values = dict(form)
-            values['department_ids'] = form.getlist('department_ids')
+            for key in ('department_ids', 'from_department_ids', 'to_department_ids'):
+                values[key] = form.getlist(key)
             return render(request, db, user, pid, values, request.url.path, message, status)
+
+    @app.post('/structure/changes')
+    async def create_structure_change(request: Request, db: Session = Depends(get_db), user: User = Depends(require_strategy)):
+        def operation(form):
+            structure.save_change(db, user, form)
+            return integer(form.get('period_id'), 'Dönem')
+        return await change(request, db, user, operation)
+
+    @app.post('/structure/changes/{change_id}/cancel')
+    async def cancel_structure_change(change_id: str, request: Request, db: Session = Depends(get_db), user: User = Depends(require_strategy)):
+        def operation(form):
+            structure.cancel_change(db, user, integer(change_id, 'Yapı kararı'), form.get('note'))
+            return integer(form.get('period_id'), 'Dönem') if form.get('period_id') else None
+        return await change(request, db, user, operation)
 
     @app.post('/structure/departments')
     async def create_department(request: Request, db: Session = Depends(get_db), user: User = Depends(require_strategy)):
@@ -84,6 +115,18 @@ def register(app):
             check_department_name(db, obj.organization_id, name, obj.id)
             db.refresh(obj)
             old = {'name': obj.name}
+            current = active_period(db)
+            for p in db.scalars(select(ReportingPeriod).order_by(ReportingPeriod.year)):
+                scope = db.scalar(select(DepartmentScope).where(DepartmentScope.period_id == p.id, DepartmentScope.department_id == obj.id))
+                profile_before = structure.profile_data(scope) if scope else None
+                if not scope:
+                    scope = DepartmentScope(period_id=p.id, department_id=obj.id, display_name=obj.name)
+                    db.add(scope)
+                if not scope.display_name: scope.display_name = obj.name
+                if current and p.year >= current.year and scope.display_name == obj.name: scope.display_name = name
+                db.flush()
+                if profile_before != structure.profile_data(scope):
+                    audit_change(db, user, 'structure_profile', scope, profile_before, structure.profile_data(scope))
             obj.name = name
             audit_change(db, user, 'department_rename', obj, old, {'name': name})
         return await change(request, db, user, operation)
@@ -161,12 +204,19 @@ def register(app):
                 raise HTTPException(422, 'Dönem kapsamı geçersiz veya gerekçesi eksik. Kapsam alanını seçin; sıfır veya kapsam dışı için gerekçe yazın.')
             if fields['status'] != 'required' and obj and db.scalar(select(SubProgramScope.subprogram_id).where(SubProgramScope.scope_id == obj.id).limit(1)):
                 raise HTTPException(422, 'Müdürlüğün alt program sorumluluğu var. Önce bu dönemdeki alt program sorumluluğunu kaldırın, sonra kapsamı değiştirin.')
-            old = {k: getattr(obj, k) for k in fields} if obj else None
+            for key in ('display_name', 'budget_code', 'active_from', 'active_to'):
+                if key in form:
+                    fields[key] = structure.day(form.get(key), {'active_from':'Etkinlik başlangıcı','active_to':'Etkinlik sonu'}[key], True) if key.startswith('active_') else str(form.get(key, '')).strip() or (None if key == 'budget_code' else '')
+            start = fields.get('active_from', obj.active_from if obj else None)
+            end = fields.get('active_to', obj.active_to if obj else None)
+            if start and end and start > end:
+                raise HTTPException(422, 'Dönem profilinde başlangıç tarihi kapanış tarihinden sonra. Etkinlik tarihlerini kontrol edip düzeltin.')
+            old = structure.encoded({k: getattr(obj, k) for k in fields}) if obj else None
             if not obj:
                 obj = DepartmentScope(period_id=pid, department_id=did, **fields); db.add(obj)
             else:
                 for key, value in fields.items(): setattr(obj, key, value)
-            audit_change(db, user, 'structure_scope_save', obj, old, dict(period_id=pid, department_id=did, **fields))
+            audit_change(db, user, 'structure_scope_save', obj, old, dict(period_id=pid, department_id=did, **structure.encoded(fields)))
             return pid
         return await change(request, db, user, operation)
 

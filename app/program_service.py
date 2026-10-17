@@ -157,6 +157,7 @@ def record(obj):
 
 
 def department_snapshot(db, period_id, department_id):
+    from .structure_service import period_name
     dept = db.get(Department, department_id)
     scope = db.scalar(select(DepartmentScope).where(DepartmentScope.period_id == period_id, DepartmentScope.department_id == department_id))
     cards = rows(db, ReportCard, period_id, department_id)
@@ -168,7 +169,7 @@ def department_snapshot(db, period_id, department_id):
         data['subprogram'] = sp.name if sp else ''
         data['program'] = sp.program.name if sp else ''
         return data
-    return {'department_id': department_id, 'department': (scope.display_name if scope and scope.display_name else dept.name),
+    return {'department_id': department_id, 'department': period_name(db, period_id, dept),
         'scope': record(scope) if scope else None,
         'period': db.get(ReportingPeriod, period_id).year,
         'cards': [named(c) for c in sorted(cards, key=lambda c: (c.position, c.id))],
@@ -302,7 +303,10 @@ def period_departments(db, period_id):
                   for model in (DepartmentScope, ReportCard, Indicator, Activity, DepartmentCostValue, EconomicValue, Submission)]
     historical.append(Department.id.in_(select(ActivityResponsibility.department_id).join(
         OfficialActivity, OfficialActivity.id == ActivityResponsibility.official_activity_id).where(OfficialActivity.period_id == period_id)))
-    return db.scalars(select(Department).where(or_(Department.is_active.is_(True), *historical)).order_by(Department.name)).all()
+    from .structure_service import department_in_year
+    period = db.get(ReportingPeriod, period_id)
+    return [d for d in db.scalars(select(Department).where(or_(Department.is_active.is_(True), *historical)).order_by(Department.name)).all()
+            if department_in_year(db, d, period.year)]
 
 
 def book_snapshot(db, period_id):

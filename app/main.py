@@ -112,6 +112,8 @@ async def security_headers(request: Request, call_next):
     )
     return response
 app.mount("/static", StaticFiles(directory=BASE_DIR / "static"), name="static")
+from .structure_service import period_name
+
 templates = Jinja2Templates(directory=BASE_DIR / "templates")
 
 
@@ -452,10 +454,12 @@ def modules(request: Request, user: User = Depends(require_user)):
 @app.get("/activity-report", response_class=HTMLResponse)
 def activity_report_workspace(request: Request, year: int = 2026, db: Session = Depends(get_db), user: User = Depends(require_user)):
     from .activity_report_service import annual_indicators
+    from .structure_service import closure_notes
     if year < 2020 or year > 2100:
         raise HTTPException(422, "Faaliyet Raporu yılı 2020–2100 arasında olmalı.")
     return templates.TemplateResponse(request, "activity_report.html", {
         "user": user, "year": year, "indicator_rows": annual_indicators(db, user, year),
+        "closure_notes": closure_notes(db, db.scalar(select(ReportingPeriod.id).where(ReportingPeriod.year == year)), user),
         "years": sorted(set(db.scalars(select(ReportingPeriod.year)).all()) | {year}),
     })
 
@@ -472,7 +476,7 @@ def dashboard(request: Request, db: Session = Depends(get_db), user: User = Depe
         indicators = db.scalars(select(Indicator).where(Indicator.department_id == dept.id, Indicator.period_id == period.id).options(selectinload(Indicator.values))).all()
         issues = sum(1 for i in indicators if indicator_issues(i, period.year))
         return templates.TemplateResponse(request, "dashboard.html", {
-            "user": user, "period": period, "department": dept, "submission": submission,
+            "user": user, "period": period, "department": dept, "department_label": period_name(db, period.id, dept), "submission": submission,
             "indicators": indicators, "issues": issues, "notifications": user_notifications(db, user),
         })
 
@@ -536,7 +540,7 @@ def department_page(department_id: int, request: Request, db: Session = Depends(
                                if complete and personnel_map.get(key) is not None else None)
     from .program_service import activity_source_disagreements
     return templates.TemplateResponse(request, "department.html", {
-        "user": user, "department": dept, "indicators": indicators, "activities": activities,
+        "user": user, "department": dept, "department_label": period_name(db, period.id, dept), "indicators": indicators, "activities": activities,
         "submission": submission, "issue_map": issue_map, "subprograms": subprograms, "period": period,
         "indicator_columns": ind_cols, "activity_columns": act_cols, "indicator_value_maps": ind_value_maps,
         "activity_maps": activity_maps, "personnel_map": personnel_map, "activity_totals": activity_totals,
@@ -745,7 +749,7 @@ def submit_department(department_id: int, db: Session = Depends(get_db), user: U
     ))
     db.add(Notification(
         role="strategy", event_type="submission_submitted",
-        message=f"{department.name} revizyon {submission.revision} incelemeye gönderildi.",
+        message=f"{period_name(db, period.id, department)} revizyon {submission.revision} incelemeye gönderildi.",
         link=f"/department/{department_id}",
     ))
     db.commit(); log(db, user, "department_submit", "submission", submission.id, f"revision={submission.revision}")
@@ -805,6 +809,7 @@ def activity_mapping_page(request: Request, db: Session = Depends(get_db), user:
     recent_batches = list(batch_groups.values())[:10]
     return templates.TemplateResponse(request, "activity_mapping.html", {
         "user": user, "period": period, "groups": list(departments.values()),
+        "department_names": {did: period_name(db, period.id, group["department"]) for did, group in departments.items()},
         "unresolved_count": len(activities), "suggestion_count": suggestion_count,
         "strong_suggestion_count": strong_suggestion_count, "recent_batches": recent_batches,
     })
@@ -831,7 +836,7 @@ def export_activity_mapping_queue(request: Request, db: Session = Depends(get_db
             suggestion = f"{suggested.program.name} / {suggested.name}" if suggested else ""
             level = "Güçlü" if suggested and score >= 0.50 else "Kontrol gerekli" if suggested else "Öneri yok"
             writer.writerow(csv_row([
-                activity.department.name, activity.id, activity.name, suggestion,
+                period_name(db, period.id, activity.department), activity.id, activity.name, suggestion,
                 round(score * 100), level, "",
             ]))
     data = ("\ufeff" + output.getvalue()).encode("utf-8")
@@ -887,7 +892,7 @@ def validate_mapping_csv(data: bytes, db: Session, period: ReportingPeriod):
         row_errors = []
         if activity.subprogram_id is not None:
             row_errors.append("Faaliyet artık eşleştirme kuyruğunda değil; güncel CSV'yi indirin.")
-        if not csv_cell_matches(source.get("Müdürlük", ""), activity.department.name):
+        if not csv_cell_matches(source.get("Müdürlük", ""), period_name(db, period.id, activity.department)):
             row_errors.append("Müdürlük adı güncel kayıtla eşleşmiyor.")
         if not csv_cell_matches(source.get("Faaliyet", ""), activity.name):
             row_errors.append("Faaliyet adı güncel kayıtla eşleşmiyor.")
@@ -922,7 +927,7 @@ async def preview_activity_mapping_csv(
         "count": len(rows),
         "rows": [{
             "activity_id": row["activity"].id,
-            "department": row["activity"].department.name,
+            "department": period_name(db, period.id, row["activity"].department),
             "activity": row["activity"].name,
             "selection": row["selection"],
         } for row in rows[:100]],
@@ -992,7 +997,7 @@ async def revert_activity_mapping_batch(
             continue
         submission = editable_submission(db, activity.department_id, period.id)
         if submission and submission.status in {"submitted", "approved"}:
-            errors.append(f"{activity.department.name}: paket incelemede veya onaylı.")
+            errors.append(f"{period_name(db, period.id, activity.department)}: paket incelemede veya onaylı.")
             continue
         validated.append(activity)
     if errors:
@@ -1052,7 +1057,7 @@ async def save_activity_mappings(request: Request, db: Session = Depends(get_db)
             continue
         submission = ensure_submission(db, act.department_id, period.id)
         if submission.status in {"submitted", "approved"}:
-            errors.append(f"{act.department.name}: paket incelemede/onaylı; eşleştirme değiştirilemez.")
+            errors.append(f"{period_name(db, period.id, act.department)}: paket incelemede/onaylı; eşleştirme değiştirilemez.")
             continue
         validated.append((act, sp))
     if errors:
@@ -1370,6 +1375,7 @@ def review(request: Request, db: Session = Depends(get_db), user: User = Depends
             event_map.setdefault(event.submission_id, []).append(event)
     return templates.TemplateResponse(request, "review.html", {
         "user": user, "rows": rows, "period": period, "event_map": event_map,
+        "department_names": {d.id: period_name(db, period.id, d) for _, d in rows},
         "notifications": user_notifications(db, user),
     })
 
@@ -1427,7 +1433,7 @@ async def submission_decision(submission_id: int, request: Request, db: Session 
     db.add(Notification(
         role="department", department_id=sub.department_id,
         event_type=f"submission_{decision}",
-        message=f"{department.name} revizyon {sub.revision or 1} {decision_label}.",
+        message=f"{period_name(db, sub.period_id, department)} revizyon {sub.revision or 1} {decision_label}.",
         link=f"/department/{sub.department_id}",
     ))
     db.commit(); log(db, user, f"submission_{decision}", "submission", sub.id, f"revision={sub.revision or 1};note={note}")
@@ -1688,10 +1694,13 @@ def create_period_record(db: Session, user: User, data):
         except (TypeError, ValueError): base = None
         if not base:
             raise HTTPException(422, "Başlangıç dönemi bulunamadı. Başlangıç yapısı alanından mevcut bir dönem seçin.")
+    from .models import Organization
+    from .structure_service import lock_organization
+    for oid in db.scalars(select(Organization.id).order_by(Organization.id)):
+        lock_organization(db, oid)
     period = ReportingPeriod(year=year, status="draft", template_status="pending")
     db.add(period); db.flush()
     program_map = {}; sub_map = {}
-    active_department_ids = select(Department.id).where(Department.is_active.is_(True))
     if base:
         programs = db.scalars(select(Program).where(Program.period_id == base.id)).all()
         for old in programs:
@@ -1700,26 +1709,8 @@ def create_period_record(db: Session, user: User, data):
         for old in subs:
             new = SubProgram(period_id=period.id, program_id=program_map[old.program_id], name=old.name, rationale=old.rationale, goal=old.goal)
             db.add(new); db.flush(); sub_map[old.id] = new.id
-        from .models import ReportCard
-        card_map = {}
-        for old in db.scalars(select(ReportCard).where(ReportCard.period_id==base.id, ReportCard.department_id.in_(active_department_ids))).all():
-            fields = {c.name:getattr(old,c.name) for c in ReportCard.__table__.columns if c.name not in {'id','period_id','subprogram_id','source_title'}}
-            card=ReportCard(period_id=period.id,subprogram_id=sub_map[old.subprogram_id],source_title=f'{year}/{old.position}',**fields)
-            db.add(card);db.flush();card_map[old.id]=card.id
-        inds = db.scalars(select(Indicator).where(Indicator.period_id == base.id, Indicator.department_id.in_(active_department_ids))).all()
-        for old in inds:
-            from .activity_contract_service import ensure_identity
-            identity_id = ensure_identity(db, old)
-            new = Indicator(period_id=period.id, department_id=old.department_id, subprogram_id=sub_map[old.subprogram_id], card_id=card_map.get(old.card_id), code=old.code, position=old.position, name=old.name, unit=old.unit, explanation=old.explanation, calculation_method=old.calculation_method, data_source=old.data_source, status="draft")
-            new.persistent_indicator_id = identity_id
-            db.add(new); db.flush()
-        acts = db.scalars(select(Activity).where(Activity.period_id == base.id, Activity.department_id.in_(active_department_ids))).all()
-        for old in acts:
-            new_act = Activity(period_id=period.id, department_id=old.department_id, subprogram_id=sub_map.get(old.subprogram_id), card_id=card_map.get(old.card_id), code=old.code, position=old.position, name=old.name, explanation=old.explanation)
-            db.add(new_act); db.flush()
-        depts = db.scalars(select(Department).where(Department.is_active.is_(True))).all()
-        for dept in depts:
-            db.add(Submission(department_id=dept.id, period_id=period.id, status="draft"))
+        from .structure_service import copy_period_work
+        copy_period_work(db, user, base, period, sub_map)
     from .master_data_service import audit_change
     audit_change(db, user, "period_create", period, None, {"year": year, "status": "draft", "template_status": "pending", "base_period_id": base.id if base else None})
     db.commit()
@@ -1734,7 +1725,9 @@ async def create_period(request: Request, db: Session = Depends(get_db), user: U
     except IntegrityError:
         db.rollback()
         raise HTTPException(409, "Dönem başka bir işlemde oluşturuldu. Genel Bakış ekranında mevcut dönemi seçin veya farklı bir yıl girin.") from None
-    return {"ok": True, "id": period.id, "year": period.year}
+    from .models import AuditLog
+    copy_audit = db.scalar(select(AuditLog).where(AuditLog.action == 'structure_period_copy', AuditLog.entity_id == period.id).order_by(AuditLog.id.desc()))
+    return {"ok": True, "id": period.id, "year": period.year, "untransferred": json.loads(copy_audit.details)['new']['untransferred'] if copy_audit else []}
 
 
 @app.post("/periods/create")
@@ -2121,7 +2114,7 @@ def department_progress_overview(db: Session, period: ReportingPeriod):
             summary["missing_accounts"] += 1
         rows.append({
             "department_id": department.id,
-            "department_name": department.name, "is_active": department.is_active,
+            "department_name": period_name(db, period.id, department), "is_active": department.is_active,
             "state": state,
             "label": PROGRESS_LABELS[state],
             "progress_percent": progress_percent,

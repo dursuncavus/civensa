@@ -9,6 +9,7 @@ from .models import (ARSectionDefinition, ARDocument, ARSectionContent, ARResour
     ReportingPeriod, User, ActivityReport, ActivityReportRevision, ReportIndicator,
     ActualRevision, PublicationIndicatorBinding)
 from .activity_contract_service import canonical, digest
+from .structure_service import period_name
 
 STATUSES = {'empty':'Boş', 'draft':'Taslak', 'ready':'Hazır', 'not_applicable':'Uygulanamaz'}
 CORE = 'III.B.2.i'
@@ -236,7 +237,7 @@ def resources(db,doc):
         rows=db.scalars(select(ARResourceRow).where(ARResourceRow.document_id==source.id).order_by(ARResourceRow.table_kind,ARResourceRow.position,ARResourceRow.id)).all()
         for row in rows:
             result[row.table_kind]['rows'].append({**row_data(row),'department_id':source.department_id,
-                'department':db.get(Department,source.department_id).name})
+                'department':period_name(db,doc.period_id,db.get(Department,source.department_id))})
         for table in result.values():
             table['source_documents'].append({'id':source.id,'revision':source.revision})
     for kind,table in result.items():
@@ -356,7 +357,7 @@ def report_data(db,user,document_id,use_freeze=True):
     core=core_summary(db,doc)
     result={'id':doc.id,'organization_id':doc.organization_id,'period_id':doc.period_id,
         'year':db.get(ReportingPeriod,doc.period_id).year,'scope':doc.scope,'department_id':doc.department_id,
-        'department':db.get(Department,doc.department_id).name if doc.department_id else 'İdare',
+        'department':period_name(db,doc.period_id,db.get(Department,doc.department_id)) if doc.department_id else 'İdare',
         'definition_version':doc.definition_version,'revision':doc.revision,'frozen':False,
         'sections':[],'resources':resources(db,doc),'core':core}
     from .activity_financial_service import financial_data, has_slot_data

@@ -270,3 +270,61 @@ def test_frozen_view_rechecks_asset_and_keeps_frozen_metadata(section_client, db
     assert service.INTEGRITY_ERROR in page.text and 'Üst yönetici olarak;' not in page.text
     assert ekler(client, doc)['status'] != 'ready'
     assert freeze.payload_json == original
+
+
+def test_closed_directorate_ek2_requires_coverage_only_through_active_to(section_client, db, sample):
+    from datetime import date
+    from app.models import DepartmentScope
+
+    client, docs, _, _ = section_client
+    doc = docs[f"birim:{sample['department'].id}"]
+    scope = db.scalar(select(DepartmentScope).where(DepartmentScope.period_id == doc.period_id,
+                                                  DepartmentScope.department_id == doc.department_id))
+    scope.active_to = date(2027, 6, 30)
+    scope.display_name = '2027 Hizmet Müdürlüğü'
+    sample['department'].name = 'Bugünkü Müdürlük'
+    db.commit()
+    token = login(client, sample['user'].email)
+    values = variables()
+    values['signatories'][0]['end_date'] = '2027-06-29'
+    assert put(client, token, doc, 'EK-2', values).status_code == 200
+    missing = ekler(client, doc)
+    assert missing['status'] == 'draft'
+    blocker = next(m for m in missing['missing'] if '30.06.2027' in m)
+    assert '2027 Hizmet Müdürlüğü' in blocker and 'Bugünkü Müdürlük' not in blocker
+    assert 'EKLER → EK-2' in blocker and 'başlangıç ve bitiş tarihlerini tamamlayın' in blocker
+    page = client.get(f'/activity-sections/reports/{doc.id}?code=EKLER')
+    assert page.status_code == 200 and blocker in page.text
+    assert 'Bugünkü Müdürlük' not in page.text
+    assurance_page = client.get(f'/activity-sections/reports/{doc.id}/assurances/EK-2')
+    assert '2027 Hizmet Müdürlüğü' in assurance_page.text and 'Bugünkü Müdürlük' not in assurance_page.text
+
+    # Complete the other sections; EK-2's one missing closure day blocks freeze.
+    token = login(client, sample['strategy'].email)
+    report = client.get(f'/api/activity-sections/reports/{doc.id}').json()
+    for section in report['sections']:
+        if section['code'] in {'EKLER', 'III.B.2.i'}:
+            continue
+        financial_na = bool(report['financial']['missing'].get(section['code']))
+        assert save(client, token, doc, section['code'],
+            status='not_applicable' if financial_na else 'ready',
+            reason='Bu örnek raporda malî veri bulunmuyor.' if financial_na else '').status_code == 200
+    revision = client.get(f'/api/activity-sections/reports/{doc.id}').json()['revision']
+    response = client.post(f'/api/activity-sections/reports/{doc.id}/freeze',
+        headers={'X-CSRF-Token': token}, json={'expected_revision': revision})
+    assert response.status_code == 409 and 'EKLER' in response.json()['detail']
+
+    token = login(client, sample['user'].email)
+    values['signatories'][0]['end_date'] = '2027-06-30'
+    assert put(client, token, doc, 'EK-2', values).status_code == 200
+    assert ekler(client, doc)['status'] == 'ready'
+    assert not ekler(client, doc)['missing']
+    token = login(client, sample['strategy'].email)
+    revision = client.get(f'/api/activity-sections/reports/{doc.id}').json()['revision']
+    response = client.post(f'/api/activity-sections/reports/{doc.id}/freeze',
+        headers={'X-CSRF-Token': token}, json={'expected_revision': revision})
+    assert response.status_code == 200, response.text
+    # Frozen readiness uses the same inclusive closure bound and saved signatories.
+    frozen = ekler(client, doc)
+    assert frozen['status'] == 'ready'
+    assert frozen['assurances'][0]['variables']['signatories'][0]['end_date'] == '2027-06-30'

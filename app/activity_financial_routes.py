@@ -6,6 +6,7 @@ from pydantic import BaseModel, Field, StrictInt, StrictFloat, StrictStr
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 from .db import get_db
+from .structure_service import period_name
 from .models import Department, Program, SubProgram, ARFinancialStatement
 from . import activity_financial_service as service
 from . import activity_sections_service as sections
@@ -28,13 +29,14 @@ class Revision(BaseModel):
 
 
 def financial_context(db,user,doc,report):
-    return {'financial':report.get('financial',{}),'budget_kinds':{'expenditure':'Gider — Ekonomik Kod','programme':'Gider — Program / Alt Program','revenue':'Gelir'},
+    departments=db.scalars(select(Department).where(Department.organization_id==doc.organization_id).order_by(Department.name)).all()
+    return {'financial_department_names':{dep.id:period_name(db,doc.period_id,dep) for dep in departments},'financial':report.get('financial',{}),'budget_kinds':{'expenditure':'Gider — Ekonomik Kod','programme':'Gider — Program / Alt Program','revenue':'Gelir'},
         'budget_columns':{k:service.budget_columns(k) for k in ('expenditure','programme','revenue')},
         'entry_columns':service.ENTRY_FIELDS,'entry_titles':{'assets':'Varlıklar ve Yükümlülükler','aid':'Yardım Yapılan Birlik ve Kuruluşlar','audit':'Malî Denetim Sonuçları','explanations':'Birim Sapma Açıklamaları'},
         'financial_slots':service.SLOTS,
         'financial_central':not report['frozen'] and not doc.department_id and (user.role=='strategy' or sections.finance(db,user)),
         'financial_own':not report['frozen'] and bool(doc.department_id and (user.role=='strategy' or doc.department_id==user.department_id)),
-        'financial_departments':db.scalars(select(Department).where(Department.organization_id==doc.organization_id).order_by(Department.name)).all(),
+        'financial_departments':departments,
         'financial_programs':db.scalars(select(Program).where(Program.period_id==doc.period_id)).all(),
         'financial_subprograms':db.scalars(select(SubProgram).where(SubProgram.period_id==doc.period_id)).all(),
         'expense_codes':service.EXPENSE_CODES,'revenue_codes':service.REVENUE_CODES}

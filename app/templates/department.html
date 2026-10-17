@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block page_title %}{{ department.name }}{% endblock %}
+{% block page_title %}{{ department_label }}{% endblock %}
 {% block page_subtitle %}{{ period.year }} Performans Programı · {{ 'Strateji inceleme görünümü' if user.role=='strategy' else 'Müdürlük veri giriş alanı' }}{% endblock %}
 {% block content %}
 <datalist id="unitOptions">{% for unit in ['Adet','Yüzde (%)','Oran (%)','Türk Lirası (₺)','Gün','Kişi','m2','Ton','Lt','Saat','Dakika'] %}<option value="{{ unit }}">{% endfor %}</datalist>
