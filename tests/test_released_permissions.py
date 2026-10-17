@@ -410,7 +410,7 @@ def test_authorization_screens_show_scope_and_controls(http, actors):
     assert all(text in page.text for text in ['Unvanı kaydet', 'Personel', 'Müdür', 'PP gönderim yetkisi'])
 
 
-@pytest.mark.parametrize('edit_kind', ['card', 'finance', 'economics', 'personnel', 'catalogue_unlink'])
+@pytest.mark.parametrize('edit_kind', ['card', 'finance', 'economics', 'economic_verify', 'personnel', 'catalogue_unlink'])
 def test_pp_edit_paths_retain_authorship(http, db, sample, actors, edit_kind):
     staff = http('staff')
     if edit_kind == 'card':
@@ -421,6 +421,14 @@ def test_pp_edit_paths_retain_authorship(http, db, sample, actors, edit_kind):
     elif edit_kind == 'economics':
         response = staff.post('/program/1/economic', data={'period_id': 1, 'year': 2027,
             'value_kind': 'budget', 'category': 'goods_services', 'program_group': 'service', 'funding_type': 'inside', 'amount': '130'})
+    elif edit_kind == 'economic_verify':
+        from app.models import EconomicValue
+        row = db.scalar(select(EconomicValue).where(EconomicValue.department_id == 1,
+            EconomicValue.year == 2027, EconomicValue.category == 'goods_services',
+            EconomicValue.funding_type == 'inside'))
+        row.state = 'needs_review'; row.raw_text = '130'; db.commit()
+        response = staff.post(f'/program/1/verify-money/economic/{row.id}',
+            data={'amount': '130', 'program_group': 'service'})
     elif edit_kind == 'personnel':
         response = staff.post('/api/departments/1/personnel-costs', json={'cost_2027_budget': '25'})
     else:
@@ -496,3 +504,70 @@ def test_submitted_data_cannot_change_after_approval_check(http, db, sample):
         'status': 'required', 'display_name': 'Eşzamanlı değişiklik'})
     assert response.status_code == 409 and 'iade' in response.json()['detail']
     assert decision(http('strategy_director'), sample).status_code == 200
+
+
+def test_economic_import_tracks_department_period_and_blocks_self_approval(http, db, sample, actors):
+    from test_pp_import_submit_ready import source_document
+    from app.models import EconomicValue
+
+    period = sample['period']; period.template_status = 'verified'
+    db.commit()
+    strategy = http('strategy_director')
+    preview = strategy.post(f'/api/periods/{period.id}/data-import-preview',
+        files={'file': ('economic.docx', source_document())})
+    assert preview.status_code == 200 and preview.json()['can_apply'], preview.text
+    batch_id = preview.json()['batch_id']
+    applied = strategy.post(f'/api/import-batches/{batch_id}/apply')
+    assert applied.status_code == 200 and applied.json()['economic_values'] == 30, applied.text
+    economic = db.scalar(select(EconomicValue).where(EconomicValue.source_table_number.is_not(None)))
+    did = economic.department_id
+    audit = db.scalar(select(AuditLog).where(AuditLog.action == 'pp_data_change',
+        AuditLog.user_id == actors['strategy_director'].id, AuditLog.entity_id == did,
+        AuditLog.details == f'period_id={period.id}'))
+    assert audit is not None
+    submission = db.scalar(select(Submission).where(Submission.department_id == did, Submission.period_id == period.id))
+    submission.status = 'submitted'; db.commit()
+    response = strategy.post(f'/api/submissions/{submission.id}/decision', json={'decision': 'approve'})
+    assert response.status_code == 403 and 'Görevler ayrılığı' in response.json()['detail']
+    # Imported economic review uses the same department scope and package lock.
+    actors['authorized'].department_id = did; db.commit()
+    writer = http('authorized')
+    path = f'/program/{did}/verify-money/economic/{economic.id}'
+    assert strategy.post(path, data={'amount': '100', 'program_group': 'service'}).status_code == 403
+    assert writer.post(path, data={'amount': '100', 'program_group': 'service'}).status_code == 409
+    submission.status = 'returned'; db.commit()
+    assert writer.post(path, data={'amount': '100', 'program_group': 'service'}).status_code == 303
+    assert db.scalar(select(AuditLog.id).where(AuditLog.action == 'pp_data_change',
+        AuditLog.user_id == actors['authorized'].id, AuditLog.entity_id == did,
+        AuditLog.details == f'period_id={period.id}'))
+
+
+def test_economic_verification_reads_body_before_package_lock(http, db, sample, monkeypatch):
+    from sqlalchemy import event
+    from starlette.requests import Request
+    from app.models import EconomicValue
+
+    writer = http('staff')
+    row = db.scalar(select(EconomicValue).where(EconomicValue.year == 2027,
+        EconomicValue.category == 'goods_services', EconomicValue.funding_type == 'inside'))
+    order = []
+    original_form = Request.form
+
+    def read_form(request, *args, **kwargs):
+        order.append('body')
+        return original_form(request, *args, **kwargs)
+
+    def observe_lock(execution):
+        if getattr(execution.statement, '_for_update_arg', None) is not None:
+            order.append('lock')
+
+    monkeypatch.setattr(Request, 'form', read_form)
+    event.listen(db, 'do_orm_execute', observe_lock)
+    try:
+        response = writer.post(f'/program/1/verify-money/economic/{row.id}',
+            data={'amount': '130', 'program_group': 'service'})
+        assert response.status_code == 303, response.text
+        assert 'body' in order and 'lock' in order
+        assert max(i for i, step in enumerate(order) if step == 'body') < order.index('lock')
+    finally:
+        event.remove(db, 'do_orm_execute', observe_lock)

@@ -14,7 +14,7 @@ from app.data_importer import parse_performance_docx
 from app.import_service import apply_import_batch
 from app.import_service import consolidate_source_departments
 from app.models import Activity, ImportBatch, Indicator, EconomicValue, ReportCard, Department
-from app.program_service import validate_department
+from app.program_service import validate_department, activity_source_disagreements
 from test_word_import import import_client, import_context, word_document
 
 pytestmark = pytest.mark.postgres
@@ -204,6 +204,20 @@ def test_real_source_apply_persists_all_records(db, import_context, real_parsed)
     relevant = [e for e in errors if any(w in e.lower() for w in ['kart', 'doğrulan', 'ekonomik'])]
     assert not relevant, '\n'.join(relevant)
     assert len(errors) == 5 and all('kataloğu bağlantısı eksik' in e for e in errors), errors
+    # CIV-011's source totals and CIV-026's economic import coexist on D-23.
+    disagreements = Counter()
+    for activity in db.scalars(select(Activity)):
+        source_disagreements = activity_source_disagreements(activity)
+        for key in source_disagreements:
+            disagreements[key] += 1
+        for value in activity.cost_values:
+            if value.source_amount is not None:
+                assert value.amount == value.source_amount
+                if f'{value.year}:{value.value_kind}' in source_disagreements:
+                    if value.funding_type == 'total':
+                        assert value.state == 'needs_review'
+                        assert value.source_raw_text == value.raw_text
+    assert disagreements == {'2027:budget': 13, '2028:forecast': 14, '2029:forecast': 18}
 
 
 

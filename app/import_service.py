@@ -2,7 +2,6 @@ import hashlib
 import json
 from .serialization import json_dumps
 from decimal import Decimal
-from copy import deepcopy
 import re
 import unicodedata
 from datetime import datetime, UTC
