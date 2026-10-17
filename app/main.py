@@ -2155,3 +2155,12 @@ register_activity_contract_routes(app)
 from . import master_data_routes
 master_data_routes.register(app)
 released_permissions.register(app)
+
+from .activity_sections_routes import register as register_activity_sections_routes
+register_activity_sections_routes(app)
+
+from .activity_financial_routes import register as register_activity_financial_routes
+register_activity_financial_routes(app)
+
+from .assurance_routes import register as register_assurance_routes
+register_assurance_routes(app)

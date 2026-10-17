@@ -231,7 +231,9 @@ def test_economic_migration_preserves_data_and_refuses_lossy_downgrade(db, sampl
         with pytest.raises(RuntimeError, match='korunmadan'):
             migration.downgrade()
         assert connection.execute(text("SELECT count(*) FROM economic_values WHERE state='needs_review' AND raw_text='-' ")).scalar() == 1
-    assert ScriptDirectory.from_config(Config(str(root/'alembic.ini'))).get_heads() == [migration.revision]
+    scripts = ScriptDirectory.from_config(Config(str(root/'alembic.ini')))
+    assert len(scripts.get_heads()) == 1
+    assert migration.revision in {revision.revision for revision in scripts.walk_revisions()}
 
 
 def test_unresolved_economic_programme_scope_is_listed_before_apply(db, import_context):

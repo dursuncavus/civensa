@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+{% block page_title %}{{ report.year }} Faaliyet Raporu{% endblock %}
+{% block page_subtitle %}{{ report.department }} · EK-1 · {{ 'Onaylı, dondurulmuş içerik' if report.frozen else 'İçerik hazırlığı' }}{% endblock %}
+{% block content %}
+<link rel="stylesheet" href="/static/activity_sections.css">
+<p><a href="/activity-sections">← Tamamlanma görünümü</a></p>
+{% if form_error %}<div class="ar-error" role="alert">{{ form_error }} Girdiğiniz alanlar aşağıda korunmuştur.</div>{% endif %}
+<div class="ar-layout"><nav class="panel ar-tree" aria-label="EK-1 bölümleri">{% for s in report.sections %}<a href="?code={{ s.code }}" class="{% if s.code==section.code %}ar-selected{% endif %}" style="padding-left:{{ 12+s.depth*12 }}px"><span>{{ s.title }}</span><small>{{ statuses[s.status] }}</small></a>{% endfor %}</nav>
+<div class="ar-body"><section class="panel ar-panel"><p class="muted">{{ section.code }} · Bölüm sahibi: {{ owners[section.owner] }}</p><h2>{{ section.title }}</h2>
+<p>Son düzenleyen: {{ section.editor_name }}{% if section.edited_at %} · {{ section.edited_at|ar_time }}{% endif %}</p>
+{% if section.copied_needs_review %}<p class="ar-warning">Geçen yıldan kopyalandı — gözden geçirin</p>{% endif %}
+{% if section.code=='EKLER' %}{% include 'assurance_slot.html' %}
+{% elif section.code=='III.B.2.i' %}<p>{{ report.core.message }}</p><a class="button" href="{{ report.core.link }}">Gösterge gerçekleşmelerini aç</a>
+{% else %}
+{% if section.content_kind in ['structured-from-PP','assurance'] %}<p class="ar-warning">Bu bölümün yapılandırılmış verileri daha sonra eklenecek. Şimdi açıklama, durum ve uygulanabilirlik gerekçesini kaydedebilirsiniz.</p>{% endif %}
+{% if editable %}
+<form method="post" action="/activity-sections/reports/{{ report.id }}/sections/{{ section.code }}" data-ar-section-form>
+<input type="hidden" name="csrf_token" value="{{ request.session.get('csrf_token') }}"><input type="hidden" name="expected_revision" value="{{ report.revision }}">
+<label>Bölüm içeriği<textarea name="text" rows="12">{{ attempted.text if attempted else section.blocks|ar_text }}</textarea></label>
+<p class="muted">Paragrafları boş satırla ayırın. Madde için “- ” kullanın. Basit tablo için “| Başlık | Değer |” yazın; her satırda aynı sayıda sütun kullanın. Önizleme kaydetmeden güncellenir.</p>
+<label>Durum<select name="status">{% for k,v in statuses.items() %}<option value="{{ k }}" {% if (attempted.status if attempted else section.status)==k %}selected{% endif %}>{{ v }}</option>{% endfor %}</select></label>
+<label>Uygulanamaz gerekçesi<textarea name="reason" rows="2">{{ attempted.reason if attempted else section.reason }}</textarea></label><button class="button primary">Bölümü kaydet</button></form>
+<div class="ar-preview"><h3>İçerik önizlemesi</h3><div data-ar-preview></div></div>
+{% else %}
+<p><span class="ar-status">{{ statuses[section.status] }}</span> {{ section.reason }}</p>
+<div class="ar-preview">{% for b in section.blocks %}{% if b.type=='paragraph' %}<p class="ar-paragraph">{{ b.text }}</p>{% elif b.type=='bullets' %}<ul>{% for text in b['items'] %}<li>{{ text }}</li>{% endfor %}</ul>{% elif b.type=='table' %}<table class="ar-table">{% for row in b.rows %}<tr>{% for cell in row %}<td>{{ cell }}</td>{% endfor %}</tr>{% endfor %}</table>{% endif %}{% endfor %}</div>
+{% endif %}{% endif %}</section>
+{% if section.code.startswith('III.A') %}{% include 'activity_financial.html' %}{% endif %}
+{% for kind,t in tables.items() %}<section class="panel ar-panel"><h2>{{ t.title }}</h2><p>Boş alan “bilinmiyor” anlamındadır; sıfır için 0 girin. Sayılar Türkçe biçimde gösterilir.</p>
+{% if editable and report.department_id %}
+<form method="post" action="/activity-sections/reports/{{ report.id }}/resources/{{ kind }}" data-ar-resource-form>
+<input type="hidden" name="csrf_token" value="{{ request.session.get('csrf_token') }}"><input type="hidden" name="expected_revision" value="{{ report.revision }}">
+<p class="muted">Kaydedilecek satırları seçin. Satırı kaldırmak için seçimini kaldırın. Aynı sayfadaki tabloları sırayla kaydedin.</p>
+<div class="ar-scroll"><table class="ar-table"><thead><tr><th>Kaydet</th>{% for key,label in t.columns %}<th>{{ label }}</th>{% endfor %}</tr></thead><tbody>
+{% set row_count=resource_count if resource_kind==kind else [t.rows|length+3,2000]|min %}
+{% for i in range(row_count) %}{% set row=t.rows[i] if i<t.rows|length else {} %}{% set active=(resource_attempt.get('include_'~i)=='on') if resource_kind==kind else i<t.rows|length %}<tr><td><input type="checkbox" name="include_{{ i }}" {% if active %}checked{% endif %} aria-label="{{ i+1 }}. satırı kaydet"></td>
+{% for key,label in t.columns %}{% set value=resource_attempt.get(key~'_'~i,'') if resource_kind==kind else row.get(key) %}<td>
+{% if key=='ownership' or (kind=='employment' and key=='category') %}<select name="{{ key }}_{{ i }}" aria-label="{{ label }} {{ i+1 }}"><option value="">Seçin</option>{% for option in (employment if key=='category' else (['mülk','kira','tahsis'] if kind=='buildings' else ['mülk','kira'])) %}<option {% if value==option %}selected{% endif %}>{{ option }}</option>{% endfor %}</select>
+{% else %}<input name="{{ key }}_{{ i }}" aria-label="{{ label }} {{ i+1 }}" {% if key in ['count','area'] %}inputmode="decimal"{% endif %} value="{{ (value|ar_number if value is not none else '') if key in ['count','area'] and resource_kind!=kind else (value if value is not none else '') }}">{% endif %}
+</td>{% endfor %}</tr>{% endfor %}</tbody></table></div><button type="button" class="button" data-ar-add-row>Satır ekle</button><button class="button primary">Tabloyu kaydet</button></form>
+{% else %}
+{% if not report.department_id %}<p>İdare verileri müdürlük tablolarından otomatik hesaplanır. Eksik değerler toplamın yanında belirtilir.</p>{% endif %}
+<div class="ar-scroll"><table class="ar-table"><thead><tr><th>Müdürlük</th>{% for key,label in t.columns %}<th>{{ label }}</th>{% endfor %}</tr></thead><tbody>{% for row in t.rows %}<tr><td>{{ row.department }}</td>{% for key,label in t.columns %}<td>{{ row[key]|ar_number if key in ['count','area'] else row[key] }}</td>{% endfor %}</tr>{% else %}<tr><td colspan="8">Henüz kaynak satırı yok.</td></tr>{% endfor %}</tbody></table></div>
+{% endif %}
+{% for key,total in t.totals.items() %}<p><strong>{{ 'Alan (m²)' if key=='area' else 'Adet / kişi' }} toplamı: {{ total.value|ar_number }}</strong> · {{ total.missing }} boş değer</p>{% endfor %}
+{% if not report.department_id and t.groups %}<h3>Tür ve mülkiyete göre toplamlar</h3>{% for group in t.groups %}<p>{{ group.category }} {{ group.ownership }}: <strong>{{ group.count|ar_number }}</strong> · {{ group.missing }} boş değer</p>{% endfor %}{% endif %}
+</section>{% endfor %}
+<section class="panel ar-panel"><h3>Bölüm denetim geçmişi</h3>{% for event in events %}<details><summary>{{ event.created_at|ar_time }} · Kullanıcı {{ event.actor_id }} · {{ {'resource_save':'Kaynak tablosu kaydedildi','financial_save':'Malî bilgi kaydedildi','financial_import':'Malî tablo içe aktarıldı'}.get(event.action,'Bölüm kaydedildi') }}</summary><p>Önceki kayıt</p><pre>{{ event.before_json }}</pre><p>Yeni kayıt</p><pre>{{ event.after_json }}</pre></details>{% else %}<p>Henüz değişiklik kaydı yok.</p>{% endfor %}</section>
+{% if user.role=='strategy' and not report.frozen %}<section class="panel ar-panel"><h3>İçerik onayı</h3><p>Tüm metin bölümleri Hazır veya gerekçeli Uygulanamaz olduğunda içerik değiştirilemez kopya olarak saklanır. Bu işlem nihai rapor yayımı veya Strateji’ye gönderim değildir. Malî veriler ve hesaplanan toplamlar onaylı kopyaya dahil edilir.</p><form method="post" action="/activity-sections/reports/{{ report.id }}/freeze"><input type="hidden" name="csrf_token" value="{{ request.session.get('csrf_token') }}"><input type="hidden" name="expected_revision" value="{{ report.revision }}"><button class="button">İçeriği onayla ve dondur</button></form></section>{% endif %}
+{% if report.frozen %}<p class="muted">Onaylı kopya doğrulama kodu: {{ report.sha256 }}</p>{% endif %}
+</div></div>
+{% endblock %}
+{% block scripts %}<script src="/static/activity_sections.js"></script>{% endblock %}

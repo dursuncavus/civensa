@@ -485,3 +485,8 @@ from .report_workflow_models import (ReportCandidate, ReportCandidateState, Cand
 from .revision_workflow_models import RevisionRequest, RevisionRequestState, RevisionRequestEvent, RevisionCorrectionCycle, RevisionEditGrant, RevisionEditGrantRenewal
 
 from .login_throttling import LoginAttempt
+
+from .activity_sections_models import (ARSectionDefinition, ARDocument, ARSectionContent,
+    ARResourceRow, ARDocumentFreeze, ARContentEvent)
+from .activity_financial_models import (ARBudgetRow, ARFinancialPolicy, ARFinancialEntry,
+    ARFinancialStatement, ARFinancialImport)
