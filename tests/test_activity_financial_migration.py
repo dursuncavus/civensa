@@ -10,6 +10,8 @@ from sqlalchemy import create_engine, inspect, text
 from sqlalchemy.engine import make_url
 from sqlalchemy.exc import DBAPIError
 from sqlalchemy.schema import CreateSchema, DropSchema
+from alembic.config import Config
+from alembic.script import ScriptDirectory
 
 ROOT=Path(__file__).resolve().parents[1]
 
@@ -45,7 +47,8 @@ def test_financial_migration_guards_and_preservation(tmp_path,backend):
         assert before==after
         with engine.connect() as conn:
             assert conn.execute(text('SELECT name FROM ar_financial_statements ORDER BY id')).scalars().all()==['Bilanço','Faaliyet Sonuçları Tablosu']
-            assert conn.execute(text('SELECT version_num FROM alembic_version')).scalar()=='c0382027a001'
+            scripts=ScriptDirectory.from_config(Config(str(ROOT/'alembic.ini')))
+            assert conn.execute(text('SELECT version_num FROM alembic_version')).scalar()==scripts.get_current_head()
         with engine.begin() as conn:
             conn.execute(text("INSERT INTO ar_financial_imports(id,document_id,kind,revision,source_sha256,preview_json,actor_id) VALUES (1,1,'expenditure',0,'hash','{}',1)"))
             conn.execute(text("INSERT INTO ar_budget_rows(id,document_id,kind,row_key,department_id,economic_code,initial,explanation,import_id) VALUES (1,1,'expenditure','1:01:0:0',1,'01',12500.23,'',1)"))

@@ -176,9 +176,13 @@ def test_missing_variables_and_unrecorded_period_prevent_ready(section_client):
     assert slot['status'] == 'draft'
     assert any('Yer' in m for m in slot['missing']) and any('tamamını' in m for m in slot['missing'])
     # Complete every other section so EKLER is the sole freeze blocker.
-    for section in client.get(f'/api/activity-sections/reports/{doc.id}').json()['sections']:
+    report = client.get(f'/api/activity-sections/reports/{doc.id}').json()
+    for section in report['sections']:
         if section['code'] not in {'EKLER', 'III.B.2.i'}:
-            assert save(client, token, doc, section['code'], status='ready').status_code == 200
+            financial_na = bool(report['financial']['missing'].get(section['code']))
+            assert save(client, token, doc, section['code'],
+                status='not_applicable' if financial_na else 'ready',
+                reason='Bu testin örnek raporunda malî veri bulunmuyor.' if financial_na else '').status_code == 200
     revision = client.get(f'/api/activity-sections/reports/{doc.id}').json()['revision']
     response = client.post(f'/api/activity-sections/reports/{doc.id}/freeze',
         headers={'X-CSRF-Token': token}, json={'expected_revision': revision})
