@@ -25,7 +25,7 @@ pytestmark=pytest.mark.postgres
 
 
 @pytest.fixture
-def foundation_db(request):
+def foundation_db(request, monkeypatch):
     url=os.environ.get('CIVENSA_TEST_POSTGRES_URL')
     if not url:pytest.fail('Authorization foundation requires disposable PostgreSQL')
     admin=create_engine(url);schema='auth_'+uuid4().hex
@@ -36,7 +36,36 @@ def foundation_db(request):
     assert result.returncode==0,result.stderr
     engine=create_engine(scoped)
     try:
-        with Session(engine,expire_on_commit=False) as db:yield db
+        with Session(engine,expire_on_commit=False) as db:
+            # Historical migration probes must use the columns that actually
+            # existed at their starting revision, while current tests use the full model.
+            from sqlalchemy import inspect, MetaData, Table
+            from sqlalchemy.orm import defer, defaultload
+            columns = {c['name'] for c in inspect(engine).get_columns('activity_cost_values')}
+            if 'source_amount' not in columns:
+                legacy_table = Table('activity_cost_values', MetaData(), autoload_with=engine)
+                db.info['historical_cost_table'] = legacy_table
+                @event.listens_for(db, 'do_orm_execute')
+                def historical_cost_reads(state):
+                    if state.is_select and any(m.class_ is ActivityCostValue for m in state.all_mappers):
+                        if state.is_relationship_load:
+                            state.statement = state.statement.options(defaultload(Activity.cost_values)
+                                .defer(ActivityCostValue.source_amount).defer(ActivityCostValue.source_raw_text)
+                                .defer(ActivityCostValue.source_resolution_json))
+                        else:
+                            state.statement = state.statement.options(
+                                defer(ActivityCostValue.source_amount), defer(ActivityCostValue.source_raw_text),
+                                defer(ActivityCostValue.source_resolution_json))
+                from app import program_service
+                original_record = program_service.record
+                def historical_record(obj):
+                    if isinstance(obj, ActivityCostValue):
+                        from types import SimpleNamespace
+                        obj = SimpleNamespace(__table__=legacy_table,
+                            **{c.name: getattr(obj, c.name) for c in legacy_table.columns})
+                    return original_record(obj)
+                monkeypatch.setattr(program_service, 'record', historical_record)
+            yield db
     finally:
         engine.dispose()
         with admin.begin() as c:c.execute(DropSchema(schema,cascade=True))

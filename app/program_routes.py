@@ -92,9 +92,9 @@ def register(app):
     @app.post('/program/{department_id}/finance/{activity_id}')
     async def finance(department_id:int,activity_id:int,request:Request,db:Session=Depends(get_db),user:User=Depends(require_user)):
         data=await request.form();pid=integer(data.get('period_id'));context(db,user,department_id,pid,True)
-        act=db.get(Activity,activity_id)
+        act=db.scalar(select(Activity).where(Activity.id==activity_id).with_for_update())
         if not act or act.department_id!=department_id or act.period_id!=pid:raise HTTPException(403)
-        save_activity_costs(db,act,db.get(ReportingPeriod,pid).year,data)
+        save_activity_costs(db,act,db.get(ReportingPeriod,pid).year,data,actor=user)
         db.commit();log(db,user,'finance_save','activity',act.id)
         return RedirectResponse(f'/program/{department_id}?period_id={pid}',303)
 
@@ -171,6 +171,11 @@ def register(app):
         try:amount=parse_number(data.get('amount'),money=True)
         except ValueError as exc:raise HTTPException(422,str(exc)) from None
         if amount is None:raise HTTPException(422,'Kaynakla doğruladığınız tutarı girin.')
+        if kind=='activity' and value.funding_type=='total' and value.source_amount is not None and value.source_resolution_json=='{}':
+            disagreement=activity_source_disagreements(owner).get(f'{value.year}:{value.value_kind}')
+            if disagreement or amount!=value.source_amount:
+                raise HTTPException(422,source_total_message(owner,value.year,value.value_kind,value.source_amount,
+                    disagreement['computed_total'] if disagreement else value.amount))
         value.amount=amount;value.state='verified'
         db.commit();log(db,user,'source_money_verified',model.__tablename__,value.id)
         return RedirectResponse(f'/program/{department_id}?period_id={owner.period_id}',303)

@@ -523,12 +523,14 @@ def department_page(department_id: int, request: Request, db: Session = Depends(
         activity_totals[key] = sum(activity_values) if complete else None
         general_totals[key] = (sum(activity_values) + personnel_map[key]
                                if complete and personnel_map.get(key) is not None else None)
+    from .program_service import activity_source_disagreements
     return templates.TemplateResponse(request, "department.html", {
         "user": user, "department": dept, "indicators": indicators, "activities": activities,
         "submission": submission, "issue_map": issue_map, "subprograms": subprograms, "period": period,
         "indicator_columns": ind_cols, "activity_columns": act_cols, "indicator_value_maps": ind_value_maps,
         "activity_maps": activity_maps, "personnel_map": personnel_map, "activity_totals": activity_totals,
         "general_totals": general_totals, "workflow_events": workflow_events,
+        "source_disagreements": {a.id: activity_source_disagreements(a) for a in activities},
         "funding_maps": {a.id:{f"{v.year}:{v.value_kind}:{v.funding_type}":v.amount for v in a.cost_values} for a in activities},
         "notifications": user_notifications(db, user),
     })
@@ -608,7 +610,7 @@ async def create_activity(request: Request, db: Session = Depends(get_db), user:
     act = Activity(period_id=period.id, department_id=user.department_id, subprogram_id=subprogram_id, name=name, explanation=str(data.get("explanation", "")).strip())
     db.add(act); db.flush()
     from .program_service import save_activity_costs
-    save_activity_costs(db, act, period.year, data)
+    save_activity_costs(db, act, period.year, data, actor=user)
     db.commit(); db.refresh(act)
     log(db, user, "activity_create", "activity", act.id)
     return {"ok": True, "id": act.id}
@@ -616,12 +618,18 @@ async def create_activity(request: Request, db: Session = Depends(get_db), user:
 
 @app.put("/api/activities/{activity_id}")
 async def update_activity(activity_id: int, request: Request, db: Session = Depends(get_db), user: User = Depends(require_user)):
-    act = db.scalar(select(Activity).where(Activity.id == activity_id).options(selectinload(Activity.cost_values)))
+    body = await request.body()
+    return _update_activity(activity_id, body, db, user)
+
+
+def _update_activity(activity_id: int, body: bytes, db: Session, user: User):
+    # Read the complete body before locking; keep the original validation order.
+    act = db.scalar(select(Activity).where(Activity.id == activity_id).with_for_update().options(selectinload(Activity.cost_values)))
     if not act:
         raise HTTPException(404)
     ensure_department_editable(db, user, act.department_id, act.period_id)
     period = db.get(ReportingPeriod, act.period_id)
-    data = await request.json()
+    data = json.loads(body)
     name = str(data.get("name", act.name)).strip()
     if not name:
         raise HTTPException(422, "Faaliyet adı zorunlu.")
@@ -637,10 +645,14 @@ async def update_activity(activity_id: int, request: Request, db: Session = Depe
     act.name = name
     act.explanation = str(data.get("explanation", act.explanation)).strip()
     from .program_service import save_activity_costs
-    save_activity_costs(db, act, period.year, data)
+    save_activity_costs(db, act, period.year, data, actor=user)
     db.commit()
     log(db, user, "activity_update", "activity", act.id)
-    return {"ok": True}
+    db.expire(act, ["cost_values"])
+    return {"ok": True, "cost_totals": {
+        f"{v.year}:{v.value_kind}": str(v.amount) if v.amount is not None else None
+        for v in act.cost_values if v.funding_type == "total"
+    }}
 
 
 @app.delete("/api/activities/{activity_id}")
@@ -1496,8 +1508,9 @@ async def data_import_preview(period_id: int, file: UploadFile = File(...), db: 
         "ok": True, "batch_id": batch.id, "status": batch.status,
         "summary": plan["summary"], "warnings": warnings,
         "errors": errors, "coverage_items": plan["parsed"].get("coverage_items", []),
+        "conflicts": plan["conflicts"], "decisions": json.loads(batch.decisions_json or "[]"),
         "departments": preview_departments, "mappings": plan["mappings"],
-        "can_apply": not plan["unresolved"] and not year_mismatch and not errors,
+        "can_apply": not plan["unresolved"] and not plan["unresolved_conflicts"] and not year_mismatch and not errors,
     }
 
 
@@ -1507,7 +1520,7 @@ def import_batch_detail(batch_id: int, db: Session = Depends(get_db), user: User
     if not batch:
         raise HTTPException(404)
     parsed = json.loads(batch.payload_json)
-    plan = build_department_plan(db, parsed)
+    plan = build_department_plan(db, parsed, json.loads(batch.decisions_json or "[]"))
     period = db.get(ReportingPeriod, batch.period_id)
     source_years = plan["summary"].get("source_years", [])
     year_mismatch = bool(period and source_years and source_years != [period.year])
@@ -1520,19 +1533,43 @@ def import_batch_detail(batch_id: int, db: Session = Depends(get_db), user: User
         "id": batch.id, "filename": batch.filename, "status": batch.status,
         "summary": plan["summary"], "warnings": warnings,
         "errors": errors, "coverage_items": plan["parsed"].get("coverage_items", []),
+        "conflicts": plan["conflicts"], "decisions": json.loads(batch.decisions_json or "[]"),
         "departments": [{
             "name": d["name"], "block_count": len(d["blocks"]),
             "indicator_count": sum(len(b["indicators"]) for b in d["blocks"]),
             "activity_count": len(d["activities"]),
         } for d in plan["parsed"].get("departments", [])],
-        "mappings": plan["mappings"], "can_apply": batch.status == "preview" and not plan["unresolved"] and not year_mismatch and not errors,
+        "mappings": plan["mappings"], "can_apply": batch.status == "preview" and not plan["unresolved"] and not plan["unresolved_conflicts"] and not year_mismatch and not errors,
         "can_revert": can_revert, "revert_reason": revert_reason,
     }
 
 
+@app.post("/api/import-batches/{batch_id}/conflicts/{conflict_id}/decision")
+async def import_conflict_decision(batch_id: int, conflict_id: str, request: Request,
+                                   db: Session = Depends(get_db), user: User = Depends(require_strategy)):
+    body = await request.body()
+    return _import_conflict_decision(batch_id, conflict_id, body, db, user)
+
+
+def _import_conflict_decision(batch_id: int, conflict_id: str, body: bytes, db: Session, user: User):
+    # No await can occur while the batch lock is held.
+    batch = db.scalar(select(ImportBatch).where(ImportBatch.id == batch_id).with_for_update())
+    if not batch:
+        raise HTTPException(404)
+    data = json.loads(body)
+    from .import_service import decide_import_conflict
+    try:
+        decide_import_conflict(db, batch, conflict_id, data.get("chosen_amount"), data.get("reason"), user)
+        db.commit()
+    except ValueError as exc:
+        db.rollback()
+        raise HTTPException(422, str(exc)) from None
+    return import_batch_detail(batch_id, db, user)
+
+
 @app.post("/api/import-batches/{batch_id}/apply")
 def apply_data_import(batch_id: int, preserve_existing: bool = False, db: Session = Depends(get_db), user: User = Depends(require_strategy)):
-    batch = db.get(ImportBatch, batch_id)
+    batch = db.scalar(select(ImportBatch).where(ImportBatch.id == batch_id).with_for_update())
     if not batch:
         raise HTTPException(404)
     try:
@@ -1550,7 +1587,7 @@ def apply_data_import(batch_id: int, preserve_existing: bool = False, db: Sessio
 
 @app.post("/api/import-batches/{batch_id}/revert")
 def revert_data_import(batch_id: int, db: Session = Depends(get_db), user: User = Depends(require_strategy)):
-    batch = db.get(ImportBatch, batch_id)
+    batch = db.scalar(select(ImportBatch).where(ImportBatch.id == batch_id).with_for_update())
     if not batch:
         raise HTTPException(404)
     try:
