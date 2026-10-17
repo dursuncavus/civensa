@@ -71,7 +71,11 @@
     $('legs').addEventListener('click', event => { if(event.target.closest('.remove-leg')) { event.target.closest('.leg').remove(); $('eligible-choices').replaceChildren(); invalidate(); } });
     $('legs').addEventListener('input', invalidate);
     ['period','year','value-kind','change-total','change-outside'].forEach(id => $(id).addEventListener('change', invalidate));
-    $('period').addEventListener('change', () => { $('year').value = $('period').selectedOptions[0].dataset.year; $('eligible-choices').replaceChildren(); });
+    $('period').addEventListener('change', () => {
+      $('year').value = $('period').selectedOptions[0].dataset.year; $('eligible-choices').replaceChildren();
+      const labels = JSON.parse($('budget-department-names').textContent)[$('period').value] || {};
+      [...document.querySelectorAll('.department option'), ...$('leg-template').content.querySelectorAll('.department option')].forEach(option => { option.textContent = labels[option.value] || ''; });
+    });
     $('preview-button').onclick = preview; $('refresh-preview').onclick = preview;
     $('continue-reference').onclick = () => { if (!current) { error('Seçimler değişti. Önce “Seçimlerle yeniden hesapla” düğmesine basın.'); return; } updateReference(); $('reference-section').hidden = false; $('reference-section').scrollIntoView(); };
     $('apply-button').onclick = async () => { const button = $('apply-button'); button.disabled = true; try { if (!current) throw Error('Önizleme güncel değil. Yeniden hesaplayın.'); const result = await post('/api/budget-reallocations/apply', {token:current.token,...reference()}); location.href = `/budget-reallocations/${result.id}`; } catch(e) { error(e.message); } finally { button.disabled = false; } };

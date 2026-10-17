@@ -336,3 +336,53 @@ def test_notification_failure_rolls_back_every_value_and_history(db,budget,http)
     for row in db.scalars(select(EconomicValue).where(EconomicValue.year==2027)):
         assert str(row.amount)==before[row.id]
     assert all(s.status=='approved' and s.revision==1 for s in db.scalars(select(Submission)))
+
+
+def test_closed_period_directorate_refuses_increase_with_receivers_but_allows_decrease(db, sample, budget, http, monkeypatch):
+    from datetime import date
+    from starlette.datastructures import FormData
+    from app.models import DepartmentScope
+    from app import structure_service
+
+    closed = sample['department']
+    receiver = db.get(Department, budget['legs'][1]['department_id'])
+    other_receiver = Department(organization_id=closed.organization_id, name='Diğer Devralan Kurum Adı')
+    db.add(other_receiver); db.flush()
+    scope = db.scalar(select(DepartmentScope).where(DepartmentScope.period_id == budget['period_id'], DepartmentScope.department_id == closed.id))
+    scope.display_name = 'Dönemde Kapanan Müdürlük'
+    for dep, name in [(receiver, 'Dönemde Devralan Birim'), (other_receiver, 'Dönemde İkinci Devralan')]:
+        db.add(DepartmentScope(period_id=budget['period_id'], department_id=dep.id, display_name=name, status='required'))
+    db.commit()
+    structure_service.save_change(db, sample['strategy'], FormData([
+        ('organization_id', str(closed.organization_id)), ('period_id', str(budget['period_id'])),
+        ('change_type', 'SPLIT'), ('effective_date', '2027-07-01'),
+        ('council_decision_date', '2027-06-20'), ('council_decision_no', '2027/48'),
+        ('from_department_ids', str(closed.id)), ('to_department_ids', str(receiver.id)),
+        ('to_department_ids', str(other_receiver.id))]))
+    db.commit()
+    assert not closed.is_active and scope.active_to == date(2027, 7, 1)
+    client = http('strategy_director')
+    incoming = copy.deepcopy(budget)
+    incoming['legs'][0]['direction'] = 'increase'
+    incoming['legs'][1]['direction'] = 'decrease'
+    monkeypatch.setattr(service, 'operation_date', lambda db: date(2027, 7, 1))
+    earlier = preview(client, incoming)  # Closure date is inclusive.
+    monkeypatch.setattr(service, 'operation_date', lambda db: date(2027, 7, 2))
+    for response in [client.post('/api/budget-reallocations/preview', json=incoming), apply(client, earlier)]:
+        assert response.status_code == 422, response.text
+        message = response.json()['detail']
+        assert all(text in message for text in ['Dönemde Kapanan Müdürlük', '01.07.2027', 'Dönemde Devralan Birim', 'Dönemde İkinci Devralan', 'artış'])
+        assert closed.name not in message and receiver.name not in message
+    assert db.scalar(select(func.count(BudgetOperation.id))) == 0
+    page = client.get('/budget-reallocations/new')
+    assert 'Dönemde Kapanan Müdürlük' in page.text
+    outgoing = preview(client, budget)
+    assert outgoing['summaries'][0]['name'] == 'Dönemde Kapanan Müdürlük'
+    response = apply(client, outgoing)
+    assert response.status_code == 200, response.text
+    detail = client.get(f"/budget-reallocations/{response.json()['id']}")
+    assert 'Dönemde Kapanan Müdürlük' in detail.text and 'Dönemde Devralan Birim' in detail.text
+    assert all('Dönemde' in n.message for n in db.scalars(select(Notification)))
+    assert 'Dönemde Kapanan Müdürlük' in db.scalar(select(SubmissionEvent).where(SubmissionEvent.department_id == closed.id)).note
+    audit = db.scalar(select(AuditLog).where(AuditLog.action == 'budget_reallocation'))
+    assert 'Dönemde Kapanan Müdürlük' in audit.details and 'Dönemde Devralan Birim' in audit.details

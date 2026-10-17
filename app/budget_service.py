@@ -9,6 +9,7 @@ from contextlib import contextmanager
 from datetime import date
 from decimal import Decimal, InvalidOperation, ROUND_DOWN, ROUND_HALF_UP, localcontext
 from uuid import uuid4
+from zoneinfo import ZoneInfo
 
 from fastapi import HTTPException
 from itsdangerous import URLSafeTimedSerializer, BadSignature, SignatureExpired
@@ -16,11 +17,12 @@ from sqlalchemy import select, exists
 from sqlalchemy.orm import aliased
 
 from . import authorization_service as auth
+from . import structure_service as structure
 from .config import session_secret
 from .models import (Activity, ActivityCostValue, EconomicValue, Department, DepartmentCostValue,
     ReportingPeriod, User, Organization, Submission, SubmissionEvent, AuditLog,
     AuthorityDelegation, DirectorateMembership, DelegationRevocation, DirectoratePackage,
-    WorkflowEvent, Notification, BudgetOperation, BudgetOperationLine)
+    WorkflowEvent, Notification, BudgetOperation, BudgetOperationLine, DepartmentScope)
 from .numbers import format_number
 from .program_service import ECONOMIC_CATEGORIES, PROGRAM_GROUPS, cost_columns
 
@@ -158,6 +160,31 @@ def normalized(db, data):
     return period, year, kind, legs
 
 
+def operation_date(db):
+    return auth.server_now(db).astimezone(ZoneInfo('Europe/Istanbul')).date()
+
+
+def check_increases(db, ctx, legs):
+    """The period profile's closing date is inclusive; reductions remain available."""
+    today = operation_date(db)
+    for leg in legs:
+        profile = ctx['profiles'].get(leg['department_id'])
+        if leg['direction'] != 'increase' or not profile or not profile.active_to or profile.active_to >= today:
+            continue
+        receivers = set()
+        for change in structure.live_changes(db):
+            if change.change_type not in {'CLOSED', 'MERGED', 'SPLIT'} or change.effective_date != profile.active_to:
+                continue
+            for link in structure.links_for(db, change.id):
+                if link.from_department_id == leg['department_id'] and link.to_department_id:
+                    receiver = db.get(Department, link.to_department_id)
+                    if receiver:
+                        receivers.add(structure.period_name(db, ctx['period'].id, receiver))
+        receiving = ', '.join(sorted(receivers)) if receivers else 'yapı kararında devralan müdürlük belirtilmemiş'
+        fail(f'{ctx["names"][leg["department_id"]]}: müdürlük {profile.active_to.strftime("%d.%m.%Y")} tarihinde kapandı/birleşti; bütçe artışı yapılamaz. '
+             f'Yapı kararındaki devralan müdürlükler: {receiving}. Artış için devralan müdürlük seçin; gerekirse Kurum Yapısı kararını kontrol edin.')
+
+
 def scope(db, user, data, *, lock=False, require_approved=True):
     period, year, kind, legs = normalized(db, data)
     org_id, delegation_id = authorize(db, user)
@@ -168,14 +195,20 @@ def scope(db, user, data, *, lock=False, require_approved=True):
         for did in sorted(set(dids + [user.department_id])):
             db.scalar(select(Department).where(Department.id == did).with_for_update())
         org_id, delegation_id = authorize(db, user)
-    deps = db.scalars(select(Department).where(Department.id.in_(dids), Department.organization_id == org_id,
-        Department.is_active.is_(True)).execution_options(populate_existing=True)).all()
+    deps = db.scalars(select(Department).where(Department.id.in_(dids), Department.organization_id == org_id)
+        .execution_options(populate_existing=True)).all()
     if len(deps) != len(dids):
-        fail('Aktarma müdürlüğü kurumunuza ait veya etkin değil. Müdürlük listesini kontrol edin.', 403)
+        fail('Aktarma müdürlüğü kurumunuza ait değil. Müdürlük listesini kontrol edin.', 403)
     def read(query):
         if lock:
             query = query.with_for_update()
         return db.scalars(query.execution_options(populate_existing=True)).all()
+    profiles = {profile.department_id: profile for profile in read(select(DepartmentScope).where(
+        DepartmentScope.period_id == period.id, DepartmentScope.department_id.in_(dids)).order_by(DepartmentScope.id))}
+    names = {dep.id: structure.period_name(db, period.id, dep) for dep in deps}
+    for dep in deps:
+        if not dep.is_active and not (dep.id in profiles and profiles[dep.id].active_to):
+            fail(f'{names[dep.id]}: müdürlük etkin değil ve bu dönemde kayıtlı kapanış tarihi yok. Müdürlük listesini ve dönem profilini kontrol edin.', 403)
     submissions = read(select(Submission).where(Submission.period_id == period.id, Submission.department_id.in_(dids)).order_by(Submission.id))
     packages = read(select(DirectoratePackage).where(DirectoratePackage.period_id == period.id,
         DirectoratePackage.department_id.in_(dids), DirectoratePackage.resource_scope == 'performance_program').order_by(DirectoratePackage.id))
@@ -183,7 +216,7 @@ def scope(db, user, data, *, lock=False, require_approved=True):
         sub = next((s for s in submissions if s.department_id == dep.id), None)
         pp = [p for p in packages if p.department_id == dep.id]
         if require_approved and (not sub or sub.status != 'approved' or any(p.state != 'strategy_approved' for p in pp)):
-            fail(f'{dep.name}: PP paketi onaylı değil. Aktarmadan önce onay sürecini tamamlayın.')
+            fail(f'{names[dep.id]}: PP paketi onaylı değil. Aktarmadan önce onay sürecini tamamlayın.')
     activities = read(select(Activity).where(Activity.period_id == period.id, Activity.department_id.in_(dids)).order_by(Activity.id))
     economic = read(select(EconomicValue).where(EconomicValue.period_id == period.id, EconomicValue.department_id.in_(dids),
         EconomicValue.year == year, EconomicValue.value_kind == kind).order_by(EconomicValue.id))
@@ -193,6 +226,7 @@ def scope(db, user, data, *, lock=False, require_approved=True):
     personnel = read(select(DepartmentCostValue).where(DepartmentCostValue.period_id == period.id,
         DepartmentCostValue.department_id.in_(dids), DepartmentCostValue.year == year, DepartmentCostValue.value_kind == kind).order_by(DepartmentCostValue.id))
     snapshot = {'period': [period.id, period.status],
+        'department_profiles': [[dep.id, names[dep.id], dep.is_active, structure.profile_data(profiles[dep.id]) if dep.id in profiles else None] for dep in deps],
         'activities': [[a.id, a.department_id, a.name, a.contract_bound] for a in activities],
         'economic': [[r.id, r.department_id, r.category, r.program_group, r.funding_type, state(r)] for r in economic],
         'costs': [[r.id, r.activity_id, r.funding_type, state(r)] for r in costs],
@@ -202,12 +236,13 @@ def scope(db, user, data, *, lock=False, require_approved=True):
         # Detect an apply+reversal cycle even if values return to their old amounts.
         'last_lines': list(db.execute(select(BudgetOperationLine.id).where(BudgetOperationLine.department_id.in_(dids)).order_by(BudgetOperationLine.id)).scalars())}
     return dict(period=period, year=year, kind=kind, legs=legs, org_id=org_id, delegation_id=delegation_id,
-                deps=deps, activities=activities, economic=economic, costs=costs, submissions=submissions,
+                deps=deps, profiles=profiles, names=names, activities=activities, economic=economic, costs=costs, submissions=submissions,
                 packages=packages, snapshot=hashlib.sha256(canonical(snapshot).encode()).hexdigest())
 
 
 def plan(db, user, data, *, lock=False, ctx=None):
     ctx = ctx or scope(db, user, data, lock=lock)
+    check_increases(db, ctx, ctx['legs'])
     activities = {a.id: a for a in ctx['activities']}
     rows_by_key = {(r.__tablename__, r.id): r for r in ctx['economic'] + ctx['costs']}
     changes, used, summaries, choices = {}, set(), [], []
@@ -215,34 +250,35 @@ def plan(db, user, data, *, lock=False, ctx=None):
     for index, leg in enumerate(ctx['legs']):
         did = leg['department_id']
         dep = next(d for d in ctx['deps'] if d.id == did)
+        name = ctx['names'][did]
         erows = [r for r in ctx['economic'] if r.department_id == did]
         arows = [r for r in ctx['costs'] if activities[r.activity_id].department_id == did]
         available_categories = sorted({r.category for r in erows if not protected(r.category)})
         available_activities = [a for a in ctx['activities'] if a.department_id == did and not a.contract_bound]
         if set(leg.get('excluded_categories', [])) - set(available_categories) or set(leg.get('excluded_activities', [])) - {a.id for a in available_activities}:
-            fail(f'{dep.name}: seçilen kayıtlar değişti. Uygun kayıt önizlemesini yenileyin.')
+            fail(f'{name}: seçilen kayıtlar değişti. Uygun kayıt önizlemesini yenileyin.')
         eligible_e = [r for r in erows if not protected(r.category) and r.category not in leg.get('excluded_categories', [])]
         eligible_a = [r for r in arows if not activities[r.activity_id].contract_bound and r.activity_id not in leg.get('excluded_activities', [])]
         for r in erows + arows:
             if r.funding_type == 'inside' and (r.amount is None or not r.amount.is_finite() or r.amount < 0):
-                fail(f'{dep.name}: {r.id} numaralı bütçe içi kaydı eksik veya negatif. Kaynak veriyi doğrulayıp yeniden önizleyin.')
+                fail(f'{name}: {r.id} numaralı bütçe içi kaydı eksik veya negatif. Kaynak veriyi doğrulayıp yeniden önizleyin.')
         baseline = sum((r.amount for r in erows if r.funding_type == 'inside'), ZERO)
         if baseline <= 0:
-            fail(f'{dep.name}: bütçe içi toplam sıfır. Dağıtım için pozitif kaynak tutarı girin.')
+            fail(f'{name}: bütçe içi toplam sıfır. Dağıtım için pozitif kaynak tutarı girin.')
         with localcontext() as precision:
             precision.prec = 60
             amount = decimal_input(leg['amount'], 'Tutar', cents=True) if 'amount' in leg else (baseline * decimal_input(leg['ratio'], 'Oran') / 100).quantize(CENT, rounding=ROUND_HALF_UP)
         if amount >= Decimal('1e18'):
-            fail(f'{dep.name}: hesaplanan tutar çok büyük. Oranı veya tutarı azaltın.')
+            fail(f'{name}: hesaplanan tutar çok büyük. Oranı veya tutarı azaltın.')
         if amount == 0:
-            fail(f'{dep.name}: oran bir kuruşun altında kaldı. Daha büyük tutar veya oran girin.')
+            fail(f'{name}: oran bir kuruşun altında kaldı. Daha büyük tutar veya oran girin.')
         delta = -amount if leg['direction'] == 'decrease' else amount
         ratio = delta / baseline
         outside_delta = ZERO
         if data.get('change_outside', False):
             outside = [r for r in eligible_e if r.funding_type == 'outside']
             if any(r.amount is None or r.amount < 0 for r in outside):
-                fail(f'{dep.name}: bütçe dışı ekonomik tutar eksik. Kaynak veriyi doğrulayın.')
+                fail(f'{name}: bütçe dışı ekonomik tutar eksik. Kaynak veriyi doğrulayın.')
             outside_delta = (sum((r.amount for r in outside), ZERO) * ratio).quantize(CENT, rounding=ROUND_HALF_UP)
         for table_label, table_rows in (('ekonomik tablo', eligible_e), ('faaliyetler', eligible_a)):
             for fund, target in [('inside', delta), ('outside', outside_delta)]:
@@ -250,27 +286,27 @@ def plan(db, user, data, *, lock=False, ctx=None):
                     continue
                 selected = [r for r in table_rows if r.funding_type == fund]
                 if any(r.amount is None or r.amount < 0 for r in selected):
-                    fail(f'{dep.name}: {"bütçe içi" if fund == "inside" else "bütçe dışı"} dağıtımında eksik / negatif kayıt var. Kaynak veriyi doğrulayın.')
+                    fail(f'{name}: {"bütçe içi" if fund == "inside" else "bütçe dışı"} dağıtımında eksik / negatif kayıt var. Kaynak veriyi doğrulayın.')
                 total = sum((r.amount for r in selected), ZERO)
                 if target < 0 and -target > total:
-                    fail(f'{dep.name} / {table_label} / {"bütçe içi" if fund == "inside" else "bütçe dışı"}: uygun toplam {money(total)} TL, istenen azalış {money(-target)} TL. Tutarı azaltın veya uygun kayıt seçimini genişletin.')
+                    fail(f'{name} / {table_label} / {"bütçe içi" if fund == "inside" else "bütçe dışı"}: uygun toplam {money(total)} TL, istenen azalış {money(-target)} TL. Tutarı azaltın veya uygun kayıt seçimini genişletin.')
                 if target == 0:
                     continue
                 if total <= 0:
-                    fail(f'{dep.name} / {table_label}: seçilen dağıtılabilir toplam sıfır. Pozitif tutarı olan kayıtları seçin.')
+                    fail(f'{name} / {table_label}: seçilen dağıtılabilir toplam sıfır. Pozitif tutarı olan kayıtları seçin.')
                 allocation = distribute(target, selected)
                 for r in selected:
                     key = (r.__tablename__, r.id)
                     if key in used:
-                        fail(f'{dep.name}: aynı kayıt iki aktarma satırında seçilmiş. Aynı müdürlükteki satırlar için birbirinden ayrı ekonomik kategori ve faaliyetler seçin.')
+                        fail(f'{name}: aynı kayıt iki aktarma satırında seçilmiş. Aynı müdürlükteki satırlar için birbirinden ayrı ekonomik kategori ve faaliyetler seçin.')
                     used.add(key)
                     changes[key] = r.amount + allocation[r.id]
         econ_before = sum((r.amount for r in erows if r.funding_type == 'inside'), ZERO)
         activity_before = sum((r.amount for r in arows if r.funding_type == 'inside'), ZERO)
-        summaries.append(dict(department_id=did, name=dep.name, amount=str(amount), change=str(delta),
+        summaries.append(dict(department_id=did, name=ctx['names'][dep.id], amount=str(amount), change=str(delta),
             percent=str((ratio * 100).quantize(Decimal('.0001'))), before=str(baseline), after=str(baseline + delta),
             outside_change=str(outside_delta), source_difference=str(econ_before - activity_before)))
-        choices.append(dict(index=index, name=dep.name,
+        choices.append(dict(index=index, name=ctx['names'][dep.id],
             categories=[{'id': c, 'name': ECONOMIC_CATEGORIES.get(c, c)} for c in available_categories],
             activities=[{'id': a.id, 'name': a.name} for a in available_activities]))
         net += delta
@@ -327,7 +363,7 @@ def plan(db, user, data, *, lock=False, ctx=None):
         items = [s for s in summaries if s['department_id'] == dep.id]
         before = Decimal(items[0]['before'])
         delta = sum((Decimal(s['change']) for s in items), ZERO)
-        department_results.append(dict(department_id=dep.id, name=dep.name, before=str(before), after=str(before + delta),
+        department_results.append(dict(department_id=dep.id, name=ctx['names'][dep.id], before=str(before), after=str(before + delta),
             change=str(delta), percent=str((delta / before * 100).quantize(Decimal('.0001')))))
     result = dict(summaries=summaries, department_results=department_results, lines=lines, choices=choices, warnings=warnings, snapshot=ctx['snapshot'])
     return ctx, result
@@ -404,21 +440,22 @@ def persist(db, user, data, ctx, result, ref, *, reverses_id=None):
         label = REFERENCES[ref['reference_type']] + ' ile aktarma' + (' — geri alma' if reverses_id else '')
         note = f'{label} #{operation.id}; {ref["reference_date"]} / {ref["reference_number"]}: {ref["reason"]}'
         for sub in ctx['submissions']:
+            department_note = f'{ctx["names"][sub.department_id]}: {note}'
             sub.revision += 1
             db.add(SubmissionEvent(submission_id=sub.id, department_id=sub.department_id, period_id=sub.period_id,
-                actor_user_id=user.id, event_type='budget_reallocation', revision=sub.revision, note=note,
+                actor_user_id=user.id, event_type='budget_reallocation', revision=sub.revision, note=department_note,
                 snapshot_json=canonical({'budget_operation_id': operation.id, 'reverses_id': reverses_id})))
         for package in ctx['packages']:
             db.add(WorkflowEvent(actor_user_id=user.id, actor_snapshot_json=auth.actor_snapshot(db, user, ctx['org_id']),
                 organization_id=ctx['org_id'], department_id=package.department_id, event_type='budget_reallocation',
                 resource_type='directorate_package', resource_id=str(package.id), context_json=canonical({'budget_operation_id': operation.id}),
-                reason=note, source='administrative', correlation_id=str(uuid4())))
+                reason=f'{ctx["names"][package.department_id]}: {note}', source='administrative', correlation_id=str(uuid4())))
         for dep in ctx['deps']:
             delta = sum((Decimal(s['change']) for s in result['summaries'] if s['department_id'] == dep.id), ZERO)
             db.add(Notification(role='department', department_id=dep.id, event_type='budget_reallocation',
-                message=f'{dep.name}: {money(delta)} TL bütçe aktarması. {REFERENCES[ref["reference_type"]]} {ref["reference_date"]} / {ref["reference_number"]}'[:500],
+                message=f'{ctx["names"][dep.id]}: {money(delta)} TL bütçe aktarması. {REFERENCES[ref["reference_type"]]} {ref["reference_date"]} / {ref["reference_number"]}'[:500],
                 link=f'/department/{dep.id}'))
-        db.add(AuditLog(user_id=user.id, action='budget_reallocation', entity_type='budget_operation', entity_id=operation.id, details=note))
+        db.add(AuditLog(user_id=user.id, action='budget_reallocation', entity_type='budget_operation', entity_id=operation.id, details=f'{", ".join(ctx["names"].values())}: {note}'))
     return operation
 
 
@@ -434,6 +471,7 @@ def apply(db, user, data):
     request = signed['request']
     ref = reference(data, request['legs'])
     ctx = scope(db, user, request, lock=True, require_approved=False)
+    check_increases(db, ctx, ctx['legs'])
     if ctx['snapshot'] != signed['snapshot']:
         fail(CONFLICT, 409)
     ctx, result = plan(db, user, request, ctx=ctx)
@@ -457,12 +495,12 @@ def reverse(db, user, operation_id, data):
         later = db.scalar(select(BudgetOperationLine.id).where(BudgetOperationLine.value_table == item.value_table,
             BudgetOperationLine.value_id == item.value_id, BudgetOperationLine.id > item.id).limit(1))
         if not row or canonical(state(row)) != item.after_json or later:
-            fail(f'{item.label}: aktarmadan sonra değer değişti. Geri alma uygulanmadı; güncel kaydı inceleyip yeni aktarma hazırlayın.', 409)
+            fail(f'{ctx["names"][item.department_id]} / {item.label}: aktarmadan sonra değer değişti. Geri alma uygulanmadı; güncel kaydı inceleyip yeni aktarma hazırlayın.', 409)
         lines.append(dict(value_table=item.value_table, value_id=item.value_id, department_id=item.department_id,
             label=item.label, funding_type=item.funding_type, before=str(item.after), after=str(item.before),
             change=str(item.before-item.after), changed=True, before_state=json.loads(item.after_json), after_state=json.loads(item.before_json)))
     old_preview = json.loads(original.preview_json)
-    summaries = [dict(s, change=str(-Decimal(s['change'])), outside_change=str(-Decimal(s['outside_change'])),
+    summaries = [dict(s, name=ctx['names'][s['department_id']], change=str(-Decimal(s['change'])), outside_change=str(-Decimal(s['outside_change'])),
         percent=str((-Decimal(s['change']) / Decimal(s['after']) * 100).quantize(Decimal('.0001'))) if Decimal(s['after']) else '—',
         before=s['after'], after=s['before']) for s in old_preview['summaries']]
     compensating_request = json.loads(original.request_json)
@@ -470,6 +508,7 @@ def reverse(db, user, operation_id, data):
         leg['direction'] = 'increase' if leg['direction'] == 'decrease' else 'decrease'
         leg.pop('ratio', None)
         leg['amount'] = summary['amount']
+    check_increases(db, ctx, compensating_request['legs'])
     result = dict(lines=lines, summaries=summaries, warnings=old_preview.get('warnings', []))
     return persist(db, user, compensating_request, ctx, result, ref, reverses_id=original.id)
 

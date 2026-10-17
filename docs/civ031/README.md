@@ -68,10 +68,23 @@ before/after actor audit. It does not change a submission's approval status.
 Only the synchronous, authorized budget/flag services bypass the ordinary
 approved-data edit hook; ordinary edit and approval separation remain enforced.
 
-The single migration is `c031b1a2c3d4`, based on `b0262027a001`, the base head at
-implementation time. Downgrade retains all values, new columns, history and
-immutability guards; re-upgrade is idempotent. Rebase the new migration onto the
-single new base head after the AR stack and CIV-027 land.
+The branch is rebased onto CIV-027 (`28be116`). The single migration is
+`c031b1a2c3d4`, with parent `c0272027a001`; the PR still targets
+`feature/authorization-workflow-phase5`. Downgrade retains all values, new
+columns, history and immutability guards; re-upgrade is idempotent.
+
+Directorate labels in the wizard, detail, notifications, audit and Turkish
+errors use `structure_service.period_name` for the selected reporting period.
+Changing the wizard period refreshes the selection labels. The signed preview
+also includes the period profiles so structure changes invalidate old previews.
+
+A period profile's `active_to` date is inclusive. After that date, new increases
+(including compensating increases) are refused with the closure date and the
+receivers recorded in the uncancelled structure decision. The operation date is
+the database clock's current calendar date in Europe/Istanbul. A global inactive
+flag caused by closure does not prevent reductions of that period's approved
+budget. Existing ordinary inactive-department restrictions still apply when
+there is no period closure profile.
 
 ## Screenshots
 
@@ -90,7 +103,7 @@ PostgreSQL guards. Migration coverage includes populated SQLite/PostgreSQL
 upgrade, immutable SQL history, lossless downgrade/re-upgrade and a single head.
 
 Run with `CIVENSA_TEST_POSTGRES_URL` pointing to a **disposable local PostgreSQL
-16+ database**, `CIVENSA_CHROMIUM_PATH` pointing to Chromium when needed, and
+18 database**, `CIVENSA_CHROMIUM_PATH` pointing to Chromium when needed, and
 `python -m pytest -q --require-postgres`. Set `CIVENSA_UI_SCREENSHOTS` to this
 folder to regenerate the two screenshots. `test_migration.py` seeds the public
 schema and requires a fresh disposable database for each repeated run.
@@ -99,10 +112,13 @@ The PR description records the actual focused and required regression results.
 No live database, deployment or source bundle is involved. CI is intentionally
 not polled, as requested for this task.
 
-Verified in this task: **29 new tests** and **304 required/related regression
-cases**, with the five historical-schema fixture failures corrected and rerun.
-The final focused run (new tests, programme/source-conflict tests and the old
-foundation upgrade scenario) passed **71 tests**; the fresh-database historical
-migration rerun passed **6 tests**. `alembic heads` reports only `c031b1a2c3d4`;
-`git diff --check` is clean. The only test warning is the existing Starlette
-TestClient/httpx deprecation.
+Fix round 1 runs the CIV-031 tests, structure-change tests, programme and
+source-conflict tests, released-permission tests, package-approval parity,
+workflow concurrency, live-pilot hardening and every migration test on local
+PostgreSQL 18.6. The PR description records the final counts and results.
+
+Fix round 1 result: **264 passed** across the complete requested selection,
+including all 30 CIV-031 tests and every migration test. The initial focused
+CIV-031 run also passed **30 tests**. Validation used PostgreSQL **18.6**;
+SQLite migration variants and Chromium interaction checks are included.
+The only warning was the existing Starlette TestClient/httpx deprecation.

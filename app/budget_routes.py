@@ -2,11 +2,11 @@
 import json
 from datetime import datetime
 from fastapi import Depends, Request, HTTPException
-from sqlalchemy import select
+from sqlalchemy import select, or_
 from sqlalchemy.exc import OperationalError, IntegrityError
 from sqlalchemy.orm import Session
 from .db import get_db
-from .models import BudgetOperation, BudgetOperationLine, Department, ReportingPeriod, User
+from .models import BudgetOperation, BudgetOperationLine, Department, ReportingPeriod, User, DepartmentScope
 from . import budget_service as service
 from . import authorization_service as auth
 
@@ -14,11 +14,17 @@ from . import authorization_service as auth
 def register(app):
     from .main import require_user, templates
 
-    def context(db, user):
+    def context(db, user, period_id=None):
         org_id, _ = service.authorize(db, user)
-        return {'user': user, 'references': service.REFERENCES,
-            'departments': db.scalars(select(Department).where(Department.organization_id == org_id, Department.is_active.is_(True)).order_by(Department.name)).all(),
-            'periods': db.scalars(select(ReportingPeriod).order_by(ReportingPeriod.year.desc())).all()}
+        periods = db.scalars(select(ReportingPeriod).order_by(ReportingPeriod.year.desc())).all()
+        departments = db.scalars(select(Department).where(Department.organization_id == org_id,
+            or_(Department.is_active.is_(True), Department.id.in_(select(DepartmentScope.department_id).where(
+                DepartmentScope.active_to.is_not(None))))).order_by(Department.id)).all()
+        names_by_period = {period.id: {dep.id: service.structure.period_name(db, period.id, dep)
+            for dep in departments} for period in periods}
+        selected = period_id or (periods[0].id if periods else None)
+        return {'user': user, 'references': service.REFERENCES, 'departments': departments, 'periods': periods,
+            'department_names': names_by_period.get(selected, {}), 'department_names_by_period': names_by_period}
 
     def commit(db, work):
         try:
@@ -45,7 +51,8 @@ def register(app):
     async def choices(request: Request, db: Session = Depends(get_db), user=Depends(require_user)):
         data = await body(request)
         ctx = service.scope(db, user, data)
-        return {'choices': [dict(index=i, name=next(d.name for d in ctx['deps'] if d.id == leg['department_id']),
+        service.check_increases(db, ctx, ctx['legs'])
+        return {'choices': [dict(index=i, name=ctx['names'][leg['department_id']],
             categories=[{'id': category, 'name': service.ECONOMIC_CATEGORIES.get(category, category)} for category in sorted({r.category for r in ctx['economic'] if r.department_id == leg['department_id'] and not service.protected(r.category)})],
             activities=[{'id': a.id, 'name': a.name} for a in ctx['activities'] if a.department_id == leg['department_id'] and not a.contract_bound]) for i, leg in enumerate(ctx['legs'])]}
 
@@ -62,12 +69,16 @@ def register(app):
 
     @app.get('/budget-reallocations/{operation_id}')
     def detail(operation_id: int, request: Request, db: Session = Depends(get_db), user=Depends(require_user)):
-        ctx = context(db, user)
         org_id, _ = service.authorize(db, user)
         operation = db.get(BudgetOperation, operation_id)
         if not operation or operation.organization_id != org_id:
             raise HTTPException(404, 'Aktarma kaydı bulunamadı. İşlem listesini yenileyin.')
-        ctx.update(operation=operation, actor=db.get(User, operation.actor_id), preview=json.loads(operation.preview_json),
+        ctx = context(db, user, operation.period_id)
+        preview = json.loads(operation.preview_json)
+        for summary in preview['summaries'] + preview.get('department_results', []):
+            dep = db.get(Department, summary['department_id'])
+            summary['name'] = service.structure.period_name(db, operation.period_id, dep)
+        ctx.update(operation=operation, actor=db.get(User, operation.actor_id), preview=preview,
             reference_request=json.loads(operation.request_json),
             reversal=db.scalar(select(BudgetOperation).where(BudgetOperation.reverses_id == operation.id)),
             lines=db.scalars(select(BudgetOperationLine).where(BudgetOperationLine.operation_id == operation.id).order_by(BudgetOperationLine.id)).all())

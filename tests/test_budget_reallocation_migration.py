@@ -20,7 +20,7 @@ def test_budget_migration_keeps_rows_and_history(tmp_path,backend):
     from alembic.script import ScriptDirectory
     scripts=ScriptDirectory.from_config(Config(str(ROOT/'alembic.ini')))
     assert scripts.get_heads()==['c031b1a2c3d4']
-    assert scripts.get_revision('c031b1a2c3d4').down_revision=='b0262027a001'
+    assert scripts.get_revision('c031b1a2c3d4').down_revision=='c0272027a001'
     admin=None
     if backend=='postgres':
         admin=create_engine(os.environ['CIVENSA_TEST_POSTGRES_URL'])
@@ -34,7 +34,7 @@ def test_budget_migration_keeps_rows_and_history(tmp_path,backend):
             env={**os.environ,'DATABASE_URL':url},capture_output=True,text=True)
         assert result.returncode==0,result.stderr
     try:
-        migrate('upgrade','b0262027a001')
+        migrate('upgrade','c0272027a001')
         with engine.begin() as c:
             c.execute(text("INSERT INTO organizations(id,name) VALUES (1,'Belediye')"))
             c.execute(text("INSERT INTO departments(id,organization_id,name) VALUES (1,1,'Strateji')"))
@@ -50,7 +50,7 @@ def test_budget_migration_keeps_rows_and_history(tmp_path,backend):
             c.execute(text("INSERT INTO budget_operation_lines(id,operation_id,department_id,value_table,value_id,label,funding_type,\"before\",\"after\",before_json,after_json) VALUES(1,1,1,'activity_cost_values',1,'Faaliyet','inside',123.45,120.45,'{}','{}')"))
         for statement in ["UPDATE budget_operations SET reason='değişiklik' WHERE id=1",'DELETE FROM budget_operations WHERE id=1', 'UPDATE budget_operation_lines SET "after"=0 WHERE id=1','DELETE FROM budget_operation_lines WHERE id=1']:
             with pytest.raises(DBAPIError),engine.begin() as c:c.execute(text(statement))
-        migrate('downgrade','b0262027a001')
+        migrate('downgrade','c0272027a001')
         migrate('upgrade','head')
         with engine.connect() as c:
             assert c.execute(text('SELECT COUNT(*) FROM budget_operations')).scalar()==1
