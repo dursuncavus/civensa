@@ -272,9 +272,23 @@ def _validate_department_records(period_id, department_id, year, scope, indicato
                 expected_categories = set(ECONOMIC_CATEGORIES)
                 # A compact source table explicitly enumerates its applicable categories.
                 # Keep omitted rows absent; an empty cell within a listed row is still reviewed.
-                if group_values and all(getattr(v, 'source_table_number', None) for v in group_values):
+                # Split rows preserve the imported compact-table scope. A zero
+                # share is explicit evidence even though it creates no target row.
+                split_contexts = []
+                for source in ev:
+                    if source.funding_type != fund or not getattr(source, 'source_table_number', None):
+                        continue
                     try:
-                        contexts = [json.loads(v.source_context_json) for v in group_values]
+                        source_context = json.loads(source.source_context_json)
+                        split = source_context.get('split_from', {})
+                        if split.get('shares') and source.category in source_context.get('categories', []):
+                            split_contexts.append((source, source_context))
+                    except (ValueError, TypeError, AttributeError):
+                        pass  # Existing scope validation below reports malformed contexts.
+                scope_values = group_values or [v for v, _ in split_contexts]
+                if scope_values and all(getattr(v, 'source_table_number', None) for v in scope_values):
+                    try:
+                        contexts = [json.loads(v.source_context_json) for v in scope_values]
                         if any(not set(c['card_ids']).issubset(card_ids) for c in contexts):
                             raise ValueError('scope')
                         expected_categories = set().union(*(set(c['categories']) for c in contexts))
@@ -282,7 +296,15 @@ def _validate_department_records(period_id, department_id, year, scope, indicato
                             raise ValueError('categories')
                     except (ValueError, TypeError, KeyError):
                         errors.append(f'{y}: ekonomik kaynak kapsamı eksik veya geçersiz; tabloyu kontrol edin.')
-                missing=expected_categories-{v.category for v in group_values}
+                explicit_zero_categories = set()
+                for source, source_context in split_contexts:
+                    try:
+                        if (set(source_context['card_ids']).issubset(card_ids)
+                                and Decimal(source_context['split_from']['shares'][group]) == 0):
+                            explicit_zero_categories.add(source.category)
+                    except (ValueError, TypeError, KeyError, ArithmeticError):
+                        pass
+                missing=expected_categories-{v.category for v in group_values}-explicit_zero_categories
                 if missing:errors.append(f'{y}: {PROGRAM_GROUPS.get(group,group)} / {"Bütçe İçi" if fund=="inside" else "Bütçe Dışı"}: {len(missing)} ekonomik gider hücresi eksik (yoksa 0 girin).')
         if p and p.amount is not None and ev and all(v.amount is not None for v in ev):
             if complete[y,k] and totals[y,k] + p.amount != sum(v.amount for v in ev): errors.append(f'{y}: ortak maliyet ve ekonomik tablo toplamları uyuşmuyor.')

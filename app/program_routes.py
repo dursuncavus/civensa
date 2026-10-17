@@ -8,6 +8,8 @@ from fastapi import Depends, Request, HTTPException
 from fastapi.responses import RedirectResponse, StreamingResponse, Response
 from sqlalchemy import select, func, delete
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
+from starlette.concurrency import run_in_threadpool
 from .db import get_db
 from .models import *
 from .numbers import parse_number
@@ -46,6 +48,68 @@ def register(app):
             economic_map=economic_map,selected_group=group,selected_fund=fund,catalogue=rows(db,OfficialActivity,period.id), fields=CARD_FIELDS,errors=errors,warnings=warnings,
             editable=user.role=='department' and (not sub or sub.status in {'draft','returned'}),
             categories=ECONOMIC_CATEGORIES,groups=PROGRAM_GROUPS,columns=economic_columns(period.year),cost_columns=cost_columns(period.year)))
+
+    def split_screen(request, db, user, department_id, period_id, data=None, error=None, status=200, saved=0):
+        from .economic_split_service import unallocated_cells, split_fingerprint, SPLIT_GROUPS
+        context(db,user,department_id,period_id)
+        cells = unallocated_cells(db,period_id,department_id)
+        cards = rows(db,ReportCard,period_id,department_id)
+        period = db.get(ReportingPeriod,period_id)
+        sub = db.scalar(select(Submission).where(Submission.department_id==department_id,Submission.period_id==period_id))
+        blocked = period.status=='closed' or bool(sub and sub.status in {'submitted','approved'})
+        card_pages = {card.id:card.source_page for card in cards}
+        pages = {}
+        for cell in cells:
+            try:
+                source_ids = json.loads(cell.source_context_json).get('card_ids', [])
+            except (ValueError, TypeError, AttributeError):
+                source_ids = []
+            source_ids = source_ids if isinstance(source_ids,list) else []
+            source_pages = [card_pages.get(cid) for cid in source_ids if isinstance(cid,int)]
+            source_pages.append(card_pages.get(cell.source_card_id))
+            pages[cell.id] = ', '.join(dict.fromkeys(page for page in source_pages if page))
+        return templates.TemplateResponse(request,'economic_split.html',dict(user=user,
+            department=db.get(Department,department_id),period=period,cells=cells,cards=cards,pages=pages,
+            groups=SPLIT_GROUPS,categories=ECONOMIC_CATEGORIES,fingerprint=split_fingerprint,
+            data=data or {},error=error,blocked=blocked,saved=saved),status_code=status)
+
+    @app.get('/program/{department_id}/economic-split')
+    def economic_split_page(department_id:int, request:Request, period_id:int,
+            saved:int=0, db:Session=Depends(get_db), user:User=Depends(require_strategy)):
+        return split_screen(request,db,user,department_id,period_id,saved=saved)
+
+    def apply_economic_split(department_id, request, data, db, user):
+        from .economic_split_service import split_economic_cells, SPLIT_GROUPS
+        pid=integer(data.get('period_id'),'Dönem')
+        context(db,user,department_id,pid)
+        cells=[{'id':integer(cell_id,'Kaynak hücre'), 'fingerprint':data.get(f'fingerprint_{cell_id}'),
+            'shares':{g:data.get(f'share_{cell_id}_{g}','') for g in SPLIT_GROUPS},
+            'zero_group':data.get(f'zero_group_{cell_id}')} for cell_id in data.getlist('cell_id')]
+        try:
+            count=split_economic_cells(db,user,pid,department_id,cells,data.get('reason'))
+            db.commit()
+        except (HTTPException,IntegrityError) as exc:
+            db.rollback()
+            status=exc.status_code if isinstance(exc,HTTPException) else 409
+            if isinstance(exc,HTTPException):
+                message=exc.detail
+            elif getattr(getattr(exc.orig,'diag',None),'constraint_name',None)=='uq_economic_cell':
+                message='Hedef ekonomik hücre eşzamanlı olarak oluşturuldu. Sayfayı yenileyip çakışan kaynakları karşılaştırın.'
+            else:
+                message='Dağılımın tutarlılık veya denetim kaydı kontrolü başarısız; hiçbir hücre değiştirilmedi. Sayfayı yenileyip tekrar deneyin; sorun sürerse sistem yöneticisine başvurun.'
+            if 'application/json' in request.headers.get('accept',''):
+                from fastapi.responses import JSONResponse
+                return JSONResponse({'detail':message},status_code=status)
+            return split_screen(request,db,user,department_id,pid,data,error=message,status=status)
+        redirect=f'/program/{department_id}/economic-split?period_id={pid}&saved={count}'
+        if 'application/json' in request.headers.get('accept',''):
+            return {'ok':True,'redirect_url':redirect}
+        return RedirectResponse(redirect,303)
+
+    @app.post('/program/{department_id}/economic-split')
+    async def economic_split_save(department_id:int, request:Request, db:Session=Depends(get_db), user:User=Depends(require_strategy)):
+        data=await request.form()  # All awaits finish before the transaction takes row locks.
+        return await run_in_threadpool(apply_economic_split,department_id,request,data,db,user)
 
     @app.post('/program/{department_id}/cards')
     async def save_card(department_id:int,request:Request,db:Session=Depends(get_db),user:User=Depends(require_user)):
