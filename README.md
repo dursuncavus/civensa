@@ -2,6 +2,8 @@
 
 Belediyeler için performans programı ve faaliyet raporu sistemi.
 
+[Render production deployment runbook](docs/operations/render.md)
+
 ## Local development and validation
 
 Use Python 3.12, install `requirements-dev.txt`, and supply environment variables
