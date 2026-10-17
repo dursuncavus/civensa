@@ -2,6 +2,7 @@
 import hashlib
 import io
 import json
+from collections import Counter
 from copy import deepcopy
 from pathlib import Path
 
@@ -11,6 +12,7 @@ from sqlalchemy import func, select
 
 from app.data_importer import parse_performance_docx
 from app.import_service import apply_import_batch
+from app.import_service import consolidate_source_departments
 from app.models import Activity, ImportBatch, Indicator, EconomicValue, ReportCard, Department
 from app.program_service import validate_department
 from test_word_import import import_client, import_context, word_document
@@ -146,6 +148,35 @@ def test_real_source_preview_is_applicable(import_client, import_context, real_s
     assert detail['conflicts'] == []
     assert detail['coverage_items'] == result['coverage_items']
     assert detail['errors'] == []
+    duplicates = [r for r in result['review_items'] if r.get('cause', '').startswith('duplicate_')]
+    assert Counter(r['cause'] for r in duplicates) == {'duplicate_programme_block': 11, 'duplicate_indicator': 8}
+    assert detail['review_items'] == result['review_items']
+    assert result['summary']['needs_review_count'] == len(result['review_items']) == 508
+
+
+def test_real_source_duplicate_evidence_and_economic_causes(real_parsed):
+    plan = consolidate_source_departments(real_parsed)
+    social = [r for r in plan['review_items'] if r.get('cause', '').startswith('duplicate_')
+              and r['department']=='Sosyal Hizmetler Müdürlüğü']
+    assert len(social) == 6
+    assert social[0]['cause']=='duplicate_programme_block' and social[0]['table_numbers']==[100, 101]
+    for index, item in enumerate(social[1:], 1):
+        assert f'SH36/PG0{index}.' in item['record']
+        assert item['table_numbers'] == ([100, 101, 102] if index < 5 else [100, 101])
+    values = [v for d in real_parsed['departments'] for t in d.get('economic_tables', []) for v in t['values']]
+    reasons = [c for v in values for c in v.get('review_causes', [])]
+    # Counts overlap: one value/column can have several independent causes.
+    assert Counter(c['cause'] for c in reasons) == {
+        'inside_total_mismatch': 180, 'source_cell_unverified': 150,
+        'program_group_unallocated': 140, 'personnel_total_mismatch': 8}
+    assert Counter(cause for cause, message in {(c['cause'], c['message']) for c in reasons}) == {
+        'inside_total_mismatch': 22, 'source_cell_unverified': 21,
+        'program_group_unallocated': 15, 'personnel_total_mismatch': 2}
+    assert Counter(cause for v in values for cause in {c['cause'] for c in v.get('review_causes', [])}) == {
+        'inside_total_mismatch': 180, 'source_cell_unverified': 100,
+        'program_group_unallocated': 140, 'personnel_total_mismatch': 8}
+    assert all('Tablo ' in c['message'] and '202' in c['message'] for c in reasons)
+    assert not any('Ekonomik satırlar, kaynak toplamları' in v.get('issue', '') for v in values)
 
 
 def test_real_source_apply_persists_all_records(db, import_context, real_parsed):

@@ -250,3 +250,85 @@ def test_unresolved_economic_programme_scope_is_listed_before_apply(db, import_c
     _, result = import_parsed(db, import_context, parsed)
     assert result['economic_values'] == 30
     assert all(v.state=='needs_review' for v in db.scalars(select(EconomicValue)))
+
+
+def repeated_block_document(*, program=None, department=None, value=None, name=None):
+    doc = Document(io.BytesIO(source_document()))
+    original = doc.tables[0]
+    original._tbl.addnext(deepcopy(original._tbl))
+    repeated = doc.tables[1]
+    for row, text in [(1, program), (2, department)]:
+        if text is not None:
+            for cell in repeated.rows[row].cells[2:]: cell.text = text
+    if value is not None: repeated.cell(8, 4).text = value
+    if name is not None: repeated.cell(8, 0).text = name
+    output = io.BytesIO(); doc.save(output)
+    return output.getvalue()
+
+
+@pytest.mark.parametrize('options,causes', [
+    ({}, ['duplicate_programme_block', 'duplicate_indicator']),
+    ({'program': 'Başka Program'}, ['duplicate_indicator']),
+    ({'value': '99'}, ['duplicate_programme_block']),
+    ({'name': 'Başka gösterge'}, ['duplicate_programme_block']),
+    ({'department': 'Başka Müdürlüğü'}, []),
+])
+def test_duplicate_source_blocks_are_reviewed_without_changing_values(options, causes):
+    parsed = parse_performance_docx(repeated_block_document(**options))
+    warnings = [r for r in parsed['review_items'] if r.get('cause', '').startswith('duplicate_')]
+    assert [r['cause'] for r in warnings] == causes
+    assert parsed['summary']['indicator_count'] == 2
+    assert sum(len(d['blocks']) for d in parsed['departments']) == 2
+    assert all(r['state'] == 'needs_review' and r['table_numbers'] == [1, 2] for r in warnings)
+    assert all('kaynak' in r['message'].lower() and 'kontrol' in r['message'].lower() for r in warnings)
+
+
+def test_duplicate_warning_survives_preview_and_apply(import_client, import_context, db):
+    response = import_client.post(f'/api/periods/{import_context.period.id}/data-import-preview',
+                                 files={'file': ('repeated.docx', repeated_block_document())})
+    preview = response.json()
+    assert response.status_code == 200 and preview['can_apply'], preview
+    warnings = [r for r in preview['review_items'] if r.get('cause', '').startswith('duplicate_')]
+    assert len(warnings) == 2
+    detail = import_client.get(f"/api/import-batches/{preview['batch_id']}").json()
+    assert detail['review_items'] == preview['review_items']
+    batch = db.get(ImportBatch, preview['batch_id'])
+    result = apply_import_batch(db, batch); db.commit()
+    assert result['cards'] == result['indicators'] == 2
+    assert db.scalar(select(func.count()).select_from(Indicator)) == 2
+
+
+@pytest.mark.parametrize('row,raw,cause,fragments', [
+    (5, '50.000', 'outside_funding_unsplit', ['Bütçe Dışı Toplam 50.000,00 TL', 'kategori', 'dağılım']),
+    (4, '12.500.000', 'inside_total_mismatch', ['Bütçe İçi Toplam 12.500.000,00 TL', 'toplamı 200,00 TL', 'fark 12.499.800,00 TL']),
+    (6, '12.500.000', 'funding_total_mismatch', ['Faaliyet Maliyeti Toplamı 12.500.000,00 TL', '200,00 TL', 'fark 12.499.800,00 TL']),
+    (3, 'belirsiz', 'source_cell_unverified', ['Mal ve Hizmet Alım Giderleri', 'belirsiz', 'doğrulanmış']),
+    (5, '', 'source_cell_unverified', ['Bütçe Dışı Toplam', 'boş', 'doğrulanmış']),
+])
+def test_economic_review_names_each_cause_and_source_column(row, raw, cause, fragments):
+    doc = Document(io.BytesIO(source_document()))
+    doc.tables[2].cell(row, 3).text = raw
+    output = io.BytesIO(); doc.save(output)
+    parsed = parse_performance_docx(output.getvalue())
+    values = parsed['departments'][0]['economic_tables'][0]['values']
+    value = next(v for v in values if v['year']==2027 and v['category']=='goods_services' and v['funding_type']=='inside')
+    reasons = [c for c in value['review_causes'] if c['cause'] == cause]
+    assert len(reasons) == 1
+    assert all(fragment in reasons[0]['message'] for fragment in ['Tablo 3, 2027 Bütçe:', *fragments])
+    assert 'Kaynak tabloyu kontrol edin.' in reasons[0]['message']
+    assert 'Ekonomik satırlar, kaynak toplamları' not in value['issue']
+
+
+def test_mixed_programme_group_keeps_all_economic_causes():
+    doc = Document(io.BytesIO(source_document(outside='5')))
+    doc.tables[0]._tbl.addnext(deepcopy(doc.tables[0]._tbl))
+    for cell in doc.tables[1].rows[1].cells[2:]: cell.text = 'Yönetim ve Destek Programı'
+    output = io.BytesIO(); doc.save(output)
+    parsed = parse_performance_docx(output.getvalue())
+    value = next(v for v in parsed['departments'][0]['economic_tables'][0]['values'] if v['year']==2027)
+    reasons = {c['cause']: c['message'] for c in value['review_causes']}
+    assert set(reasons) == {'outside_funding_unsplit', 'funding_total_mismatch', 'program_group_unallocated'}
+    assert all('Tablo 4' in message for message in reasons.values())
+    assert 'Program grubu dağılımı kaynakta ayrılmamış.' in reasons['program_group_unallocated']
+    assert 'Yönetim ve Destek Programı' in reasons['program_group_unallocated']
+    assert 'Çevre Programı' in reasons['program_group_unallocated']

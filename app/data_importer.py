@@ -7,7 +7,7 @@ from .value_labels import value_kind_label, funding_label
 from docx import Document
 from docx.table import Table
 from docx.oxml.ns import qn
-from .numbers import source_cell
+from .numbers import source_cell, format_number
 
 
 def _clean(text: str) -> str:
@@ -360,11 +360,38 @@ def _parse_economic_table(table, table_number, blocks):
     for index, (y, k) in enumerate(expected):
         checks = {f: (totals.get(f) or [{}] * len(expected))[index] for f in ('inside', 'outside', 'total')}
         outside_zero = checks['outside'].get('state') == 'verified' and Decimal(checks['outside']['amount']) == 0
-        parts = [rows[index] for rows in source_rows.values()]
-        valid_parts = all(v['state'] == 'verified' for v in parts)
-        total_ok = (all(v.get('state') == 'verified' for v in checks.values()) and valid_parts
-                    and Decimal(checks['inside']['amount']) == sum(Decimal(v['amount']) for v in parts)
-                    and Decimal(checks['total']['amount']) == Decimal(checks['inside']['amount']) + Decimal(checks['outside']['amount']))
+        reasons = []
+        prefix = f'Tablo {table_number}, {y} {value_kind_label(k)}: '
+        def reason(cause, message):
+            reasons.append({'cause': cause, 'message': prefix + message + ' Kaynak tabloyu kontrol edin.'})
+        def money(amount):
+            return format_number(amount, money=True) + ' TL'
+        total_labels = {'inside': 'Bütçe İçi Toplam', 'outside': 'Bütçe Dışı Toplam', 'total': 'Faaliyet Maliyeti Toplamı'}
+        parts = {category: rows[index] for category, rows in source_rows.items()}
+        for label, cell in [*((ECONOMIC_CATEGORIES[c], v) for c, v in parts.items()),
+                            *((total_labels[f], v) for f, v in checks.items())]:
+            if cell.get('state') != 'verified':
+                raw = cell.get('raw_text', '')
+                observed = f'«{raw}»' if raw else 'boş/eksik hücre'
+                detail = cell.get('issue', 'Kaynak hücre doğrulanamadı.')
+                reason('source_cell_unverified', f'{label} için beklenen doğrulanmış bir tutar; gözlenen {observed}. {detail}')
+        if checks['outside'].get('state') == 'verified' and not outside_zero:
+            reason('outside_funding_unsplit', f"Bütçe Dışı Toplam {money(checks['outside']['amount'])}; "
+                   'kategori bazında bütçe içi/dışı dağılım kaynakta ayrılmamış. Kategori tutarlarını ve finansman dağılımını kaynaktan doğrulayın.')
+        if checks['inside'].get('state') == 'verified' and all(v['state'] == 'verified' for v in parts.values()):
+            observed = Decimal(checks['inside']['amount'])
+            expected_total = sum(Decimal(v['amount']) for v in parts.values())
+            if observed != expected_total:
+                reason('inside_total_mismatch', f'Bütçe İçi Toplam {money(observed)}, kategori satırlarının toplamı {money(expected_total)}; fark {money(observed - expected_total)}.')
+        if all(v.get('state') == 'verified' for v in checks.values()):
+            observed = Decimal(checks['total']['amount'])
+            inside = Decimal(checks['inside']['amount']); outside = Decimal(checks['outside']['amount'])
+            if observed != inside + outside:
+                reason('funding_total_mismatch', f'Faaliyet Maliyeti Toplamı {money(observed)}, Bütçe İçi Toplam {money(inside)} + '
+                       f'Bütçe Dışı Toplam {money(outside)} = {money(inside + outside)}; fark {money(observed - inside - outside)}.')
+        if group == 'unallocated':
+            programmes = '; '.join(dict.fromkeys(b['program'] for b in blocks)) or 'Program bilgisi eksik'
+            reason('program_group_unallocated', f'Program grubu dağılımı kaynakta ayrılmamış. Programlar: {programmes}. Tutarları program gruplarına göre doğrulayın.')
         for category, rows in source_rows.items():
             for fund in ('inside', 'outside'):
                 value = dict(rows[index]) if fund == 'inside' else {
@@ -372,10 +399,10 @@ def _parse_economic_table(table, table_number, blocks):
                     'raw_text': checks['outside'].get('raw_text', ''),
                     'state': 'verified' if outside_zero else 'needs_review'}
                 value.update(category=category, funding_type=fund, program_group=group)
-                if not outside_zero or not total_ok or group == 'unallocated':
+                if reasons:
                     value['state'] = 'needs_review'
-                    value['issue'] = value.get('issue', '') + (' ' if value.get('issue') else '') + ('Program grubu dağılımı kaynakta ayrılmamış.' if group == 'unallocated' else
-                        'Ekonomik satırlar, kaynak toplamları veya finansman dağılımı kaynağa göre doğrulanmalı.')
+                    value['review_causes'] = list(reasons)
+                    value['issue'] = ' '.join(r['message'] for r in reasons)
                     if not outside_zero:
                         value['amount'] = None  # No category-level financing split is given.
                 values.append(value)
@@ -386,6 +413,7 @@ def _parse_economic_table(table, table_number, blocks):
 def _review_items(departments):
     items = []
     for department in departments:
+        items.extend(_duplicate_block_reviews(department))
         def add(value, record, table_number=None):
             if value.get('state') != 'needs_review':
                 return
@@ -406,6 +434,41 @@ def _review_items(departments):
     return items
 
 
+def _duplicate_block_reviews(department):
+    """Flag source repetitions once per repeated group, keeping every block intact."""
+    programmes = OrderedDict(); indicators = OrderedDict()
+    for block in department['blocks']:
+        key = (_key(block['program']), _key(block['subprogram']))
+        programmes.setdefault(key, []).append(block)
+        for indicator in block['indicators']:
+            # Compare parsed numbers: 2467 and 2.467 assert the same value. Unknown
+            # text stays distinct, and blank/dash/zero must never compare equal.
+            values = tuple(sorted((v['year'], v['kind'], v['state'],
+                                   Decimal(v['value']) if v.get('value') is not None else v.get('raw_text', ''))
+                                  for v in indicator['values']))
+            key = (_key(indicator['name']), values)
+            matches = indicators.setdefault(key, [])
+            if not any(b is block for b, _ in matches):
+                matches.append((block, indicator))
+    items = []
+    def add(cause, record, blocks, description):
+        numbers = [b.get('table_number') for b in blocks]
+        tables = ', '.join(str(n) for n in numbers)
+        items.append({'department': department['name'], 'record': record, 'table_number': numbers[0],
+                      'table_numbers': numbers, 'year': None, 'kind': '', 'raw_text': '',
+                      'state': 'needs_review', 'cause': cause,
+                      'message': f"{department['name']} / Tablolar {tables}: {description} Kaynak blokları kontrol edin; tekrarların kasıtlı olup olmadığını doğrulayın."})
+    for blocks in programmes.values():
+        if len(blocks) > 1:
+            record = blocks[0]['program'] + ' / ' + blocks[0]['subprogram']
+            add('duplicate_programme_block', record, blocks, f'Aynı program ve alt program birden fazla blokta bulunuyor: {record}.')
+    for matches in indicators.values():
+        if len(matches) > 1:
+            record = matches[0][1]['name']
+            add('duplicate_indicator', record, [b for b, _ in matches], f'Aynı kod/ad ve aynı değerlere sahip gösterge birden fazla blokta bulunuyor: {record}.')
+    return items
+
+
 def _check_economic_personnel(departments):
     """Keep both source assertions when a shared personnel total disagrees."""
     for department in departments:
@@ -416,6 +479,15 @@ def _check_economic_personnel(departments):
                     continue
                 values = [v for v in table['values'] if (v['year'], v['kind']) == key and v['category'] in {'personnel', 'sgk'}]
                 if values and all(v['amount'] is not None for v in values) and sum(Decimal(v['amount']) for v in values) != Decimal(common['amount']):
+                    economic_total = sum(Decimal(v['amount']) for v in values)
+                    shared_total = Decimal(common['amount'])
+                    message = (f"Tablo {table['table_number']}, {key[0]} {value_kind_label(key[1])}: "
+                               f"Personel ve SGK satırları ortak personel tablosundan farklı; ekonomik toplam "
+                               f"{format_number(economic_total, money=True)} TL, ortak personel toplamı "
+                               f"{format_number(shared_total, money=True)} TL; fark "
+                               f"{format_number(economic_total - shared_total, money=True)} TL. İki kaynağı karşılaştırın.")
                     for value in values:
                         value['state'] = 'needs_review'
-                        value['issue'] = 'Personel ve SGK satırları ortak personel tablosundan farklı; iki kaynağı karşılaştırın.'
+                        value['review_causes'] = [*value.get('review_causes', []),
+                                                  {'cause': 'personnel_total_mismatch', 'message': message}]
+                        value['issue'] = ' '.join(r['message'] for r in value['review_causes'])

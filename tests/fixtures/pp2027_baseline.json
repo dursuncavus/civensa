@@ -13,7 +13,7 @@
     ],
     "economic_table_count": 33,
     "economic_value_count": 1290,
-    "needs_review_count": 427
+    "needs_review_count": 440
   },
   "departments": [
     {
@@ -42941,5 +42941,5 @@
     }
   ],
   "baseline_revision": "CIV-026: remove 61 repeated header rows; retain 960d62c source fields and CIV-010 allowlist",
-  "economic_snapshot_sha256": "154f0a980d58dbcd4915c425953a771f1f0b6aaaf7555451de9a1788c097d4b8"
+  "economic_snapshot_sha256": "a54a46deaf5a19cb0d41b601e7a980d7a80534ceb201cf6541258b3741b9186c"
 }
