@@ -2157,3 +2157,5 @@ register_activity_financial_routes(app)
 
 from .assurance_routes import register as register_assurance_routes
 register_assurance_routes(app)
+from . import budget_routes
+budget_routes.register(app)

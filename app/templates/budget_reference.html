@@ -1,0 +1,7 @@
+<div class="form-grid">
+<label>Bütçenin meclis kabul aşaması<select id="phase"><option value="before_adoption">Meclis kabulünden önce</option><option value="after_adoption" {{ "selected" if operation is defined and operation.phase == "after_adoption" else "" }}>Meclis kabulünden sonra</option></select></label>
+<label>Müdürlük içi kapsam<select id="transfer-scope"><option value="other">Diğer aktarmalar</option><option value="functional_classes">İkinci düzey fonksiyonel sınıflar arası</option></select></label>
+<label>Gerekli dayanak<input id="reference-label" readonly><input id="reference-type" type="hidden"></label>
+<label>Dayanak tarihi<input type="date" id="reference-date" required></label><label>Dayanak sayısı<input id="reference-number" maxlength="100" required></label>
+<label>Gerekçe<textarea id="reason" required rows="3" placeholder="Aktarmanın gerekçesini ve kapsamını yazın."></textarea></label>
+</div><p class="muted">Kabul aşaması ve müdürlük içi fonksiyonel kapsam Strateji tarafından beyan edilir. Müdürlükler arası kabul sonrası aktarmada Meclis kararı zorunludur.</p>

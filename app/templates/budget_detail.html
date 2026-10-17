@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+{% block page_title %}Bütçe Aktarması #{{ operation.id }}{% endblock %}
+{% block page_subtitle %}{{ operation.year }} · {{ references[operation.reference_type] }} · {{ operation.reference_date }} / {{ operation.reference_number }}{% endblock %}
+{% block content %}
+<div id="budget-error" role="alert" class="card" hidden></div>
+<section class="card"><div class="section-head"><h2>İşlem kaydı</h2><a class="button" href="/budget-reallocations">İşlem listesi</a></div>
+<p><b>{{ actor.full_name }}</b> · {{ operation.created_at }} · {{ 'Meclis kabulünden önce' if operation.phase=='before_adoption' else 'Meclis kabulünden sonra' }}</p><p>{{ operation.reason }}</p><p>Toplam bütçe değişiyor: {{ 'Evet' if reference_request.change_total else 'Hayır' }} · Bütçe dışı da değişiyor: {{ 'Evet' if reference_request.change_outside else 'Hayır' }}</p>
+<p>Paketlerin onay durumu korundu. {% if operation.delegation_id %}Onaylı veri düzeltme yetki devri #{{ operation.delegation_id }} kullanıldı.{% endif %}</p>
+{% if operation.reverses_id %}<p><a href="/budget-reallocations/{{ operation.reverses_id }}">#{{ operation.reverses_id }} numaralı işlemin geri alınması</a></p>{% endif %}
+{% for s in preview.summaries %}<p><b>{{ s.name }}</b> · Bütçe içi: {{ s.change|trmoney }} TL · Bütçe dışı: {{ s.outside_change|trmoney }} TL · Mevcut ekonomik/faaliyet farkı: {{ s.source_difference|trmoney }} TL</p>{% endfor %}
+{% for result in preview.department_results|default([]) %}{% if preview.department_results|length < preview.summaries|length %}<p>{{ result.name }}: işlem sonu {{ result.after|trmoney }} TL · Net %{{ result.percent }}</p>{% endif %}{% endfor %}
+<details><summary>Kaydedilen uygun kayıt seçimleri</summary>{% for leg in reference_request.legs %}<p>Müdürlük #{{ leg.department_id }} · Çıkarılan ekonomik kategoriler: {{ leg.excluded_categories|default([])|join(', ') or 'Yok' }} · Çıkarılan faaliyet kimlikleri: {{ leg.excluded_activities|default([])|join(', ') or 'Yok' }}</p>{% endfor %}</details>
+{% for warning in preview.warnings %}<p>{{ warning }}</p>{% endfor %}
+</section><section class="card"><h2>Değişen değerler</h2><div class="table-wrap"><table><thead><tr><th>Müdürlük</th><th>Kayıt</th><th>Kaynak</th><th>Önce (TL)</th><th>Değişim (TL)</th><th>Sonra (TL)</th></tr></thead><tbody>
+{% for line in lines %}<tr><td>{% for dep in departments %}{% if dep.id==line.department_id %}{{ dep.name }}{% endif %}{% endfor %}</td><td>{{ 'Faaliyet' if line.value_table=='activity_cost_values' else 'Ekonomik' }} · {{ line.label }}</td><td>{{ {'inside':'Bütçe içi','outside':'Bütçe dışı','total':'Toplam'}[line.funding_type] }}</td><td>{{ line.before|trmoney }}</td><td>{{ (line.after-line.before)|trmoney }}</td><td>{{ line.after|trmoney }}</td></tr>{% endfor %}
+</tbody></table></div></section>
+{% if reversal %}<section class="card"><p>Bu işlem geri alındı. <a href="/budget-reallocations/{{ reversal.id }}">Telafi işlemi #{{ reversal.id }}</a></p></section>
+{% else %}<section class="card" id="reversal-section" data-operation="{{ operation.id }}" data-departments="{{ reference_request.legs|map(attribute='department_id')|unique|list|length }}"><h2>Geri alma</h2><p>Değerler bu işlemden sonra değişmediyse tam olarak önceki tutarlara döner. Geri alma ayrıca kaydedilir.</p>{% include 'budget_reference.html' %}<button class="button danger" id="reverse-button">Geri almayı yeni işlem olarak kaydet</button></section>{% endif %}
+{% endblock %}
+{% block scripts %}<script src="/static/budget.js"></script>{% endblock %}
