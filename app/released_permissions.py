@@ -10,7 +10,7 @@ from .db import get_db
 from .models import (Activity, ActivityCatalogueLink, ActivityCostValue, ActivityResponsibility,
                      AuditLog, Department, DepartmentCostValue, DepartmentScope, Indicator,
                      IndicatorValue, OfficialActivity, Program, ReportCard, Submission,
-                     SubmissionEvent, SubProgram, EconomicValue, ImportBatch, User)
+                     SubmissionEvent, SubProgram, EconomicValue, ImportBatch, User, Organization)
 
 DIRECTOR_ERROR = ("Bu müdürlükte etkin bir Müdür zaten var. Kullanıcılar ekranında önce mevcut "
                   "Müdürü Personel olarak değiştirin veya hesabını devre dışı bırakın; sonra yeni Müdürü atayın.")
@@ -63,9 +63,54 @@ def commit_user_change(db):
         raise HTTPException(409, DIRECTOR_ERROR) from None
 
 
-def audit_user_change(db, actor, target, field, old, new):
+def lock_user_administration(db, actor, target):
+    """Serialize authority checks with appointments, activation and account edits."""
+    department_ids = sorted({did for did in (actor.department_id, target.department_id) if did})
+    organization_ids = sorted(set(db.scalars(select(Department.organization_id).where(
+        Department.id.in_(department_ids))).all()))
+    # Organization first, then departments: concurrent bootstrap requests must
+    # observe the winner, including legacy Strategy accounts in another department.
+    for oid in organization_ids:
+        db.scalar(select(Organization).where(Organization.id == oid).with_for_update())
+    for did in department_ids:
+        db.scalar(select(Department).where(Department.id == did).with_for_update())
+    actor = db.get(User, actor.id, populate_existing=True)
+    if target.id:
+        target = db.get(User, target.id, populate_existing=True)
+    if not actor or not actor.is_active or actor.role != 'strategy':
+        raise HTTPException(403, "Kullanıcı yönetimi için etkin Strateji hesabı gerekir. Yeniden giriş yapın; Strateji Geliştirme Müdürüne başvurun.")
+    return actor, target
+
+
+def is_strategy_user(db, target):
+    department = db.get(Department, target.department_id) if target.department_id else None
+    return target.role == 'strategy' or bool(department and department.name == 'Strateji Geliştirme Müdürlüğü')
+
+
+def require_strategy_user_management(db, actor, target, *, appointment=False):
+    """Call only after lock_user_administration; return an explicit bootstrap reason."""
+    if not is_strategy_user(db, target):
+        return None
+    department = db.get(Department, target.department_id) if target.department_id else None
+    directors = select(User.id).where(User.role == 'strategy', User.position == 'director', User.is_active.is_(True))
+    if department:
+        directors = directors.join(Department).where(Department.organization_id == department.organization_id)
+    director_ids = set(db.scalars(directors).all())
+    if actor.id in director_ids:
+        return None
+    if not director_ids and appointment and target.role == 'strategy':
+        return 'Strateji Müdürü başlangıç ataması: etkin Strateji Geliştirme Müdürü bulunmadığı için etkin Strateji kullanıcısı tarafından yapıldı (bootstrap).'
+    raise HTTPException(403, f"{target.full_name} ({target.email}) kullanıcısının Strateji unvanını veya Müdür hesabını değiştiremezsiniz. "
+                        "Kullanıcılar ekranındaki işlem için etkin Strateji Geliştirme Müdürüne başvurun. "
+                        "Etkin Müdür yoksa başka bir etkin Strateji kullanıcısı yalnızca yeni Müdür atayabilir.")
+
+
+def audit_user_change(db, actor, target, field, old, new, reason=None):
+    details = {'field': field, 'old': old, 'new': new}
+    if reason:
+        details['reason'] = reason
     db.add(AuditLog(user_id=actor.id, action='user_' + field + '_change', entity_type='user',
-                    entity_id=target.id, details=json.dumps({'field': field, 'old': old, 'new': new}, ensure_ascii=False)))
+                    entity_id=target.id, details=json.dumps(details, ensure_ascii=False)))
 
 
 def register(app):
@@ -112,14 +157,18 @@ def register(app):
         target = db.get(User, user_id)
         if not target:
             raise HTTPException(404, "Kullanıcı bulunamadı. Kullanıcılar ekranını yenileyin.")
-        db.scalar(select(Department).where(Department.id == target.department_id).with_for_update())
-        db.refresh(target)
+        user, target = lock_user_administration(db, user, target)
+        if user.id == target.id:
+            raise HTTPException(403, f"{target.full_name} ({target.email}): kendi unvanınızı değiştiremezsiniz. "
+                                "Kullanıcılar ekranındaki atama için Strateji Geliştirme Müdürüne başvurun; "
+                                "etkin Müdür yoksa başka bir etkin Strateji kullanıcısından Müdür atamasını isteyin.")
+        reason = require_strategy_user_management(db, user, target, appointment=value == 'director' and target.is_active)
         if value == 'director' and target.is_active:
             check_director_available(db, target)
         old = target.position
         target.position = value
         if old != value:
-            audit_user_change(db, user, target, 'position', old, value)
+            audit_user_change(db, user, target, 'position', old, value, reason)
         commit_user_change(db)
         return {'ok': True, 'position': value}
 

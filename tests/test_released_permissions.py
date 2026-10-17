@@ -133,11 +133,162 @@ def test_second_director_refused_then_replacement_audited(http, db, actors):
     assert all(a.user_id == actors['strategy_staff'].id and a.created_at for a in logs)
 
 
+def strategy_candidate(db, actors, key='candidate', *, active=True, role='strategy'):
+    candidate = User(email=key+'@example.invalid', full_name=key, role=role,
+        department_id=actors['strategy_staff'].department_id, position='staff',
+        is_active=active, password_hash=hash_password(PASSWORD))
+    db.add(candidate); db.commit(); actors[key] = candidate
+    return candidate
+
+
+@pytest.mark.parametrize('actor,position', [('strategy_staff', 'director'), ('strategy_director', 'staff')])
+def test_own_position_change_refused(http, db, actors, actor, position):
+    target = actors[actor]; old = target.position
+    response = http(actor).post(f'/api/users/{target.id}/position', json={'position': position})
+    assert response.status_code == 403
+    assert all(word in response.json()['detail'] for word in [target.full_name, 'kendi unvanınızı', 'Kullanıcılar'])
+    db.refresh(target)
+    assert target.position == old
+    assert db.scalar(select(func.count(AuditLog.id)).where(AuditLog.action == 'user_position_change')) == 0
+
+
+def test_strategy_staff_cannot_demote_or_replace_director(http, db, actors):
+    candidate = strategy_candidate(db, actors)
+    staff = http('strategy_staff'); director = actors['strategy_director']
+    for target, position in [(director, 'staff'), (candidate, 'director')]:
+        response = staff.post(f'/api/users/{target.id}/position', json={'position': position})
+        assert response.status_code == 403
+        assert target.email in response.json()['detail'] and 'etkin Strateji Geliştirme Müdürüne' in response.json()['detail']
+    # Scope is the Strategy department too, not merely the target's role string.
+    department_role = strategy_candidate(db, actors, 'department_role', role='department')
+    assert staff.post(f'/api/users/{department_role.id}/position', json={'position': 'director'}).status_code == 403
+    response = staff.post('/api/users', json={'email': 'replacement@example.invalid', 'full_name': 'Yerine Atama',
+        'role': 'strategy', 'position': 'director', 'password': PASSWORD})
+    assert response.status_code == 403
+    assert db.scalar(select(User.id).where(User.email == 'replacement@example.invalid')) is None
+    db.refresh(director); db.refresh(candidate)
+    assert director.position == 'director' and candidate.position == 'staff'
+    assert db.scalar(select(func.count(AuditLog.id)).where(AuditLog.action == 'user_position_change')) == 0
+
+
+def test_strategy_director_appoints_successor_and_handover_is_audited(http, db, actors):
+    candidate = strategy_candidate(db, actors, active=False)
+    director = http('strategy_director'); staff = http('strategy_staff')
+    path = f'/api/users/{candidate.id}'
+    assert director.post(path+'/position', json={'position': 'director'}).status_code == 200
+    assert staff.post(path+'/active', json={'active': True}).status_code == 403
+    # Preserve one active director and the self-position ban: the incumbent leaves
+    # by deactivating their own account, then a different staff member bootstraps.
+    previous = actors['strategy_director']
+    assert director.post(f'/api/users/{previous.id}/active', json={'active': False}).status_code == 200
+    assert director.get('/modules').status_code == 401
+    assert staff.post(path+'/active', json={'active': True}).status_code == 200
+    successor = http('candidate')
+    assert successor.post(f'/api/users/{previous.id}/position', json={'position': 'staff'}).status_code == 200
+    db.refresh(previous); db.refresh(candidate)
+    assert previous.position == 'staff' and not previous.is_active
+    assert candidate.position == 'director' and candidate.is_active
+    logs = db.scalars(select(AuditLog).where(AuditLog.action.in_(['user_position_change', 'user_is_active_change'])).order_by(AuditLog.id)).all()
+    assert [(a.user_id, a.entity_id, json.loads(a.details)['old'], json.loads(a.details)['new']) for a in logs] == [
+        (previous.id, candidate.id, 'staff', 'director'),
+        (previous.id, previous.id, True, False),
+        (actors['strategy_staff'].id, candidate.id, False, True),
+        (candidate.id, previous.id, 'director', 'staff'),
+    ]
+    assert 'bootstrap' in json.loads(logs[2].details)['reason']
+    assert all(a.created_at for a in logs)
+
+
+def test_bootstrap_requires_no_active_director_other_target_active_actor_and_csrf(http, db, actors):
+    candidate = strategy_candidate(db, actors)
+    staff = http('strategy_staff'); director = http('strategy_director')
+    path = f'/api/users/{candidate.id}/position'
+    assert staff.post(path, json={'position': 'director'}).status_code == 403
+    actors['strategy_director'].is_active = False; db.commit()
+    assert director.post(path, json={'position': 'director'}).status_code == 401
+    assert staff.post(f"/api/users/{actors['strategy_staff'].id}/position", json={'position': 'director'}).status_code == 403
+    token = staff.headers.pop('X-CSRF-Token')
+    assert staff.post(path, json={'position': 'director'}).status_code == 403
+    staff.headers['X-CSRF-Token'] = token
+    candidate.is_active = False; db.commit()
+    assert staff.post(path, json={'position': 'director'}).status_code == 403
+    candidate.is_active = True; db.commit()
+    assert staff.post(path, json={'position': 'director'}).status_code == 200
+    audit = db.scalar(select(AuditLog).where(AuditLog.action == 'user_position_change'))
+    details = json.loads(audit.details)
+    assert audit.user_id == actors['strategy_staff'].id and audit.entity_id == candidate.id and audit.created_at
+    assert details['old'] == 'staff' and details['new'] == 'director'
+    assert 'etkin Strateji Geliştirme Müdürü bulunmadığı' in details['reason'] and 'bootstrap' in details['reason']
+    # The exception closes immediately after the appointment.
+    assert staff.post(path, json={'position': 'staff'}).status_code == 403
+
+
+def test_bootstrap_new_director_creation_is_audited(http, db, actors):
+    actors['strategy_director'].is_active = False; db.commit()
+    response = http('strategy_staff').post('/api/users', json={'email': 'initial@example.invalid', 'full_name': 'İlk Müdür',
+        'role': 'strategy', 'position': 'director', 'password': PASSWORD})
+    assert response.status_code == 200, response.text
+    audit = db.scalar(select(AuditLog).where(AuditLog.action == 'user_position_change', AuditLog.entity_id == response.json()['id']))
+    assert audit.user_id == actors['strategy_staff'].id and audit.created_at
+    details = json.loads(audit.details)
+    assert details['old'] is None and details['new'] == 'director' and 'bootstrap' in details['reason']
+
+
+def test_strategy_director_account_cannot_be_taken_over_or_removed_by_staff(http, db, actors):
+    director = actors['strategy_director']; old_hash = director.password_hash
+    batch = 'a' * 16
+    db.add(AuditLog(action='user_bulk_create_item', entity_type='user', entity_id=director.id, details=f'batch={batch};department_id={director.department_id}'))
+    db.commit()
+    staff = http('strategy_staff')
+    for path, data in [(f'/api/users/{director.id}/active', {'active': False}),
+                       (f'/api/users/{director.id}/reset-password', {'password': PASSWORD+'new'}),
+                       (f'/api/users/batches/{batch}/revert', {})]:
+        response = staff.post(path, json=data)
+        assert response.status_code == 403 and director.email in response.json()['detail']
+    db.refresh(director)
+    assert director.is_active and director.position == 'director' and director.password_hash == old_hash
+
+
+@pytest.mark.parametrize('route', ['position', 'create', 'activate'])
+def test_concurrent_strategy_bootstrap_has_one_authorized_winner(http, db, actors, route):
+    from concurrent.futures import ThreadPoolExecutor
+    from threading import Barrier
+    from sqlalchemy.orm import Session
+    candidates = [strategy_candidate(db, actors, key) for key in ('candidate1', 'candidate2')]
+    if route == 'activate':
+        for candidate in candidates:
+            candidate.position = 'director'
+            candidate.is_active = False
+    actors['strategy_director'].is_active = False; db.commit()
+    clients = [http('strategy_staff'), http('strategy_staff')]
+    ids = [candidate.id for candidate in candidates]; bind = db.get_bind()
+    db.commit()
+    def independent_database():
+        with Session(bind) as session:
+            yield session
+    app.dependency_overrides[get_db] = independent_database
+    barrier = Barrier(2)
+    def appoint(index):
+        barrier.wait(timeout=5)
+        if route == 'create':
+            return clients[index].post('/api/users', json={'email': f'newcandidate{index}@example.invalid',
+                'full_name': 'Yeni Müdür', 'role': 'strategy', 'position': 'director', 'password': PASSWORD}).status_code
+        if route == 'activate':
+            return clients[index].post(f'/api/users/{ids[index]}/active', json={'active': True}).status_code
+        return clients[index].post(f'/api/users/{ids[index]}/position', json={'position': 'director'}).status_code
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        assert sorted(pool.map(appoint, range(2))) == [200, 403]
+    db.expire_all()
+    assert db.scalar(select(func.count(User.id)).where(User.role == 'strategy', User.position == 'director', User.is_active.is_(True))) == 1
+    logs = db.scalars(select(AuditLog).where(AuditLog.action == ('user_is_active_change' if route == 'activate' else 'user_position_change'))).all()
+    assert len(logs) == 1 and 'bootstrap' in json.loads(logs[0].details)['reason']
+
+
 def test_director_reactivation_conflict_and_new_staff_default(http, db, actors):
     strategy = http('strategy_staff')
     director_path = f"/api/users/{actors['director'].id}"
     assert strategy.post(director_path+'/active', json={'active': False}).status_code == 200
-    assert strategy.post(f"/api/users/{actors['staff'].id}/position", json={'position': 'director'}).status_code == 200
+    assert http('strategy_staff').post(f"/api/users/{actors['staff'].id}/position", json={'position': 'director'}).status_code == 200
     assert strategy.post(director_path+'/active', json={'active': True}).status_code == 409
     duplicate = strategy.post('/api/users', json={'email': 'duplicate@example.invalid', 'full_name': 'İkinci Müdür',
         'role': 'department', 'department_id': actors['staff'].department_id, 'position': 'director', 'password': PASSWORD})
@@ -202,9 +353,9 @@ def test_deleted_data_keeps_scoped_authorship(http, db, sample, actors):
     assert staff.delete('/api/activities/'+str(created.json()['id'])).status_code == 200
     # Demote original Strategy director and promote the former data editor.
     strategy = http('strategy_director')
-    assert strategy.post(f"/api/users/{actors['strategy_director'].id}/position", json={'position': 'staff'}).status_code == 200
+    assert strategy.post(f"/api/users/{actors['strategy_director'].id}/active", json={'active': False}).status_code == 200
     actors['staff'].role = 'strategy'; actors['staff'].department_id = actors['strategy_staff'].department_id; db.commit()
-    assert strategy.post(f"/api/users/{actors['staff'].id}/position", json={'position': 'director'}).status_code == 200
+    assert http('strategy_staff').post(f"/api/users/{actors['staff'].id}/position", json={'position': 'director'}).status_code == 200
     assert http('director').post('/api/departments/1/submit').status_code == 200
     assert decision(staff, sample).status_code == 403
 
@@ -286,9 +437,9 @@ def test_pp_edit_paths_retain_authorship(http, db, sample, actors, edit_kind):
             'responsible': 'Test Belediyesi', 'explanation': 'Ortak açıklama', 'calculation_method': 'Kaynak yöntemi',
             'data_source': 'Kaynak kayıt'}).status_code == 303
     strategy = http('strategy_director')
-    assert strategy.post(f"/api/users/{actors['strategy_director'].id}/position", json={'position': 'staff'}).status_code == 200
+    assert strategy.post(f"/api/users/{actors['strategy_director'].id}/active", json={'active': False}).status_code == 200
     actors['staff'].role = 'strategy'; actors['staff'].department_id = actors['strategy_staff'].department_id; db.commit()
-    assert strategy.post(f"/api/users/{actors['staff'].id}/position", json={'position': 'director'}).status_code == 200
+    assert http('strategy_staff').post(f"/api/users/{actors['staff'].id}/position", json={'position': 'director'}).status_code == 200
     # The SoD check precedes financial revalidation; invalid totals cannot hide it.
     sub = db.scalar(select(Submission)); sub.status = 'submitted'; db.commit()
     response = decision(staff, sample)

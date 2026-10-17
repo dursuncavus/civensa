@@ -206,6 +206,9 @@ def test_rename_leaves_publication_and_approved_snapshot_names_frozen(db, sample
     assert approved
     assert post(browser, token, '/report-builder/publish', period_id=sample['period'].id).status_code == 303
     pub = db.scalar(select(Publication)); before = pub.snapshot_json; approved_before = approved.snapshot_json
+    # Fixture for the next editable working revision: CIV-025 locks approved
+    # content. Editing this copy must still leave both frozen snapshots intact.
+    submission.status = 'returned'; submission.revision += 1; db.commit()
     for url, data in [
         (f'/structure/departments/{sample["department"].id}/rename', {'name': 'Yeni Müdürlük'}),
         (f'/structure/programs/{sample["subprogram"].program_id}', {'period_id': sample['period'].id, 'name': 'Yeni Program'}),

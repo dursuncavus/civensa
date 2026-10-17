@@ -16,6 +16,11 @@ ROOT = Path(__file__).resolve().parents[1]
 
 @pytest.mark.parametrize('backend', ['sqlite', 'postgres'])
 def test_civ025_pilot_upgrade_downgrade_reupgrade(tmp_path, backend):
+    from alembic.config import Config
+    from alembic.script import ScriptDirectory
+    scripts = ScriptDirectory.from_config(Config(str(ROOT / 'alembic.ini')))
+    assert scripts.get_heads() == ['c025a1b2c3d4']
+    assert scripts.get_revision('c025a1b2c3d4').down_revision == 'b8d011e6f420'
     admin = None
     if backend == 'postgres':
         admin = create_engine(os.environ['CIVENSA_TEST_POSTGRES_URL'])
@@ -32,7 +37,7 @@ def test_civ025_pilot_upgrade_downgrade_reupgrade(tmp_path, backend):
                                 env={**os.environ, 'DATABASE_URL': url}, capture_output=True, text=True)
         assert result.returncode == 0, result.stderr
     try:
-        migrate('upgrade', 'a6c006e9b241')
+        migrate('upgrade', 'b8d011e6f420')
         with engine.begin() as conn:
             conn.execute(text("INSERT INTO organizations (id,name) VALUES (1,'Test Belediyesi')"))
             conn.execute(text("INSERT INTO reporting_periods (id,year,status,template_status) VALUES (1,2027,'active','verified')"))
@@ -60,7 +65,7 @@ def test_civ025_pilot_upgrade_downgrade_reupgrade(tmp_path, backend):
             assert not conn.execute(text('SELECT can_submit FROM users WHERE id = 36')).scalar()
         with pytest.raises(IntegrityError), engine.begin() as conn:
             conn.execute(text("UPDATE users SET position = 'director' WHERE id = 2"))
-        migrate('downgrade', 'a6c006e9b241')
+        migrate('downgrade', 'b8d011e6f420')
         with engine.connect() as conn:
             assert conn.execute(text('SELECT COUNT(*) FROM users')).scalar() == 36
             assert conn.execute(text('SELECT position FROM users WHERE id = 1')).scalar() == 'director'

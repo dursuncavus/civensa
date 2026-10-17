@@ -1234,14 +1234,22 @@ async def set_user_active(user_id: int, request: Request, db: Session = Depends(
     active = data.get("active")
     if not isinstance(active, bool):
         raise HTTPException(422, "Etkinlik durumu true/false olmalı.")
-    if target.id == user.id and not active:
+    user, target = released_permissions.lock_user_administration(db, user, target)
+    strategy_director = target.position == "director" and released_permissions.is_strategy_user(db, target)
+    reason = None
+    if strategy_director:
+        reason = released_permissions.require_strategy_user_management(db, user, target, appointment=active)
+    if target.id == user.id and not active and not strategy_director:
         raise HTTPException(409, "Kendi hesabınızı devre dışı bırakamazsınız.")
     if active and target.department_id:
         from .master_data_service import active_department
         active_department(db, target.department_id)
     if active and target.position == "director":
         released_permissions.check_director_available(db, target)
+    old = target.is_active
     target.is_active = active
+    if old != active:
+        released_permissions.audit_user_change(db, user, target, "is_active", old, active, reason)
     released_permissions.commit_user_change(db)
     log(db, user, "user_activate" if active else "user_deactivate", "user", target.id)
     return {"ok": True, "active": target.is_active}
@@ -1256,6 +1264,9 @@ async def reset_user_password(user_id: int, request: Request, db: Session = Depe
     password = str(data.get("password", ""))
     if password != password.strip() or len(password) < 8:
         raise HTTPException(422, "Yeni parola en az 8 karakter olmalı ve kenar boşluğu içermemeli.")
+    user, target = released_permissions.lock_user_administration(db, user, target)
+    if target.position == "director":
+        released_permissions.require_strategy_user_management(db, user, target)
     target.password_hash = hash_password(password)
     db.commit()
     log(db, user, "user_password_reset", "user", target.id)
@@ -1277,6 +1288,9 @@ async def revert_user_batch(batch_id: str, request: Request, db: Session = Depen
         if not target:
             errors.append(f"Kullanıcı #{audit.entity_id} artık bulunamıyor.")
             continue
+        user, target = released_permissions.lock_user_administration(db, user, target)
+        if target.position == "director":
+            released_permissions.require_strategy_user_management(db, user, target)
         used = db.scalar(select(AuditLog.id).where(AuditLog.user_id == target.id).limit(1))
         if used:
             errors.append(f"{target.email}: hesap kullanılmış; silinemez.")
@@ -1316,17 +1330,21 @@ async def create_user(request: Request, db: Session = Depends(get_db), user: Use
         department_id = released_permissions.strategy_department(db).id
     if role == "department" and not department_id:
         raise HTTPException(422, "Müdürlük kullanıcısına müdürlük atanmalı.")
-    if department_id:
-        from .master_data_service import active_department
-        active_department(db, department_id)
     position = data.get("position", "staff")
     released_permissions.validate_position(position)
     new = User(email=email, full_name=full_name, role=role, department_id=department_id,
-               password_hash=hash_password(password), position=position, can_submit=False)
+               password_hash=hash_password(password), position=position, can_submit=False, is_active=True)
+    reason = None
+    if position == "director":
+        user, new = released_permissions.lock_user_administration(db, user, new)
+        reason = released_permissions.require_strategy_user_management(db, user, new, appointment=True)
+    if department_id:
+        from .master_data_service import active_department
+        active_department(db, department_id)
     if position == "director":
         released_permissions.check_director_available(db, new)
     db.add(new); db.flush()
-    released_permissions.audit_user_change(db, user, new, "position", None, position)
+    released_permissions.audit_user_change(db, user, new, "position", None, position, reason)
     released_permissions.commit_user_change(db); db.refresh(new)
     log(db, user, "user_create", "user", new.id, f"role={role}")
     return {"ok": True, "id": new.id}
