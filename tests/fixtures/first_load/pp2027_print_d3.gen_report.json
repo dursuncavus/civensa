@@ -1,0 +1,43 @@
+{
+ "departments": [
+  "Sağlık İşleri Müdürlüğü",
+  "Ruhsat ve Denetim Müdürlüğü",
+  "Zabıta Müdürlüğü",
+  "Veteriner İşleri Müdürlüğü",
+  "Emlak İstimlak Müdürlüğü",
+  "Fen İşleri Müdürlüğü",
+  "İmar ve Şehircilik Müdürlüğü",
+  "Park ve Bahçeler Müdürlüğü",
+  "Etüd Proje Müdürlüğü",
+  "Plan Proje Müdürlüğü",
+  "Kentsel Dönüşüm Müdürlüğü",
+  "Afet İşleri ve Risk Yönetimi Müdürlüğü",
+  "Temizlik İşleri Müdürlüğü",
+  "Çevre Koruma ve Kontrol Müdürlüğü",
+  "Tarımsal Hizmetler Müdürlüğü",
+  "İklim Değişikliği ve Sıfır Atık Müdürlüğü",
+  "Kültür, Sanat ve Sosyal İşler Müdürlüğü",
+  "Gençlik ve Spor İşleri Müdürlüğü",
+  "Sosyal Destek Müdürlüğü",
+  "Dış İlişkiler Müdürlüğü",
+  "Halkla İlişkiler Müdürlüğü",
+  "Araştırma ve Geliştirme Müdürlüğü",
+  "Özel Kalem Müdürlüğü",
+  "İnsan Kaynakları ve Eğitim Müdürlüğü",
+  "Bilgi İşlem Müdürlüğü",
+  "Rehberlik ve Teftiş Kurulu Müdürlüğü",
+  "Hukuk İşleri Müdürlüğü",
+  "Strateji Geliştirme Müdürlüğü",
+  "Destek Hizmetleri Müdürlüğü",
+  "Mali Hizmetler Müdürlüğü",
+  "Yazı İşleri Müdürlüğü",
+  "Gelirler Müdürlüğü",
+  "Makine İkmal Bakım ve Onarım Müdürlüğü"
+ ],
+ "unmapped": [
+  "Emlak İstimlak Müdürlüğü",
+  "Emlak İstimlak Müdürlüğü",
+  "Gelirler Müdürlüğü (Bütçe İşletme Şefliği)",
+  "Gelirler Müdürlüğü (Bütçe İşletme Şefliği)"
+ ]
+}
