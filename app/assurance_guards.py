@@ -7,12 +7,16 @@ from .report_workflow_models import ReportCandidate, ReportRelease
 
 
 def require_if_placed(connection, organization_id, period_id):
+    from .assurance_service import integrity_error, require_integrity
+    # A valid asset cannot block this transition. Avoid introducing a dependency
+    # on EKLER tables while replaying pre-CIV-037 migration checkpoints.
+    if not integrity_error():
+        return
     placed = connection.execute(select(AssuranceStatement.id).join(
         ARDocument, ARDocument.id == AssuranceStatement.document_id).where(
         ARDocument.organization_id == organization_id,
         ARDocument.period_id == period_id).limit(1)).first()
     if placed:
-        from .assurance_service import require_integrity
         require_integrity()
 
 
