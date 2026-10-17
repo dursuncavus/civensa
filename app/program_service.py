@@ -104,11 +104,14 @@ def activity_source_disagreements(activity):
     rows = {(v.year, v.value_kind, v.funding_type): v for v in activity.cost_values}
     result = {}
     for total in activity.cost_values:
-        if total.funding_type != "total" or total.source_amount is None or total.source_resolution_json not in (None, "", "{}"):
+        resolution = json.loads(total.source_resolution_json or '{}')
+        if total.funding_type != "total" or total.source_amount is None or any(k != 'budget_reallocation_delta' for k in resolution):
             continue
         inside = rows.get((total.year, total.value_kind, "inside"))
         outside = rows.get((total.year, total.value_kind, "outside"))
         computed = inside.amount + outside.amount if inside and outside and inside.amount is not None and outside.amount is not None else None
+        if computed is not None:
+            computed -= Decimal(resolution.get('budget_reallocation_delta', '0'))
         if total.source_amount != computed:
             result[f"{total.year}:{total.value_kind}"] = {"source_total": total.source_amount, "computed_total": computed}
     return result
@@ -163,8 +166,12 @@ def save_activity_costs(db, activity, year, data, actor=None):
         values['total'] = values['inside'] + values['outside'] if values['inside'] is not None else None
         total_row = existing.get((y, kind, 'total'))
         decision = None
-        if total_row and total_row.source_amount is not None and total_row.source_resolution_json in (None, '', '{}') and values['total'] != total_row.source_amount:
-            message = source_total_message(activity, y, kind, total_row.source_amount, values['total'])
+        resolution = json.loads(total_row.source_resolution_json or '{}') if total_row else {}
+        adjusted_total = values['total'] - Decimal(resolution.get('budget_reallocation_delta', '0')) if values['total'] is not None else None
+        if total_row and total_row.source_amount is not None and not any(k != 'budget_reallocation_delta' for k in resolution) and adjusted_total != total_row.source_amount:
+            message = source_total_message(activity, y, kind, total_row.source_amount, adjusted_total)
+            if resolution.get('budget_reallocation_delta'):
+                message += ' Karşılaştırılan toplamdan onaylı aktarma etkisi çıkarılmıştır.'
             confirmation = data.get(prefix+'_use_computed')
             if confirmation is not True and confirmation not in ('true', 'on'):
                 raise HTTPException(422, message)

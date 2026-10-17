@@ -50,6 +50,7 @@ class AuthorityDelegation(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     organization_id: Mapped[int] = mapped_column(ForeignKey('organizations.id'))
     department_id: Mapped[int] = mapped_column(ForeignKey('departments.id'))
+    authority_kind: Mapped[str] = mapped_column(String(40), default='director_approval', server_default='director_approval')
     director_membership_id: Mapped[int] = mapped_column(ForeignKey('directorate_memberships.id'))
     delegate_membership_id: Mapped[int] = mapped_column(ForeignKey('directorate_memberships.id'))
     active: Mapped[bool] = mapped_column(Boolean, default=True, server_default=text('true'))
