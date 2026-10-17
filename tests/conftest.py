@@ -81,6 +81,12 @@ def sample(db):
     # retaining old workflow guards. Supply only the new User fields in those
     # fixtures; CIV-025's own migration tests use raw pre-migration rows instead.
     schema = db.get_bind().get_execution_options().get('schema_translate_map', {}).get(None)
+    # Historical workflow probes use today's Activity ORM before CIV-031. Supply
+    # the default flag only for that seed; the dedicated raw migration test proves
+    # CIV-031 adds it to a populated base without changing values.
+    activity_columns = {column['name'] for column in inspect(db.get_bind()).get_columns('activities', schema=schema)}
+    if 'contract_bound' not in activity_columns:
+        db.execute(text('ALTER TABLE activities ADD COLUMN contract_bound BOOLEAN NOT NULL DEFAULT false'))
     user_columns = {column['name'] for column in inspect(db.get_bind()).get_columns('users', schema=schema)}
     if 'position' not in user_columns:
         db.execute(text("ALTER TABLE users ADD COLUMN position VARCHAR(20) NOT NULL DEFAULT 'staff' "

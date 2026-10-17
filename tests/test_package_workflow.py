@@ -241,15 +241,22 @@ def test_raw_decision_hash_mismatch_denied(foundation_db,people,package):
 def test_phase3_additive_upgrade_preserves_phase2_history(foundation_db,people):
     import os,subprocess,sys
     from tests.test_authorization_foundation import ROOT
-    db=foundation_db;x=people;established(db,x);grant(db,x)
+    db=foundation_db;x=people;established(db,x);delegation=grant(db,x)
+    from sqlalchemy import inspect
+    assert 'authority_kind' not in {c['name'] for c in inspect(db.connection()).get_columns('authority_delegations')}
+    assert 'authority_kind' in inspect(delegation).unloaded
     auth.assign_final_authority(db,x['strategy'],x['department'].organization_id,x['director'].id,'Nihai görevlendirme');db.commit()
     tables=('directorate_memberships','membership_events','authority_delegations','delegation_events','final_authority_assignments','final_authority_events')
     before={t:[dict(r) for r in db.execute(text(f'SELECT * FROM {t} ORDER BY id')).mappings()] for t in tables};db.commit()
+    # Compare every field and row, including the sole expected additive default;
+    # no historical column is dropped from the equality assertion.
+    expected = dict(before, authority_delegations=[dict(row, authority_kind='director_approval') for row in before['authority_delegations']])
     for _ in range(2):
         done=subprocess.run([sys.executable,'-m','alembic','upgrade','head'],cwd=ROOT,
             env={**os.environ,'DATABASE_URL':db.get_bind().url.render_as_string(hide_password=False)},capture_output=True,text=True)
         assert done.returncode==0,done.stderr
-    for t,rows in before.items():assert [dict(r) for r in db.execute(text(f'SELECT * FROM {t} ORDER BY id')).mappings()]==rows
+    for t,rows in expected.items():assert [dict(r) for r in db.execute(text(f'SELECT * FROM {t} ORDER BY id')).mappings()]==rows
+    assert db.scalar(select(AuthorityDelegation.authority_kind)) == 'director_approval'
     for cls in (DirectoratePackage,PackageRevision,PackageDecision):assert db.scalar(select(func.count(cls.id)))==0
 
 
