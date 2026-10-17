@@ -38,11 +38,32 @@ def test_idml_rehearsal_loads_every_activity_link_and_keeps_source_issues(db):
     assert source_pages(parsed, park['name'], activity['name'] + ': toplam farklı') == ['128']
     assert parsed['excluded_source_tables'][0]['page'] == '243'
     assert not parsed['rejected_economic_tables']
-    from scripts.first_load_audit import audit_results
+    from scripts.first_load_audit import audit_results, checklist
     audit = audit_results(parsed, inspection['results'])
     assert audit['findings'] and all(f['side'] == 'SOURCE' for f in audit['findings'])
     assert len(audit['findings']) == sum(len(r['errors']) for r in inspection['results'])
     assert not audit['transfers']
+    presentation = checklist(parsed, inspection['results'], audit)
+    assert (presentation['book_messages'], presentation['allocation_messages'], presentation['mixed_messages']) == (370, 112, 28)
+    assert presentation['book_messages'] + presentation['allocation_messages'] == len(audit['findings']) == 482
+    assert len(presentation['items']) == 158
+    assert presentation['only_allocation'] == []
+    assert all(item['action'] for item in presentation['items'])
+    assert sum(allocation['messages'] for allocation in presentation['allocations'].values()) == 140
+    assert set(presentation['allocations']) == {
+        'Fen İşleri Müdürlüğü', 'İnsan Kaynakları ve Eğitim Müdürlüğü', 'Yazı İşleri Müdürlüğü'}
+    mixed_personnel = next(f for f in audit['findings'] if {
+        'program_group_unallocated', 'personnel_total_mismatch'} <= {c['cause'] for c in f.get('causes', [])})
+    book_item = next(i for i in presentation['items'] if i['department'] == mixed_personnel['department']
+                     and mixed_personnel['error'] in i['messages'])
+    assert len({c['table'] for c in book_item['cells']}) == 2  # Economic and common personnel tables, not programme cards.
+    from scripts.first_load_dryrun import report
+    content = report(parsed, inspection, path, 'test')
+    book_list = content.split('## Pazartesi — müdürlük bazında yalnız kitap düzeltme listesi')[1]
+    assert book_list.count('- [ ] ') == book_list.count('  Yapılacak: ') == 158
+    assert 'program grubu' not in book_list.lower()
+    assert 'Program Grubu Belirlenmeli' not in book_list
+    assert '45.333.709,00 + 0,00 = 45.333.709,00, kitapta 44.333.709,00 yazıyor (fark -1.000.000,00)' in book_list
     assert {f['group'] for f in audit['findings']} == {
         'activity_total', 'activity_value', 'cross_total', 'economic', 'explanation',
         'finance_missing', 'indicator', 'personnel', 'program_group'}
@@ -76,7 +97,9 @@ def test_repeatable_exclusions_use_original_word_numbers_and_are_reported(book):
     assert content.count('**Provada çıkarıldı — nihai kitapta düzeltilmeli:') == 2
     assert 'T2, kitap s.1; başlık: Alt Program Kapsamında' in content
     assert '--exclude-source-table 2 --exclude-source-table 4' in content
-    assert content.index('Provada çıkarıldı') < content.index('Gönderime hazır')
+    headings = ['Kitap temiz mi:', 'Kitap kontrol maddesi:',
+                'Yalnız program grubu dağılımı bekleyen müdürlük:', 'Gönderime hazır:', 'Provada çıkarıldı']
+    assert [content.index(text) for text in headings] == sorted(content.index(text) for text in headings)
     assert parse_book(word)[0]['excluded_source_tables'] == []
     for bad in [0, 6]:
         with pytest.raises(ValueError, match='tablo numarası bulunamadı'):

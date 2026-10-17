@@ -314,25 +314,40 @@ def proof_text(cells, stage):
 
 
 def report(parsed, inspection, path, digest):
-    from scripts.first_load_audit import audit_results, GROUPS, BookAudit
+    from scripts.first_load_audit import audit_results, checklist, GROUPS, BookAudit, money
     audit = audit_results(parsed, inspection['results'])
+    presentation = checklist(parsed, inspection['results'], audit)
     findings = audit['findings']
     ready = sum(r['ready'] for r in inspection['results'])
     excluded = parsed.get('excluded_source_tables', [])
     flags = ''.join(f" --exclude-source-table {e['table_number']}" for e in excluded)
     lines = ['# 2027 PP ilk yükleme — kaynak kontrol listesi', '']
+    lines.extend([f"Kitap temiz mi: **{'Evet' if presentation['clean'] else 'Hayır'}**.", '',
+                  f"Kitap kontrol maddesi: **{len(presentation['items'])}**.", '',
+                  f"Yalnız program grubu dağılımı bekleyen müdürlük: **{len(presentation['only_allocation'])}**.", '',
+                  f'Gönderime hazır: **{ready}/{len(inspection["results"])}** (yalnızca bu prova).', ''])
     for item in excluded:
         lines.extend([f"**Provada çıkarıldı — nihai kitapta düzeltilmeli: T{item['table_number']}, "
-                      f"kitap s.{item['page']}; başlık: {cell(' | '.join(item['header']))}.**", ''])
-    lines.extend([f'Gönderime hazır: **{ready}/{len(inspection["results"])}** (yalnızca bu prova).', '',
+                      f"kitap s.{item['page']}; başlık: {cell(' | '.join(item['header']))}.**", '',
+                      f"Yapılacak: s.{item['page']}, tablo {item['table_number']}, satır 1, yıl sütunları: "
+                      'dönemin Bütçe yılı/sütunlarını ve ilgili kart bağlantısını düzeltin. '
+                      'Nihai kitabı tablo çıkarmadan yeniden deneyin.', ''])
+    lines.extend([
                   f'Kaynak: `{path.name}`; SHA256: `{digest}`.', '',
+                  f"Mesaj sayımı: **{presentation['book_messages']} kitap mesajı + "
+                  f"{presentation['allocation_messages']} yalnız program grubu mesajı = "
+                  f"{presentation['book_messages'] + presentation['allocation_messages']}**. "
+                  f"Kitap mesajlarından {presentation['mixed_messages']} adedi ayrıca dağılım gerektirir; "
+                  'kitap nedenleri listede, dağılım hücreleri ayrı bölümde gösterilir ve mesaj ikinci kez sayılmaz.', '',
                   f"Doğrulama: {sum(f['side'] == 'SOURCE' for f in findings)} SOURCE mesajı, "
                   f"{sum(f['side'] == 'SYSTEM' for f in findings)} SYSTEM mesajı; "
                   f"{len(audit['transfers'])} saklama aktarım sorunu; "
                   f"{sum(len(r['warnings']) for r in inspection['results'])} engelleyici olmayan uyarı.", '',
                   'Aynı kök nedenden üreyen mesajlar müdürlük listesinde tek kontrol maddesinde toplanır. '
                   'Hazır = gerçek paket uygulandı ve validate_department hata listesi boş. '
-                  'Çıkarılan tablo ile ek üyelik/açıklama sorunları ayrıca nihai kitapta kontrol edilmelidir.', '',
+                  'Çıkarılan tablo ve ek üyelik sorunu doğrulama mesajı sayısına eklenmez. '
+                  'Kitap maddeleri dağılım işlerini içermez. Fark = kitaptaki/kontrol edilen toplam − hesaplanan tutar. '
+                  'Koşullu 0,00 önerisi veri düzeltmesi değildir; kaynak yokluğunu Strateji teyit etmelidir.', '',
                   '## Çalıştırma', '', '```sh',
                   '# CIVENSA_TEST_POSTGRES_URL: yerel, disposable PostgreSQL 16+; CREATE DATABASE yetkisi.',
                   f'python scripts/first_load_dryrun.py {path.as_posix()}{flags} --out docs/first-load/dryrun-d3.md',
@@ -375,10 +390,9 @@ def report(parsed, inspection, path, digest):
         lines.append(f"| {GROUPS[item['group']]} | {item['side']} | {item['count']} |")
     lines.extend(['', 'SYSTEM = üretilen Word, ayrıştırıcı, eşleme/ekim, saklama veya doğrulama kaynaklı hata. '
                   'SOURCE = kitap hücresi/dağılımının kendisi. Tanınmayan hata veya kitap–Word/saklama farkı '
-                  'otomatik SOURCE sayılmaz; SYSTEM olarak raporlanır. Program Grubu Belirlenmeli üç müdürlükte '
-                  '(Fen, İnsan Kaynakları, Yazı) hem Hizmet hem Yönetim kartları varken yalnız tek toplu ekonomik '
-                  'kategori tablosu bulunmasından kaynaklanır. Kategori × program grubu dağılımı kitapta yoktur; '
-                  'grup eksik ekimi değildir. Paylaştırma oranı veya varsayılan grup uydurulmadı.', '',
+                  'otomatik SOURCE sayılmaz; SYSTEM olarak raporlanır. Program Grubu Belirlenmeli kitap '
+                  'düzeltme listesine girmez; kategori × program grubu dağılımı yükleme sonrası ayrı Strateji işidir. '
+                  'Paylaştırma oranı veya varsayılan grup uydurulmadı.', '',
                   '## Her gruptan kitap → Word → saklanan değer kanıtı', ''])
     for group in GROUPS:
         example = next((f for f in findings if f['group'] == group), None)
@@ -414,30 +428,45 @@ def report(parsed, inspection, path, digest):
                 lines.extend(['- Kitap: ' + cell(proof_text(cells, 'book')),
                               '- Word: ' + cell(proof_text(cells, 'word')),
                               '- Saklanan Activity.explanation: ' + cell(trace.activity_stored(result['stored'], activity)[0]['explanation']), ''])
-    lines.extend(['## Pazartesi — müdürlük bazında yalnız SOURCE kontrol listesi', ''])
+    lines.extend(['## Kitapta düzeltilmez — yükleme sonrası Strateji girer (program grubu dağılımı)', '',
+                  'Bu bölüm kitap kontrol maddesi sayısına dahil değildir. Her kaynak kategori hücresi için '
+                  'Hizmet + Yönetim ve Destek tutarları kaynak tutarını korumalıdır. Bütçe dışı 0,00 değerleri '
+                  'kitabın Bütçe Dışı Toplam satırından gelir; kategori hücresindeki bütçe içi tutarla karıştırılmamalı. '
+                  'Mevcut uygulamada Strateji için iki gruba atomik bölme akışı bulunmuyor; bu bölüm yapılacak '
+                  'yükleme sonrası işi tanımlar (PR açıklamasında route/validator incelemesi vardır).', ''])
+    if not presentation['allocations']:
+        lines.extend(['Dağılım bekleyen hücre yok.', ''])
+    for name, allocation in presentation['allocations'].items():
+        lines.extend([f'### {name}', '',
+                      f"{allocation['messages']} doğrulama mesajında dağılım gereksinimi var; "
+                      'başka kitap nedeni de taşıyan mesajlar kitap sayımında bir kez sayılmıştır.', '',
+                      '| Kart | Program / alt program | Grup |', '| --- | --- | --- |'])
+        for card in allocation['cards']:
+            lines.append(f"| {cell(card['title'])} | {cell(card['program'])} / {cell(card['subprogram'])} | {card['group']} |")
+        lines.extend(['', '| Yıl / sütun | Kategori | Finansman | Dağıtılacak tutar | Kaynak hücresi |',
+                      '| --- | --- | --- | ---: | --- |'])
+        from app.program_service import ECONOMIC_CATEGORIES
+        from app.value_labels import value_kind_label, funding_label
+        for value in sorted(allocation['cells'], key=lambda v: (v['year'], v['kind'], v['category'], v['funding_type'])):
+            lines.append(f"| {value['year']} {value_kind_label(value['kind'])} | {ECONOMIC_CATEGORIES[value['category']]} | "
+                         f"{funding_label(value['funding_type'])} | {money(value['amount'])} | {cell(reference_text(value['cells']))} |")
+        lines.append('')
+    lines.extend(['## Pazartesi — müdürlük bazında yalnız kitap düzeltme listesi', ''])
     for result in inspection['results']:
-        selected = [f for f in findings if f['department'] == result['name'] and f['side'] == 'SOURCE']
-        unique = {}
-        for finding in selected:
-            target = unique.setdefault(finding['key'], dict(group=finding['group'], details=[], cells=[]))
-            if finding['details'] not in target['details']:
-                target['details'].append(finding['details'])
-            for ref in finding['cells']:
-                if ref not in target['cells']:
-                    target['cells'].append(ref)
+        selected = [i for i in presentation['items'] if i['department'] == result['name']]
         lines.extend([f"### {result['name']}", '',
                       f"Gönderime hazır: **{'Evet' if result['ready'] else 'Hayır'}**; "
-                      f"{len(selected)} SOURCE mesajı / {len(unique)} kaynak kontrol maddesi.", ''])
-        for finding in unique.values():
-            lines.extend(['- [ ] ' + cell(' '.join(finding['details']))
-                          + ' **Hücreler:** ' + cell(reference_text(finding['cells']))])
-        extras = [issue for issue in parsed.get('membership_issues', []) if result['name'] + ' / ' in issue]
-        for issue in extras:
-            match = re.search(r'Tablo (\d+), satır (\d+)', issue)
-            cells = [trace.cell(int(match[1]), int(match[2])-1, 0)] if match else []
-            lines.append('- [ ] SOURCE (validate_department dışında): ' + cell(issue) + ' **Hücre:** ' + cell(reference_text(cells)))
-        if not unique and not extras:
-            lines.append('SOURCE engeli yok.')
+                      f"{sum(len(i['messages']) for i in selected)} kitap mesajı / {len(selected)} kitap kontrol maddesi.", ''])
+        if result['name'] in presentation['only_allocation']:
+            lines.extend(['Kitap açısından temiz; program grubu dağılımı bekliyor.', ''])
+        for item in selected:
+            lines.extend(['- [ ] ' + cell(item['title']), '',
+                          '  **Hücreler:** ' + cell(reference_text(item['cells'])), '',
+                          '  Yapılacak: ' + cell(item['action']), ''])
+            if item['note']:
+                lines.extend(['  ' + cell(item['note']), ''])
+        if not selected and result['name'] not in presentation['only_allocation']:
+            lines.append('Kitap düzeltmesi yok.')
         lines.append('')
     systems = [f for f in findings if f['side'] == 'SYSTEM']
     if systems or audit['transfers']:
