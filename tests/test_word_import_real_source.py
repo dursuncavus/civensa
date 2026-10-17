@@ -11,7 +11,8 @@ from sqlalchemy import func, select
 
 from app.data_importer import parse_performance_docx
 from app.import_service import apply_import_batch
-from app.models import Activity, ImportBatch, Indicator
+from app.models import Activity, ImportBatch, Indicator, EconomicValue, ReportCard, Department
+from app.program_service import validate_department
 from test_word_import import import_client, import_context, word_document
 
 pytestmark = pytest.mark.postgres
@@ -107,6 +108,13 @@ def test_real_source_matches_960d62c_baseline(real_source, real_parsed):
     assert summary.pop('table_count') == baseline['summary']['table_count'] + 1 == 162
     assert summary == {k: v for k, v in baseline['summary'].items() if k != 'table_count'}
     assert real_parsed['errors'] == real_parsed['warnings'] == []
+    economic_snapshot = [{'department': d['name'], 'tables': d.get('economic_tables', [])}
+                         for d in real_parsed['departments']]
+    digest = hashlib.sha256(json.dumps(economic_snapshot, ensure_ascii=False, sort_keys=True).encode()).hexdigest()
+    assert digest == baseline['economic_snapshot_sha256']
+    headers = {'Performans Göstergesi', 'Performans Göstergeleri', 'Ölçü Birimi',
+               '2025 Yılı Gerçekleşme', '2027 Hedef', '2028 Tahmin', '2029 Tahmini'}
+    assert not any(i['name'] in headers for d in real_parsed['departments'] for b in d['blocks'] for i in b['indicators'])
     actual = source_snapshot(real_parsed)
     assert apply_documented_baseline_allowlist(actual, baseline['departments']) == baseline['departments']
     human_resources = next(
@@ -115,7 +123,7 @@ def test_real_source_matches_960d62c_baseline(real_source, real_parsed):
     )
     assert human_resources['blocks'][1]['subprogram'] == 'Üst Yönetim, İdari ve Mali Hizmetler'
     coverage = real_parsed['coverage_items']
-    assert len(coverage) == 65
+    assert len(coverage) == 32
     assert [item['table_number'] for item in coverage[:28]] == list(range(1, 29))
     assert all(f"Tablo {item['table_number']}: {item['first_cell_text']}" in item['message']
                for item in coverage)
@@ -151,11 +159,21 @@ def test_real_source_apply_persists_all_records(db, import_context, real_parsed)
     db.commit()
     result = apply_import_batch(db, batch)
     db.commit()
-    assert result['indicators'] == real_parsed['summary']['indicator_count'] == 324
+    assert result['indicators'] == real_parsed['summary']['indicator_count'] == 263
     assert result['activities'] == real_parsed['summary']['activity_count'] == 288
-    assert db.scalar(select(func.count()).select_from(Indicator)) == 324
+    assert db.scalar(select(func.count()).select_from(Indicator)) == 263
     assert db.scalar(select(func.count()).select_from(Activity)) == 288
     assert batch.status == 'applied'
+    assert result['cards'] == db.scalar(select(func.count()).select_from(ReportCard)) == 64
+    assert result['economic_values'] == db.scalar(select(func.count()).select_from(EconomicValue)) == 1290
+    assert all(row.source_card_id and json.loads(row.source_context_json)['card_ids']
+               for row in db.scalars(select(EconomicValue)))
+    sample = db.scalar(select(Department).where(Department.name == 'Özel Kalem Müdürlüğü'))
+    errors, warnings = validate_department(db, import_context.period.id, sample.id)
+    relevant = [e for e in errors if any(w in e.lower() for w in ['kart', 'doğrulan', 'ekonomik'])]
+    assert not relevant, '\n'.join(relevant)
+    assert len(errors) == 5 and all('kataloğu bağlantısı eksik' in e for e in errors), errors
+
 
 
 @pytest.mark.parametrize('year,valid', [('2027/1', True), ('2027 / 2027', True),

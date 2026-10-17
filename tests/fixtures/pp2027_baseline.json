@@ -4,13 +4,16 @@
   "summary": {
     "department_count": 39,
     "indicator_table_count": 64,
-    "indicator_count": 324,
+    "indicator_count": 263,
     "activity_table_count": 33,
     "activity_count": 288,
     "table_count": 161,
     "source_years": [
       2027
-    ]
+    ],
+    "economic_table_count": 33,
+    "economic_value_count": 1290,
+    "needs_review_count": 427
   },
   "departments": [
     {
@@ -24,36 +27,6 @@
           "rationale": "GEREKÇE: Özel gereksinimli bireylerin ve engelli vatandaşların sosyal hayata etkin ve eşit katılımlarının desteklenmesi, günlük yaşam becerilerinin geliştirilmesi, eğitim, rehabilitasyon, sosyal ve kültürel faaliyetlere erişimlerinin artırılması ve yaşam kalitelerinin yükseltilmesi amacıyla Engelsiz Yaşam Faaliyetleri yürütülecektir. AÇIKLAMALAR: Engelli bireylerin temel hak ve özgürlüklerden eşit şekilde yararlanmalarını, rehabilitasyon ve eğitim imkânlarına erişimlerini ve toplumsal hayata bağımsız katılımlarını sağlamak amacıyla Engelsiz Yaşam Faaliyetleri yürütülmektedir. Bu çalışmalar; 5378 sayılı Engelliler Hakkında Kanun’un 1, 4, 4/B, 10 ve 15. maddeleri, belediyelerin engellilere yönelik merkez ve hizmetler sunmasını düzenleyen 5393 sayılı Belediye Kanunu’nun 14 ve 38. maddeleri ile ilçe belediyelerine sosyal ve kültürel hizmet sunma yetkisi veren 5216 sayılı Büyükşehir Belediyesi Kanunu’nun 7. maddesi dayanağında hayata geçirilmektedir. Yürütülen faaliyetlerle; özel gereksinimli bireylerin günlük yaşam becerilerini geliştirmek, sosyal, kültürel ve eğitsel olanaklara erişimlerini güçlendirmek ve yaşam kalitelerini yükselterek toplumsal entegrasyonlarını desteklemek hedeflenmektedir.",
           "goal": "Özel gereksinimli bireylerin ve engelli vatandaşların sosyal hayata katılımını desteklemek, gelişimlerini arttıracak hizmetleri yaygınlaştırmak.",
           "indicators": [
-            {
-              "name": "Performans Göstergesi",
-              "values": [
-                {
-                  "year": 2025,
-                  "kind": "actual",
-                  "raw_text": "2025 Yılı Gerçekleşme"
-                },
-                {
-                  "year": 2026,
-                  "kind": "year_end_estimate",
-                  "raw_text": "2026 Yıl Sonu Gerçekleşme Tahmini."
-                },
-                {
-                  "year": 2027,
-                  "kind": "target",
-                  "raw_text": "2027 Hedef"
-                },
-                {
-                  "year": 2028,
-                  "kind": "forecast",
-                  "raw_text": "2028 Tahmin"
-                },
-                {
-                  "year": 2029,
-                  "kind": "forecast",
-                  "raw_text": "2029 Tahmini"
-                }
-              ]
-            },
             {
               "name": "SH02/PG01. Özel Gereksinimli bireylere yönelik düzenlenen aktivite/ gelişim desteği sayısı",
               "values": [
@@ -125,36 +98,6 @@
           "goal": "Vektörle etkin mücadele ederek çevre sağlığını korumak ve toplum sağlığı risklerini en aza indirmek",
           "indicators": [
             {
-              "name": "Performans Göstergesi",
-              "values": [
-                {
-                  "year": 2025,
-                  "kind": "actual",
-                  "raw_text": "2025 Yılı Gerçekleşme"
-                },
-                {
-                  "year": 2026,
-                  "kind": "year_end_estimate",
-                  "raw_text": "2026 Yıl Sonu Gerçekleşme Tahmini."
-                },
-                {
-                  "year": 2027,
-                  "kind": "target",
-                  "raw_text": "2027 Hedef"
-                },
-                {
-                  "year": 2028,
-                  "kind": "forecast",
-                  "raw_text": "2028 Tahmin"
-                },
-                {
-                  "year": 2029,
-                  "kind": "forecast",
-                  "raw_text": "2029 Tahmini"
-                }
-              ]
-            },
-            {
               "name": "SH04/PG01 Vektörle Mücadele ve Dezenfeksiyon Yapılan Toplam Alan/Nokta",
               "values": [
                 {
@@ -224,36 +167,6 @@
           "rationale": "GEREKÇE :Toplum sağlığının korunması ve geliştirilmesi, hastalıkların oluşmadan önlenmesi, sağlıklı yaşam alışkanlıklarının yaygınlaştırılması ve vatandaşların sağlık hizmetlerine erişiminin kolaylaştırılması amacıyla koruyucu sağlık hizmetlerinin etkin, erişilebilir ve sürdürülebilir şekilde sunulması gerekmektedir. Bu kapsamda, sağlık bilincinin artırılması, erken tanı ve koruyucu sağlık uygulamalarının desteklenmesi, dezavantajlı gruplar başta olmak üzere tüm vatandaşlara yönelik sağlık danışmanlığı, eğitim, tarama ve farkındalık çalışmalarının yürütülmesi; bireylerin yaşam kalitesinin yükseltilmesine ve toplum sağlığının güçlendirilmesine katkı sağlanması hedeflenmektedir. AÇIKLAMALAR:5393 sayılı Belediye Kanunu, 5216 sayılı Büyükşehir Belediyesi Kanunu, 1593 sayılı Umumi Hıfzıssıhha Kanunu ve ilgili diğer mevzuat kapsamında belediyelere verilen koruyucu sağlık hizmetlerinin yürütülmesine ilişkin görevler yerine getirilmektedir. Bu kapsamda evde sağlık hizmetleri, sağlık taramaları, fizyoterapi, diyetisyen ve beslenme danışmanlığı, psikolojik danışmanlık, sağlık eğitimleri ile toplumun sağlık bilincini artırmaya yönelik faaliyetler yürütülmektedir. Söz konusu çalışmalar; Türkiye Yüzyılı Kalkınma Planı ile Büyükçekmece Belediyesi 2025-2029 Stratejik Planında yer alan koruyucu sağlık hizmetlerinin güçlendirilmesi, sağlıklı yaşamın teşvik edilmesi, dezavantajlı grupların sağlık hizmetlerine erişiminin artırılması, toplum sağlığının korunması ve yaşam kalitesinin yükseltilmesi hedeflerine ulaşılmasına doğrudan katkı sağlamaktadır.",
           "goal": "Belediye bünyesinde sunulan sağlık hizmetlerinden faydalanan kişi sayısını arttırmak ve hizmet kalitesini yükseltmek.",
           "indicators": [
-            {
-              "name": "Performans Göstergesi",
-              "values": [
-                {
-                  "year": 2025,
-                  "kind": "actual",
-                  "raw_text": "2025 Yılı Gerçekleşme"
-                },
-                {
-                  "year": 2026,
-                  "kind": "year_end_estimate",
-                  "raw_text": "2026 Yıl Sonu Gerçekleşme Tahmini."
-                },
-                {
-                  "year": 2027,
-                  "kind": "target",
-                  "raw_text": "2027 Hedef"
-                },
-                {
-                  "year": 2028,
-                  "kind": "forecast",
-                  "raw_text": "2028 Tahmin"
-                },
-                {
-                  "year": 2029,
-                  "kind": "forecast",
-                  "raw_text": "2029 Tahmini"
-                }
-              ]
-            },
             {
               "name": "SH01/PG01.Sunulan Evde Sağlık Hizmeti Sayısı",
               "values": [
@@ -414,36 +327,6 @@
           "rationale": "GEREKÇE: Yaşlı,engelli,yatağa bağımlı ve sağlık kuruluşlarına kendi imkanlarıyla ulaşamayan vatandaşların sağlık hizmetlerine erişimini kolaylaştırmak,tedavi süreçlerinin kesintisiz yürütülmesini sağlamak ve toplum sağlını korumak amacıyla hasta nakil hizmetleri ile belediyenin görev alanına giren tedavi edici sağlık hizmetlerinin etkin, güvenli ve sürdürülebilir şekilde yürütülmesi. AÇIKLAMALAR: Yaşlı, engelli, yatağa bağımlı ve sağlık kuruluşlarına ulaşmakta güçlük çeken vatandaşların sağlık hizmetlerine erişimini kolaylaştırmak ve tedavi süreçlerinin kesintisiz sürdürülmesini sağlamak amacıyla hasta nakil ve tedavi edici sağlık hizmetleri yürütülmektedir. Bu faaliyetler; belediyelerin sağlık alanındaki görev ve yetkilerini düzenleyen 5393 sayılı Belediye Kanunu’nun 14 ve 38. maddeleri, 5216 sayılı Büyükşehir Belediyesi Kanunu’nun 7. maddesi, 3359 sayılı Sağlık Hizmetleri Temel Kanunu’nun 3. maddesi ile 1593 sayılı Umumi Hıfzıssıhha Kanunu’nun ilgili maddeleri ve bağlı mevzuat dayanağında hayata geçirilmektedir. Güvenli, etkin ve zamanında sunulan bu hizmetler; Türkiye Yüzyılı Kalkınma Planı ile Büyükçekmece Belediyesi 2025-2029 Stratejik Planı’nda yer alan sağlık hizmetlerine erişimin artırılması, dezavantajlı grupların desteklenmesi, toplum sağlığının korunması ve yaşam kalitesinin yükseltilmesi hedeflerine doğrudan katkı sunmaktadır.",
           "goal": "Vatandaşın tedavi edici sağlık hizmetlerinden zamanında güvenli ve kaliteli şekilde erişimini sağlamak.",
           "indicators": [
-            {
-              "name": "Performans Göstergesi",
-              "values": [
-                {
-                  "year": 2025,
-                  "kind": "actual",
-                  "raw_text": "2025 Yılı Gerçekleşme"
-                },
-                {
-                  "year": 2026,
-                  "kind": "year_end_estimate",
-                  "raw_text": "2026 Yıl Sonu Gerçekleşme Tahmini."
-                },
-                {
-                  "year": 2027,
-                  "kind": "target",
-                  "raw_text": "2027 Hedef"
-                },
-                {
-                  "year": 2028,
-                  "kind": "forecast",
-                  "raw_text": "2028 Tahmin"
-                },
-                {
-                  "year": 2029,
-                  "kind": "forecast",
-                  "raw_text": "2029 Tahmini"
-                }
-              ]
-            },
             {
               "name": "SH03/PG01 Sunulan Hasta Nakil Hizmet Sayısı",
               "values": [
@@ -1684,36 +1567,6 @@
           "goal": "İlçemiz sınırları içerisindeki ticari işletmelerin mevzuata uygunluğunu denetleyerek halk sağlığı ve huzurunu korumak amacıyla; yıllık ortalama 1.350 iş yeri denetimi gerçekleştirmek, ruhsatlandırma süreçlerini dijitalleştirerek işlem sürelerini %20 azaltmak ve esnafın yasal farkındalığını artırarak kayıt dışılığı minimize etmektir.",
           "indicators": [
             {
-              "name": "Performans Göstergesi",
-              "values": [
-                {
-                  "year": 2025,
-                  "kind": "actual",
-                  "raw_text": "2025 Yılı Gerçekleşme"
-                },
-                {
-                  "year": 2026,
-                  "kind": "year_end_estimate",
-                  "raw_text": "2026 Yıl Sonu Gerçekleşme Tahmini."
-                },
-                {
-                  "year": 2027,
-                  "kind": "target",
-                  "raw_text": "2027 Hedef"
-                },
-                {
-                  "year": 2028,
-                  "kind": "forecast",
-                  "raw_text": "2028 Tahmin"
-                },
-                {
-                  "year": 2029,
-                  "kind": "forecast",
-                  "raw_text": "2029 Tahmini"
-                }
-              ]
-            },
-            {
               "name": "SH05.PG01. Denetimi yapılan işyeri sayılı",
               "values": [
                 {
@@ -2478,36 +2331,6 @@
           "goal": "lçe genelindeki sıhhi ve gayrisıhhi müesseselerin denetim süreçlerini akıllı şehir teknolojileriyle entegre ederek, halk sağlığını korumak, kentsel esenliği sağlamak ve denetimlerin etkinliğini yıllık bazda artırarak mevzuata uygunluk oranını %100’e çıkarmaktır.",
           "indicators": [
             {
-              "name": "Performans Göstergesi",
-              "values": [
-                {
-                  "year": 2025,
-                  "kind": "actual",
-                  "raw_text": "2025 Yılı Gerçekleşme"
-                },
-                {
-                  "year": 2026,
-                  "kind": "year_end_estimate",
-                  "raw_text": "2026 Yıl Sonu Gerçekleşme Tahmini."
-                },
-                {
-                  "year": 2027,
-                  "kind": "target",
-                  "raw_text": "2027 Hedef"
-                },
-                {
-                  "year": 2028,
-                  "kind": "forecast",
-                  "raw_text": "2028 Tahmin"
-                },
-                {
-                  "year": 2029,
-                  "kind": "forecast",
-                  "raw_text": "2029 Tahmini"
-                }
-              ]
-            },
-            {
               "name": "SH52/PG01. Mühüleme ve Mühür Fekki sayısı",
               "values": [
                 {
@@ -2637,36 +2460,6 @@
           "rationale": "GEREKÇE:5393 sayılı Belediye Kanunu başta olmak üzere ilgili mevzuat hükümleri doğrultusunda belediyelerin görevleri arasında kent düzeninin sağlanması, halkın huzur, sağlık ve güvenliğinin korunması, çevre ve görüntü kirliliğinin önlenmesi, tüketici haklarının gözetilmesi ve kamu düzenini bozabilecek unsurlarla mücadele edilmesi yer almaktadır. Artan nüfus, ticari faaliyetlerin çeşitlenmesi ve kentleşme süreci; iş yeri denetimlerinin etkin yürütülmesini, işgallerin önlenmesini, seyyar satış faaliyetlerinin kontrol altına alınmasını, çevre ve görüntü kirliliğiyle mücadeleyi, vatandaş şikâyetlerine hızlı müdahale edilmesini ve diğer kamu kurumlarıyla koordinasyonun güçlendirilmesini gerekli kılmaktadır. Bu kapsamda zabıta hizmetlerinin etkinliğinin artırılması, kent güvenliği ve estetiğinin korunması ile yaşam kalitesinin yükseltilmesi amaçlanmaktadır. AÇIKLAMA: Kent düzeni, güvenliği ve estetiğinin korunması amacıyla zabıta teşkilatının kurumsal kapasitesi güçlendirilecektir. Bu doğrultuda personel mevcudu ve teknik teçhizat donanımı %10 oranında artırılarak denetim, işgal önleme, çevre kirliliğiyle mücadele ve ruhsatsız faaliyetlere müdahale süreçlerinin sahadaki etkinliği yükseltilecektir. Yapılacak takviyelerle ihbar ve denetim mekanizmaları hızlandırılarak tespit edilen tüm olumsuzlukların eksiksiz (%100) giderilmesi sağlanacaktır.",
           "goal": "Çalışan personeli ve ekipmanları yüzde 10 oranında arttırarak zabıta hizmetleri konusunda kent güvenliği ve estetiğiaçısından tespit edilen olumsuzlukların giderilme oranı % 100 olacaktır.",
           "indicators": [
-            {
-              "name": "Performans Göstergesi",
-              "values": [
-                {
-                  "year": 2025,
-                  "kind": "actual",
-                  "raw_text": "2025 Yılı Gerçekleşme"
-                },
-                {
-                  "year": 2026,
-                  "kind": "year_end_estimate",
-                  "raw_text": "2026 Yıl Sonu Gerçekleşme Tahmini."
-                },
-                {
-                  "year": 2027,
-                  "kind": "target",
-                  "raw_text": "2027 Hedef"
-                },
-                {
-                  "year": 2028,
-                  "kind": "forecast",
-                  "raw_text": "2028 Tahmin"
-                },
-                {
-                  "year": 2029,
-                  "kind": "forecast",
-                  "raw_text": "2029 Tahmini"
-                }
-              ]
-            },
             {
               "name": "SH07.PG01. Yıl içerisinde denetlenen iş yeri sayısı",
               "values": [
@@ -3884,41 +3677,6 @@
           "goal": "2027-2029 döneminde sahipsiz hayvanların etkin şekilde yönetilmesini sağlamak, kısırlaştırma, aşılama, tedavi ve rehabilitasyon hizmetlerinin kapasite ve etkinliğini artırmak, bakımevinin fiziki altyapısını güçlendirmek ve hayvan refahı ile toplum sağlığının korunmasına sürdürülebilir katkı sağlamaktır.",
           "indicators": [
             {
-              "name": "Performans Göstergesi",
-              "values": [
-                {
-                  "year": 2025,
-                  "kind": "actual",
-                  "raw_text": "2025 Yılı Gerçekleşme"
-                },
-                {
-                  "year": 2026,
-                  "kind": "planned",
-                  "raw_text": "2026 Planlanan"
-                },
-                {
-                  "year": 2026,
-                  "kind": "year_end_estimate",
-                  "raw_text": "2026 Yıl Sonu Gerçekleşme Tahmini."
-                },
-                {
-                  "year": 2027,
-                  "kind": "target",
-                  "raw_text": "2027 Hedef"
-                },
-                {
-                  "year": 2028,
-                  "kind": "forecast",
-                  "raw_text": "2028 Tahmin"
-                },
-                {
-                  "year": 2029,
-                  "kind": "forecast",
-                  "raw_text": "2029 Tahmini"
-                }
-              ]
-            },
-            {
               "name": "P.G.1: Tedavi Edilen Sahipsiz Hayvan Sayısı",
               "values": [
                 {
@@ -4821,36 +4579,6 @@
           "goal": "Belediyemiz hizmet alanlarında kamu yararı doğrultusunda ihtiyaç duyulan taşınmazların kamulaştırma ve kamulaştırmasız el atma süreçlerinin mevzuata uygun yürütülmesini sağlamak; kamulaştırmasız el atma davalarından kaynaklı mali yükü yıllık bazında %10 azaltmak ve taşınmaz envanterinin %100 dijital takibini gerçekleştirmektir.",
           "indicators": [
             {
-              "name": "Performans Göstergesi",
-              "values": [
-                {
-                  "year": 2025,
-                  "kind": "actual",
-                  "raw_text": "2025 Yılı Gerçekleşme"
-                },
-                {
-                  "year": 2026,
-                  "kind": "year_end_estimate",
-                  "raw_text": "2026 Yıl Sonu Gerçekleşme Tahmini."
-                },
-                {
-                  "year": 2027,
-                  "kind": "target",
-                  "raw_text": "2027 Hedef"
-                },
-                {
-                  "year": 2028,
-                  "kind": "forecast",
-                  "raw_text": "2028 Tahmin"
-                },
-                {
-                  "year": 2029,
-                  "kind": "forecast",
-                  "raw_text": "2029 Tahmini"
-                }
-              ]
-            },
-            {
               "name": "SH09.PG01. Davaların takibi, kamulaştırma ve el atma davalarına ilişkin işlemlerin tamamlanması",
               "values": [
                 {
@@ -4950,36 +4678,6 @@
           "rationale": "Gerekçe: Faaliyetler; 5393 sayılı Belediye Kanunu, 5216 sayılı Büyükşehir Belediyesi Kanunu, 3194 sayılı İmar Kanunu, 2942 sayılı Kamulaştırma Kanunu, 775 sayılı Gecekondu Kanunu, 2886 sayılı Devlet İhale Kanunu ve 4734 sayılı Kamu İhale Kanunu hükümlerini yerine getirmek amacıyla yürütülmektedir. Bu kapsamdaki temel gerekçe; belediye mülkiyetindeki taşınmazların korunmasını sağlamak, kamu hizmetlerinin gerektirdiği taşınmaz ihtiyacını hukuka uygun şekilde karşılamak, haksız işgallere karşı yasal hakları korumak, taşınmaz kaynaklı gelirleri optimize ederek belediye bütçesine kazandırmak ve kamu kaynaklarının etkin, şeffaf ve verimli kullanımını temin etmektir. Açıklama: Emlak ve İstimlak Müdürlüğü; belediye mülkiyetinde bulunan taşınmazların tahsis, kiralama, satış, devir, kamulaştırma ve ecrimisil işlemlerini ilgili mevzuat hükümleri doğrultusunda yürütmektedir. Bu çerçevede; 2886 sayılı Kanun kapsamında kiralama ve satış ihaleleri gerçekleştirilmekte, tahakkuk ve tahsilat süreçleri kesintisiz takip edilmekte, 3194 ve 775 sayılı kanunlar kapsamındaki hisse satışı ve tahsis işlemleri tamamlanmakta, 2942 sayılı Kanun uyarınca kamu hizmetleri için gerekli kamulaştırma ve mahkeme kararlarının uygulama süreçleri idare edilmektedir. Ayrıca taşınmaz envanterinin dijital ortamda yüzde 100 güncel tutulması, tespit edilen işgallere karşı en geç 30 gün içinde yasal süreçlerin başlatılması ve taşınmaz portföyünün kurumsal hedeflerle uyumlu şekilde yönetilmesi sağlanmaktadır.",
           "goal": "Belediye mülkiyetindeki taşınmazların envanterini %100 güncel tutmak, crimisil, kiralama ve satış süreçlerini dijital takip sistemiyle yöneterek kurumsal gelirleri optimize etmek ve işgallere karşı yasal süreçleri 30 gün içinde başlatarak mülkiyet haklarını korumaktır.",
           "indicators": [
-            {
-              "name": "Performans Göstergesi",
-              "values": [
-                {
-                  "year": 2025,
-                  "kind": "actual",
-                  "raw_text": "2025 Yılı Gerçekleşme"
-                },
-                {
-                  "year": 2026,
-                  "kind": "year_end_estimate",
-                  "raw_text": "2026 Yıl Sonu Gerçekleşme Tahmini."
-                },
-                {
-                  "year": 2027,
-                  "kind": "target",
-                  "raw_text": "2027 Hedef"
-                },
-                {
-                  "year": 2028,
-                  "kind": "forecast",
-                  "raw_text": "2028 Tahmin"
-                },
-                {
-                  "year": 2029,
-                  "kind": "forecast",
-                  "raw_text": "2029 Tahmini"
-                }
-              ]
-            },
             {
               "name": "SH10.PG01.Tespit edilen işgallere ait ecrimisil işlemlerinin başlatılması",
               "values": [
@@ -6393,36 +6091,6 @@
           "goal": "İlçenin kurumsal ve sosyal altyapı ihtiyacını karşılamak amacıyla; 2029 yılı sonuna kadar planlanan kamu binalarını yasal standartlarda inşa etmek, mevcut yapıların bakım ve onarım işlerini fiziksel iş programına uygun olarak %100 oranında gerçekleştirmektir",
           "indicators": [
             {
-              "name": "Performans Göstergesi",
-              "values": [
-                {
-                  "year": 2025,
-                  "kind": "actual",
-                  "raw_text": "2025 Yılı Gerçekleşme"
-                },
-                {
-                  "year": 2026,
-                  "kind": "year_end_estimate",
-                  "raw_text": "2026 Yıl Sonu Gerçekleşme Tahmini."
-                },
-                {
-                  "year": 2027,
-                  "kind": "target",
-                  "raw_text": "2027 Hedef"
-                },
-                {
-                  "year": 2028,
-                  "kind": "forecast",
-                  "raw_text": "2028 Tahmin"
-                },
-                {
-                  "year": 2029,
-                  "kind": "forecast",
-                  "raw_text": "2029 Tahmini"
-                }
-              ]
-            },
-            {
               "name": "SH11.PG01. Kent Genelinde Farklı İhtiyaçlar İçin Yapılacak Olan Kamu Binası Sayısı .",
               "values": [
                 {
@@ -6583,36 +6251,6 @@
           "goal": "İlçe genelinde ulaşım konforunu ve güvenliğini artırmak amacıyla; 2029 yılı sonuna kadar parke taş ve asfalt kaplama çalışmalarını %100 program dâhilinde tamamlamak, altyapı ve yol ağı eksikliklerini modern mühendislik standartlarında gidererek kesintisiz bir ulaşım ağı oluşturmaktır.",
           "indicators": [
             {
-              "name": "Performans Göstergesi",
-              "values": [
-                {
-                  "year": 2025,
-                  "kind": "actual",
-                  "raw_text": "2025 Yılı Gerçekleşme"
-                },
-                {
-                  "year": 2026,
-                  "kind": "year_end_estimate",
-                  "raw_text": "2026 Yıl Sonu Gerçekleşme Tahmini."
-                },
-                {
-                  "year": 2027,
-                  "kind": "target",
-                  "raw_text": "2027 Hedef"
-                },
-                {
-                  "year": 2028,
-                  "kind": "forecast",
-                  "raw_text": "2028 Tahmin"
-                },
-                {
-                  "year": 2029,
-                  "kind": "forecast",
-                  "raw_text": "2029 Tahmini"
-                }
-              ]
-            },
-            {
               "name": "SH12.PG01.Kent Genelinde Parke Taş İle Yol Yapım Bakım ve Onarım İşi",
               "values": [
                 {
@@ -6772,36 +6410,6 @@
           "rationale": "GEREKÇE: Büyükçekmece genelinde kent estetiğini, güvenliğini ve enerji verimliliğini en üst seviyeye çıkarmak faaliyetlerimizin temel gerekçesini oluşturmaktadır. Bu kapsamda, cadde ve sokak aydınlatma sistemlerini modern teknolojilerle yenileyerek enerji tasarruflu LED dönüşümlerini fiilen gerçekleştireceğiz. Mevcut elektrik altyapısının bakım ve onarım süreçlerini kesintisiz yöneterek sistemlerin %100 işler halde tutulmasını sağlayacağız. Ayrıca, kamu binaları ve alanlarında elektrik güvenliği kontrollerini düzenli olarak yürüterek işletme maliyetlerini minimize etmeyi hedefliyoruz. AÇIKLAMALAR:Fen İşleri Müdürlüğü, ilgili mevzuat uyarınca ilçenin enerji verimliliğini ve güvenliğini artırmak üzere aydınlatma sistemlerinin modern teknolojilerle yenilenmesi ile elektrik altyapısının bakım ve onarım süreçlerini modern standartlarda yürütmektedir. Bu faaliyetler; BM 2030 Sürdürülebilir Kalkınma Amaçları, 12. Kalkınma Planı ve 2050 Büyükçekmece Vizyonu gibi üst politika belgeleriyle tam uyumlu bir şekilde, performans esaslı bütçe yönetimiyle hayata geçirilmektedir",
           "goal": "Kent estetiğini ve güvenliğini artırmak amacıyla; 2029 yılı sonuna kadar cadde ve sokak aydınlatma sistemlerini %100 işler halde tutmak, enerji tasarruflu modern aydınlatma dönüşümlerini tamamlayarak işletme maliyetlerini minimize etmektir.",
           "indicators": [
-            {
-              "name": "Performans Göstergesi",
-              "values": [
-                {
-                  "year": 2025,
-                  "kind": "actual",
-                  "raw_text": "2025 Yılı Gerçekleşme"
-                },
-                {
-                  "year": 2026,
-                  "kind": "year_end_estimate",
-                  "raw_text": "2026 Yıl Sonu Gerçekleşme Tahmini."
-                },
-                {
-                  "year": 2027,
-                  "kind": "target",
-                  "raw_text": "2027 Hedef"
-                },
-                {
-                  "year": 2028,
-                  "kind": "forecast",
-                  "raw_text": "2028 Tahmin"
-                },
-                {
-                  "year": 2029,
-                  "kind": "forecast",
-                  "raw_text": "2029 Tahmini"
-                }
-              ]
-            },
             {
               "name": "SH13.PG01.Yıl içinde elektrik ve aydınlatma",
               "values": [
@@ -8019,36 +7627,6 @@
           "goal": "",
           "indicators": [
             {
-              "name": "Performans Göstergesi",
-              "values": [
-                {
-                  "year": 2025,
-                  "kind": "actual",
-                  "raw_text": "2025 Yılı Gerçekleşme"
-                },
-                {
-                  "year": 2026,
-                  "kind": "year_end_estimate",
-                  "raw_text": "2026 Yıl Sonu Gerçekleşme Tahmini."
-                },
-                {
-                  "year": 2027,
-                  "kind": "target",
-                  "raw_text": "2027 Hedef"
-                },
-                {
-                  "year": 2028,
-                  "kind": "forecast",
-                  "raw_text": "2028 Tahmin"
-                },
-                {
-                  "year": 2029,
-                  "kind": "forecast",
-                  "raw_text": "2029 Tahmini"
-                }
-              ]
-            },
-            {
               "name": "SH14.PG01. Düzenlenen yapı ruhsatı sayısı",
               "values": [
                 {
@@ -8148,36 +7726,6 @@
           "rationale": "GEREKÇE:3194 sayılı İmar Kanunu ve 5393 sayılı Belediye Kanunu başta olmak üzere ilgili mevzuat hükümleri uyarınca; ilçenin planlı, güvenli ve sürdürülebilir yapılaşma ihtiyacını karşılamak, kentsel disiplini tesis etmek ve afetlere karşı dirençli bir kent dokusu oluşturmak amacıyla bu faaliyetler yürütülmektedir. AÇIKLAMALAR: Ruhsatlandırma, mekânsal planlama ve imar denetim süreçleri yasal standartlarda yürütülerek Büyükçekmece genelinde mevzuata uygun ve sağlıklı bir kentsel çevre tesis edilmekte; kentsel güvenliğe ve vatandaşların yaşam kalitesine doğrudan katkı sunulmaktadır. Yürütülen tüm şehircilik ve imar faaliyetleri; Birleşmiş Milletler 2030 Sürdürülebilir Kalkınma Amaçları, 12. Kalkınma Planı ve 2050 Büyükçekmece Vizyonu hedefleriyle tam uyum içerisinde ele alınmaktadır. İmar ve kentsel denetim süreçleri, kurumsal kaynakların etkin kullanımını temel alan performans esaslı bütçe ve yönetim anlayışıyla hayata geçirilmekte ve periyodik olarak izlenmektedir.",
           "goal": "",
           "indicators": [
-            {
-              "name": "Performans Göstergesi",
-              "values": [
-                {
-                  "year": 2025,
-                  "kind": "actual",
-                  "raw_text": "2025 Yılı Gerçekleşme"
-                },
-                {
-                  "year": 2026,
-                  "kind": "year_end_estimate",
-                  "raw_text": "2026 Yıl Sonu Gerçekleşme Tahmini."
-                },
-                {
-                  "year": 2027,
-                  "kind": "target",
-                  "raw_text": "2027 Hedef"
-                },
-                {
-                  "year": 2028,
-                  "kind": "forecast",
-                  "raw_text": "2028 Tahmin"
-                },
-                {
-                  "year": 2029,
-                  "kind": "forecast",
-                  "raw_text": "2029 Tahmini"
-                }
-              ]
-            },
             {
               "name": "SH15.PG01.Yıllık olarak tespit edilen ve yasal işlem başlatılan kaçak yapı sayısı",
               "values": [
@@ -9817,41 +9365,6 @@
           "goal": "İlçe genelinde aktif yeşil alan miktarını artırarak 2029 yılı sonuna kadar en az 170.000 m2 yeşil alan oluşturmak ve mevcut yeşil alanların yaşam kalitesini arttırarak, koruyup geliştirmek.",
           "indicators": [
             {
-              "name": "Performans Göstergesi",
-              "values": [
-                {
-                  "year": 2025,
-                  "kind": "actual",
-                  "raw_text": "2025 Yılı Gerçekleşme"
-                },
-                {
-                  "year": 2026,
-                  "kind": "planned",
-                  "raw_text": "2026 Planlanan"
-                },
-                {
-                  "year": 2026,
-                  "kind": "year_end_estimate",
-                  "raw_text": "2026 Yıl Sonu Gerçekleşme Tahmini."
-                },
-                {
-                  "year": 2027,
-                  "kind": "target",
-                  "raw_text": "2027 Hedef"
-                },
-                {
-                  "year": 2028,
-                  "kind": "forecast",
-                  "raw_text": "2028 Tahmin"
-                },
-                {
-                  "year": 2029,
-                  "kind": "forecast",
-                  "raw_text": "2029 Tahmini"
-                }
-              ]
-            },
-            {
               "name": "SH16.PG01. Bitkisel ve yapısal peyzaj düzenlemelerinin yapımı.",
               "values": [
                 {
@@ -10043,41 +9556,6 @@
           "rationale": "Gerekçe: 5393 sayılı Belediye Kanunu ve 5216 sayılı Büyükşehir Belediyesi Kanunu’nun yerel yönetimlere yüklediği kentsel hizmet ve çevre düzenleme sorumlulukları doğrultusunda; ilçemizin kent estetiğini yükseltmek, kamusal alan kullanım kalitesini geliştirmek ve vatandaşlarımıza güvenli, fonksiyonel ve erişilebilir açık alanlar sunmak amaçlanmaktadır. Bu kapsamda, parklar, meydanlar ve prestij caddeleri başta olmak üzere ilçe bütününde artan kentsel ihtiyaçların karşılanması ve mevcut donatıların niteliğinin korunabilmesi için 2029 yılı sonuna kadar asgari 7.000 adet kentsel donatı elemanının (oyun grubu, oturma bankı, fitness aletleri, heykeller, estetik/enerji verimli aydınlatma direkleri vb.) kente kazandırılması ve/veya periyodik bakım ve onarımlarının sağlanması hedeflenmektedir. AÇIKLAMA: İlçe genelindeki park, meydan ve caddelerde ihtiyaç analizleri ve durum tespitleri yapılarak kentsel kimliğe ve engelsiz erişime uygun donatı projeleri hazırlanacaktır. Projelendirilen kent mobilyaları, oyun grupları, spor aletleri ve aydınlatma elemanlarının alım ve montaj süreçleri tamamlanacak; mevcut donatıların periyodik bakım, onarım ve yenileme çalışmaları teknik denetim ve düzenli raporlamalarla eksiksiz yürütülecektir.",
           "goal": "Kentsel estetiğini artırmak amacıyla parklar, meydanlar ve prestij caddeleri için 2029 yılına kadar en az 7000 adet kentsel donatı elemanın ( oyun grubu, bank, fıtness alet, heykel, aydınlatma vb.) kullanma sunulmasının ve/veya bakımının sağlanması.",
           "indicators": [
-            {
-              "name": "Performans Göstergesi",
-              "values": [
-                {
-                  "year": 2025,
-                  "kind": "actual",
-                  "raw_text": "2025 Yılı Gerçekleşme"
-                },
-                {
-                  "year": 2026,
-                  "kind": "planned",
-                  "raw_text": "2026 Planlanan"
-                },
-                {
-                  "year": 2026,
-                  "kind": "year_end_estimate",
-                  "raw_text": "2026 Yıl Sonu Gerçekleşme Tahmini."
-                },
-                {
-                  "year": 2027,
-                  "kind": "target",
-                  "raw_text": "2027 Hedef"
-                },
-                {
-                  "year": 2028,
-                  "kind": "forecast",
-                  "raw_text": "2028 Tahmin"
-                },
-                {
-                  "year": 2029,
-                  "kind": "forecast",
-                  "raw_text": "2029 Tahmini"
-                }
-              ]
-            },
             {
               "name": "SH17.PG01. Kullanıma sunulan ve bakım onarımı yapılan kent donatı sayısı (Bank, spor, çocuk oyun elemanı, heykel vb.)",
               "values": [
@@ -11667,41 +11145,6 @@
           "goal": "2029 yılı sonuna kadar; Büyükçekmece sakinlerinin ihtiyaç duyduğu 110 adet kamu hizmet yapısının (eğitim, sağlık, spor ve sosyal tesisler) etüt ve projelerini; kent estetiği, evrensel tasarım ve sürdürülebilirlik ilkelerine uygun olarak tamamlayıp halkın hizmetine sunmak.",
           "indicators": [
             {
-              "name": "Performans Göstergesi",
-              "values": [
-                {
-                  "year": 2025,
-                  "kind": "actual",
-                  "raw_text": "2025 Yılı Gerçekleşme"
-                },
-                {
-                  "year": 2026,
-                  "kind": "planned",
-                  "raw_text": "2026 Planlanan"
-                },
-                {
-                  "year": 2026,
-                  "kind": "year_end_estimate",
-                  "raw_text": "2026 Yıl Sonu Gerçekleşme Tahmini."
-                },
-                {
-                  "year": 2027,
-                  "kind": "target",
-                  "raw_text": "2027 Hedef"
-                },
-                {
-                  "year": 2028,
-                  "kind": "forecast",
-                  "raw_text": "2028 Tahmin"
-                },
-                {
-                  "year": 2029,
-                  "kind": "forecast",
-                  "raw_text": "2029 Tahmini"
-                }
-              ]
-            },
-            {
               "name": "SH18.PG01 Tamamlanacak Kamu Projesi Sayısı",
               "values": [
                 {
@@ -11788,41 +11231,6 @@
           "rationale": "Büyükçekmece ilçesinde kentsel gelişimin planlı, estetik, işlevsel, güvenli ve sürdürülebilir bir anlayışla yönlendirilmesine ihtiyaç duyulmaktadır. Bu kapsamda, kentsel tasarım ve planlama çalışmalarının geliştirilmesi, mevcut kentsel alanların iyileştirilmesi ve vatandaşların yaşam kalitesinin artırılmasına yönelik proje ve uygulamalara teknik altyapı sağlanması amaçlanmaktadır.",
           "goal": "İlçenin kentsel dokusunu iyileştirmek amacıyla; estetik ve işlevsel tasarım ilkelerine uygun kentsel tasarım rehberlerini hazırlamak ve projelerin bu rehberler doğrultusunda hayata geçirilmesini koordine etmek suretiyle kentsel yaşam kalitesini artırmak.",
           "indicators": [
-            {
-              "name": "Performans Göstergesi",
-              "values": [
-                {
-                  "year": 2025,
-                  "kind": "actual",
-                  "raw_text": "2025 Yılı Gerçekleşme"
-                },
-                {
-                  "year": 2026,
-                  "kind": "planned",
-                  "raw_text": "2026 Planlanan"
-                },
-                {
-                  "year": 2026,
-                  "kind": "year_end_estimate",
-                  "raw_text": "2026 Yıl Sonu Gerçekleşme Tahmini."
-                },
-                {
-                  "year": 2027,
-                  "kind": "target",
-                  "raw_text": "2027 Hedef"
-                },
-                {
-                  "year": 2028,
-                  "kind": "forecast",
-                  "raw_text": "2028 Tahmin"
-                },
-                {
-                  "year": 2029,
-                  "kind": "forecast",
-                  "raw_text": "2029 Tahmini"
-                }
-              ]
-            },
             {
               "name": "SH19.PG01. Tamamlanan Kentsel Tasarım Düzenleme Çalışması Sayısı",
               "values": [
@@ -13369,36 +12777,6 @@
           "goal": "1/1000 ölçekli uygulama imar planı çalışmalarını yapmak ve bu planların uygulanmasını sağlamak.",
           "indicators": [
             {
-              "name": "Performans Göstergesi",
-              "values": [
-                {
-                  "year": 2025,
-                  "kind": "actual",
-                  "raw_text": "2025 Yılı Gerçekleşme"
-                },
-                {
-                  "year": 2026,
-                  "kind": "year_end_estimate",
-                  "raw_text": "2026 Yıl Sonu Gerçekleşme Tahmini."
-                },
-                {
-                  "year": 2027,
-                  "kind": "target",
-                  "raw_text": "2027 Hedef"
-                },
-                {
-                  "year": 2028,
-                  "kind": "forecast",
-                  "raw_text": "2028 Tahmin"
-                },
-                {
-                  "year": 2029,
-                  "kind": "forecast",
-                  "raw_text": "2029 Tahmini"
-                }
-              ]
-            },
-            {
               "name": "SH20.PG01. Çalışması Yürütülen Plan sayısı",
               "values": [
                 {
@@ -13710,36 +13088,6 @@
           "rationale": "GEREKÇE: 6306 sayılı Afet Riski Altındaki Alanların Dönüştürülmesi Hakkında Kanun ve ilgili Uygulama Yönetmeliği hükümleri doğrultusunda; kentsel dönüşüm süreçlerine etkin, şeffaf ve hızlı çözümler üretmek amacıyla kurumsal kapasitenin optimize edilmesi hedeflenmektedir. Geçmiş dönem performans göstergeleri, sahadaki kentsel riskler ve değişen yerel dinamikler gözetilerek stratejik plan ve bütçe uyumu güçlendirilecek; mali kaynakların doğru önceliklere yönlendirilmesi ve iç kontrol mekanizmalarının etkin işletilmesi sağlanacaktır. Böylece kamu kaynaklarının israfı önlenerek kurumsal riskler en aza indirilecek, afetlere dirençli ve güvenli konut arzı desteklenerek vatandaş memnuniyeti en üst seviyeye çıkarılacaktır. AÇIKLAMA: Riskli ve sağlıksız yapı stokunun tasfiyesi ile kentsel yaşam kalitesinin artırılması amacıyla hak sahiplerinin doğrudan katılım sağlayacağı ada bazlı dönüşüm süreçleri koordine edilecektir. Bu kapsamda; yerel ihtiyaçların yerinde tespiti, ada ölçeğinde birleşmelerin teşvik edilmesi, donatı alanlarının artırılması, otopark çözümlerinin üretilmesi ve kent estetiğinin geliştirilmesine yönelik bilgilendirme ve uzlaşma toplantıları düzenlenecektir. Çevresel ve ekonomik sürdürülebilirliği önceleyen katılımcı planlama yaklaşımıyla, vatandaşların mülkiyet ve imar hakları korunarak bütüncül kentsel yenileme projelerinin hayata geçirilmesi sağlanacaktır.",
           "goal": "2029 yılı sonuna kadar; afetlere karşı dirençli bir kent oluşturmak amacıyla Kentsel Dönüşüm Strateji Belgesi’ni tamamlamak, her yıl ortalama 300 riskli yapının tespitini gerçekleştirmek ve katılımcı dönüşüm modelleriyle vatandaş uzlaşma oranını %90’ın üzerinde tutarak güvenli yapılaşmayı sağlamak.",
           "indicators": [
-            {
-              "name": "Performans Göstergesi",
-              "values": [
-                {
-                  "year": 2025,
-                  "kind": "actual",
-                  "raw_text": "2025 Yılı Gerçekleşme"
-                },
-                {
-                  "year": 2026,
-                  "kind": "year_end_estimate",
-                  "raw_text": "2026 Yıl Sonu Gerçekleşme Tahmini."
-                },
-                {
-                  "year": 2027,
-                  "kind": "target",
-                  "raw_text": "2027 Hedef"
-                },
-                {
-                  "year": 2028,
-                  "kind": "forecast",
-                  "raw_text": "2028 Tahmin"
-                },
-                {
-                  "year": 2029,
-                  "kind": "forecast",
-                  "raw_text": "2029 Tahmini"
-                }
-              ]
-            },
             {
               "name": "SH21.PG01. Kentsel Dönüşüm Konulu Bilgilendirme Toplantı Sayısı",
               "values": [
@@ -14505,36 +13853,6 @@
           "goal": "Afet öncesi hazırlık süreçlerini güçlendirmek ve toplumsal direnci artırmak amacıyla; personelin ve vatandaşların afet farkındalık düzeyini yükseltmek, profesyonel müdahale ekipleri kurmak ve uygulamalı tatbikatlarla afet anı reflekslerini %100 oranında geliştirmektir",
           "indicators": [
             {
-              "name": "Performans Göstergesi",
-              "values": [
-                {
-                  "year": 2025,
-                  "kind": "actual",
-                  "raw_text": "2025 Yılı Gerçekleşme"
-                },
-                {
-                  "year": 2026,
-                  "kind": "year_end_estimate",
-                  "raw_text": "2026 Yıl Sonu Gerçekleşme Tahmini."
-                },
-                {
-                  "year": 2027,
-                  "kind": "target",
-                  "raw_text": "2027 Hedef"
-                },
-                {
-                  "year": 2028,
-                  "kind": "forecast",
-                  "raw_text": "2028 Tahmin"
-                },
-                {
-                  "year": 2029,
-                  "kind": "forecast",
-                  "raw_text": "2029 Tahmini"
-                }
-              ]
-            },
-            {
               "name": "SH01/PG01. Afet bilgilendirme konusunda dağıtılan broşür sayısı",
               "values": [
                 {
@@ -14701,36 +14019,6 @@
           "rationale": "GEREKÇE: Afet ve acil durumlara karşı kentsel ve kurumsal dirençliliğin en üst düzeye çıkarılması; risklerin önceden öngörülmesini, zarar azaltma politikalarının benimsenmesini ve afet anı koordinasyon reflekslerinin eksiksiz işletilmesini zorunlu kılmaktadır. Olası bir afet anında ilk müdahalenin hızı ve başarısı, sahadaki personelin uzmanlık seviyesi ile toplumun acil durumlara hazırlık düzeyiyle doğrudan ilişkilidir. Bu kapsamda, afet öncesi hazırlık evresini güçlendirerek can ve mal kayıplarını asgari düzeye indirmek; belediye personeli ve vatandaşlar nezdinde afet bilincini yerleşik bir kültüre dönüştürmek, yetkin arama-kurtarma ve müdahale altyapısını kurumsallaştırmak ve saha tatbikatlarıyla müdahale reflekslerini tam kapasiteye ulaştırmak hedeflenmektedir. AÇIKLAMA: Alt program hedefine ulaşmak amacıyla; afet öncesi, sırası ve sonrasını kapsayan çok boyutlu bir hazırlık ve müdahale mekanizması hayata geçirilecektir. Kurum personeline ve ilçe genelindeki vatandaşlara yönelik afet farkındalığı, temel yangın güvenliği, ilkyardım ve tahliye eğitimleri yaygınlaştırılarak toplumsal bilinç güçlendirilecektir. Eş zamanlı olarak, gerekli teknik teçhizat ve donanımla desteklenmiş akredite profesyonel arama-kurtarma ekipleri kurulacak, lojistik ve operasyonel müdahale kapasitesi artırılacaktır. Hazırlanan teorik altyapı ve acil durum eylem planları; senaryo tabanlı, çok paydaşlı ve gerçeğe yakın saha tatbikatlarıyla düzenli olarak test edilerek tüm unsurların afet anı reaksiyon süreleri ve koordinasyon kabiliyetleri en üst seviyeye taşınacaktır.",
           "goal": "Afet öncesi hazırlık süreçlerini güçlendirmek ve toplumsal direnci artırmak amacıyla; personelin ve vatandaşların afet farkındalık düzeyini yükseltmek, profesyonel müdahale ekipleri kurmak ve uygulamalı tatbikatlarla afet anı reflekslerini %100 oranında geliştirmektir",
           "indicators": [
-            {
-              "name": "Performans Göstergesi",
-              "values": [
-                {
-                  "year": 2025,
-                  "kind": "actual",
-                  "raw_text": "2025 Yılı Gerçekleşme"
-                },
-                {
-                  "year": 2026,
-                  "kind": "year_end_estimate",
-                  "raw_text": "2026 Yıl Sonu Gerçekleşme Tahmini."
-                },
-                {
-                  "year": 2027,
-                  "kind": "target",
-                  "raw_text": "2027 Hedef"
-                },
-                {
-                  "year": 2028,
-                  "kind": "forecast",
-                  "raw_text": "2028 Tahmin"
-                },
-                {
-                  "year": 2029,
-                  "kind": "forecast",
-                  "raw_text": "2029 Tahmini"
-                }
-              ]
-            },
             {
               "name": "SH01/PG01. Afet bilgilendirme konusunda dağıtılan broşür sayısı",
               "values": [
@@ -16739,41 +16027,6 @@
           "goal": "İlçemiz genelinde çevre sağlığını korumak amacıyla 2029 yılı sonuna kadar; 354.000 ton evsel atığın transfer istasyonuna naklini sağlmak ve şehir estetiğine uygun 3025 adet çöp konteyneri ve çöp kutusunu ortak alanlara yerleştirmek. Katı atık yönetimi konusunda projeler geliştirerek ilçemizde uygulanan temizlik hizmetlerinde standartın yükseltilmesini sağlayarak vatandaşımızın memnunuiyet oranını artırmak.",
           "indicators": [
             {
-              "name": "Performans Göstergesi",
-              "values": [
-                {
-                  "year": 2025,
-                  "kind": "actual",
-                  "raw_text": "2025 Yılı Gerçekleşme"
-                },
-                {
-                  "year": 2026,
-                  "kind": "planned",
-                  "raw_text": "2026 Planlanan"
-                },
-                {
-                  "year": 2026,
-                  "kind": "year_end_estimate",
-                  "raw_text": "2026 Yıl Sonu Gerçekleşme Tahmini."
-                },
-                {
-                  "year": 2027,
-                  "kind": "target",
-                  "raw_text": "2027 Hedef"
-                },
-                {
-                  "year": 2028,
-                  "kind": "forecast",
-                  "raw_text": "2028 Tahmin"
-                },
-                {
-                  "year": 2029,
-                  "kind": "forecast",
-                  "raw_text": "2029 Tahmini"
-                }
-              ]
-            },
-            {
               "name": "SH24/PG01. Transfer istasyonuna nakledilen evsel atık (çöp) miktarı",
               "values": [
                 {
@@ -17867,36 +17120,6 @@
           "goal": "Sürdürülebilir bir ekosistem oluşturmak amacıyla; ilçe genelinde çevresel denetim faaliyetlerini etkinleştirerek Marmara Denizi ve Büyükçekmece Gölü'nü korumaya yönelik farkındalık ve kontrol süreçlerini yönetmek.",
           "indicators": [
             {
-              "name": "Performans Göstergesi",
-              "values": [
-                {
-                  "year": 2025,
-                  "kind": "actual",
-                  "raw_text": "2025 Yılı Gerçekleşme"
-                },
-                {
-                  "year": 2026,
-                  "kind": "year_end_estimate",
-                  "raw_text": "2026 Yıl Sonu Gerçekleşme Tahmini."
-                },
-                {
-                  "year": 2027,
-                  "kind": "target",
-                  "raw_text": "2027 Hedef"
-                },
-                {
-                  "year": 2028,
-                  "kind": "forecast",
-                  "raw_text": "2028 Tahmin"
-                },
-                {
-                  "year": 2029,
-                  "kind": "forecast",
-                  "raw_text": "2029 Tahmini"
-                }
-              ]
-            },
-            {
               "name": "SH25/PG01. Meri mevzuat kapsamında ilçe genelinde kontrol ve denetimlerin artırılması",
               "values": [
                 {
@@ -18375,36 +17598,6 @@
           "goal": "Tarımsal üretimin doğa dostu yöntemlerle sürekliliğini sağlamak, verimliliği ve kalitesini artırmak.",
           "indicators": [
             {
-              "name": "Performans Göstergesi",
-              "values": [
-                {
-                  "year": 2025,
-                  "kind": "actual",
-                  "raw_text": "2025 Yılı Gerçekleşme"
-                },
-                {
-                  "year": 2026,
-                  "kind": "year_end_estimate",
-                  "raw_text": "2026 Yıl Sonu Gerçekleşme Tahmini."
-                },
-                {
-                  "year": 2027,
-                  "kind": "target",
-                  "raw_text": "2027 Hedef"
-                },
-                {
-                  "year": 2028,
-                  "kind": "forecast",
-                  "raw_text": "2028 Tahmin"
-                },
-                {
-                  "year": 2029,
-                  "kind": "forecast",
-                  "raw_text": "2029 Tahmini"
-                }
-              ]
-            },
-            {
               "name": "SH26/PG01. Kentsel yeşil alanlarda yerel üretim ve sorumlu tüketimi teşvik etmek amacıyla oluşturulan kent bostanları sayısı",
               "values": [
                 {
@@ -18571,36 +17764,6 @@
           "rationale": "GEREKÇE: 5393 sayılı Belediye Kanunu, 5216 sayılı Büyükşehir Belediyesi Kanunu, 5488 sayılı Tarım Kanunu, 5403 sayılı Toprak Koruma ve Arazi Kullanımı Kanunu, 5553 sayılı Tohumculuk Kanunu, 5262 sayılı Organik Tarım Kanunu ile 5996 sayılı Veteriner Hizmetleri, Bitki Sağlığı, Gıda ve Yem Kanunu'nun belediyelere yüklediği görev ve sorumluluklar doğrultusunda; tarımsal araştırma ve geliştirme faaliyetlerinin desteklenmesi, üreticilerin bilgi ve teknik kapasitesinin artırılması, akıllı tarım uygulamalarının yaygınlaştırılması, doğal kaynakların sürdürülebilir kullanımının sağlanması ve yenilikçi üretim yöntemlerinin geliştirilmesi amaçlanmaktadır. AÇIKLAMA:Bu doğrultuda, 2027-2029 döneminde üreticilere yönelik eğitim, seminer ve uygulamalı bilgilendirme faaliyetleri sürdürülecek, akıllı tarım uygulamalarının yaygınlaştırılması amacıyla toprak analizleri gerçekleştirilecek, dikey ve topraksız tarım yöntemlerine yönelik araştırma ve uygulama çalışmaları yürütülecek, çevre dostu ve sürdürülebilir üretim teknikleri teşvik edilecek, üreticilere teknik destek sağlanarak tarımsal verimliliğin ve ürün kalitesinin artırılması hedeflenecektir. Yürütülen faaliyetler performans göstergeleri doğrultusunda düzenli olarak izlenecek ve değerlendirilecek olup, çalışmalar belediyemizin mevcut personel, makine, ekipman ve bütçe imkânları çerçevesinde gerçekleştirilecektir.",
           "goal": "Tarımsal üretimde verimliliği artırmak amacıyla; akıllı tarım teknolojileri ve AR-GE temelli yöntemleri (dikey/topraksız tarım) yaygınlaştırmak, toprak analizi ve eğitim desteği ile yerel üreticinin teknik kapasitesini modernize etmektir.",
           "indicators": [
-            {
-              "name": "Performans Göstergesi",
-              "values": [
-                {
-                  "year": 2025,
-                  "kind": "actual",
-                  "raw_text": "2025 Yılı Gerçekleşme"
-                },
-                {
-                  "year": 2026,
-                  "kind": "year_end_estimate",
-                  "raw_text": "2026 Yıl Sonu Gerçekleşme Tahmini."
-                },
-                {
-                  "year": 2027,
-                  "kind": "target",
-                  "raw_text": "2027 Hedef"
-                },
-                {
-                  "year": 2028,
-                  "kind": "forecast",
-                  "raw_text": "2028 Tahmin"
-                },
-                {
-                  "year": 2029,
-                  "kind": "forecast",
-                  "raw_text": "2029 Tahmini"
-                }
-              ]
-            },
             {
               "name": "SH27/PG01. Tarımsal üretime yönelik düzenlenen eğitim sayısı",
               "values": [
@@ -20014,36 +19177,6 @@
           "goal": "Büyükçekmece Sürdürülebilir Enerji ve İklim Eylem Planı (SECAP) doğrultusunda iklim değişikliğiyle mücadele projelerini hayata geçirmek; ilçe genelinde sıfır atık uygulamaları ve denetim faaliyetlerini etkinleştirerek geri kazanılabilir atıkların kaynağında ayrıştırılmasını sağlamak ve kentsel sürdürülebilirlik standartlarını yükseltmektir.",
           "indicators": [
             {
-              "name": "Performans Göstergesi",
-              "values": [
-                {
-                  "year": 2025,
-                  "kind": "actual",
-                  "raw_text": "2025 Yılı Gerçekleşme"
-                },
-                {
-                  "year": 2026,
-                  "kind": "year_end_estimate",
-                  "raw_text": "2026 Yıl Sonu Gerçekleşme Tahmini."
-                },
-                {
-                  "year": 2027,
-                  "kind": "target",
-                  "raw_text": "2027 Hedef"
-                },
-                {
-                  "year": 2028,
-                  "kind": "forecast",
-                  "raw_text": "2028 Tahmin"
-                },
-                {
-                  "year": 2029,
-                  "kind": "forecast",
-                  "raw_text": "2029 Tahmini"
-                }
-              ]
-            },
-            {
               "name": "SH28/PG01. Büyükçekmece Sürdürülebilir Enerji ve İklim Eylem Planı kapsamında uygulanacak ve desteklenecek projelerin artırılması",
               "values": [
                 {
@@ -20748,41 +19881,6 @@
           "goal": "İlçemizde okuma kültürünü yaygınlaştırmak amacıyla; 2029 yılına kadar kütüphane envanterini %50 artırmak, dijital kütüphane altyapısını kurarak bilgiye erişimi 7/24 kesintisiz hale getirmek ve gezici kütüphane hizmetiyle kütüphaneye erişimi kısıtlı mahallelerdeki vatandaş sayısını artırmaktır.",
           "indicators": [
             {
-              "name": "Performans Göstergesi",
-              "values": [
-                {
-                  "year": 2025,
-                  "kind": "actual",
-                  "raw_text": "2025 Yılı Gerçekleşme"
-                },
-                {
-                  "year": 2026,
-                  "kind": "planned",
-                  "raw_text": "2026 Planlanan"
-                },
-                {
-                  "year": 2026,
-                  "kind": "year_end_estimate",
-                  "raw_text": "2026 Yıl Sonu Gerçekleşme Tahmini."
-                },
-                {
-                  "year": 2027,
-                  "kind": "target",
-                  "raw_text": "2027 Hedef"
-                },
-                {
-                  "year": 2028,
-                  "kind": "forecast",
-                  "raw_text": "2028 Tahmin"
-                },
-                {
-                  "year": 2029,
-                  "kind": "forecast",
-                  "raw_text": "2029 Tahmini"
-                }
-              ]
-            },
-            {
               "name": "SH29/PG01. Toplumun Bilimsel Okuryazarlığını Geliştirmeye Yönelik Düzenlenen Etkinlik Sayısı",
               "values": [
                 {
@@ -20968,41 +20066,6 @@
           "goal": "Büyükçekmece’nin uluslararası alanda kültürel temsil gücünü artırmak amacıyla; Uluslararası İstanbul Büyükçekmece Kültür ve Sanat Festivali'ni her yıl artan katılımcı ve nitelikle sürdürmek, yerel sanatçıları uluslararası platformlarla buluşturmak ve kültürel etkinlik çeşitliliğini 2029 yılına kadar %50 artırarak ilçenin turizm ve kültür potansiyelini maksimize etmektir.",
           "indicators": [
             {
-              "name": "Performans Göstergesi",
-              "values": [
-                {
-                  "year": 2025,
-                  "kind": "actual",
-                  "raw_text": "2025 Yılı Gerçekleşme"
-                },
-                {
-                  "year": 2026,
-                  "kind": "planned",
-                  "raw_text": "2026 Planlanan"
-                },
-                {
-                  "year": 2026,
-                  "kind": "year_end_estimate",
-                  "raw_text": "2026 Yıl Sonu Gerçekleşme Tahmini."
-                },
-                {
-                  "year": 2027,
-                  "kind": "target",
-                  "raw_text": "2027 Hedef"
-                },
-                {
-                  "year": 2028,
-                  "kind": "forecast",
-                  "raw_text": "2028 Tahmin"
-                },
-                {
-                  "year": 2029,
-                  "kind": "forecast",
-                  "raw_text": "2029 Tahmini"
-                }
-              ]
-            },
-            {
               "name": "SH30/PG01. Uluslararası İstanbul Büyükçekmece Kültür ve Sanat Festivali Organizasyonu sayısı.",
               "values": [
                 {
@@ -21152,41 +20215,6 @@
           "rationale": "GEREKÇE:Toplumun kültür ve sanat faaliyetlerine erişimini artırmak, yerel sanatçıları desteklemek, kültürel üretimi teşvik etmek ve ilçenin sosyal yaşamına katkı sağlamak amacıyla kültür ve sanat faaliyetlerinin sürdürülebilir şekilde yürütülmesi gerekmektedir. AÇIKLAMALAR; Tiyatro, konser, festival, gösteri, sergi, söyleşi ve paneller gibi çeşitli kültür ve sanat etkinliklerinin düzenlenmesi hedeflenmektedir. Yerel sanatçıların eserleri tanıtılacak ve sanatçılar desteklenecektir. Kültür merkezlerinde sanat eğitimleri sürdürülecek, etkinliklerin organizasyon süreçleri geliştirilecektir. Ayrıca kültürel üretimin ve yaratıcı sektörlerin desteklenmesine yönelik çalışmalar gerçekleştirilecektir.",
           "goal": "İlçemizde kültür ve sanatı toplumun tüm kesimlerine ulaştırmak amacıyla; 2029 yılına kadar tiyatro, konser ve festival etkinlik sayısını her yıl %15 artırmak, mahalle bazlı etkinliklerle kültürel katılımı güçlendirmek ve dijital içerik üretimiyle yerel sanatçıların görünürlüğünü artırmaktır.",
           "indicators": [
-            {
-              "name": "Performans Göstergesi",
-              "values": [
-                {
-                  "year": 2025,
-                  "kind": "actual",
-                  "raw_text": "2025 Yılı Gerçekleşme"
-                },
-                {
-                  "year": 2026,
-                  "kind": "planned",
-                  "raw_text": "2026 Planlanan"
-                },
-                {
-                  "year": 2026,
-                  "kind": "year_end_estimate",
-                  "raw_text": "2026 Yıl Sonu Gerçekleşme Tahmini."
-                },
-                {
-                  "year": 2027,
-                  "kind": "target",
-                  "raw_text": "2027 Hedef"
-                },
-                {
-                  "year": 2028,
-                  "kind": "forecast",
-                  "raw_text": "2028 Tahmin"
-                },
-                {
-                  "year": 2029,
-                  "kind": "forecast",
-                  "raw_text": "2029 Tahmini"
-                }
-              ]
-            },
             {
               "name": "SH31/PG01. Sahnelenen Toplam Tiyatro ve Performans Sanatı Sayısı",
               "values": [
@@ -21373,41 +20401,6 @@
           "goal": "Büyükçekmece’nin yerel belleğini ve kültürel mirasını koruyarak gelecek nesillere aktarmak amacıyla; 2029 yılına kadar müze ziyaretçi sayısını %40 artırmak, mevcut koleksiyonları QR kod ve dijital müze uygulamalarıyla modernize etmek ve müze eğitim programlarıyla her yıl en az 1.500 öğrenciye yerel tarih bilinci kazandırmaktır.",
           "indicators": [
             {
-              "name": "Performans Göstergesi",
-              "values": [
-                {
-                  "year": 2025,
-                  "kind": "actual",
-                  "raw_text": "2025 Yılı Gerçekleşme"
-                },
-                {
-                  "year": 2026,
-                  "kind": "planned",
-                  "raw_text": "2026 Planlanan"
-                },
-                {
-                  "year": 2026,
-                  "kind": "year_end_estimate",
-                  "raw_text": "2026 Yıl Sonu Gerçekleşme Tahmini."
-                },
-                {
-                  "year": 2027,
-                  "kind": "target",
-                  "raw_text": "2027 Hedef"
-                },
-                {
-                  "year": 2028,
-                  "kind": "forecast",
-                  "raw_text": "2028 Tahmin"
-                },
-                {
-                  "year": 2029,
-                  "kind": "forecast",
-                  "raw_text": "2029 Tahmini"
-                }
-              ]
-            },
-            {
               "name": "SH32/PG01. Müze alanlarını ziyaret eden kişi sayısı",
               "values": [
                 {
@@ -21592,41 +20585,6 @@
           "rationale": "GEREKÇE: Vatandaşların kişisel, sosyal ve mesleki gelişimlerini desteklemek, eğitimde fırsat eşitliğini güçlendirmek ve istihdam edilebilirliği artırmak amacıyla hayat boyu öğrenme faaliyetlerinin yaygınlaştırılması hedeflenmektedir. AÇIKLAMA:Meslek edindirme, sanat ve hobi kurslarının düzenlenmesi ve Halk Akademisi eğitimlerinin sürdürülmesi hedeflenmektedir. Seminer, konferans ve kişisel gelişim eğitimleri ile sertifika programları düzenlenerek vatandaşların bilgi ve becerilerinin geliştirilmesi sağlanacaktır. Ayrıca kurs merkezlerinin eğitim materyalleri ve donanımları güçlendirilerek daha kaliteli eğitim ortamları oluşturulacaktır.",
           "goal": "İlçemizde hayat boyu öğrenme kültürünü yaygınlaştırmak amacıyla; 2029 yılına kadar kursiyer kapasitesini kademeli olarak artırmak, mesleki ve sanatsal kurs çeşitliliğini modernize ederek kursiyerlerin istihdam edilebilirliğini desteklemek ve sınav hazırlık kurslarıyla eğitimde fırsat eşitliğini güçlendirmektir.",
           "indicators": [
-            {
-              "name": "Performans Göstergesi",
-              "values": [
-                {
-                  "year": 2025,
-                  "kind": "actual",
-                  "raw_text": "2025 Yılı Gerçekleşme"
-                },
-                {
-                  "year": 2026,
-                  "kind": "planned",
-                  "raw_text": "2026 Planlanan"
-                },
-                {
-                  "year": 2026,
-                  "kind": "year_end_estimate",
-                  "raw_text": "2026 Yıl Sonu Gerçekleşme Tahmini."
-                },
-                {
-                  "year": 2027,
-                  "kind": "target",
-                  "raw_text": "2027 Hedef"
-                },
-                {
-                  "year": 2028,
-                  "kind": "forecast",
-                  "raw_text": "2028 Tahmin"
-                },
-                {
-                  "year": 2029,
-                  "kind": "forecast",
-                  "raw_text": "2029 Tahmini"
-                }
-              ]
-            },
             {
               "name": "SH33/PG01. İstihdam Odaklı ve Sanatsal Yetkinlik Kazandıran Kurs Programı Sayısı",
               "values": [
@@ -23773,36 +22731,6 @@
           "goal": "Gençler ve kırılgan gruplar başta olmak üzere toplumun tüm kesimlerinin spor faaliyetlerine katılımını artırmak, sporcu gelişimini desteklemek ve sporun toplumsal yaygınlığını sağlamak amacıyla sporcu çalıştırıcı, kulüp ve federasyonlara yönelik destek mekanizmalarını güçlendirmek.",
           "indicators": [
             {
-              "name": "Performans Göstergesi",
-              "values": [
-                {
-                  "year": 2025,
-                  "kind": "actual",
-                  "raw_text": "2025 Yılı Gerçekleşme"
-                },
-                {
-                  "year": 2026,
-                  "kind": "year_end_estimate",
-                  "raw_text": "2026 Yıl Sonu Gerçekleşme Tahmini."
-                },
-                {
-                  "year": 2027,
-                  "kind": "target",
-                  "raw_text": "2027 Hedef"
-                },
-                {
-                  "year": 2028,
-                  "kind": "forecast",
-                  "raw_text": "2028 Tahmin"
-                },
-                {
-                  "year": 2029,
-                  "kind": "forecast",
-                  "raw_text": "2029 Tahmini"
-                }
-              ]
-            },
-            {
               "name": "SH34/PG01:Kano, SUP, bisiklet gibi alternatif ve temel spor branşlarına kayıt yaptıran toplam genç sayısı.",
               "values": [
                 {
@@ -23962,36 +22890,6 @@
           "rationale": "GEREKÇE:Türkiye Cumhuriyeti Anayasası’nın 59’uncu maddesi ve 5393 sayılı Belediye Kanunu’nun 14’üncü maddesi doğrultusunda; toplumun tüm kesimlerinin spor hizmetlerine eşit ve güvenli erişiminin sağlanması, sporun yaygınlaştırılması, sporcu gelişiminin desteklenmesi ve amatör spor kulüplerinin faaliyetlerine katkı sunulması amaçlanmaktadır. Faaliyetler; ilgili mevzuat, Büyükçekmece Belediye Meclisinin 23.10.2025 tarihli ve 81 sayılı ve 10.07.2026 tarihli ve 67 sayılı kararları ile Spor Ödül Yönetmeliği hükümleri çerçevesinde yürütülecektir. AÇIKLAMA:2027 yılında çocuklar, gençler, yetişkinler, yaşlılar ve kırılgan gruplara yönelik spor kursları ve etkinlikler düzenlenecek; spor tesislerine erişim ve katılım imkânları artırılacaktır. Sporcu, çalıştırıcı ve amatör spor kulüplerine ayni, nakdî, teknik ve lojistik destek sağlanacak; ulusal ve uluslararası spor organizasyonları gerçekleştirilecektir. Bu çalışmalarla On İkinci Kalkınma Planı, Birleşmiş Milletler 2030 Sürdürülebilir Kalkınma Amaçları ve Büyükçekmece Belediyesi Stratejik Planı’nda yer alan sağlıklı yaşam, kapsayıcılık, fırsat eşitliği ve sürdürülebilir kent hedeflerine katkı sunulacaktır.",
           "goal": "Toplumun tüm kesimleri, özellikle çocuklar, gençler, yaşlılar ve kırılgan gruplar için spor tesislerine ve sportif faaliyetlere eşit, güvenli ve sürdürülebilir erişimi sağlamak; sporcu, çalıştırıcı, kulüp ve federasyonlara yönelik destekleri güçlendirerek sporun yaygınlaşmasına ve ulusal ve uluslararası düzeyde gelişimine katkı sunmak.",
           "indicators": [
-            {
-              "name": "Performans Göstergesi",
-              "values": [
-                {
-                  "year": 2025,
-                  "kind": "actual",
-                  "raw_text": "2025 Yılı Gerçekleşme"
-                },
-                {
-                  "year": 2026,
-                  "kind": "year_end_estimate",
-                  "raw_text": "2026 Yıl Sonu Gerçekleşme Tahmini."
-                },
-                {
-                  "year": 2027,
-                  "kind": "target",
-                  "raw_text": "2027 Hedef"
-                },
-                {
-                  "year": 2028,
-                  "kind": "forecast",
-                  "raw_text": "2028 Tahmin"
-                },
-                {
-                  "year": 2029,
-                  "kind": "forecast",
-                  "raw_text": "2029 Tahmini"
-                }
-              ]
-            },
             {
               "name": "SH34/PG01: Spor tesislerinden faydalanan toplumun farklı kesimlerinin, farklı mahalleler ve bölgelerdeki tesislerin toplam kapasitesine oranı",
               "values": [
@@ -25322,36 +24220,6 @@
           "goal": "Sosyal yardım yönetmeliği kriterleri çerçevesinde; yıllık 7.000 haneye gıda, 750 kişiye giyim, 500 haneye yakacak ve 200 özel gereksinimli bireye medikal malzeme desteği sunarak sosyal refahı korumak; tüm başvuru ve inceleme süreçlerini en geç 15 gün içinde tamamlayarak yardımların kesintisiz ve zamanında ulaşmasını sağlamaktır.",
           "indicators": [
             {
-              "name": "Performans Göstergesi",
-              "values": [
-                {
-                  "year": 2025,
-                  "kind": "actual",
-                  "raw_text": "2025 Yılı Gerçekleşme"
-                },
-                {
-                  "year": 2026,
-                  "kind": "year_end_estimate",
-                  "raw_text": "2026 Yıl Sonu Gerçekleşme Tahmini."
-                },
-                {
-                  "year": 2027,
-                  "kind": "target",
-                  "raw_text": "2027 Hedef"
-                },
-                {
-                  "year": 2028,
-                  "kind": "forecast",
-                  "raw_text": "2028 Tahmin"
-                },
-                {
-                  "year": 2029,
-                  "kind": "forecast",
-                  "raw_text": "2029 Tahmini"
-                }
-              ]
-            },
-            {
               "name": "SH36/PG01. Gıda, giyim gibi temel ihtiyaçları ayni olarak karşılanan hane sayısı",
               "values": [
                 {
@@ -25511,36 +24379,6 @@
           "rationale": "GEREKÇE: İlçemizde yaşayan, ekonomik yoksunluk çeken ve temel ihtiyaçlarını karşılamakta zorlanan dar gelirli vatandaşlarımızın yaşam koşullarını iyileştirmek amacıyla mevzuat ve Sosyal Yardım Komisyonu kararları doğrultusunda nakdi yardım hizmetleri yürütülmektedir. Artan yaşam maliyetleri ve kent yoksulluğunun oluşturduğu olumsuzlukları hafifletmek adına; gıda, barınma, sağlık ve eğitim gibi zorunlu giderleri destekleyecek düzenli veya geçici nakdi yardımların, sosyal incelemeler ışığında adil, şeffaf, objektif ve kamu kaynaklarını etkin kullanarak ihtiyaç sahiplerine ulaştırılması hedeflenmektedir. AÇIKLAMALAR: Faaliyet kapsamında; sosyal inceleme sonucunda uygun görülen hanelere düzenli ya da süreli nakdi destek sağlanacak; afet, yangın ve sağlık sorunları gibi olağanüstü durumlarda ise acil nakdi yardımlar ivedilikle ulaştırılacaktır. Başta çocuklar, yaşlılar, engelliler ve tek ebeveynli aileler olmak üzere dezavantajlı grupların önceliklendirildiği bu süreçte başvuru, değerlendirme ve karar mekanizmaları hızlı, şeffaf ve sürdürülebilir bir yapıda işletilecektir. Yararlanıcı hanelerin durumları periyodik olarak izlenerek kamu kaynaklarının etkin ve verimli kullanımı temin edilecek; böylece sosyal belediyecilik ilkeleri doğrultusunda yoksulluğun azaltılmasına ve toplumsal bütünleşmenin güçlendirilmesine katkı sağlanacaktır.",
           "goal": "Sosyal yardım yönetmeliği kapsamında; yoksullukla mücadele ve ekonomik güçlenmeyi desteklemek amacıyla yıllık ortalama 3.200 haneye nakdi destek sunmak; başvuru ve inceleme süreçlerini dijital sistemlerle optimize ederek yardımların en geç 15 iş günü içinde ihtiyaç sahiplerine ulaşmasını sağlamaktır.",
           "indicators": [
-            {
-              "name": "Performans Göstergesi",
-              "values": [
-                {
-                  "year": 2025,
-                  "kind": "actual",
-                  "raw_text": "2025 Yılı Gerçekleşme"
-                },
-                {
-                  "year": 2026,
-                  "kind": "year_end_estimate",
-                  "raw_text": "2026 Yıl Sonu Gerçekleşme Tahmini."
-                },
-                {
-                  "year": 2027,
-                  "kind": "target",
-                  "raw_text": "2027 Hedef"
-                },
-                {
-                  "year": 2028,
-                  "kind": "forecast",
-                  "raw_text": "2028 Tahmin"
-                },
-                {
-                  "year": 2029,
-                  "kind": "forecast",
-                  "raw_text": "2029 Tahmini"
-                }
-              ]
-            },
             {
               "name": "SH36/PG01. Gıda, giyim gibi temel ihtiyaçları ayni olarak karşılanan hane sayısı",
               "values": [
@@ -25702,36 +24540,6 @@
           "goal": "Eğitimde fırsat eşitliğini güçlendirmek amacıyla; her eğitim-öğretim döneminde dar gelirli ailelerin çocuklarından oluşan 900 öğrenciye düzenli beslenme desteği ve 1.200 öğrenciye kırtasiye desteği sunmak; Operasyonel süreçleri her yıl modernize ederek desteklerin ihtiyaca uygun ve zamanında ulaştırılmasını sağlamaktır.",
           "indicators": [
             {
-              "name": "Performans Göstergesi",
-              "values": [
-                {
-                  "year": 2025,
-                  "kind": "actual",
-                  "raw_text": "2025 Yılı Gerçekleşme"
-                },
-                {
-                  "year": 2026,
-                  "kind": "year_end_estimate",
-                  "raw_text": "2026 Yıl Sonu Gerçekleşme Tahmini."
-                },
-                {
-                  "year": 2027,
-                  "kind": "target",
-                  "raw_text": "2027 Hedef"
-                },
-                {
-                  "year": 2028,
-                  "kind": "forecast",
-                  "raw_text": "2028 Tahmin"
-                },
-                {
-                  "year": 2029,
-                  "kind": "forecast",
-                  "raw_text": "2029 Tahmini"
-                }
-              ]
-            },
-            {
               "name": "SH36/PG01. Gıda, giyim gibi temel ihtiyaçları ayni olarak karşılanan hane sayısı",
               "values": [
                 {
@@ -25891,36 +24699,6 @@
           "rationale": "GEREKÇE: İlçemizde yaşayan çocukların fiziksel, zihinsel, duygusal ve sosyal gelişimlerini desteklemek; onları ihmal, istismar, yoksulluk ve eğitimden kopma gibi risklere karşı korumak amacıyla koruyucu ve önleyici sosyal hizmetler yürütülmektedir. Çocuğun üstün yararı ilkesi ve aile bütünlüğünün korunması odağında, olası risklerin erken tespiti ve zamanında müdahale edilmesi temel önceliktir. Çocukların karşılaştığı risklerin aile ve çevre koşullarıyla doğrudan ilişkili olması sebebiyle eğitim, sağlık, psikososyal destek ve sosyal yardım unsurlarını kapsayan bütüncül ve koordineli bir hizmet yaklaşımının uygulanması hedeflenmektedir. AÇIKLAMALAR: Faaliyet kapsamında; sosyal risk altındaki çocuklar ve aileleri sosyal incelemelerle tespit edilerek rehberlik, danışmanlık ve psikososyal destek hizmetleri sunulacaktır. Çocukların eğitim, sağlık ve sosyal uyum ihtiyaçları doğrultusunda ilgili kamu kurumları, sağlık-eğitim kuruluşları ve sivil toplum örgütleriyle koordineli yönlendirmeler yapılacaktır. Vaka takip ve müdahale planları düzenli olarak izlenip güncellenecek, süreçler titizlikle kayıt altına alınacaktır. Ayrıca ailelere yönelik ebeveynlik becerileri ve ihmal-istismarın önlenmesi konularında bilinçlendirme çalışmaları yürütülecek; çocukların kültürel, sosyal ve eğitsel faaliyetlere erişimi artırılacaktır. Böylece Büyükçekmece Belediyesi'nin sosyal belediyecilik vizyonu doğrultusunda erken müdahale kapasitesi güçlendirilerek çocuk refahı ve aile bütünlüğü sürdürülebilir biçimde temin edilecektir.",
           "goal": "İlçemizdeki risk altındaki çocuklara yönelik sosyal hizmet müdahalelerini yaygınlaştırmak amacıyla; 2029 yılına kadar yıllık ortalama 4.500 çocuğun sosyal incelemesini tamamlamak, vaka bazlı takip sistemini dijitalleştirerek müdahale süresini optimize etmek ve ailelere yönelik rehberlik hizmetleriyle çocuk refahını %50 artırmaktır.",
           "indicators": [
-            {
-              "name": "Performans Göstergesi",
-              "values": [
-                {
-                  "year": 2025,
-                  "kind": "actual",
-                  "raw_text": "2025 Yılı Gerçekleşme"
-                },
-                {
-                  "year": 2026,
-                  "kind": "year_end_estimate",
-                  "raw_text": "2026 Yıl Sonu Gerçekleşme Tahmini."
-                },
-                {
-                  "year": 2027,
-                  "kind": "target",
-                  "raw_text": "2027 Hedef"
-                },
-                {
-                  "year": 2028,
-                  "kind": "forecast",
-                  "raw_text": "2028 Tahmin"
-                },
-                {
-                  "year": 2029,
-                  "kind": "forecast",
-                  "raw_text": "2029 Tahmini"
-                }
-              ]
-            },
             {
               "name": "SH39/PG01. Sosyal incelemesi yapılan çocuk sayısı",
               "values": [
@@ -28268,41 +27046,6 @@
           "goal": "Büyükçekmece'nin uluslararası alanda kurumsal temsiliyetini artırmak; kardeş şehirler, konsolosluklar ve diplomatik misyonlarla etkin, sürekli ve karşılıklı faydaya dayalı ilişkiler geliştirmek.",
           "indicators": [
             {
-              "name": "Performans Göstergesi",
-              "values": [
-                {
-                  "year": 2025,
-                  "kind": "actual",
-                  "raw_text": "2025 Yılı Gerçekleşme"
-                },
-                {
-                  "year": 2026,
-                  "kind": "planned",
-                  "raw_text": "2026 Planlanan"
-                },
-                {
-                  "year": 2026,
-                  "kind": "year_end_estimate",
-                  "raw_text": "2026 Yıl Sonu Gerçekleşme Tahmini."
-                },
-                {
-                  "year": 2027,
-                  "kind": "target",
-                  "raw_text": "2027 Hedef"
-                },
-                {
-                  "year": 2028,
-                  "kind": "forecast",
-                  "raw_text": "2028 Tahmin"
-                },
-                {
-                  "year": 2029,
-                  "kind": "forecast",
-                  "raw_text": "2029 Tahmini"
-                }
-              ]
-            },
-            {
               "name": "SH40/PG01. Uluslararası Temsil Yıl içinde Belediye adına katılım sağlanan ve aktif katkı sunulan (sunum, konuşma ,moderasyon) uluslararası toplantı sayısı",
               "values": [
                 {
@@ -29587,41 +28330,6 @@
           "goal": "Belediyenin kurumsal iletişim ve tanıtım faaliyetlerini dijital, basılı ve dış görsel mecralarda planlı, etkin ve sürdürülebilir şekilde yürütmektir.",
           "indicators": [
             {
-              "name": "Performans Göstergesi",
-              "values": [
-                {
-                  "year": 2025,
-                  "kind": "actual",
-                  "raw_text": "2025 Yılı Gerçekleşme"
-                },
-                {
-                  "year": 2026,
-                  "kind": "planned",
-                  "raw_text": "2026 Planlanan"
-                },
-                {
-                  "year": 2026,
-                  "kind": "year_end_estimate",
-                  "raw_text": "2026 Yıl Sonu Gerçekleşme Tahmini."
-                },
-                {
-                  "year": 2027,
-                  "kind": "target",
-                  "raw_text": "2027 Hedef"
-                },
-                {
-                  "year": 2028,
-                  "kind": "forecast",
-                  "raw_text": "2028 Tahmin"
-                },
-                {
-                  "year": 2029,
-                  "kind": "forecast",
-                  "raw_text": "2029 Tahmini"
-                }
-              ]
-            },
-            {
               "name": "SH41/PG01. Belediye hizmetlerine ilişkin duyuruların ilçe genelindeki dış görsel mecralarda duyurulması (Billboard,Raket, Megalight)",
               "values": [
                 {
@@ -29771,41 +28479,6 @@
           "rationale": "GEREKÇE:5393 sayılı Belediye Kanunu ve ilgili mevzuat kapsamında; vatandaşların belediye hizmetlerine ilişkin talep, istek ve şikâyetlerinin etkin, hızlı ve çözüm odaklı bir yaklaşımla karşılanması, vatandaş ile belediye arasındaki iletişimin güçlendirilmesi ve hizmet kalitesinin artırılmasıamaçlanmaktadır. AÇIKLAMA: Bu doğrultuda; Çözüm Masasında görev yapan personelin mesleki yetkinliğinin geliştirilmesine yönelik eğitim faaliyetleri yürütülecek, ULAKBEL sistemi üzerinden iletilen talep, istek ve şikâyetlerin karşılanma ve memnuniyet oranları takip edilecek, vatandaş memnuniyet anketleri gerçekleştirilecek ve elde edilen sonuçlar doğrultusunda hizmet süreçlerinin sürekli iyileştirilmesi sağlanacaktır.",
           "goal": "Çağrı hizmetleri ve dijital başvuru sistemleri aracılığıyla vatandaşların talep, istek ve şikâyetlerinin etkin, hızlı, verimli ve ölçülebilir şekilde karşılanmasını sağlamaktır.",
           "indicators": [
-            {
-              "name": "Performans Göstergesi",
-              "values": [
-                {
-                  "year": 2025,
-                  "kind": "actual",
-                  "raw_text": "2025 Yılı Gerçekleşme"
-                },
-                {
-                  "year": 2026,
-                  "kind": "planned",
-                  "raw_text": "2026 Planlanan"
-                },
-                {
-                  "year": 2026,
-                  "kind": "year_end_estimate",
-                  "raw_text": "2026 Yıl Sonu Gerçekleşme Tahmini."
-                },
-                {
-                  "year": 2027,
-                  "kind": "target",
-                  "raw_text": "2027 Hedef"
-                },
-                {
-                  "year": 2028,
-                  "kind": "forecast",
-                  "raw_text": "2028 Tahmin"
-                },
-                {
-                  "year": 2029,
-                  "kind": "forecast",
-                  "raw_text": "2029 Tahmini"
-                }
-              ]
-            },
             {
               "name": "SH42/PG01. Çözüm Masasında görev yapan personelin eğitim alma oranı",
               "values": [
@@ -29957,41 +28630,6 @@
           "goal": "Kurumsal iletişim kapasitesini geliştirmek şeffaf ve hesap verebilir bir yönetim anlayışı oluşturmak; katılımcı bir yaklaşımla bilgi akışını kesintisiz hale getirerek vatandaşların belediye hizmetlerine erişimini kolaylaştırmak ve halkın kuruma duyduğu güveni sürdürülebilir kılmaktır.",
           "indicators": [
             {
-              "name": "Performans Göstergesi",
-              "values": [
-                {
-                  "year": 2025,
-                  "kind": "actual",
-                  "raw_text": "2025 Yılı Gerçekleşme"
-                },
-                {
-                  "year": 2026,
-                  "kind": "planned",
-                  "raw_text": "2026 Planlanan"
-                },
-                {
-                  "year": 2026,
-                  "kind": "year_end_estimate",
-                  "raw_text": "2026 Yıl Sonu Gerçekleşme Tahmini."
-                },
-                {
-                  "year": 2027,
-                  "kind": "target",
-                  "raw_text": "2027 Hedef"
-                },
-                {
-                  "year": 2028,
-                  "kind": "forecast",
-                  "raw_text": "2028 Tahmin"
-                },
-                {
-                  "year": 2029,
-                  "kind": "forecast",
-                  "raw_text": "2029 Tahmini"
-                }
-              ]
-            },
-            {
               "name": "SH43/PG01. Büyükçekmece Belediyesi’nin dijital platformlarda (Facebook, Instagram, X) elde ettiği toplam görüntülenme sayısı",
               "values": [
                 {
@@ -30106,41 +28744,6 @@
           "rationale": "GEREKÇE:5393 sayılı Belediye Kanunu ve ilgili mevzuat kapsamında; belediye hizmet, proje, yatırım, etkinlik ve faaliyetlerinin kamuoyuna doğru, zamanında, şeffaf ve etkin bir şekilde duyurulması, belediyenin ulusal ve yerel medyadaki görünürlüğünün artırılması ve kamuoyunun belediye faaliyetleri hakkında düzenli olarak bilgilendirilmesi amaçlanmaktadır. AÇIKLAMA: Bu doğrultuda; elektronik basın, ulusal yazılı ve görsel basın ile yerel medyada belediyeye ilişkin haberlerin düzenli olarak takip edilmesi ve raporlanması, basın bülteni ve haber içeriklerinin hazırlanarak medya kuruluşlarıyla paylaşılması, basın toplantıları ve basın mensuplarına yönelik etkinliklerin düzenlenmesi sağlanacaktır. Gerçekleştirilen çalışmaların medya yansımaları ve basın mensuplarının katılım düzeyleri takip edilerek kurumsal iletişim faaliyetlerinin etkinliği değerlendirilecektir.",
           "goal": "Belediye hizmet ve projelerini; ölçülebilir, etkileşim odaklı ve vatandaş merkezli bir iletişim diliyle ulusal/yerel basında duyurarak kurumsal itibarı ve marka bilinirliğini artırmaktır.",
           "indicators": [
-            {
-              "name": "Performans Göstergesi",
-              "values": [
-                {
-                  "year": 2025,
-                  "kind": "actual",
-                  "raw_text": "2025 Yılı Gerçekleşme"
-                },
-                {
-                  "year": 2026,
-                  "kind": "planned",
-                  "raw_text": "2026 Planlanan"
-                },
-                {
-                  "year": 2026,
-                  "kind": "year_end_estimate",
-                  "raw_text": "2026 Yıl Sonu Gerçekleşme Tahmini."
-                },
-                {
-                  "year": 2027,
-                  "kind": "target",
-                  "raw_text": "2027 Hedef"
-                },
-                {
-                  "year": 2028,
-                  "kind": "forecast",
-                  "raw_text": "2028 Tahmin"
-                },
-                {
-                  "year": 2029,
-                  "kind": "forecast",
-                  "raw_text": "2029 Tahmini"
-                }
-              ]
-            },
             {
               "name": "SH44/PG01. Yıl boyunca Elektronik basında çıkan haber sayısı",
               "values": [
@@ -31496,36 +30099,6 @@
           "goal": "*Araştırma, geliştirme ve yenilik faaliyetleri yoluyla belediyenin kurumsal kapasitesini güçlendirmek, proje üretme yetkinliğini artırmak, dış finansman kaynaklarından yararlanmak ve hizmet sunumunda yenilikçi uygulamaları yaygınlaştırmaktır.",
           "indicators": [
             {
-              "name": "Performans Göstergesi",
-              "values": [
-                {
-                  "year": 2025,
-                  "kind": "value",
-                  "raw_text": "2025 Yılı Gerçekleşen"
-                },
-                {
-                  "year": 2026,
-                  "kind": "year_end_estimate",
-                  "raw_text": "2026 Yıl Sonu Gerçekleşme Tahmini"
-                },
-                {
-                  "year": 2027,
-                  "kind": "target",
-                  "raw_text": "2027 Hedef"
-                },
-                {
-                  "year": 2028,
-                  "kind": "forecast",
-                  "raw_text": "2028 Tahmini"
-                },
-                {
-                  "year": 2029,
-                  "kind": "forecast",
-                  "raw_text": "2029 Tahmini"
-                }
-              ]
-            },
-            {
               "name": "SH45/PG01, Ulusal ve uluslararası hibe/fon programlarına yapılan proje başvuru sayısı",
               "values": [
                 {
@@ -32599,41 +31172,6 @@
           "goal": "Üst yönetim süreçlerini ve vatandaş etkileşimini dijital sistemlerle optimize etmek; protokol ve organizasyon standartlarını yükselterek özel kalem hizmetlerinde kurumsal verimliliği ve yönetişim kalitesini artırmak.",
           "indicators": [
             {
-              "name": "Performans Göstergesi",
-              "values": [
-                {
-                  "year": 2025,
-                  "kind": "actual",
-                  "raw_text": "2025 Yılı Gerçekleşme"
-                },
-                {
-                  "year": 2026,
-                  "kind": "planned",
-                  "raw_text": "2026 Planlanan"
-                },
-                {
-                  "year": 2026,
-                  "kind": "year_end_estimate",
-                  "raw_text": "2026 Yıl Sonu Gerçekleşme Tahmini."
-                },
-                {
-                  "year": 2027,
-                  "kind": "target",
-                  "raw_text": "2027 Hedef"
-                },
-                {
-                  "year": 2028,
-                  "kind": "forecast",
-                  "raw_text": "2028 Tahmin"
-                },
-                {
-                  "year": 2029,
-                  "kind": "forecast",
-                  "raw_text": "2029 Tahmini"
-                }
-              ]
-            },
-            {
               "name": "SH46/PG01. Üst yönetim programlarının planlanan takvime uygun yürütülme oranı",
               "values": [
                 {
@@ -33378,7 +31916,38 @@
           ]
         }
       ],
-      "personnel": []
+      "personnel": [
+        {
+          "year": 2026,
+          "kind": "budget",
+          "raw_text": "-"
+        },
+        {
+          "year": 2026,
+          "kind": "midyear_spend",
+          "raw_text": "-"
+        },
+        {
+          "year": 2026,
+          "kind": "year_end_estimate",
+          "raw_text": "-"
+        },
+        {
+          "year": 2027,
+          "kind": "budget",
+          "raw_text": "34.050.000,00"
+        },
+        {
+          "year": 2028,
+          "kind": "forecast",
+          "raw_text": "42.562.500,00"
+        },
+        {
+          "year": 2029,
+          "kind": "forecast",
+          "raw_text": "53.203.125,00"
+        }
+      ]
     },
     {
       "name": "İnsan Kaynakları ve Eğitim Müdürlüğü",
@@ -33391,36 +31960,6 @@
           "rationale": "5018 sayılı Kamu Mali Yönetimi ve Kontrol Kanunu, 657 sayılı Devlet Memurları Kanunu (Hizmet İçi Eğitim hükümleri) ve 5393 sayılı Belediye Kanunu uyarınca idareye verilen personelin mesleki, teknik ve akademik yetkinliklerini artırma, hizmet içi eğitim süreçlerini planlama, oryantasyon ve uzmanlaşma olanağı sağlama görevleri yürütülmektedir. Bu doğrultuda kurumsal inovasyon kapasitesini güçlendirecek nitelikli insan kaynağının yetiştirilmesi amaçlanmaktadır.",
           "goal": "Yürütülen faaliyetlerle; sürekli eğitim ve lisansüstü destek süreçleri optimize edilerek veriye dayalı İK yönetimi pekiştirilmekte, kurumsal verimlilik, hizmet kalitesi ve yenilikçilik kültürü üst seviyeye çıkarılmaktadır.",
           "indicators": [
-            {
-              "name": "Performans Göstergesi",
-              "values": [
-                {
-                  "year": 2025,
-                  "kind": "actual",
-                  "raw_text": "2025 Yılı Gerçekleşme"
-                },
-                {
-                  "year": 2026,
-                  "kind": "year_end_estimate",
-                  "raw_text": "2026 Yıl Sonu Gerçekleşme Tahmini."
-                },
-                {
-                  "year": 2027,
-                  "kind": "target",
-                  "raw_text": "2027 Hedef"
-                },
-                {
-                  "year": 2028,
-                  "kind": "forecast",
-                  "raw_text": "2028 Tahmin"
-                },
-                {
-                  "year": 2029,
-                  "kind": "forecast",
-                  "raw_text": "2029 Tahmini"
-                }
-              ]
-            },
             {
               "name": "SH47/PG01. Çalışanların eğitim düzeylerinin yükseltilmesi için desteklenen programların sayısı",
               "values": [
@@ -33491,36 +32030,6 @@
           "rationale": "5018 sayılı Kamu Mali Yönetimi ve Kontrol Kanunu, 657 sayılı Devlet Memurları Kanunu (Hizmet İçi Eğitim hükümleri), 5393 sayılı Belediye Kanunu ve 6698 sayılı Kişisel Verilerin Korunması Kanunu uyarınca Müdürlüğümüze verilen; personel özlük ve gelişim verilerinin dijitalleştirilmesi, veri analitiğine dayalı eğitim ihtiyacının tespiti, yıllık hizmet içi eğitimlerin düzenlenmesi ve kurumsal aidiyeti pekiştirecek İK süreçlerinin yürütülmesi görevleri ifa edilmektedir.",
           "goal": "Bu alt program doğrultusunda; İK süreçlerinin dijital sistemlere (veri tabanlı İK) entegrasyonu tamamlanarak analitik karar alma mekanizmaları güçlendirilecek; eğitim ihtiyaç analizlerine dayalı nokta atışı hizmet içi eğitimlerle personel yetkinliği ve çalışan memnuniyeti maksimize edilerek kurumsal verimlilik artırılacaktır.",
           "indicators": [
-            {
-              "name": "Performans Göstergesi",
-              "values": [
-                {
-                  "year": 2025,
-                  "kind": "actual",
-                  "raw_text": "2025 Yılı Gerçekleşme"
-                },
-                {
-                  "year": 2026,
-                  "kind": "year_end_estimate",
-                  "raw_text": "2026 Yıl Sonu Gerçekleşme Tahmini."
-                },
-                {
-                  "year": 2027,
-                  "kind": "target",
-                  "raw_text": "2027 Hedef"
-                },
-                {
-                  "year": 2028,
-                  "kind": "forecast",
-                  "raw_text": "2028 Tahmin"
-                },
-                {
-                  "year": 2029,
-                  "kind": "forecast",
-                  "raw_text": "2029 Tahmini"
-                }
-              ]
-            },
             {
               "name": "SH48/PG01. Hizmet içi eğitimlere katılan toplam personel sayısı",
               "values": [
@@ -34820,41 +33329,6 @@
           "rationale": "Bu faaliyetler ile, belediye hizmetlerinin dijital dönüşümünü sağlayarak kurumsal verimliliği ve vatandaş erişilebilirliğini artırmayı amaçlamaktadır. Bu doğrultuda, dijital hizmetler geliştirilerek belediye süreçleri hızlandırılmakta ve kamu kaynaklarının verimli kullanımı için denetim mekanizmaları modernize edilmektedir. Bilgi İşlem Müdürlüğü, tüm birimlerin (İmar, Çevre, Kültür, Sosyal Hizmetler, vb.) BT altyapısını yöneterek ve veri akışını güçlendirerek belediye hizmetlerinin koordineli ve kesintisiz sunulmasını sağlamaktadır. Bu çalışmalar, vatandaşların bilgiye erişimini kolaylaştırarak şeffaflığı artırmakta ve hizmet kalitesini sürekli olarak iyileştirmektedir./",
           "goal": "Kurumsal dijital dönüşümü tamamlamak amacıyla; belediyecilik hizmetlerinin %100'ünü e-devlet ve mobil ortama taşımak, siber güvenlik olgunluk seviyesini her yıl %20 artırmak ve veri merkezi (data center) kapasitesini 2029 yılına kadar modernize ederek kesintisiz hizmet sunmaktır",
           "indicators": [
-            {
-              "name": "Performans Göstergesi",
-              "values": [
-                {
-                  "year": 2025,
-                  "kind": "actual",
-                  "raw_text": "2025 Yılı Gerçekleşme"
-                },
-                {
-                  "year": 2026,
-                  "kind": "planned",
-                  "raw_text": "2026 Planlanan"
-                },
-                {
-                  "year": 2026,
-                  "kind": "year_end_estimate",
-                  "raw_text": "2026 Yıl Sonu Gerçekleşme Tahmini."
-                },
-                {
-                  "year": 2027,
-                  "kind": "target",
-                  "raw_text": "2027 Hedef"
-                },
-                {
-                  "year": 2028,
-                  "kind": "forecast",
-                  "raw_text": "2028 Tahmin"
-                },
-                {
-                  "year": 2029,
-                  "kind": "forecast",
-                  "raw_text": "2029 Tahmini"
-                }
-              ]
-            },
             {
               "name": "SH49/PG01. Kurumsal Bilgi Teknolojileri Altyapısının Kapasite ve Performans Artış Oranı",
               "values": [
@@ -36183,36 +34657,6 @@
           "goal": "Belediyenin taraf olduğu dava ve icra süreçlerini mevzuata uygun, hızlı ve etkin bir şekilde yürüterek kurumsal hakları korumak; idari iş ve işlemlerde hukuki riskleri en aza indirmek için birimlere zamanında danışmanlık desteği sağlamak ve dijital dosya takip sistemine geçerek yargılama giderlerinde tasarruf sağlamaktır.",
           "indicators": [
             {
-              "name": "Performans Göstergesi",
-              "values": [
-                {
-                  "year": 2025,
-                  "kind": "actual",
-                  "raw_text": "2025 Yılı Gerçekleşme"
-                },
-                {
-                  "year": 2026,
-                  "kind": "year_end_estimate",
-                  "raw_text": "2026 Yıl Sonu Gerçekleşme Tahmini."
-                },
-                {
-                  "year": 2027,
-                  "kind": "target",
-                  "raw_text": "2027 Hedef"
-                },
-                {
-                  "year": 2028,
-                  "kind": "forecast",
-                  "raw_text": "2028 Tahmin"
-                },
-                {
-                  "year": 2029,
-                  "kind": "forecast",
-                  "raw_text": "2029 Tahmini"
-                }
-              ]
-            },
-            {
               "name": "SH51/PG01. Aleyhe Açılan Davalarda Savunma Süresi İçinde Cevap Verilme Oranı",
               "values": [
                 {
@@ -36720,36 +35164,6 @@
           "rationale": "",
           "goal": "Belediyenin stratejik yönetim kapasitesini artırmak amacıyla; 2027-2029 döneminde stratejik plan ve performans programı hedeflerine ulaşma oranını %90’ın üzerine çıkarmak, iç kontrol eylem planı uyumunu tam kapasiteyle sağlamak ve bütçe süreçlerine vatandaş katılımını dijital ve fiziksel yöntemlerle her yıl %10 artırmaktır.",
           "indicators": [
-            {
-              "name": "Performans Göstergesi",
-              "values": [
-                {
-                  "year": 2025,
-                  "kind": "actual",
-                  "raw_text": "2025 Yılı Gerçekleşme"
-                },
-                {
-                  "year": 2026,
-                  "kind": "year_end_estimate",
-                  "raw_text": "2026 Yıl Sonu Gerçekleşme Tahmini."
-                },
-                {
-                  "year": 2027,
-                  "kind": "target",
-                  "raw_text": "2027 Hedef"
-                },
-                {
-                  "year": 2028,
-                  "kind": "forecast",
-                  "raw_text": "2028 Tahmin"
-                },
-                {
-                  "year": 2029,
-                  "kind": "forecast",
-                  "raw_text": "2029 Tahmini"
-                }
-              ]
-            },
             {
               "name": "SH52/PG01. Katılımcı Bütçeleme ve Stratejik Planlama Süreçlerine Dahil Edilen Vatandaş Sayısı/Görüş Sayısı.",
               "values": [
@@ -38981,36 +37395,6 @@
           "goal": "Belediyenin mali kaynaklarının kullanımına ilişkin denetim raporlarını periyodik olarak hazırlayarak; mali yönetimde şeffaflığı, hesap verebilirliği ve kaynakların stratejik önceliklere uygunluğunu %100 oranında izlemek ve raporlamak.",
           "indicators": [
             {
-              "name": "Performans Göstergesi",
-              "values": [
-                {
-                  "year": 2025,
-                  "kind": "actual",
-                  "raw_text": "2025 Yılı Gerçekleşme"
-                },
-                {
-                  "year": 2026,
-                  "kind": "year_end_estimate",
-                  "raw_text": "2026 Yıl Sonu Gerçekleşme Tahmini."
-                },
-                {
-                  "year": 2027,
-                  "kind": "target",
-                  "raw_text": "2027 Hedef"
-                },
-                {
-                  "year": 2028,
-                  "kind": "forecast",
-                  "raw_text": "2028 Tahmin"
-                },
-                {
-                  "year": 2029,
-                  "kind": "forecast",
-                  "raw_text": "2029 Tahmini"
-                }
-              ]
-            },
-            {
               "name": "SH55/PG01. Mali Tabloların Yayınlanması Oranı",
               "values": [
                 {
@@ -39685,41 +38069,6 @@
           "goal": "Karar alma süreçlerinin hukuki geçerliliğini, şeffaflığını ve hızını artırmak amacıyla; Meclis ve Encümen kararlarını %100 oranında yasal süreleri içinde kesinleştirmek, bu kararları dijital ortama aktararak ilgili birimlere tebliğ süresini minimize etmek ve kurumsal karar belleğine erişimi optimize etmektir.",
           "indicators": [
             {
-              "name": "Performans Göstergesi",
-              "values": [
-                {
-                  "year": 2025,
-                  "kind": "actual",
-                  "raw_text": "2025 Yılı Gerçekleşme"
-                },
-                {
-                  "year": 2026,
-                  "kind": "planned",
-                  "raw_text": "2026 Planlanan"
-                },
-                {
-                  "year": 2026,
-                  "kind": "year_end_estimate",
-                  "raw_text": "2026 Yıl Sonu Gerçekleşme Tahmini."
-                },
-                {
-                  "year": 2027,
-                  "kind": "target",
-                  "raw_text": "2027 Hedef"
-                },
-                {
-                  "year": 2028,
-                  "kind": "forecast",
-                  "raw_text": "2028 Tahmin"
-                },
-                {
-                  "year": 2029,
-                  "kind": "forecast",
-                  "raw_text": "2029 Tahmini"
-                }
-              ]
-            },
-            {
               "name": "1.Meclis ve Encümen kararlarının yasal süreleri içinde kesinleştirilme oranı",
               "values": [
                 {
@@ -39904,41 +38253,6 @@
           "rationale": "GEREKÇE: Resmî yazışma kuralları, arşiv mevzuatı ve ilgili idari düzenlemelerin belediyemize yüklediği yasal yükümlülükler doğrultusunda; gelen ve giden evrak akışının, yazışma süreçlerinin ve kurumsal hafızayı oluşturan belgelerin güvenli, düzenli ve mevzuata uygun şekilde yönetilmesi esastır. Bürokratik işlem sürelerini en aza indirmek, birimler arası koordinasyonu hızlandırmak, şeffaf ve izlenebilir bir yönetim yapısı oluşturmak ve kamusal hizmet sunum kalitesini sürdürülebilir kılmak amacıyla bu faaliyet yürütülmektedir. AÇIKLAMA: Belediyemize fiziki veya elektronik ortamda intikal eden her türlü başvuru, resmî yazı ve dilekçenin kaydı, tasnifi, taranması ve ilgili birimlere ivedilikle sevki Elektronik Belge Yönetim Sistemi (EBYS) üzerinden yürütülecektir. Kurum dışına gidecek resmî yazıların Resmî Yazışmalarda Uygulanacak Usul ve Esaslar Hakkında Yönetmelik standartlarına uygun olarak çıkışı sağlanacak, tebligat ve posta süreçleri takip edilecektir. Devlet Arşiv Hizmetleri Hakkında Yönetmelik ilkeleri doğrultusunda birim ve kurum arşivleme faaliyetleri düzenli olarak yürütülerek; ayıklama, imha, dijitalleştirme ve saklama işlemleri eksiksiz tamamlanacak, böylece güçlü bir kurumsal arşiv hafızası ve kesintisiz evrak dolaşım altyapısı temin edilecektir.",
           "goal": "Kurumsal bilgi akışını optimize etmek amacıyla; gelen ve giden evrak süreçlerini %100 dijital platformlar üzerinden (EBYS) yönetmek, evrakların kayıt ve ilgili birime sevk süresini maksimum 1 iş gününe indirmek ve fiziksel arşiv yükünü azaltarak dijital arşiv erişilebilirliğini artırmaktır.",
           "indicators": [
-            {
-              "name": "Performans Göstergesi",
-              "values": [
-                {
-                  "year": 2025,
-                  "kind": "actual",
-                  "raw_text": "2025 Yılı Gerçekleşme"
-                },
-                {
-                  "year": 2026,
-                  "kind": "planned",
-                  "raw_text": "2026 Planlanan"
-                },
-                {
-                  "year": 2026,
-                  "kind": "year_end_estimate",
-                  "raw_text": "2026 Yıl Sonu Gerçekleşme Tahmini."
-                },
-                {
-                  "year": 2027,
-                  "kind": "target",
-                  "raw_text": "2027 Hedef"
-                },
-                {
-                  "year": 2028,
-                  "kind": "forecast",
-                  "raw_text": "2028 Tahmin"
-                },
-                {
-                  "year": 2029,
-                  "kind": "forecast",
-                  "raw_text": "2029 Tahmini"
-                }
-              ]
-            },
             {
               "name": "1.Gelen ve giden evrakın sisteme girişi ile ilgili birimin evrakı almasına kadar geçen toplam süreç takibi oranı",
               "values": [
@@ -40125,41 +38439,6 @@
           "goal": "4109 sayılı Kanun kapsamındaki asker ailesi yardım başvurularını titizlikle değerlendirmek; başvuru ve karar süreçlerini %100 yasal süreler içinde tamamlayarak, muhtaç asker ailelerinin sosyal desteğe erişimini en kısa sürede ve bürokrasiyi minimize ederek gerçekleştirmek",
           "indicators": [
             {
-              "name": "Performans Göstergesi",
-              "values": [
-                {
-                  "year": 2025,
-                  "kind": "actual",
-                  "raw_text": "2025 Yılı Gerçekleşme"
-                },
-                {
-                  "year": 2026,
-                  "kind": "planned",
-                  "raw_text": "2026 Planlanan"
-                },
-                {
-                  "year": 2026,
-                  "kind": "year_end_estimate",
-                  "raw_text": "2026 Yıl Sonu Gerçekleşme Tahmini."
-                },
-                {
-                  "year": 2027,
-                  "kind": "target",
-                  "raw_text": "2027 Hedef"
-                },
-                {
-                  "year": 2028,
-                  "kind": "forecast",
-                  "raw_text": "2028 Tahmin"
-                },
-                {
-                  "year": 2029,
-                  "kind": "forecast",
-                  "raw_text": "2029 Tahmini"
-                }
-              ]
-            },
-            {
               "name": "1.Başvuruların Kanuni Süresi İçinde Karara Bağlanma Oranı",
               "values": [
                 {
@@ -40316,46 +38595,6 @@
           "rationale": "GEREKÇE: 4721 sayılı Türk Medeni Kanunu ve Evlendirme Yönetmeliği hükümleri doğrultusunda, ailenin korunması ve kurulmasına ilişkin yasal prosedürlerin eksiksiz, mevzuata uygun ve hukuki geçerliliği temin edilmiş bir biçimde yerine getirilmesi esastır. Nikâh akdi müracaat ve tescil süreçlerinde bürokrasiyi azaltmak, e-Belediye ve dijitalleşme altyapısıyla vatandaş odaklı, şeffaf ve hızlı bir hizmet sunumu sağlamak, kurumsal kapasiteyi artırarak hizmet kalitesini stratejik hedefler doğrultusunda sürdürülebilir kılmak amacıyla bu faaliyet yürütülmektedir. AÇIKLAMA: Evlendirme memurluğumuza yapılan nikâh başvurularının kabulü, evlenme ehliyet ve engellerinin Merkezi Nüfus İdaresi Sistemi (MERNİS) ve e-Devlet entegrasyonları üzerinden incelenmesi, sağlık raporu ve diğer zorunlu evrakların kontrolü yasal süreler dâhilinde tamamlanacaktır. Nikâh salonları ve talep edilen mekânlarda nikâh akitleri usulüne uygun şekilde icra edilecek; tanzim edilen evlenme kütükleri ile uluslararası aile cüzdanları eksiksiz düzenlenerek yasal bildirimler süresi içinde nüfus müdürlüklerine aktarılacaktır. Randevu, başvuru ve bilgilendirme süreçlerinin dijital ortama taşınmasıyla vatandaş memnuniyeti en üst düzeye çıkarılacak, modern ve nitelikli hizmet anlayışıyla süreçlerin kesintisiz yürütülmesi temin edilecektir.",
           "goal": "Evlendirme hizmetlerinde bürokrasiyi azaltmak ve vatandaş memnuniyetini artırmak amacıyla; nikah başvuru ve randevu süreçlerini %100 dijital ortama taşımak, müracaatları yasal süreler içinde eksiksiz sonuçlandırmak ve hizmet sunumunda modern, hızlı ve güvenilir bir yapı oluşturmaktır.",
           "indicators": [
-            {
-              "name": "Performans Göstergesi",
-              "values": [
-                {
-                  "year": 2025,
-                  "kind": "actual",
-                  "raw_text": "2025 Yılı Gerçekleşme"
-                },
-                {
-                  "year": 2026,
-                  "kind": "planned",
-                  "raw_text": "2026 Planlanan"
-                },
-                {
-                  "year": 2026,
-                  "kind": "planned",
-                  "raw_text": "2026 Planlanan"
-                },
-                {
-                  "year": 2026,
-                  "kind": "year_end_estimate",
-                  "raw_text": "2026 Yıl Sonu Gerçekleşme Tahmini."
-                },
-                {
-                  "year": 2027,
-                  "kind": "target",
-                  "raw_text": "2027 Hedef"
-                },
-                {
-                  "year": 2028,
-                  "kind": "forecast",
-                  "raw_text": "2028 Tahmin"
-                },
-                {
-                  "year": 2029,
-                  "kind": "forecast",
-                  "raw_text": "2029 Tahmini"
-                }
-              ]
-            },
             {
               "name": "1.Nikâh işlemlerinin ortalama tamamlama süresi",
               "values": [
@@ -41849,36 +40088,6 @@
           "goal": "Kurumsal mali sürdürülebilirliği güçlendirmek amacıyla, 2027–2029 döneminde öz gelirlerin etkin yönetimi ve diğer finansal kaynakların sürdürülebilirliğini sağlayarak belediye gelirlerinde her yıl en az % 1 artırmak.",
           "indicators": [
             {
-              "name": "Performans Göstergesi",
-              "values": [
-                {
-                  "year": 2025,
-                  "kind": "actual",
-                  "raw_text": "2025 Yılı Gerçekleşme"
-                },
-                {
-                  "year": 2026,
-                  "kind": "year_end_estimate",
-                  "raw_text": "2026 Yıl Sonu Gerçekleşme Tahmini."
-                },
-                {
-                  "year": 2027,
-                  "kind": "target",
-                  "raw_text": "2027 Hedef"
-                },
-                {
-                  "year": 2028,
-                  "kind": "forecast",
-                  "raw_text": "2028 Tahmin"
-                },
-                {
-                  "year": 2029,
-                  "kind": "forecast",
-                  "raw_text": "2029 Tahmini"
-                }
-              ]
-            },
-            {
               "name": "Belirtilen döneme ait yapılan tahsilatın, ilgili döneme ait tahakkuka oranı (%)",
               "values": [
                 {
@@ -41979,36 +40188,6 @@
           "goal": "2029 dönemi sonuna kadar kurumun bütçesine sağlanacak katkıyı arttırmak için çocuk bakımevi ile Çocuk oyun ve etkinlik merkezlerindeki hizmetlerin erişilebilirliğini artırarak okul öncesi bakım hizmetlerinden yararlanan çocuk sayısını % 50 artırmak",
           "indicators": [
             {
-              "name": "Performans Göstergesi",
-              "values": [
-                {
-                  "year": 2025,
-                  "kind": "actual",
-                  "raw_text": "2025 Yılı Gerçekleşme"
-                },
-                {
-                  "year": 2026,
-                  "kind": "year_end_estimate",
-                  "raw_text": "2026 Yıl Sonu Gerçekleşme Tahmini."
-                },
-                {
-                  "year": 2027,
-                  "kind": "target",
-                  "raw_text": "2027 Hedef"
-                },
-                {
-                  "year": 2028,
-                  "kind": "forecast",
-                  "raw_text": "2028 Tahmin"
-                },
-                {
-                  "year": 2029,
-                  "kind": "forecast",
-                  "raw_text": "2029 Tahmini"
-                }
-              ]
-            },
-            {
               "name": "Çocuk Bakım evlerinden yararlanan velilerin memnuniyet oranı",
               "values": [
                 {
@@ -42078,36 +40257,6 @@
           "rationale": "GEREKÇE:Yerel ekonomik döngünün güçlendirilmesi, kırsal ve kentsel kalkınmanın dengeli biçimde desteklenmesi ve dayanışma temelli üretim modellerinin yaygınlaştırılması amacıyla kooperatifçilik yapılarının güçlendirilmesine ihtiyaç duyulmaktadır. Yerel üreticilerin pazara erişim kapasitelerini artırmak, aracıları azaltarak hemşehrilerimizin sağlıklı, güvenilir ve uygun maliyetli ürünlere doğrudan ulaşmasını sağlamak ile belediyemizin sürdürülebilir öz gelir kaynaklarını çeşitlendirerek mali yapısını desteklemek amacıyla bu faaliyet yürütülmektedir. AÇIKLAMA:İlçemiz genelinde yerel üretimi ve kooperatifçilik ekosistemini canlandırmak üzere üreticilere ve kooperatiflere yönelik lojistik, teknik, kurumsal kapasite ve pazarlama destekleri sunulacaktır. Bu doğrultuda; kooperatif ürünlerinin doğrudan tüketiciyle buluşturulacağı üretici pazarları, satış noktaları, dağıtım kanalları ve dijital pazarlama platformları kurulup yaygınlaştırılacaktır. Hemşehrilerin ekonomik ve nitelikli yerel ürünlere erişimi kolaylaştırılırken, yerel istihdam ve üretim teşvik edilecek; adil ticaret ve sürdürülebilir gelir modelleriyle kurumumuzun stratejik hedefleri doğrultusunda yerel kalkınmaya ve mali sürdürülebilirliğe doğrudan katkı sağlanacaktır.",
           "goal": "2029 yılı sonuna kadar işbirliği yapılan yerli üretici ve kooperatiflerin sayısının % 40 arttırarak ulusal ticarete katkı sağlayıp belediyenin sürdürülebilir gelir kaynaklarını artırmak ve hemşerilerimizin ekonomik ve güvenilir ürünlere erişimi sağlamak",
           "indicators": [
-            {
-              "name": "Performans Göstergesi",
-              "values": [
-                {
-                  "year": 2025,
-                  "kind": "actual",
-                  "raw_text": "2025 Yılı Gerçekleşme"
-                },
-                {
-                  "year": 2026,
-                  "kind": "year_end_estimate",
-                  "raw_text": "2026 Yıl Sonu Gerçekleşme Tahmini."
-                },
-                {
-                  "year": 2027,
-                  "kind": "target",
-                  "raw_text": "2027 Hedef"
-                },
-                {
-                  "year": 2028,
-                  "kind": "forecast",
-                  "raw_text": "2028 Tahmin"
-                },
-                {
-                  "year": 2029,
-                  "kind": "forecast",
-                  "raw_text": "2029 Tahmini"
-                }
-              ]
-            },
             {
               "name": "Kadın kooperatifleri sayısının toplam tedarikçiye oranı",
               "values": [
@@ -42208,36 +40357,6 @@
           "rationale": "GEREKÇE:Belediyemize bağlı iktisadi işletmelerin sunduğu kamusal ve ticari hizmetlerin aksamadan, kaliteli ve sürdürülebilir bir yapıda yürütülmesi için mali disiplin ve mevzuata tam uyum esastır. Kamu kaynakları ile işletme varlıklarının rasyonel, ekonomik ve verimli kullanılması; vergi, SGK ve diğer yasal mali yükümlülüklerin cezai yaptırımlara mahal vermeden zamanında ifa edilmesi ve kurumun genel bütçesine katma değer sağlayacak sürdürülebilir gelir-gider dengesinin kurulması amacıyla bu faaliyet yürütülmektedir. AÇIKLAMA:İktisadi işletmelerin operasyonel ve idari süreçlerinin aksaksız işletilmesi amacıyla bütçe, gider ve tedarik yönetimi merkezi ve planlı bir anlayışla yürütülecektir. Bu kapsamda; işletmelerin ihtiyaç duyduğu mal ve hizmet alımları piyasa koşullarına uygun, şeffaf ve rekabetçi yöntemlerle karşılanacak, maliyet düşürücü ve verimlilik artırıcı tedbirler hayata geçirilecektir. Tüm vergi, harç, prim ve sözleşmeye dayalı yasal yükümlülükler süresi içinde yerine getirilecek; gelir ve gider akışları periyodik olarak izlenip muhasebeleştirilerek üst yönetime düzenli raporlanacak, böylece belediyemizin stratejik plan hedefleri doğrultusunda kurumsal mali sürdürülebilirlik güvence altına alınacaktır.",
           "goal": "Dönem sonuna kadar Kurumsal mali sürdürülebilirliği desteklemek amacıyla, iktisadi işletmeye bağlı şubelerin giderlerini etkin ve mevzuata uygun şekilde yöneterek, iktisadi işletme gelirinin toplam gelirler içerisindeki payını % 2 yükseltmek",
           "indicators": [
-            {
-              "name": "Performans Göstergesi",
-              "values": [
-                {
-                  "year": 2025,
-                  "kind": "actual",
-                  "raw_text": "2025 Yılı Gerçekleşme"
-                },
-                {
-                  "year": 2026,
-                  "kind": "year_end_estimate",
-                  "raw_text": "2026 Yıl Sonu Gerçekleşme Tahmini."
-                },
-                {
-                  "year": 2027,
-                  "kind": "target",
-                  "raw_text": "2027 Hedef"
-                },
-                {
-                  "year": 2028,
-                  "kind": "forecast",
-                  "raw_text": "2028 Tahmin"
-                },
-                {
-                  "year": 2029,
-                  "kind": "forecast",
-                  "raw_text": "2029 Tahmini"
-                }
-              ]
-            },
             {
               "name": "İktisadi işletme toplam gelirlerinin kurumun toplam gelirine oranı (%)",
               "values": [
@@ -44043,41 +42162,6 @@
           "goal": "Belediye hizmetlerinin kesintisiz yürütülmesini sağlamak amacıyla; yıllık ortalama 110 adet resmi plakalı araç ve iş makinelerinin faal tutulmasını sağlayarak, taşıt ve iş makinesi filosunun periyodik bakım, onarım ve teknik destek süreçlerini optimize etmek, operasyonel sürekliliği sağlamak, araç yönetim kapasitesini teknolojik altyapıyla güçlendirmek ve çevre dostu ulaşım modellerini yaygınlaştırmaktır.",
           "indicators": [
             {
-              "name": "Performans Göstergesi",
-              "values": [
-                {
-                  "year": 2025,
-                  "kind": "actual",
-                  "raw_text": "2025 Yılı Gerçekleşme"
-                },
-                {
-                  "year": 2026,
-                  "kind": "planned",
-                  "raw_text": "2026 Planlanan"
-                },
-                {
-                  "year": 2026,
-                  "kind": "year_end_estimate",
-                  "raw_text": "2026 Yıl Sonu Gerçekleşme Tahmini."
-                },
-                {
-                  "year": 2027,
-                  "kind": "target",
-                  "raw_text": "2027 Hedef"
-                },
-                {
-                  "year": 2028,
-                  "kind": "forecast",
-                  "raw_text": "2028 Tahmin"
-                },
-                {
-                  "year": 2029,
-                  "kind": "forecast",
-                  "raw_text": "2029 Tahmini"
-                }
-              ]
-            },
-            {
               "name": "P.G 1.1. Hizmet araçlarının çevre dostu araçlara dönüştürülme sayısı",
               "values": [
                 {
@@ -44855,5 +42939,7 @@
         }
       ]
     }
-  ]
+  ],
+  "baseline_revision": "CIV-026: remove 61 repeated header rows; retain 960d62c source fields and CIV-010 allowlist",
+  "economic_snapshot_sha256": "154f0a980d58dbcd4915c425953a771f1f0b6aaaf7555451de9a1788c097d4b8"
 }

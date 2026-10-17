@@ -2,6 +2,7 @@ import hashlib
 import json
 from .serialization import json_dumps
 from decimal import Decimal
+from copy import deepcopy
 import re
 import unicodedata
 from datetime import datetime, UTC
@@ -183,6 +184,7 @@ def consolidate_source_departments(parsed: dict) -> dict:
                 "blocks": [],
                 "activities": [],
                 "personnel": [],
+                "economic_tables": [],
             }
             order.append(key)
         else:
@@ -193,17 +195,28 @@ def consolidate_source_departments(parsed: dict) -> dict:
                 )
         target = grouped[key]
         target["blocks"].extend(dept.get("blocks", []))
+        target["economic_tables"].extend(deepcopy(dept.get("economic_tables", [])))
         target["activities"].extend(deepcopy(dept.get("activities", [])))
         target["personnel"] = _merge_unique_costs(target["personnel"], dept.get("personnel", []))
 
     departments = [grouped[k] for k in order]
+    for department in departments:
+        block_tables = {b.get('table_number') for b in department['blocks']}
+        for table in department['economic_tables']:
+            if not set(table['block_table_numbers']).issubset(block_tables):
+                for value in table['values']:
+                    value['state'] = 'needs_review'
+                    value['issue'] = (value.get('issue', '') + ' Kaynak program bloklarının müdürlük kapsamını kontrol edin.').strip()
+    from .data_importer import _review_items
+    review_items = _review_items(departments)
     summary = dict(parsed.get("summary", {}))
     summary["raw_department_count"] = summary.get("department_count", len(parsed.get("departments", [])))
     summary["department_count"] = len(departments)
     summary["indicator_count"] = sum(len(b.get("indicators", [])) for d in departments for b in d["blocks"])
     summary["activity_count"] = sum(len(d["activities"]) for d in departments)
+    summary["needs_review_count"] = len(review_items)
     warnings = list(parsed.get("warnings", [])) + normalization_notes
-    return {"departments": departments, "summary": summary, "warnings": warnings, "errors": list(parsed.get("errors", [])), "coverage_items": list(parsed.get("coverage_items", []))}
+    return {"departments": departments, "summary": summary, "warnings": warnings, "errors": list(parsed.get("errors", [])), "coverage_items": list(parsed.get("coverage_items", [])), "review_items": review_items}
 
 
 def _similarity(a: str, b: str) -> float:
@@ -359,6 +372,9 @@ def _delete_department_period_data(db: Session, department_id: int, period_id: i
         db.delete(act)
     for row in db.scalars(select(DepartmentCostValue).where(DepartmentCostValue.department_id == department_id, DepartmentCostValue.period_id == period_id)).all():
         db.delete(row)
+    for row in db.scalars(select(EconomicValue).where(EconomicValue.department_id==department_id, EconomicValue.period_id==period_id)).all():
+        db.delete(row)
+    db.flush()
     for card in db.scalars(select(ReportCard).where(ReportCard.department_id==department_id, ReportCard.period_id==period_id)).all():
         db.delete(card)
     db.flush()
@@ -493,6 +509,8 @@ def _restore_department_state(db: Session, state: dict, period_id: int) -> None:
     for card in state.get("cards", []):
         db.add(ReportCard(**card))
     db.flush()
+    for item in state.get("economics", []):
+        db.add(EconomicValue(**item))
     for item in state.get("indicators", []):
         ind = Indicator(
             id=item["id"], period_id=period_id, department_id=department_id,
@@ -659,7 +677,7 @@ def apply_import_batch(db: Session, batch: ImportBatch, preserve_existing: bool 
 
     result = {
         "departments": 0, "created_departments": 0, "skipped_existing_departments": 0,
-        "indicators": 0, "activities": 0, "personnel_values": 0,
+        "indicators": 0, "activities": 0, "personnel_values": 0, "cards": 0, "economic_values": 0,
         "unlinked_activities": 0, "preserve_existing": preserve_existing,
     }
 
@@ -694,7 +712,7 @@ def apply_import_batch(db: Session, batch: ImportBatch, preserve_existing: bool 
                 rationale=block.get('rationale',''), goal=block.get('goal',''),
                 explanation=meta.get('explanation',''), calculation_method=meta.get('calculation_method',''),
                 data_source=meta.get('data_source',''), responsible=meta.get('responsible',''))
-            db.add(card); db.flush(); block_cards.append(card)
+            db.add(card); db.flush(); block_cards.append(card); result["cards"] += 1
             for item in block.get("indicators", []):
                 ind = Indicator(
                     period_id=period.id, department_id=dept.id, subprogram_id=subprogram.id, card_id=card.id,
@@ -733,7 +751,7 @@ def apply_import_batch(db: Session, batch: ImportBatch, preserve_existing: bool 
             for cost in item.get("costs", []):
                 key = (cost.get("year"), cost.get("kind"), cost.get("funding_type", "total"))
                 amount = cost.get("amount")
-                if key[0] is None or not key[1] or (amount is None and cost.get("state") != "needs_review") or key in seen_costs:
+                if key[0] is None or not key[1] or (amount is None and cost.get("state") not in {"needs_review", "not_applicable"}) or key in seen_costs:
                     continue
                 seen_costs.add(key)
                 db.add(ActivityCostValue(
@@ -751,7 +769,7 @@ def apply_import_batch(db: Session, batch: ImportBatch, preserve_existing: bool 
         for row in src.get("personnel", []):
             key = (row.get("year"), row.get("kind"))
             amount = row.get("amount")
-            if key[0] is None or not key[1] or (amount is None and row.get("state") != "needs_review") or key in seen_personnel:
+            if key[0] is None or not key[1] or (amount is None and row.get("state") not in {"needs_review", "not_applicable"}) or key in seen_personnel:
                 continue
             seen_personnel.add(key)
             db.add(DepartmentCostValue(
@@ -760,6 +778,32 @@ def apply_import_batch(db: Session, batch: ImportBatch, preserve_existing: bool 
                 raw_text=row.get("raw_text", ""), state=row.get("state", "verified"),
             ))
             result["personnel_values"] += 1
+        cards_by_table = {block.get('table_number'): card for block, card in zip(src['blocks'], block_cards)}
+        economic_rows = {}
+        for table in src.get('economic_tables', []):
+            source_cards = [cards_by_table[n] for n in table['block_table_numbers'] if n in cards_by_table]
+            context = {key: table[key] for key in ('categories', 'totals', 'block_table_numbers')}
+            context['card_ids'] = [c.id for c in source_cards]
+            for value in table['values']:
+                key = tuple(value[k] for k in ('year', 'kind', 'category', 'program_group', 'funding_type'))
+                if key in economic_rows:
+                    row = economic_rows[key]
+                    row.amount = None; row.state = 'needs_review'
+                    row.issue = 'Aynı ekonomik hücre birden fazla kaynak tabloda bulunuyor; kaynakları karşılaştırın.'
+                    row.raw_text += ' / ' + value['raw_text']
+                    continue
+                row = EconomicValue(period_id=period.id, department_id=dept.id, year=value['year'],
+                    value_kind=value['kind'], category=value['category'], program_group=value['program_group'],
+                    funding_type=value['funding_type'], amount=Decimal(value['amount']).quantize(Decimal('.01')) if value['amount'] is not None else None,
+                    raw_text=value['raw_text'], state=value['state'], issue=value.get('issue', ''),
+                    source_card_id=source_cards[-1].id if source_cards else None, source_table_number=table['table_number'],
+                    source_context_json=json_dumps(context, ensure_ascii=False))
+                if len(source_cards) != len(table['block_table_numbers']):
+                    row.state = 'needs_review'
+                    if 'Kaynak program bloklarının' not in row.issue:
+                        row.issue = (row.issue + ' Kaynak program bloklarının müdürlük kapsamını kontrol edin.').strip()
+                economic_rows[key] = row
+                db.add(row); result['economic_values'] += 1
         result["departments"] += 1
 
     batch.snapshot_json = json_dumps(snapshot, ensure_ascii=False, sort_keys=True)

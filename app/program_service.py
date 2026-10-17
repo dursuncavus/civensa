@@ -10,13 +10,15 @@ from .models import (ReportCard, Indicator, IndicatorValue, Activity, ActivityCo
     ReportingPeriod, ReportSection, OfficialActivity, ActivityResponsibility, ActivityCatalogueLink,
     Submission, AuditLog)
 from .numbers import parse_number, format_number
+from .value_labels import value_kind_label, funding_label
+import json
 
 ECONOMIC_CATEGORIES = {
     'personnel': 'Personel Giderleri', 'sgk': 'Sosyal Güvenlik Kurumuna Devlet Primi Giderleri',
     'goods_services': 'Mal ve Hizmet Alım Giderleri', 'interest': 'Faiz Giderleri',
     'current_transfers': 'Cari Transferler', 'capital': 'Sermaye Giderleri',
     'capital_transfers': 'Sermaye Transferleri', 'lending': 'Borç Verme', 'reserve': 'Yedek Ödenekler'}
-PROGRAM_GROUPS = {'service': 'Hizmet Programları', 'management': 'Yönetim ve Destek Programı', 'outside_program': 'Program Dışı Giderler'}
+PROGRAM_GROUPS = {'service': 'Hizmet Programları', 'management': 'Yönetim ve Destek Programı', 'outside_program': 'Program Dışı Giderler', 'unallocated': 'Program Grubu Belirlenmeli'}
 
 
 def cost_columns(year):
@@ -26,6 +28,13 @@ def cost_columns(year):
 
 def economic_columns(year):
     return [c for c in cost_columns(year) if c[1] != 'year_end_estimate']
+
+
+def historical_no_data(value, year):
+    return (value is not None and value.year == year - 1
+            and value.value_kind in {'budget', 'midyear_spend', 'year_end_estimate'}
+            and value.state == 'not_applicable' and value.amount is None
+            and value.raw_text.strip() in {'-', '–', '—'})
 
 
 VALUE_KIND_LABELS = {"budget": "Bütçe", "midyear_spend": "Haziran Sonu Harcama",
@@ -208,6 +217,9 @@ def _validate_department_records(period_id, department_id, year, scope, indicato
             if not getattr(c,attr).strip(): errors.append(f'Kart {c.source_title or c.id}: {label} eksik.')
     for i in indicators:
         errors.extend(f'{i.name}: {msg}' for msg in indicator_issues(i, year))
+        for value in i.values:
+            if value.value is None and value.raw_text.strip() in {'-', '–', '—'}:
+                warnings.append(f'{i.name}: {value.year} {value_kind_label(value.value_kind)} kaynakta çizgi; müdürlükçe kontrol edilmeli.')
         if not i.card_id: errors.append(f'{i.name}: kart bağlantısı eksik.')
         elif i.card.department_id != department_id or i.card.period_id != period_id or i.card.subprogram_id != i.subprogram_id:
             errors.append(f'{i.name}: kart ve alt program kapsamı uyuşmuyor.')
@@ -228,17 +240,26 @@ def _validate_department_records(period_id, department_id, year, scope, indicato
         if not a.explanation.strip(): errors.append(f'{a.name}: faaliyet açıklaması eksik.')
         m = {(v.year,v.value_kind,v.funding_type): v for v in a.cost_values}
         for v in a.cost_values:
-            if v.state != 'verified' or v.amount is None: errors.append(f'{a.name}: {v.year} kaynak tutarı doğrulanmalı.')
+            historical_na = historical_no_data(v, year)
+            if not historical_na and (v.state != 'verified' or v.amount is None):
+                errors.append(f'{a.name}: {v.year} {value_kind_label(v.value_kind)} / {funding_label(v.funding_type)} kaynak tutarı doğrulanmalı.')
         for y,k in set(required) | {(v.year,v.value_kind) for v in a.cost_values}:
             vs = [m.get((y,k,f)) for f in ['total','inside','outside']]
+            if all(historical_no_data(v, year) for v in vs):
+                continue
             if any(v is None or v.amount is None for v in vs):
-                errors.append(f'{a.name}: {y} {k} finansman bilgisi eksik.')
+                errors.append(f'{a.name}: {y} {value_kind_label(k)} finansman bilgisi eksik.')
                 if (y,k) in complete: complete[y,k] = False
             elif vs[0].amount != vs[1].amount + vs[2].amount:
                 errors.append(f'{a.name}: {y} toplamı bütçe içi + dışı ile eşit değil.')
             if (y,k) in totals and vs[0] and vs[0].amount is not None: totals[y,k] += vs[0].amount
+    card_ids = {card.id for card in cards}
     for v in economics:
-        if (v.year,v.value_kind) not in economic_columns(year) or v.category not in ECONOMIC_CATEGORIES or v.program_group not in PROGRAM_GROUPS or v.funding_type not in {'inside','outside'} or not v.amount.is_finite() or v.amount<0:errors.append('Ekonomik tablo boyut/tutar bilgisi geçersiz.')
+        if getattr(v, 'source_card_id', None) and v.source_card_id not in card_ids:
+            errors.append(f'{v.year}: ekonomik kaynak kartının müdürlük ve dönem kapsamı uyuşmuyor.')
+        if (v.year,v.value_kind) not in economic_columns(year) or v.category not in ECONOMIC_CATEGORIES or v.program_group not in PROGRAM_GROUPS or v.funding_type not in {'inside','outside'} or (v.amount is not None and (not v.amount.is_finite() or v.amount<0)):errors.append('Ekonomik tablo boyut/tutar bilgisi geçersiz.')
+        if getattr(v, 'state', 'verified') != 'verified' or v.amount is None or v.program_group == 'unallocated':
+            errors.append(f'{v.year} {value_kind_label(v.value_kind)} / {ECONOMIC_CATEGORIES.get(v.category,"Ekonomik gider")} / {funding_label(v.funding_type)}: ekonomik kaynak tutarı ve program grubu doğrulanmalı.')
     personnel = {(v.year,v.value_kind): v for v in personnel_rows if v.category=='personnel_sgk'}
     for y,k in required:
         p = personnel.get((y,k)); ev = [v for v in economics if v.year==y and v.value_kind==k]
@@ -246,10 +267,24 @@ def _validate_department_records(period_id, department_id, year, scope, indicato
         if not ev: errors.append(f'{y}: ekonomik tablo eksik.')
         for group in {v.program_group for v in economics}:
             for fund in ['inside','outside']:
-                missing=set(ECONOMIC_CATEGORIES)-{v.category for v in ev if v.program_group==group and v.funding_type==fund}
+                group_values = [v for v in ev if v.program_group==group and v.funding_type==fund]
+                expected_categories = set(ECONOMIC_CATEGORIES)
+                # A compact source table explicitly enumerates its applicable categories.
+                # Keep omitted rows absent; an empty cell within a listed row is still reviewed.
+                if group_values and all(getattr(v, 'source_table_number', None) for v in group_values):
+                    try:
+                        contexts = [json.loads(v.source_context_json) for v in group_values]
+                        if any(not set(c['card_ids']).issubset(card_ids) for c in contexts):
+                            raise ValueError('scope')
+                        expected_categories = set().union(*(set(c['categories']) for c in contexts))
+                        if not expected_categories or not expected_categories.issubset(ECONOMIC_CATEGORIES):
+                            raise ValueError('categories')
+                    except (ValueError, TypeError, KeyError):
+                        errors.append(f'{y}: ekonomik kaynak kapsamı eksik veya geçersiz; tabloyu kontrol edin.')
+                missing=expected_categories-{v.category for v in group_values}
                 if missing:errors.append(f'{y}: {PROGRAM_GROUPS.get(group,group)} / {"Bütçe İçi" if fund=="inside" else "Bütçe Dışı"}: {len(missing)} ekonomik gider hücresi eksik (yoksa 0 girin).')
-        if p and p.amount is not None and ev and complete[y,k]:
-            if totals[y,k] + p.amount != sum(v.amount for v in ev): errors.append(f'{y}: ortak maliyet ve ekonomik tablo toplamları uyuşmuyor.')
+        if p and p.amount is not None and ev and all(v.amount is not None for v in ev):
+            if complete[y,k] and totals[y,k] + p.amount != sum(v.amount for v in ev): errors.append(f'{y}: ortak maliyet ve ekonomik tablo toplamları uyuşmuyor.')
             econ_personnel = sum((v.amount for v in ev if v.category in {'personnel','sgk'}), Decimal(0))
             if econ_personnel != p.amount: errors.append(f'{y}: ekonomik personel/SGK satırları ortak tablodan farklı.')
             for fund in ['inside','outside']:
@@ -284,7 +319,7 @@ def book_snapshot(db, period_id):
     for d in snapshots:
         if d['scope'] and d['scope']['status']=='excluded': continue
         for v in d['economics']:
-            if v['year']>=period.year:
+            if v['year']>=period.year and v['amount'] is not None:
                 economic[(v['category'],v['year'],v['program_group'],v['funding_type'])] += Decimal(v['amount'])
         for a in d['activities']:
             for v in a['costs']:

@@ -5,6 +5,7 @@ import json
 from decimal import Decimal
 from .serialization import json_dumps
 from .numbers import parse_number, format_number, format_contract_targets
+from .value_labels import value_kind_label, funding_label
 import os
 import secrets
 import hmac
@@ -246,6 +247,8 @@ from .time_display import turkey_time
 templates.env.filters['turkey_time'] = turkey_time
 templates.env.filters["trnum"] = lambda v: format_number(v)
 templates.env.filters['contract_targets'] = format_contract_targets
+templates.env.filters['value_kind_label'] = value_kind_label
+templates.env.filters['funding_label'] = funding_label
 templates.env.filters["trmoney"] = lambda v: format_number(v, True)
 def section_text(raw):
     content=json.loads(raw)
@@ -312,8 +315,10 @@ def indicator_issues(ind: Indicator, period_year: int):
     if not (ind.data_source.strip() or (ind.card and ind.card.data_source.strip())):
         issues.append("Verinin kaynağı boş.")
     for value in ind.values:
+        if value.raw_text.strip() in {"-", "–", "—"} and value.value is None:
+            continue
         if value.state != "verified" or value.value is None:
-            issues.append(f"{value.year} {value.value_kind}: kaynak değeri doğrulanmalı ({value.raw_text}).")
+            issues.append(f"{value.year} {value_kind_label(value.value_kind)}: kaynak değeri doğrulanmalı ({value.raw_text}).")
     return issues
 
 
@@ -1564,6 +1569,7 @@ async def data_import_preview(period_id: int, file: UploadFile = File(...), db: 
         "summary": plan["summary"], "warnings": warnings,
         "errors": errors, "coverage_items": plan["parsed"].get("coverage_items", []),
         "conflicts": plan["conflicts"], "decisions": json.loads(batch.decisions_json or "[]"),
+        "review_items": plan["parsed"].get("review_items", []),
         "departments": preview_departments, "mappings": plan["mappings"],
         "can_apply": not plan["unresolved"] and not plan["unresolved_conflicts"] and not year_mismatch and not errors,
     }
@@ -1589,6 +1595,7 @@ def import_batch_detail(batch_id: int, db: Session = Depends(get_db), user: User
         "summary": plan["summary"], "warnings": warnings,
         "errors": errors, "coverage_items": plan["parsed"].get("coverage_items", []),
         "conflicts": plan["conflicts"], "decisions": json.loads(batch.decisions_json or "[]"),
+        "review_items": plan["parsed"].get("review_items", []),
         "departments": [{
             "name": d["name"], "block_count": len(d["blocks"]),
             "indicator_count": sum(len(b["indicators"]) for b in d["blocks"]),
