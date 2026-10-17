@@ -9,7 +9,8 @@
 <div class="ar-body"><section class="panel ar-panel"><p class="muted">{{ section.code }} · Bölüm sahibi: {{ owners[section.owner] }}</p><h2>{{ section.title }}</h2>
 <p>Son düzenleyen: {{ section.editor_name }}{% if section.edited_at %} · {{ section.edited_at|ar_time }}{% endif %}</p>
 {% if section.copied_needs_review %}<p class="ar-warning">Geçen yıldan kopyalandı — gözden geçirin</p>{% endif %}
-{% if section.code=='III.B.2.i' %}<p>{{ report.core.message }}</p><a class="button" href="{{ report.core.link }}">Gösterge gerçekleşmelerini aç</a>
+{% if section.code=='EKLER' %}{% include 'assurance_slot.html' %}
+{% elif section.code=='III.B.2.i' %}<p>{{ report.core.message }}</p><a class="button" href="{{ report.core.link }}">Gösterge gerçekleşmelerini aç</a>
 {% else %}
 {% if section.content_kind in ['structured-from-PP','assurance'] %}<p class="ar-warning">Bu bölümün yapılandırılmış verileri daha sonra eklenecek. Şimdi açıklama, durum ve uygulanabilirlik gerekçesini kaydedebilirsiniz.</p>{% endif %}
 {% if editable %}

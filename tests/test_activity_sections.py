@@ -80,11 +80,13 @@ def resource(client,token,doc,kind,rows):
 def ready_and_freeze(client,token,doc):
     data=client.get(f'/api/activity-sections/reports/{doc.id}').json()
     for section in data['sections']:
-        if section['code']!=service.CORE:
+        if section['code'] not in {service.CORE,'EKLER'}:
             financial_na=bool(data.get('financial',{}).get('missing',{}).get(section['code']))
             result=save(client,token,doc,section['code'],status='not_applicable' if financial_na else 'ready',
                 reason='Bu testin örnek raporunda malî veri bulunmuyor.' if financial_na else '')
             assert result.status_code==200,result.text
+    from test_assurance_helpers import complete_assurances
+    complete_assurances(client,doc)
     revision=client.get(f'/api/activity-sections/reports/{doc.id}').json()['revision']
     response=client.post(f'/api/activity-sections/reports/{doc.id}/freeze',headers={'X-CSRF-Token':token},json={'expected_revision':revision})
     assert response.status_code==200,response.text
@@ -198,7 +200,8 @@ def test_frozen_content_and_previous_year_copy(section_client,db,sample):
     assert created.status_code==200,created.text
     new=db.scalar(select(ARDocument).where(ARDocument.period_id==period.id,ARDocument.department_id==sample['department'].id))
     copied=client.get(f'/api/activity-sections/reports/{new.id}').json()
-    sections=[s for s in copied['sections'] if s['code']!=service.CORE]
+    sections=[s for s in copied['sections'] if s['code'] not in {service.CORE,'EKLER'}]
+    assert next(s for s in copied['sections'] if s['code']=='EKLER')['status']=='empty'
     assert all(s['status']=='draft' and s['copied_needs_review'] and s['copied_from_id']==approval['freeze_id'] for s in sections)
     assert [r['count'] for r in copied['resources']['employment']['rows']]==[None,0]
     page=client.get(f'/activity-sections/reports/{new.id}')

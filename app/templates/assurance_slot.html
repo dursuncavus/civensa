@@ -1,0 +1,10 @@
+<p>Beyan metinleri mevzuata göre kilitlidir. Değişken alanları ilgili beyanın formundan doldurun. İmza, rapor dışında tamamlanır.</p>
+{% for message in section.missing %}<p class="ar-error" role="alert">{{ message }}</p>{% endfor %}
+{% for item in section.assurances %}
+{% set statement=assurance_view(item) %}
+<article class="ar-preview">
+<h3>{{ item.code }} · {{ statement.title if not statement.error else 'Güvence beyanı' }}</h3>
+<a class="button" href="/activity-sections/reports/{{ report.id }}/assurances/{{ item.code }}">Beyan alanlarını aç</a>
+{% include 'assurance_statement.html' %}
+</article>
+{% endfor %}

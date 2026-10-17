@@ -194,6 +194,9 @@ def content_data(content):
 
 def save_section(db,user,document_id,code,blocks,status,reason,expected_revision):
     doc=document(db,user,document_id)
+    if code == 'EKLER':
+        from .assurance_service import LOCK_ERROR
+        fail(LOCK_ERROR)
     definition,content=section_pair(db,doc,code)
     writable(db,user,doc,expected_revision,definition)
     validate_blocks(blocks)
@@ -346,6 +349,9 @@ def report_data(db,user,document_id,use_freeze=True):
             fail('Onaylı faaliyet raporu kopyası doğrulanamadı. Sistem sorumlusuyla iletişime geçin.',409)
         result=json.loads(freeze.payload_json,parse_float=Decimal)
         result.update(frozen=True,sha256=freeze.sha256)
+        from .assurance_service import slot
+        for row in result['sections']:
+            if row['code'] == 'EKLER': slot(db,doc,row,frozen=True)
         return result
     core=core_summary(db,doc)
     result={'id':doc.id,'organization_id':doc.organization_id,'period_id':doc.period_id,
@@ -372,6 +378,9 @@ def report_data(db,user,document_id,use_freeze=True):
             missing+=result['financial']['missing'].get(definition.code,[])
         row['missing']=missing
         row['editor_name']=db.get(User,content.edited_by).full_name if content.edited_by else '—'
+        if definition.code == 'EKLER':
+            from .assurance_service import slot
+            slot(db,doc,row)
         result['sections'].append(row)
     return result
 

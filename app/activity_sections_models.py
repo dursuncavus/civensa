@@ -103,3 +103,6 @@ def immutable(mapper, connection, target):
 for model in (ARDocumentFreeze, ARContentEvent):
     event.listen(model, 'before_update', immutable)
     event.listen(model, 'before_delete', immutable)
+
+# EKLER variable model must also participate in Alembic metadata discovery.
+from .assurance_models import AssuranceStatement  # noqa: F401
