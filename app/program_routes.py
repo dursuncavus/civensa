@@ -186,13 +186,23 @@ def register(app):
 
     @app.post('/report-builder/scope')
     async def scope(request:Request,db:Session=Depends(get_db),user:User=Depends(require_strategy)):
-        data=await request.form();pid=integer(data.get('period_id'));did=integer(data.get('department_id'));context(db,user,did,pid)
+        data=await request.form();pid=integer(data.get('period_id'));did=integer(data.get('department_id'))
+        from .master_data_service import active_department, audit_change, period_record
+        period_record(db,pid)  # Share the lock used by master-data responsibilities.
+        context(db,user,did,pid)
         status=data.get('status');reason=str(data.get('reason','')).strip()
         if status not in {'required','zero','excluded'} or (status!='required' and not reason):raise HTTPException(422,'Kapsam ve gerekçeyi kontrol edin.')
         obj=db.scalar(select(DepartmentScope).where(DepartmentScope.period_id==pid,DepartmentScope.department_id==did))
-        if not obj:obj=DepartmentScope(period_id=pid,department_id=did);db.add(obj)
+        fields=('position','status','reason','display_name')
+        old={f:getattr(obj,f) for f in fields} if obj else None
+        if not obj:
+            active_department(db,did)
+            obj=DepartmentScope(period_id=pid,department_id=did);db.add(obj)
+        if status!='required' and obj.id and db.scalar(select(SubProgramScope.subprogram_id).where(SubProgramScope.scope_id==obj.id).limit(1)):
+            raise HTTPException(422,'Müdürlüğün alt program sorumluluğu var. Kurum Yapısı ekranında bu sorumluluğu kaldırıp kapsamı yeniden kaydedin.')
         obj.position=integer(data.get('position',0));obj.status=status;obj.reason=reason;obj.display_name=str(data.get('display_name','')).strip()
-        db.commit();log(db,user,'scope_save','department',did)
+        audit_change(db,user,'scope_save',obj,old,{f:getattr(obj,f) for f in fields})
+        db.commit()
         return RedirectResponse('/report-builder',303)
 
     @app.post('/report-builder/section')
@@ -271,7 +281,7 @@ def register(app):
         data=await request.form();pid=integer(data.get('period_id'));period=db.scalar(select(ReportingPeriod).where(ReportingPeriod.id==pid).with_for_update())
         if not period:raise HTTPException(404)
         errors=[]
-        for dept in db.scalars(select(Department)).all():
+        for dept in period_departments(db,pid):
             scope=db.scalar(select(DepartmentScope).where(DepartmentScope.department_id==dept.id,DepartmentScope.period_id==pid))
             if not scope:errors.append(f'{dept.name}: dönem kapsamı belirtilmeli.');continue
             issues,_=validate_department(db,pid,dept.id);errors.extend(f'{dept.name}: {e}' for e in issues)

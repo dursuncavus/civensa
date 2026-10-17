@@ -25,6 +25,7 @@ class Department(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     organization_id: Mapped[int] = mapped_column(ForeignKey("organizations.id"))
     name: Mapped[str] = mapped_column(String(200))
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, server_default="1")
     organization: Mapped[Organization] = relationship(back_populates="departments")
     indicators: Mapped[list["Indicator"]] = relationship(back_populates="department", cascade="all, delete-orphan")
     activities: Mapped[list["Activity"]] = relationship(back_populates="department", cascade="all, delete-orphan")
@@ -279,6 +280,13 @@ class DepartmentScope(Base):
     status: Mapped[str] = mapped_column(String(30), default="required")
     reason: Mapped[str] = mapped_column(Text, default="")
     __table_args__ = (UniqueConstraint("period_id", "department_id", name="uq_scope_department"),)
+
+
+class SubProgramScope(Base):
+    """Responsible departments use the existing period-specific DepartmentScope."""
+    __tablename__ = "subprogram_scopes"
+    subprogram_id: Mapped[int] = mapped_column(ForeignKey("subprograms.id"), primary_key=True)
+    scope_id: Mapped[int] = mapped_column(ForeignKey("department_scopes.id"), primary_key=True)
 
 
 class ReportSection(Base):

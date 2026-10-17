@@ -1,0 +1,8 @@
+{% extends "base.html" %}
+{% block page_title %}İlk Raporlama Dönemi{% endblock %}
+{% block page_subtitle %}Performans programı hazırlığı için bir dönem oluşturun.{% endblock %}
+{% block content %}<section><h2>Henüz raporlama dönemi oluşturulmadı</h2>
+{% if user.role == 'strategy' %}<p>İlk dönemi oluşturduktan sonra Kurum Yapısı ekranından müdürlük, program ve alt programları ekleyebilirsiniz.</p><p class="muted">Yeni dönem taslak olarak açılır. Bakanlık şablonu doğrulandıktan sonra etkinleştirilebilir.</p>
+{% if error %}<div class="structure-error" role="alert">{{ error }}</div>{% endif %}
+<form method="post" action="/periods/create" class="structure-form"><input type="hidden" name="csrf_token" value="{{ request.session.get('csrf_token') }}"><label>Dönem yılı<input name="year" inputmode="numeric" required value="{{ attempted_year }}" aria-label="Dönem yılı" aria-describedby="year-help"><small id="year-help">2020–2100 arasında dört haneli bir yıl girin.</small></label><button class="button primary">İlk dönemi oluştur</button></form>
+{% else %}<p>Strateji Geliştirme henüz ilk dönemi açmadı. Raporlama döneminin oluşturulması için Strateji Geliştirme ile iletişime geçin.</p>{% endif %}</section>{% endblock %}
