@@ -222,7 +222,7 @@ def parse_performance_docx(data: bytes):
     doc=Document(io.BytesIO(data))
     departments=OrderedDict(); current_department=None; errors=[]; coverage_items=[]
     indicator_table_count=0; activity_table_count=0; economic_table_count=0
-    pending_blocks=[]
+    pending_blocks=[]; rejected_economic_tables=[]
     tables = list(iter_document_tables(doc))
     for index,table in enumerate(tables):
         perf=_parse_indicator_table(table)
@@ -254,11 +254,12 @@ def parse_performance_docx(data: bytes):
             dept=departments.setdefault(current_department,{"name":current_department,"blocks":[],"activities":[],"personnel":[]})
             dept["activities"].extend(cost["activities"]); dept["personnel"].extend(cost["personnel"])
             continue
-        economic = _parse_economic_table(table, index+1, pending_blocks)
+        economic = _parse_economic_table(table, index+1, pending_blocks if current_department else [])
         if economic is not None:
             economic_table_count += 1
-            if current_department is None:
-                errors.append(f"Tablo {index+1}: ekonomik tablo bir müdürlükle eşleştirilemedi. Önüne müdürlük ve program bilgilerini ekleyip dosyayı yeniden yükleyin.")
+            if economic.get('error'):
+                rejected_economic_tables.append(economic)
+                errors.append(economic['error'])
             else:
                 departments[current_department].setdefault('economic_tables', []).append(economic)
             pending_blocks=[]
@@ -295,6 +296,7 @@ def parse_performance_docx(data: bytes):
         "errors":errors,
         "coverage_items":coverage_items,
         "review_items":review_items,
+        "rejected_economic_tables":rejected_economic_tables,
     }
 
 
@@ -317,21 +319,42 @@ def _economic_cell(row, column):
 
 def _parse_economic_table(table, table_number, blocks):
     from .program_service import ECONOMIC_CATEGORIES, economic_columns
-    if not table.rows or _label_key(table.cell(0, 0).text) != 'ekonomikad':
+    if not table.rows or not any(_label_key(cell.text) == 'ekonomikad'
+                                 for cell in table.rows[0].cells[:2]):
         return None
+    headers = [_clean(cell.text) for cell in table.rows[0].cells]
     categories = {_label_key(label): key for key, label in ECONOMIC_CATEGORIES.items()}
+    # Ministry sources use both singular and plural expense names.
+    categories.update({_label_key(label[:-4] + 'i'): key
+                       for key, label in ECONOMIC_CATEGORIES.items() if label.endswith('leri')})
     categories['sosyalguvenlikkurumunadevletprimigiderler'] = 'sgk'
+    codes = {'01': 'personnel', '02': 'sgk', '03': 'goods_services',
+             '04': 'interest', '05': 'current_transfers', '06': 'capital',
+             '07': 'capital_transfers', '08': 'lending', '09': 'reserve'}
     columns = {}
     for col, cell in enumerate(table.rows[0].cells):
         spec = _value_kind(cell.text)
         if spec:
             columns[spec] = -1 if spec in columns else col
     year = blocks[-1]['budget_year'] if blocks else None
-    expected = economic_columns(year) if year else list(columns)
+    # A department left over from a completed card is not source provenance.
+    # Reject before making values or placeholders when the card/year is absent.
+    if not blocks or year is None or (year, 'budget') not in columns:
+        detail = ''
+        if blocks:
+            detail = (f' Kartın yılına uygun {year} Bütçe sütunu bulunamadı.' if year
+                      else ' Önceki kartta Bütçe Yılı belirlenemedi.')
+        message = (f'Kart tablosuna bağlı olmayan ekonomik tablo (tablo {table_number}): '
+                   + ' | '.join(headers) + '.' + detail
+                   + ' Bu tabloyu ilgili müdürlüğün kartından hemen sonra yerleştirin veya kaynaktan çıkarın.')
+        return {'table_number': table_number, 'header_row': headers, 'error': message}
+    expected = economic_columns(year)
     source_rows = {}; totals = {}
     for row in table.rows[1:]:
         label = _label_key(row.cells[0].text)
-        category = categories.get(label)
+        category = codes.get(_clean(row.cells[0].text)) or next(
+            (categories[_label_key(cell.text)] for cell in row.cells[:2]
+             if _label_key(cell.text) in categories), None)
         total = next((key for prefix, key in [('butceicitoplam', 'inside'),
                      ('butcedisitoplam', 'outside'), ('faaliyetmaliyet', 'total')]
                      if label.startswith(prefix)), None)
