@@ -226,6 +226,8 @@ def _source_activity_linkable(dept: dict) -> bool:
     activities = dept.get("activities", [])
     if not activities:
         return True
+    if any('source_memberships' in a for a in activities):
+        return all(_membership_block_index(a, dept.get('blocks', [])) is not None for a in activities)
     unique_blocks = []
     for block in dept.get("blocks", []):
         key = (_clean(block.get("program", "")), _clean(block.get("subprogram", "")))
@@ -234,9 +236,18 @@ def _source_activity_linkable(dept: dict) -> bool:
     return len(unique_blocks) == 1
 
 
-def _link_subprograms(block_subprograms: list, activity_count: int):
+def _membership_block_index(activity, blocks):
+    tables = {m['block_table_number'] for m in activity.get('source_memberships', [])}
+    indices = [i for i, b in enumerate(blocks) if b.get('table_number') in tables]
+    return indices[0] if len(indices) == 1 else None
+
+
+def _link_subprograms(block_subprograms: list, activity_count: int, activities=None, blocks=None):
     if not activity_count:
         return []
+    if activities is not None and any('source_memberships' in a for a in activities):
+        return [block_subprograms[i] if (i := _membership_block_index(a, blocks)) is not None else None
+                for a in activities]
     unique = []
     seen = set()
     for sp in block_subprograms:
@@ -734,16 +745,19 @@ def apply_import_batch(db: Session, batch: ImportBatch, preserve_existing: bool 
                     db.add(IndicatorValue(indicator_id=ind.id, year=int(year), value_kind=str(kind), value=Decimal(str(amount)) if amount is not None else None, raw_text=value.get("raw_text", str(amount)), state=value.get("state", "verified")))
 
         activities = src.get("activities", [])
-        # Conservative linking: unique one-subprogram packages are safe; exact source-order
-        # matches are safe. More complex packages stay explicitly unlinked for user review.
-        links = _link_subprograms(block_subprograms, len(activities))
+        # Explicit book memberships select a card. Older Word sources keep the
+        # single-subprogramme fallback; activity order never implies membership.
+        links = _link_subprograms(block_subprograms, len(activities), activities, src.get('blocks', []))
         result["unlinked_activities"] += sum(1 for sp in links if sp is None)
 
         for item, subprogram in zip(activities, links):
+            card_index = _membership_block_index(item, src.get('blocks', []))
+            card_id = (block_cards[card_index].id if card_index is not None else
+                       block_cards[0].id if len(block_cards) == 1 and 'source_memberships' not in item else None)
             act = Activity(
                 period_id=period.id, department_id=dept.id,
                 subprogram_id=subprogram.id if subprogram else None,
-                card_id=block_cards[0].id if len(block_cards)==1 else None,
+                card_id=card_id,
                 name=_clean(item.get("name", "")) or _clean(item.get("official_name", "")) or "Faaliyet adı belirtilmedi",
                 explanation=_clean(item.get("explanation", "")),
             )

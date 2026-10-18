@@ -8,6 +8,7 @@ def parse_number(raw, *, money=False, source=False):
     if text in {'', '-', '–', '—'}:
         return None
     original = text
+    text = re.sub(r'^₺\s*', '', text)
     text = re.sub(r'\s*(?:TL|₺)\s*$', '', text, flags=re.I).strip()
     multiplier = Decimal(1)
     scaled = re.search(r'\s+(Mn|milyon)\s*$', text, re.I)

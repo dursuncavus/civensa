@@ -1,4 +1,5 @@
 import io
+import json
 import re
 import unicodedata
 from collections import OrderedDict
@@ -205,16 +206,33 @@ def _parse_activity_table(table, table_number=None, budget_year=None):
         pairs=[]; j=explanation_start
         while j<len(rows):
             title=_clean(rows[j].cells[0].text)
-            if _label_key(re.sub(r"^\d+[.\s)]*", "", title)).startswith("faaliyetadi"):
-                official=title.split(":",1)[1].strip() if ":" in title else title
+            code = re.match(r'^\s*(\d+)[.\s)]', title)
+            body = re.sub(r'^\d+[.\s)]*', '', title)
+            labelled = _label_key(body).startswith('faaliyetadi')
+            # Some book headings omit “Faaliyet Adı:”. Accept only an exact,
+            # coded activity title, never arbitrary prose resembling a heading.
+            known_title = code and any(_label_key(body) == _label_key(
+                re.sub(r'^\d+[.\s)]*', '', a['name'])) for a in activities)
+            if labelled or known_title:
+                official=body.split(":",1)[1].strip() if labelled and ":" in body else body
                 desc=_clean(rows[j+1].cells[0].text) if j+1<len(rows) else ""
-                pairs.append((official,desc)); j+=2
+                pairs.append(dict(official=official, description=desc, code=code.group(1) if code else None,
+                                  table_number=table_number, title_row=j+1, row_number=j+2)); j+=2
             else:
                 j+=1
-        for idx,(official,desc) in enumerate(pairs):
-            if idx<len(activities):
-                activities[idx]["official_name"]=official
-                activities[idx]["explanation"]=desc
+        for idx, activity in enumerate(activities):
+            code = re.match(r'^\s*(\d+)[.\s)]', activity['name'])
+            if code:
+                candidates = [p for p in pairs if p['code'] == code.group(1)]
+                exact = [p for p in candidates if _label_key(p['official']) == _label_key(
+                    re.sub(r'^\d+[.\s)]*', '', activity['name']))]
+                candidates = exact or candidates
+            else:
+                candidates = pairs[idx:idx+1]  # Existing uncoded Ministry format.
+            if len(candidates) == 1:
+                pair = candidates[0]
+                activity.update(official_name=pair['official'], explanation=pair['description'],
+                                explanation_source={k: pair[k] for k in ('table_number', 'title_row', 'row_number')})
     return {"activities":activities,"personnel":personnel,"columns":[{"column":c,"year":y,"kind":k,"label":headers[c]} for c,y,k in value_columns]}
 
 
@@ -244,6 +262,19 @@ def parse_performance_docx(data: bytes):
             dept=departments.setdefault(current_department,{"name":current_department,"blocks":[],"activities":[],"personnel":[]})
             pending_blocks.append({"table_number":index+1,"program":perf["program"],"budget_year":perf["budget_year"]})
             dept["blocks"].append({"table_number":index+1, **{k:perf[k] for k in ("budget_year","program","subprogram","rationale","goal","source_title","administration","metadata","indicators")}})
+            continue
+        # The print book lists membership separately from department-level costs.
+        # These amounts must never become duplicate ActivityCostValue sources.
+        if table.rows and _label_key(table.rows[0].cells[0].text).startswith('altprogramkapsaminda'):
+            if not current_department:
+                errors.append(f'Tablo {index+1}: faaliyet üyeliğinin kartı bulunamadı. Önüne ilgili performans kartını ekleyin.')
+                continue
+            block = departments[current_department]['blocks'][-1]
+            members = block.setdefault('activity_memberships', [])
+            for row_number, row in enumerate(table.rows[2:], 3):
+                title = _clean(row.cells[0].text)
+                if title:
+                    members.append({'name': title, 'table_number': index+1, 'row_number': row_number})
             continue
         budget_year = departments[current_department]['blocks'][-1]['budget_year'] if current_department else None
         cost=_parse_activity_table(table, table_number=index+1, budget_year=budget_year)
@@ -283,6 +314,8 @@ def parse_performance_docx(data: bytes):
     if not indicator_table_count:
         errors.append("Dosyada tanınan performans göstergesi tablosu bulunamadı. Bakanlık gösterge şablonunu ve Performans Göstergeleri başlığını kontrol edip dosyayı yeniden yükleyin.")
     result=list(departments.values())
+    membership_issues = []
+    _attach_activity_memberships(result, membership_issues)
     indicator_count=sum(len(b["indicators"]) for d in result for b in d["blocks"])
     activity_count=sum(len(d["activities"]) for d in result)
     source_years=sorted({b.get("budget_year") for d in result for b in d["blocks"] if b.get("budget_year")})
@@ -292,12 +325,53 @@ def parse_performance_docx(data: bytes):
     return {
         "departments":result,
         "summary":{"department_count":len(result),"indicator_table_count":indicator_table_count,"indicator_count":indicator_count,"activity_table_count":activity_table_count,"activity_count":activity_count,"table_count":len(tables),"source_years":source_years,"economic_table_count":economic_table_count,"economic_value_count":economic_count,"needs_review_count":len(review_items)},
-        "warnings":list(errors),
+        "warnings":list(errors) + membership_issues,
         "errors":errors,
         "coverage_items":coverage_items,
         "review_items":review_items,
         "rejected_economic_tables":rejected_economic_tables,
+        "source_tables": _source_table_pages(tables),
+        "membership_issues": membership_issues,
     }
+
+
+def _activity_identity(name):
+    code = re.match(r'^\s*(\d+)[.\s)]', name)
+    return ('code', code.group(1)) if code else ('name', _label_key(name))
+
+
+def _attach_activity_memberships(departments, issues):
+    for department in departments:
+        blocks = department['blocks']
+        if not any('activity_memberships' in block for block in blocks):
+            continue  # Preserve the old Word format's single-subprogramme fallback.
+        by_identity = {}
+        for activity in department['activities']:
+            activity['source_memberships'] = []
+            by_identity.setdefault(_activity_identity(activity['name']), []).append(activity)
+        for block in blocks:
+            for member in block.get('activity_memberships', []):
+                matches = by_identity.get(_activity_identity(member['name']), [])
+                if len(matches) != 1:
+                    issues.append(f"Tablo {member['table_number']}, satır {member['row_number']}: "
+                                  f"{department['name']} / {member['name']}: faaliyet maliyet kaydı tekil eşleşmedi. "
+                                  'Kart üyeliği ile müdürlük maliyet tablosundaki faaliyet kod/adını kontrol edin.')
+                    continue
+                matches[0]['source_memberships'].append({**member, 'block_table_number': block['table_number']})
+
+
+def _source_table_pages(tables):
+    sources = {}
+    for index, table in enumerate(tables, 1):
+        caption = table._tbl.tblPr.find(qn('w:tblCaption'))
+        if caption is not None:
+            try:
+                value = json.loads(caption.get(qn('w:val')))
+                if isinstance(value, dict) and value.get('page'):
+                    sources[str(index)] = value
+            except (ValueError, TypeError):
+                pass
+    return sources
 
 
 def _economic_cell(row, column):
