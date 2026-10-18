@@ -68,8 +68,12 @@ STY = {}   # paragraf stili adı -> özellikler (önizleme için)
 def para(name, family, style, size, leading, just='LeftAlign', color='Metin Koyu', tint=None, caps=False, tracking=0,
          before=0.0, after=0.0, tabular=False, hyph=False, left=0.0, first=0.0, keep=0, bullet=False, tabs=None, nobreak=False):
     STY[name] = dict(family=family, style=style, size=size, leading=leading, just=just, color=color, tint=tint, caps=caps,
-                     before=before, after=after, tabular=tabular, left=left, first=first, bullet=bullet, tabs=tabs)
+                     before=before, after=after, tabular=tabular, left=left, first=first, bullet=bullet, tabs=tabs, hyph=hyph)
     attrs = dict(SpaceBefore=float(before), SpaceAfter=float(after), Hyphenation='true' if hyph else 'false')
+    if hyph:   # Türkçe heceleme ve iki yana yaslamada aralık sınırları
+        attrs.update(HyphenateWordsLongerThan='5', HyphenateAfterFirst='2', HyphenateBeforeLast='2', HyphenateLadderLimit='2',
+                     HyphenateCapitalizedWords='true', HyphenationZone='0', MinimumWordSpacing='85', DesiredWordSpacing='100',
+                     MaximumWordSpacing='125', MinimumLetterSpacing='-1', DesiredLetterSpacing='0', MaximumLetterSpacing='2')
     if tint is not None:
         attrs['FillTint'] = float(tint)
     if caps:
@@ -136,7 +140,7 @@ def define_styles():
     para('32r Grafik Etiket Sağ', FC, 'Regular', 7, 8.5, just='RightAlign', color='Metin Açık')
     para('33 Grafik Değer', FC, 'SemiBold', 7.5, 9, tabular=True)
     para('33b Grafik Değer Koyu Zemin', FC, 'SemiBold', 7.5, 9, color=KZ, tabular=True)
-    para('34 Gösterge Halka Rakam', FS, 'Medium', 15, 16, just='CenterAlign', color=KZ)
+    para('34 Gösterge Halka Rakam', FS, 'Medium', 20, 22, just='CenterAlign', color=KZ, tracking=-10)
     para('34a Gösterge Halka Etiket', FS, 'Regular', 7.5, 10, just='CenterAlign', color='Ana Açık')
     # 40–42 içindekiler
     para('40 İçindekiler Bölüm', FS, 'Medium', 12, 15, color=KZ, tabs=[('RightAlign', 140 * MM, ' ')])
@@ -144,9 +148,14 @@ def define_styles():
     para('42 İçindekiler No', FS, 'Medium', 20, 22, color='Kurumsal Vurgu', tabular=True)
     para('43 Bölüm Listesi', FS, 'Regular', 9.5, 13, tabs=[('RightAlign', 112 * MM, ' ')])
     # 50–51 sayfa öğeleri
-    para('50 Sayfa Numarası', FC, 'Medium', 7.5, 10, tabular=True)
-    para('51 Üst Bilgi', FC, 'Regular', 7, 10, color='Metin Açık', caps=True, tracking=80)
-    para('51b Üst Bilgi Koyu Zemin', FC, 'Regular', 7, 10, color='Ana Açık', caps=True, tracking=80)
+    para('50 Sayfa Numarası', FS, 'SemiBold', 9, 10, color='Kurumsal Ana', tabular=True)
+    para('50r Sayfa Numarası Sağ', FS, 'SemiBold', 9, 10, just='RightAlign', color='Kurumsal Ana', tabular=True)
+    para('50b Sayfa Numarası Koyu Zemin', FS, 'SemiBold', 9, 10, color=KZ, tabular=True)
+    para('50br Sayfa Numarası Koyu Zemin Sağ', FS, 'SemiBold', 9, 10, just='RightAlign', color=KZ, tabular=True)
+    para('51 Rubrik', FS, 'Medium', 6.5, 10, color='Metin Açık', caps=True, tracking=120)
+    para('51r Rubrik Sağ', FS, 'Medium', 6.5, 10, just='RightAlign', color='Metin Açık', caps=True, tracking=120)
+    para('51b Rubrik Koyu Zemin', FS, 'Medium', 6.5, 10, color='Ana Açık', caps=True, tracking=120)
+    para('51br Rubrik Koyu Zemin Sağ', FS, 'Medium', 6.5, 10, just='RightAlign', color='Ana Açık', caps=True, tracking=120)
     # 60–79 özel tasarım öğeleri
     para('60 Bölüm No', FS, 'Medium', 110, 100, tracking=-30)
     para('61 Bölüm Spotu', FS, 'Light', 13, 18, after=8)
@@ -208,9 +217,10 @@ def nid(p='u'):
 
 
 class Page:
-    def __init__(self, side, master='A'):
+    def __init__(self, side, master='Y', register=True):
         self.side, self.master, self.items = side, master, []
-        PAGES.append(self)
+        if register:
+            PAGES.append(self)
 
     # yardımcılar
     @property
@@ -291,9 +301,47 @@ METIN4 = ('Müdürlüklerin faaliyet sonuçları, stratejik plandaki amaç ve he
           'göstergelerde oran hesaplanmaz, yalnız gerçekleşme değeri gösterilir.')
 
 
-def running(pg, txt, dark=False):
-    x = pg.ml
-    pg.text(x, 9.0, 120.0, 6.0, [P('51b Üst Bilgi Koyu Zemin' if dark else '51 Üst Bilgi', txt)])
+RAPOR = '2026 Faaliyet Raporu'
+PAGENUM = ('PAGENUM', '')
+
+
+def header(pg, rubrik, dark=False):
+    """Sayfa üstü: dış köşede sayfa numarası, ince dikey çizgi, rubrik. Sol ve sağ sayfa aynalı."""
+    d = 'b' if dark else ''
+    line_col = 'Ana Açık' if dark else 'Çizgi Gri'
+    y, h = 10.0, 5.0
+    if pg.side == 'L':
+        pg.text(15, y, 11, h, [P(f'50{d} Sayfa Numarası' + (' Koyu Zemin' if dark else ''), PAGENUM)])
+        pg.line([(27.5, y + 0.6), (27.5, y + 3.9)], stroke=line_col, sw=0.5)
+        pg.text(30.5, y + 0.5, 110, h, [P('51b Rubrik Koyu Zemin' if dark else '51 Rubrik', rubrik)])
+    else:
+        pg.text(PW - 15 - 11, y, 11, h, [P('50br Sayfa Numarası Koyu Zemin Sağ' if dark else '50r Sayfa Numarası Sağ', PAGENUM)])
+        pg.line([(PW - 27.5, y + 0.6), (PW - 27.5, y + 3.9)], stroke=line_col, sw=0.5)
+        pg.text(PW - 30.5 - 110, y + 0.5, 110, h, [P('51br Rubrik Koyu Zemin Sağ' if dark else '51r Rubrik Sağ', rubrik)])
+
+
+# ana sayfalar: anahtar -> (ad, ön ek, taban ad, sağ sayfa rubriği); sol sayfa rubriği her zaman rapor adı
+MASTERS = {
+    'A': ('A-Ön Bölüm', 'A', 'Ön Bölüm', 'Sunuş ve Yönetici Özeti'),
+    'B': ('B-Genel Bilgiler', 'B', 'Genel Bilgiler', 'Genel Bilgiler'),
+    'C': ('C-Amaçlar ve Hedefler', 'C', 'Amaçlar ve Hedefler', 'Amaçlar ve Hedefler'),
+    'D': ('D-Faaliyetler', 'D', 'Faaliyetler', 'Faaliyetlere İlişkin Bilgi ve Değerlendirmeler'),
+    'E': ('E-Kurumsal Kabiliyet', 'E', 'Kurumsal Kabiliyet', 'Kurumsal Kabiliyet ve Kapasitenin Değerlendirilmesi'),
+    'F': ('F-Öneri ve Tedbirler', 'F', 'Öneri ve Tedbirler', 'Öneri ve Tedbirler'),
+    'G': ('G-Ekler', 'G', 'Ekler', 'Ekler'),
+    'Y': ('Y-Boş', 'Y', 'Boş', None),
+}
+MASTER_PAGES = {}   # anahtar -> (sol Page, sağ Page)
+
+
+def build_masters():
+    MASTER_PAGES.clear()
+    for k, (name, pre, base, rub) in MASTERS.items():
+        l, r = Page('L', register=False), Page('R', register=False)
+        if rub:
+            header(l, RAPOR)
+            header(r, rub)
+        MASTER_PAGES[k] = (l, r)
 
 
 def kpi_block(pg, x, y, w, num, label, style='66 Büyük Rakam', lstyle='67 Büyük Rakam Etiket', rule=True):
@@ -314,9 +362,10 @@ def arcs(pg, cx, cy, radii, stroke='Ana Açık', tint=45, sw=0.6):
 
 def build_pages():
     PAGES.clear(); STORIES.clear()
+    build_masters()
 
     # ---- 1 KAPAK (sağ, tek sayfa)
-    p = Page('R', master='B')
+    p = Page('R', master='Y')
     p.bg('Kurumsal Ana')
     arcs(p, 205, 30, [62, 84, 106])
     p.rect(18, 18, 11, 11, fill='Paper', label='Logo')
@@ -331,27 +380,27 @@ def build_pages():
     p.text(100, 255, 85, 12, [P('65 Kapak Künye', f'2021 tarihli Usul ve Esaslar Yönetmeliği{LS}EK-1 yapısına göre hazırlanmıştır.')])
 
     # ---- 2–3 BAŞKANIN MESAJI
-    p = Page('L', master='B')
+    p = Page('L', master='Y')
     p.bg('Kurumsal Ana')
     arcs(p, -25, 305, [48, 68])
-    running(p, '2026 Faaliyet Raporu · Sunuş', dark=True)
+    header(p, 'Sunuş', dark=True)
     p.text(15, 30, 150, 40, [P('01b Bölüm Başlığı Koyu Zemin', 'Başkanın', LS, V('Mesajı'))])
     body = [P('05b Gövde Koyu Zemin', METIN1), P('05b Gövde Koyu Zemin', METIN2), P('05b Gövde Koyu Zemin', METIN4),
             P('05b Gövde Koyu Zemin', METIN3), P('05b Gövde Koyu Zemin', 'Hizmetlerimizi değerlendirirken yalnız tamamlanan işleri '
               'değil, tamamlanamayanları ve nedenlerini de açıkça yazdık. Bu rapor, önümüzdeki yılın planlamasına da yön verecektir.'),
             P('70 İmza Ad', 'Ad Soyad'), P('71 İmza Unvan', 'Büyükçekmece Belediye Başkanı')]
     p.text(15, 76, 165, 150, body, cols=2, gutter=8)
-    p = Page('R', master='B')
+    p = Page('R', master='Y')
     photo(p, 0, -BL, PW + BL, PH + 2 * BL, label='Başkan fotoğrafı (tam sayfa)')
     p.rect(0, 186, 128, PH + BL - 186, fill='Kurumsal Ana')
     p.text(14, 194, 104, 16, [P('69a Alıntı İşareti', '“')])
     p.text(14, 210, 104, 60, [P('68b Alıntı Koyu Zemin', 'Bir yılın hesabını verirken rakamların arkasındaki insanı ve mahalleyi unutmadık.')])
 
     # ---- 4–5 İÇİNDEKİLER + BİR BAKIŞTA
-    p = Page('L', master='B')
+    p = Page('L', master='Y')
     p.bg('Kurumsal Ana')
     arcs(p, -20, -20, [70, 92])
-    running(p, '2026 Faaliyet Raporu', dark=True)
+    header(p, RAPOR, dark=True)
     p.text(15, 30, 150, 20, [P('01b Bölüm Başlığı Koyu Zemin', 'İçindekiler')])
     toc = [('01', 'Genel Bilgiler', '6', ['Misyon ve Vizyon', 'Yetki, Görev ve Sorumluluklar', 'İdareye İlişkin Bilgiler'], ),
            ('02', 'Amaçlar ve Hedefler', '24', ['Temel Politika ve Öncelikler', 'Stratejik Plandaki Amaç ve Hedefler']),
@@ -369,7 +418,6 @@ def build_pages():
     p.text(40, y + 4.2, 140, 12, [P('40 İçindekiler Bölüm', 'Ekler: İç Kontrol Güvence Beyanları', '\t', '262')])
 
     p = Page('R', master='A')
-    running(p, '2026 Faaliyet Raporu · Bir Bakışta')
     p.text(20, 30, 160, 34, [P('01 Bölüm Başlığı', 'Bir Bakışta ', V('2026'))])
     p.text(20, 50, 112, 22, [P('06 Spot', 'Yılın sonuçları altı rakamda. Ayrıntılar ilgili bölümlerde.')])
     kp = [('%72', 'Kurum performans gerçekleşme oranı'), ('227', 'Performans göstergesi izlendi'), ('37', 'Müdürlük raporlarını sundu'),
@@ -383,10 +431,9 @@ def build_pages():
     p.text(20, 246, 165, 6, [P('31 Grafik Kaynak', ORNEK)])
 
     # ---- 6–7 BÖLÜM AÇILIŞI
-    p = Page('L', master='B')
+    p = Page('L', master='Y')
     photo(p, -BL, -BL, PW + BL, PH + 2 * BL, label='Bölüm görseli (tam sayfa)')
-    p = Page('R', master='B')
-    running(p, '2026 Faaliyet Raporu')
+    p = Page('R', master='Y')
     p.text(20, 22, 120, 40, [P('60 Bölüm No', '01')])
     p.text(20, 66, 150, 40, [P('01 Bölüm Başlığı', 'Genel', LS, V('Bilgiler'))])
     p.text(20, 98, 112, 36, [P('61 Bölüm Spotu', 'Belediyenin görev alanı, teşkilat yapısı, insan kaynakları ve sunduğu hizmetler.')])
@@ -424,16 +471,14 @@ def build_pages():
         P('03 Ara Başlık 2', 'Meclis ve encümen'),
         P('05 Gövde', METIN1),
     ]
-    p = Page('L', master='A')
-    running(p, 'Genel Bilgiler')
+    p = Page('L', master='B')
     (mx, mw), (sx, sw_) = p.cols()
     p.text(mx, 24, mw, 228, story=long_story)
     p.text(sx, 92, sw_, 60, [P('04 Ara Başlık 3', 'Kısaca'), P('08 Kenar Notu', 'Misyon ve vizyon metinleri 2025–2029 Stratejik Planı’ndan alınmıştır. '
                                                                     'Plan, Meclisin 2024 tarihli kararıyla kabul edilmiştir.')])
     p.line([(sx, 160), (sx + sw_, 160)], stroke='Kurumsal Vurgu', sw=1.5)
     p.text(sx, 164, sw_, 70, [P('68a Alıntı Kenar', 'Planlama, kaynakların nereye gideceğine birlikte karar vermektir.')])
-    p = Page('R', master='A')
-    running(p, 'Genel Bilgiler')
+    p = Page('R', master='B')
     (mx, mw), (sx, sw_) = p.cols()
     p.text(mx, 24, mw, 186, story=long_story)
     photo(p, sx, 24, sw_, 60, label='Görsel')
@@ -445,8 +490,7 @@ def build_pages():
         p.text(x, 237, 52, 10, [P('67 Büyük Rakam Etiket', l_)])
 
     # ---- 10–11 MÜDÜRLÜK AÇILIŞI
-    p = Page('L', master='A')
-    running(p, 'Faaliyetlere İlişkin Bilgi ve Değerlendirmeler')
+    p = Page('L', master='D')
     p.text(15, 24, 165, 8, [P('73 Etiket Turuncu', 'Hizmet alanı · Bütüncül Kent Yönetimi')])
     p.text(15, 32, 165, 36, [P('01 Bölüm Başlığı', 'Sağlık İşleri ', V('Müdürlüğü'))])
     p.text(15, 46, 112, 24, [P('06 Spot', 'Evde sağlık, psikolojik danışmanlık ve hasta nakli hizmetleri.')])
@@ -473,8 +517,7 @@ def build_pages():
     p.text(135, 130, 45, 90, [P('04 Ara Başlık 3', 'Araç ve tesis'), P('08 Kenar Notu', '3 hasta nakil aracı, 2 hizmet aracı, 1 sağlık merkezi. Ayrıntılı liste Ekler bölümündedir.'),
                               P('04 Ara Başlık 3', 'Bütçe'), P('08 Kenar Notu', 'Başlangıç ödeneği 70.000.000,00 TL; yıl sonu gideri 48.342.217,01 TL.')])
     p.text(15, 206, 112, 50, [P('02 Ara Başlık 1', 'Faaliyetler'), P('05 Gövde', METIN4)])
-    p = Page('R', master='A')
-    running(p, 'Sağlık İşleri Müdürlüğü')
+    p = Page('R', master='D')
     p.text(20, 24, 165, 60, [P('03 Ara Başlık 2', 'Evde sağlık hizmetleri'), P('05 Gövde', METIN2), P('05 Gövde', METIN3)], cols=2, gutter=8)
     gx, gy, gw, gh = 20.0, 90.0, 80.5, 55.0
     caps = ['Evde sağlık ziyareti', 'Fizyoterapi hizmeti', 'Hasta nakil aracı', 'Psikolojik danışmanlık']
@@ -487,9 +530,9 @@ def build_pages():
         kpi_block(p, 20 + i * 56.0, 222, 50, n_, l_, style='66a Büyük Rakam Yeşil')
 
     # ---- 12–13 PERFORMANS GRAFİKLERİ
-    p = Page('L', master='B')
+    p = Page('L', master='Y')
     p.bg('Kurumsal Ana')
-    running(p, 'Performans Bilgileri', dark=True)
+    header(p, RAPOR, dark=True)
     p.text(15, 30, 165, 34, [P('01b Bölüm Başlığı Koyu Zemin', 'Performans ', V('Sonuçları'))])
     p.text(15, 46, 120, 24, [P('06b Spot Koyu Zemin', 'Kurum genelinde gösterge gerçekleşmesi altı yıldır düzenli artıyor.')])
     # çizgi grafik
@@ -516,42 +559,40 @@ def build_pages():
     # halka göstergeler
     p.text(15, 176, 165, 8, [P('30b Grafik Başlığı Koyu Zemin', 'Göstergelerin Durumu')])
     for i, (v, l_) in enumerate([(72, 'Kurum performansı'), (84, 'Hedefine ulaşan gösterge'), (91, 'Tamamlanan faaliyet')]):
-        cx, cy, r = 42 + i * 55.0, 212.0, 17.0
-        p.oval(cx, cy, r, stroke='Ana Açık', sw=4.5, stint=35)
-        p.arc(cx, cy, r, 0, 360 * v / 100, stroke='Kurumsal Vurgu', sw=4.5)
-        p.text(cx - 15, cy - 3.0, 30, 9, [P('34 Gösterge Halka Rakam', f'%{v}')])
-        p.text(cx - 25, cy + r + 4, 50, 10, [P('34a Gösterge Halka Etiket', l_)])
-    p = Page('R', master='A')
-    running(p, 'Performans Bilgileri')
+        cx, cy, r, ring = 41.5 + i * 56.0, 216.0, 19.0, 7.0 * MM     # halka kalınlığı 7 mm
+        p.oval(cx, cy, r, stroke='Ana Açık', sw=ring, stint=30)
+        p.arc(cx, cy, r, 0, 360 * v / 100, stroke='Kurumsal Vurgu', sw=ring)
+        p.text(cx - 15, cy - 4.6, 30, 10, [P('34 Gösterge Halka Rakam', f'%{v}')])
+        p.text(cx - 25, cy + r + 7, 50, 10, [P('34a Gösterge Halka Etiket', l_)])
+    p = Page('R', master='D')
     p.text(20, 24, 165, 10, [P('30 Grafik Başlığı', 'Hizmet Alanlarına Göre Gösterge Gerçekleşme Oranı (%)')])
-    y = 38.0
+    y = 37.0
     mx_ = max(v for _, v in HIZMET_ALANLARI)
     for nm, v in HIZMET_ALANLARI:
-        p.text(20, y + 0.6, 58, 9, [P('32 Grafik Etiket', nm)])
-        bw = (v / 100) * 92
-        p.rect(80, y, 92, 6, fill='Zemin Gri')
-        p.rect(80, y, bw, 6, fill='Kurumsal Vurgu' if v == mx_ else 'Kurumsal Ana')
-        p.text(80 + bw + 1.5, y + 0.6, 14, 6, [P('33 Grafik Değer', f'%{v}')])
-        y += 11.0
-    p.text(20, y + 1, 165, 6, [P('31 Grafik Kaynak', ORNEK)])
+        p.text(20, y, 150, 5, [P('32 Grafik Etiket', nm)])
+        bw = (v / 100) * 150
+        p.rect(20, y + 4.6, bw, 2.4, fill='Kurumsal Vurgu' if v == mx_ else 'Kurumsal Ana')
+        p.text(20 + bw + 2, y + 3.6, 14, 5, [P('33 Grafik Değer', f'%{v}')])
+        y += 12.0
+    p.line([(20, 35), (20, y - 3)], stroke='Çizgi Gri', sw=0.4)
+    p.text(20, y - 1, 165, 6, [P('31 Grafik Kaynak', ORNEK)])
     # eşik tablosu (renk kodlu)
-    p.text(20, 132, 112, 10, [P('23 Tablo Başlığı', 'Performans Değerlendirme Ölçeği')])
+    p.text(20, 134, 112, 10, [P('23 Tablo Başlığı', 'Performans Değerlendirme Ölçeği')])
     scale = [('0', 'Gerçekleşmemiş', 'Grafik 5'), ('1–45', 'Düşük', 'Grafik 4'), ('46–75', 'Orta', 'Grafik 3'),
              ('76–109', 'Yüksek', 'Grafik 6'), ('110 ve üstü', 'Hedefin çok üstü', 'Kurumsal Vurgu')]
-    y = 142.0
+    y = 144.0
     for rng_, nm, col in scale:
         p.rect(20, y + 1, 4, 4, fill=col)
         p.text(27, y + 0.6, 40, 6, [P('13 Tablo Metin', nm)])
         p.text(70, y + 0.6, 30, 6, [P('17 Tablo Rakam', rng_)])
         p.line([(20, y + 7.5), (100, y + 7.5)], stroke='Çizgi Gri', sw=0.25)
         y += 9.0
-    p.text(115, 132, 70, 60, [P('04 Ara Başlık 3', 'Nasıl okunur'), P('08 Kenar Notu', 'Gerçekleşme oranı, gerçekleşme değerinin hedefe bölünmesiyle bulunur. '
+    p.text(115, 134, 70, 60, [P('04 Ara Başlık 3', 'Nasıl okunur'), P('08 Kenar Notu', 'Gerçekleşme oranı, gerçekleşme değerinin hedefe bölünmesiyle bulunur. '
                                                                           'Hedefi olmayan göstergede oran hesaplanmaz.')])
-    p.text(20, 200, 112, 50, [P('03 Ara Başlık 2', 'Değerlendirme'), P('05 Gövde', METIN4)])
+    p.text(20, 202, 112, 50, [P('03 Ara Başlık 2', 'Değerlendirme'), P('05 Gövde', METIN4)])
 
     # ---- 14–15 TABLOLAR
-    p = Page('L', master='A')
-    running(p, 'Mali Bilgiler')
+    p = Page('L', master='D')
     p.text(15, 24, 165, 34, [P('01 Bölüm Başlığı', 'Bütçe Uygulama ', V('Sonuçları'))])
     rng = random.Random(2026)
     rows = []
@@ -577,22 +618,21 @@ def build_pages():
     STORIES['uTab1'] = [P('23 Tablo Başlığı', 'Müdürlüklerin Bütçe Ödenekleri ve Yıl Sonu Giderleri'), ('TABLE', t),
                         P('21 Tablo Kaynak', 'Kaynak: Mali Hizmetler Müdürlüğü. ' + ORNEK)]
     p.text(15, 48, 165, 205, story='uTab1')
-    p = Page('R', master='A')
-    running(p, 'Mali Bilgiler')
+    p = Page('R', master='D')
     p.text(20, 24, 165, 10, [P('30 Grafik Başlığı', 'Ekonomik Sınıflandırmaya Göre Gider Dağılımı (%)')])
     parts = [('Personel', 18.4, 'Grafik 1'), ('SGK', 2.9, 'Grafik 6'), ('Mal ve Hizmet Alımı', 52.6, 'Grafik 3'),
              ('Faiz', 0.4, 'Grafik 5'), ('Cari Transfer', 3.1, 'Grafik 4'), ('Sermaye', 22.6, 'Kurumsal Vurgu')]
     x = 20.0
     for nm, v, col in parts:
         w_ = 165 * v / 100
-        p.rect(x, 36, w_, 14, fill=col)
+        p.rect(x, 38, w_, 7, fill=col)
         x += w_
     for i, (nm, v, col) in enumerate(parts):
         lx = 20 + (i % 3) * 56.0
-        ly = 56 + (i // 3) * 9.0
+        ly = 50 + (i // 3) * 9.0
         p.rect(lx, ly + 0.8, 3.5, 3.5, fill=col)
         p.text(lx + 5.5, ly, 50, 6, [P('32 Grafik Etiket', f'{nm}  ', ('Kalın', f'%{str(v).replace(".", ",")}'))])
-    p.text(20, 76, 165, 6, [P('31 Grafik Kaynak', ORNEK)])
+    p.text(20, 70, 165, 6, [P('31 Grafik Kaynak', ORNEK)])
     t2 = B.Table([165 * MM - 3 * mv, mv, mv, mv], header_rows=1)
     t2.row([('Ekonomik Sınıflandırma', 'Hücre Başlık Sol', '11 Tablo Başlık Sol'), ('Başlangıç Ödeneği (TL)', 'Hücre Başlık', '10 Tablo Başlık'),
             ('Kesinleşen Ödenek (TL)', 'Hücre Başlık', '10 Tablo Başlık'), ('Yıl Sonu Gideri (TL)', 'Hücre Başlık', '10 Tablo Başlık')])
@@ -605,8 +645,7 @@ def build_pages():
     p.text(20, 214, 112, 40, [P('03 Ara Başlık 2', 'Açıklama'), P('05 Gövde', METIN3)])
 
     # ---- 16 YOL HARİTASI (sol, tek)
-    p = Page('L', master='A')
-    running(p, 'Amaçlar ve Hedefler')
+    p = Page('L', master='C')
     p.text(15, 24, 110, 34, [P('01 Bölüm Başlığı', 'Stratejik Plan', LS, V('2025–2029'))])
     steps = [('2025', 'Planın kabulü', 'Amaç, hedef ve göstergeler belirlendi; sorumlu müdürlükler atandı.'),
              ('2026', 'İlk izleme yılı', 'Göstergelerin ilk gerçekleşme değerleri bu raporla yayımlandı.'),
@@ -724,20 +763,26 @@ def story_xml(sid, paras):
     for p_ in paras:
         if p_[0] == 'TABLE':
             s.table(p_[1])
-        else:
-            s.p(p_[0], *p_[1])
+            continue
+        body = []
+        for r in p_[1]:
+            if r == PAGENUM:
+                body.append('<CharacterStyleRange AppliedCharacterStyle="CharacterStyle/$ID/[No character style]"><Content><?ACE 18?></Content></CharacterStyleRange>')
+                continue
+            cs, txt = (r if isinstance(r, tuple) else ('$ID/[No character style]', r))
+            body.append(f'<CharacterStyleRange AppliedCharacterStyle={B.a("CharacterStyle/" + cs)}><Content>{escape(txt)}</Content></CharacterStyleRange>')
+        body.append('<CharacterStyleRange AppliedCharacterStyle="CharacterStyle/$ID/[No character style]"><Br /></CharacterStyleRange>')
+        s.parts.append(f'<ParagraphStyleRange AppliedParagraphStyle={B.a("ParagraphStyle/" + p_[0])}>{"".join(body)}</ParagraphStyleRange>')
     return s.xml()
 
 
-def master_xml(mid, name, prefix, base, with_footer):
+def master_xml(mid, name, prefix, base, mpages):
     sec = 'uSec1'
     parts = [B.page_xml(f'{mid}p1', prefix, 'L', 'n', sec).replace(' AppliedAlternateLayout="uSec1"', ''),
              B.page_xml(f'{mid}p2', prefix, 'R', 'n', sec).replace(' AppliedAlternateLayout="uSec1"', '')]
-    if with_footer:
-        fy1 = H / 2 - 13 * MM
-        fy2 = fy1 + 12
-        parts.append(B.frame(f'{mid}f1', 'uFootL', -W + 15 * MM, fy1, -20 * MM, fy2))
-        parts.append(B.frame(f'{mid}f2', 'uFootR', 20 * MM, fy1, W - 15 * MM, fy2))
+    for mp in mpages:
+        for it in mp.items:
+            parts.append(item_xml(mp, it))
     return (B.HEAD + f'<idPkg:MasterSpread xmlns:idPkg="{B.PKG}" DOMVersion="{B.DOM}">\n'
             f'<MasterSpread Self="{mid}" Name="{name}" NamePrefix="{prefix}" BaseName="{base}" ShowMasterItems="true" PageCount="2" '
             f'OverriddenPageItemProps="" PrimaryTextFrame="n" ItemTransform="1 0 0 1 0 0">' + ''.join(parts) + '</MasterSpread>\n</idPkg:MasterSpread>\n')
@@ -762,7 +807,7 @@ def build_idml(pages):
 
     # metin çerçevelerine kimlik ve zincir bağları
     frames_by_story = {}
-    for pg in pages:
+    for pg in pages + [mp for pair in MASTER_PAGES.values() for mp in pair]:
         for it in pg.items:
             if it['t'] == 'text':
                 it['fid'] = nid('uTF')
@@ -773,10 +818,8 @@ def build_idml(pages):
             it['next'] = frs[i + 1]['fid'] if i + 1 < len(frs) else 'n'
 
     stories = {sid: story_xml(sid, STORIES[sid]) for sid in frames_by_story}
-    stories['uFootL'] = footer_story('uFootL', True)
-    stories['uFootR'] = footer_story('uFootR', False)
-    masters = {'A': ('uMA', 'A-Metin', 'A', 'Metin', True), 'B': ('uMB', 'B-Boş', 'B', 'Boş', False)}
-    master_files = {f'MasterSpreads/MasterSpread_{m[0]}.xml': master_xml(*m) for m in masters.values()}
+    masters = {k: (f'uM{k}', v[0], v[1], v[2]) for k, v in MASTERS.items()}
+    master_files = {f'MasterSpreads/MasterSpread_{m[0]}.xml': master_xml(*m, MASTER_PAGES[k]) for k, m in masters.items()}
 
     sec = 'uSec1'
     spreads_pages = [[0]] + [[i, i + 1] if i + 1 < len(pages) else [i] for i in range(1, len(pages), 2)]
@@ -874,6 +917,6 @@ if __name__ == '__main__':
     print('sayfa', len(pages))
     print('IDML', build_idml(pages))
     import onizleme
-    print('PDF', onizleme.render(pages, STORIES, STY, RGB, CELLSTY, os.path.join(OUT, 'Civensa_Ozel_Tasarim_v2_onizleme.pdf')))
+    print('PDF', onizleme.render(pages, STORIES, STY, RGB, CELLSTY, os.path.join(OUT, 'Civensa_Ozel_Tasarim_v2_onizleme.pdf'), MASTER_PAGES))
     for w_ in B.warnings:
         print('UYARI', w_)

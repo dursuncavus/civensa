@@ -60,6 +60,31 @@ def font(family, style, tabular=False):
     return name
 
 
+VOW = set('aeıioöuüâîûAEIİOÖUÜÂÎÛ')
+WORD = __import__('re').compile(r"[A-Za-zÇĞİÖŞÜçğıöşüÂÎÛâîû]+")
+
+
+def hyph_word(w):
+    """Türkçe hece kuralı: ünlüler arasında 0 ünsüz → ünlüden önce; 1 → ünsüzden önce; 2 → aralarından;
+    3+ → son ünsüzden önce. İlk 2 ve son 2 harf bölünmez (InDesign ayarıyla aynı)."""
+    if len(w) < 6:
+        return w
+    v = [i for i, ch in enumerate(w) if ch in VOW]
+    cuts = []
+    for i, j in zip(v, v[1:]):
+        c = j - i - 1
+        b = j if c == 0 else i + 1 if c == 1 else i + 2 if c == 2 else j - 1
+        if 2 <= b <= len(w) - 2:
+            cuts.append(b)
+    for b in reversed(cuts):
+        w = w[:b] + '\u00ad' + w[b:]
+    return w
+
+
+def hyphenate(txt):
+    return WORD.sub(lambda m: hyph_word(m.group(0)), txt)
+
+
 def tr_upper(s):
     return s.replace('i', 'İ').replace('ı', 'I').upper()
 
@@ -91,7 +116,7 @@ class TabLine(Flowable):
         return self.st.spaceAfter
 
 
-def make_flowables(paras, STY, RGB, CELLSTY):
+def make_flowables(paras, STY, RGB, CELLSTY, pagenum=None):
     out = []
     for p in paras:
         if p[0] == 'TABLE':
@@ -104,15 +129,19 @@ def make_flowables(paras, STY, RGB, CELLSTY):
         al = {'LeftAlign': TA_LEFT, 'RightAlign': TA_RIGHT, 'CenterAlign': TA_CENTER, 'LeftJustified': TA_JUSTIFY}[s['just']]
         st = ParagraphStyle(name, fontName=base_font, fontSize=s['size'], leading=s['leading'], alignment=al, textColor=HexColor(color),
                             spaceBefore=s['before'], spaceAfter=s['after'], leftIndent=s['left'], firstLineIndent=s['first'] if not s['bullet'] else 0,
-                            bulletFontName=base_font, bulletFontSize=s['size'], bulletIndent=0)
+                            bulletFontName=base_font, bulletFontSize=s['size'], bulletIndent=0, embeddedHyphenation=1 if s['hyph'] else 0)
         parts_l, parts_r, side = [], [], 'l'
         for r in runs:
+            if r == ('PAGENUM', ''):
+                r = str(pagenum)
             cs, txt = r if isinstance(r, tuple) else (None, r)
             if txt == '\t':
                 side = 'r'
                 continue
             if s['caps']:
                 txt = tr_upper(txt)
+            if s['hyph']:
+                txt = hyphenate(txt)
             m = escape(txt).replace(' ', '<br/>')
             if cs == 'Kalın':
                 sty = 'Bold' if s['style'] in ('SemiBold', 'Bold', 'Medium') else 'SemiBold'
@@ -175,7 +204,7 @@ def path_of(c, pts, close=True):
     return p
 
 
-def render(pages, STORIES, STY, RGB, CELLSTY, out_pdf):
+def render(pages, STORIES, STY, RGB, CELLSTY, out_pdf, master_pages=None):
     from ozel_v2 import arc_points, PW, PH
     W, H = PW * MM, PH * MM
     spreads = [[0]] + [[i, i + 1] if i + 1 < len(pages) else [i] for i in range(1, len(pages), 2)]
@@ -194,7 +223,10 @@ def render(pages, STORIES, STY, RGB, CELLSTY, out_pdf):
             c.setFillColor(HexColor('#ffffff')); c.rect(ox, 0, W, H, stroke=0, fill=1)
             X = lambda x: ox + x * MM
             Y = lambda y: H - y * MM
-            for it in pg.items:
+            mitems = []
+            if master_pages and pg.master in master_pages:
+                mitems = master_pages[pg.master][0 if pg.side == 'L' else 1].items
+            for it in [dict(m, _master=True) for m in mitems] + pg.items:
                 t_ = it['t']
                 if t_ == 'rect':
                     pts = [(X(x), Y(y)) for x, y in it['pts']]
@@ -242,9 +274,13 @@ def render(pages, STORIES, STY, RGB, CELLSTY, out_pdf):
                     c.drawPath(p, stroke=1, fill=0)
                 elif t_ == 'text':
                     sid = it['story']
-                    if sid not in remaining:
-                        remaining[sid] = make_flowables(STORIES[sid], STY, RGB, CELLSTY)
-                    fl = remaining[sid]
+                    has_num = any(r == ('PAGENUM', '') for p_ in STORIES[sid] if p_[0] != 'TABLE' for r in p_[1])
+                    if has_num or it.get('_master'):
+                        fl = make_flowables(STORIES[sid], STY, RGB, CELLSTY, pagenum=pi + 1)
+                    else:
+                        if sid not in remaining:
+                            remaining[sid] = make_flowables(STORIES[sid], STY, RGB, CELLSTY)
+                        fl = remaining[sid]
                     x0, top, w, h = X(it['x']), Y(it['y']), it['w'] * MM, it['h'] * MM
                     n = it['cols']; g = it['gutter'] * MM
                     cw = (w - g * (n - 1)) / n

@@ -1,4 +1,4 @@
-CIVENSA ÖZEL TASARIM ŞABLONU — SÜRÜM 2 (18 Ekim 2026)
+CIVENSA ÖZEL TASARIM ŞABLONU — SÜRÜM 2.1 (18 Ekim 2026)
 Karışım: HiveArt "Sustainability and ESG Report" tasarım mantığı (koyu yeşil zemin, bol boşluk,
 yay çizgileri, yan sütunda büyük rakamlar, zaman çizelgesi) + BrandPacks "Sustainability Report"
 kapak ve bölüm açılışları (büyük numaralar, iki renkli başlıklar, görsel kullanımı, rakam şeritleri,
@@ -20,7 +20,13 @@ SAYFALAR (16 sayfa, 200 x 280 mm, 3 mm taşma payı)
 12–13 Performans: çizgi grafik, halka göstergeler, yatay çubuk grafik, renk kodlu ölçek
 14–15 Mali tablolar: müdürlük bütçe tablosu, ekonomik sınıflandırma (%100 çubuk + tablo)
 16    Stratejik plan yol haritası (zaman çizelgesi)
-Ana sayfalar: "A-Metin" (alt bilgi + sayfa numarası), "B-Boş" (koyu zemin ve tam görsel sayfaları).
+SAYFA ÜSTÜ (RUBRİK) VE SAYFA NUMARASI
+- Sayfa numarası sayfa üstünde, dış köşede; rubrikten ince dikey çizgiyle ayrılır. Sayfa altında numara yok.
+- Sol sayfa: numara | 2026 FAALİYET RAPORU. Sağ sayfa: BÖLÜM ADI | numara (aynalı).
+- Her bölümün kendi ana sayfası var: A-Ön Bölüm, B-Genel Bilgiler, C-Amaçlar ve Hedefler, D-Faaliyetler,
+  E-Kurumsal Kabiliyet, F-Öneri ve Tedbirler, G-Ekler, Y-Boş (kapak, açılış, tam görsel ve koyu zemin sayfaları).
+  Sayfaya bölümünün ana sayfasını uygula; rubrik kendiliğinden gelir.
+- Koyu zemin sayfalarında numara ve rubrik sayfanın kendisindedir (beyaz/açık yeşil stiller: 50b, 51b).
 
 KURALLAR (Plan v1.4'e göre)
 - Başlıkların yanında numara yok. Bölüm numarası yalnız ayırıcı sayfada ve içindekilerde.
@@ -39,6 +45,8 @@ STİLLER
 - Renk örnekleri: Kurumsal Ana (koyu yeşil), Kurumsal Vurgu (turuncu), Ana Açık, Metin Koyu, Metin Açık,
   Çizgi Gri, Zemin Gri, Açık Zemin, Görsel Yer Tutucu, Grafik 1–6. Renk örneğini değiştirince bağlı her şey değişir.
 - Tablo rakamlarında OpenType "Tablo Biçiminde Hizalı" açıktır (v1'deki gibi).
+- Metin stillerinde (05, 05b, 07, 08) Türkçe heceleme açık: 6 harften uzun sözcükler, ilk ve son 2 harf bölünmez,
+  art arda en çok 2 satır tire. Sözcük aralığı %85–100–125, harf aralığı -1/0/+2. Paragraf dizgisi: Adobe Paragraph Composer.
 
 GÖRSELLER
 - Gri çerçeveler görsel yer tutucudur (adı "Görsel", "Kapak görseli" ...). Çerçeveyi seçip
@@ -50,8 +58,8 @@ GRAFİKLER
   Değerler örnektir. Gerçek veriyle grafik, Civensa'dan aktarım işi kurulduğunda üretilecek.
 
 ÖNİZLEME PDF'İ
-- Civensa_Ozel_Tasarim_v2_onizleme.pdf yerleşimi görmek içindir; heceleme ve harf aralığı yaklaşık.
-  Önizlemede iki yana yaslı metindeki geniş boşluklar InDesign'da Türkçe heceleme ile kapanır.
+- Civensa_Ozel_Tasarim_v2_onizleme.pdf yerleşimi görmek içindir. Önizlemede de Türkçe hece kuralıyla tireleme yapıldı;
+  InDesign'ın kendi Türkçe sözlüğü bazı sözcükleri farklı bölebilir. Harf aralığı (tracking) önizlemede gösterilmez.
 
 BİLİNEN SINIR
 - Dosya InDesign olmayan bir ortamda üretildi; InDesign'da açılış Claude tarafından denenemedi.
