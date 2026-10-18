@@ -1,6 +1,8 @@
 """EK-1 HTML and API actions use the same authorization and transactions."""
 from fastapi import APIRouter, Depends, HTTPException, Request
-from fastapi.responses import RedirectResponse, JSONResponse
+import re
+import unicodedata
+from fastapi.responses import RedirectResponse, JSONResponse, Response
 from fastapi.exceptions import RequestValidationError
 from fastapi.routing import APIRoute
 from pydantic import BaseModel, Field, StrictInt, StrictBool, StrictStr
@@ -108,6 +110,32 @@ def register(app):
     @router.get('/api/activity-sections/reports/{document_id}')
     def data(document_id:int,db:Session=Depends(get_db),user=Depends(require_user)):
         return service.report_data(db,user,document_id)
+
+    @router.get('/activity-sections/reports/{document_id}/export.docx')
+    def export_docx(document_id:int,db:Session=Depends(get_db),user=Depends(require_user)):
+        from .ar_export import build_activity_report_docx, TEMPLATE_PATH
+        from docx.opc.exceptions import PackageNotFoundError
+        doc=service.document(db,user,document_id)
+        if user.role!='strategy' and (doc.department_id is None or doc.department_id!=user.department_id):
+            service.fail('Bu faaliyet raporunu indiremezsiniz. Kendi birim raporunuzu açın; idare raporu için Strateji ile iletişime geçin.',403)
+        payload=service.report_data(db,user,doc.id)
+        slug='idare'
+        if payload['department_id']:
+            name=payload['department'].translate(str.maketrans('ıİşŞğĞüÜöÖçÇ','iIsSgGuUoOcC'))
+            name=unicodedata.normalize('NFKD',name).encode('ascii','ignore').decode().lower()
+            slug=re.sub(r'[^a-z0-9]+','-',name).strip('-') or 'birim'
+        state='onayli' if payload['frozen'] else 'taslak'
+        filename=f"{payload['year']}-faaliyet-raporu-{slug}-{state}.docx"
+        try:
+            content=build_activity_report_docx(payload,TEMPLATE_PATH)
+        except (FileNotFoundError,PackageNotFoundError):
+            service.fail('Faaliyet raporu Word şablonu açılamadı. Sistem sorumlusundan faaliyet_raporu.docx dosyasını kontrol etmesini isteyin.',503)
+        except ValueError as error:
+            service.fail(str(error),503)
+        return Response(content,
+            media_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            headers={'Content-Disposition':f'attachment; filename="{filename}"',
+                     'Cache-Control':'private, no-store','X-Content-Type-Options':'nosniff'})
 
     @router.post('/api/activity-sections/reports/{document_id}/sections/{code}')
     def save(document_id:int,code:str,data:SectionSave,db:Session=Depends(get_db),user=Depends(require_user)):
