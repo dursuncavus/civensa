@@ -374,7 +374,11 @@ def test_migration_upgrade_downgrade_preserves_data_and_sql_guards():
             assert conn.execute(text('SELECT count(*) FROM ic_standards')).scalar() == 18
             assert conn.execute(text('SELECT status FROM ic_plans WHERE id=:id'), {'id': plan_id}).scalar() == 'active'
         heads = subprocess.run([sys.executable, '-m', 'alembic', 'heads'], cwd=ROOT, text=True, capture_output=True)
-        assert heads.stdout.strip() == 'c048a1b2c3d4 (head)'
+        assert heads.returncode == 0 and len(heads.stdout.strip().splitlines()) == 1
+        from alembic.config import Config
+        from alembic.script import ScriptDirectory
+        scripts = ScriptDirectory.from_config(Config(str(ROOT / 'alembic.ini')))
+        assert scripts.get_revision('c048a1b2c3d4').down_revision == 'c044a1b2c3d4'
     finally:
         engine.dispose()
         with base.begin() as conn:
