@@ -17,7 +17,8 @@ NOTE = 'Civensa Not'
 CAPTION = 'Civensa Tablo Başlık'
 DRAFT = 'TASLAK — onaylanmamış içerik'
 STYLES = [*(f'Civensa Başlık {i}' for i in range(1, 5)), BODY, 'Civensa Madde',
-          'Civensa Tablo', CAPTION, NOTE, 'Civensa Kapak Başlık']
+          'Civensa Tablo', CAPTION, NOTE, 'Civensa Kapak Başlık',
+          *(f'TOC {i}' for i in range(1, 4))]
 
 
 def _text(value):
@@ -27,7 +28,6 @@ def _text(value):
 def _field(paragraph, instruction, placeholder=''):
     field = OxmlElement('w:fldSimple')
     field.set(qn('w:instr'), instruction)
-    field.set(qn('w:dirty'), 'true')
     run = OxmlElement('w:r')
     text = OxmlElement('w:t')
     text.text = placeholder
@@ -53,7 +53,11 @@ class _Report:
         section.orientation = WD_ORIENT.PORTRAIT
         section.page_width, section.page_height = self.portrait
         self.doc.settings.odd_and_even_pages_header_footer = False
-        section.different_first_page_header_footer = False
+        section.different_first_page_header_footer = True
+        for part in (section.first_page_header, section.first_page_footer):
+            for node in list(part._element):
+                part._element.remove(node)
+            part.add_paragraph(style=BODY)
         header = section.header.paragraphs[0]
         header.clear()
         header.style = NOTE
@@ -67,13 +71,33 @@ class _Report:
         footer.add_run('Sayfa ')
         _field(footer, 'PAGE', '1')
         update = self.doc.settings.element.find(qn('w:updateFields'))
-        if update is None:
-            update = OxmlElement('w:updateFields')
-            self.doc.settings.element.append(update)
-        update.set(qn('w:val'), 'true')
+        if update is not None:
+            self.doc.settings.element.remove(update)
 
     def paragraph(self, text, style=BODY):
         return self.doc.add_paragraph('' if text == '' else _text(text), style)
+
+    def toc(self, sections):
+        # A complex field can contain a multi-paragraph cached result. fldSimple
+        # cannot hold these TOC paragraphs reliably in Microsoft Word.
+        paragraph = self.paragraph('')
+        begin = OxmlElement('w:fldChar')
+        begin.set(qn('w:fldCharType'), 'begin')
+        paragraph.add_run()._r.append(begin)
+        instruction = OxmlElement('w:instrText')
+        instruction.set(qn('xml:space'), 'preserve')
+        instruction.text = ' TOC \\o "1-3" \\h \\z \\u '
+        paragraph.add_run()._r.append(instruction)
+        separate = OxmlElement('w:fldChar')
+        separate.set(qn('w:fldCharType'), 'separate')
+        paragraph.add_run()._r.append(separate)
+        for section in sections:
+            level = section['depth'] + 1
+            if level <= 3:
+                paragraph = self.paragraph(section['title'], f'TOC {level}')
+        end = OxmlElement('w:fldChar')
+        end.set(qn('w:fldCharType'), 'end')
+        paragraph.add_run()._r.append(end)
 
     def orientation(self, landscape):
         section = self.doc.add_section(WD_SECTION.NEW_PAGE)
@@ -256,12 +280,11 @@ def build_activity_report_docx(payload, template_path) -> bytes:
         report.paragraph(payload['department'], 'Civensa Kapak Başlık')
     report.paragraph('').add_run().add_break(WD_BREAK.PAGE)
     report.paragraph('İçindekiler', 'Civensa Kapak Başlık')
-    toc = report.paragraph('')
-    _field(toc, 'TOC \\t "Civensa Başlık 1,1,Civensa Başlık 2,2,Civensa Başlık 3,3,Civensa Başlık 4,4" \\h \\z',
-           'İçindekiler alanını güncelleştirin.')
-    report.paragraph("Word'de güncellemek için sağ tık → Alanı Güncelleştir", NOTE)
+    report.paragraph("Sayfa numaraları için Word'de içindekilere sağ tıklayıp Alanı Güncelleştir seçin.", NOTE)
+    sections = sorted(payload['sections'], key=lambda row: row['position'])
+    report.toc(sections)
     report.paragraph('').add_run().add_break(WD_BREAK.PAGE)
-    for section in sorted(payload['sections'], key=lambda row: row['position']):
+    for section in sections:
         report.paragraph(section['title'], f"Civensa Başlık {min(section['depth'] + 1, 4)}")
         if not payload['frozen'] and section.get('missing'):
             report.paragraph('Eksikler:\n' + '\n'.join('• ' + message for message in section['missing']), NOTE)

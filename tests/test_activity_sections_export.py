@@ -45,9 +45,9 @@ def test_definition_order_cover_styles_draft_notes_and_downloads(section_client,
     assert set(STYLES) <= {s.name for s in Document(TEMPLATE_PATH).styles}
     assert all(p.style.name in STYLES for p in word.paragraphs)
     assert all(t.style.name == 'Civensa Tablo' for t in word.tables)
-    assert word.settings.element.find(qn('w:updateFields')).get(qn('w:val')) == 'true'
-    assert 'TOC' in word.element.xml and 'Civensa Başlık 4,4' in word.element.xml
-    assert "Word'de güncellemek için sağ tık → Alanı Güncelleştir" in text(word)
+    assert word.settings.element.find(qn('w:updateFields')) is None
+    assert 'TOC' in word.element.xml and '\\o "1-3"' in word.element.xml
+    assert "Sayfa numaraları için Word'de içindekilere sağ tıklayıp Alanı Güncelleştir seçin." in text(word)
     for path in ['/activity-sections', f'/activity-sections/reports/{doc.id}']:
         html = client.get(path).text
         assert 'Word olarak indir' in html and f'/reports/{doc.id}/export.docx' in html
@@ -209,3 +209,77 @@ def test_template_error_is_actionable_turkish(section_client, monkeypatch, tmp_p
     assert response.status_code == 503
     assert 'Word şablonu açılamadı' in response.json()['detail']
     assert 'Sistem sorumlusundan' in response.json()['detail']
+
+
+def assert_current_turkish_word_document(document):
+    settings = document.settings.element
+    assert settings.find(qn('w:updateFields')) is None
+    modes = [node for node in settings.iter(qn('w:compatSetting'))
+             if node.get(qn('w:name')) == 'compatibilityMode']
+    assert len(modes) == 1 and modes[0].get(qn('w:val')) == '15'
+    defaults = document.styles.element.find(qn('w:docDefaults')).find(qn('w:rPrDefault')).find(qn('w:rPr'))
+    assert defaults.find(qn('w:lang')).get(qn('w:val')) == 'tr-TR'
+    for key in ('eastAsia', 'bidi'):
+        original = Document().styles.element.find(qn('w:docDefaults')).find(qn('w:rPrDefault')).find(qn('w:rPr')).find(qn('w:lang'))
+        assert defaults.find(qn('w:lang')).get(qn('w:' + key)) == original.get(qn('w:' + key))
+    fonts = defaults.find(qn('w:rFonts'))
+    assert fonts.get(qn('w:ascii')) == fonts.get(qn('w:hAnsi')) == 'Arial'
+    assert fonts.get(qn('w:asciiTheme')) is None and fonts.get(qn('w:hAnsiTheme')) is None
+    for style in document.styles:
+        if style.name.startswith('Civensa '):
+            assert style.element.rPr.find(qn('w:lang')).get(qn('w:val')) == 'tr-TR'
+    assert document.styles['Civensa Gövde'].font.name == 'Arial'
+    assert document.styles['Civensa Gövde'].font.size == Pt(10)
+    for level in range(1, 5):
+        style = document.styles[f'Civensa Başlık {level}']
+        assert style.element.pPr.find(qn('w:outlineLvl')).get(qn('w:val')) == str(level - 1)
+    for level in range(1, 4):
+        style = document.styles[f'TOC {level}']
+        assert abs(style.paragraph_format.left_indent.twips - (level - 1) * document.styles['TOC 2'].paragraph_format.left_indent.twips) <= 1
+    first = document.sections[0]
+    assert first.different_first_page_header_footer
+    assert first._sectPr.find(qn('w:titlePg')) is not None
+    assert first.first_page_header._element.xpath('.//w:t | .//w:fldChar | .//w:fldSimple') == []
+    assert first.first_page_footer._element.xpath('.//w:t | .//w:fldChar | .//w:fldSimple') == []
+
+
+@pytest.mark.parametrize('frozen', [False, True])
+def test_word_mac_settings_cached_toc_and_cover(section_client, db, sample, frozen):
+    _, docs, _, _ = section_client
+    payload = service.report_data(db, sample['strategy'], docs['idare'].id)
+    payload.update(frozen=frozen, sha256='a' * 64)
+    word = Document(BytesIO(build_activity_report_docx(payload, TEMPLATE_PATH)))
+    assert_current_turkish_word_document(Document(TEMPLATE_PATH))
+    assert_current_turkish_word_document(word)
+    instruction = ''.join(word.element.xpath('.//w:instrText/text()'))
+    assert 'TOC' in instruction and '\\o "1-3"' in instruction and '\\u' in instruction
+    entries = []
+    within_result = False
+    finished = False
+    for paragraph in word.paragraphs:
+        markers = paragraph._p.xpath('.//w:fldChar/@w:fldCharType')
+        if 'separate' in markers:
+            within_result = True
+        if paragraph.style.name in {'TOC 1', 'TOC 2', 'TOC 3'}:
+            assert within_result and not finished
+            assert paragraph._p.xpath('.//w:tab | .//w:fldSimple') == []
+            entries.append((paragraph.style.name, paragraph.text))
+        if 'end' in markers:
+            finished = True
+            within_result = False
+    assert finished
+    assert entries == [(f"TOC {s['depth'] + 1}", s['title']) for s in payload['sections'] if s['depth'] < 3]
+    assert 'Sayfa numaraları için Word\'de içindekilere sağ tıklayıp Alanı Güncelleştir seçin.' in text(word)
+    assert all(not section.different_first_page_header_footer for section in list(word.sections)[1:])
+    assert (DRAFT in word.sections[0].header.paragraphs[0].text) is (not frozen)
+
+
+def test_checked_in_demo_has_current_word_settings_and_cached_toc():
+    from pathlib import Path
+    word = Document(Path(__file__).resolve().parents[1] / 'docs/civ046/ornek-taslak.docx')
+    assert_current_turkish_word_document(word)
+    headings = [(int(p.style.name.rsplit(' ', 1)[1]), p.text) for p in word.paragraphs
+                if p.style.name.startswith('Civensa Başlık ')]
+    entries = [(int(p.style.name[-1]), p.text) for p in word.paragraphs if p.style.name in {'TOC 1', 'TOC 2', 'TOC 3'}]
+    assert entries == [(level, title) for level, title in headings if level <= 3]
+    assert 'Hiçbir içindekiler tablosu öğesine rastlanmadı' not in text(word)
