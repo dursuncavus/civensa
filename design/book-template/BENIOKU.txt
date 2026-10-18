@@ -1,0 +1,50 @@
+CIVENSA KİTAP ŞABLONU — SÜRÜM 1 (18 Ekim 2026)
+
+AÇMA SIRASI
+1. "fontlar" klasöründeki bütün .ttf dosyalarını kur (Mac: dosyaları seç, çift tıkla, "Yükle").
+   Fira Sans, Fira Sans Condensed ve Fira Sans Extra Condensed ailesi gelir. Lisans: SIL Open Font
+   License — ücretsiz, kitapta, web'de ve Word'de kullanılabilir (OFL-lisans.txt).
+2. InDesign'ı fontlar kurulduktan SONRA aç; Civensa_Kitap_Sablonu.idml dosyasını aç.
+3. Hemen "Farklı Kaydet" ile .indd olarak kaydet. Bundan sonra .indd üzerinde çalış.
+
+SAYFA
+- 200 x 280 mm, karşılıklı sayfalar, 3 mm taşma payı (eski kitapla aynı ölçü).
+- Kenar boşlukları: üst 20, alt 22, iç 20, dış 15 mm. Ana sayfa "A-Metin": sayfa numarası ve alt bilgi.
+- Sayfa 1–19: tek akan metin (stil kılavuzu + Tablo 1–5). Sayfa 20–21: yatay döndürülmüş Tablo 6.
+  Metin taşarsa sayfa ekle; tablolar sayfa sonunda bölünür, başlık satırı tekrarlanır.
+
+STİLLER (hepsi numaralı)
+- Paragraf: 01–08 başlık ve metin · 10–22 tablo · 30–31 grafik · 40–41 içindekiler · 50–51 sayfa öğeleri.
+- Karakter: Kalın, İtalik, Rakam Tabular, Vurgu Renk.
+- Hücre: Hücre Başlık, Hücre Etiket, Hücre Metin, Hücre Metin Uzun, Hücre Rakam, Hücre Toplam ...
+- Tablo: Tablo Standart, Tablo Kart.
+- Renk örnekleri: Kurumsal Ana, Kurumsal Vurgu, Metin Koyu, Çizgi Gri, Zemin Gri, Grafik 1–6.
+  Renk örneğini değiştirdiğinde ona bağlı bütün stiller değişir.
+
+RAKAM HİZASI — ÖNEMLİ
+- Tablo rakam stillerinde (17, 18, 19, 20) OpenType "Tablo Biçiminde Hizalı" (Tabular Lining) açıktır.
+- Fira Sans'ın varsayılan rakamları orantılıdır. Yeni bir rakam stili kurarsan bu seçeneği aç:
+  Paragraf Stili Seçenekleri → OpenType Özellikleri → Rakam Stili: Tablo Biçiminde Hizalı.
+- Fira'da normal ve kalın tabular rakamlar aynı genişliktedir; kalın toplam satırı da hizalı kalır.
+- Para tutarları her zaman iki ondalıklı olduğu için sağa hizalama + tabular rakam = virgüller alt alta.
+  Ondalık sayısı değişen gösterge değerlerinde tam virgül hizası istersen "Ondalığa Hizala" sekmesi kullan.
+
+ÖRNEK VERİ
+- Metinler gerçek kitaptaki (d3 baskı dosyası) en uzun değerlerdir: gerekçe 1.792, göstergeye ilişkin
+  açıklama 1.754, faaliyet adı 324, gösterge adı 164 karakter; müdürlük adı "Basın, Yayın ve Halkla
+  İlişkiler Müdürlüğü".
+- Tutarlar güvenlik paylı: müdürlük tabloları 9.999.999.999,99 · kurum toplamı 99.999.999.999,99 ·
+  gösterge 99.999.999. İçerik doğru değildir; yalnız biçim içindir.
+- "-" veri yok, "0,00" sıfır demektir; ikisi farklı görünmeli.
+
+GRAFİKLER ("grafikler" klasörü)
+- 01 halka (ekonomik sınıflandırma) · 02 yatay çubuk (33 müdürlük, uzun etiketler) · 03 sütun (nüfus) ·
+  04 çizgi (program grupları, tahmin ayrımı) · 05 %100 yığılmış çubuk (personel durumu).
+- .svg: Illustrator'da aç; yazılar canlı metindir, font ve renk değiştirilebilir.
+- .pdf: InDesign'a doğrudan yerleştirilebilir; Illustrator'da da açılır.
+- _onizleme.png: yalnızca bakmak için.
+- Renkler Grafik 1–6 örnekleriyle aynı sıradadır. Değerler örnektir.
+
+BİLİNEN SINIR
+- Dosya InDesign olmayan bir ortamda üretildi; InDesign'da açılış Claude tarafından denenemedi.
+  Açılırken uyarı ya da bozukluk görürsen ekran görüntüsünü gönder.
