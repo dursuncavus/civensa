@@ -50,10 +50,10 @@ def live_client(db, sample):
     app.dependency_overrides.clear()
 
 
-def login(client, email, password=PASSWORD):
+def login(client, email, password=PASSWORD, *, expected_path="/modules"):
     response = client.post('/login', data={'email': email, 'password': password})
-    assert response.status_code == 303 and response.headers['location'] == '/modules', response.text
-    page = client.get('/modules')
+    assert response.status_code == 303 and response.headers['location'] == expected_path, response.text
+    page = client.get(expected_path)
     assert page.status_code == 200
     return CSRF_RE.search(page.text).group(1)
 
@@ -195,7 +195,7 @@ def test_account_csv_round_trip_with_a_guarded_department_name(backend, live_cli
     rows = read_csv(strategy.get('/api/users/missing-departments.csv'))
 
     def preview(department_name):
-        rows[1][1:5] = [department_name, 'Yeni Kullanıcı', 'yeni@example.invalid', 'GeciciParola1']
+        rows[1][1:5] = [department_name, 'Yeni Kullanıcı', 'yeni@example.invalid', 'Personel']
         out = io.StringIO(); csv.writer(out).writerows(rows)
         return strategy.post('/api/users/bulk-preview', headers={'X-CSRF-Token': csrf},
                              files={'file': ('hesaplar.csv', out.getvalue().encode('utf-8'), 'text/csv')}).json()
@@ -242,7 +242,11 @@ def test_password_reset_rejects_every_old_session_of_that_user_only(backend, liv
     assert response.status_code == 401
     assert indicator_value(db) == before
     # 5. A fresh login with the new password works; the old password no longer does.
-    second = live_client(); csrf_a_second = login(second, victim.email, NEW_PASSWORD)
+    second = live_client(); csrf_a_second = login(second, victim.email, NEW_PASSWORD, expected_path='/change-password')
+    assert second.get('/modules').status_code == 303
+    personal = NEW_PASSWORD + '-personal'
+    assert second.post('/api/me/change-password', headers={'X-CSRF-Token': csrf_a_second}, json={
+        'current_password': NEW_PASSWORD, 'new_password': personal, 'confirmation': personal}).status_code == 200
     assert second.get('/modules').status_code == 200
     response = second.post(f'/api/indicators/{sample["indicator"].id}/save',
                            headers={'X-CSRF-Token': csrf_a_second}, json={'value_2027_target': '9'})
@@ -304,7 +308,7 @@ def test_reset_to_the_same_password_and_self_reset_still_end_sessions(backend, l
     assert strategy.post(f'/api/users/{sample["strategy"].id}/reset-password', headers={'X-CSRF-Token': csrf},
                          json={'password': NEW_PASSWORD}).status_code == 200
     assert replay(live_client, own).get('/modules').status_code == 401
-    assert login(live_client(), sample['strategy'].email, NEW_PASSWORD)
+    assert login(live_client(), sample['strategy'].email, NEW_PASSWORD, expected_path='/change-password')
 
 
 @pytest.mark.postgres
