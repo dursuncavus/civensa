@@ -170,28 +170,62 @@ def tint(hexc, t):
 
 
 def make_table(t, STY, RGB, CELLSTY):
-    data, cmds = [], []
+    ncol = len(t.widths)
+    data = [['' for _ in range(ncol)] for _ in t.rows]
+    cmds, covered = [], set()
     for r, cells in enumerate(t.rows):
-        row = []
-        for c, cdef in enumerate(cells):
+        col = 0
+        for cdef in cells:
+            while (col, r) in covered:
+                col += 1
             content, cstyle, pstyle = cdef[0], cdef[1], cdef[2]
+            span = cdef[3] if len(cdef) > 3 else 1
+            rowspan = 1
+            if isinstance(span, tuple):
+                span, rowspan = span
+            for dc in range(span):
+                for dr in range(rowspan):
+                    if dc or dr:
+                        covered.add((col + dc, r + dr))
             runs = content if isinstance(content, list) else [content]
-            row.append(make_flowables([(pstyle, runs)], STY, RGB, CELLSTY)[0])
+            data[r][col] = make_flowables([(pstyle, runs)], STY, RGB, CELLSTY)[0]
+            c2, r2 = col + span - 1, r + rowspan - 1
+            if span > 1 or rowspan > 1:
+                cmds.append(('SPAN', (col, r), (c2, r2)))
             fill, ft, top, bot = CELLSTY[cstyle]
             if fill:
-                cmds.append(('BACKGROUND', (c, r), (c, r), HexColor(tint(RGB[fill], ft))))
+                cmds.append(('BACKGROUND', (col, r), (c2, r2), HexColor(tint(RGB[fill], ft))))
             if top:
-                cmds.append(('LINEABOVE', (c, r), (c, r), top[0], HexColor(RGB[top[1]])))
+                cmds.append(('LINEABOVE', (col, r), (c2, r), top[0], HexColor(RGB[top[1]])))
             if bot:
-                cmds.append(('LINEBELOW', (c, r), (c, r), bot[0], HexColor(RGB[bot[1]])))
-        data.append(row)
-    cmds += [('VALIGN', (0, 0), (-1, -1), 'TOP'), ('VALIGN', (0, 0), (-1, t.header_rows - 1 if t.header_rows else 0), 'BOTTOM'),
+                cmds.append(('LINEBELOW', (col, r2), (c2, r2), bot[0], HexColor(RGB[bot[1]])))
+            col += span
+    cmds += [('VALIGN', (0, 0), (-1, -1), 'TOP'),
              ('LEFTPADDING', (0, 0), (-1, -1), 3), ('RIGHTPADDING', (0, 0), (-1, -1), 3),
              ('TOPPADDING', (0, 0), (-1, -1), 2.5), ('BOTTOMPADDING', (0, 0), (-1, -1), 2.5)]
+    if t.header_rows:
+        cmds.append(('VALIGN', (0, 0), (-1, t.header_rows - 1), 'BOTTOM'))
     tb = Table(data, colWidths=t.widths, repeatRows=t.header_rows)
     tb.setStyle(TableStyle(cmds))
     tb.hAlign = 'LEFT'
     return tb
+
+
+def flow(frame, fl, canv):
+    """Frame.addFromList bölmez; tablo ve paragrafları kalan alana göre böl."""
+    while fl:
+        f = fl[0]
+        if frame.add(f, canv):
+            fl.pop(0)
+            continue
+        parts = frame.split(f, canv)
+        if len(parts) >= 2:
+            fl.pop(0)
+            fl[0:0] = parts
+            if frame.add(fl[0], canv):
+                fl.pop(0)
+                continue
+        break
 
 
 def path_of(c, pts, close=True):
@@ -255,7 +289,9 @@ def render(pages, STORIES, STY, RGB, CELLSTY, out_pdf, master_pages=None):
                     pts = [(X(x), Y(y)) for x, y in it['pts']]
                     c.setStrokeColor(HexColor(tint(RGB[it['stroke']], it['tint']))); c.setLineWidth(it['sw'])
                     c.setLineCap(1 if it['cap'] == 'RoundEndCap' else 0)
+                    c.setDash([3 * it['sw'], 2 * it['sw']] if it.get('dash') else [])
                     c.drawPath(path_of(c, pts, close=False), stroke=1, fill=0)
+                    c.setDash([])
                 elif t_ == 'oval':
                     if it['fill']:
                         c.setFillColor(HexColor(tint(RGB[it['fill']], it['tint'])))
@@ -288,9 +324,19 @@ def render(pages, STORIES, STY, RGB, CELLSTY, out_pdf, master_pages=None):
                         tot = sum(f.wrap(cw, h)[1] + (f.getSpaceAfter() if hasattr(f, 'getSpaceAfter') else 0) for f in fl)
                         shift = (h - tot) if it['valign'] == 'BottomAlign' else (h - tot) / 2
                         top -= max(0, shift)
+                    if it.get('rot'):
+                        # alan sol-alt köşesine taşı, 90° döndür: iç genişlik = alan yüksekliği
+                        c.saveState()
+                        c.translate(X(it['x']), Y(it['y'] + it['h']))
+                        c.rotate(90)
+                        iw, ih = it['h'] * MM, it['w'] * MM
+                        fr = Frame(0, -ih, iw, ih, leftPadding=0, rightPadding=0, topPadding=0, bottomPadding=0, showBoundary=0)
+                        flow(fr, fl, c)
+                        c.restoreState()
+                        continue
                     for k2 in range(n):
                         fr = Frame(x0 + k2 * (cw + g), top - h, cw, h, leftPadding=0, rightPadding=0, topPadding=0, bottomPadding=0, showBoundary=0)
-                        fr.addFromList(fl, c)
+                        flow(fr, fl, c)
             c.restoreState()
         c.showPage()
     # taşan metin kontrolü (son çerçeveden sonra kalan)

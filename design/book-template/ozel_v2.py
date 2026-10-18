@@ -127,6 +127,10 @@ def define_styles():
     para('16 Tablo Toplam Etiket', FC, 'SemiBold', 7.5, 9.5)
     para('17 Tablo Rakam', FX, 'Regular', 7.5, 9.5, just='RightAlign', tabular=True, nobreak=True)
     para('18 Tablo Rakam Toplam', FX, 'SemiBold', 7.5, 9.5, just='RightAlign', tabular=True, nobreak=True)
+    para('14 Tablo Metin Uzun', FS, 'Regular', 7.5, 10.5, just='LeftJustified', after=3, hyph=True)
+    para('15 Tablo Alt Satır', FC, 'Italic', 7, 9, color='Metin Açık', left=8)
+    para('19 Tablo Rakam Gösterge', FC, 'Regular', 7.5, 9.5, just='RightAlign', tabular=True, nobreak=True)
+    para('20 Tablo Rakam Geniş Tablo', FX, 'Regular', 6.5, 8, just='RightAlign', tabular=True, nobreak=True)
     para('21 Tablo Kaynak', FC, 'Italic', 6.5, 8.5, color='Metin Açık', before=3)
     para('22 Tablo Kapsayıcı', FS, 'Regular', 4, 4, after=2)
     para('23 Tablo Başlığı', FS, 'SemiBold', 9, 11.5, after=5, keep=1)
@@ -141,6 +145,7 @@ def define_styles():
     para('33 Grafik Değer', FC, 'SemiBold', 7.5, 9, tabular=True)
     para('33b Grafik Değer Koyu Zemin', FC, 'SemiBold', 7.5, 9, color=KZ, tabular=True)
     para('34 Gösterge Halka Rakam', FS, 'Medium', 20, 22, just='CenterAlign', color=KZ, tracking=-10)
+    para('35 Halka Merkez Rakam', FS, 'Medium', 18, 20, just='CenterAlign', color='Kurumsal Ana', tracking=-10)
     para('34a Gösterge Halka Etiket', FS, 'Regular', 7.5, 10, just='CenterAlign', color='Ana Açık')
     # 40–42 içindekiler
     para('40 İçindekiler Bölüm', FS, 'Medium', 12, 15, color=KZ, tabs=[('RightAlign', 140 * MM, ' ')])
@@ -193,7 +198,15 @@ def define_styles():
     B.cell('Hücre Rakam', '17 Tablo Rakam', inset=(2.5, 3, 2.5, 3), bottom=(0.25, 'Çizgi Gri'))
     B.cell('Hücre Toplam', '16 Tablo Toplam Etiket', fill='Açık Zemin', top=(0.75, 'Kurumsal Ana'), bottom=(1.5, 'Kurumsal Vurgu'))
     B.cell('Hücre Toplam Rakam', '18 Tablo Rakam Toplam', fill='Açık Zemin', top=(0.75, 'Kurumsal Ana'), bottom=(1.5, 'Kurumsal Vurgu'))
+    B.cell('Hücre Etiket', '12 Tablo Etiket', fill='Açık Zemin', inset=(2.5, 3, 2.5, 3), bottom=(0.5, 'Paper'))
+    B.cell('Hücre Bölüm Satırı', '12 Tablo Etiket', fill='Kurumsal Ana', tint=15, valign='CenterAlign', inset=(3, 3, 3, 3), bottom=(0.5, 'Paper'))
+    B.cell('Hücre Metin Uzun', '14 Tablo Metin Uzun', inset=(3, 3, 1.5, 3), bottom=(0.25, 'Çizgi Gri'))
+    B.cell('Hücre Rakam Gösterge', '19 Tablo Rakam Gösterge', inset=(2.5, 3, 2.5, 3), bottom=(0.25, 'Çizgi Gri'))
+    B.cell('Hücre Rakam Geniş', '20 Tablo Rakam Geniş Tablo', inset=(2, 1.5, 2, 1.5), bottom=(0.25, 'Çizgi Gri'))
+    B.cell('Hücre Alt Satır', '15 Tablo Alt Satır', inset=(1.5, 3, 1.5, 3), bottom=(0.25, 'Zemin Gri'))
+    B.cell('Hücre Alt Satır Rakam', '17 Tablo Rakam', inset=(1.5, 3, 1.5, 3), bottom=(0.25, 'Zemin Gri'))
     B.tablestyle('Tablo Standart', 'Hücre Başlık', 'Hücre Metin')
+    B.tablestyle('Tablo Kart', 'Hücre Başlık', 'Hücre Metin')
 
 
 CELLSTY = {   # önizleme: hücre stili -> (zemin, tint, üst çizgi, alt çizgi)
@@ -202,6 +215,13 @@ CELLSTY = {   # önizleme: hücre stili -> (zemin, tint, üst çizgi, alt çizgi
     'Hücre Metin': (None, None, None, (0.25, 'Çizgi Gri')),
     'Hücre Rakam': (None, None, None, (0.25, 'Çizgi Gri')),
     'Hücre Toplam': ('Açık Zemin', None, (0.75, 'Kurumsal Ana'), (1.5, 'Kurumsal Vurgu')),
+    'Hücre Etiket': ('Açık Zemin', None, None, (0.5, 'Paper')),
+    'Hücre Bölüm Satırı': ('Kurumsal Ana', 15, None, (0.5, 'Paper')),
+    'Hücre Metin Uzun': (None, None, None, (0.25, 'Çizgi Gri')),
+    'Hücre Rakam Gösterge': (None, None, None, (0.25, 'Çizgi Gri')),
+    'Hücre Rakam Geniş': (None, None, None, (0.25, 'Çizgi Gri')),
+    'Hücre Alt Satır': (None, None, None, (0.25, 'Zemin Gri')),
+    'Hücre Alt Satır Rakam': (None, None, None, (0.25, 'Zemin Gri')),
     'Hücre Toplam Rakam': ('Açık Zemin', None, (0.75, 'Kurumsal Ana'), (1.5, 'Kurumsal Vurgu')),
 }
 
@@ -249,8 +269,8 @@ class Page:
     def poly(self, pts, fill=None, tint=None, photo=False, label=None):
         self.items.append(dict(t='rect', pts=pts, fill=fill, tint=tint, stroke=None, sw=0, stint=None, photo=photo, label=label))
 
-    def line(self, pts, stroke='Metin Koyu', sw=0.5, tint=None, cap='ButtEndCap'):
-        self.items.append(dict(t='line', pts=pts, stroke=stroke, sw=sw, tint=tint, cap=cap))
+    def line(self, pts, stroke='Metin Koyu', sw=0.5, tint=None, cap='ButtEndCap', dash=False):
+        self.items.append(dict(t='line', pts=pts, stroke=stroke, sw=sw, tint=tint, cap=cap, dash=dash))
 
     def oval(self, cx, cy, r, fill=None, tint=None, stroke=None, sw=0.0, stint=None):
         self.items.append(dict(t='oval', cx=cx, cy=cy, r=r, fill=fill, tint=tint, stroke=stroke, sw=sw, stint=stint))
@@ -258,11 +278,12 @@ class Page:
     def arc(self, cx, cy, r, a0, a1, stroke, sw, tint=None, cap='ButtEndCap'):
         self.items.append(dict(t='arc', cx=cx, cy=cy, r=r, a0=a0, a1=a1, stroke=stroke, sw=sw, tint=tint, cap=cap))
 
-    def text(self, x, y, w, h, paras=None, story=None, cols=1, gutter=5.0, valign='TopAlign', name=None):
+    def text(self, x, y, w, h, paras=None, story=None, cols=1, gutter=5.0, valign='TopAlign', name=None, rot=False):
+        """rot=True: alan (x, y, w, h) sayfada; metin 90° döner (yatay tablo). Satırlar soldan sağa ilerler."""
         if story is None:
             story = nid('uS')
             STORIES[story] = paras
-        self.items.append(dict(t='text', x=x, y=y, w=w, h=h, story=story, cols=cols, gutter=gutter, valign=valign))
+        self.items.append(dict(t='text', x=x, y=y, w=w, h=h, story=story, cols=cols, gutter=gutter, valign=valign, rot=rot))
         return story
 
 
@@ -729,8 +750,9 @@ def item_xml(pg, it):
     if it['t'] == 'line':
         pts = [((fx(x), sy(y)),) * 3 for x, y in it['pts']]
         return (f'<GraphicLine Self="{nid()}" ContentType="Unassigned" Visible="true" Name="$ID/" ItemLayer="{B.LAYER}" '
-                f'{color_attrs(None, None, it["stroke"], it["sw"], it["tint"])} EndCap="{it["cap"]}" AppliedObjectStyle="ObjectStyle/$ID/[None]" '
-                f'ItemTransform="1 0 0 1 0 0">{geom(pts, open_=len(pts) > 1)}</GraphicLine>')
+                f'{color_attrs(None, None, it["stroke"], it["sw"], it["tint"])} EndCap="{it["cap"]}" '
+                + ('StrokeType="StrokeStyle/$ID/Canned Dashed 3x2" ' if it.get('dash') else '')
+                + f'AppliedObjectStyle="ObjectStyle/$ID/[None]" ItemTransform="1 0 0 1 0 0">{geom(pts, open_=len(pts) > 1)}</GraphicLine>')
     if it['t'] == 'oval':
         cx, cy, r = it['cx'], it['cy'], it['r']
         k = 0.5523 * r
@@ -748,11 +770,17 @@ def item_xml(pg, it):
                 f'ItemTransform="1 0 0 1 0 0">{geom(pts, open_=True)}</GraphicLine>')
     if it['t'] == 'text':
         x1, y1, x2, y2 = fx(it['x']), sy(it['y']), fx(it['x'] + it['w']), sy(it['y'] + it['h'])
+        transform = '1 0 0 1 0 0'
+        if it.get('rot'):
+            # iç kutu: genişlik = alan yüksekliği, yükseklik = alan genişliği; saat yönü tersine 90°
+            iw, ih = it['h'] * MM, it['w'] * MM
+            transform = f'0 -1 1 0 {B.fmt(x1)} {B.fmt(y2)}'
+            x1, y1, x2, y2 = 0.0, 0.0, iw, ih
         pts = [((x1, y1),) * 3, ((x1, y2),) * 3, ((x2, y2),) * 3, ((x2, y1),) * 3]
         fid = it['fid']
         return (f'<TextFrame Self="{fid}" ParentStory="{it["story"]}" PreviousTextFrame="{it["prev"]}" NextTextFrame="{it["next"]}" '
                 f'ContentType="TextType" ItemLayer="{B.LAYER}" FillColor="Swatch/None" StrokeColor="Swatch/None" StrokeWeight="0" '
-                f'AppliedObjectStyle="ObjectStyle/$ID/[Normal Text Frame]" ItemTransform="1 0 0 1 0 0" Visible="true" Name="$ID/">'
+                f'AppliedObjectStyle="ObjectStyle/$ID/[Normal Text Frame]" ItemTransform="{transform}" Visible="true" Name="$ID/">'
                 f'{geom(pts)}<TextFramePreference TextColumnCount="{it["cols"]}" TextColumnGutter="{B.fmt(it["gutter"] * MM)}" '
                 f'AutoSizingType="Off" VerticalJustification="{it["valign"]}" /></TextFrame>')
     raise ValueError(it['t'])
@@ -798,7 +826,7 @@ def footer_story(sid, left):
     return st.xml()
 
 
-def build_idml(pages):
+def build_idml(pages, name='Civensa_Ozel_Tasarim_v2'):
     B.SRC = os.path.join(HERE, '..', 'idml')
     os.makedirs(OUT, exist_ok=True)
     define_styles()
@@ -855,7 +883,7 @@ def build_idml(pages):
     kept = [c for c in rest if not c.startswith(drop)]
     story_ids = list(stories)
     doc_open = re.sub(r'StoryList="[^"]*"', f'StoryList="{" ".join(story_ids)}"', doc_open)
-    doc_open = re.sub(r'Name="[^"]*\.indd"', 'Name="Civensa_Ozel_Tasarim_v2.indd"', doc_open)
+    doc_open = re.sub(r'Name="[^"]*\.indd"', f'Name="{name}.indd"', doc_open)
     doc_open = re.sub(r'ActiveLayer="[^"]*"', f'ActiveLayer="{B.LAYER}"', doc_open)
     layer = (f'<Layer Self="{B.LAYER}" Name="Katman 1" Visible="true" Locked="false" IgnoreWrap="false" ShowGuides="true" LockGuides="false" UI="true" Expendable="true" Printable="true">'
              '<Properties><LayerColor type="enumeration">LightBlue</LayerColor></Properties></Layer>')
@@ -901,7 +929,7 @@ def build_idml(pages):
     missing = B.check_style_refs(list(files.values()), styles)
     if missing:
         raise SystemExit(f'tanımsız stil: {missing}')
-    target = os.path.join(OUT, 'Civensa_Ozel_Tasarim_v2.idml')
+    target = os.path.join(OUT, f'{name}.idml')
     with zipfile.ZipFile(target, 'w') as z:
         z.writestr(zipfile.ZipInfo('mimetype'), 'application/vnd.adobe.indesign-idml-package', compress_type=zipfile.ZIP_STORED)
         for name, text in files.items():

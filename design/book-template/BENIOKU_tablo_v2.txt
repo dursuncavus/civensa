@@ -1,0 +1,45 @@
+CIVENSA TABLO ŞABLONU — SÜRÜM 2 (18 Ekim 2026)
+v1'deki altı tablo ve beş grafik, aynı en uzun gerçek verilerle, özel tasarım v2.1'in stilleriyle
+(renkler, fontlar, rubrik ve sayfa numarası, kurallar) yeniden kuruldu.
+
+AÇMA SIRASI
+1. "fontlar" klasöründeki bütün .ttf dosyalarını kur (Fira Sans, Fira Sans Condensed,
+   Fira Sans Extra Condensed, Literata). Özel tasarım paketini kurduysan yeniden kurmana gerek yok.
+2. InDesign'ı fontlar kurulduktan SONRA aç; Civensa_Tablo_Sablonu_v2.idml dosyasını aç.
+3. Hemen "Farklı Kaydet" ile .indd olarak kaydet.
+
+SAYFALAR (11 sayfa, 200 x 280 mm)
+ 1–6   Akan tablo metni: Tablo 1 program bütçe kartı, Tablo 2 alt program faaliyet maliyetleri,
+       Tablo 3 müdürlük faaliyet maliyetleri (bütçe içi/dışı), Tablo 4 ekonomik sınıflandırma,
+       Tablo 5 33 müdürlük bütçe dağılımı. Sayfa 6 boş bırakıldı: InDesign tabloları önizlemeden
+       biraz uzun dizerse metin oraya akar, taşma olmaz. Gerekmezse sayfayı sil.
+ 7     Grafik 1: 33 müdürlük, uzun etiketli yatay çubuk.
+ 8–9   Grafik 2 halka, Grafik 3 sütun, Grafik 4 çizgi (tahmin kesikli), Grafik 5 %100 yığılmış çubuk.
+10–11  Tablo 6: 13 sütunlu ekonomik kod tablosu, 90° döndürülmüş yatay çerçevede.
+       Tablo tek sayfaya sığıyor; sayfa 11'deki ikinci çerçeve yedektir.
+Ana sayfalar: A-Tablolar, B-Grafikler (sayfa üstünde aynalı rubrik + numara), Y-Boş.
+
+ÖRNEK VERİ (v1 ile aynı)
+- Gerekçe 1.792, göstergeye ilişkin açıklama 1.754, faaliyet adı 324, gösterge adı 164 karakter;
+  en uzun müdürlük adı "Basın, Yayın ve Halkla İlişkiler Müdürlüğü".
+- Tutarlar güvenlik paylı: müdürlük 9.999.999.999,99 · kurum toplamı 99.999.999.999,99 · gösterge 99.999.999.
+- "-" veri yok, "0,00" sıfır demektir. İçerik doğru değildir; yalnız biçim içindir.
+
+KURALLAR
+- Birim sütun başlığında: "2027 Bütçe (TL)", "Toplam Bütçeye Oranı (%)". Hücrelerde TL ve % yok.
+  Göstergelerde birim satır başına değiştiği için ayrı "Ölçü Birimi" sütunu var.
+- Tablo numarası ("Tablo 1.") başlık numarası değildir; kalır.
+- Tablo rakam stillerinde (17, 18, 19, 20) OpenType "Tablo Biçiminde Hizalı" açık. Yeni rakam stili
+  kurarsan bu seçeneği aç; Fira'da kalın ve normal tabular rakam aynı genişlikte.
+
+STİLLER
+- Özel tasarım dosyasıyla aynı adlar. Tablo: 10–23 (14 uzun metin hücresi, 15 bütçe içi/dışı alt satır,
+  19 gösterge rakamı, 20 geniş tablo rakamı). Hücre: Hücre Başlık, Başlık Sol, Etiket, Bölüm Satırı,
+  Metin, Metin Uzun, Rakam, Rakam Gösterge, Rakam Geniş, Alt Satır, Alt Satır Rakam, Toplam, Toplam Rakam.
+- Tablo stilleri: Tablo Standart, Tablo Kart. Grafik: 30–35.
+- İki dosyada stiller aynı ada sahip olduğu için düzelttiğin stilleri InDesign'da birinden diğerine
+  "Stilleri Yükle" ile aktarabilirsin.
+
+BİLİNEN SINIR
+- InDesign'da açılış Claude tarafından denenemedi. Uyarı ya da bozukluk görürsen ekran görüntüsü gönder.
+- Önizleme PDF'i yaklaşıktır; satır ve tablo yükseklikleri InDesign'da biraz farklı çıkabilir.
