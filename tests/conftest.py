@@ -81,11 +81,21 @@ def sample(db):
     # retaining old workflow guards. Supply only the new User fields in those
     # fixtures; CIV-025's own migration tests use raw pre-migration rows instead.
     schema = db.get_bind().get_execution_options().get('schema_translate_map', {}).get(None)
+    # Historical workflow probes use today's Activity ORM before CIV-031. Supply
+    # the default flag only for that seed; the dedicated raw migration test proves
+    # CIV-031 adds it to a populated base without changing values.
+    activity_columns = {column['name'] for column in inspect(db.get_bind()).get_columns('activities', schema=schema)}
+    if 'contract_bound' not in activity_columns:
+        db.execute(text('ALTER TABLE activities ADD COLUMN contract_bound BOOLEAN NOT NULL DEFAULT false'))
     user_columns = {column['name'] for column in inspect(db.get_bind()).get_columns('users', schema=schema)}
     if 'position' not in user_columns:
         db.execute(text("ALTER TABLE users ADD COLUMN position VARCHAR(20) NOT NULL DEFAULT 'staff' "
                         "CONSTRAINT ck_user_position CHECK (position IN ('staff', 'director')) "
                         "CONSTRAINT ck_director_department CHECK (position != 'director' OR department_id IS NOT NULL)"))
+    if 'must_change_password' not in user_columns:
+        # Only model-based historical workflow seeds use this adapter. The
+        # CIV-044 migration test inserts raw c031 rows to exercise the real upgrade.
+        db.execute(text('ALTER TABLE users ADD COLUMN must_change_password BOOLEAN NOT NULL DEFAULT false'))
     if 'can_submit' not in user_columns:
         db.execute(text("ALTER TABLE users ADD COLUMN can_submit BOOLEAN NOT NULL DEFAULT false"))
     # Historical checkpoints also predate CIV-027. Model-based fixtures need

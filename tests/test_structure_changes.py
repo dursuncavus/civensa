@@ -247,7 +247,8 @@ def test_additive_migration_preserves_rows_names_and_guards_after_downgrade(foun
     assert db.execute(text('SELECT display_name FROM department_scopes')).scalar()=='Eski Ad'
     db.commit();migrate('upgrade','head')
     scripts=ScriptDirectory.from_config(Config(str(ROOT/'alembic.ini')))
-    assert scripts.get_heads()==['c0272027a001']
+    assert len(scripts.get_heads()) == 1
+    assert 'c0272027a001' in {r.revision for r in scripts.iterate_revisions('head', 'c0292027a001')}
     assert scripts.get_revision('c0272027a001').down_revision == 'c0292027a001'
     assert db.execute(text('SELECT COUNT(*) FROM departments')).scalar()==2
     assert db.execute(text('SELECT COUNT(*) FROM structure_change_transfers')).scalar()==1

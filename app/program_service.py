@@ -21,6 +21,65 @@ ECONOMIC_CATEGORIES = {
 PROGRAM_GROUPS = {'service': 'Hizmet Programları', 'management': 'Yönetim ve Destek Programı', 'outside_program': 'Program Dışı Giderler', 'unallocated': 'Program Grubu Belirlenmeli'}
 
 
+def save_catalogue_entry(db, period_id, values, department_ids, actor, obj=None, source=None):
+    """Shared catalogue write path. Caller owns the transaction; audit is atomic."""
+    if not db.get(ReportingPeriod, period_id):
+        raise HTTPException(404)
+    ids = set(department_ids)
+    if not ids or any(not db.get(Department, did) for did in ids):
+        raise HTTPException(422, 'Geçerli sorumlu birimleri seçin.')
+    if any(not str(values.get(f, '')).strip() for f in ('program_name', 'subprogram_name', 'code', 'name')):
+        raise HTTPException(422, 'Katalog kod/ad alanları zorunlu.')
+    if obj and obj.period_id != period_id:
+        raise HTTPException(403)
+    existing = {r.department_id: r for r in db.scalars(select(ActivityResponsibility).where(
+        ActivityResponsibility.official_activity_id == obj.id))} if obj else {}
+    linked = set(db.scalars(select(Activity.department_id).join(ActivityCatalogueLink,
+        ActivityCatalogueLink.activity_id == Activity.id).where(
+        ActivityCatalogueLink.official_activity_id == obj.id))) if obj else set()
+    if not linked.issubset(ids):
+        raise HTTPException(409, 'Bağlı yerel faaliyetlerin sorumlu birimini kaldırmadan önce bağlantıyı düzenleyin.')
+    changed = obj is None or ids != existing.keys() or any(getattr(obj, f) != v for f, v in values.items())
+    if obj is None:
+        obj = OfficialActivity(period_id=period_id, **values)
+        db.add(obj)
+        db.flush()
+    else:
+        for field, value in values.items():
+            setattr(obj, field, value)
+    for did, responsibility in existing.items():
+        if did not in ids:
+            db.delete(responsibility)
+    for did in ids - existing.keys():
+        db.add(ActivityResponsibility(official_activity_id=obj.id, department_id=did))
+    if changed:
+        db.add(AuditLog(user_id=actor.id, action='catalogue_create', entity_type='official_activity',
+                        entity_id=obj.id, details=json_dumps({'values': values,
+                            'department_ids': sorted(ids), 'source': source})))
+    return obj
+
+
+def save_activity_catalogue_links(db, activity, official_ids, actor, source=None):
+    ids = set(official_ids)
+    for oid in ids:
+        official = db.get(OfficialActivity, oid)
+        responsible = db.scalar(select(ActivityResponsibility.id).where(
+            ActivityResponsibility.official_activity_id == oid,
+            ActivityResponsibility.department_id == activity.department_id))
+        if not official or official.period_id != activity.period_id or not responsible:
+            raise HTTPException(422, 'Katalog faaliyeti bu dönem ve sorumlu birime ait olmalı.')
+    existing = {link.official_activity_id: link for link in db.scalars(select(ActivityCatalogueLink).where(
+        ActivityCatalogueLink.activity_id == activity.id))}
+    for oid, link in existing.items():
+        if oid not in ids:
+            db.delete(link)
+    for oid in ids - existing.keys():
+        db.add(ActivityCatalogueLink(activity_id=activity.id, official_activity_id=oid))
+    if ids != existing.keys():
+        db.add(AuditLog(user_id=actor.id, action='catalogue_link', entity_type='activity',
+                        entity_id=activity.id, details=json_dumps({'official_ids': sorted(ids), 'source': source})))
+
+
 def cost_columns(year):
     return [(year-1, 'budget'), (year-1, 'midyear_spend'), (year-1, 'year_end_estimate'),
             (year, 'budget'), (year+1, 'forecast'), (year+2, 'forecast')]
@@ -45,11 +104,14 @@ def activity_source_disagreements(activity):
     rows = {(v.year, v.value_kind, v.funding_type): v for v in activity.cost_values}
     result = {}
     for total in activity.cost_values:
-        if total.funding_type != "total" or total.source_amount is None or total.source_resolution_json not in (None, "", "{}"):
+        resolution = json.loads(total.source_resolution_json or '{}')
+        if total.funding_type != "total" or total.source_amount is None or any(k != 'budget_reallocation_delta' for k in resolution):
             continue
         inside = rows.get((total.year, total.value_kind, "inside"))
         outside = rows.get((total.year, total.value_kind, "outside"))
         computed = inside.amount + outside.amount if inside and outside and inside.amount is not None and outside.amount is not None else None
+        if computed is not None:
+            computed -= Decimal(resolution.get('budget_reallocation_delta', '0'))
         if total.source_amount != computed:
             result[f"{total.year}:{total.value_kind}"] = {"source_total": total.source_amount, "computed_total": computed}
     return result
@@ -104,8 +166,12 @@ def save_activity_costs(db, activity, year, data, actor=None):
         values['total'] = values['inside'] + values['outside'] if values['inside'] is not None else None
         total_row = existing.get((y, kind, 'total'))
         decision = None
-        if total_row and total_row.source_amount is not None and total_row.source_resolution_json in (None, '', '{}') and values['total'] != total_row.source_amount:
-            message = source_total_message(activity, y, kind, total_row.source_amount, values['total'])
+        resolution = json.loads(total_row.source_resolution_json or '{}') if total_row else {}
+        adjusted_total = values['total'] - Decimal(resolution.get('budget_reallocation_delta', '0')) if values['total'] is not None else None
+        if total_row and total_row.source_amount is not None and not any(k != 'budget_reallocation_delta' for k in resolution) and adjusted_total != total_row.source_amount:
+            message = source_total_message(activity, y, kind, total_row.source_amount, adjusted_total)
+            if resolution.get('budget_reallocation_delta'):
+                message += ' Karşılaştırılan toplamdan onaylı aktarma etkisi çıkarılmıştır.'
             confirmation = data.get(prefix+'_use_computed')
             if confirmation is not True and confirmation not in ('true', 'on'):
                 raise HTTPException(422, message)

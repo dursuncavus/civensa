@@ -139,7 +139,7 @@ def terminate_director_delegations(db, actor, organization_id, department_id, re
             actor_snapshot_json=actor_snapshot(db,actor,organization_id),event_type='revoked',
             context_json=encode({'delegation_id':delegation.id,'director_membership_id':delegation.director_membership_id,
                 'delegate_membership_id':delegation.delegate_membership_id,'cause':DIRECTOR_CHANGE_TERMINATION}),reason=reason));db.flush()
-        db.execute(text('UPDATE authority_delegations SET active=false WHERE id=:id'),{'id':delegation.id});db.expire(delegation)
+        db.execute(AuthorityDelegation.__table__.update().where(AuthorityDelegation.id == delegation.id).values(active=False));db.expire(delegation)
     return rows
 
 
@@ -155,7 +155,7 @@ def active_delegation(db, org_id, dep_id, *, at=None):
     # active membership; a stale active row of a replaced director grants nothing.
     return db.scalar(select(AuthorityDelegation).join(DirectorateMembership,DirectorateMembership.id==AuthorityDelegation.director_membership_id)
         .join(User,User.id==DirectorateMembership.user_id).where(AuthorityDelegation.organization_id==org_id,
-        AuthorityDelegation.department_id==dep_id,AuthorityDelegation.active.is_(True),
+        AuthorityDelegation.department_id==dep_id,AuthorityDelegation.authority_kind=='director_approval',AuthorityDelegation.active.is_(True),
         AuthorityDelegation.start_at<=now,AuthorityDelegation.end_at>now,
         DirectorateMembership.active.is_(True),DirectorateMembership.role_code=='department_director',
         DirectorateMembership.organization_id==org_id,DirectorateMembership.department_id==dep_id,User.is_active.is_(True),
@@ -228,8 +228,15 @@ def can(db, actor, action, organization_id, department_id=None, *, resource_scop
         return False
 
 
-def create_delegation(db, actor, organization_id, department_id, delegate_user_id, start_at, end_at, formal_basis):
+def create_delegation(db, actor, organization_id, department_id, delegate_user_id, start_at, end_at, formal_basis, *, authority_kind="director_approval"):
     actor=active_actor(db,actor);scope_department(db,organization_id,department_id,lock=True)
+    if authority_kind not in {'director_approval', 'approved_data_correction'}:
+        fail('Yetki türü geçersiz. Müdür onayı veya onaylı veri düzeltme seçin.', 422)
+    if authority_kind == 'approved_data_correction':
+        from .released_permissions import require_strategy_director
+        require_strategy_director(actor)
+        if actor.department_id != department_id:
+            fail('Onaylı veri düzeltme yetkisi yalnızca kendi Strateji biriminizde devredilebilir.')
     if not eligibility(db,actor,'delegate_authority',organization_id,department_id,resource_scope='performance_program'):
         fail('Yalnız asıl müdür yetki devri oluşturabilir; vekil yeniden devir yapamaz.')
     if any(t.tzinfo is None for t in (start_at,end_at)) or start_at>=end_at or end_at<=server_now(db):
@@ -241,12 +248,12 @@ def create_delegation(db, actor, organization_id, department_id, delegate_user_i
     if not delegate or delegate.role_code!='department_editor':fail('Vekil, müdürlüğün mevcut aktif veri girişçisi olmalıdır.')
     row=AuthorityDelegation(organization_id=organization_id,department_id=department_id,
         director_membership_id=director.id,delegate_membership_id=delegate.id,start_at=start_at,end_at=end_at,
-        formal_basis=required(formal_basis,'Yetki devri dayanağı'),created_by=actor.id)
+        formal_basis=required(formal_basis,'Yetki devri dayanağı'),created_by=actor.id,authority_kind=authority_kind)
     db.add(row);db.flush()
     db.add(DelegationEvent(delegation_id=row.id,actor_user_id=actor.id,
         actor_snapshot_json=actor_snapshot(db,actor,organization_id),event_type='granted',
         context_json=encode({'director_membership_id':director.id,'delegate_membership_id':delegate.id,
-            'start_at':start_at,'end_at':end_at,'formal_basis':row.formal_basis}),reason=row.formal_basis));db.flush()
+            'start_at':start_at,'end_at':end_at,'formal_basis':row.formal_basis,'authority_kind':authority_kind}),reason=row.formal_basis));db.flush()
     return row
 
 
@@ -262,7 +269,7 @@ def revoke_delegation(db, actor, delegation_id, reason):
         actor_snapshot_json=actor_snapshot(db,actor,row.organization_id),event_type='revoked',
         context_json=encode({'delegation_id':row.id}),reason=reason));db.flush()
     # Only reservation state changes; original grant interval/basis remain immutable.
-    db.execute(text('UPDATE authority_delegations SET active=false WHERE id=:id'),{'id':row.id});db.expire(row)
+    db.execute(AuthorityDelegation.__table__.update().where(AuthorityDelegation.id == row.id).values(active=False));db.expire(row)
 
 
 def assign_final_authority(db, actor, organization_id, user_id, formal_basis):

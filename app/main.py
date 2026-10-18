@@ -23,6 +23,7 @@ from sqlalchemy import select, inspect, func, exists, false, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, selectinload
 from starlette.middleware.sessions import SessionMiddleware
+from starlette.routing import Match
 from alembic import command as alembic_command
 from alembic.config import Config as AlembicConfig
 from alembic.script import ScriptDirectory
@@ -34,7 +35,8 @@ from .models import (
     ActivityCostValue, DepartmentCostValue, Submission, AuditLog, Program,
     SubProgram, TemplateSnapshot, ImportBatch, SubmissionEvent, Notification, NotificationRecipient,
 )
-from .security import verify_password, hash_password
+from .security import verify_password, hash_password, temporary_password
+from .personal_accounts import ACCOUNT_CSV_HEADERS, validate_account_csv, prepare_user_creation
 from . import login_throttling
 from . import released_permissions
 from .seed import seed
@@ -89,6 +91,41 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="Civensa", version=APP_VERSION, lifespan=lifespan)
+
+
+class FirstPasswordMiddleware:
+    """The signed pending-login marker also gates public pages and unknown URLs.
+
+    require_user separately checks the database flag for every protected route.
+    SessionMiddleware wraps this middleware so its session is available here.
+    """
+    def __init__(self, app):
+        self.app = app
+
+    def protected_route(self, scope):
+        # Protected routes must validate the password fingerprint first, so a
+        # stale temporary-password session still gets the existing 401 behavior.
+        for route in scope["app"].routes:
+            if route.matches(scope)[0] == Match.FULL and hasattr(route, "dependant"):
+                dependencies = [route.dependant]
+                while dependencies:
+                    dependency = dependencies.pop()
+                    if dependency.call is require_user:
+                        return True
+                    dependencies.extend(dependency.dependencies)
+        return False
+
+    async def __call__(self, scope, receive, send):
+        path = scope.get("path", "")
+        if (scope["type"] == "http" and scope.get("session", {}).get("must_change_password")
+                and path not in {"/change-password", "/api/me/change-password", "/logout", "/static"}
+                and not path.startswith("/static/") and not self.protected_route(scope)):
+            await RedirectResponse("/change-password", 303)(scope, receive, send)
+            return
+        await self.app(scope, receive, send)
+
+
+app.add_middleware(FirstPasswordMiddleware)
 app.add_middleware(
     SessionMiddleware,
     secret_key=session_secret(),
@@ -105,6 +142,8 @@ async def security_headers(request: Request, call_next):
     response.headers["X-Content-Type-Options"] = "nosniff"
     response.headers["Referrer-Policy"] = "same-origin"
     response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
+    if request.url.path == "/change-password":
+        response.headers["Cache-Control"] = "no-store"
     response.headers["Content-Security-Policy"] = (
         "default-src 'self'; img-src 'self' data:; script-src 'self'; "
         "style-src 'self' 'unsafe-inline'; font-src 'self'; frame-ancestors 'none'; "
@@ -157,6 +196,10 @@ async def require_user(request: Request, db: Session = Depends(get_db)):
     if not user or not user.is_active:
         request.session.clear()
         raise HTTPException(status_code=401)
+    if user.must_change_password and request.url.path not in {"/change-password", "/api/me/change-password"}:
+        request.session["must_change_password"] = True
+        raise HTTPException(303, "Devam etmek için kendi parolanızı belirleyin.",
+                            headers={"Location": "/change-password"})
     if request.method in {"POST", "PUT", "PATCH", "DELETE"}:
         if not await csrf_valid(request):
             raise HTTPException(403, CSRF_ERROR)
@@ -403,11 +446,15 @@ def ensure_submission(db: Session, department_id: int, period_id: int):
 
 @app.get("/", include_in_schema=False)
 def root(request: Request, db: Session = Depends(get_db)):
-    return RedirectResponse("/modules" if current_user(request, db) else "/login", 303)
+    user = current_user(request, db)
+    return RedirectResponse(("/change-password" if user.must_change_password else "/modules") if user else "/login", 303)
 
 
 @app.get("/login", response_class=HTMLResponse)
-def login_page(request: Request):
+def login_page(request: Request, db: Session = Depends(get_db)):
+    user = current_user(request, db)
+    if user and user.is_active and user.must_change_password:
+        return RedirectResponse("/change-password", 303)
     return templates.TemplateResponse(request, "login.html", {"error": None})
 
 
@@ -433,8 +480,10 @@ def login(request: Request, email: str = Form(...), password: str = Form(...), d
     request.session.clear()
     start_user_session(request, user.id, user.password_hash)
     request.session["csrf_token"] = secrets.token_urlsafe(32)
+    if user.must_change_password:
+        request.session["must_change_password"] = True
     log(db, user, "login", "user", user.id)
-    return RedirectResponse("/modules", 303)
+    return RedirectResponse("/change-password" if user.must_change_password else "/modules", 303)
 
 
 @app.post("/logout")
@@ -1091,115 +1140,30 @@ def users_page(request: Request, db: Session = Depends(get_db), user: User = Dep
     })
 
 
+@app.get("/api/users/template.csv")
 @app.get("/api/users/missing-departments.csv")
 def missing_department_accounts_csv(db: Session = Depends(get_db), user: User = Depends(require_strategy)):
-    departments = db.scalars(select(Department).order_by(Department.name)).all()
-    assigned = set(db.scalars(
-        select(User.department_id).where(User.role == "department", User.is_active.is_(True), User.department_id.is_not(None))
-    ).all())
+    # All active directorates: existing personal accounts never prevent adding staff.
+    departments = db.scalars(select(Department).where(Department.is_active.is_(True)).order_by(Department.name)).all()
     output = io.StringIO()
     writer = csv.writer(output)
     writer.writerow(csv_row(ACCOUNT_CSV_HEADERS))
     for department in departments:
-        if department.is_active and department.id not in assigned:
-            writer.writerow(csv_row([department.id, department.name, "", "", ""]))
+        writer.writerow(csv_row([department.id, department.name, "", "", ""]))
     data = ("\ufeff" + output.getvalue()).encode("utf-8")
-    headers = {"Content-Disposition": 'attachment; filename="civensa-eksik-mudurluk-hesaplari.csv"'}
+    headers = {"Content-Disposition": 'attachment; filename="civensa-kisisel-hesap-sablonu.csv"',
+               "Cache-Control": "no-store"}
     return StreamingResponse(io.BytesIO(data), media_type="text/csv; charset=utf-8", headers=headers)
-
-
-ACCOUNT_CSV_HEADERS = ["Müdürlük ID", "Müdürlük", "Ad Soyad", "E-posta", "Geçici Parola"]
-
-
-def validate_account_csv(data: bytes, db: Session):
-    try:
-        text = data.decode("utf-8-sig")
-    except UnicodeDecodeError:
-        return [], ["Dosya UTF-8 kodlamalı CSV olmalı."]
-    if "\x00" in text:
-        return [], ["CSV dosyasında geçersiz karakter bulundu."]
-    try:
-        reader = csv.DictReader(io.StringIO(text))
-    except csv.Error:
-        return [], ["CSV dosyası okunamadı."]
-    if reader.fieldnames != ACCOUNT_CSV_HEADERS:
-        return [], ["Sütun başlıkları indirilen şablonla aynı olmalı."]
-
-    departments = {item.id: item for item in db.scalars(select(Department)).all()}
-    assigned = set(db.scalars(
-        select(User.department_id).where(User.role == "department", User.is_active.is_(True), User.department_id.is_not(None))
-    ).all())
-    existing_emails = {str(value).lower() for value in db.scalars(select(User.email)).all()}
-    seen_departments, seen_emails, rows, errors = set(), set(), [], []
-    try:
-        source_rows = list(reader)
-    except csv.Error:
-        return [], ["CSV satırları okunamadı."]
-    if len(source_rows) > 200:
-        return [], ["CSV en fazla 200 satır içerebilir."]
-
-    for line_no, source in enumerate(source_rows, start=2):
-        department_raw = str(source.get("Müdürlük ID", "")).strip()
-        department_name = str(source.get("Müdürlük", "")).strip()
-        full_name = str(source.get("Ad Soyad", "")).strip()
-        email = str(source.get("E-posta", "")).strip().lower()
-        password = str(source.get("Geçici Parola", ""))
-        if not full_name and not email and not password.strip():
-            continue
-        prefix = f"Satır {line_no}: "
-        try:
-            department_id = int(department_raw)
-        except ValueError:
-            errors.append(prefix + "Müdürlük ID sayısal olmalı.")
-            continue
-        department = departments.get(department_id)
-        if not department:
-            errors.append(prefix + "Müdürlük bulunamadı.")
-            continue
-        row_errors = []
-        if not department.is_active:
-            row_errors.append(f"{department.name}: müdürlük pasif; Kurum Yapısı ekranında etkinleştirin veya etkin bir müdürlük seçin.")
-        if not csv_cell_matches(department_name, department.name):
-            row_errors.append("Müdürlük adı şablonla eşleşmiyor.")
-        if department_id in assigned:
-            row_errors.append("Bu müdürlüğün hesabı zaten var.")
-        if department_id in seen_departments:
-            row_errors.append("Aynı müdürlük dosyada birden fazla kez doldurulmuş.")
-        if not full_name:
-            row_errors.append("Ad Soyad gerekli.")
-        if not email or "@" not in email or email.startswith("@") or email.endswith("@"):
-            row_errors.append("Geçerli e-posta gerekli.")
-        elif email in existing_emails or email in seen_emails:
-            row_errors.append("E-posta zaten kayıtlı veya dosyada tekrarlanıyor.")
-        if password != password.strip():
-            row_errors.append("Geçici parolanın başında veya sonunda boşluk olamaz.")
-        if len(password) < 8:
-            row_errors.append("Geçici parola en az 8 karakter olmalı.")
-        if row_errors:
-            errors.extend(prefix + message for message in row_errors)
-            continue
-        seen_departments.add(department_id)
-        seen_emails.add(email)
-        rows.append({
-            "department_id": department_id,
-            "department_name": department.name,
-            "full_name": full_name,
-            "email": email,
-            "password": password,
-        })
-    if not rows and not errors:
-        errors.append("Doldurulmuş hesap satırı bulunamadı.")
-    return rows, errors
 
 
 @app.post("/api/users/bulk-preview")
 async def preview_users_csv(file: UploadFile = File(...), db: Session = Depends(get_db), user: User = Depends(require_strategy)):
     data = await read_upload_limited(file, 256 * 1024, "CSV dosyası")
-    rows, errors = validate_account_csv(data, db)
+    rows, errors = validate_account_csv(data, db, user)
     return {
         "ok": not errors,
         "count": len(rows),
-        "rows": [{key: row[key] for key in ("department_id", "department_name", "full_name", "email")} for row in rows],
+        "rows": [{key: row[key] for key in ("department_id", "department_name", "full_name", "email", "duty")} for row in rows],
         "errors": errors[:50],
     }
 
@@ -1207,32 +1171,108 @@ async def preview_users_csv(file: UploadFile = File(...), db: Session = Depends(
 @app.post("/api/users/bulk-import")
 async def import_users_csv(file: UploadFile = File(...), db: Session = Depends(get_db), user: User = Depends(require_strategy)):
     data = await read_upload_limited(file, 256 * 1024, "CSV dosyası")
-    rows, errors = validate_account_csv(data, db)
+    rows, errors = validate_account_csv(data, db, user)
     if errors:
         raise HTTPException(422, {"message": "CSV doğrulaması başarısız; hiçbir hesap oluşturulmadı.", "errors": errors[:50]})
     batch_id = secrets.token_hex(8)
+    # Credentials live only in this response buffer. No token, file, session,
+    # database column, or audit detail can retrieve them after the response.
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(csv_row(["Müdürlük", "Ad Soyad", "E-posta", "Görev", "Geçici Parola"]))
     try:
         for row in rows:
-            from .master_data_service import active_department
-            active_department(db, row["department_id"])
+            password = temporary_password()
             new_user = User(
                 email=row["email"], full_name=row["full_name"], role="department",
-                department_id=row["department_id"], password_hash=hash_password(row["password"]),
+                department_id=row["department_id"], password_hash=hash_password(password),
+                position=row["position"], can_submit=False, is_active=True, must_change_password=True,
             )
+            user, reason = prepare_user_creation(db, user, new_user)
+            appointment_reason = f"Toplu hesap oluşturma, CSV {batch_id}"
+            if reason:
+                appointment_reason += "; " + reason
             db.add(new_user); db.flush()
+            released_permissions.audit_user_change(db, user, new_user, "position", None,
+                                                   new_user.position, appointment_reason)
             db.add(AuditLog(
                 user_id=user.id, action="user_bulk_create_item", entity_type="user", entity_id=new_user.id,
                 details=f"batch={batch_id};department_id={row['department_id']}",
             ))
-        db.add(AuditLog(
-            user_id=user.id, action="user_bulk_create", entity_type="user",
-            details=f"batch={batch_id};count={len(rows)}",
-        ))
+            writer.writerow(csv_row([row["department_name"], row["full_name"], row["email"], row["duty"], password]))
+        db.add(AuditLog(user_id=user.id, action="user_bulk_create", entity_type="user",
+                        details=f"batch={batch_id};count={len(rows)}"))
         db.commit()
     except IntegrityError:
         db.rollback()
-        raise HTTPException(409, "Hesaplar başka bir işlemde değişti; listeyi yeniden indirip tekrar deneyin.")
-    return {"ok": True, "created": len(rows), "batch_id": batch_id}
+        raise HTTPException(409, "Hesaplar başka bir işlemde değişti; Kullanıcılar listesini yenileyin. Oluşturulmuş hesaplar için Parola sıfırla seçin.") from None
+    except HTTPException:
+        db.rollback()
+        raise
+    data = ("\ufeff" + output.getvalue()).encode("utf-8")
+    output.close()
+    return StreamingResponse(io.BytesIO(data), media_type="text/csv; charset=utf-8", headers={
+        "Content-Disposition": f'attachment; filename="civensa-gecici-parolalar-{batch_id}.csv"',
+        "Cache-Control": "no-store, private", "Pragma": "no-cache",
+        "X-Account-Batch": batch_id, "X-Accounts-Created": str(len(rows)),
+    })
+
+
+@app.get("/api/users/batches/{batch_id}/credentials.csv")
+def expired_user_credentials(batch_id: str, user: User = Depends(require_strategy)):
+    raise HTTPException(410, "Geçici parola dosyası yalnızca hesap oluşturulurken bir kez teslim edilir; tekrar indirilemez. Kullanıcılar ekranında her kullanıcı için Parola sıfırla seçin.")
+
+
+def deactivate_users(db, actor, targets, reason):
+    """Validate the entire selection before changing any account; never delete."""
+    # Lock all organizations/departments in the existing administration order.
+    dids = {u.department_id for u in [actor, *targets] if u.department_id}
+    from .models import Organization
+    orgs = set(db.scalars(select(Department.organization_id).where(Department.id.in_(dids))))
+    for oid in sorted(orgs):
+        db.scalar(select(Organization).where(Organization.id == oid).with_for_update())
+    for did in sorted(dids):
+        db.scalar(select(Department).where(Department.id == did).with_for_update())
+    locked = []
+    for target in targets:
+        actor, target = released_permissions.lock_user_administration(db, actor, target)
+        strategy_director = target.position == "director" and released_permissions.is_strategy_user(db, target)
+        if strategy_director:
+            released_permissions.require_strategy_user_management(db, actor, target)
+        if target.id == actor.id and not strategy_director:
+            raise HTTPException(409, "Kendi hesabınızı pasifleştiremezsiniz. Seçimden kendi hesabınızı çıkarın.")
+        locked.append(target)
+    changed = 0
+    for target in locked:
+        old = target.is_active
+        target.is_active = False
+        if old:
+            changed += 1
+            released_permissions.audit_user_change(db, actor, target, "is_active", True, False, reason)
+            db.add(AuditLog(user_id=actor.id, action="user_deactivate", entity_type="user", entity_id=target.id,
+                            details=json_dumps({"reason": reason}, ensure_ascii=False)))
+    return changed
+
+
+@app.post("/api/users/bulk-deactivate")
+async def bulk_deactivate_users(request: Request, db: Session = Depends(get_db), user: User = Depends(require_strategy)):
+    data = await request.json()
+    ids = data.get("user_ids") if isinstance(data, dict) else None
+    reason = data.get("reason", "") if isinstance(data, dict) else ""
+    if not isinstance(reason, str) or not reason.strip() or len(reason.strip()) > 1000:
+        raise HTTPException(422, "Pasifleştirme gerekçesi eksik veya çok uzun. Gerekçe alanına 1–1000 karakterlik açıklama yazın.")
+    if not isinstance(ids, list) or not 1 <= len(ids) <= 200 or any(type(uid) is not int for uid in ids):
+        raise HTTPException(422, "Kullanıcı seçimi geçersiz. Kullanıcılar ekranında 1–200 hesap seçin.")
+    targets = db.scalars(select(User).where(User.id.in_(set(ids))).order_by(User.id)).all()
+    if len(targets) != len(set(ids)):
+        raise HTTPException(404, "Seçilen hesaplardan biri bulunamadı. Kullanıcılar listesini yenileyip tekrar seçin.")
+    try:
+        count = deactivate_users(db, user, targets, reason.strip())
+        released_permissions.commit_user_change(db)
+    except HTTPException:
+        db.rollback()
+        raise
+    return {"ok": True, "deactivated": count}
 
 
 @app.post("/api/users/{user_id}/active")
@@ -1278,6 +1318,7 @@ async def reset_user_password(user_id: int, request: Request, db: Session = Depe
     if target.position == "director":
         released_permissions.require_strategy_user_management(db, user, target)
     target.password_hash = hash_password(password)
+    target.must_change_password = True
     db.commit()
     log(db, user, "user_password_reset", "user", target.id)
     return {"ok": True}
@@ -1303,13 +1344,12 @@ async def revert_user_batch(batch_id: str, request: Request, db: Session = Depen
             released_permissions.require_strategy_user_management(db, user, target)
         used = db.scalar(select(AuditLog.id).where(AuditLog.user_id == target.id).limit(1))
         if used:
-            errors.append(f"{target.email}: hesap kullanılmış; silinemez.")
+            errors.append(f"{target.email}: hesap kullanılmış; toplu geri alınamaz. Kullanıcılar ekranından gerekçeyle pasifleştirin.")
             continue
         targets.append(target)
     if errors:
-        raise HTTPException(409, {"message": "İşlem grubu güvenle geri alınamıyor; hiçbir hesap silinmedi.", "errors": errors[:50]})
-    for target in targets:
-        db.delete(target)
+        raise HTTPException(409, {"message": "İşlem grubu güvenle geri alınamıyor; hiçbir hesap pasifleştirilmedi.", "errors": errors[:50]})
+    deactivate_users(db, user, targets, f"Toplu hesap oluşturmayı geri alma, CSV {batch_id}")
     db.add(AuditLog(user_id=user.id, action="user_bulk_create_revert", entity_type="user_batch", details=f"batch={batch_id};count={len(targets)}"))
     db.commit()
     return {"ok": True, "reverted": len(targets)}
@@ -1343,16 +1383,8 @@ async def create_user(request: Request, db: Session = Depends(get_db), user: Use
     position = data.get("position", "staff")
     released_permissions.validate_position(position)
     new = User(email=email, full_name=full_name, role=role, department_id=department_id,
-               password_hash=hash_password(password), position=position, can_submit=False, is_active=True)
-    reason = None
-    if position == "director":
-        user, new = released_permissions.lock_user_administration(db, user, new)
-        reason = released_permissions.require_strategy_user_management(db, user, new, appointment=True)
-    if department_id:
-        from .master_data_service import active_department
-        active_department(db, department_id)
-    if position == "director":
-        released_permissions.check_director_available(db, new)
+               password_hash=hash_password(password), position=position, can_submit=False, is_active=True, must_change_password=True)
+    user, reason = prepare_user_creation(db, user, new)
     db.add(new); db.flush()
     released_permissions.audit_user_change(db, user, new, "position", None, position, reason)
     released_permissions.commit_user_change(db); db.refresh(new)
@@ -1474,6 +1506,11 @@ def notification_read(notification_id: int, db: Session = Depends(get_db), user:
     return {"ok": True}
 
 
+@app.get("/change-password", response_class=HTMLResponse)
+def change_password_page(request: Request, user: User = Depends(require_user)):
+    return templates.TemplateResponse(request, "change_password.html", {"user": user})
+
+
 @app.post("/api/me/change-password")
 async def change_own_password(request: Request, db: Session = Depends(get_db), user: User = Depends(require_user)):
     data = await request.json()
@@ -1492,7 +1529,7 @@ async def change_own_password(request: Request, db: Session = Depends(get_db), u
     # committed while this request waited for its body must win, not be overwritten.
     new_hash = hash_password(new_password)
     changed = db.execute(update(User).where(User.id == user.id, User.password_hash == user.password_hash)
-                         .values(password_hash=new_hash)).rowcount
+                         .values(password_hash=new_hash, must_change_password=False)).rowcount
     if changed != 1:
         db.rollback()
         raise HTTPException(409, "Parolanız bu sırada başka bir işlemle değiştirildi. Yeniden giriş yapıp tekrar deneyin.")
@@ -1500,6 +1537,7 @@ async def change_own_password(request: Request, db: Session = Depends(get_db), u
     # Other sessions of this user are now rejected; keep only the session that made the change,
     # stamped with the hash written here (a reset committed right after must still end it).
     start_user_session(request, user.id, new_hash)
+    request.session.pop("must_change_password", None)
     log(db, user, "self_password_change", "user", user.id)
     return {"ok": True}
 
@@ -1864,7 +1902,8 @@ def operations_status(request: Request, db: Session = Depends(get_db), user: Use
             "department_accounts": count(User, User.role == "department", User.is_active.is_(True), User.department_id.is_not(None)),
             "missing_department_accounts": max(
                 0,
-                count(Department) - count(User, User.role == "department", User.is_active.is_(True), User.department_id.is_not(None)),
+                db.scalar(select(func.count(Department.id)).where(Department.is_active.is_(True),
+                    ~exists().where(User.department_id == Department.id, User.role == "department", User.is_active.is_(True)))),
             ),
             "indicators": count(Indicator, Indicator.period_id == period.id),
             "activities": count(Activity, Activity.period_id == period.id),
@@ -1892,7 +1931,7 @@ def release_readiness(request: Request, db: Session = Depends(get_db), user: Use
         ).scalar()
     duplicate_accounts = db.execute(
         select(User.department_id, func.count(User.id)).where(
-            User.role == "department", User.is_active.is_(True), User.department_id.is_not(None)
+            User.position == "director", User.is_active.is_(True), User.department_id.is_not(None)
         ).group_by(User.department_id).having(func.count(User.id) > 1)
     ).all()
     checks = {
@@ -2157,3 +2196,5 @@ register_activity_financial_routes(app)
 
 from .assurance_routes import register as register_assurance_routes
 register_assurance_routes(app)
+from . import budget_routes
+budget_routes.register(app)

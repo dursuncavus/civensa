@@ -103,7 +103,7 @@ def test_deactivate_keeps_history_blocks_all_new_account_and_scope_paths(db, sam
     from app.main import ACCOUNT_CSV_HEADERS
     output = io.StringIO(); writer = csv.writer(output)
     writer.writerow(ACCOUNT_CSV_HEADERS)
-    writer.writerow([did, sample['department'].name, 'Yeni Kullanıcı', 'new@example.invalid', 'test-only-password'])
+    writer.writerow([did, sample['department'].name, 'Yeni Kullanıcı', 'new@example.invalid', 'Personel'])
     for url in ['/api/users/bulk-preview', '/api/users/bulk-import']:
         response = browser.post(url, headers={'X-CSRF-Token': token}, files={'file': ('accounts.csv', output.getvalue().encode())})
         assert 'pasif' in response.text
