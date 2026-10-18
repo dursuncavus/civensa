@@ -1,0 +1,7 @@
+# Design tooling inputs and outputs (not committed: generated, large or third-party)
+gf/
+idml/
+longest.json
+book-template/out/
+book-template/out_v2/
+book-template/__pycache__/
