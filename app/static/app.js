@@ -475,3 +475,32 @@ document.querySelectorAll('.save-user-position').forEach(button=>button.addEvent
   if(!r.ok){toast(j.detail||'Unvan değiştirilemedi. Kullanıcılar ekranını yenileyip tekrar deneyin.');return;}
   location.reload();
 }));
+
+// CIV-045: exact programme shares and one atomic directorate save.
+(function(){
+  const form=document.getElementById('economicSplitForm');
+  if(!form)return;
+  const box=document.getElementById('economicSplitErrors'),button=form.querySelector('button[type="submit"]');
+  form.querySelectorAll('[data-split-cell]').forEach(row=>{
+    const inputs=[...row.querySelectorAll('[data-split-share]')],remaining=row.querySelector('[data-split-remaining]');
+    function update(){
+      if(!row.dataset.sourceAmount){remaining.textContent='Kaynak doğrulanmalı';return}
+      const amounts=inputs.map(input=>input.value.trim()?sourceMoneyCents(input.value):0n);
+      if(amounts.some(amount=>amount===null)){remaining.textContent='Payı kontrol edin';return}
+      const rest=sourceDecimalCents(row.dataset.sourceAmount)-amounts.reduce((sum,value)=>sum+value,0n);
+      remaining.textContent=(rest<0n?'-':'')+displaySourceCents(rest<0n?-rest:rest);
+    }
+    inputs.forEach(input=>input.addEventListener('input',update));update();
+  });
+  let saving=false;
+  form.addEventListener('submit',async event=>{
+    event.preventDefault();if(saving)return;
+    saving=true;button.disabled=true;
+    try{
+      const {r,j}=await jsonFetch(form.action,{method:'POST',headers:{Accept:'application/json'},body:new FormData(form)});
+      if(r.ok&&j.ok===true&&j.redirect_url){location.assign(j.redirect_url);return}
+      box.textContent=errorMessage(j.detail)||'Dağılım kaydedilemedi. Payları kontrol edip tekrar deneyin.';
+      box.hidden=false;box.focus();box.scrollIntoView({behavior:'smooth',block:'center'});
+    }finally{saving=false;button.disabled=false}
+  });
+})();
