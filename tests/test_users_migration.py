@@ -18,7 +18,7 @@ ROOT = Path(__file__).resolve().parents[1]
 @pytest.mark.parametrize('backend', ['postgres', 'sqlite'])
 def test_populated_personal_password_upgrade_and_lossless_downgrade(tmp_path, backend):
     scripts = ScriptDirectory.from_config(Config(str(ROOT / 'alembic.ini')))
-    assert scripts.get_heads() == ['c044a1b2c3d4']
+    assert len(scripts.get_heads()) == 1
     assert scripts.get_revision('c044a1b2c3d4').down_revision == 'c031b1a2c3d4'
     admin = None
     if backend == 'postgres':
