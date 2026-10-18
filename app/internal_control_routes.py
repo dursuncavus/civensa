@@ -13,7 +13,7 @@ from .db import get_db
 from .file_security import read_upload_limited
 from .internal_control_models import (COMPONENTS, STANDARD_COMPONENTS, ICPlan, ICCondition,
                                       ICAction, ICActionParty, ICImport)
-from .models import Department
+from .models import Department, User
 from . import internal_control_service as service
 
 XLSX = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
@@ -185,6 +185,7 @@ def register(app):
             raise HTTPException(404, 'Plan bulunamadı. Plan listesini yenileyin.')
         return templates.TemplateResponse(request, 'internal_control/plan.html', dict(user=user, plan=plan,
             components=COMPONENTS, standards=STANDARD_COMPONENTS, status_labels=STATUS_LABELS,
+            creator=db.get(User, plan.created_by),
             component=component, standard=standard, department_id=department_id, q=q,
             **catalogue(db, plan, component=component, standard=standard, department_id=department_id, q=q)))
 

@@ -296,6 +296,7 @@ def test_strategy_ui_round_trip(client, db, sample):
     assert client.get(f'/internal-control/imports/{batch.id}/validation.xlsx').status_code == 200
     response = client.post(f'/internal-control/imports/{batch.id}/commit')
     assert response.status_code == 200 and 'Etik Değerler' in response.text
+    assert 'Kaydeden: Strateji' in response.text
     plan = db.scalar(select(ICPlan))
     assert client.get(f'/internal-control/plans/{plan.id}?component=&standard=&department_id=&q=').status_code == 200
     assert client.post(f'/internal-control/plans/{plan.id}/activate').status_code == 200
