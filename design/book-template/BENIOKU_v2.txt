@@ -1,0 +1,59 @@
+CIVENSA ÖZEL TASARIM ŞABLONU — SÜRÜM 2 (18 Ekim 2026)
+Karışım: HiveArt "Sustainability and ESG Report" tasarım mantığı (koyu yeşil zemin, bol boşluk,
+yay çizgileri, yan sütunda büyük rakamlar, zaman çizelgesi) + BrandPacks "Sustainability Report"
+kapak ve bölüm açılışları (büyük numaralar, iki renkli başlıklar, görsel kullanımı, rakam şeritleri,
+turuncu halka göstergeler). Şablon dosyaları kullanılmadı; sayfalar sıfırdan çizildi.
+
+AÇMA SIRASI
+1. "fontlar" klasöründeki bütün .ttf dosyalarını kur: Fira Sans, Fira Sans Condensed,
+   Fira Sans Extra Condensed ve Literata. Hepsi SIL Open Font License (ücretsiz).
+2. InDesign'ı fontlar kurulduktan SONRA aç; Civensa_Ozel_Tasarim_v2.idml dosyasını aç.
+3. Hemen "Farklı Kaydet" ile .indd olarak kaydet.
+
+SAYFALAR (16 sayfa, 200 x 280 mm, 3 mm taşma payı)
+ 1    Kapak
+ 2–3  Başkanın Mesajı (koyu zemin + tam sayfa görsel, alıntı kutusu)
+ 4–5  İçindekiler (bölüm numaralı) + Bir Bakışta (6 büyük rakam)
+ 6–7  Bölüm açılışı: tam sayfa görsel + "01", iki renkli başlık, alt başlık listesi, rakam şeridi
+ 8–9  Uzun metin: 112 mm ana sütun + 45 mm kenar sütunu, iki sayfaya akan tek metin
+10–11 Müdürlük açılışı: teşkilat şeması, personel tablosu, 2x2 görsel ızgarası, rakamlar
+12–13 Performans: çizgi grafik, halka göstergeler, yatay çubuk grafik, renk kodlu ölçek
+14–15 Mali tablolar: müdürlük bütçe tablosu, ekonomik sınıflandırma (%100 çubuk + tablo)
+16    Stratejik plan yol haritası (zaman çizelgesi)
+Ana sayfalar: "A-Metin" (alt bilgi + sayfa numarası), "B-Boş" (koyu zemin ve tam görsel sayfaları).
+
+KURALLAR (Plan v1.4'e göre)
+- Başlıkların yanında numara yok. Bölüm numarası yalnız ayırıcı sayfada ve içindekilerde.
+- Tablolarda birim sütun başlığında yazar: "Yıl Sonu Gideri (TL)", "Gerçekleşme (%)".
+  Hücrelerde sembol yok. Düz metinde tutarın yanına "TL".
+- En fazla 3 font ailesi. Bu dosyada 2 aile var: Literata (uzun metin) ve Fira Sans ailesi.
+  Özel tasarımda Adobe Fonts kullanılabilir: stillerin font tanımını değiştirmen yeterli.
+
+STİLLER
+- Paragraf: 01–09 başlık ve metin · 10–23 tablo · 30–34 grafik · 40–43 içindekiler/listeler ·
+  50–51 sayfa öğeleri · 60–76 özel tasarım öğeleri (bölüm no, kapak, büyük rakam, alıntı, şema, yol haritası).
+- Adı "b" ile biten stiller koyu (yeşil) zemin içindir: 01b, 05b, 06b, 30b, 51b ...
+- İki renkli başlık: başlığın ikinci kısmına "Vurgu Renk" karakter stili uygulanır.
+- Karakter: Kalın, İtalik, Rakam Tabular, Vurgu Renk, Ana Renk.
+- Hücre: Hücre Başlık, Hücre Başlık Sol, Hücre Metin, Hücre Rakam, Hücre Toplam, Hücre Toplam Rakam.
+- Renk örnekleri: Kurumsal Ana (koyu yeşil), Kurumsal Vurgu (turuncu), Ana Açık, Metin Koyu, Metin Açık,
+  Çizgi Gri, Zemin Gri, Açık Zemin, Görsel Yer Tutucu, Grafik 1–6. Renk örneğini değiştirince bağlı her şey değişir.
+- Tablo rakamlarında OpenType "Tablo Biçiminde Hizalı" açıktır (v1'deki gibi).
+
+GÖRSELLER
+- Gri çerçeveler görsel yer tutucudur (adı "Görsel", "Kapak görseli" ...). Çerçeveyi seçip
+  Dosya > Yerleştir ile görseli koy; çerçeve orantılı doldurur. Kapak görseli köşesi kesik çokgendir.
+- Logo yeri beyaz kare ("Logo").
+
+GRAFİKLER
+- Grafikler InDesign nesneleriyle çizildi (dikdörtgen, çizgi, yay, metin çerçevesi); hepsi düzenlenebilir.
+  Değerler örnektir. Gerçek veriyle grafik, Civensa'dan aktarım işi kurulduğunda üretilecek.
+
+ÖNİZLEME PDF'İ
+- Civensa_Ozel_Tasarim_v2_onizleme.pdf yerleşimi görmek içindir; heceleme ve harf aralığı yaklaşık.
+  Önizlemede iki yana yaslı metindeki geniş boşluklar InDesign'da Türkçe heceleme ile kapanır.
+
+BİLİNEN SINIR
+- Dosya InDesign olmayan bir ortamda üretildi; InDesign'da açılış Claude tarafından denenemedi.
+  Açılırken uyarı ya da bozukluk görürsen ekran görüntüsünü gönder.
+- Sayfa ölçüsü Pazartesi kesinleşecek; ölçü değişirse dosya kodla yeniden üretilir.

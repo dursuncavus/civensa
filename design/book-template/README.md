@@ -11,3 +11,9 @@ Inputs expected next to this folder (not committed, large or third-party):
 Run: `python3 build_idml.py` then `python3 charts.py` (needs fontTools, matplotlib). Output in `out/`.
 `longest.json` holds the longest real text per table role extracted from the d3 IDML.
 See BENIOKU.txt (Turkish) for the delivered package description.
+
+## v2 — özel tasarım (18 Oct 2026)
+`python3 ozel_v2.py` builds `out_v2/Civensa_Ozel_Tasarim_v2.idml` (16 pages: cover, mayor's message, contents,
+at-a-glance, section opener, long text, directorate opener, performance charts, financial tables, roadmap) and a
+reportlab preview PDF (`onizleme.py`). Needs `../gf/ofl/literata/` (static Literata TTFs, googlefonts/literata
+`fonts/ttf`) in addition to the Fira folders. Package description: `BENIOKU_v2.txt` (Turkish).
