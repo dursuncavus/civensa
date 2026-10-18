@@ -150,6 +150,10 @@ def parse_workbook(data, filename):
             return source
         indexes = [headers.index(h) for h in HEADERS]
         title_idx = headers.index(TITLE_HEADER) if TITLE_HEADER in headers else None
+        source['columns'] = {get_column_letter(i + 1): get_column_letter(idx + 1)
+                             for i, idx in enumerate(indexes)}
+        if title_idx is not None:
+            source['columns']['N'] = get_column_letter(title_idx + 1)
         for num, values in enumerate(rows, 2):
             if num > MAX_ROWS + 1:
                 block('Plan', num, '', '', 'Plan satır sınırını aşıyor.', f'En fazla {MAX_ROWS} veri satırı yükleyin.')
@@ -201,8 +205,15 @@ def unit_resolver(db):
 
 def validate_source(db, source):
     issues = list(source['issues'])
+    if issues:
+        # A structural failure prevents reliable field validation. Do not report
+        # unread fields as empty or infer catalogue records from a partial sheet.
+        return dict(issues=issues, unmatched={}, conditions=[], actions=[],
+                    counts={'conditions': 0, 'actions': 0}, can_commit=False)
     metadata = source['metadata']
     def add(level, row, col, value, message, todo, sheet='Plan'):
+        if sheet == 'Plan':
+            col = '/'.join(source.get('columns', {}).get(c, c) for c in col.split('/'))
         issues.append(issue(level, sheet, row, col, value, message, todo))
     for idx, field in enumerate(INFO_FIELDS[:4], 2):
         if not metadata.get(field):
@@ -239,7 +250,10 @@ def validate_source(db, source):
         if condition in conditions:
             first = conditions[condition]
             if (first['text'], first['current_state_text'], first['standard_title']) != (condition_text, state, entry['standard_title']):
-                add('warning', row, 'D/E/N', condition_text, 'Aynı genel şartın metni, mevcut durumu veya başlığı farklı; ilk satır korunacak.',
+                changed_columns = '/'.join(col for key, value, col in [
+                    ('text', condition_text, 'D'), ('current_state_text', state, 'E'),
+                    ('standard_title', entry['standard_title'], 'N')] if first[key] != value)
+                add('warning', row, changed_columns, condition_text, 'Aynı genel şartın metni, mevcut durumu veya başlığı farklı; ilk satır korunacak.',
                     f'{first["sort_order"]}. satırla karşılaştırıp farklılığı düzeltin veya ilk satırı kabul ederek kaydedin.')
         else:
             conditions[condition] = dict(standard_code=standard, standard_title=entry['standard_title'],

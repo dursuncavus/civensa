@@ -122,13 +122,15 @@ def test_duplicate_action_codes_normalized(db, sample):
 def test_missing_or_renamed_headers_and_sheets(db, sample, mutate):
     _, report = stage(db, sample, workbook(mutate=mutate))
     assert not report['can_commit']
+    assert len(report['issues']) == 1
+    assert not any('boş' in i['message'] for i in report['issues'])
 
 
 @pytest.mark.parametrize('data, filename', [(b'not an xlsx', 'bad.xlsx'), (b'PKbroken', 'bad.xlsx'),
                                            (b'not an xlsx', 'bad.xls')])
 def test_invalid_xlsx_checklist(db, sample, data, filename):
     _, report = ic.create_import(db, sample['strategy'], data, filename)
-    assert any(i['sheet'] == 'Dosya' for i in report['issues'])
+    assert [i['sheet'] for i in report['issues']] == ['Dosya']
     assert not report['can_commit']
 
 
@@ -479,3 +481,13 @@ def test_long_codes_fail_validation_without_database_error(db, sample):
                                                         '5': 'KOS1.1.' + '9' * 5000})]))
     assert not report['can_commit']
     assert {i['column'] for i in report['issues'] if i['level'] == 'blocking'} == {'C', 'F'}
+
+
+def test_reordered_headers_report_the_actual_source_column(db, sample):
+    def reorder(book):
+        for row in book['Plan'].iter_rows():
+            row[0].value, row[7].value = row[7].value, row[0].value
+    _, report = stage(db, sample, workbook([action_row(**{'7': 'Eşleşmeyen Birim'})], mutate=reorder))
+    assert len(report['issues']) == 1
+    assert report['issues'][0]['row'] == 2 and report['issues'][0]['column'] == 'A'
+    assert report['issues'][0]['value'] == 'Eşleşmeyen Birim'

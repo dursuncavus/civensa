@@ -83,7 +83,10 @@ include Üst Yönetim, İç Kontrol İzleme ve Yönlendirme Kurulu and Çalışm
 Other bodies and unmatched department spellings need explicit reusable mapping.
 Unmatched names appear once each. Exported strings are literal cells, including
 values starting with `=`, so reports do not create executable Excel formulas.
-Commit always validates the stored source again using current aliases.
+Structural failures stop field validation until the workbook can be read reliably,
+so unread fields are not reported as blank. Plan issues use the actual source
+column even when headers are reordered. Commit always validates the stored source
+again using current aliases.
 
 ## CIV-049 integration points and current limits
 
