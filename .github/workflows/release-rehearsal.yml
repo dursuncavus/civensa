@@ -1,0 +1,51 @@
+name: Release migration rehearsal
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  rehearsal:
+    # Backups contain private data: only trusted, same-repository release code.
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_DB: release_rehearsal
+          POSTGRES_USER: release_rehearsal
+          POSTGRES_PASSWORD: disposable_rehearsal_only
+        ports:
+          - 5432:5432
+        options: >-
+          --log-driver=none
+          --health-cmd "pg_isready -U release_rehearsal -d release_rehearsal"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install dependencies and PostgreSQL 18 tools
+        run: |
+          python -m pip install -r requirements.txt
+          docker pull postgres:18
+      - name: Restore verified backup, migrate twice, and start application
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DATABASE_URL: postgresql://release_rehearsal:disposable_rehearsal_only@127.0.0.1:5432/release_rehearsal
+        run: python -m ops.release_rehearsal
+      - name: Delete downloaded backup
+        if: always()
+        run: rm -rf -- rehearsal-backup
