@@ -7,7 +7,7 @@ from sqlalchemy import select
 from .models import (ARSectionDefinition, ARDocument, ARSectionContent, ARResourceRow,
     ARDocumentFreeze, ARContentEvent, Department, DepartmentScope, Organization,
     ReportingPeriod, User, ActivityReport, ActivityReportRevision, ReportIndicator,
-    ActualRevision, PublicationIndicatorBinding)
+    ActualRevision, PublicationIndicatorBinding, IndicatorDefinitionRevision)
 from .activity_contract_service import canonical, digest
 from .structure_service import period_name
 
@@ -232,7 +232,7 @@ def row_data(row):
 def resources(db,doc):
     docs=[doc] if doc.department_id else db.scalars(select(ARDocument).where(
         ARDocument.organization_id==doc.organization_id,ARDocument.period_id==doc.period_id,ARDocument.department_id.is_not(None)).order_by(ARDocument.id)).all()
-    result={k:{'title':v[1],'columns':v[2],'rows':[],'totals':{},'source_documents':[]} for k,v in TABLES.items()}
+    result={k:{'section_code':v[0],'title':v[1],'columns':v[2],'rows':[],'totals':{},'source_documents':[]} for k,v in TABLES.items()}
     for source in docs:
         rows=db.scalars(select(ARResourceRow).where(ARResourceRow.document_id==source.id).order_by(ARResourceRow.table_kind,ARResourceRow.position,ARResourceRow.id)).all()
         for row in rows:
@@ -333,12 +333,23 @@ def core_summary(db,doc):
     query=select(ReportIndicator).join(PublicationIndicatorBinding,PublicationIndicatorBinding.id==ReportIndicator.publication_binding_id).where(ReportIndicator.report_revision_id==revision.id)
     if doc.department_id:
         query=query.where(PublicationIndicatorBinding.department_id==doc.department_id)
-    items=db.scalars(query).all();verified=0
+    items=db.scalars(query.order_by(ReportIndicator.id)).all();verified=0;indicators=[]
     for item in items:
         latest=db.scalar(select(ActualRevision).where(ActualRevision.report_indicator_id==item.id).order_by(ActualRevision.revision.desc()).limit(1))
         verified+=bool(latest and latest.state=='verified' and json.loads(latest.evidence_json))
+        binding=db.get(PublicationIndicatorBinding,item.publication_binding_id)
+        definition=db.get(IndicatorDefinitionRevision,binding.definition_revision_id)
+        if digest(definition.definition_json)!=definition.sha256:
+            fail('Gösterge tanımı doğrulanamadı. Strateji ile gösterge raporunu kontrol edin.',409)
+        data=json.loads(definition.definition_json)
+        indicators.append({'name':data['name'],'unit':data.get('unit'),'targets':data.get('targets',[]),
+            'data_source':data.get('data_source',''), 'actual':latest.value if latest else None,
+            'actual_state':latest.state if latest else 'missing','raw_text':latest.raw_text if latest else '',
+            'evidence':json.loads(latest.evidence_json) if latest else [],
+            'explanation':latest.explanation if latest else '',
+            'deviation':json.loads(latest.deviation_json) if latest else {}})
     return {'revision_id':revision.id,'status':'ready' if items and verified==len(items) else 'draft',
-        'total':len(items),'verified':verified,'link':f'/activity-reports/revisions/{revision.id}',
+        'total':len(items),'verified':verified,'indicators':indicators,'link':f'/activity-reports/revisions/{revision.id}',
         'message':f'{len(items)} göstergenin {verified} tanesinde doğrulanmış, kaynaklı gerçekleşme var.'}
 
 
@@ -350,13 +361,17 @@ def report_data(db,user,document_id,use_freeze=True):
             fail('Onaylı faaliyet raporu kopyası doğrulanamadı. Sistem sorumlusuyla iletişime geçin.',409)
         result=json.loads(freeze.payload_json,parse_float=Decimal)
         result.update(frozen=True,sha256=freeze.sha256)
+        # Presentation metadata for pre-CIV-046 freezes; never replace stored facts.
+        for kind, table in result.get('resources',{}).items():
+            if kind in TABLES:table.setdefault('section_code',TABLES[kind][0])
         from .assurance_service import slot
         for row in result['sections']:
             if row['code'] == 'EKLER': slot(db,doc,row,frozen=True)
         return result
     core=core_summary(db,doc)
     result={'id':doc.id,'organization_id':doc.organization_id,'period_id':doc.period_id,
-        'year':db.get(ReportingPeriod,doc.period_id).year,'scope':doc.scope,'department_id':doc.department_id,
+        'year':db.get(ReportingPeriod,doc.period_id).year,'organization':db.get(Organization,doc.organization_id).name,
+        'scope':doc.scope,'department_id':doc.department_id,
         'department':period_name(db,doc.period_id,db.get(Department,doc.department_id)) if doc.department_id else 'İdare',
         'definition_version':doc.definition_version,'revision':doc.revision,'frozen':False,
         'sections':[],'resources':resources(db,doc),'core':core}

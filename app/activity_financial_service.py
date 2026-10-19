@@ -381,6 +381,7 @@ def financial_data(db,doc):
             if doc.department_id and record.department_id!=doc.department_id:continue
             item=calculated(budget_raw(record),kind)
             item.update(id=record.id,import_id=record.import_id,
+                classification=budget_label(db,item,doc.period_id),
                 department=period_name(db,doc.period_id,db.get(Department,record.department_id)) if record.department_id else 'İdare',
                 pp_budget=refs.get((record.department_id,record.economic_code)),pp_publication_id=pub_id,
                 birim_explanation=overrides.get(record.row_key,''))
