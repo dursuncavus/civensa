@@ -91,8 +91,11 @@ def test_all_approval_blockers_atomic_and_visible(client,db,sample):
         indicator=Indicator(period_id=sample['period'].id,department_id=sample['department'].id,subprogram_id=sample['subprogram'].id,card_id=sample['card'].id,name=name,unit='Adet')
         db.add(indicator);db.flush();db.add(IndicatorValue(indicator_id=indicator.id,year=2027,value_kind='target',value='1'))
     db.commit();report=new_report(client,publish(client,db,sample),sample)
+    from tests.test_activity_contract import report_editor
+    app.dependency_overrides[require_user]=lambda:report_editor(sample)
     slot=report['indicators'][0]['report_indicator_id']
     assert client.post(f'/api/activity-reports/indicators/{slot}/actuals',json=actual_payload(explanation='')).status_code==200
+    app.dependency_overrides[require_user]=lambda:sample['strategy']
     url=f"/api/activity-reports/revisions/{report['revision_id']}/approve"
     response=client.post(url);assert response.status_code==409
     blockers=response.json()['detail']['blockers'];assert len(blockers)==3

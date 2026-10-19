@@ -454,14 +454,20 @@ def save_actual(db, user, report_indicator_id, expected_revision, value, state, 
 
 
 def approve_report(db, user, revision_id):
+    from .released_permissions import require_strategy_director, SOD_ERROR
     strategy(user)
     report, revision, pub, payload = report_revision(db, user, revision_id)
     lock_report(db, report)
     ensure_legacy_writable(db, report, revision)
+    require_strategy_director(user)
     if revision.revision != report.current_revision:
         raise HTTPException(409, 'Yalnız güncel rapor revizyonu onaylanabilir.')
     if db.scalar(select(ActivityReportApproval.id).where(ActivityReportApproval.report_revision_id == revision.id)):
         raise HTTPException(409, 'Bu rapor revizyonu zaten onaylı.')
+    authored_actual = db.scalar(select(ActualRevision.id).join(ReportIndicator).where(
+        ReportIndicator.report_revision_id == revision.id, ActualRevision.created_by == user.id).limit(1))
+    if revision.created_by == user.id or authored_actual:
+        raise HTTPException(403, SOD_ERROR.format(record="Faaliyet Raporu revizyonu"))
     blockers = []
     for item in db.scalars(select(ReportIndicator).where(ReportIndicator.report_revision_id == revision.id).order_by(ReportIndicator.id)):
         actual = db.scalar(select(ActualRevision).where(ActualRevision.report_indicator_id == item.id).order_by(ActualRevision.revision.desc()))
@@ -514,7 +520,8 @@ def report_data(db, user, revision_id):
         # A transfer must not disclose the other department's definition.
         differences = [dict(d, **{side: d.get(side) if (d.get(side) or {}).get('department_id') == user.department_id else None for side in ('before', 'after')}) for d in differences]
     approval = db.scalar(select(ActivityReportApproval).where(ActivityReportApproval.report_revision_id == revision.id))
-    return {'approval': {'created_by': approval.created_by, 'name': db.get(User, approval.created_by).full_name, 'created_at': approval.created_at.isoformat()} if approval else None, 'report_id': report.id, 'organization_id': report.organization_id, 'revision_id': revision.id,
+    from .structure_service import closure_notes
+    return {'closure_notes': closure_notes(db, report.period_id, user, report.organization_id), 'approval': {'created_by': approval.created_by, 'name': db.get(User, approval.created_by).full_name, 'created_at': approval.created_at.isoformat()} if approval else None, 'report_id': report.id, 'organization_id': report.organization_id, 'revision_id': revision.id,
         'revision': revision.revision, 'current_revision': report.current_revision, 'year': payload['period'],
         'publication_id': pub.id, 'publication_version': pub.version, 'publication_sha256': revision.publication_sha256,
         'newer_publication_available': latest > pub.version, 'previous_revision_id': revision.previous_revision_id,

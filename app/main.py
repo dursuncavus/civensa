@@ -5,6 +5,7 @@ import json
 from decimal import Decimal
 from .serialization import json_dumps
 from .numbers import parse_number, format_number, format_contract_targets
+from .value_labels import value_kind_label, funding_label
 import os
 import secrets
 import hmac
@@ -22,6 +23,7 @@ from sqlalchemy import select, inspect, func, exists, false, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, selectinload
 from starlette.middleware.sessions import SessionMiddleware
+from starlette.routing import Match
 from alembic import command as alembic_command
 from alembic.config import Config as AlembicConfig
 from alembic.script import ScriptDirectory
@@ -33,8 +35,10 @@ from .models import (
     ActivityCostValue, DepartmentCostValue, Submission, AuditLog, Program,
     SubProgram, TemplateSnapshot, ImportBatch, SubmissionEvent, Notification, NotificationRecipient,
 )
-from .security import verify_password, hash_password
+from .security import verify_password, hash_password, temporary_password
+from .personal_accounts import ACCOUNT_CSV_HEADERS, validate_account_csv, prepare_user_creation
 from . import login_throttling
+from . import released_permissions
 from .seed import seed
 from .template_parser import analyze_template
 from .data_importer import parse_performance_docx
@@ -87,6 +91,41 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="Civensa", version=APP_VERSION, lifespan=lifespan)
+
+
+class FirstPasswordMiddleware:
+    """The signed pending-login marker also gates public pages and unknown URLs.
+
+    require_user separately checks the database flag for every protected route.
+    SessionMiddleware wraps this middleware so its session is available here.
+    """
+    def __init__(self, app):
+        self.app = app
+
+    def protected_route(self, scope):
+        # Protected routes must validate the password fingerprint first, so a
+        # stale temporary-password session still gets the existing 401 behavior.
+        for route in scope["app"].routes:
+            if route.matches(scope)[0] == Match.FULL and hasattr(route, "dependant"):
+                dependencies = [route.dependant]
+                while dependencies:
+                    dependency = dependencies.pop()
+                    if dependency.call is require_user:
+                        return True
+                    dependencies.extend(dependency.dependencies)
+        return False
+
+    async def __call__(self, scope, receive, send):
+        path = scope.get("path", "")
+        if (scope["type"] == "http" and scope.get("session", {}).get("must_change_password")
+                and path not in {"/change-password", "/api/me/change-password", "/logout", "/static"}
+                and not path.startswith("/static/") and not self.protected_route(scope)):
+            await RedirectResponse("/change-password", 303)(scope, receive, send)
+            return
+        await self.app(scope, receive, send)
+
+
+app.add_middleware(FirstPasswordMiddleware)
 app.add_middleware(
     SessionMiddleware,
     secret_key=session_secret(),
@@ -103,6 +142,8 @@ async def security_headers(request: Request, call_next):
     response.headers["X-Content-Type-Options"] = "nosniff"
     response.headers["Referrer-Policy"] = "same-origin"
     response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
+    if request.url.path == "/change-password":
+        response.headers["Cache-Control"] = "no-store"
     response.headers["Content-Security-Policy"] = (
         "default-src 'self'; img-src 'self' data:; script-src 'self'; "
         "style-src 'self' 'unsafe-inline'; font-src 'self'; frame-ancestors 'none'; "
@@ -110,6 +151,8 @@ async def security_headers(request: Request, call_next):
     )
     return response
 app.mount("/static", StaticFiles(directory=BASE_DIR / "static"), name="static")
+from .structure_service import period_name
+
 templates = Jinja2Templates(directory=BASE_DIR / "templates")
 
 
@@ -153,15 +196,24 @@ async def require_user(request: Request, db: Session = Depends(get_db)):
     if not user or not user.is_active:
         request.session.clear()
         raise HTTPException(status_code=401)
+    if user.must_change_password and request.url.path not in {"/change-password", "/api/me/change-password"}:
+        request.session["must_change_password"] = True
+        raise HTTPException(303, "Devam etmek için kendi parolanızı belirleyin.",
+                            headers={"Location": "/change-password"})
     if request.method in {"POST", "PUT", "PATCH", "DELETE"}:
         if not await csrf_valid(request):
             raise HTTPException(403, CSRF_ERROR)
-    return user
+    # Keep authorship request-scoped, including writes made by import services.
+    db.info["released_actor_id"] = user.id
+    try:
+        yield user
+    finally:
+        db.info.pop("released_actor_id", None)
 
 
 def require_strategy(user: User = Depends(require_user)):
     if user.role != "strategy":
-        raise HTTPException(status_code=403)
+        raise HTTPException(403, "Bu işlem yalnızca Strateji Geliştirme kullanıcılarına açıktır. Yetkili hesabınızla giriş yapın veya Strateji Geliştirme ile iletişime geçin.")
     return user
 
 
@@ -240,6 +292,8 @@ from .time_display import turkey_time
 templates.env.filters['turkey_time'] = turkey_time
 templates.env.filters["trnum"] = lambda v: format_number(v)
 templates.env.filters['contract_targets'] = format_contract_targets
+templates.env.filters['value_kind_label'] = value_kind_label
+templates.env.filters['funding_label'] = funding_label
 templates.env.filters["trmoney"] = lambda v: format_number(v, True)
 def section_text(raw):
     content=json.loads(raw)
@@ -306,8 +360,10 @@ def indicator_issues(ind: Indicator, period_year: int):
     if not (ind.data_source.strip() or (ind.card and ind.card.data_source.strip())):
         issues.append("Verinin kaynağı boş.")
     for value in ind.values:
+        if value.raw_text.strip() in {"-", "–", "—"} and value.value is None:
+            continue
         if value.state != "verified" or value.value is None:
-            issues.append(f"{value.year} {value.value_kind}: kaynak değeri doğrulanmalı ({value.raw_text}).")
+            issues.append(f"{value.year} {value_kind_label(value.value_kind)}: kaynak değeri doğrulanmalı ({value.raw_text}).")
     return issues
 
 
@@ -390,11 +446,15 @@ def ensure_submission(db: Session, department_id: int, period_id: int):
 
 @app.get("/", include_in_schema=False)
 def root(request: Request, db: Session = Depends(get_db)):
-    return RedirectResponse("/modules" if current_user(request, db) else "/login", 303)
+    user = current_user(request, db)
+    return RedirectResponse(("/change-password" if user.must_change_password else "/modules") if user else "/login", 303)
 
 
 @app.get("/login", response_class=HTMLResponse)
-def login_page(request: Request):
+def login_page(request: Request, db: Session = Depends(get_db)):
+    user = current_user(request, db)
+    if user and user.is_active and user.must_change_password:
+        return RedirectResponse("/change-password", 303)
     return templates.TemplateResponse(request, "login.html", {"error": None})
 
 
@@ -420,8 +480,10 @@ def login(request: Request, email: str = Form(...), password: str = Form(...), d
     request.session.clear()
     start_user_session(request, user.id, user.password_hash)
     request.session["csrf_token"] = secrets.token_urlsafe(32)
+    if user.must_change_password:
+        request.session["must_change_password"] = True
     log(db, user, "login", "user", user.id)
-    return RedirectResponse("/modules", 303)
+    return RedirectResponse("/change-password" if user.must_change_password else "/modules", 303)
 
 
 @app.post("/logout")
@@ -441,10 +503,12 @@ def modules(request: Request, user: User = Depends(require_user)):
 @app.get("/activity-report", response_class=HTMLResponse)
 def activity_report_workspace(request: Request, year: int = 2026, db: Session = Depends(get_db), user: User = Depends(require_user)):
     from .activity_report_service import annual_indicators
+    from .structure_service import closure_notes
     if year < 2020 or year > 2100:
         raise HTTPException(422, "Faaliyet Raporu yılı 2020–2100 arasında olmalı.")
     return templates.TemplateResponse(request, "activity_report.html", {
         "user": user, "year": year, "indicator_rows": annual_indicators(db, user, year),
+        "closure_notes": closure_notes(db, db.scalar(select(ReportingPeriod.id).where(ReportingPeriod.year == year)), user),
         "years": sorted(set(db.scalars(select(ReportingPeriod.year)).all()) | {year}),
     })
 
@@ -453,7 +517,7 @@ def activity_report_workspace(request: Request, year: int = 2026, db: Session = 
 def dashboard(request: Request, db: Session = Depends(get_db), user: User = Depends(require_user)):
     period = active_period(db) if user.role == "department" else session_period(request, db)
     if not period:
-        raise HTTPException(409, "Raporlama dönemi bulunamadı.")
+        return templates.TemplateResponse(request, "first_period.html", {"user": user, "attempted_year": datetime.now(UTC).year, "error": ""})
     if user.role == "department":
         dept = db.get(Department, user.department_id)
         submission = ensure_submission(db, dept.id, period.id)
@@ -461,11 +525,12 @@ def dashboard(request: Request, db: Session = Depends(get_db), user: User = Depe
         indicators = db.scalars(select(Indicator).where(Indicator.department_id == dept.id, Indicator.period_id == period.id).options(selectinload(Indicator.values))).all()
         issues = sum(1 for i in indicators if indicator_issues(i, period.year))
         return templates.TemplateResponse(request, "dashboard.html", {
-            "user": user, "period": period, "department": dept, "submission": submission,
+            "user": user, "period": period, "department": dept, "department_label": period_name(db, period.id, dept), "submission": submission,
             "indicators": indicators, "issues": issues, "notifications": user_notifications(db, user),
         })
 
-    departments = db.scalars(select(Department).order_by(Department.name)).all()
+    from .program_service import period_departments
+    departments = period_departments(db, period.id)
     periods = db.scalars(select(ReportingPeriod).order_by(ReportingPeriod.year.desc())).all()
     snapshots = db.scalars(select(TemplateSnapshot).where(TemplateSnapshot.period_id == period.id).order_by(TemplateSnapshot.created_at.desc())).all()
     imports = db.scalars(select(ImportBatch).where(ImportBatch.period_id == period.id).order_by(ImportBatch.created_at.desc())).all()
@@ -522,12 +587,14 @@ def department_page(department_id: int, request: Request, db: Session = Depends(
         activity_totals[key] = sum(activity_values) if complete else None
         general_totals[key] = (sum(activity_values) + personnel_map[key]
                                if complete and personnel_map.get(key) is not None else None)
+    from .program_service import activity_source_disagreements
     return templates.TemplateResponse(request, "department.html", {
-        "user": user, "department": dept, "indicators": indicators, "activities": activities,
+        "user": user, "department": dept, "department_label": period_name(db, period.id, dept), "indicators": indicators, "activities": activities,
         "submission": submission, "issue_map": issue_map, "subprograms": subprograms, "period": period,
         "indicator_columns": ind_cols, "activity_columns": act_cols, "indicator_value_maps": ind_value_maps,
         "activity_maps": activity_maps, "personnel_map": personnel_map, "activity_totals": activity_totals,
         "general_totals": general_totals, "workflow_events": workflow_events,
+        "source_disagreements": {a.id: activity_source_disagreements(a) for a in activities},
         "funding_maps": {a.id:{f"{v.year}:{v.value_kind}:{v.funding_type}":v.amount for v in a.cost_values} for a in activities},
         "notifications": user_notifications(db, user),
     })
@@ -607,7 +674,7 @@ async def create_activity(request: Request, db: Session = Depends(get_db), user:
     act = Activity(period_id=period.id, department_id=user.department_id, subprogram_id=subprogram_id, name=name, explanation=str(data.get("explanation", "")).strip())
     db.add(act); db.flush()
     from .program_service import save_activity_costs
-    save_activity_costs(db, act, period.year, data)
+    save_activity_costs(db, act, period.year, data, actor=user)
     db.commit(); db.refresh(act)
     log(db, user, "activity_create", "activity", act.id)
     return {"ok": True, "id": act.id}
@@ -615,12 +682,18 @@ async def create_activity(request: Request, db: Session = Depends(get_db), user:
 
 @app.put("/api/activities/{activity_id}")
 async def update_activity(activity_id: int, request: Request, db: Session = Depends(get_db), user: User = Depends(require_user)):
-    act = db.scalar(select(Activity).where(Activity.id == activity_id).options(selectinload(Activity.cost_values)))
+    body = await request.body()
+    return _update_activity(activity_id, body, db, user)
+
+
+def _update_activity(activity_id: int, body: bytes, db: Session, user: User):
+    # Read the complete body before locking; keep the original validation order.
+    act = db.scalar(select(Activity).where(Activity.id == activity_id).with_for_update().options(selectinload(Activity.cost_values)))
     if not act:
         raise HTTPException(404)
     ensure_department_editable(db, user, act.department_id, act.period_id)
     period = db.get(ReportingPeriod, act.period_id)
-    data = await request.json()
+    data = json.loads(body)
     name = str(data.get("name", act.name)).strip()
     if not name:
         raise HTTPException(422, "Faaliyet adı zorunlu.")
@@ -636,10 +709,14 @@ async def update_activity(activity_id: int, request: Request, db: Session = Depe
     act.name = name
     act.explanation = str(data.get("explanation", act.explanation)).strip()
     from .program_service import save_activity_costs
-    save_activity_costs(db, act, period.year, data)
+    save_activity_costs(db, act, period.year, data, actor=user)
     db.commit()
     log(db, user, "activity_update", "activity", act.id)
-    return {"ok": True}
+    db.expire(act, ["cost_values"])
+    return {"ok": True, "cost_totals": {
+        f"{v.year}:{v.value_kind}": str(v.amount) if v.amount is not None else None
+        for v in act.cost_values if v.funding_type == "total"
+    }}
 
 
 @app.delete("/api/activities/{activity_id}")
@@ -686,13 +763,19 @@ async def save_personnel_costs(department_id: int, request: Request, db: Session
 
 @app.post("/api/departments/{department_id}/submit")
 def submit_department(department_id: int, db: Session = Depends(get_db), user: User = Depends(require_user)):
+    # Callers may pass an actor from another Session; use this transaction's copy.
+    user = db.get(User, user.id, populate_existing=True)
     if user.role != "department" or user.department_id != department_id:
-        raise HTTPException(403)
+        raise HTTPException(403, "Bu PP paketini gönderemezsiniz. Paketin müdürlüğüne ait Müdür veya gönderim yetkili Personel hesabıyla giriş yapın; yetki için Müdürünüze başvurun.")
+    released_permissions.require_submit(user)
     period = active_period(db)
     # Serialize submission creation and repeated sends for this department.
     department = db.scalar(select(Department).where(Department.id == department_id).with_for_update())
     if not department:
         raise HTTPException(404)
+    # Recheck permission after waiting for any concurrent grant/revoke.
+    user = db.get(User, user.id, populate_existing=True)
+    released_permissions.require_submit(user)
     submission = ensure_submission(db, department_id, period.id)
     if submission.status == "approved":
         raise HTTPException(409, "Onaylanmış paket yeniden gönderilemez.")
@@ -715,7 +798,7 @@ def submit_department(department_id: int, db: Session = Depends(get_db), user: U
     ))
     db.add(Notification(
         role="strategy", event_type="submission_submitted",
-        message=f"{department.name} revizyon {submission.revision} incelemeye gönderildi.",
+        message=f"{period_name(db, period.id, department)} revizyon {submission.revision} incelemeye gönderildi.",
         link=f"/department/{department_id}",
     ))
     db.commit(); log(db, user, "department_submit", "submission", submission.id, f"revision={submission.revision}")
@@ -775,6 +858,7 @@ def activity_mapping_page(request: Request, db: Session = Depends(get_db), user:
     recent_batches = list(batch_groups.values())[:10]
     return templates.TemplateResponse(request, "activity_mapping.html", {
         "user": user, "period": period, "groups": list(departments.values()),
+        "department_names": {did: period_name(db, period.id, group["department"]) for did, group in departments.items()},
         "unresolved_count": len(activities), "suggestion_count": suggestion_count,
         "strong_suggestion_count": strong_suggestion_count, "recent_batches": recent_batches,
     })
@@ -801,7 +885,7 @@ def export_activity_mapping_queue(request: Request, db: Session = Depends(get_db
             suggestion = f"{suggested.program.name} / {suggested.name}" if suggested else ""
             level = "Güçlü" if suggested and score >= 0.50 else "Kontrol gerekli" if suggested else "Öneri yok"
             writer.writerow(csv_row([
-                activity.department.name, activity.id, activity.name, suggestion,
+                period_name(db, period.id, activity.department), activity.id, activity.name, suggestion,
                 round(score * 100), level, "",
             ]))
     data = ("\ufeff" + output.getvalue()).encode("utf-8")
@@ -857,7 +941,7 @@ def validate_mapping_csv(data: bytes, db: Session, period: ReportingPeriod):
         row_errors = []
         if activity.subprogram_id is not None:
             row_errors.append("Faaliyet artık eşleştirme kuyruğunda değil; güncel CSV'yi indirin.")
-        if not csv_cell_matches(source.get("Müdürlük", ""), activity.department.name):
+        if not csv_cell_matches(source.get("Müdürlük", ""), period_name(db, period.id, activity.department)):
             row_errors.append("Müdürlük adı güncel kayıtla eşleşmiyor.")
         if not csv_cell_matches(source.get("Faaliyet", ""), activity.name):
             row_errors.append("Faaliyet adı güncel kayıtla eşleşmiyor.")
@@ -892,7 +976,7 @@ async def preview_activity_mapping_csv(
         "count": len(rows),
         "rows": [{
             "activity_id": row["activity"].id,
-            "department": row["activity"].department.name,
+            "department": period_name(db, period.id, row["activity"].department),
             "activity": row["activity"].name,
             "selection": row["selection"],
         } for row in rows[:100]],
@@ -962,7 +1046,7 @@ async def revert_activity_mapping_batch(
             continue
         submission = editable_submission(db, activity.department_id, period.id)
         if submission and submission.status in {"submitted", "approved"}:
-            errors.append(f"{activity.department.name}: paket incelemede veya onaylı.")
+            errors.append(f"{period_name(db, period.id, activity.department)}: paket incelemede veya onaylı.")
             continue
         validated.append(activity)
     if errors:
@@ -1022,7 +1106,7 @@ async def save_activity_mappings(request: Request, db: Session = Depends(get_db)
             continue
         submission = ensure_submission(db, act.department_id, period.id)
         if submission.status in {"submitted", "approved"}:
-            errors.append(f"{act.department.name}: paket incelemede/onaylı; eşleştirme değiştirilemez.")
+            errors.append(f"{period_name(db, period.id, act.department)}: paket incelemede/onaylı; eşleştirme değiştirilemez.")
             continue
         validated.append((act, sp))
     if errors:
@@ -1048,7 +1132,7 @@ def users_page(request: Request, db: Session = Depends(get_db), user: User = Dep
     users = db.scalars(select(User).order_by(User.full_name)).all()
     departments = db.scalars(select(Department).order_by(Department.name)).all()
     assigned_department_ids = {item.department_id for item in users if item.role == "department" and item.department_id and item.is_active}
-    missing_departments = [item for item in departments if item.id not in assigned_department_ids]
+    missing_departments = [item for item in departments if item.is_active and item.id not in assigned_department_ids]
     return templates.TemplateResponse(request, "users.html", {
         "user": user, "users": users, "departments": departments,
         "missing_departments": missing_departments,
@@ -1056,113 +1140,30 @@ def users_page(request: Request, db: Session = Depends(get_db), user: User = Dep
     })
 
 
+@app.get("/api/users/template.csv")
 @app.get("/api/users/missing-departments.csv")
 def missing_department_accounts_csv(db: Session = Depends(get_db), user: User = Depends(require_strategy)):
-    departments = db.scalars(select(Department).order_by(Department.name)).all()
-    assigned = set(db.scalars(
-        select(User.department_id).where(User.role == "department", User.is_active.is_(True), User.department_id.is_not(None))
-    ).all())
+    # All active directorates: existing personal accounts never prevent adding staff.
+    departments = db.scalars(select(Department).where(Department.is_active.is_(True)).order_by(Department.name)).all()
     output = io.StringIO()
     writer = csv.writer(output)
     writer.writerow(csv_row(ACCOUNT_CSV_HEADERS))
     for department in departments:
-        if department.id not in assigned:
-            writer.writerow(csv_row([department.id, department.name, "", "", ""]))
+        writer.writerow(csv_row([department.id, department.name, "", "", ""]))
     data = ("\ufeff" + output.getvalue()).encode("utf-8")
-    headers = {"Content-Disposition": 'attachment; filename="civensa-eksik-mudurluk-hesaplari.csv"'}
+    headers = {"Content-Disposition": 'attachment; filename="civensa-kisisel-hesap-sablonu.csv"',
+               "Cache-Control": "no-store"}
     return StreamingResponse(io.BytesIO(data), media_type="text/csv; charset=utf-8", headers=headers)
-
-
-ACCOUNT_CSV_HEADERS = ["Müdürlük ID", "Müdürlük", "Ad Soyad", "E-posta", "Geçici Parola"]
-
-
-def validate_account_csv(data: bytes, db: Session):
-    try:
-        text = data.decode("utf-8-sig")
-    except UnicodeDecodeError:
-        return [], ["Dosya UTF-8 kodlamalı CSV olmalı."]
-    if "\x00" in text:
-        return [], ["CSV dosyasında geçersiz karakter bulundu."]
-    try:
-        reader = csv.DictReader(io.StringIO(text))
-    except csv.Error:
-        return [], ["CSV dosyası okunamadı."]
-    if reader.fieldnames != ACCOUNT_CSV_HEADERS:
-        return [], ["Sütun başlıkları indirilen şablonla aynı olmalı."]
-
-    departments = {item.id: item for item in db.scalars(select(Department)).all()}
-    assigned = set(db.scalars(
-        select(User.department_id).where(User.role == "department", User.is_active.is_(True), User.department_id.is_not(None))
-    ).all())
-    existing_emails = {str(value).lower() for value in db.scalars(select(User.email)).all()}
-    seen_departments, seen_emails, rows, errors = set(), set(), [], []
-    try:
-        source_rows = list(reader)
-    except csv.Error:
-        return [], ["CSV satırları okunamadı."]
-    if len(source_rows) > 200:
-        return [], ["CSV en fazla 200 satır içerebilir."]
-
-    for line_no, source in enumerate(source_rows, start=2):
-        department_raw = str(source.get("Müdürlük ID", "")).strip()
-        department_name = str(source.get("Müdürlük", "")).strip()
-        full_name = str(source.get("Ad Soyad", "")).strip()
-        email = str(source.get("E-posta", "")).strip().lower()
-        password = str(source.get("Geçici Parola", ""))
-        if not full_name and not email and not password.strip():
-            continue
-        prefix = f"Satır {line_no}: "
-        try:
-            department_id = int(department_raw)
-        except ValueError:
-            errors.append(prefix + "Müdürlük ID sayısal olmalı.")
-            continue
-        department = departments.get(department_id)
-        if not department:
-            errors.append(prefix + "Müdürlük bulunamadı.")
-            continue
-        row_errors = []
-        if not csv_cell_matches(department_name, department.name):
-            row_errors.append("Müdürlük adı şablonla eşleşmiyor.")
-        if department_id in assigned:
-            row_errors.append("Bu müdürlüğün hesabı zaten var.")
-        if department_id in seen_departments:
-            row_errors.append("Aynı müdürlük dosyada birden fazla kez doldurulmuş.")
-        if not full_name:
-            row_errors.append("Ad Soyad gerekli.")
-        if not email or "@" not in email or email.startswith("@") or email.endswith("@"):
-            row_errors.append("Geçerli e-posta gerekli.")
-        elif email in existing_emails or email in seen_emails:
-            row_errors.append("E-posta zaten kayıtlı veya dosyada tekrarlanıyor.")
-        if password != password.strip():
-            row_errors.append("Geçici parolanın başında veya sonunda boşluk olamaz.")
-        if len(password) < 8:
-            row_errors.append("Geçici parola en az 8 karakter olmalı.")
-        if row_errors:
-            errors.extend(prefix + message for message in row_errors)
-            continue
-        seen_departments.add(department_id)
-        seen_emails.add(email)
-        rows.append({
-            "department_id": department_id,
-            "department_name": department.name,
-            "full_name": full_name,
-            "email": email,
-            "password": password,
-        })
-    if not rows and not errors:
-        errors.append("Doldurulmuş hesap satırı bulunamadı.")
-    return rows, errors
 
 
 @app.post("/api/users/bulk-preview")
 async def preview_users_csv(file: UploadFile = File(...), db: Session = Depends(get_db), user: User = Depends(require_strategy)):
     data = await read_upload_limited(file, 256 * 1024, "CSV dosyası")
-    rows, errors = validate_account_csv(data, db)
+    rows, errors = validate_account_csv(data, db, user)
     return {
         "ok": not errors,
         "count": len(rows),
-        "rows": [{key: row[key] for key in ("department_id", "department_name", "full_name", "email")} for row in rows],
+        "rows": [{key: row[key] for key in ("department_id", "department_name", "full_name", "email", "duty")} for row in rows],
         "errors": errors[:50],
     }
 
@@ -1170,30 +1171,108 @@ async def preview_users_csv(file: UploadFile = File(...), db: Session = Depends(
 @app.post("/api/users/bulk-import")
 async def import_users_csv(file: UploadFile = File(...), db: Session = Depends(get_db), user: User = Depends(require_strategy)):
     data = await read_upload_limited(file, 256 * 1024, "CSV dosyası")
-    rows, errors = validate_account_csv(data, db)
+    rows, errors = validate_account_csv(data, db, user)
     if errors:
         raise HTTPException(422, {"message": "CSV doğrulaması başarısız; hiçbir hesap oluşturulmadı.", "errors": errors[:50]})
     batch_id = secrets.token_hex(8)
+    # Credentials live only in this response buffer. No token, file, session,
+    # database column, or audit detail can retrieve them after the response.
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(csv_row(["Müdürlük", "Ad Soyad", "E-posta", "Görev", "Geçici Parola"]))
     try:
         for row in rows:
+            password = temporary_password()
             new_user = User(
                 email=row["email"], full_name=row["full_name"], role="department",
-                department_id=row["department_id"], password_hash=hash_password(row["password"]),
+                department_id=row["department_id"], password_hash=hash_password(password),
+                position=row["position"], can_submit=False, is_active=True, must_change_password=True,
             )
+            user, reason = prepare_user_creation(db, user, new_user)
+            appointment_reason = f"Toplu hesap oluşturma, CSV {batch_id}"
+            if reason:
+                appointment_reason += "; " + reason
             db.add(new_user); db.flush()
+            released_permissions.audit_user_change(db, user, new_user, "position", None,
+                                                   new_user.position, appointment_reason)
             db.add(AuditLog(
                 user_id=user.id, action="user_bulk_create_item", entity_type="user", entity_id=new_user.id,
                 details=f"batch={batch_id};department_id={row['department_id']}",
             ))
-        db.add(AuditLog(
-            user_id=user.id, action="user_bulk_create", entity_type="user",
-            details=f"batch={batch_id};count={len(rows)}",
-        ))
+            writer.writerow(csv_row([row["department_name"], row["full_name"], row["email"], row["duty"], password]))
+        db.add(AuditLog(user_id=user.id, action="user_bulk_create", entity_type="user",
+                        details=f"batch={batch_id};count={len(rows)}"))
         db.commit()
     except IntegrityError:
         db.rollback()
-        raise HTTPException(409, "Hesaplar başka bir işlemde değişti; listeyi yeniden indirip tekrar deneyin.")
-    return {"ok": True, "created": len(rows), "batch_id": batch_id}
+        raise HTTPException(409, "Hesaplar başka bir işlemde değişti; Kullanıcılar listesini yenileyin. Oluşturulmuş hesaplar için Parola sıfırla seçin.") from None
+    except HTTPException:
+        db.rollback()
+        raise
+    data = ("\ufeff" + output.getvalue()).encode("utf-8")
+    output.close()
+    return StreamingResponse(io.BytesIO(data), media_type="text/csv; charset=utf-8", headers={
+        "Content-Disposition": f'attachment; filename="civensa-gecici-parolalar-{batch_id}.csv"',
+        "Cache-Control": "no-store, private", "Pragma": "no-cache",
+        "X-Account-Batch": batch_id, "X-Accounts-Created": str(len(rows)),
+    })
+
+
+@app.get("/api/users/batches/{batch_id}/credentials.csv")
+def expired_user_credentials(batch_id: str, user: User = Depends(require_strategy)):
+    raise HTTPException(410, "Geçici parola dosyası yalnızca hesap oluşturulurken bir kez teslim edilir; tekrar indirilemez. Kullanıcılar ekranında her kullanıcı için Parola sıfırla seçin.")
+
+
+def deactivate_users(db, actor, targets, reason):
+    """Validate the entire selection before changing any account; never delete."""
+    # Lock all organizations/departments in the existing administration order.
+    dids = {u.department_id for u in [actor, *targets] if u.department_id}
+    from .models import Organization
+    orgs = set(db.scalars(select(Department.organization_id).where(Department.id.in_(dids))))
+    for oid in sorted(orgs):
+        db.scalar(select(Organization).where(Organization.id == oid).with_for_update())
+    for did in sorted(dids):
+        db.scalar(select(Department).where(Department.id == did).with_for_update())
+    locked = []
+    for target in targets:
+        actor, target = released_permissions.lock_user_administration(db, actor, target)
+        strategy_director = target.position == "director" and released_permissions.is_strategy_user(db, target)
+        if strategy_director:
+            released_permissions.require_strategy_user_management(db, actor, target)
+        if target.id == actor.id and not strategy_director:
+            raise HTTPException(409, "Kendi hesabınızı pasifleştiremezsiniz. Seçimden kendi hesabınızı çıkarın.")
+        locked.append(target)
+    changed = 0
+    for target in locked:
+        old = target.is_active
+        target.is_active = False
+        if old:
+            changed += 1
+            released_permissions.audit_user_change(db, actor, target, "is_active", True, False, reason)
+            db.add(AuditLog(user_id=actor.id, action="user_deactivate", entity_type="user", entity_id=target.id,
+                            details=json_dumps({"reason": reason}, ensure_ascii=False)))
+    return changed
+
+
+@app.post("/api/users/bulk-deactivate")
+async def bulk_deactivate_users(request: Request, db: Session = Depends(get_db), user: User = Depends(require_strategy)):
+    data = await request.json()
+    ids = data.get("user_ids") if isinstance(data, dict) else None
+    reason = data.get("reason", "") if isinstance(data, dict) else ""
+    if not isinstance(reason, str) or not reason.strip() or len(reason.strip()) > 1000:
+        raise HTTPException(422, "Pasifleştirme gerekçesi eksik veya çok uzun. Gerekçe alanına 1–1000 karakterlik açıklama yazın.")
+    if not isinstance(ids, list) or not 1 <= len(ids) <= 200 or any(type(uid) is not int for uid in ids):
+        raise HTTPException(422, "Kullanıcı seçimi geçersiz. Kullanıcılar ekranında 1–200 hesap seçin.")
+    targets = db.scalars(select(User).where(User.id.in_(set(ids))).order_by(User.id)).all()
+    if len(targets) != len(set(ids)):
+        raise HTTPException(404, "Seçilen hesaplardan biri bulunamadı. Kullanıcılar listesini yenileyip tekrar seçin.")
+    try:
+        count = deactivate_users(db, user, targets, reason.strip())
+        released_permissions.commit_user_change(db)
+    except HTTPException:
+        db.rollback()
+        raise
+    return {"ok": True, "deactivated": count}
 
 
 @app.post("/api/users/{user_id}/active")
@@ -1205,10 +1284,23 @@ async def set_user_active(user_id: int, request: Request, db: Session = Depends(
     active = data.get("active")
     if not isinstance(active, bool):
         raise HTTPException(422, "Etkinlik durumu true/false olmalı.")
-    if target.id == user.id and not active:
+    user, target = released_permissions.lock_user_administration(db, user, target)
+    strategy_director = target.position == "director" and released_permissions.is_strategy_user(db, target)
+    reason = None
+    if strategy_director:
+        reason = released_permissions.require_strategy_user_management(db, user, target, appointment=active)
+    if target.id == user.id and not active and not strategy_director:
         raise HTTPException(409, "Kendi hesabınızı devre dışı bırakamazsınız.")
+    if active and target.department_id:
+        from .master_data_service import active_department
+        active_department(db, target.department_id)
+    if active and target.position == "director":
+        released_permissions.check_director_available(db, target)
+    old = target.is_active
     target.is_active = active
-    db.commit()
+    if old != active:
+        released_permissions.audit_user_change(db, user, target, "is_active", old, active, reason)
+    released_permissions.commit_user_change(db)
     log(db, user, "user_activate" if active else "user_deactivate", "user", target.id)
     return {"ok": True, "active": target.is_active}
 
@@ -1222,7 +1314,11 @@ async def reset_user_password(user_id: int, request: Request, db: Session = Depe
     password = str(data.get("password", ""))
     if password != password.strip() or len(password) < 8:
         raise HTTPException(422, "Yeni parola en az 8 karakter olmalı ve kenar boşluğu içermemeli.")
+    user, target = released_permissions.lock_user_administration(db, user, target)
+    if target.position == "director":
+        released_permissions.require_strategy_user_management(db, user, target)
     target.password_hash = hash_password(password)
+    target.must_change_password = True
     db.commit()
     log(db, user, "user_password_reset", "user", target.id)
     return {"ok": True}
@@ -1243,15 +1339,17 @@ async def revert_user_batch(batch_id: str, request: Request, db: Session = Depen
         if not target:
             errors.append(f"Kullanıcı #{audit.entity_id} artık bulunamıyor.")
             continue
+        user, target = released_permissions.lock_user_administration(db, user, target)
+        if target.position == "director":
+            released_permissions.require_strategy_user_management(db, user, target)
         used = db.scalar(select(AuditLog.id).where(AuditLog.user_id == target.id).limit(1))
         if used:
-            errors.append(f"{target.email}: hesap kullanılmış; silinemez.")
+            errors.append(f"{target.email}: hesap kullanılmış; toplu geri alınamaz. Kullanıcılar ekranından gerekçeyle pasifleştirin.")
             continue
         targets.append(target)
     if errors:
-        raise HTTPException(409, {"message": "İşlem grubu güvenle geri alınamıyor; hiçbir hesap silinmedi.", "errors": errors[:50]})
-    for target in targets:
-        db.delete(target)
+        raise HTTPException(409, {"message": "İşlem grubu güvenle geri alınamıyor; hiçbir hesap pasifleştirilmedi.", "errors": errors[:50]})
+    deactivate_users(db, user, targets, f"Toplu hesap oluşturmayı geri alma, CSV {batch_id}")
     db.add(AuditLog(user_id=user.id, action="user_bulk_create_revert", entity_type="user_batch", details=f"batch={batch_id};count={len(targets)}"))
     db.commit()
     return {"ok": True, "reverted": len(targets)}
@@ -1274,13 +1372,22 @@ async def create_user(request: Request, db: Session = Depends(get_db), user: Use
         raise HTTPException(422, "Geçici parola en az 8 karakter olmalı.")
     if db.scalar(select(User).where(User.email == email)):
         raise HTTPException(409, "Bu e-posta zaten kayıtlı.")
-    department_id = int(data["department_id"]) if role == "department" and data.get("department_id") else None
+    try:
+        department_id = int(data["department_id"]) if data.get("department_id") else None
+    except (ValueError, TypeError):
+        raise HTTPException(422, "Müdürlük seçimi geçersiz. Kullanıcılar ekranından bir müdürlük seçin.") from None
+    if role == "strategy":
+        department_id = released_permissions.strategy_department(db).id
     if role == "department" and not department_id:
         raise HTTPException(422, "Müdürlük kullanıcısına müdürlük atanmalı.")
-    if department_id and not db.get(Department, department_id):
-        raise HTTPException(422, "Müdürlük bulunamadı.")
-    new = User(email=email, full_name=full_name, role=role, department_id=department_id, password_hash=hash_password(password))
-    db.add(new); db.commit(); db.refresh(new)
+    position = data.get("position", "staff")
+    released_permissions.validate_position(position)
+    new = User(email=email, full_name=full_name, role=role, department_id=department_id,
+               password_hash=hash_password(password), position=position, can_submit=False, is_active=True, must_change_password=True)
+    user, reason = prepare_user_creation(db, user, new)
+    db.add(new); db.flush()
+    released_permissions.audit_user_change(db, user, new, "position", None, position, reason)
+    released_permissions.commit_user_change(db); db.refresh(new)
     log(db, user, "user_create", "user", new.id, f"role={role}")
     return {"ok": True, "id": new.id}
 
@@ -1300,18 +1407,29 @@ def review(request: Request, db: Session = Depends(get_db), user: User = Depends
             event_map.setdefault(event.submission_id, []).append(event)
     return templates.TemplateResponse(request, "review.html", {
         "user": user, "rows": rows, "period": period, "event_map": event_map,
+        "department_names": {d.id: period_name(db, period.id, d) for _, d in rows},
         "notifications": user_notifications(db, user),
     })
 
 
 @app.post("/api/submissions/{submission_id}/decision")
 async def submission_decision(submission_id: int, request: Request, db: Session = Depends(get_db), user: User = Depends(require_strategy)):
+    user = db.get(User, user.id, populate_existing=True)
+    released_permissions.require_strategy_director(user)
     # Read the body before the row lock: no await may run while FOR UPDATE is held,
     # or a second request blocking on the same row freezes the event loop (A1-F4).
     try:
         data = await request.json()
     except ValueError:
         data = None
+    scope = db.get(Submission, submission_id, populate_existing=True)
+    if not scope:
+        raise HTTPException(404, "Paket bulunamadı. İnceleme kuyruğunu yenileyin.")
+    # A decision cannot target a draft that becomes submitted while this request
+    # waits for the department lock. Recheck the state under the locks below too.
+    if scope.status != "submitted":
+        raise HTTPException(409, "Yalnızca incelemedeki paket için karar verilebilir.")
+    db.scalar(select(Department).where(Department.id == scope.department_id).with_for_update())
     sub = db.scalar(select(Submission).where(Submission.id == submission_id)
                     .with_for_update().execution_options(populate_existing=True))
     if not sub:
@@ -1324,6 +1442,7 @@ async def submission_decision(submission_id: int, request: Request, db: Session 
     decision = data.get("decision")
     note = str(data.get("note", "")).strip()
     if decision == "approve":
+        released_permissions.require_independent_pp_approver(db, user, sub)
         from .program_service import validate_department
         errors, warnings = validate_department(db, sub.period_id, sub.department_id)
         if errors:
@@ -1346,7 +1465,7 @@ async def submission_decision(submission_id: int, request: Request, db: Session 
     db.add(Notification(
         role="department", department_id=sub.department_id,
         event_type=f"submission_{decision}",
-        message=f"{department.name} revizyon {sub.revision or 1} {decision_label}.",
+        message=f"{period_name(db, sub.period_id, department)} revizyon {sub.revision or 1} {decision_label}.",
         link=f"/department/{sub.department_id}",
     ))
     db.commit(); log(db, user, f"submission_{decision}", "submission", sub.id, f"revision={sub.revision or 1};note={note}")
@@ -1387,6 +1506,11 @@ def notification_read(notification_id: int, db: Session = Depends(get_db), user:
     return {"ok": True}
 
 
+@app.get("/change-password", response_class=HTMLResponse)
+def change_password_page(request: Request, user: User = Depends(require_user)):
+    return templates.TemplateResponse(request, "change_password.html", {"user": user})
+
+
 @app.post("/api/me/change-password")
 async def change_own_password(request: Request, db: Session = Depends(get_db), user: User = Depends(require_user)):
     data = await request.json()
@@ -1405,7 +1529,7 @@ async def change_own_password(request: Request, db: Session = Depends(get_db), u
     # committed while this request waited for its body must win, not be overwritten.
     new_hash = hash_password(new_password)
     changed = db.execute(update(User).where(User.id == user.id, User.password_hash == user.password_hash)
-                         .values(password_hash=new_hash)).rowcount
+                         .values(password_hash=new_hash, must_change_password=False)).rowcount
     if changed != 1:
         db.rollback()
         raise HTTPException(409, "Parolanız bu sırada başka bir işlemle değiştirildi. Yeniden giriş yapıp tekrar deneyin.")
@@ -1413,6 +1537,7 @@ async def change_own_password(request: Request, db: Session = Depends(get_db), u
     # Other sessions of this user are now rejected; keep only the session that made the change,
     # stamped with the hash written here (a reset committed right after must still end it).
     start_user_session(request, user.id, new_hash)
+    request.session.pop("must_change_password", None)
     log(db, user, "self_password_change", "user", user.id)
     return {"ok": True}
 
@@ -1487,8 +1612,10 @@ async def data_import_preview(period_id: int, file: UploadFile = File(...), db: 
         "ok": True, "batch_id": batch.id, "status": batch.status,
         "summary": plan["summary"], "warnings": warnings,
         "errors": errors, "coverage_items": plan["parsed"].get("coverage_items", []),
+        "conflicts": plan["conflicts"], "decisions": json.loads(batch.decisions_json or "[]"),
+        "review_items": plan["parsed"].get("review_items", []),
         "departments": preview_departments, "mappings": plan["mappings"],
-        "can_apply": not plan["unresolved"] and not year_mismatch and not errors,
+        "can_apply": not plan["unresolved"] and not plan["unresolved_conflicts"] and not year_mismatch and not errors,
     }
 
 
@@ -1498,7 +1625,7 @@ def import_batch_detail(batch_id: int, db: Session = Depends(get_db), user: User
     if not batch:
         raise HTTPException(404)
     parsed = json.loads(batch.payload_json)
-    plan = build_department_plan(db, parsed)
+    plan = build_department_plan(db, parsed, json.loads(batch.decisions_json or "[]"))
     period = db.get(ReportingPeriod, batch.period_id)
     source_years = plan["summary"].get("source_years", [])
     year_mismatch = bool(period and source_years and source_years != [period.year])
@@ -1511,19 +1638,44 @@ def import_batch_detail(batch_id: int, db: Session = Depends(get_db), user: User
         "id": batch.id, "filename": batch.filename, "status": batch.status,
         "summary": plan["summary"], "warnings": warnings,
         "errors": errors, "coverage_items": plan["parsed"].get("coverage_items", []),
+        "conflicts": plan["conflicts"], "decisions": json.loads(batch.decisions_json or "[]"),
+        "review_items": plan["parsed"].get("review_items", []),
         "departments": [{
             "name": d["name"], "block_count": len(d["blocks"]),
             "indicator_count": sum(len(b["indicators"]) for b in d["blocks"]),
             "activity_count": len(d["activities"]),
         } for d in plan["parsed"].get("departments", [])],
-        "mappings": plan["mappings"], "can_apply": batch.status == "preview" and not plan["unresolved"] and not year_mismatch and not errors,
+        "mappings": plan["mappings"], "can_apply": batch.status == "preview" and not plan["unresolved"] and not plan["unresolved_conflicts"] and not year_mismatch and not errors,
         "can_revert": can_revert, "revert_reason": revert_reason,
     }
 
 
+@app.post("/api/import-batches/{batch_id}/conflicts/{conflict_id}/decision")
+async def import_conflict_decision(batch_id: int, conflict_id: str, request: Request,
+                                   db: Session = Depends(get_db), user: User = Depends(require_strategy)):
+    body = await request.body()
+    return _import_conflict_decision(batch_id, conflict_id, body, db, user)
+
+
+def _import_conflict_decision(batch_id: int, conflict_id: str, body: bytes, db: Session, user: User):
+    # No await can occur while the batch lock is held.
+    batch = db.scalar(select(ImportBatch).where(ImportBatch.id == batch_id).with_for_update())
+    if not batch:
+        raise HTTPException(404)
+    data = json.loads(body)
+    from .import_service import decide_import_conflict
+    try:
+        decide_import_conflict(db, batch, conflict_id, data.get("chosen_amount"), data.get("reason"), user)
+        db.commit()
+    except ValueError as exc:
+        db.rollback()
+        raise HTTPException(422, str(exc)) from None
+    return import_batch_detail(batch_id, db, user)
+
+
 @app.post("/api/import-batches/{batch_id}/apply")
 def apply_data_import(batch_id: int, preserve_existing: bool = False, db: Session = Depends(get_db), user: User = Depends(require_strategy)):
-    batch = db.get(ImportBatch, batch_id)
+    batch = db.scalar(select(ImportBatch).where(ImportBatch.id == batch_id).with_for_update())
     if not batch:
         raise HTTPException(404)
     try:
@@ -1541,7 +1693,7 @@ def apply_data_import(batch_id: int, preserve_existing: bool = False, db: Sessio
 
 @app.post("/api/import-batches/{batch_id}/revert")
 def revert_data_import(batch_id: int, db: Session = Depends(get_db), user: User = Depends(require_strategy)):
-    batch = db.get(ImportBatch, batch_id)
+    batch = db.scalar(select(ImportBatch).where(ImportBatch.id == batch_id).with_for_update())
     if not batch:
         raise HTTPException(404)
     try:
@@ -1566,19 +1718,24 @@ def select_period(period_id: int, request: Request, db: Session = Depends(get_db
     return RedirectResponse("/dashboard", 303)
 
 
-@app.post("/api/periods")
-async def create_period(request: Request, db: Session = Depends(get_db), user: User = Depends(require_strategy)):
-    data = await request.json()
-    try:
-        year = int(data.get("year"))
-    except (TypeError, ValueError):
-        raise HTTPException(422, "Dönem yılı geçersiz.")
-    if year < 2020 or year > 2100:
-        raise HTTPException(422, "Dönem yılı geçersiz.")
+def create_period_record(db: Session, user: User, data):
+    raw_year = str(data.get("year", "")).strip()
+    if not raw_year.isascii() or not raw_year.isdigit() or len(raw_year) != 4 or not 2020 <= int(raw_year) <= 2100:
+        raise HTTPException(422, "Dönem yılı geçersiz. Dönem yılı alanına 2020–2100 arasında dört haneli bir yıl girin.")
+    year = int(raw_year)
     if db.scalar(select(ReportingPeriod).where(ReportingPeriod.year == year)):
-        raise HTTPException(409, "Bu dönem zaten var.")
+        raise HTTPException(409, f"{year} dönemi zaten var. Genel Bakış ekranında mevcut dönemi seçin veya farklı bir yıl girin.")
     base_id = data.get("base_period_id")
-    base = db.get(ReportingPeriod, int(base_id)) if base_id else active_period(db)
+    base = active_period(db)
+    if base_id:
+        try: base = db.get(ReportingPeriod, int(base_id))
+        except (TypeError, ValueError): base = None
+        if not base:
+            raise HTTPException(422, "Başlangıç dönemi bulunamadı. Başlangıç yapısı alanından mevcut bir dönem seçin.")
+    from .models import Organization
+    from .structure_service import lock_organization
+    for oid in db.scalars(select(Organization.id).order_by(Organization.id)):
+        lock_organization(db, oid)
     period = ReportingPeriod(year=year, status="draft", template_status="pending")
     db.add(period); db.flush()
     program_map = {}; sub_map = {}
@@ -1590,28 +1747,39 @@ async def create_period(request: Request, db: Session = Depends(get_db), user: U
         for old in subs:
             new = SubProgram(period_id=period.id, program_id=program_map[old.program_id], name=old.name, rationale=old.rationale, goal=old.goal)
             db.add(new); db.flush(); sub_map[old.id] = new.id
-        from .models import ReportCard
-        card_map = {}
-        for old in db.scalars(select(ReportCard).where(ReportCard.period_id==base.id)).all():
-            fields = {c.name:getattr(old,c.name) for c in ReportCard.__table__.columns if c.name not in {'id','period_id','subprogram_id','source_title'}}
-            card=ReportCard(period_id=period.id,subprogram_id=sub_map[old.subprogram_id],source_title=f'{year}/{old.position}',**fields)
-            db.add(card);db.flush();card_map[old.id]=card.id
-        inds = db.scalars(select(Indicator).where(Indicator.period_id == base.id)).all()
-        for old in inds:
-            from .activity_contract_service import ensure_identity
-            identity_id = ensure_identity(db, old)
-            new = Indicator(period_id=period.id, department_id=old.department_id, subprogram_id=sub_map[old.subprogram_id], card_id=card_map.get(old.card_id), code=old.code, position=old.position, name=old.name, unit=old.unit, explanation=old.explanation, calculation_method=old.calculation_method, data_source=old.data_source, status="draft")
-            new.persistent_indicator_id = identity_id
-            db.add(new); db.flush()
-        acts = db.scalars(select(Activity).where(Activity.period_id == base.id)).all()
-        for old in acts:
-            new_act = Activity(period_id=period.id, department_id=old.department_id, subprogram_id=sub_map.get(old.subprogram_id), card_id=card_map.get(old.card_id), code=old.code, position=old.position, name=old.name, explanation=old.explanation)
-            db.add(new_act); db.flush()
-        depts = db.scalars(select(Department)).all()
-        for dept in depts:
-            db.add(Submission(department_id=dept.id, period_id=period.id, status="draft"))
-    db.commit(); log(db, user, "period_create", "reporting_period", period.id, f"{year} dönemi; şablon doğrulaması bekleniyor")
-    return {"ok": True, "id": period.id, "year": year}
+        from .structure_service import copy_period_work
+        copy_period_work(db, user, base, period, sub_map)
+    from .master_data_service import audit_change
+    audit_change(db, user, "period_create", period, None, {"year": year, "status": "draft", "template_status": "pending", "base_period_id": base.id if base else None})
+    db.commit()
+    return period
+
+
+@app.post("/api/periods")
+async def create_period(request: Request, db: Session = Depends(get_db), user: User = Depends(require_strategy)):
+    data = await request.json()
+    try:
+        period = create_period_record(db, user, data)
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(409, "Dönem başka bir işlemde oluşturuldu. Genel Bakış ekranında mevcut dönemi seçin veya farklı bir yıl girin.") from None
+    from .models import AuditLog
+    copy_audit = db.scalar(select(AuditLog).where(AuditLog.action == 'structure_period_copy', AuditLog.entity_id == period.id).order_by(AuditLog.id.desc()))
+    return {"ok": True, "id": period.id, "year": period.year, "untransferred": json.loads(copy_audit.details)['new']['untransferred'] if copy_audit else []}
+
+
+@app.post("/periods/create")
+async def create_period_form(request: Request, db: Session = Depends(get_db), user: User = Depends(require_strategy)):
+    data = await request.form()
+    try:
+        period = create_period_record(db, user, data)
+    except (HTTPException, IntegrityError) as exc:
+        db.rollback()
+        return templates.TemplateResponse(request, "first_period.html", {"user": user, "attempted_year": data.get("year", ""),
+            "error": exc.detail if isinstance(exc, HTTPException) else "Dönem başka bir işlemde oluşturuldu. Genel Bakış ekranından dönemi seçin."},
+            status_code=exc.status_code if isinstance(exc, HTTPException) else 409)
+    request.session["period_id"] = period.id
+    return RedirectResponse("/dashboard", 303)
 
 
 @app.post("/api/periods/{period_id}/verify-template")
@@ -1734,7 +1902,8 @@ def operations_status(request: Request, db: Session = Depends(get_db), user: Use
             "department_accounts": count(User, User.role == "department", User.is_active.is_(True), User.department_id.is_not(None)),
             "missing_department_accounts": max(
                 0,
-                count(Department) - count(User, User.role == "department", User.is_active.is_(True), User.department_id.is_not(None)),
+                db.scalar(select(func.count(Department.id)).where(Department.is_active.is_(True),
+                    ~exists().where(User.department_id == Department.id, User.role == "department", User.is_active.is_(True)))),
             ),
             "indicators": count(Indicator, Indicator.period_id == period.id),
             "activities": count(Activity, Activity.period_id == period.id),
@@ -1762,7 +1931,7 @@ def release_readiness(request: Request, db: Session = Depends(get_db), user: Use
         ).scalar()
     duplicate_accounts = db.execute(
         select(User.department_id, func.count(User.id)).where(
-            User.role == "department", User.is_active.is_(True), User.department_id.is_not(None)
+            User.position == "director", User.is_active.is_(True), User.department_id.is_not(None)
         ).group_by(User.department_id).having(func.count(User.id) > 1)
     ).all()
     checks = {
@@ -1898,8 +2067,8 @@ PROGRESS_LABELS = {
 
 
 def department_progress_overview(db: Session, period: ReportingPeriod):
-    from .program_service import validate_department
-    departments = db.scalars(select(Department).order_by(Department.name)).all()
+    from .program_service import validate_department, period_departments
+    departments = period_departments(db, period.id)
     submissions = db.scalars(select(Submission).where(Submission.period_id == period.id)).all()
     submission_by_department = {item.department_id: item for item in submissions}
     indicators = db.scalars(
@@ -1980,11 +2149,11 @@ def department_progress_overview(db: Session, period: ReportingPeriod):
 
         has_department_user = department.id in departments_with_users
         summary[state] += 1
-        if not has_department_user:
+        if department.is_active and not has_department_user:
             summary["missing_accounts"] += 1
         rows.append({
             "department_id": department.id,
-            "department_name": department.name,
+            "department_name": period_name(db, period.id, department), "is_active": department.is_active,
             "state": state,
             "label": PROGRESS_LABELS[state],
             "progress_percent": progress_percent,
@@ -2014,3 +2183,18 @@ from .program_routes import register as register_program_routes
 register_program_routes(app)
 from .activity_contract_routes import register as register_activity_contract_routes
 register_activity_contract_routes(app)
+
+from . import master_data_routes
+master_data_routes.register(app)
+released_permissions.register(app)
+
+from .activity_sections_routes import register as register_activity_sections_routes
+register_activity_sections_routes(app)
+
+from .activity_financial_routes import register as register_activity_financial_routes
+register_activity_financial_routes(app)
+
+from .assurance_routes import register as register_assurance_routes
+register_assurance_routes(app)
+from . import budget_routes
+budget_routes.register(app)

@@ -9,10 +9,10 @@ concurrency:
   cancel-in-progress: true
 jobs:
   test:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     strategy:
       matrix:
-        postgres: ['16', '18']
+        postgres: ['18']
     services:
       postgres:
         image: postgres:${{ matrix.postgres }}

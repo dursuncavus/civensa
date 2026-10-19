@@ -1,0 +1,11 @@
+{% if statement.error %}<p class="ar-error" role="alert">{{ statement.error }}</p>{% else %}
+<div aria-label="Kilitli beyan metni">
+<h3>{{ statement.heading }}{% if statement.footnotes %}<sup>1</sup>{% endif %}</h3>
+{% for paragraph in statement.paragraphs %}<p>{% if paragraph.endswith('(Yer-Tarih)') %}{{ paragraph[:-11] }}({{ statement.variables.place }} - {{ statement.date_display }}){% else %}{{ paragraph }}{% endif %}{% if loop.index0==statement.footnote_anchor_paragraph %}<sup>2</sup>{% endif %}</p>{% endfor %}
+<p>{{ statement.signature_labels[0] }}: <span aria-label="İmza alanı boş">________________</span></p>
+<p>{{ statement.signature_labels[1] }}: {{ statement.name }}</p><p>{{ statement.signature_labels[2] }}: {{ statement.title_value }}</p>
+{% if statement.reservations_note %}<p>{{ statement.reservations_note }}<sup>3</sup></p>
+{% if statement.variables.reservations %}<ol>{% for reservation in statement.variables.reservations %}<li>{{ reservation.text }}<br>Gerekçe: {{ reservation.justification }}</li>{% endfor %}</ol>{% endif %}{% endif %}
+{% if statement.footnotes %}<ol aria-label="Mevzuat dipnotları">{% for footnote in statement.footnotes %}<li>{{ footnote }}</li>{% endfor %}</ol>{% endif %}
+</div>
+{% endif %}

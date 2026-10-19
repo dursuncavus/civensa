@@ -1,6 +1,6 @@
-from datetime import datetime, UTC
+from datetime import date, datetime, UTC
 from decimal import Decimal
-from sqlalchemy import String, Integer, ForeignKey, Text, Float, Numeric, DateTime, UniqueConstraint, Boolean
+from sqlalchemy import String, Integer, ForeignKey, Text, Float, Numeric, Date, DateTime, UniqueConstraint, Boolean, CheckConstraint, Index, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from .db import Base
 
@@ -25,6 +25,7 @@ class Department(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     organization_id: Mapped[int] = mapped_column(ForeignKey("organizations.id"))
     name: Mapped[str] = mapped_column(String(200))
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, server_default="1")
     organization: Mapped[Organization] = relationship(back_populates="departments")
     indicators: Mapped[list["Indicator"]] = relationship(back_populates="department", cascade="all, delete-orphan")
     activities: Mapped[list["Activity"]] = relationship(back_populates="department", cascade="all, delete-orphan")
@@ -37,8 +38,18 @@ class User(Base):
     full_name: Mapped[str] = mapped_column(String(200))
     role: Mapped[str] = mapped_column(String(30))
     password_hash: Mapped[str] = mapped_column(String(255))
+    must_change_password: Mapped[bool] = mapped_column(Boolean, default=False, server_default=text("false"))
     department_id: Mapped[int | None] = mapped_column(ForeignKey("departments.id"), nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, server_default="1")
+    position: Mapped[str] = mapped_column(String(20), default="staff", server_default="staff")
+    can_submit: Mapped[bool] = mapped_column(Boolean, default=False, server_default="0")
+    __table_args__ = (
+        CheckConstraint("position IN ('staff', 'director')", name="ck_user_position"),
+        CheckConstraint("position != 'director' OR department_id IS NOT NULL", name="ck_director_department"),
+        Index("uq_active_department_director", "department_id", unique=True,
+              postgresql_where=text("is_active AND position = 'director'"),
+              sqlite_where=text("is_active = 1 AND position = 'director'")),
+    )
 
 
 class Program(Base):
@@ -112,6 +123,7 @@ class Activity(Base):
     explanation: Mapped[str] = mapped_column(Text, default="")
     department: Mapped[Department] = relationship(back_populates="activities")
     subprogram: Mapped[SubProgram | None] = relationship()
+    contract_bound: Mapped[bool] = mapped_column(Boolean, default=False, server_default="0")
     cost_values: Mapped[list["ActivityCostValue"]] = relationship(back_populates="activity", cascade="all, delete-orphan", order_by="ActivityCostValue.year")
 
 
@@ -129,6 +141,9 @@ class ActivityCostValue(Base):
     value_kind: Mapped[str] = mapped_column(String(50))
     funding_type: Mapped[str] = mapped_column(String(30), default="total")
     amount: Mapped[float | None] = mapped_column(Numeric(22, 2), nullable=True)
+    source_amount: Mapped[Decimal | None] = mapped_column(Numeric(22, 2), nullable=True)
+    source_raw_text: Mapped[str] = mapped_column(Text, default="")
+    source_resolution_json: Mapped[str] = mapped_column(Text, default="{}")
     raw_text: Mapped[str] = mapped_column(Text, default="")
     state: Mapped[str] = mapped_column(String(30), default="verified")
     activity: Mapped[Activity] = relationship(back_populates="cost_values")
@@ -212,6 +227,7 @@ class ImportBatch(Base):
     filename: Mapped[str] = mapped_column(String(255))
     status: Mapped[str] = mapped_column(String(30), default="preview")
     payload_json: Mapped[str] = mapped_column(Text, default="{}")
+    decisions_json: Mapped[str] = mapped_column(Text, default="[]")
     # Snapshot of affected departments before applying the import. Used only for a
     # guarded rollback; never exposed to department users.
     snapshot_json: Mapped[str] = mapped_column(Text, default="{}")
@@ -265,7 +281,13 @@ class EconomicValue(Base):
     category: Mapped[str] = mapped_column(String(50))
     program_group: Mapped[str] = mapped_column(String(50))
     funding_type: Mapped[str] = mapped_column(String(30))
-    amount: Mapped[float] = mapped_column(Numeric(22, 2))
+    amount: Mapped[float | None] = mapped_column(Numeric(22, 2), nullable=True)
+    raw_text: Mapped[str] = mapped_column(Text, default="")
+    state: Mapped[str] = mapped_column(String(30), default="verified")
+    issue: Mapped[str] = mapped_column(Text, default="")
+    source_card_id: Mapped[int | None] = mapped_column(ForeignKey("report_cards.id", name="fk_economic_source_card"), nullable=True)
+    source_table_number: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    source_context_json: Mapped[str] = mapped_column(Text, default="{}")
     __table_args__ = (UniqueConstraint("period_id", "department_id", "year", "value_kind", "category", "program_group", "funding_type", name="uq_economic_cell"),)
 
 
@@ -276,9 +298,19 @@ class DepartmentScope(Base):
     department_id: Mapped[int] = mapped_column(ForeignKey("departments.id"))
     position: Mapped[int] = mapped_column(Integer, default=0)
     display_name: Mapped[str] = mapped_column(String(250), default="")
+    budget_code: Mapped[str | None] = mapped_column(Text, nullable=True)
+    active_from: Mapped[date | None] = mapped_column(Date, nullable=True)
+    active_to: Mapped[date | None] = mapped_column(Date, nullable=True)
     status: Mapped[str] = mapped_column(String(30), default="required")
     reason: Mapped[str] = mapped_column(Text, default="")
     __table_args__ = (UniqueConstraint("period_id", "department_id", name="uq_scope_department"),)
+
+
+class SubProgramScope(Base):
+    """Responsible departments use the existing period-specific DepartmentScope."""
+    __tablename__ = "subprogram_scopes"
+    subprogram_id: Mapped[int] = mapped_column(ForeignKey("subprograms.id"), primary_key=True)
+    scope_id: Mapped[int] = mapped_column(ForeignKey("department_scopes.id"), primary_key=True)
 
 
 class ReportSection(Base):
@@ -458,3 +490,58 @@ from .report_workflow_models import (ReportCandidate, ReportCandidateState, Cand
 from .revision_workflow_models import RevisionRequest, RevisionRequestState, RevisionRequestEvent, RevisionCorrectionCycle, RevisionEditGrant, RevisionEditGrantRenewal
 
 from .login_throttling import LoginAttempt
+
+from .activity_sections_models import (ARSectionDefinition, ARDocument, ARSectionContent,
+    ARResourceRow, ARDocumentFreeze, ARContentEvent)
+from .activity_financial_models import (ARBudgetRow, ARFinancialPolicy, ARFinancialEntry,
+    ARFinancialStatement, ARFinancialImport)
+
+class StructureChange(Base):
+    __tablename__ = 'structure_changes'
+    id: Mapped[int] = mapped_column(primary_key=True)
+    change_type: Mapped[str] = mapped_column(String(20))
+    effective_date: Mapped[date] = mapped_column(Date)
+    council_decision_no: Mapped[str] = mapped_column(String(200))
+    council_decision_date: Mapped[date] = mapped_column(Date)
+    note: Mapped[str] = mapped_column(Text, default='')
+    snapshot_json: Mapped[str] = mapped_column(Text)
+    created_by: Mapped[int] = mapped_column(ForeignKey('users.id'))
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(UTC).replace(tzinfo=None))
+    __table_args__ = (CheckConstraint("change_type IN ('RENAMED','MERGED','SPLIT','CLOSED','CREATED')", name='ck_structure_change_type'),)
+
+
+class StructureChangeLink(Base):
+    __tablename__ = 'structure_change_links'
+    id: Mapped[int] = mapped_column(primary_key=True)
+    change_id: Mapped[int] = mapped_column(ForeignKey('structure_changes.id'))
+    from_department_id: Mapped[int | None] = mapped_column(ForeignKey('departments.id'))
+    to_department_id: Mapped[int | None] = mapped_column(ForeignKey('departments.id'))
+    __table_args__ = (CheckConstraint('from_department_id IS NOT NULL OR to_department_id IS NOT NULL', name='ck_structure_link_endpoint'),)
+
+
+class StructureChangeTransfer(Base):
+    __tablename__ = 'structure_change_transfers'
+    id: Mapped[int] = mapped_column(primary_key=True)
+    change_id: Mapped[int] = mapped_column(ForeignKey('structure_changes.id'))
+    from_department_id: Mapped[int] = mapped_column(ForeignKey('departments.id'))
+    to_department_id: Mapped[int] = mapped_column(ForeignKey('departments.id'))
+    official_activity_id: Mapped[int | None] = mapped_column(ForeignKey('official_activities.id'))
+    indicator_id: Mapped[str | None] = mapped_column(ForeignKey('indicator_identities.indicator_id'))
+    activity_id: Mapped[int | None] = mapped_column(ForeignKey('activities.id'))
+    note: Mapped[str] = mapped_column(Text, default='')
+    __table_args__ = (
+        CheckConstraint('(CASE WHEN official_activity_id IS NULL THEN 0 ELSE 1 END + CASE WHEN indicator_id IS NULL THEN 0 ELSE 1 END + CASE WHEN activity_id IS NULL THEN 0 ELSE 1 END) = 1', name='ck_structure_transfer_one_record'),
+        CheckConstraint('from_department_id <> to_department_id', name='ck_structure_transfer_receiver'),
+        UniqueConstraint('change_id', 'from_department_id', 'official_activity_id', name='uq_structure_transfer_official'),
+        UniqueConstraint('change_id', 'from_department_id', 'indicator_id', name='uq_structure_transfer_indicator'),
+        UniqueConstraint('change_id', 'from_department_id', 'activity_id', name='uq_structure_transfer_activity'))
+
+
+class StructureChangeCancellation(Base):
+    __tablename__ = 'structure_change_cancellations'
+    id: Mapped[int] = mapped_column(primary_key=True)
+    change_id: Mapped[int] = mapped_column(ForeignKey('structure_changes.id'), unique=True)
+    note: Mapped[str] = mapped_column(Text)
+    created_by: Mapped[int] = mapped_column(ForeignKey('users.id'))
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(UTC).replace(tzinfo=None))
+from .budget_models import BudgetOperation, BudgetOperationLine

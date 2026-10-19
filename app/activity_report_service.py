@@ -24,10 +24,11 @@ def annual_indicators(db, user, year):
         selectinload(Indicator.values), selectinload(Indicator.department))
     if user.role == 'department':
         query = query.where(Indicator.department_id == user.department_id)
+    from .structure_service import period_name
     result = []
     for indicator in db.scalars(query.order_by(Indicator.department_id, Indicator.position, Indicator.id)):
         values = {v.value_kind: v for v in indicator.values if v.year == year and v.value_kind in {'target', 'actual'}}
-        result.append(dict(name=indicator.name, department=indicator.department.name,
+        result.append(dict(name=indicator.name, department=period_name(db, period.id, indicator.department),
                            unit=indicator.unit, source=indicator.data_source,
                            target=indicator_cell(values.get('target')),
                            actual=indicator_cell(values.get('actual'))))

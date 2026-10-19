@@ -8,6 +8,8 @@ from fastapi import Depends, Request, HTTPException
 from fastapi.responses import RedirectResponse, StreamingResponse, Response
 from sqlalchemy import select, func, delete
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
+from starlette.concurrency import run_in_threadpool
 from .db import get_db
 from .models import *
 from .numbers import parse_number
@@ -46,6 +48,68 @@ def register(app):
             economic_map=economic_map,selected_group=group,selected_fund=fund,catalogue=rows(db,OfficialActivity,period.id), fields=CARD_FIELDS,errors=errors,warnings=warnings,
             editable=user.role=='department' and (not sub or sub.status in {'draft','returned'}),
             categories=ECONOMIC_CATEGORIES,groups=PROGRAM_GROUPS,columns=economic_columns(period.year),cost_columns=cost_columns(period.year)))
+
+    def split_screen(request, db, user, department_id, period_id, data=None, error=None, status=200, saved=0):
+        from .economic_split_service import unallocated_cells, split_fingerprint, SPLIT_GROUPS
+        context(db,user,department_id,period_id)
+        cells = unallocated_cells(db,period_id,department_id)
+        cards = rows(db,ReportCard,period_id,department_id)
+        period = db.get(ReportingPeriod,period_id)
+        sub = db.scalar(select(Submission).where(Submission.department_id==department_id,Submission.period_id==period_id))
+        blocked = period.status=='closed' or bool(sub and sub.status in {'submitted','approved'})
+        card_pages = {card.id:card.source_page for card in cards}
+        pages = {}
+        for cell in cells:
+            try:
+                source_ids = json.loads(cell.source_context_json).get('card_ids', [])
+            except (ValueError, TypeError, AttributeError):
+                source_ids = []
+            source_ids = source_ids if isinstance(source_ids,list) else []
+            source_pages = [card_pages.get(cid) for cid in source_ids if isinstance(cid,int)]
+            source_pages.append(card_pages.get(cell.source_card_id))
+            pages[cell.id] = ', '.join(dict.fromkeys(page for page in source_pages if page))
+        return templates.TemplateResponse(request,'economic_split.html',dict(user=user,
+            department=db.get(Department,department_id),period=period,cells=cells,cards=cards,pages=pages,
+            groups=SPLIT_GROUPS,categories=ECONOMIC_CATEGORIES,fingerprint=split_fingerprint,
+            data=data or {},error=error,blocked=blocked,saved=saved),status_code=status)
+
+    @app.get('/program/{department_id}/economic-split')
+    def economic_split_page(department_id:int, request:Request, period_id:int,
+            saved:int=0, db:Session=Depends(get_db), user:User=Depends(require_strategy)):
+        return split_screen(request,db,user,department_id,period_id,saved=saved)
+
+    def apply_economic_split(department_id, request, data, db, user):
+        from .economic_split_service import split_economic_cells, SPLIT_GROUPS
+        pid=integer(data.get('period_id'),'Dönem')
+        context(db,user,department_id,pid)
+        cells=[{'id':integer(cell_id,'Kaynak hücre'), 'fingerprint':data.get(f'fingerprint_{cell_id}'),
+            'shares':{g:data.get(f'share_{cell_id}_{g}','') for g in SPLIT_GROUPS},
+            'zero_group':data.get(f'zero_group_{cell_id}')} for cell_id in data.getlist('cell_id')]
+        try:
+            count=split_economic_cells(db,user,pid,department_id,cells,data.get('reason'))
+            db.commit()
+        except (HTTPException,IntegrityError) as exc:
+            db.rollback()
+            status=exc.status_code if isinstance(exc,HTTPException) else 409
+            if isinstance(exc,HTTPException):
+                message=exc.detail
+            elif getattr(getattr(exc.orig,'diag',None),'constraint_name',None)=='uq_economic_cell':
+                message='Hedef ekonomik hücre eşzamanlı olarak oluşturuldu. Sayfayı yenileyip çakışan kaynakları karşılaştırın.'
+            else:
+                message='Dağılımın tutarlılık veya denetim kaydı kontrolü başarısız; hiçbir hücre değiştirilmedi. Sayfayı yenileyip tekrar deneyin; sorun sürerse sistem yöneticisine başvurun.'
+            if 'application/json' in request.headers.get('accept',''):
+                from fastapi.responses import JSONResponse
+                return JSONResponse({'detail':message},status_code=status)
+            return split_screen(request,db,user,department_id,pid,data,error=message,status=status)
+        redirect=f'/program/{department_id}/economic-split?period_id={pid}&saved={count}'
+        if 'application/json' in request.headers.get('accept',''):
+            return {'ok':True,'redirect_url':redirect}
+        return RedirectResponse(redirect,303)
+
+    @app.post('/program/{department_id}/economic-split')
+    async def economic_split_save(department_id:int, request:Request, db:Session=Depends(get_db), user:User=Depends(require_strategy)):
+        data=await request.form()  # All awaits finish before the transaction takes row locks.
+        return await run_in_threadpool(apply_economic_split,department_id,request,data,db,user)
 
     @app.post('/program/{department_id}/cards')
     async def save_card(department_id:int,request:Request,db:Session=Depends(get_db),user:User=Depends(require_user)):
@@ -92,9 +156,9 @@ def register(app):
     @app.post('/program/{department_id}/finance/{activity_id}')
     async def finance(department_id:int,activity_id:int,request:Request,db:Session=Depends(get_db),user:User=Depends(require_user)):
         data=await request.form();pid=integer(data.get('period_id'));context(db,user,department_id,pid,True)
-        act=db.get(Activity,activity_id)
+        act=db.scalar(select(Activity).where(Activity.id==activity_id).with_for_update())
         if not act or act.department_id!=department_id or act.period_id!=pid:raise HTTPException(403)
-        save_activity_costs(db,act,db.get(ReportingPeriod,pid).year,data)
+        save_activity_costs(db,act,db.get(ReportingPeriod,pid).year,data,actor=user)
         db.commit();log(db,user,'finance_save','activity',act.id)
         return RedirectResponse(f'/program/{department_id}?period_id={pid}',303)
 
@@ -160,17 +224,35 @@ def register(app):
 
     @app.post('/program/{department_id}/verify-money/{kind}/{value_id}')
     async def verify_money(department_id:int,kind:str,value_id:int,request:Request,db:Session=Depends(get_db),user:User=Depends(require_user)):
-        model=ActivityCostValue if kind=='activity' else DepartmentCostValue if kind=='personnel' else None
+        data=await request.form()
+        model={'activity':ActivityCostValue,'personnel':DepartmentCostValue,'economic':EconomicValue}.get(kind)
         if not model:raise HTTPException(404)
         value=db.get(model,value_id)
         if not value:raise HTTPException(404)
         owner=value.activity if kind=='activity' else value
         context(db,user,department_id,owner.period_id,True)
         if owner.department_id!=department_id:raise HTTPException(403)
-        data=await request.form()
         try:amount=parse_number(data.get('amount'),money=True)
         except ValueError as exc:raise HTTPException(422,str(exc)) from None
         if amount is None:raise HTTPException(422,'Kaynakla doğruladığınız tutarı girin.')
+        if kind=='activity' and value.funding_type=='total' and value.source_amount is not None and value.source_resolution_json=='{}':
+            disagreement=activity_source_disagreements(owner).get(f'{value.year}:{value.value_kind}')
+            if disagreement or amount!=value.source_amount:
+                raise HTTPException(422,source_total_message(owner,value.year,value.value_kind,value.source_amount,
+                    disagreement['computed_total'] if disagreement else value.amount))
+        if kind == 'economic':
+            group = str(data.get('program_group', value.program_group))
+            if group not in PROGRAM_GROUPS or group == 'unallocated':
+                raise HTTPException(422, 'Ekonomik giderin program grubunu seçin.')
+            conflict = db.scalar(select(EconomicValue.id).where(EconomicValue.period_id==value.period_id,
+                EconomicValue.department_id==department_id, EconomicValue.year==value.year,
+                EconomicValue.value_kind==value.value_kind, EconomicValue.category==value.category,
+                EconomicValue.funding_type==value.funding_type, EconomicValue.program_group==group,
+                EconomicValue.id!=value.id))
+            if conflict:
+                raise HTTPException(409, 'Bu program grubunda ekonomik hücre zaten var; kayıtları karşılaştırın.')
+            value.program_group = group
+            value.issue = ''
         value.amount=amount;value.state='verified'
         db.commit();log(db,user,'source_money_verified',model.__tablename__,value.id)
         return RedirectResponse(f'/program/{department_id}?period_id={owner.period_id}',303)
@@ -179,20 +261,32 @@ def register(app):
     def builder(request:Request,db:Session=Depends(get_db),user:User=Depends(require_strategy)):
         period=session_period(request,db)
         if not period:raise HTTPException(404)
+        from .structure_service import period_name
         scopes={r.department_id:r for r in rows(db,DepartmentScope,period.id)}
         return templates.TemplateResponse(request,'report_builder.html',dict(user=user,period=period,
-            departments=db.scalars(select(Department).order_by(Department.name)).all(),scopes=scopes,
+            departments=period_departments(db,period.id),scopes=scopes,
+            department_names={d.id:period_name(db,period.id,d) for d in period_departments(db,period.id)},
             sections=rows(db,ReportSection,period.id),catalogue=rows(db,OfficialActivity,period.id),responsibilities={i.id:[r.department_id for r in db.scalars(select(ActivityResponsibility).where(ActivityResponsibility.official_activity_id==i.id)).all()] for i in rows(db,OfficialActivity,period.id)},publications=rows(db,Publication,period.id)))
 
     @app.post('/report-builder/scope')
     async def scope(request:Request,db:Session=Depends(get_db),user:User=Depends(require_strategy)):
-        data=await request.form();pid=integer(data.get('period_id'));did=integer(data.get('department_id'));context(db,user,did,pid)
+        data=await request.form();pid=integer(data.get('period_id'));did=integer(data.get('department_id'))
+        from .master_data_service import active_department, audit_change, period_record
+        period_record(db,pid)  # Share the lock used by master-data responsibilities.
+        context(db,user,did,pid)
         status=data.get('status');reason=str(data.get('reason','')).strip()
         if status not in {'required','zero','excluded'} or (status!='required' and not reason):raise HTTPException(422,'Kapsam ve gerekçeyi kontrol edin.')
         obj=db.scalar(select(DepartmentScope).where(DepartmentScope.period_id==pid,DepartmentScope.department_id==did))
-        if not obj:obj=DepartmentScope(period_id=pid,department_id=did);db.add(obj)
+        fields=('position','status','reason','display_name')
+        old={f:getattr(obj,f) for f in fields} if obj else None
+        if not obj:
+            active_department(db,did)
+            obj=DepartmentScope(period_id=pid,department_id=did);db.add(obj)
+        if status!='required' and obj.id and db.scalar(select(SubProgramScope.subprogram_id).where(SubProgramScope.scope_id==obj.id).limit(1)):
+            raise HTTPException(422,'Müdürlüğün alt program sorumluluğu var. Kurum Yapısı ekranında bu sorumluluğu kaldırıp kapsamı yeniden kaydedin.')
         obj.position=integer(data.get('position',0));obj.status=status;obj.reason=reason;obj.display_name=str(data.get('display_name','')).strip()
-        db.commit();log(db,user,'scope_save','department',did)
+        audit_change(db,user,'scope_save',obj,old,{f:getattr(obj,f) for f in fields})
+        db.commit()
         return RedirectResponse('/report-builder',303)
 
     @app.post('/report-builder/section')
@@ -240,15 +334,8 @@ def register(app):
         if not ids or any(not db.get(Department,d) for d in ids):raise HTTPException(422,'Geçerli sorumlu birimleri seçin.')
         obj=db.get(OfficialActivity,integer(data['id'])) if data.get('id') else None
         if data.get('id') and not obj:raise HTTPException(404)
-        if obj and obj.period_id!=pid:raise HTTPException(403)
-        if obj:
-            linked_departments=set(db.scalars(select(Activity.department_id).join(ActivityCatalogueLink,ActivityCatalogueLink.activity_id==Activity.id).where(ActivityCatalogueLink.official_activity_id==obj.id)).all())
-            if not linked_departments.issubset(ids):raise HTTPException(409,'Bağlı yerel faaliyetlerin sorumlu birimini kaldırmadan önce bağlantıyı düzenleyin.')
-            for f,v in values.items():setattr(obj,f,v)
-            db.execute(delete(ActivityResponsibility).where(ActivityResponsibility.official_activity_id==obj.id))
-        else:obj=OfficialActivity(period_id=pid,**values);db.add(obj);db.flush()
-        for did in ids:db.add(ActivityResponsibility(official_activity_id=obj.id,department_id=did))
-        db.commit();log(db,user,'catalogue_create','official_activity',obj.id)
+        save_catalogue_entry(db,pid,values,ids,user,obj=obj)
+        db.commit()
         return RedirectResponse('/report-builder',303)
 
     @app.post('/program/{department_id}/catalogue-link')
@@ -257,13 +344,8 @@ def register(app):
         activity=db.get(Activity,integer(data.get('activity_id')))
         if not activity or activity.department_id!=department_id or activity.period_id!=pid:raise HTTPException(403)
         ids={integer(v) for v in data.getlist('official_ids')}
-        for oid in ids:
-            official=db.get(OfficialActivity,oid)
-            responsible=db.scalar(select(ActivityResponsibility.id).where(ActivityResponsibility.official_activity_id==oid,ActivityResponsibility.department_id==department_id))
-            if not official or official.period_id!=pid or not responsible:raise HTTPException(422,'Katalog faaliyeti bu dönem ve sorumlu birime ait olmalı.')
-        db.execute(delete(ActivityCatalogueLink).where(ActivityCatalogueLink.activity_id==activity.id))
-        for oid in ids:db.add(ActivityCatalogueLink(activity_id=activity.id,official_activity_id=oid))
-        db.commit();log(db,user,'catalogue_link','activity',activity.id)
+        save_activity_catalogue_links(db,activity,ids,user)
+        db.commit()
         return RedirectResponse(f'/program/{department_id}?period_id={pid}',303)
 
     @app.post('/report-builder/publish')
@@ -271,7 +353,7 @@ def register(app):
         data=await request.form();pid=integer(data.get('period_id'));period=db.scalar(select(ReportingPeriod).where(ReportingPeriod.id==pid).with_for_update())
         if not period:raise HTTPException(404)
         errors=[]
-        for dept in db.scalars(select(Department)).all():
+        for dept in period_departments(db,pid):
             scope=db.scalar(select(DepartmentScope).where(DepartmentScope.department_id==dept.id,DepartmentScope.period_id==pid))
             if not scope:errors.append(f'{dept.name}: dönem kapsamı belirtilmeli.');continue
             issues,_=validate_department(db,pid,dept.id);errors.extend(f'{dept.name}: {e}' for e in issues)

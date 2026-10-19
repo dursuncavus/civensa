@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+{% block page_title %}Faaliyet Raporu · EK-1{% endblock %}
+{% block page_subtitle %}Birim ve idare raporları · Bölümler, sahipler ve eksikler{% endblock %}
+{% block content %}
+<link rel="stylesheet" href="/static/activity_sections.css">
+{% if user.role=='strategy' %}
+<section class="panel ar-panel"><h2>Yıl raporlarını oluştur</h2><p>Kapsamdaki müdürlüklere birer birim raporu ve kuruma bir idare raporu açılır. Mevcut kayıtlar korunur.</p>
+<form method="post" action="/activity-sections/years" class="ar-filters">
+<input type="hidden" name="csrf_token" value="{{ request.session.get('csrf_token') }}">
+<label>Kurum<select name="organization_id">{% for org in organizations %}<option value="{{ org.id }}">{{ org.name }}</option>{% endfor %}</select></label>
+<label>Raporlama yılı<select name="period_id">{% for period in periods %}<option value="{{ period.id }}">{{ period.year }}</option>{% endfor %}</select></label>
+<label><input type="checkbox" name="copy_previous"> Önceki yılın onaylı kopyasından doldur</label><button class="button primary">Raporları oluştur</button></form></section>
+{% endif %}
+<section class="panel ar-panel"><h2>Tamamlanma görünümü</h2>
+<form method="get" class="ar-filters"><label>Yıl<select name="period_id"><option value="">Tümü</option>{% for p in periods %}<option value="{{ p.id }}" {% if selected_period==p.id %}selected{% endif %}>{{ p.year }}</option>{% endfor %}</select></label>
+<label>Bölüm<select name="section"><option value="">Tüm bölümler</option>{% for d in definitions %}<option value="{{ d.code }}" {% if selected_section==d.code %}selected{% endif %}>{{ d.code }} · {{ d.title }}</option>{% endfor %}</select></label>
+<label>Durum<select name="status"><option value="">Tümü</option>{% for k,v in statuses.items() %}<option value="{{ k }}" {% if selected_status==k %}selected{% endif %}>{{ v }}</option>{% endfor %}</select></label><button class="button">Filtrele</button></form>
+<div class="ar-scroll"><table class="ar-table"><thead><tr><th>Yıl / Rapor</th><th>Bölüm</th><th>Durum</th><th>Sahibi</th><th>Eksikler</th></tr></thead><tbody>
+{% for item in reports %}{% for s in item.matches %}<tr><td>{{ item.report.year }} · {{ item.report.department }}{% if item.report.frozen %}<br><strong>Onaylı kopya</strong>{% endif %}</td><td><a href="/activity-sections/reports/{{ item.report.id }}?code={{ s.code }}">{{ s.code }} · {{ s.title }}</a></td><td><span class="ar-status ar-{{ s.status }}">{{ statuses[s.status] }}</span></td><td>{{ owners[s.owner] }}</td><td>{% for missing in s.missing %}<div>{{ missing }}</div>{% else %}—{% endfor %}</td></tr>{% endfor %}{% else %}<tr><td colspan="5">Bu filtrelerle rapor bulunamadı. Yıl raporlarını oluşturun veya filtreleri değiştirin.</td></tr>{% endfor %}
+</tbody></table></div></section>
+{% endblock %}

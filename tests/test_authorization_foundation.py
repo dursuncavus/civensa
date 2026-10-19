@@ -25,7 +25,7 @@ pytestmark=pytest.mark.postgres
 
 
 @pytest.fixture
-def foundation_db(request):
+def foundation_db(request, monkeypatch):
     url=os.environ.get('CIVENSA_TEST_POSTGRES_URL')
     if not url:pytest.fail('Authorization foundation requires disposable PostgreSQL')
     admin=create_engine(url);schema='auth_'+uuid4().hex
@@ -36,7 +36,60 @@ def foundation_db(request):
     assert result.returncode==0,result.stderr
     engine=create_engine(scoped)
     try:
-        with Session(engine,expire_on_commit=False) as db:yield db
+        with Session(engine,expire_on_commit=False) as db:
+            # Historical migration probes must use the columns that actually
+            # existed at their starting revision, while current tests use the full model.
+            from sqlalchemy import inspect, MetaData, Table
+            from sqlalchemy.orm import defer, defaultload
+            columns = {c['name'] for c in inspect(engine).get_columns('activity_cost_values')}
+            if 'source_amount' not in columns:
+                legacy_table = Table('activity_cost_values', MetaData(), autoload_with=engine)
+                db.info['historical_cost_table'] = legacy_table
+                @event.listens_for(db, 'do_orm_execute')
+                def historical_cost_reads(state):
+                    if state.is_select and any(m.class_ is ActivityCostValue for m in state.all_mappers):
+                        if state.is_relationship_load:
+                            state.statement = state.statement.options(defaultload(Activity.cost_values)
+                                .defer(ActivityCostValue.source_amount).defer(ActivityCostValue.source_raw_text)
+                                .defer(ActivityCostValue.source_resolution_json))
+                        else:
+                            state.statement = state.statement.options(
+                                defer(ActivityCostValue.source_amount), defer(ActivityCostValue.source_raw_text),
+                                defer(ActivityCostValue.source_resolution_json))
+                from app import program_service
+                original_record = program_service.record
+                def historical_record(obj):
+                    if isinstance(obj, ActivityCostValue):
+                        from types import SimpleNamespace
+                        obj = SimpleNamespace(__table__=legacy_table,
+                            **{c.name: getattr(obj, c.name) for c in legacy_table.columns})
+                    return original_record(obj)
+                monkeypatch.setattr(program_service, 'record', historical_record)
+            inspector = inspect(engine)
+            if inspector.has_table('authority_delegations') and 'authority_kind' not in {
+                    c['name'] for c in inspector.get_columns('authority_delegations')}:
+                # Keep the actual old layout: CIV-031 must add/backfill the column.
+                # Prior schemas can contain only the original director-approval
+                # grant, so that predicate is a constant until the real upgrade.
+                legacy_delegations = Table('authority_delegations', MetaData(), autoload_with=engine)
+                db.info['historical_delegation_table'] = legacy_delegations
+                from sqlalchemy import literal
+                from sqlalchemy.sql import visitors
+                from sqlalchemy.sql.elements import ColumnElement
+                kind = AuthorityDelegation.__table__.c.authority_kind
+
+                @event.listens_for(db, 'do_orm_execute')
+                def historical_delegation_reads(state):
+                    if not state.is_select or not any(m.class_ is AuthorityDelegation for m in state.all_mappers):
+                        return
+                    if 'authority_kind' in {c['name'] for c in inspect(state.session.connection()).get_columns('authority_delegations')}:
+                        return  # After Alembic upgrades, read/check the real column.
+                    def legacy_kind(node):
+                        if isinstance(node, ColumnElement) and node.shares_lineage(kind):
+                            return literal('director_approval', type_=kind.type)
+                    statement = state.statement.options(defer(AuthorityDelegation.authority_kind, raiseload=True))
+                    state.statement = visitors.replacement_traverse(statement, {}, legacy_kind)
+            yield db
     finally:
         engine.dispose()
         with admin.begin() as c:c.execute(DropSchema(schema,cascade=True))
@@ -71,6 +124,25 @@ def eligible(db,x,key,action='director_approve',**kw):
 
 def grant(db,x,start=None,end=None):
     now=auth.server_now(db)
+    legacy = db.info.get('historical_delegation_table')
+    if legacy is not None:
+        from sqlalchemy import inspect
+        if 'authority_kind' not in {c['name'] for c in inspect(db.connection()).get_columns('authority_delegations')}:
+            # Historical seed only: Core uses precisely the reflected old columns;
+            # the original database scope/interval/history guards still execute.
+            director = auth.active_membership(db, x['director'].id, x['department'].organization_id, x['department'].id)
+            delegate = auth.active_membership(db, x['user'].id, x['department'].organization_id, x['department'].id)
+            values = dict(organization_id=director.organization_id, department_id=director.department_id,
+                director_membership_id=director.id, delegate_membership_id=delegate.id, active=True,
+                start_at=start or now-timedelta(minutes=1), end_at=end or now+timedelta(hours=1),
+                formal_basis='Vekâlet yazısı 2026-1', created_by=x['director'].id)
+            row_id = db.scalar(legacy.insert().values(**values).returning(legacy.c.id))
+            db.add(DelegationEvent(delegation_id=row_id, actor_user_id=x['director'].id,
+                actor_snapshot_json=auth.actor_snapshot(db, x['director'], director.organization_id), event_type='granted',
+                context_json=auth.encode({key: values[key] for key in ('director_membership_id', 'delegate_membership_id', 'start_at', 'end_at', 'formal_basis')}),
+                reason=values['formal_basis']))
+            db.commit()
+            return db.get(AuthorityDelegation, row_id)
     row=auth.create_delegation(db,x['director'],x['department'].organization_id,x['department'].id,x['user'].id,
         start or now-timedelta(minutes=1),end or now+timedelta(hours=1),'Vekâlet yazısı 2026-1')
     db.commit();return row
@@ -342,7 +414,9 @@ def test_additive_upgrade_preserves_history_and_does_not_invent_assignments(foun
     payload,defs=contract.freeze_program_payload(db,1,x['strategy']);raw=contract.canonical(payload)
     pub=Publication(period_id=1,version=1,snapshot_json=raw,sha256=contract.digest(raw),created_by=x['strategy'].id)
     db.add(pub);db.flush();contract.attach_publication_definitions(db,pub,defs,x['strategy']);db.commit()
-    revision=contract.create_report_revision(db,x['strategy'],organization_id=1,publication_id=pub.id,report_id=None,expected_revision=0)
+    # The legacy approval fixture now separates revision author and approver.
+    x['editor2'].role='strategy';db.commit()
+    revision=contract.create_report_revision(db,x['editor2'],organization_id=1,publication_id=pub.id,report_id=None,expected_revision=0)
     db.commit();slot=db.scalar(select(ReportIndicator)).id
     contract.save_actual(db,x['user'],slot,0,'1.75','verified',
         [{'title':'Defter','locator':'Sayfa 1','source_revision':'r1'}],'Kaynak kontrolü',{})

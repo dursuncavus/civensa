@@ -24,9 +24,32 @@ def publish(client, db, sample):
     return db.scalar(select(Publication).order_by(Publication.version.desc()))
 
 
+def report_editor(sample):
+    from app.db import get_db
+    if 'report_editor' not in sample:
+        db = next(app.dependency_overrides[get_db]())
+        editor = User(email='report-editor@example.invalid', full_name='Rapor Personeli', role='strategy',
+                      department_id=sample['department'].id, password_hash='unused')
+        db.add(editor); db.commit()
+        sample['report_editor'] = editor
+    return sample['report_editor']
+
+
+def approve_as_director(client, sample, url):
+    previous = app.dependency_overrides[require_user]
+    app.dependency_overrides[require_user] = lambda: sample['strategy']
+    try:
+        return client.post(url)
+    finally:
+        app.dependency_overrides[require_user] = previous
+
+
 def new_report(client, pub, sample, **kwargs):
     data = {'publication_id': pub.id, 'organization_id': sample['department'].organization_id, **kwargs}
+    previous = app.dependency_overrides[require_user]
+    app.dependency_overrides[require_user] = lambda: report_editor(sample)
     response = client.post('/api/activity-reports/revisions', json=data)
+    app.dependency_overrides[require_user] = previous
     assert response.status_code == 200, response.text
     return client.get(f"/api/activity-reports/revisions/{response.json()['revision_id']}").json()
 
@@ -110,16 +133,17 @@ def test_missing_is_not_zero_and_zero_target_has_no_percentage(client, db, sampl
 
 def test_approval_gate_and_same_base_correction(client, db, sample):
     pub = publish(client, db, sample); report = new_report(client, pub, sample)
+    app.dependency_overrides[require_user] = lambda: report_editor(sample)
     slot = report['indicators'][0]['report_indicator_id']
     url = f"/api/activity-reports/revisions/{report['revision_id']}/approve"
-    assert client.post(url).status_code == 409
+    assert approve_as_director(client, sample, url).status_code == 409
     client.post(f'/api/activity-reports/indicators/{slot}/actuals', json=actual_payload(evidence=[]))
-    assert client.post(url).status_code == 409
+    assert approve_as_director(client, sample, url).status_code == 409
     client.post(f'/api/activity-reports/indicators/{slot}/actuals', json=actual_payload(expected_revision=0, explanation=''))
-    assert client.post(url).status_code == 409
+    assert approve_as_director(client, sample, url).status_code == 409
     client.post(f'/api/activity-reports/indicators/{slot}/actuals', json=actual_payload(expected_revision=1))
-    assert client.post(url).status_code == 200
-    assert client.post(url).status_code == 409
+    assert approve_as_director(client, sample, url).status_code == 200
+    assert approve_as_director(client, sample, url).status_code == 409
     assert client.post(f'/api/activity-reports/indicators/{slot}/actuals', json=actual_payload(expected_revision=3)).status_code == 409
     revised = new_report(client, pub, sample, report_id=report['report_id'], expected_revision=1,
                          revision_reason='Kaynak düzeltmesi')
