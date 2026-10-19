@@ -296,6 +296,7 @@ class BookAudit:
 
 
 def audit_results(parsed, results):
+    from scripts.institution_summary import audit_institution_tables
     audit = BookAudit(parsed)
     findings = []
     transfers = []
@@ -316,6 +317,7 @@ def audit_results(parsed, results):
     findings.sort(key=lambda f: (f['department'], f['group'], f['error']))
     counts = Counter((f['side'], f['group']) for f in findings)
     return dict(findings=findings, transfers=transfers,
+                institution=audit_institution_tables(parsed),
                 counts=[dict(side=s, group=g, count=n) for (s, g), n in sorted(counts.items())])
 
 

@@ -19,6 +19,7 @@ import os
 from pathlib import Path
 from tempfile import TemporaryDirectory
 import re
+import shlex
 import sys
 import unicodedata
 from uuid import uuid4
@@ -313,16 +314,62 @@ def proof_text(cells, stage):
                      for v in cells)
 
 
-def report(parsed, inspection, path, digest):
+def institution_report(audit):
+    from app.numbers import format_number
+
+    findings = audit['findings']
+    failures = sum(f['status'] == 'FAIL' for f in findings)
+    lines = ['## Kurum özet tabloları', '',
+             f"Kurum kontrolü: **{len(findings) - failures} PASS / {failures} FAIL**. "
+             'Bu bulgular müdürlük SOURCE/SYSTEM mesajlarına ve kitap kontrol maddesi sayımına eklenmez.', '',
+             'Tablolar başlık metniyle bulunur; sayfa numarası yalnız kaynak kanıtıdır. '
+             'Fark = basılı − hesaplanan. Boş, çizgi veya okunamayan tutar sıfır sayılmaz; '
+             'eksik toplam ve hesaplanamayan karşılaştırma FAIL olur. '
+             'Yedek Ödenekler yalnız kurum düzeyinde ayrı gösterilir. '
+             'Ekonomik çapraz toplamlar ayrıştırılmış kaynak tutarlarını kullanır; '
+             'kaynak inceleme durumunu veya yükleme engelini değiştirmez.', '',
+             'Okunan tablolar: ' + ('; '.join(f"s.{t['page']} / {t['id']} — {t['name']}" for t in audit['tables']) or 'Yok') + '.', '',
+             'Sınırlar: IDML sayfası hikâyenin ilk basılı sayfasıdır; çok sayfalı tabloda hücrenin kesin '
+             'devam sayfası çıkarılamaz. Program ayrıntısı, başlığında “Ekonomik Kod” yazmasına rağmen '
+             'program / alt program / faaliyet hiyerarşisidir; ekonomik kategori dökümü içermez. '
+             'Program çapraz toplamında kartlara bağlı üyelik tutarları kullanılır; ekonomik kategoriler '
+             'program gruplarına tahminen dağıtılmaz. Yalnız genel “Program/Programı” soneki eşdeğer sayılır; '
+             'farklı program adları eşlenmez ve ayrı FAIL olarak gösterilir. Döner Sermaye satırı satır toplamında denetlenir; '
+             'kitapta bütçe içi + döner sermaye genel toplamı verilmediğinde böyle bir toplam üretilmez.', '',
+             'Yedek Ödenekler — yalnız kurum düzeyi; müdürlük farkına katılmaz. Aşağıdaki tutarlar basılı '
+             'hücrelerdir; doğrulukları satır / sütun kontrollerinde ayrıca gösterilir.', '',
+             '| Kitap sayfası / tablo / satır | Yıl | Hizmet | Yönetim ve Destek | Program Dışı | Toplam |',
+             '| --- | --- | ---: | ---: | ---: | ---: |']
+    for reserve in audit.get('reserves', []):
+        values = [f"s.{reserve['page']} / {reserve['table']} / {reserve['row']}", reserve['year'], *reserve['values']]
+        lines.append('| ' + ' | '.join(cell(v) for v in values) + ' |')
+    lines += ['', '| Durum | Kontrol | Kitap sayfası | Tablo | Satır | Sütun | Basılı değer | Hesaplanan değer | Fark | Açıklama |',
+              '| --- | --- | --- | --- | --- | --- | ---: | ---: | ---: | --- |']
+    for f in findings:
+        def display(value):
+            if value is None:
+                return 'Bilinmiyor'
+            return format_number(value, money=not f['check'].startswith('Yüzde'))
+        raw = display(f['printed']) if f['printed'] is not None else f"«{f['raw'] or 'BOŞ'}»"
+        values = [f['status'], f['check'], f['page'], f"{f['table']} — {f['name']}",
+                  f"{f['row']} — {f['label']}", f['column'], raw,
+                  display(f['computed']), display(f['difference']), f['note']]
+        lines.append('| ' + ' | '.join(cell(v) for v in values) + ' |')
+    return lines + ['']
+
+
+def report(parsed, inspection, path, digest, output_path=None):
     from scripts.first_load_audit import audit_results, checklist, GROUPS, BookAudit, money
     audit = audit_results(parsed, inspection['results'])
+    institution = audit.get('institution', dict(findings=[], tables=[]))
+    institution_clean = all(f['status'] == 'PASS' for f in institution['findings'])
     presentation = checklist(parsed, inspection['results'], audit)
     findings = audit['findings']
     ready = sum(r['ready'] for r in inspection['results'])
     excluded = parsed.get('excluded_source_tables', [])
     flags = ''.join(f" --exclude-source-table {e['table_number']}" for e in excluded)
     lines = ['# 2027 PP ilk yükleme — kaynak kontrol listesi', '']
-    lines.extend([f"Kitap temiz mi: **{'Evet' if presentation['clean'] else 'Hayır'}**.", '',
+    lines.extend([f"Kitap temiz mi: **{'Evet' if presentation['clean'] and institution_clean else 'Hayır'}**.", '',
                   f"Kitap kontrol maddesi: **{len(presentation['items'])}**.", '',
                   f"Yalnız program grubu dağılımı bekleyen müdürlük: **{len(presentation['only_allocation'])}**.", '',
                   f'Gönderime hazır: **{ready}/{len(inspection["results"])}** (yalnızca bu prova).', ''])
@@ -350,13 +397,12 @@ def report(parsed, inspection, path, digest):
                   'Koşullu 0,00 önerisi veri düzeltmesi değildir; kaynak yokluğunu Strateji teyit etmelidir.', '',
                   '## Çalıştırma', '', '```sh',
                   '# CIVENSA_TEST_POSTGRES_URL: yerel, disposable PostgreSQL 16+; CREATE DATABASE yetkisi.',
-                  f'python scripts/first_load_dryrun.py {path.as_posix()}{flags} --out docs/first-load/dryrun-d3.md',
+                  f'python scripts/first_load_dryrun.py {shlex.quote(path.as_posix())}{flags} --out {output_path or "docs/first-load/dryrun-d3.md"}',
                   '```', '',
-                  'CIV-041 ekonomik tablo düzeltmeleri bu dala alındı. PR #43 önce birleşmelidir; PR #42 tabanı '
-                  'feature/authorization-workflow-phase5 olarak kalır. Yalnızca localhost test URL adresi okunur; '
+                  'Yalnızca localhost test URL adresi okunur; '
                   'her prova ayrı veritabanı oluşturur ve sonunda siler. Dışlama yalnızca prova betiğinde, '
-                  'geçici Word üzerinde yapılır; üretici ve canlı yükleyici tablo çıkarmaz. Dışlamasız kitapta '
-                  's.243 tablosunu CIV-041 reddeder; kaynakta düzeltmeden nihai yükleme yapılamaz.', '',
+                  'geçici Word üzerinde yapılır; üretici ve canlı yükleyici tablo çıkarmaz. '
+                  'Kurum özetleri IDML kaynağından ayrıca okunur; dışlama bu denetimleri kaldırmaz.', '',
                   'Tek kurum, doğrulanmış dönem şablonu, ad eşlemesi ve denetimli/idempotent faaliyet kataloğu '
                   'gerçek servislerle hazırlanır. Boş, çizgi ve sıfır ayrıdır. Kaynak sayıları değiştirilmedi; '
                   'doğrulama kuralları gevşetilmedi. Sayfalar IDML hikâyesinin ilk basılı sayfasıdır. '
@@ -375,6 +421,7 @@ def report(parsed, inspection, path, digest):
         lines.extend(['Uygulama engeli: ' + cell(inspection['apply_error']), ''])
     for error in inspection['errors']:
         lines.append('- ' + cell(error))
+    lines.extend(institution_report(institution))
     lines.extend(['## Yapılan SYSTEM düzeltmeleri', '',
                   '- Para ayrıştırıcısı baştaki ₺ işaretini tanır; ham metin korunur. Veteriner s.107 ekonomik '
                   'toplamı «₺10.424.938,95» artık 10424938.95 olarak okunur; rastgele ek metin kabul edilmez.',
@@ -480,7 +527,7 @@ def report(parsed, inspection, path, digest):
                       + cell('; '.join(conversion['unmapped']) or 'Yok') + '.', '',
                       'Basılı sayfaya bağlı olmayan tablolar (dışlama seçeneğinden bağımsız; yüklemeye alınmaz): '
                       + cell(json.dumps(conversion['unplaced'], ensure_ascii=False)) + '.', ''])
-    lines.extend(['Teyit bekleyen ad eşlemeleri: ' + '; '.join(inspection['pending']) + '. '
+    lines.extend(['Teyit bekleyen ad eşlemeleri: ' + ('; '.join(inspection['pending']) or 'Yok (D-94, 19 Ekim 2026 teyidi)') + '. '
                   'Program/alt program kodları kitapta yoktur ve boş bırakılır. Tekil müdürlük içi faaliyet '
                   'kodu üyeliği belirler. Resmî katalog 0006 Özel Kalem gibi maliyet karşılığı bulunmayan '
                   'üyelikleri korur; yeni maliyet üretilmez. Nihai kitap dışlamasız yeniden denenmelidir.', ''])
@@ -519,7 +566,15 @@ def parse_book(path, name_map=NAME_MAP, exclude_source_tables=()):
         book_tables = {}
         if path.suffix.lower() == '.idml':
             from scripts.book_to_load_docx import extract_tables
-            book_tables = {t['id']: t['rows'] for t in extract_tables(path)}
+            from scripts.institution_summary import table_kind
+            extracted = extract_tables(path)
+            book_tables = {t['id']: t['rows'] for t in extracted}
+            parsed['institution_tables'] = [t for t in extracted if table_kind(t)]
+        else:
+            from scripts.institution_summary import table_kind
+            candidates = [dict(id=f'Word T{i}', page='?', rows=[[c.text for c in r.cells] for r in t.rows])
+                          for i, t in enumerate(doc.tables, 1)]
+            parsed['institution_tables'] = [t for t in candidates if table_kind(t)]
         parsed['rehearsal_tables'] = {}
         for index, table in enumerate(doc.tables, 1):
             source = parsed.get('source_tables', {}).get(str(index), {})
@@ -547,7 +602,7 @@ def main():
             with Session(engine, expire_on_commit=False) as db:
                 inspection = inspect_import(db, deepcopy(parsed), args.book.name)
         inspection['conversion'] = conversion
-        content = report(parsed, inspection, args.book, hashlib.sha256(data).hexdigest())
+        content = report(parsed, inspection, args.book, hashlib.sha256(data).hexdigest(), args.out)
         if args.out:
             args.out.parent.mkdir(parents=True, exist_ok=True)
             args.out.write_text(content, encoding='utf-8')
