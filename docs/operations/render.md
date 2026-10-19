@@ -6,6 +6,7 @@
 - Render, ücretsiz native Python 3 servisi olarak kaynak koddan kurulur; eski bundle komutları asla geri getirilmemelidir.
 - Başlatma komutundaki `PYTHONPATH=.` zorunludur; komut değişince **Clear build cache & deploy** kullanılmalıdır.
 - Üretimde güçlü `SESSION_SECRET`, güvenli çerezler ve doğrudan (havuzsuz) Neon bağlantısı gerekir; demo verisi kapalıdır.
+- Yayın PR’ında release rehearsal yeşil olmalıdır; başarısız kontrol varken `main` dalına yayın yapılmaz.
 - Yayından önce üretimden süresiz bir Neon yedek dalı oluşturun; gizli istemle alınan bağlantının sunucu adını doğrulayıp migrasyonu çalıştırın.
 - Yayından sonra başlangıç logunu, giriş sayfasını ve satır sayılarını kontrol edin; bağlantı bilgilerini hiçbir yerde paylaşmayın.
 - Geri dönüşte önceki Render dalına geçiş ile yedek daldan veritabanı geri yüklemesi birlikte yapılmalıdır; eski kod yeni şemayla çalışamaz.
@@ -73,11 +74,32 @@ change the database schema even if no manual migration was run.
 These are operator instructions; documenting them does not execute a deployment
 or a production database command.
 
-1. Record the previous Render branch and deployed revision. Create a Neon backup
+1. **Release rehearsal must be green on the release PR** (`phase5` → `main`).
+   The `Release migration rehearsal` check restores the newest successful
+   `Daily verified database backup` artifact from `main` (maximum age 48 hours)
+   into disposable PostgreSQL 18 inside GitHub Actions. It verifies checksum,
+   size, counts and Alembic versions, upgrades twice, and starts the production
+   lifespan with demo seeding disabled before checking `/login`. The summary
+   contains PASS/FAIL and public table counts before → after, including new
+   tables; raw database/app output and row contents are suppressed. No artifacts
+   are uploaded and downloaded files are deleted even on failure. Production
+   data stays inside Actions; no production connection or secret is used.
+   Pre-existing tables must not lose rows; intentional deletions require a
+   reason in `ops/release_rehearsal.py`'s allowlist and the release PR.
+   If the backup is missing/stale, the owner runs **Actions → Daily verified
+   database backup → Run workflow** on `main`, waits for green, then uses
+   **Re-run failed jobs** on the release check. For a manual rehearsal use
+   **Actions → Release migration rehearsal → Run workflow**, selecting the
+   release-candidate branch. Manual dispatch becomes available in the Actions
+   UI once this workflow is on `main`; until then the release PR event runs it.
+   Require this check through branch protection on `main`; the workflow alone
+   does not configure branch protection. Use trusted same-repository release
+   PRs only; fork PRs cannot access production backup artifacts.
+2. Record the previous Render branch and deployed revision. Create a Neon backup
    branch **from production before any migration**, remove its expiration, and
    record its identity and recovery point. Record baseline row counts for the
    tables that will be checked after release.
-2. On a trusted machine, use a checkout of the intended release revision at the
+3. On a trusted machine, use a checkout of the intended release revision at the
    repository root, with its dependencies installed. Read the production direct
    connection into `DATABASE_URL` through a hidden prompt. For **zsh**:
 
@@ -109,12 +131,12 @@ or a production database command.
    unset DATABASE_URL
    ```
 
-3. Switch Render's deploy branch to the approved release branch (`main` for the
+4. Switch Render's deploy branch to the approved release branch (`main` for the
    verified production configuration) and deploy. If either command changed,
    use **Clear build cache & deploy**.
-4. Check Render logs for **Application startup complete** and investigate any
+5. Check Render logs for **Application startup complete** and investigate any
    startup or migration errors before accepting the release.
-5. Open `/login` on the production service and check that the login page loads.
+6. Open `/login` on the production service and check that the login page loads.
    Compare post-release row counts with the recorded baseline, accounting only
    for expected migration changes and legitimate writes. If using Neon SQL
    Editor for read-only counts, follow the warning below.
