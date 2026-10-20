@@ -100,7 +100,7 @@ def target(printed):
                 year=2027, value_kind='forecast', category='personnel_sgk', amount=77, raw_text='77')
             db.add(old_cost)
             db.flush()
-            snapshot = dict(departments=[{'department_id': d.id} for d in departments],
+            snapshot = dict(departments=[{'department_id': d.id, 'department_name': d.name} for d in departments],
                             created_department_ids=[])
             for bid, status in clear.BATCH_STATES.items():
                 stamp = datetime(2026, 9, 21, 14, bid)
@@ -196,7 +196,8 @@ def test_clear_chain_and_preserved_rows(target, printed):
     ('personnel_amount', 'personel/SGK'), ('personnel_extra', 'personel/SGK'),
     ('personnel_missing', 'personel/SGK'), ('personnel_category', 'kategori'),
     ('personnel_raw', 'personel/SGK'), ('personnel_state', 'personel/SGK'),
-    ('personnel_audit', 'denetim kaydı'), ('department_audit', 'denetim kaydı')])
+    ('personnel_audit', 'denetim kaydı'), ('department_audit', 'denetim kaydı'),
+    ('snapshot_name', 'snapshot')])
 def test_refusals_preserve_every_row_and_sequence(target, guard, message, apply):
     engine, ids, extra = target
     pid, did, spid = extra['period_id'], extra['department_id'], extra['subprogram_id']
@@ -230,6 +231,11 @@ def test_refusals_preserve_every_row_and_sequence(target, guard, message, apply)
                 db.add(m.AuditLog(action='personnel_cost_update' if guard == 'personnel_audit' else 'pp_data_change',
                     entity_type='department', entity_id=did, details='period_id=1',
                     created_at=datetime(2026, 10, 20)))
+        elif guard == 'snapshot_name':
+            batch = db.get(m.ImportBatch, 10)
+            snapshot = json.loads(batch.snapshot_json)
+            snapshot['departments'][0]['department_name'] = 'Değişmiş müdürlük kimliği'
+            batch.snapshot_json = json.dumps(snapshot)
         elif guard == 'publication':
             db.add(m.Publication(period_id=pid, version=1, snapshot_json='{}', sha256='x', created_by=ids['actor_id']))
         elif guard == 'submission':
@@ -531,3 +537,24 @@ def test_legacy_payload_defaults_are_exact_and_batches_remain_unchanged(target):
     clear.execute(engine, apply=True, **ids)
     with Session(engine) as db:
         assert {b.id: clear.batch_state(b) for b in db.scalars(select(m.ImportBatch))} == batches
+
+
+
+@pytest.mark.postgres
+def test_importer_resolved_name_match_still_requires_snapshot_identity_and_exact_content(target):
+    engine, ids, _ = target
+    from app.import_service import build_department_plan
+    with Session(engine) as db:
+        for batch in db.scalars(select(m.ImportBatch)):
+            payload = json.loads(batch.payload_json)
+            payload['departments'][0]['name'] += 'ü'
+            batch.payload_json = json.dumps(payload, ensure_ascii=False)
+        plan = build_department_plan(db, payload)
+        assert plan['mappings'][0]['action'] == 'match'
+        assert plan['mappings'][0]['confidence'] < 1
+        db.commit()
+    before = state(engine)
+    planned = clear.execute(engine, **ids)
+    assert planned['counts']['department_cost_values'] == 93
+    assert state(engine) == before
+    assert clear.execute(engine, apply=True, **ids)['counts'] == planned['counts']

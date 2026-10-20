@@ -333,6 +333,11 @@ def build_plan(db, organization_id, actor_id):
             # Same legacy snapshot contract as the importer's revert path:
             # an absent created-ID list contributes no extra departments.
             affected.update(int(x) for x in snapshot.get('created_department_ids', []))
+            for saved_department in snapshot['departments']:
+                department = db.get(m.Department, int(saved_department['department_id']))
+                if (department is None or ('department_name' in saved_department
+                        and saved_department['department_name'] != department.name)):
+                    raise ValueError
             phase = 'arşiv planı'
             plan = build_department_plan(db, archived_payload(json.loads(batch.payload_json)),
                                          json.loads(batch.decisions_json or '[]'))
@@ -345,7 +350,7 @@ def build_plan(db, organization_id, actor_id):
                 catalogue_sources.append(source)
                 item = mapping[department_key(source['name'])]
                 did = item.get('department_id')
-                if item['action'] != 'match' or item['confidence'] != 1:
+                if item['action'] != 'match':
                     raise ValueError
                 if did not in affected:
                     continue  # preserve-existing imports did not touch this department
