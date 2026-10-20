@@ -4,7 +4,7 @@
 {% block content %}
 <div id="budget-error" role="alert" class="card" hidden></div>
 <section class="card"><div class="section-head"><h2>İşlem kaydı</h2><a class="button" href="/budget-reallocations">İşlem listesi</a></div>
-<p><b>{{ actor.full_name }}</b> · {{ operation.created_at }} · {{ 'Meclis kabulünden önce' if operation.phase=='before_adoption' else 'Meclis kabulünden sonra' }}</p><p>{{ operation.reason }}</p><p>Toplam bütçe değişiyor: {{ 'Evet' if reference_request.change_total else 'Hayır' }} · Bütçe dışı da değişiyor: {{ 'Evet' if reference_request.change_outside else 'Hayır' }}</p>
+<p><b>{{ actor|actor_label }}</b> · {{ operation.created_at|turkey_time }} · {{ 'Meclis kabulünden önce' if operation.phase=='before_adoption' else 'Meclis kabulünden sonra' }}</p><p>{{ operation.reason }}</p><p>Toplam bütçe değişiyor: {{ 'Evet' if reference_request.change_total else 'Hayır' }} · Bütçe dışı da değişiyor: {{ 'Evet' if reference_request.change_outside else 'Hayır' }}</p>
 <p>Paketlerin onay durumu korundu. {% if operation.delegation_id %}Onaylı veri düzeltme yetki devri #{{ operation.delegation_id }} kullanıldı.{% endif %}</p>
 {% if operation.reverses_id %}<p><a href="/budget-reallocations/{{ operation.reverses_id }}">#{{ operation.reverses_id }} numaralı işlemin geri alınması</a></p>{% endif %}
 {% for s in preview.summaries %}<p><b>{{ s.name }}</b> · Bütçe içi: {{ s.change|trmoney }} TL · Bütçe dışı: {{ s.outside_change|trmoney }} TL · Mevcut ekonomik/faaliyet farkı: {{ s.source_difference|trmoney }} TL</p>{% endfor %}

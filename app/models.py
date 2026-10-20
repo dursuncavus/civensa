@@ -186,6 +186,7 @@ class SubmissionEvent(Base):
     department_id: Mapped[int] = mapped_column(ForeignKey("departments.id"))
     period_id: Mapped[int] = mapped_column(ForeignKey("reporting_periods.id"))
     actor_user_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
+    actor: Mapped["User | None"] = relationship(viewonly=True, lazy="selectin")
     event_type: Mapped[str] = mapped_column(String(30))
     revision: Mapped[int] = mapped_column(Integer, default=1)
     note: Mapped[str] = mapped_column(Text, default="")
@@ -358,6 +359,7 @@ class Publication(Base):
     sha256: Mapped[str] = mapped_column(String(64))
     template_version: Mapped[str] = mapped_column(String(30), default="5.0")
     created_by: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    creator: Mapped["User | None"] = relationship(viewonly=True, lazy="selectin")
     created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(UTC).replace(tzinfo=None))
     __table_args__ = (UniqueConstraint("period_id", "version", name="uq_publication_version"),)
 
