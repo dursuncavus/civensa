@@ -122,7 +122,7 @@ def test_department_and_period_boundaries(client, db, sample, fresh, kind, case)
             department_id=other.id if case == 'other_path' else 1)
 
 
-@pytest.mark.parametrize('children', ['indicators_activities', 'economic'])
+@pytest.mark.parametrize('children', ['indicators_activities', 'economic', 'economic_context', 'economic_both'])
 def test_card_lists_child_counts(client, db, sample, fresh, children):
     card = sample['card']
     if children == 'indicators_activities':
@@ -130,7 +130,11 @@ def test_card_lists_child_counts(client, db, sample, fresh, children):
         assert '2 gösterge ve 1 faaliyet var' in message
     else:
         card = fresh['card']
-        db.scalar(select(EconomicValue)).source_card_id = card.id
+        value = db.scalar(select(EconomicValue))
+        if children != 'economic_context':
+            value.source_card_id = card.id
+        if children != 'economic':
+            value.source_context_json = json.dumps({'card_ids': [card.id, sample['card'].id]})
         db.commit()
         assert '1 ekonomik değer var' in refuse(client, db, 'card', card)
 

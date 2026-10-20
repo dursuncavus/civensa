@@ -113,9 +113,21 @@ def remove_draft(db, user, department_id, period_id, model, record_id):
             raise HTTPException(409, f'“{obj.name}” kaldırılamadı: ' + '; '.join(blockers) + '. Geçmişi korumak için kaydı saklayın; Strateji Geliştirme birimine başvurun.')
         previous['values'] = [record(value) for value in obj.values]
     else:
+        economic_ids = set(db.scalars(select(EconomicValue.id).where(EconomicValue.source_card_id == obj.id)))
+        # Imported economic tables can span several cards. source_card_id holds
+        # only the last card; source_context_json retains every contributing card.
+        for value in db.scalars(select(EconomicValue).where(EconomicValue.period_id == period_id,
+                EconomicValue.department_id == department_id)):
+            try:
+                source = json.loads(value.source_context_json)
+            except (ValueError, TypeError):
+                continue
+            if isinstance(source, dict) and isinstance(source.get('card_ids'), list) and obj.id in source['card_ids']:
+                economic_ids.add(value.id)
         counts = [(db.scalar(select(func.count()).select_from(child).where(column == obj.id)), label)
             for child, column, label in [(Indicator, Indicator.card_id, 'gösterge'),
-                (Activity, Activity.card_id, 'faaliyet'), (EconomicValue, EconomicValue.source_card_id, 'ekonomik değer')]]
+                (Activity, Activity.card_id, 'faaliyet')]]
+        counts.append((len(economic_ids), 'ekonomik değer'))
         children = ' ve '.join(f'{count} {label}' for count, label in counts if count)
         if children:
             raise HTTPException(409, f'“{obj.source_title or "Performans kartı"}”: Bu kartta {children} var; önce bunları kaldırın veya başka karta taşıyın.')
