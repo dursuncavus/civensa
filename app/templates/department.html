@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from 'draft_removal.html' import removal %}
 {% block page_title %}{{ department_label }}{% endblock %}
 {% block page_subtitle %}{{ period.year }} Performans Programı · {{ 'Strateji inceleme görünümü' if user.role=='strategy' else 'Müdürlük veri giriş alanı' }}{% endblock %}
 {% block content %}
@@ -26,6 +27,7 @@
       </div>
       <div class="editor-grid two"><label>Göstergeye İlişkin Açıklama<textarea data-field="explanation" {{ 'readonly' if user.role!='department' or period.status=='closed' or submission.status in ['submitted','approved'] else '' }}>{{ i.explanation }}</textarea></label><label>Hesaplama Yöntemi<textarea data-field="calculation_method" {{ 'readonly' if user.role!='department' or period.status=='closed' or submission.status in ['submitted','approved'] else '' }}>{{ i.calculation_method }}</textarea></label></div>
       <label>Verinin Kaynağı<textarea data-field="data_source" {{ 'readonly' if user.role!='department' or period.status=='closed' or submission.status in ['submitted','approved'] else '' }}>{{ i.data_source }}</textarea></label>
+      {% if removable %}{{ removal('indicator', i.id, i.name, department.id, period.id, request.session.get('csrf_token'), 'department') }}{% endif %}
       {% if user.role=='department' and period.status!='closed' and submission.status not in ['submitted','approved'] %}<div class="actions"><button class="button primary save-indicator">Kaydet ve Kontrol Et</button></div>{% endif %}
     </article>
   {% else %}<div class="empty-state">Bu dönem için müdürlüğe atanmış performans göstergesi bulunmuyor.</div>{% endfor %}

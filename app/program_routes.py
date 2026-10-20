@@ -33,6 +33,34 @@ def register(app):
         check_pp_access(db,user,did,db.get(ReportingPeriod,pid))
         if edit: ensure_department_editable(db,user,did,pid)
 
+    def remove_record(department_id, record_id, model, request, data, db, user):
+        from .draft_removal_service import remove_draft
+        pid = session_period(request, db, data, require=True).id
+        try:
+            remove_draft(db, user, department_id, pid, model, record_id)
+            db.commit()
+        except IntegrityError:
+            db.rollback()
+            raise HTTPException(409, 'Kayıt bağlantıları değiştiği için kaldırılamadı. Sayfayı yenileyip bağlı kayıtları kontrol edin.') from None
+        redirect = f'/program/{department_id}?period_id={pid}'
+        if data.get('return_to') == 'department':
+            redirect = f'/department/{department_id}?period_id={pid}'
+        if 'application/json' in request.headers.get('accept', ''):
+            return {'ok': True, 'redirect_url': redirect}
+        return RedirectResponse(redirect, 303)
+
+    @app.post('/program/{department_id}/indicator/{indicator_id}/remove', dependencies=[Depends(require_pp_period)])
+    async def remove_indicator(department_id:int, indicator_id:int, request:Request,
+            db:Session=Depends(get_db), user:User=Depends(require_user)):
+        data = await request.form()
+        return await run_in_threadpool(remove_record, department_id, indicator_id, Indicator, request, data, db, user)
+
+    @app.post('/program/{department_id}/cards/{card_id}/remove', dependencies=[Depends(require_pp_period)])
+    async def remove_card(department_id:int, card_id:int, request:Request,
+            db:Session=Depends(get_db), user:User=Depends(require_user)):
+        data = await request.form()
+        return await run_in_threadpool(remove_record, department_id, card_id, ReportCard, request, data, db, user)
+
     @app.get('/program/{department_id}')
     def workbench(department_id:int, request:Request, period_id:int|None=None, group:str='service', fund:str='inside', db:Session=Depends(get_db), user:User=Depends(require_user)):
         period = pp_period(request,db,user,department_id)
@@ -43,10 +71,12 @@ def register(app):
         snapshot=department_snapshot(db,period.id,department_id)
         if group not in PROGRAM_GROUPS or fund not in {'inside','outside'}:raise HTTPException(422)
         economic_map={f"{v['category']}:{v['year']}:{v['value_kind']}":v['amount'] for v in snapshot['economics'] if v['program_group']==group and v['funding_type']==fund}
+        from .draft_removal_service import removal_available
         return templates.TemplateResponse(request,'program.html',dict(user=user,department=db.get(Department,department_id),period=period,
             snapshot=snapshot,cards=rows(db,ReportCard,period.id,department_id),subprograms=rows(db,SubProgram,period.id),
             economic_map=economic_map,selected_group=group,selected_fund=fund,catalogue=rows(db,OfficialActivity,period.id), fields=CARD_FIELDS,errors=errors,warnings=warnings,
             editable=user.role=='department' and period.status!='closed' and (not sub or sub.status in {'draft','returned'}),
+            removable=removal_available(db,user,department_id,period),
             categories=ECONOMIC_CATEGORIES,groups=PROGRAM_GROUPS,columns=economic_columns(period.year),cost_columns=cost_columns(period.year)))
 
     def split_screen(request, db, user, department_id, period_id, data=None, error=None, status=200, saved=0):

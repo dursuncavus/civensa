@@ -54,6 +54,21 @@ const jsonFetch=async(url,options={})=>{
 };
 const escapeHtml=(value)=>String(value??'').replace(/[&<>'\"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','\"':'&quot;'}[c]));
 
+document.querySelectorAll('[data-draft-removal]').forEach(form=>{
+  const panel=form.closest('.draft-removal'),error=form.querySelector('[role="alert"]'),submit=form.querySelector('[type="submit"]');
+  form.querySelector('[data-cancel-removal]').addEventListener('click',()=>{
+    panel.open=false;error.hidden=true;panel.querySelector('summary').focus();
+  });
+  form.addEventListener('submit',async event=>{
+    event.preventDefault();
+    if(submit.disabled)return;
+    submit.disabled=true;error.hidden=true;
+    const {r,j}=await jsonFetch(form.action,{method:'POST',headers:{Accept:'application/json'},body:new FormData(form)});
+    if(r.ok){drafts.allowNavigation();location.href=j.redirect_url;return}
+    error.textContent=j.detail;error.hidden=false;error.focus();submit.disabled=false;
+  });
+});
+
 (function(){
   const button=document.getElementById('notificationButton'),panel=document.getElementById('notificationPanel'),list=document.getElementById('notificationList'),badge=document.getElementById('notificationBadge');
   if(!button||!panel||!list||!badge)return;
@@ -109,7 +124,7 @@ const drafts=(()=>{
   function register(record){
     const marker=document.createElement('p');marker.className='draft-status';marker.setAttribute('role','status');
     (record.querySelector('h2, h3')||record.firstElementChild).after(marker);
-    states.set(record,{baseline:values(record),marker,dirty:false,saving:false,saved:false,failed:!!record.querySelector('[role="alert"]')});
+    states.set(record,{baseline:values(record),marker,dirty:false,saving:false,saved:false,failed:!!record.querySelector('[role="alert"]:not([hidden])')});
     render(record);
     ['input','change'].forEach(type=>record.addEventListener(type,()=>{navigationApproved=false;render(record)}));
   }
@@ -168,7 +183,7 @@ const drafts=(()=>{
       event.preventDefault();const form=event.target,button=event.submitter;confirm(()=>form.requestSubmit(button));
     });
   }
-  return {fields,key,values,register,render,error,begin,finish,saved};
+  return {fields,key,values,register,render,error,begin,finish,saved,allowNavigation:()=>{navigationApproved=true}};
 })();
 
 async function saveIndicatorCard(card){
