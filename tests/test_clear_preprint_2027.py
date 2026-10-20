@@ -610,3 +610,54 @@ def test_snapshot_preexisting_catalogue_is_preserved_without_claiming_content_ow
     after = state(engine)
     for table in ('programs', 'subprograms'):
         assert after[0][table] == before[0][table]
+
+
+
+@pytest.mark.postgres
+def test_pre_october_archives_replay_recorded_float_migrations_without_ignoring_metadata(target):
+    engine, ids, extra = target
+    with Session(engine) as db:
+        for batch in db.scalars(select(m.ImportBatch)):
+            payload = json.loads(batch.payload_json)
+            for department in payload['departments']:
+                for block in department['blocks']:
+                    for indicator in block['indicators']:
+                        for row in indicator['values']:
+                            row.pop('state', None); row.pop('raw_text', None)
+                for activity in department['activities']:
+                    for row in activity['costs']:
+                        if row['amount'] is None:
+                            row['amount'] = '20.25'
+                        row.pop('state', None); row.pop('raw_text', None)
+                for row in department['personnel']:
+                    if row['amount'] is None:
+                        row['amount'] = '300.25'
+                    row.pop('state', None); row.pop('raw_text', None)
+            batch.payload_json = json.dumps(payload, ensure_ascii=False)
+        for row in db.scalars(select(m.IndicatorValue).join(m.Indicator).where(
+                m.Indicator.period_id == extra['period_id'])):
+            row.raw_text = '2.5'
+        for row in db.scalars(select(m.ActivityCostValue).join(m.Activity).where(
+                m.Activity.period_id == extra['period_id'])):
+            row.amount = '10.25' if row.year == 2027 else '20.25'
+            row.raw_text = '10.25' if row.year == 2027 else '20.25'
+            row.state = 'verified'
+        for row in db.scalars(select(m.DepartmentCostValue).where(
+                m.DepartmentCostValue.period_id == extra['period_id'])):
+            row.raw_text = {2027: '100.25', 2028: '200.002', 2029: '300.25'}[row.year]
+            row.state = 'needs_review' if row.year == 2028 else 'verified'
+            if row.year == 2029:
+                row.amount = '300.25'
+        db.commit()
+    before = state(engine)
+    assert clear.execute(engine, **ids)['counts']['department_cost_values'] == 93
+    assert state(engine) == before
+    with Session(engine) as db:
+        cost = db.scalar(select(m.DepartmentCostValue).where(
+            m.DepartmentCostValue.period_id == extra['period_id']))
+        cost.raw_text = 'Aynı sayı, sonradan değiştirilmiş metin'
+        db.commit()
+    changed = state(engine)
+    with pytest.raises(live.Refusal, match='raw_text'):
+        clear.execute(engine, apply=True, **ids)
+    assert state(engine) == changed

@@ -198,6 +198,58 @@ def archived_payload(payload):
     return payload
 
 
+def legacy_archive(payload, snapshot):
+    rows = [row for department in payload['departments']
+        for block in department.get('blocks', []) for indicator in block.get('indicators', [])
+        for row in indicator.get('values', [])]
+    rows += [row for department in payload['departments']
+        for activity in department.get('activities', []) for row in activity.get('costs', [])]
+    rows += [row for department in payload['departments'] for row in department.get('personnel', [])]
+    return 'source_conflict_version' not in snapshot and all('state' not in row for row in rows)
+
+
+def project_legacy_migrations(db, source):
+    """Replay e5a0b1c2d3e4/b8d011e6f420 on archived values, without touching DB rows.
+
+    Pre-October float rows gained raw_text via PostgreSQL's CAST(float AS TEXT),
+    not the later importer's missing-field defaults. Compare the resulting full
+    tuples; never ignore raw text or state differences.
+    """
+    def project(rows, money=False):
+        precision, scale = (22, 2) if money else (26, 6)
+        quantum = Decimal(1).scaleb(-scale)
+        for row in rows:
+            key = 'amount' if money else 'value'
+            if row.get(key) is None:
+                continue  # pre-migration importer skipped these legacy cells
+            raw, stored = db.execute(text(
+                'SELECT CAST(CAST(:amount AS DOUBLE PRECISION) AS TEXT), '
+                f'CAST(CAST(:amount AS DOUBLE PRECISION) AS NUMERIC({precision},{scale}))'
+            ), {'amount': str(row[key])}).one()
+            exact = Decimal(raw)
+            review = (not exact.is_finite() or abs(exact) >= Decimal('1e20')
+                      or exact != exact.quantize(quantum) or (money and exact < 0))
+            row.update({key: str(stored), 'raw_text': raw,
+                        'state': 'needs_review' if review or (not money and row.get('kind') == 'value')
+                                 else 'verified'})
+    for block in source.get('blocks', []):
+        for indicator in block.get('indicators', []):
+            project(indicator.get('values', []))
+    for activity in source.get('activities', []):
+        costs = activity.get('costs', [])
+        project(costs, True)
+        indexed = {}
+        for row in costs:
+            if row.get('amount') is not None:
+                indexed.setdefault((row.get('year'), row.get('kind'), row.get('funding_type', 'total')), row)
+        for (year, kind, funding), row in indexed.items():
+            inside, outside = indexed.get((year, kind, 'inside')), indexed.get((year, kind, 'outside'))
+            if (funding == 'total' and inside and outside
+                    and Decimal(row['amount']) != Decimal(inside['amount']) + Decimal(outside['amount'])):
+                row['state'] = 'needs_review'
+    project(source.get('personnel', []), True)
+
+
 def personnel_signature(row):
     return (int(row['year']), str(row.get('kind', row.get('value_kind'))),
             row.get('category', 'personnel_sgk'), number(row.get('amount'), True),
@@ -291,7 +343,18 @@ def check_department(db, did, source, period_id):
                                   row_values(values, True)))
     if (Counter(map(encoded, actual_indicators)) != Counter(map(encoded, expected_indicators))
             or Counter(map(encoded, actual_activities)) != Counter(map(encoded, expected_activities))):
-        refuse('2027 gösterge/faaliyet veya değer satırı son ön baskı paket planına izlenemiyor')
+        differing = []
+        for label, actual, expected, fields in (
+                ('gösterge', actual_indicators, expected_indicators,
+                 ('üyelik', 'ad', 'birim', 'açıklama', 'hesaplama', 'kaynak', 'değerler')),
+                ('faaliyet', actual_activities, expected_activities,
+                 ('üyelik', 'ad', 'açıklama', 'maliyetler'))):
+            if len(actual) != len(expected):
+                differing.append(label + ' sayısı')
+            differing.extend(label + '/' + field for index, field in enumerate(fields)
+                if Counter(encoded(row[index]) for row in actual) != Counter(encoded(row[index]) for row in expected))
+        refuse(f'2027 gösterge/faaliyet veya değer satırı son ön baskı paket planına izlenemiyor '
+               f'(müdürlük #{did}; alanlar: {", ".join(differing) or "satır ilişkisi"})')
     return indicators, activities
 
 
@@ -357,7 +420,9 @@ def build_plan(db, organization_id, actor_id):
                         and saved_department['department_name'] != department.name)):
                     raise ValueError
             phase = 'arşiv planı'
-            plan = build_department_plan(db, archived_payload(json.loads(batch.payload_json)),
+            payload = json.loads(batch.payload_json)
+            legacy = legacy_archive(payload, snapshot)
+            plan = build_department_plan(db, archived_payload(payload),
                                          json.loads(batch.decisions_json or '[]'))
             if plan['unresolved'] or plan['unresolved_conflicts']:
                 raise ValueError
@@ -365,6 +430,8 @@ def build_plan(db, organization_id, actor_id):
             mapping = {department_key(x['source_name']): x for x in plan['mappings']}
             matched = set()
             for source in plan['parsed']['departments']:
+                if legacy:
+                    project_legacy_migrations(db, source)
                 item = mapping[department_key(source['name'])]
                 did = item.get('department_id')
                 if item['action'] != 'match':

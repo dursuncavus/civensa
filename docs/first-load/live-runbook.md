@@ -219,7 +219,10 @@ Araç şu durumların her birinde Türkçe gerekçeyle **0 satır yazıp durur**
   müdürlük; arşiv personel planına göre eksik/fazla/değişmiş hücre.
   Importer'ın seen_personnel döngüsü gibi uygun ilk (year, kind) kaydı alınır;
   (year, value_kind, category, amount, raw_text, state) çoklu kümesi birebir eşleşmelidir.
-  Boş ile sıfır ve ham metin/durum farkları korunur.
+  Boş ile sıfır ve ham metin/durum farkları korunur. 1 Ekim öncesi, durum alanı
+  taşımayan arşivlerde e5a0b1c2d3e4 ve b8d011e6f420 geçişlerinin belgeli sayısal/
+  ham-metin/durum dönüşümleri salt okunur SELECT ile arşiv planına yeniden uygulanır;
+  sonuçtaki altı alan yine tam eşleşmelidir. Veritabanına migrasyon çalıştırılmaz.
 - Son uygulanan ön baskı paketinden sonra personnel_cost_update veya herhangi
   bir department denetim kaydı; başka PP içerik düzenlemesi, silinmiş kayda veya
   dönemi belirsiz kayda ilişkin düzenleme de durdurur.
