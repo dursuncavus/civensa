@@ -114,6 +114,7 @@ def test_clear_chain_and_preserved_rows(target, printed):
     plan = clear.execute(engine, **ids)
     assert state(engine) == before
     assert len(plan['departments']) == 33
+    before_rows = before[0]
     assert plan['counts'] == dict(indicators=33, indicator_values=33, activities=33,
         activity_cost_values=66, submissions=33, submission_events=0,
         activity_catalogue_links=0, department_scopes=0, subprogram_scopes=0)
@@ -132,6 +133,9 @@ def test_clear_chain_and_preserved_rows(target, printed):
         receipt = db.scalar(select(m.AuditLog).where(m.AuditLog.action == clear.ACTION))
         assert json.loads(receipt.details)['counts'] == plan['counts']
     after = state(engine)
+    allowed_changes = set(clear.FIELDS) | {'audit_log', 'import_batches'}
+    assert {t: h for t, h in after[0].items() if t not in allowed_changes} == {
+        t: h for t, h in before_rows.items() if t not in allowed_changes}
     repeated = clear.execute(engine, apply=True, **ids)
     assert repeated['already_cleared'] and sum(repeated['counts'].values()) == 0
     assert state(engine) == after
@@ -268,3 +272,39 @@ def test_clear_requires_separate_confirmation(tmp_path, monkeypatch, capsys, con
     assert live.main(['--clear-preprint', '--apply', '--backup', str(tmp_path / 'unused.dump'),
                       '--organization-id', '1', '--actor-id', '1']) == 1
     assert 'Temizleme onayı uyuşmuyor' in capsys.readouterr().err
+
+
+def test_rehearsal_source_integrity_and_local_only(monkeypatch, tmp_path):
+    from scripts import rehearse_clear_preprint_2027 as rehearsal
+    from scripts.first_load_dryrun import local_test_url
+    dump = tmp_path / 'synthetic.dump'
+    dump.write_bytes(b'PGDMP-synthetic-source-integrity-test')
+    manifest = dict(utc_timestamp='2026-10-20T12:00:00+00:00',
+                    file_name=dump.name, file_size_bytes=dump.stat().st_size,
+                    sha256=hashlib.sha256(dump.read_bytes()).hexdigest(),
+                    alembic_version={'version_num': [live.HEAD]},
+                    public_table_row_counts={'organizations': 1})
+    dump.with_suffix('.manifest.json').write_text(json.dumps(manifest))
+    monkeypatch.setattr(rehearsal, 'require_fresh_backup', lambda _: None)
+    assert rehearsal.source_backup(dump) == manifest
+    dump.write_bytes(b'PGDMP-tampered')
+    with pytest.raises(live.Refusal, match='Yedek doğrulanamadı'):
+        rehearsal.source_backup(dump)
+    for raw in ('postgresql://unused@remote.example/db',
+                'postgresql://unused@localhost/db?hostaddr=remote.example'):
+        monkeypatch.setenv('CIVENSA_TEST_POSTGRES_URL', raw)
+        with pytest.raises(ValueError):
+            local_test_url()
+
+
+def test_private_rehearsal_child_diagnostics_are_suppressed(monkeypatch, capsys):
+    from scripts import rehearse_clear_preprint_2027 as rehearsal
+    def child(command, **kwargs):
+        import subprocess
+        assert kwargs['stdout'] is subprocess.DEVNULL
+        assert kwargs['stderr'] is subprocess.DEVNULL
+        return subprocess.CompletedProcess(command, 1)
+    monkeypatch.setattr(rehearsal.subprocess, 'run', child)
+    with pytest.raises(live.Refusal):
+        rehearsal.private(['pg_restore', 'sentinel-private-path'], {})
+    assert 'sentinel-private-path' not in str(capsys.readouterr())
