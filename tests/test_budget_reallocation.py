@@ -203,7 +203,7 @@ def test_staff_denied_delegation_grant_and_revocation(db,actors,budget,http):
 
 def test_flag_audited_approved_status_and_stale(db,sample,budget,http):
     client=http('strategy_director');p=preview(client,budget)
-    path=f"/api/activities/{sample['activity'].id}/contract-bound"
+    path=f"/api/activities/{sample['activity'].id}/contract-bound?period_id=1"
     assert http('other').post(path,json={'contract_bound':True}).status_code==403
     assert http('staff').post(path,json={'contract_bound':True}).status_code==200
     assert apply(client,p).status_code==409

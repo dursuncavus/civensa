@@ -105,7 +105,7 @@ def test_closed_work_split_copy_routes_every_kind_drafts_and_lists_untransferred
     assert {'structure_change','structure_link','structure_transfer','structure_profile','structure_period_copy'} <= {l.action for l in logs}
     assert all(l.user_id == sample['strategy'].id and l.created_at and set(json.loads(l.details)) == {'old','new'} for l in logs)
     assert db.scalar(select(AuditLog).where(AuditLog.action=='pp_data_change',AuditLog.entity_id==copied_i.department_id,AuditLog.details==f'period_id={pid}'))
-    assert browser.post(f'/structure/changes/{db.scalar(select(StructureChange.id))}/cancel', data={'csrf_token':token,'note':'Yanlış karar'}).status_code == 303
+    assert browser.post(f'/structure/changes/{db.scalar(select(StructureChange.id))}/cancel?period_id=1', data={'csrf_token':token,'note':'Yanlış karar'}).status_code == 303
     db.expire_all()
     assert copied_a.department_id == receivers['Park İşleri Müdürlüğü']
     assert copied_i.department_id == receivers['Bahçe İşleri Müdürlüğü']
@@ -135,7 +135,7 @@ def test_cancellation_is_append_only_and_restores_profiles_with_audit(db,sample,
     old_name = sample['department'].name
     assert save(browser,token,payload(sample)).status_code == 303
     change = db.scalar(select(StructureChange)); original = change.snapshot_json
-    response = browser.post(f'/structure/changes/{change.id}/cancel',data={'csrf_token':token,'note':'Meclis kararındaki ad düzeltildi'})
+    response = browser.post(f'/structure/changes/{change.id}/cancel?period_id=1',data={'csrf_token':token,'note':'Meclis kararındaki ad düzeltildi'})
     assert response.status_code == 303,response.text
     db.expire_all()
     assert sample['department'].name == old_name and change.snapshot_json == original
@@ -155,7 +155,7 @@ def test_cancellation_refuses_overwriting_later_profile_edits(db,sample,live_cli
     assert save(browser,token,data).status_code == 303
     scope=db.scalar(select(DepartmentScope)); scope.budget_code='Sonraki düzeltme'; db.commit()
     cid=db.scalar(select(StructureChange.id))
-    result=browser.post(f'/structure/changes/{cid}/cancel',data={'csrf_token':token,'note':'Düzeltme'})
+    result=browser.post(f'/structure/changes/{cid}/cancel?period_id=1',data={'csrf_token':token,'note':'Düzeltme'})
     assert result.status_code == 409 and 'sonrasında değişmiş' in result.text
     db.expire_all(); assert scope.budget_code == 'Sonraki düzeltme'
     assert not db.scalar(select(StructureChangeCancellation.id))
@@ -274,7 +274,7 @@ def test_cancellation_of_new_department_keeps_all_rows(db,sample,live_client):
     assert save(browser,token,data).status_code==303
     created=db.scalar(select(Department).where(Department.name=='Yeni Birim'))
     change=db.scalar(select(StructureChange))
-    result=browser.post(f'/structure/changes/{change.id}/cancel',data={'csrf_token':token,'note':'Meclis kararı düzeltildi'})
+    result=browser.post(f'/structure/changes/{change.id}/cancel?period_id=1',data={'csrf_token':token,'note':'Meclis kararı düzeltildi'})
     assert result.status_code==303,result.text
     db.refresh(created);assert not created.is_active
     assert db.get(Department,created.id)

@@ -26,7 +26,7 @@ def integer(value, label='Kimlik'):
 
 
 def register(app):
-    from .main import require_user, require_strategy, ensure_department_editable, templates, session_period, pp_period, check_pp_access, log
+    from .main import require_user, require_strategy, ensure_department_editable, templates, session_period, pp_period, check_pp_access, require_pp_period, log
 
     def context(db, user, did, pid, edit=False):
         if not db.get(Department,did) or not db.get(ReportingPeriod,pid): raise HTTPException(404)
@@ -107,12 +107,12 @@ def register(app):
             return {'ok':True,'redirect_url':redirect}
         return RedirectResponse(redirect,303)
 
-    @app.post('/program/{department_id}/economic-split')
+    @app.post('/program/{department_id}/economic-split', dependencies=[Depends(require_pp_period)])
     async def economic_split_save(department_id:int, request:Request, db:Session=Depends(get_db), user:User=Depends(require_strategy)):
         data=await request.form()  # All awaits finish before the transaction takes row locks.
         return await run_in_threadpool(apply_economic_split,department_id,request,data,db,user)
 
-    @app.post('/program/{department_id}/cards')
+    @app.post('/program/{department_id}/cards', dependencies=[Depends(require_pp_period)])
     async def save_card(department_id:int,request:Request,db:Session=Depends(get_db),user:User=Depends(require_user)):
         data=await request.form();pid=session_period(request,db,data).id;context(db,user,department_id,pid,True)
         card=db.get(ReportCard,integer(data['id'])) if data.get('id') else None
@@ -129,7 +129,7 @@ def register(app):
         db.commit();log(db,user,'card_save','report_card',card.id)
         return RedirectResponse(f'/program/{department_id}?period_id={pid}',303)
 
-    @app.post('/program/{department_id}/assign')
+    @app.post('/program/{department_id}/assign', dependencies=[Depends(require_pp_period)])
     async def assign(department_id:int,request:Request,db:Session=Depends(get_db),user:User=Depends(require_user)):
         data=await request.form();pid=session_period(request,db,data).id;context(db,user,department_id,pid,True)
         card=db.get(ReportCard,integer(data.get('card_id')))
@@ -143,7 +143,7 @@ def register(app):
         db.commit();log(db,user,'card_assign',model.__tablename__,obj.id)
         return RedirectResponse(f'/program/{department_id}?period_id={pid}',303)
 
-    @app.post('/program/{department_id}/indicator')
+    @app.post('/program/{department_id}/indicator', dependencies=[Depends(require_pp_period)])
     async def add_indicator(department_id:int,request:Request,db:Session=Depends(get_db),user:User=Depends(require_user)):
         data=await request.form();pid=session_period(request,db,data).id;context(db,user,department_id,pid,True)
         card=db.get(ReportCard,integer(data.get('card_id')))
@@ -154,7 +154,7 @@ def register(app):
         db.add(obj);db.commit();log(db,user,'indicator_create','indicator',obj.id)
         return RedirectResponse(f'/department/{department_id}?period_id={pid}',303)
 
-    @app.post('/program/{department_id}/finance/{activity_id}')
+    @app.post('/program/{department_id}/finance/{activity_id}', dependencies=[Depends(require_pp_period)])
     async def finance(department_id:int,activity_id:int,request:Request,db:Session=Depends(get_db),user:User=Depends(require_user)):
         data=await request.form();pid=session_period(request,db,data).id;context(db,user,department_id,pid,True)
         act=db.scalar(select(Activity).where(Activity.id==activity_id).with_for_update())
@@ -163,7 +163,7 @@ def register(app):
         db.commit();log(db,user,'finance_save','activity',act.id)
         return RedirectResponse(f'/program/{department_id}?period_id={pid}',303)
 
-    @app.post('/program/{department_id}/economic')
+    @app.post('/program/{department_id}/economic', dependencies=[Depends(require_pp_period)])
     async def economic(department_id:int,request:Request,db:Session=Depends(get_db),user:User=Depends(require_user)):
         data=await request.form();pid=session_period(request,db,data).id;context(db,user,department_id,pid,True)
         year=integer(data.get('year'));kind=data.get('value_kind');cat=data.get('category');group=data.get('program_group');fund=data.get('funding_type')
@@ -179,7 +179,7 @@ def register(app):
         db.commit();log(db,user,'economic_save','department',department_id,f'{year}/{kind}/{cat}/{group}/{fund}')
         return RedirectResponse(f'/program/{department_id}?period_id={pid}',303)
 
-    @app.post('/program/{department_id}/economic-grid')
+    @app.post('/program/{department_id}/economic-grid', dependencies=[Depends(require_pp_period)])
     async def economic_grid(department_id:int,request:Request,db:Session=Depends(get_db),user:User=Depends(require_user)):
         data=await request.form();pid=session_period(request,db,data).id;context(db,user,department_id,pid,True)
         group=data.get('program_group');fund=data.get('funding_type')
@@ -204,7 +204,7 @@ def register(app):
             return {'ok':True,'redirect_url':redirect_url}
         return RedirectResponse(redirect_url,303)
 
-    @app.post('/program/{department_id}/verify-value/{value_id}')
+    @app.post('/program/{department_id}/verify-value/{value_id}', dependencies=[Depends(require_pp_period)])
     async def verify_value(department_id:int,value_id:int,request:Request,db:Session=Depends(get_db),user:User=Depends(require_user)):
         data=await request.form();v=db.get(IndicatorValue,value_id)
         if not v:raise HTTPException(404)
@@ -224,7 +224,7 @@ def register(app):
         db.commit();log(db,user,'source_value_verified','indicator_value',v.id)
         return RedirectResponse(f'/program/{department_id}?period_id={period.id}',303)
 
-    @app.post('/program/{department_id}/verify-money/{kind}/{value_id}')
+    @app.post('/program/{department_id}/verify-money/{kind}/{value_id}', dependencies=[Depends(require_pp_period)])
     async def verify_money(department_id:int,kind:str,value_id:int,request:Request,db:Session=Depends(get_db),user:User=Depends(require_user)):
         data=await request.form()
         model={'activity':ActivityCostValue,'personnel':DepartmentCostValue,'economic':EconomicValue}.get(kind)
@@ -271,7 +271,7 @@ def register(app):
             department_names={d.id:period_name(db,period.id,d) for d in period_departments(db,period.id)},
             sections=rows(db,ReportSection,period.id),catalogue=rows(db,OfficialActivity,period.id),responsibilities={i.id:[r.department_id for r in db.scalars(select(ActivityResponsibility).where(ActivityResponsibility.official_activity_id==i.id)).all()] for i in rows(db,OfficialActivity,period.id)},publications=rows(db,Publication,period.id)))
 
-    @app.post('/report-builder/scope')
+    @app.post('/report-builder/scope', dependencies=[Depends(require_pp_period)])
     async def scope(request:Request,db:Session=Depends(get_db),user:User=Depends(require_strategy)):
         data=await request.form();pid=session_period(request,db,data).id;did=integer(data.get('department_id'))
         from .master_data_service import active_department, audit_change, period_record
@@ -292,7 +292,7 @@ def register(app):
         db.commit()
         return RedirectResponse(f'/report-builder?period_id={pid}',303)
 
-    @app.post('/report-builder/section')
+    @app.post('/report-builder/section', dependencies=[Depends(require_pp_period)])
     async def section(request:Request,db:Session=Depends(get_db),user:User=Depends(require_strategy)):
         data=await request.form();pid=session_period(request,db,data).id
         if not db.get(ReportingPeriod,pid):raise HTTPException(404)
@@ -327,7 +327,7 @@ def register(app):
         db.commit();log(db,user,'section_save','report_section',obj.id)
         return RedirectResponse(f'/report-builder?period_id={pid}',303)
 
-    @app.post('/report-builder/catalogue')
+    @app.post('/report-builder/catalogue', dependencies=[Depends(require_pp_period)])
     async def catalogue(request:Request,db:Session=Depends(get_db),user:User=Depends(require_strategy)):
         data=await request.form();pid=session_period(request,db,data).id
         if not db.get(ReportingPeriod,pid):raise HTTPException(404)
@@ -341,7 +341,7 @@ def register(app):
         db.commit()
         return RedirectResponse(f'/report-builder?period_id={pid}',303)
 
-    @app.post('/program/{department_id}/catalogue-link')
+    @app.post('/program/{department_id}/catalogue-link', dependencies=[Depends(require_pp_period)])
     async def catalogue_link(department_id:int,request:Request,db:Session=Depends(get_db),user:User=Depends(require_user)):
         data=await request.form();pid=session_period(request,db,data).id;context(db,user,department_id,pid,True)
         activity=db.get(Activity,integer(data.get('activity_id')))
@@ -351,7 +351,7 @@ def register(app):
         db.commit()
         return RedirectResponse(f'/program/{department_id}?period_id={pid}',303)
 
-    @app.post('/report-builder/publish')
+    @app.post('/report-builder/publish', dependencies=[Depends(require_pp_period)])
     async def publish(request:Request,db:Session=Depends(get_db),user:User=Depends(require_strategy)):
         data=await request.form();pid=session_period(request,db,data).id;period=db.scalar(select(ReportingPeriod).where(ReportingPeriod.id==pid).with_for_update())
         if not period:raise HTTPException(404)

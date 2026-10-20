@@ -153,7 +153,7 @@ def test_malformed_and_cross_period_card_rejected(client,db,sample):
 
 def test_unrelated_edit_keeps_source_review(client,db,sample):
     v=db.scalar(select(IndicatorValue));v.value=None;v.raw_text='111,001';v.state='needs_review';db.commit()
-    r=client.post(f'/api/indicators/{sample["indicator"].id}/save',json={'name':'Düzeltilmiş ad','value_2027_target':''})
+    r=client.post(f'/api/indicators/{sample["indicator"].id}/save?period_id=1',json={'name':'Düzeltilmiş ad','value_2027_target':''})
     assert r.status_code==200
     db.refresh(v);assert v.raw_text=='111,001' and v.state=='needs_review' and v.value is None
 
@@ -173,6 +173,6 @@ def test_missing_economic_zero_is_not_complete(db,sample):
 
 def test_explicit_money_review_preserves_original(client,db,sample):
     row=db.scalar(select(DepartmentCostValue));row.amount=Decimal('1.23');row.raw_text='1.234';row.state='needs_review';db.commit()
-    r=client.post(f'/program/1/verify-money/personnel/{row.id}',data={'amount':'1,23'},follow_redirects=False)
+    r=client.post(f'/program/1/verify-money/personnel/{row.id}?period_id=1',data={'amount':'1,23'},follow_redirects=False)
     assert r.status_code==303,r.text
     db.refresh(row);assert row.state=='verified' and row.raw_text=='1.234' and row.amount==Decimal('1.23')

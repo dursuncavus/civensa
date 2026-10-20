@@ -68,3 +68,50 @@ def test_browser_write_keeps_displayed_period(browser, client, db, sample, two_p
         assert not db.scalar(select(Activity.id).where(Activity.period_id == other.id))
         assert not db.scalar(select(DepartmentCostValue.id).where(DepartmentCostValue.period_id == other.id))
         assert db.scalar(select(Submission).where(Submission.period_id == other.id)).status == 'draft'
+
+
+@pytest.mark.parametrize('path', ['/program/1', '/program/1/economic-split', '/report-builder', '/structure'])
+def test_pp_write_forms_include_selected_period(browser, client, db, sample, two_periods, path):
+    from app.main import app, require_user
+    app.dependency_overrides[require_user] = lambda: sample['strategy']
+    period, _ = two_periods
+    if path.endswith('economic-split'):
+        from app.models import EconomicValue
+        db.add(EconomicValue(period_id=period.id, department_id=1, year=period.year,
+                             value_kind='budget', category='personnel', program_group='unallocated',
+                             funding_type='inside', amount=25))
+        db.commit()
+    response = client.get(f'{path}?period_id={period.id}')
+    assert response.status_code == 200, response.text
+    with browser.new_page() as page:
+        page.set_content(response.text)
+        forms = page.locator('form[method="post"][action^="/program/"], form[method="post"][action^="/report-builder/"], form[method="post"][action^="/structure/"]')
+        assert forms.count() > 0
+        for form in forms.all():
+            assert form.locator('input[name="period_id"]').input_value() == str(period.id), form.get_attribute('action')
+
+
+def test_pp_json_helper_sends_period_for_every_write_route(browser, client, two_periods):
+    from test_pp_required_period import WRITES
+    from urllib.parse import parse_qs, urlparse
+    period, _ = two_periods
+    with browser.new_context() as context:
+        writes = []
+
+        def serve(route):
+            request = route.request
+            if request.method in {'POST', 'PUT', 'DELETE'}:
+                writes.append(request.url)
+                route.fulfill(status=200, content_type='application/json', body='{"ok":true}')
+                return
+            response = client.get(request.url)
+            route.fulfill(status=response.status_code, headers=dict(response.headers), body=response.content)
+
+        context.route('http://testserver/**', serve)
+        page = context.new_page()
+        page.goto(f'http://testserver/department/1?period_id={period.id}')
+        routes = [(method.upper(), path) for method, path, _, _ in WRITES if path.startswith('/api/')]
+        for method, path in routes:
+            page.evaluate('([method,path]) => jsonFetch(path,{method})', [method, path])
+        assert len(writes) == len(routes)
+        assert all(parse_qs(urlparse(url).query).get('period_id') == [str(period.id)] for url in writes)

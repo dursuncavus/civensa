@@ -194,7 +194,7 @@ def test_first_login_blocks_navigation_and_writes_until_personal_password(db, sa
                  '/activity-sections', '/health', '/docs', '/redoc', '/openapi.json', '/unknown-page']:
         response = person.get(path)
         assert response.status_code == 303 and response.headers['location'] == '/change-password'
-    blocked = person.post('/api/departments/1/submit')
+    blocked = person.post('/api/departments/1/submit?period_id=1')
     assert blocked.status_code == 303 and blocked.headers['location'] == '/change-password'
     page = person.get('/change-password')
     assert page.status_code == 200 and 'Devam etmek için kendi parolanızı belirleyin.' in page.text

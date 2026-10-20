@@ -159,7 +159,7 @@ def test_mapping_export_is_guarded_and_still_reimports(backend, live_client, db,
     # The guarded file is filled in and re-imported unchanged: names still match.
     rows[1][6] = f"{sample['subprogram'].program.name} / {sample['subprogram'].name}"
     out = io.StringIO(); csv.writer(out).writerows(rows)
-    response = strategy.post('/api/activity-mappings/import-preview', headers={'X-CSRF-Token': csrf},
+    response = strategy.post('/api/activity-mappings/import-preview?period_id=1', headers={'X-CSRF-Token': csrf},
                              files={'file': ('kuyruk.csv', out.getvalue().encode('utf-8'), 'text/csv')})
     assert response.status_code == 200, response.text
     assert response.json()['ok'] and response.json()['count'] == 1, response.json()
@@ -177,7 +177,7 @@ def test_mapping_import_accepts_a_guarded_selection_only(backend, live_client, d
     def preview(selection):
         rows[1][6] = selection
         out = io.StringIO(); csv.writer(out).writerows(rows)
-        return strategy.post('/api/activity-mappings/import-preview', headers={'X-CSRF-Token': csrf},
+        return strategy.post('/api/activity-mappings/import-preview?period_id=1', headers={'X-CSRF-Token': csrf},
                              files={'file': ('kuyruk.csv', out.getvalue().encode('utf-8'), 'text/csv')}).json()
     guarded = f"'=Program / {sample['subprogram'].name}"
     assert preview(guarded)['ok'] and preview(guarded)['count'] == 1
@@ -237,7 +237,7 @@ def test_password_reset_rejects_every_old_session_of_that_user_only(backend, liv
     # 3. Old cookie of A: authenticated GET is rejected as unauthenticated (401, not a CSRF 403).
     assert replay(live_client, cookie_a).get('/modules').status_code == 401
     # 4. Old cookie of A with its once-valid CSRF token cannot write.
-    response = replay(live_client, cookie_a).post(f'/api/indicators/{sample["indicator"].id}/save',
+    response = replay(live_client, cookie_a).post(f'/api/indicators/{sample["indicator"].id}/save?period_id=1',
                                                   headers={'X-CSRF-Token': csrf_a}, json={'value_2027_target': '9'})
     assert response.status_code == 401
     assert indicator_value(db) == before
@@ -248,7 +248,7 @@ def test_password_reset_rejects_every_old_session_of_that_user_only(backend, liv
     assert second.post('/api/me/change-password', headers={'X-CSRF-Token': csrf_a_second}, json={
         'current_password': NEW_PASSWORD, 'new_password': personal, 'confirmation': personal}).status_code == 200
     assert second.get('/modules').status_code == 200
-    response = second.post(f'/api/indicators/{sample["indicator"].id}/save',
+    response = second.post(f'/api/indicators/{sample["indicator"].id}/save?period_id=1',
                            headers={'X-CSRF-Token': csrf_a_second}, json={'value_2027_target': '9'})
     assert response.status_code == 200, response.text
     assert indicator_value(db) == Decimal('9')
@@ -275,10 +275,10 @@ def test_self_password_change_keeps_acting_session_and_kills_the_others(backend,
         'current_password': PASSWORD, 'new_password': NEW_PASSWORD, 'confirmation': NEW_PASSWORD})
     assert response.status_code == 200, response.text
     assert acting.get('/modules').status_code == 200
-    assert acting.post(f'/api/indicators/{sample["indicator"].id}/save', headers={'X-CSRF-Token': csrf},
+    assert acting.post(f'/api/indicators/{sample["indicator"].id}/save?period_id=1', headers={'X-CSRF-Token': csrf},
                        json={'value_2027_target': '4'}).status_code == 200
     assert replay(live_client, cookie_elsewhere).get('/modules').status_code == 401
-    assert replay(live_client, cookie_elsewhere).post(f'/api/indicators/{sample["indicator"].id}/save', headers={'X-CSRF-Token': csrf_elsewhere},
+    assert replay(live_client, cookie_elsewhere).post(f'/api/indicators/{sample["indicator"].id}/save?period_id=1', headers={'X-CSRF-Token': csrf_elsewhere},
                           json={'value_2027_target': '5'}).status_code == 401
     assert indicator_value(db) == Decimal('4')
     assert login(live_client(), sample['user'].email, NEW_PASSWORD)
@@ -291,7 +291,7 @@ def test_deactivated_user_stays_rejected(backend, live_client, db, sample):
     response = strategy.post(f'/api/users/{sample["user"].id}/active', headers={'X-CSRF-Token': csrf}, json={'active': False})
     assert response.status_code == 200
     assert replay(live_client, cookie).get('/modules').status_code == 401
-    assert replay(live_client, cookie).post(f'/api/indicators/{sample["indicator"].id}/save', headers={'X-CSRF-Token': csrf_victim},
+    assert replay(live_client, cookie).post(f'/api/indicators/{sample["indicator"].id}/save?period_id=1', headers={'X-CSRF-Token': csrf_victim},
                                             json={'value_2027_target': '7'}).status_code == 401
     assert indicator_value(db) == Decimal('1.75')
     assert live_client().post('/login', data={'email': sample['user'].email, 'password': PASSWORD}).status_code == 400
@@ -458,9 +458,9 @@ def test_decision_checks_keep_their_order_and_reject_bad_bodies(client, db, samp
     from app.main import app, require_user
     app.dependency_overrides[require_user] = lambda: sample['strategy']
     sub = db.scalar(select(Submission))
-    path = f'/api/submissions/{sub.id}/decision'
-    assert client.post('/api/submissions/999/decision', json={'decision': 'approve'}).status_code == 404
-    assert client.post('/api/submissions/999/decision', content=b'{bozuk', headers={'Content-Type': 'application/json'}).status_code == 404
+    path = f'/api/submissions/{sub.id}/decision?period_id=1'
+    assert client.post('/api/submissions/999/decision?period_id=1', json={'decision': 'approve'}).status_code == 404
+    assert client.post('/api/submissions/999/decision?period_id=1', content=b'{bozuk', headers={'Content-Type': 'application/json'}).status_code == 404
     assert client.post(path, content=b'{bozuk', headers={'Content-Type': 'application/json'}).status_code == 409  # draft
     sub.status = 'submitted'; db.commit()
     assert client.post(path, content=b'{bozuk', headers={'Content-Type': 'application/json'}).status_code == 422
@@ -549,7 +549,7 @@ def test_decision_body_wait_never_freezes_the_server(db, sample):
         assert _health_seconds(port)[0] == b'HTTP/1.1 200 OK'
 
         def request_head(body):
-            return (f'POST /api/submissions/{sub.id}/decision HTTP/1.1\r\nHost: test\r\nCookie: {cookie}\r\n'
+            return (f'POST /api/submissions/{sub.id}/decision?period_id=1 HTTP/1.1\r\nHost: test\r\nCookie: {cookie}\r\n'
                     f'X-CSRF-Token: {csrf}\r\nContent-Type: application/json\r\nContent-Length: {len(body)}\r\n'
                     'Connection: close\r\n\r\n').encode()
         body_t1 = json.dumps({'decision': 'approve'}).encode()

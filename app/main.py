@@ -309,7 +309,7 @@ def active_period(db: Session):
     return period or db.scalar(select(ReportingPeriod).order_by(ReportingPeriod.year.desc()))
 
 
-def session_period(request: Request, db: Session, data=None):
+def session_period(request: Request, db: Session, data=None, *, require=False):
     """Resolve PP context from this request; another tab's session is not context."""
     query_id = getattr(request, "query_params", {}).get("period_id") if request else None
     if data is not None and not hasattr(data, "get"):
@@ -325,11 +325,31 @@ def session_period(request: Request, db: Session, data=None):
     if len(set(ids)) > 1:
         raise HTTPException(422, "Bağlantı ve form farklı raporlama dönemleri içeriyor. Sayfayı seçtiğiniz yıl için yeniden açın.")
     if not ids:
+        if require:
+            raise HTTPException(422, "Raporlama dönemi belirtilmedi. Sayfayı yenileyip seçtiğiniz yıl üzerinden tekrar deneyin.")
         return active_period(db)
     period = db.get(ReportingPeriod, ids[0])
     if not period:
         raise HTTPException(404, "Seçilen raporlama dönemi bulunamadı. Dönem bağlantısını kontrol edin veya Strateji Geliştirme birimine başvurun.")
     return period
+
+
+async def require_pp_period(request: Request, db: Session = Depends(get_db),
+                            user: User = Depends(require_user)):
+    """Require explicit HTTP write context before any mutation or audit.
+
+    FastAPI caches this request's JSON/form for the handler.
+    """
+    if "application/json" in request.headers.get("content-type", ""):
+        try:
+            data = await request.json()
+        except ValueError:
+            data = None
+        if not hasattr(data, "get"):
+            data = None
+    else:
+        data = await request.form()
+    return session_period(request, db, data, require=True)
 
 
 def check_pp_access(db: Session, user: User, department_id: int, period: ReportingPeriod):
@@ -659,7 +679,7 @@ def department_page(department_id: int, request: Request, db: Session = Depends(
     })
 
 
-@app.post("/api/indicators/{indicator_id}/save")
+@app.post("/api/indicators/{indicator_id}/save", dependencies=[Depends(require_pp_period)])
 async def save_indicator(indicator_id: int, request: Request, db: Session = Depends(get_db), user: User = Depends(require_user)):
     ind = db.scalar(select(Indicator).where(Indicator.id == indicator_id).options(selectinload(Indicator.values)))
     if not ind:
@@ -712,7 +732,7 @@ def activity_subprogram_id(value):
     return int(digits)
 
 
-@app.post("/api/activities")
+@app.post("/api/activities", dependencies=[Depends(require_pp_period)])
 async def create_activity(request: Request, db: Session = Depends(get_db), user: User = Depends(require_user)):
     if user.role != "department" or not user.department_id:
         raise HTTPException(403)
@@ -737,7 +757,7 @@ async def create_activity(request: Request, db: Session = Depends(get_db), user:
     return pp_write_result(period, act.department_id, id=act.id)
 
 
-@app.put("/api/activities/{activity_id}")
+@app.put("/api/activities/{activity_id}", dependencies=[Depends(require_pp_period)])
 async def update_activity(activity_id: int, request: Request, db: Session = Depends(get_db), user: User = Depends(require_user)):
     body = await request.body()
     return _update_activity(activity_id, body, db, user, request)
@@ -777,11 +797,12 @@ def _update_activity(activity_id: int, body: bytes, db: Session, user: User, req
 
 
 @app.delete("/api/activities/{activity_id}")
-def delete_activity(activity_id: int, request: Request, db: Session = Depends(get_db), user: User = Depends(require_user)):
+def delete_activity(activity_id: int, request: Request, db: Session = Depends(get_db), user: User = Depends(require_user),
+                    period: ReportingPeriod = Depends(require_pp_period)):
     act = db.get(Activity, activity_id)
     if not act:
         raise HTTPException(404)
-    period = pp_period(request, db, user, act.department_id, record_period_id=act.period_id)
+    period = pp_period(request, db, user, act.department_id, {"period_id": period.id}, record_period_id=act.period_id)
     ensure_department_editable(db, user, act.department_id, act.period_id)
     from .models import ActivityCatalogueLink
     db.execute(ActivityCatalogueLink.__table__.delete().where(ActivityCatalogueLink.activity_id == act.id))
@@ -790,7 +811,7 @@ def delete_activity(activity_id: int, request: Request, db: Session = Depends(ge
     return pp_write_result(period, user.department_id)
 
 
-@app.post("/api/departments/{department_id}/personnel-costs")
+@app.post("/api/departments/{department_id}/personnel-costs", dependencies=[Depends(require_pp_period)])
 async def save_personnel_costs(department_id: int, request: Request, db: Session = Depends(get_db), user: User = Depends(require_user)):
     data = await request.json()
     period = pp_period(request, db, user, department_id, data)
@@ -819,7 +840,7 @@ async def save_personnel_costs(department_id: int, request: Request, db: Session
     return pp_write_result(period, department_id)
 
 
-@app.post("/api/departments/{department_id}/submit")
+@app.post("/api/departments/{department_id}/submit", dependencies=[Depends(require_pp_period)])
 async def submit_department_request(department_id: int, request: Request, db: Session = Depends(get_db), user: User = Depends(require_user)):
     data = await request.json() if "application/json" in request.headers.get("content-type", "") else await request.form()
     period = pp_period(request, db, user, department_id, data)
@@ -1032,7 +1053,7 @@ def validate_mapping_csv(data: bytes, db: Session, period: ReportingPeriod):
     return resolved, errors
 
 
-@app.post("/api/activity-mappings/import-preview")
+@app.post("/api/activity-mappings/import-preview", dependencies=[Depends(require_pp_period)])
 async def preview_activity_mapping_csv(
     request: Request, file: UploadFile = File(...), db: Session = Depends(get_db),
     user: User = Depends(require_strategy),
@@ -1053,7 +1074,7 @@ async def preview_activity_mapping_csv(
     }
 
 
-@app.post("/api/activity-mappings/import-apply")
+@app.post("/api/activity-mappings/import-apply", dependencies=[Depends(require_pp_period)])
 async def apply_activity_mapping_csv(
     request: Request, file: UploadFile = File(...), db: Session = Depends(get_db),
     user: User = Depends(require_strategy),
@@ -1082,7 +1103,7 @@ async def apply_activity_mapping_csv(
     return {"ok": True, "updated": len(rows), "remaining": remaining, "batch_id": batch_id}
 
 
-@app.post("/api/activity-mappings/batches/{batch_id}/revert")
+@app.post("/api/activity-mappings/batches/{batch_id}/revert", dependencies=[Depends(require_pp_period)])
 async def revert_activity_mapping_batch(
     batch_id: str, request: Request, db: Session = Depends(get_db),
     user: User = Depends(require_strategy),
@@ -1136,7 +1157,7 @@ async def revert_activity_mapping_batch(
     return {"ok": True, "reverted": len(validated)}
 
 
-@app.post("/api/activity-mappings/bulk")
+@app.post("/api/activity-mappings/bulk", dependencies=[Depends(require_pp_period)])
 async def save_activity_mappings(request: Request, db: Session = Depends(get_db), user: User = Depends(require_strategy)):
     data = await request.json()
     assignments = data.get("assignments", [])
@@ -1482,7 +1503,7 @@ def review(request: Request, db: Session = Depends(get_db), user: User = Depends
     })
 
 
-@app.post("/api/submissions/{submission_id}/decision")
+@app.post("/api/submissions/{submission_id}/decision", dependencies=[Depends(require_pp_period)])
 async def submission_decision(submission_id: int, request: Request, db: Session = Depends(get_db), user: User = Depends(require_strategy)):
     user = db.get(User, user.id, populate_existing=True)
     released_permissions.require_strategy_director(user)
