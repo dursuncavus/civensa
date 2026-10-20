@@ -1,278 +1,394 @@
 # Basılı PP 2027 — sahibin kontrollü ilk yükleme kılavuzu
 
-Bu kılavuz komutları hazırlamak içindir. CIV-052 kapsamında canlı veritabanında
-veya Render'da hiçbir komut çalıştırılmadı. Canlı uygulama yalnız proje sahibinin
-onayladığı zamanda, güvenilir kendi bilgisayarında yapılır. Komutlar **Bash** içindir.
+D-88 / D-111: basılı kitap değiştirilmeden, taslak ve mevcut inceleme hücreleri
+korunarak yüklenir. İşletme ve İştirakler Müdürlüğü Meclis verisi gelene kadar
+atlanır. Beklenen sayım **33 müdürlük / 61 kart / 256 gösterge / 285 faaliyet /
+1300 ekonomik değer**. Doğrulama hatası olan taslaklar da kaydedilir; kaynak
+düzeltmesi bu araçta yapılmaz.
 
-D-88 / D-111: basılı kitap değişmeden yüklenir. Paketler `draft` (taslak), kaynakta
-inceleme gerektiren hücreler mevcut `needs_review` durumundadır. Müdürlük doğrulama
-hataları raporlanır; tutarlar, boş hücreler ve kurallar değiştirilmez. D-109 uyarınca
-kurum özetlerinin BOOK / CHECK / UNKNOWN bulguları veri değildir ve engel değildir.
-İşletme ve İştirakler Müdürlüğü Meclis verisi gelene kadar **yüklenmez**.
+**CIV-058 / D-131 özel durumu:** normal ilk yükleme “2027 PP verisi zaten var”
+diye durdu. Sahibin 20 Ekim 2026, 16:30 (Türkiye) salt okunur envanterinde dönem
+2 aktif; 33 müdürlükte yalnız gösterge/faaliyet, teslimler taslak; paketler
+3 önizleme, 4/5/7/8/9/10 uygulanmış, 6 geri alınmış; uygulamalar 21 Eylül tarihli.
+Son uygulama sonrasında PP içerik düzenlemesi bulunmadığı bildirildi.
+Araç bu beyanı yeterli saymaz; her çalışmada tekrar denetler.
 
-## 1. Sorumlu ile hazırlığı tamamlayın
+Bu görevde canlı veritabanı, Render, merge veya deploy çalıştırılmaz. Aşağıdaki
+canlı adımları ayrı operasyon zamanında sahibi yürütür. Hedef release #50,
+main 6b4d834, Alembic c048a1b2c3d4; farklıysa durun. Migrasyon veya Render
+yeniden başlatması bu işlemin parçası değildir.
 
-Proje sahibinin onayladığı **CIV-052 PR commit** numarasını, kurum numarasını ve
-etkin Strateji/yönetici kullanıcı numarasını sorumludan alın. Bu kullanıcı denetim
-kaydında yüklemeyi yapan kişidir. Bu numaralar gizli bağlantı değildir. Kullanıcı
-hesabı veya kurum otomatik oluşturulmaz. Hedefte tek kurum olmalıdır.
+Her komut bloğu **zsh içinden tek başına** yapıştırılabilir: bash ile başlar,
+gerekli bilgileri yeniden ister, önceki bloğun değişkenlerine dayanmaz.
+İstemler /dev/tty üzerinden okunur; bağlantı komut geçmişine yazılmaz.
+Terminal kaydı ve ekran paylaşımı kapalı olmalıdır. Bağlantıyı chat, dosya,
+.env, komut argümanı, ekran görüntüsü veya PR'a koymayın.
 
-Canlı için beklenen mevcut sürüm release #50 (`main` `6b4d834`), Alembic başlığı
-`c048a1b2c3d4` olmalıdır. Bu yükleme bir yayın veya migrasyon işlemi değildir.
-Sürüm farklıysa durun; [Render işletim belgesindeki](../operations/render.md)
-başlatmanın migrasyon çalıştırabileceği bilgisini dikkate alarak sorumluya bildirin.
-Bu işlem için Render ayarı değiştirmeyin, uygulamayı yeniden yayımlamayın.
+## 1. Onaylı kodu hazırlayın
 
-Yükleme boyunca kullanıcıların veri girişine ara vereceği pencereyi önceden
-belirleyin; yedekten sonra yeni düzeltme/gönderim yapılmamalıdır. İkinci bir yükleyici
-aynı anda çalışamaz; bu koruma normal kullanıcı oturumlarını kapatmaz.
+Python 3.12+, Git, Bash, yerel PostgreSQL **18** sunucusu ve PATH içinde
+pg_dump / pg_restore 18 gerekir. Mac'te PostgreSQL 18 kurulumu/PATH seçimini
+sorumlu bir kez tamamlasın. Kurum ve etkin Strateji/yönetici numaralarını
+sorumludan alın. Kullanıcı veya kurum otomatik oluşturulmaz.
 
-## 2. Onaylı kodu kendi bilgisayarınızda açın
-
-Python 3.12+, Git, Bash ve PostgreSQL 18 `pg_restore`/`psql` araçları kurulu olmalıdır.
-Terminalde deponun kök klasörüne geçin. İlk kez kuruluyorsa:
-
-```bash
-git clone https://github.com/dursuncavus/civensa.git
-cd civensa
-```
-
-Mevcut depo kullanılıyorsa önce `cd civensa` ile aynı klasöre geçin; kaydedilmemiş
-çalışmanız varsa sorumluya danışmadan dal değiştirmeyin.
+Depo zaten varsa tam yolunu girin; yoksa boş bir hedef klasör yolu girin.
+Kirli çalışma ağacında bu blok durur. Sahibin onayladığı **CIV-058 PR başı
+commit** numarasını kullanın; eski CIV-052 kodunda temizleme seçeneği yoktur.
 
 ```bash
-git status --short
-git fetch origin task/civ-052-live-first-load
-read -r -p 'Sahibin onayladığı CIV-052 commit numarası: ' CIV052_COMMIT
-git switch --detach "$CIV052_COMMIT"
+bash <<'BASH'
+set -euo pipefail
+set +x
+read -r -p 'Civensa depo klasörünün tam yolu (yoksa oluşturulur): ' CIV058_REPO </dev/tty
+if [ ! -d "$CIV058_REPO" ]; then
+  git clone https://github.com/dursuncavus/civensa.git "$CIV058_REPO"
+fi
+cd "$CIV058_REPO"
+test -z "$(git status --porcelain)" || { echo 'DURDU: Kaydedilmemiş çalışma var.'; exit 1; }
+git fetch origin task/civ-058-clear-preprint-2027
+read -r -p 'Sahibin onayladığı CIV-058 tam commit numarası: ' CIV058_COMMIT </dev/tty
+git switch --detach "$CIV058_COMMIT"
 git rev-parse HEAD
 python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install -r requirements.txt
 python scripts/first_load_live.py --help
+BASH
 ```
 
-Beklenen: `git status --short` boş; commit numarası onaylananla aynı; yardımda
-`--apply`, `--backup`, `--resume` görünür. Kurulum hatasında durun. Burada hiçbir
-veritabanı bağlantısı veya migrasyon çalışmaz.
+Beklenen: gösterilen commit onaylananla aynı; yardımda --clear-preprint,
+--apply, --backup ve --resume var. Kurulum hatasında durun.
 
-## 3. Bağlantıyı yalnız gizli istemde girin
+## 2. Önce doğrulanmış üretim yedeğinde yerel prova yapın
 
-Neon'da hedef canlı dal/veritabanı/rolü ve **doğrudan, havuzsuz** bağlantıyı doğrulayın.
-Bağlantı `sslmode=require` veya daha güçlü TLS doğrulaması içermelidir. Neon Console'un
-eklediği `channel_binding=require` kabul edilir; bu parametrenin başka değeri veya
-başka ek bağlantı parametresi kabul edilmez. Bağlantıyı
-chat, dosya, `.env`, komut satırı, ekran görüntüsü veya PR'a yapıştırmayın. Terminal
-kaydını ve kabuk izlemeyi kapatın. Aşağıdaki gizli istem yazdığınızı göstermez ve
-bağlantıyı komut geçmişine kaydetmez:
+CIV-050 yaklaşımı kullanılır: doğrulanmış yedeğin SHA256/boyutu kontrol edilir,
+**yeni boş** geçici PostgreSQL 18 veritabanına geri yüklenir, bütün public tablo
+sayımları ve Alembic sürümü manifestle karşılaştırılır. Migrasyon çalışmaz.
+Kaynak yedek mevcut yeşil **Daily verified database backup** artifact'inden
+alınır; iki dosyayı (.dump ve .manifest.json) depo dışında birlikte tutun.
+CIV-050 gibi kaynak en çok 48 saatlik olabilir. Eski/eksikse ayrı yetkili
+operasyonda yedek prosedürünü tamamlamadan ilerlemeyin.
+
+**Sahibin yerel betiği** seçildi: yeni bir workflow'un main'e taşınmasına veya
+üretim sırrına gerek duymaz; yedek GitHub'dan güvenilir sahibin bilgisayarına
+indirilir. CIVENSA_TEST_POSTGRES_URL yalnız localhost/127.0.0.1/::1 ve sorgu
+parametresiz yerel bağlantı kabul eder. Betik rastgele adlı boş veritabanlarını
+kendisi oluşturur ve sonunda siler; girilen yönetim veritabanını silmez.
+Yerel rol CREATE DATABASE yetkili olmalıdır. Canlı URL burada kabul edilmez.
 
 ```bash
+bash <<'BASH'
+set -euo pipefail
 set +x
-unset DATABASE_URL MIGRATION_DATABASE_URL
-read -r -s -p 'Canlı doğrudan PostgreSQL bağlantısı (gizli): ' CIVENSA_FIRST_LOAD_DATABASE_URL
+unset DATABASE_URL MIGRATION_DATABASE_URL CIVENSA_FIRST_LOAD_DATABASE_URL
+read -r -p 'Civensa depo klasörünün tam yolu: ' CIV058_REPO </dev/tty
+cd "$CIV058_REPO"
+source .venv/bin/activate
+read -r -p 'Doğrulanmış üretim .dump dosyasının tam yolu: ' CIV058_DUMP </dev/tty
+read -r -p 'Yedekteki kurum numarası: ' CIV058_ORG </dev/tty
+read -r -p 'Yedekteki etkin Strateji/yönetici numarası: ' CIV058_ACTOR </dev/tty
+read -r -s -p 'Yalnız yerel PostgreSQL 18 test bağlantısı (gizli): ' CIVENSA_TEST_POSTGRES_URL </dev/tty
+printf '\n'
+export CIVENSA_TEST_POSTGRES_URL
+trap 'unset CIVENSA_TEST_POSTGRES_URL' EXIT
+python scripts/rehearse_clear_preprint_2027.py --backup "$CIV058_DUMP" \
+  --organization-id "$CIV058_ORG" --actor-id "$CIV058_ACTOR" </dev/tty
+BASH
+```
+
+Betik sırayla temizleme planı → temizleme uygulaması → ikinci temizleme
+(0 yazma) → ilk yükleme planı → ilk yükleme uygulaması → --resume ile son
+planı (0 yazma) çalıştırır. Planlarda bütün satırlar ve sıra sayaçları karşılaştırılır.
+İki uygulamadan hemen önce geçici hedefin **yeni gerçek yedeği** alınır; başka
+boş veritabanına geri yüklenip satır/sıra/sayım/şema doğrulanır. Bu hedef yedekleri
+60 dakikadan yeni olmalıdır. Üretim artifact'inin tarihi değiştirilmez.
+
+İki yazma için ayrı istemde sırasıyla **2027 ON BASKI TASLAGINI SIL** ve
+**261cd17fd0be** yazın. Yalnız geçici yerel kopya değişir.
+Beklenen son satır CIV-058 yerel prova: PASS; civ058-rehearsal-counts.json her
+adımın sayımlarını içerir. Dosya yalnız sayım/hash/zaman içerir; veri satırı veya
+bağlantı içermez. Sorumlu bu dosyayı operasyon kaydına almalıdır. FAIL veya
+eksik adımda canlı işleme geçmeyin. Betik sonlandığında geçici dump'lar silinir;
+asıl artifact'i erişimi kısıtlı yerde tutun. İşletim sistemi zorla kapanırsa
+civensa_civ058_ önekli yarım kalmış yerel kopyayı sorumlu temizlesin.
+
+## 3. Yazmadan normal ilk yükleme planını alın
+
+Doğru Neon dal/veritabanı/rolü ve doğrudan havuzsuz adresi sahibi doğrular.
+Uzak hedefte sslmode=require veya verify-ca/verify-full zorunludur;
+channel_binding=require kabul edilir. Başka URL parametresi kabul edilmez.
+
+```bash
+bash <<'BASH'
+set -euo pipefail
+set +x
+unset DATABASE_URL MIGRATION_DATABASE_URL CIVENSA_FIRST_LOAD_DATABASE_URL
+read -r -p 'Civensa depo klasörünün tam yolu: ' CIV058_REPO </dev/tty
+cd "$CIV058_REPO"
+source .venv/bin/activate
+read -r -p 'Kurum numarası: ' CIV058_ORG </dev/tty
+read -r -p 'Etkin Strateji/yönetici kullanıcı numarası: ' CIV058_ACTOR </dev/tty
+read -r -s -p 'Doğrudan PostgreSQL bağlantısı (gizli): ' CIVENSA_FIRST_LOAD_DATABASE_URL </dev/tty
 printf '\n'
 export CIVENSA_FIRST_LOAD_DATABASE_URL
-read -r -p 'Kurum numarası: ' CIV052_ORG_ID
-read -r -p 'Yükleyen Strateji/yönetici kullanıcı numarası: ' CIV052_ACTOR_ID
-```
-
-Beklenen: gizli istemde bağlantı görünmez. Yükleyici hedefi yalnız
-`CIVENSA_FIRST_LOAD_DATABASE_URL` değişkeninden alır; `DATABASE_URL` veya
-`MIGRATION_DATABASE_URL` hedef olarak kullanılmaz. URL hiçbir çıktıda gösterilmez.
-
-## 4. Yazmadan plan alın
-
-```bash
+trap 'unset CIVENSA_FIRST_LOAD_DATABASE_URL' EXIT
 python scripts/first_load_live.py \
-  --organization-id "$CIV052_ORG_ID" --actor-id "$CIV052_ACTOR_ID"
+  --organization-id "$CIV058_ORG" --actor-id "$CIV058_ACTOR"
+BASH
 ```
 
-Beklenen: `PLAN: Hedefe 0 satır yazıldı.`, her kaynak müdürlük için kısa bir Türkçe
-işlem satırı ve ardından JSON çıktısı. `departments` listesinde her müdürlük için:
+Normal boş hedefte PLAN: Hedefe 0 satır yazıldı. ve 33/61/256/285/1300
+beklenir. Her Eşleştir/Oluştur numarasını ve adını sahibi kontrol eder;
+beklenmeyen create veya skip durumunda durur. İşletme ve İştirakler'in Meclis
+gerekçesiyle atlanması beklenir. Tam kitap 34/64/263/290/1340'tır.
+Bu özel durumda “2027 PP verisi zaten var” beklenir; **yalnız D-131 onaylı
+envanter** için aşağıdaki 4. adıma geçin. Diğer hatalarda durun.
 
-- `match`: mevcut müdürlüğün `department_id` numarası ve `name` adı; satır `Eşleştir:` ile başlar.
-- `create`: oluşturulacak müdürlüğün `name` adı; satır `Oluştur:` ile başlar.
-- `skip`: atlama gerekçesi `reason`; satır `Atla:` ile başlar.
+## 4. D-131 için araya giren adım: ön baskı temizleme planı
 
-Sahibi her `match` numarasını/adını ve her `create` kaydını tek tek kontrol etmelidir.
-Her `create` gerçekten **yeni bir müdürlük** olmalıdır; sistemde adı değiştirilmiş
-mevcut bir müdürlük için yeni kayıt oluşturmayın. **Beklenmeyen her `create` veya
-`skip` = DURUN**; sorumlu eşleşmeyi doğrulamadan uygulamayın. İşletme ve İştirakler'in
-Meclis verisi gerekçesiyle atlanması beklenir. Uygulama çıktısı da `departments`
-listesini içerir; hizmetin reddettiği müdürlük `skip` ve gerekçesiyle gösterilir.
-
-JSON içindeki `counts` sayımları:
-
-| Alan | Beklenen |
-| --- | ---: |
-| departments | 33 |
-| cards | 61 |
-| indicators | 256 |
-| activities | 285 |
-| economic_values | 1300 |
-
-Tam basılı kitap **34 / 64 / 263 / 290 / 1340** içerir. Atlanan İşletme ve İştirakler
-**1 / 3 / 7 / 5 / 40** çıkarılır. `created_departments` hedefte mevcut müdürlüklere
-göre 0–33 arasında değişir; mevcut doğru eşleşmeler yeniden oluşturulmaz.
-`skipped` listesinde İşletme ve İştirakler ve Meclis verisi gerekçesi görünür.
-Plan hedefte yalnız salt okunur işlem kullanır; sıra sayaçları bile ilerlemez.
-Doğrulama hata ayrıntıları mevcut [basılı kitap provasında](dryrun-printed.md)
-bulunur; bu plan hedefe deneme verisi yazıp geri almaz.
-
-**Durun:** `DURDU`, farklı başlık, yetkisiz kullanıcı, yanlış kurum, açık/doğrulanmış
-olmayan 2027 dönemi, belirsiz eşleşme, beklenmeyen atlama veya sayım farkı varsa
-sorumluya bildirin. 2027 PP verisi zaten varsa normal çalıştırma 0 satır yazar ve
-reddeder. Veri silerek veya üstüne yazarak engeli aşmayın; yalnız adım 8'deki
-belgelenmiş devam koşulları uygunsa devam edin.
-
-## 5. Kullanıcı girişini durdurun ve yeni doğrulanmış yedek alın
-
-[Mevcut yedek prosedürünü](../operations/db-backup.md) uygulayın:
-GitHub → Actions → **Daily verified database backup** → **Run workflow**, dal
-**main**. Prosedürün gerektirdiği bağlantı sırrı önceden repository Actions secret
-olarak sahibi tarafından güvenli ayarda girilmiş olmalıdır. Yükleyiciye bu sırrı
-vermeyin ve yeni bir sır dosyası oluşturmayın.
-
-İş **yeşil** tamamlanınca o çalıştırmanın `civensa-db-backup-YYYYMMDD-HHMMZ`
-eserini indirin. ZIP'i erişimi kısıtlı, depo dışındaki bir klasöre açın. `.dump` ve
-aynı adlı `.manifest.json` birlikte kalmalıdır. Yedek doğrulaması, ayrı PostgreSQL'e
-geri yükleme ve tablo sayımı karşılaştırmasının geçtiğini yeşil çalıştırmada görün.
-Bu adımın mevcut prosedürü yalnız canlıdan okur.
+Bu adım normal plan ile yeni yedek arasındadır. **Henüz silmez.**
 
 ```bash
-read -r -p 'İndirilen .dump dosyasının tam yolu: ' CIV052_BACKUP
-```
-
-Beklenen: yakın tarihli yeşil yedeğin iki dosyası yan yanadır. **Yedeğin alındığı
-andan uygulamaya kadar 60 dakikadan az** geçmiş olmalıdır; indirme zamanı yetmez.
-Yükleyici manifestteki yedek zamanını, SHA256, boyut, biçim ve Alembic başlığını
-kontrol eder. Yerel dosya bu yedeğin canlı hedefe ait olduğunu ispatlayamaz; bunu
-sahibi doğru yeşil çalıştırma/dal ve hedef üzerinden doğrular. Yedek başarısızsa,
-eskiyse veya yanlış hedefe aitse durun ve yeni yedek alın.
-
-## 6. Sahip onayıyla yalnız bir kez uygulayın
-
-Önce adım 4'ün planını ve adım 5'in yedeğini sahibi kontrol etsin. Tüm kullanıcı
-veri girişleri hâlâ duruyorken, sahibi uygulamaya onay verdikten sonra:
-
-```bash
+bash <<'BASH'
+set -euo pipefail
+set +x
+unset DATABASE_URL MIGRATION_DATABASE_URL CIVENSA_FIRST_LOAD_DATABASE_URL
+read -r -p 'Civensa depo klasörünün tam yolu: ' CIV058_REPO </dev/tty
+cd "$CIV058_REPO"
+source .venv/bin/activate
+read -r -p 'Kurum numarası: ' CIV058_ORG </dev/tty
+read -r -p 'Etkin Strateji/yönetici kullanıcı numarası: ' CIV058_ACTOR </dev/tty
+read -r -s -p 'Doğrudan PostgreSQL bağlantısı (gizli): ' CIVENSA_FIRST_LOAD_DATABASE_URL </dev/tty
+printf '\n'
+export CIVENSA_FIRST_LOAD_DATABASE_URL
+trap 'unset CIVENSA_FIRST_LOAD_DATABASE_URL' EXIT
 python scripts/first_load_live.py \
-  --organization-id "$CIV052_ORG_ID" --actor-id "$CIV052_ACTOR_ID" \
-  --apply --backup "$CIV052_BACKUP"
+  --organization-id "$CIV058_ORG" --actor-id "$CIV058_ACTOR" --clear-preprint
+BASH
 ```
 
-Beklenen istem:
+Beklenen: PLAN: Hedefe 0 satır yazıldı.; her müdürlükte Temizle satırı,
+paket numarası ve gösterge/değer/faaliyet/maliyet/teslim sayısı; ardından
+JSON counts ve departments. Salt okunur işlem sıra sayaçlarını da değiştirmez.
+Sahibi tüm müdürlükleri/sayımları yerel PASS provasıyla karşılaştırsın.
 
-```text
-Yazma onayı: kitap SHA256 ilk 12 karakterini yazın (261cd17fd0be):
-```
+Araç şu durumların her birinde Türkçe gerekçeyle **0 satır yazıp durur**:
 
-Kitabın tam SHA256 değeri
-`261cd17fd0be13dead1c573966bb3cc17b63664adc867b2e6fc4e156df28f36e`.
-Kontrol ettikten sonra **261cd17fd0be** yazıp Enter'a basın. Bu bağlantı sırrı
-değildir. Hatalı/boş onay yazmayı engeller. Onayı komuta argüman olarak eklemeyin.
+- Herhangi bir 2027 rapor kartı, ekonomik değer, müdürlük maliyet değeri veya yayın;
+  taslak dışı teslim; first_load_department işareti.
+- Son uygulanan ön baskı paketinden sonra PP içerik denetim kaydı; silinmiş
+  kayda veya dönemi belirsiz kayda ilişkin düzenleme de durdurur.
+- 3–10 dışı/değişmiş paket envanteri veya 21 Eylül dışı uygulama zamanı.
+- Son ilgili paket planıyla birebir uyuşmayan gösterge/faaliyet/değer,
+  inceleme geçmişi, kalıcı gösterge kimliği veya kökeni kanıtlanamayan başka
+  2027 dönem satırı.
 
-Her başarılı müdürlük için `Yüklendi: … · taslak · … doğrulama hatası` görünür.
-Sonda `UYGULAMA SONUCU:` altında adım 4 sayımları, `skipped`, `failed` ve müdürlük
-bazında `validation` içindeki Türkçe hatalar/uyarılar görünür. Doğrulama hatası
-beklenir ve yüklemeyi engellemez. `failed` boşsa komut çıkış kodu 0'dır. Her
-müdürlük kendi işlemiyle kaydedilir; hizmetin reddettiği müdürlüğün tüm kayıtları
-birlikte geri alınır ve neden `failed` listesine yazılır (çıkış kodu 2).
+21 Eylül'deki eski içe aktarıcı kapsam/katalog bağlantısı veya teslim olayı
+oluşturmuyordu. Böyle kayıtlar varsa “ön baskıda oluşturuldu” diye varsayılmaz;
+oluşturulma izi olmadığı için temizleme reddedilir. Koruma gevşetilmez.
+Yalnız login, doğrulanmış kullanıcı işlemleri, yedek dışa aktarma, dönem
+etkinleştirme ve civ025_tracking_started gibi içerik dışı kayıtlar engel değildir.
+2026'ya kesin bağlanabilen içerik denetimleri de korunur.
 
-## 7. Sonucu uygulamada kontrol edin
+## 5. Veri girişini durdurun; yeni doğrulanmış yedek alın
 
-Sayımları ve atlanan müdürlüğü kontrol edin; Strateji hesabıyla 2027 dönemindeki
-kartları, faaliyetleri, ekonomik tabloları ve denetim geçmişini açın. Paketler taslak
-olmalı; boş değerler sıfıra dönüşmemeli; mevcut inceleme hücreleri incelemede kalmalı.
-Kaynakta hata olan değerleri kitap dışında özel bir kopyada düzeltmeyin. Strateji
-Civensa'nın mevcut yetkili ekranında gerekçesi/denetim iziyle düzeltir.
-
-İlerleme panosunun mevcut davranışı korunur: müdürlük kullanıcısının ilk kayıtlı
-veri girişinden önce `Başlamadı` görünebilir; gerçek bir müdürlük düzenlemesinden
-sonra doğrulama hatası olan taslak `Eksikleri / hataları var` (`needs_attention`)
-görünür. Bu yükleme sahte müdürlük düzenleme kaydı oluşturmaz.
-
-Beklenmeyen sonuçta girişleri açmayın; sorumluya yalnız gizli bilgi içermeyen
-sonuç raporunu iletin. Başarılı yükleme sayımlarını ve kullanılan yedek eserini
-operasyon kaydına yazın. Bağlantıyı terminalden kaldırın:
+Kullanıcı girişine ara verilen pencereyi sahibi belirlesin. Danışma kilidi
+yükleyicileri sıraya koyar; normal kullanıcı oturumlarını kapatmaz.
+[db-backup.md](../operations/db-backup.md) prosedürüyle Actions →
+**Daily verified database backup** → Run workflow → main; yeşil biten
+çalıştırmanın artifact'ini indirin. Bu, sahibin ayrı canlı salt okunur yedek
+operasyonudur. Üretim sırrını bu araca vermeyin. İndirilen .dump ile aynı adlı
+.manifest.json depo dışında yan yana kalsın.
 
 ```bash
-unset CIVENSA_FIRST_LOAD_DATABASE_URL
+bash <<'BASH'
+set -euo pipefail
+set +x
+unset DATABASE_URL MIGRATION_DATABASE_URL CIVENSA_FIRST_LOAD_DATABASE_URL
+read -r -p 'Civensa depo klasörünün tam yolu: ' CIV058_REPO </dev/tty
+cd "$CIV058_REPO"
+source .venv/bin/activate
+read -r -p 'Yeni yeşil yedeğin .dump tam yolu: ' CIV058_DUMP </dev/tty
+python - "$CIV058_DUMP" <<'PY'
+from pathlib import Path
+import sys
+from scripts.first_load_live import verify_backup
+try:
+    verify_backup(Path(sys.argv[1]))
+except Exception:
+    print('DURDU: Yedek doğrulanamadı; yeni yeşil yedeği kontrol edin.')
+    raise SystemExit(1)
+print('Yedek dosya/manifest/şema/SHA256 ve 60 dakika kontrolü geçti.')
+PY
+BASH
 ```
 
-## 8. Kesinti/hata sonrası kontrollü devam
+Yükleyici dosya biçimi, boyut, SHA256, Alembic başlığı ve manifestteki asıl yedek
+zamanını kontrol eder; indirme zamanı yetmez. Bu dosyanın doğru canlı hedefe ait
+olduğunu yalnız sahibi yeşil çalıştırma ve Neon hedefi üzerinden doğrular.
 
-Normal ikinci uygulama, 2027 verisini görüp **0 satır yazarak durur**. `--resume`
-yalnız bu kitap SHA256'sıyla başarıyla uygulanmış `ImportBatch` ve aynı işlemde
-kaydedilmiş `first_load_department` denetim izi olan müdürlükleri atlar. Sonraki
-kullanıcı düzeltmeleri dahil hiçbir kayıtlarına dokunmaz. İz bulunmayan mevcut
-2027 PP verisi varsa devam reddedilir. Başarısız ve dolayısıyla geri alınmış
-müdürlükler tekrar denenebilir. İşletme ve İştirakler her durumda atlanır.
+## 6. Yalnız ön baskı temizliğini uygulayın; yeniden plan alın
 
-Bağlantı kaldırılmışsa adım 3'ün gizli istemini yeniden kullanın. Önce:
+Önce 2. adımın PASS sonucu, 4. adımın planı ve 5. adımın doğru hedef yedeği
+sahibi tarafından kontrol edilmiş olmalıdır. Veri girişi kapalı kalır.
 
 ```bash
+bash <<'BASH'
+set -euo pipefail
+set +x
+unset DATABASE_URL MIGRATION_DATABASE_URL CIVENSA_FIRST_LOAD_DATABASE_URL
+read -r -p 'Civensa depo klasörünün tam yolu: ' CIV058_REPO </dev/tty
+cd "$CIV058_REPO"
+source .venv/bin/activate
+read -r -p 'Kurum numarası: ' CIV058_ORG </dev/tty
+read -r -p 'Etkin Strateji/yönetici kullanıcı numarası: ' CIV058_ACTOR </dev/tty
+read -r -s -p 'Doğrudan PostgreSQL bağlantısı (gizli): ' CIVENSA_FIRST_LOAD_DATABASE_URL </dev/tty
+printf '\n'
+export CIVENSA_FIRST_LOAD_DATABASE_URL
+trap 'unset CIVENSA_FIRST_LOAD_DATABASE_URL' EXIT
+read -r -p '60 dakikadan yeni doğrulanmış .dump tam yolu: ' CIV058_DUMP </dev/tty
 python scripts/first_load_live.py \
-  --organization-id "$CIV052_ORG_ID" --actor-id "$CIV052_ACTOR_ID" --resume
-```
-
-Tamamlanmış bir yüklemede bütün sayaçlar 0, `skipped` 34 müdürlüktür. Kısmi yüklemede
-sayımlar yalnız eksik müdürlükleri gösterir. Beklenmeyen mevcut veride durun.
-Sahip eksikleri ve nedenleri onaylarsa, kullanıcı girişleri duruyorken **yeni yeşil
-yedek** alın (adım 5); devamın geri dönüş noktası bu yeni yedektir. Sonra:
-
-```bash
+  --organization-id "$CIV058_ORG" --actor-id "$CIV058_ACTOR" --clear-preprint --apply --backup "$CIV058_DUMP" </dev/tty
 python scripts/first_load_live.py \
-  --organization-id "$CIV052_ORG_ID" --actor-id "$CIV052_ACTOR_ID" \
-  --resume --apply --backup "$CIV052_BACKUP"
-unset CIVENSA_FIRST_LOAD_DATABASE_URL
+  --organization-id "$CIV058_ORG" --actor-id "$CIV058_ACTOR"
+BASH
 ```
 
-SHA256 onayı yine zorunludur. Tam yükleme sonrasında bu komut da 0 satır yazar.
-Bir müdürlükteki kaynak/hizmet hatasını çözmek için kitabı değiştirmeyin; sorumluya
-bildirin. Veri silme, otomatik temizleme veya mevcut düzeltmelerin üstüne yazma
-seçeneği yoktur.
+Temizleme istemine **2027 ON BASKI TASLAGINI SIL** yazın. Eksik/yanlış onay,
+eski yedek, yanlış şema/kurum/aktör veya kilit yazmayı engeller. Yedek onay
+isteminden sonra tekrar denetlenir.
 
-## 9. Geri dönüş — yüklemeden önceki yedeği geri yükleyin
+Tek işlemde yalnız 2027 göstergelerinin değerleri/göstergeler, faaliyet maliyetleri/
+faaliyetler ve kökeni doğrulanmış taslak teslimler temizlenir. Denetim tüm
+ret kontrollerini kilitler alındıktan sonra yapar. Hata olursa tüm temizlik geri
+alınır. Temizlenecek kapsam/bağlantı/olay varsa oluşturulma kökeni de zorunludur;
+bu onaylı eski paketlerde böyle bir köken bulunmadığından varlıkları reddedilir.
 
-Bir müdürlük başarısız olduğunda yalnız onun işlemi otomatik geri alınır. Önceki
-başarılı müdürlükler korunur. **Tüm ilk yüklemeyi** geri almak için yüklemeden hemen
-önce alınan yeşil yedeği kullanmak gerekir; tek tek satır silmeyin ve içe aktarma
-paketinin eski geri alma düğmesini bu operasyon için kullanmayın.
+Müdürlükler, kullanıcılar, dönemler, 2026 verisi, program/alt program kataloğu,
+tüm audit_log ve import_batches satırları tutulur. Paketlerin içerik/snapshot/
+hash/tarih alanları değişmez; 3–10 paketlerinin durumu **superseded** olur.
+Bu durum eski preview/apply/revert düğmelerinin artık kullanılmasını engeller.
+Tek preprint_2027_cleared denetim kaydı D-131, silinen sayımlar ve korunan
+paket/katalog hash'lerini içerir.
 
-Sahibi geri dönüş kararı verirse kullanıcı girişleri kapalı kalır. Sorumlu
-[db-backup.md](../operations/db-backup.md) uyarınca aynı `.dump` dosyasını önce
-**yeni boş yerel veritabanına**, PostgreSQL 18 araçlarıyla geri yükler:
+Bloktaki ikinci komut artık normal ilk yükleme planını vermelidir:
+**33/61/256/285/1300** ve yalnız İşletme ve İştirakler atlanmış.
+Fark varsa durun; yazma çalıştırmayın. İkinci temizleme, yeni içerik yoksa
+zaten temizlendi diyerek **0 satır** yazar; yeni içerik/ilk yükleme işareti
+varsa reddeder. Bu seçenek basılı yüklemeyi geri almak için kullanılamaz.
+
+## 7. Basılı kitabı sahibin onayıyla yükleyin
+
+6. adımın normal planını kontrol edin. Yedek hâlâ 60 dakikadan yeniyse aynı
+geri dönüş noktası kullanılabilir; değilse 5. adımdan yeni yeşil yedek alın.
+Kullanıcı girişi hâlâ kapalı olmalıdır.
 
 ```bash
-createdb -h localhost -U postgres civensa_first_load_restore
-pg_restore -h localhost -U postgres -d civensa_first_load_restore \
-  --exit-on-error --single-transaction --no-owner --no-privileges \
-  "$CIV052_BACKUP"
-psql -h localhost -U postgres -d civensa_first_load_restore \
-  -c 'SELECT version_num FROM public.alembic_version ORDER BY version_num;'
+bash <<'BASH'
+set -euo pipefail
+set +x
+unset DATABASE_URL MIGRATION_DATABASE_URL CIVENSA_FIRST_LOAD_DATABASE_URL
+read -r -p 'Civensa depo klasörünün tam yolu: ' CIV058_REPO </dev/tty
+cd "$CIV058_REPO"
+source .venv/bin/activate
+read -r -p 'Kurum numarası: ' CIV058_ORG </dev/tty
+read -r -p 'Etkin Strateji/yönetici kullanıcı numarası: ' CIV058_ACTOR </dev/tty
+read -r -s -p 'Doğrudan PostgreSQL bağlantısı (gizli): ' CIVENSA_FIRST_LOAD_DATABASE_URL </dev/tty
+printf '\n'
+export CIVENSA_FIRST_LOAD_DATABASE_URL
+trap 'unset CIVENSA_FIRST_LOAD_DATABASE_URL' EXIT
+read -r -p '60 dakikadan yeni doğrulanmış .dump tam yolu: ' CIV058_DUMP </dev/tty
+python scripts/first_load_live.py \
+  --organization-id "$CIV058_ORG" --actor-id "$CIV058_ACTOR" --apply --backup "$CIV058_DUMP" </dev/tty
+BASH
 ```
 
-Parola istenirse yalnız gizli parola istemine girilir. Beklenen:
-`c048a1b2c3d4`; manifestteki **her** public tablonun satır sayısı geri yüklemede
-aynı olmalıdır. Hata/sayım farkında durun. Daha sonra yetkili veritabanı sorumlusu,
-sahip onayıyla, bu doğrulanmış yedeği **yeni boş Neon kurtarma veritabanına** geri
-yükler; hedef bağlantısını yalnız gizli istem/ortam değişkeniyle verir. Proje sahibi
-kurtarma veritabanını uygulamanın bağlantı hedefi olarak güvenli Render ayarından
-seçtirir; önceki veritabanını korur. Bu canlı geri dönüş ayrı, sorumlu tarafından
-yönetilen operasyondur; burada otomatik canlı restore veya silme komutu yoktur.
-[Render belgesindeki](../operations/render.md) bağlantı, giriş ve sayım kontrollerini
-tekrarlamadan kullanıcı girişini açmayın. Kod/şema bu yüklemede değişmediğinden
-veri geri dönüşü için eski uygulama sürümüne geçilmez. Yedekten sonra yapılan
-meşru kullanıcı değişiklikleri geri dönüşte kaybolabilir; bunları sorumlu ayrıca
-korur ve hesaplar.
+Kitap SHA256 onayına **261cd17fd0be** yazın. Tam SHA256:
+261cd17fd0be13dead1c573966bb3cc17b63664adc867b2e6fc4e156df28f36e.
+Onayı komut argümanına eklemeyin. Her müdürlük ayrı işlemde kaydolur; başarısız
+müdürlük geri alınır. UYGULAMA SONUCU içinde counts beklenenle aynı, failed boş
+olmalıdır. Taslak doğrulama hataları beklenebilir; validation içinde raporlanır.
 
-## Testlerin sınırı
+## 8. Sonucu kontrol edin; sıfır yazan son planı alın
 
-CI yalnız disposable yerel PostgreSQL kullanır: planın tüm tablo/sıra sayaçlarını
-koruması, kaynak/URL/onay/yedek/başlık/yetki korumaları, taslak ve inceleme hücreleri,
-tekrarın 0 yazması, düzeltmeleri koruyan devam, tek müdürlük geri alması ve atlama
-listesi doğrulanır. Canlı endpoint/rol yetkileri, sahibin onayı, seçilen yedeğin o
-hedefe ait olması, veri girişine gerçekten ara verilmesi ve canlı son sayımlar
-ancak sahip tarafından bu operasyon sırasında doğrulanabilir. Bu PR CI'da canlı
-bağlantı veya sır kullanmaz.
+Strateji hesabında 2027 kart/faaliyet/ekonomik tablo ve denetim geçmişini
+kontrol edin. Boşlar sıfıra dönüşmemeli; inceleme hücreleri korunmalı; paketler
+taslak olmalıdır. İlerleme panosu ilk gerçek müdürlük düzenlemesine kadar
+Başlamadı görünebilir; araç sahte düzenleme geçmişi üretmez.
+
+```bash
+bash <<'BASH'
+set -euo pipefail
+set +x
+unset DATABASE_URL MIGRATION_DATABASE_URL CIVENSA_FIRST_LOAD_DATABASE_URL
+read -r -p 'Civensa depo klasörünün tam yolu: ' CIV058_REPO </dev/tty
+cd "$CIV058_REPO"
+source .venv/bin/activate
+read -r -p 'Kurum numarası: ' CIV058_ORG </dev/tty
+read -r -p 'Etkin Strateji/yönetici kullanıcı numarası: ' CIV058_ACTOR </dev/tty
+read -r -s -p 'Doğrudan PostgreSQL bağlantısı (gizli): ' CIVENSA_FIRST_LOAD_DATABASE_URL </dev/tty
+printf '\n'
+export CIVENSA_FIRST_LOAD_DATABASE_URL
+trap 'unset CIVENSA_FIRST_LOAD_DATABASE_URL' EXIT
+python scripts/first_load_live.py \
+  --organization-id "$CIV058_ORG" --actor-id "$CIV058_ACTOR" --resume
+BASH
+```
+
+Beklenen: counts tüm alanlarda 0, skipped 34; hiçbir satır/sıra değişmez.
+Beklenmeyen sonuçta girişleri açmayın. Sonuç sayımlarını, onaylı commit'i,
+yedek artifact'ini ve yerel prova JSON'unu operasyon kaydına alın.
+Her blok bittiğinde gizli bağlantı değişkeni otomatik kaldırılır.
+
+## 9. Kesinti sonrası devam
+
+Normal ikinci yükleme mevcut veri yüzünden durur. --resume yalnız bu kitap
+SHA256'sına ait applied paket ve first_load_department izi olan müdürlükleri
+kullanıcı düzeltmeleriyle birlikte koruyup atlar. Önce 8. adımın planını alın;
+kısmi yüklemede yalnız eksik müdürlükler sayılır. Beklenmeyen veride durun.
+Sahibi eksikleri onayladıktan ve 5. adımla **yeni** yedek aldıktan sonra:
+
+```bash
+bash <<'BASH'
+set -euo pipefail
+set +x
+unset DATABASE_URL MIGRATION_DATABASE_URL CIVENSA_FIRST_LOAD_DATABASE_URL
+read -r -p 'Civensa depo klasörünün tam yolu: ' CIV058_REPO </dev/tty
+cd "$CIV058_REPO"
+source .venv/bin/activate
+read -r -p 'Kurum numarası: ' CIV058_ORG </dev/tty
+read -r -p 'Etkin Strateji/yönetici kullanıcı numarası: ' CIV058_ACTOR </dev/tty
+read -r -s -p 'Doğrudan PostgreSQL bağlantısı (gizli): ' CIVENSA_FIRST_LOAD_DATABASE_URL </dev/tty
+printf '\n'
+export CIVENSA_FIRST_LOAD_DATABASE_URL
+trap 'unset CIVENSA_FIRST_LOAD_DATABASE_URL' EXIT
+read -r -p 'Yeni doğrulanmış .dump tam yolu: ' CIV058_DUMP </dev/tty
+python scripts/first_load_live.py \
+  --organization-id "$CIV058_ORG" --actor-id "$CIV058_ACTOR" --resume --apply --backup "$CIV058_DUMP" </dev/tty
+BASH
+```
+
+Kitap SHA256 onayı yine zorunludur. Tam yüklemede bu da 0 satır yazar.
+Temizleme seçeneğini kesinti kurtarması için kullanmayın.
+
+## 10. Geri dönüş
+
+Temizleme kendi tek işlemi başarısızsa tamamen geri alınır. Temizleme veya
+yükleme kaydedildikten sonra genel geri dönüş gerekirse sahibi veri girişini
+kapalı tutar ve [doğrulanmış yedek geri dönüş prosedürünü](../operations/db-backup.md)
+sorumluyla uygular. Temizlemeden önceki yedek eski ön baskıyı da geri getirir;
+temizleme sonrası yedek temiz başlangıcı geri getirir. Doğru geri dönüş noktasını
+seçin. Önce yeni boş yerel PostgreSQL 18'e restore ve bütün manifest sayımları
+doğrulanır; canlı kurtarma veritabanı seçimi ayrı yetkili operasyondur.
+Burada otomatik canlı restore, migrasyon veya deploy yoktur. Yedekten sonraki
+meşru değişikliklerin korunmasını sorumlu ayrıca planlar.
+
+## Prova/test kanıtının sınırı
+
+Disposable PostgreSQL 18 testleri planın bütün tablo/sıra değerlerini korumasını,
+ret koşullarını, atomik geri almayı, 2026 ve korunan kayıtları, ikinci temizlemenin
+0 yazmasını ve 33/61/256/285/1300 basılı yükleme zincirini doğrular.
+**Sentetik CI verisi gerçek üretim yedeği provası değildir.** Gerçek yedek
+provasının kanıtı 2. adımda sahibin ürettiği PASS JSON'udur; bu kanıt olmadan
+canlı işleme geçilmez. Canlı bağlantı/rol, doğru artifact, gerçek veri giriş
+molası ve canlı sonuç sayımları yalnız ayrı operasyon sırasında doğrulanır.
