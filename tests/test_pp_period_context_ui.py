@@ -73,7 +73,7 @@ def test_browser_write_keeps_displayed_period(browser, client, db, sample, two_p
 @pytest.mark.parametrize('path', ['/program/1', '/program/1/economic-split', '/report-builder', '/structure'])
 def test_pp_write_forms_include_selected_period(browser, client, db, sample, two_periods, path):
     from app.main import app, require_user
-    app.dependency_overrides[require_user] = lambda: sample['strategy']
+    app.dependency_overrides[require_user] = lambda: sample['user' if path == '/program/1' else 'strategy']
     period, _ = two_periods
     if path.endswith('economic-split'):
         from app.models import EconomicValue
