@@ -69,7 +69,7 @@ alınır; iki dosyayı (.dump ve .manifest.json) depo dışında birlikte tutun.
 CIV-050 gibi kaynak en çok 48 saatlik olabilir. Eski/eksikse ayrı yetkili
 operasyonda yedek prosedürünü tamamlamadan ilerlemeyin.
 
-**Sahibin yerel betiği** seçildi: yeni bir workflow'un main'e taşınmasına veya
+**Sahibin yerel betiği** aşağıda hazırdır: yeni bir workflow'un main'e taşınmasına veya
 üretim sırrına gerek duymaz; yedek GitHub'dan güvenilir sahibin bilgisayarına
 indirilir. CIVENSA_TEST_POSTGRES_URL yalnız localhost/127.0.0.1/::1 ve sorgu
 parametresiz yerel bağlantı kabul eder. Betik rastgele adlı boş veritabanlarını
@@ -111,6 +111,34 @@ bağlantı içermez. Sorumlu bu dosyayı operasyon kaydına almalıdır. FAIL ve
 eksik adımda canlı işleme geçmeyin. Betik sonlandığında geçici dump'lar silinir;
 asıl artifact'i erişimi kısıtlı yerde tutun. İşletim sistemi zorla kapanırsa
 civensa_civ058_ önekli yarım kalmış yerel kopyayı sorumlu temizlesin.
+
+### Üretim yedeğini bilgisayarınıza indirmeden Actions provası
+
+**CIV-058 verified backup rehearsal**, CIV-050 gibi mevcut yeşil yedek artifact'ini
+Actions içinde indirir, bütün işlemleri yalnız geçici PostgreSQL 18'de yürütür.
+Canlı bağlantı/üretim sırrı almaz; yeni canlı yedek başlatmaz; migrasyon çalıştırmaz.
+Yedek/kopyalar iş sonunda silinir; artifact yüklenmez. Sonuç yalnız işin Summary
+bölümünde ve gizli bilgi içermeyen JSON sayım günlüğünde görünür.
+
+Workflow main'e ulaştıktan sonra: Actions → **CIV-058 verified backup rehearsal**
+→ Run workflow; onaylı dalı ve mevcut yeşil yedeğin çalışma numarasını seçin.
+İki onay alanına **2027 ON BASKI TASLAGINI SIL** ve **261cd17fd0be** yazın.
+Kurum/aktör alanları isteğe bağlıdır: boşken yalnız kopya için yedekteki tek kurum
+ve mevcut etkin Strateji/yönetici hesabı seçilir, kullanılan sayısal kimlikler
+Summary'de kaydedilir; kullanıcı oluşturulmaz/etkinleştirilmez. Canlı CLI'da
+kimlikleri sahibi ayrıca açıkça girer.
+
+Bu PR main'e birleşmeden prova için, yalnız aynı depodaki
+task/civ-058-clear-preprint-2027 PR açıklamasına şu **görünür tek satırın eklenmesi**
+manuel başlatmadır:
+
+**CIV058_PROVA_BASLAT 2027 ON BASKI TASLAGINI SIL 261cd17fd0be**
+
+Bu özel istek mevcut yeşil **39433446455** yedek çalışmasını kullanır.
+Normal kod gönderimi veya bu satır zaten varken açıklama düzenlemek yedek
+indirmez. Tekrar için satırı kaldırıp açıklamayı kaydedin; sonra yeniden ekleyin.
+Fork PR'larında çalışmaz. Bu geçiş yolu merge/deploy gerektirmez.
+Summary'deki PASS ve tüm aşama sayımlarını kontrol etmeden canlı adımlara geçmeyin.
 
 ## 3. Yazmadan normal ilk yükleme planını alın
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Owner-run CIV-058 rehearsal: verified backup -> empty disposable PostgreSQL 18."""
+"""CIV-058 sahibin yerel provası: doğrulanmış yedek → yeni boş geçici PostgreSQL 18."""
 from contextlib import contextmanager, redirect_stdout
 from datetime import datetime, timezone
 import hashlib
