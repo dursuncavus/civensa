@@ -67,7 +67,9 @@ def register(app):
     async def change(request, db, user, operation):
         form = await request.form()
         try:
+            selected_period = session_period(request, db, form)
             pid = operation(form)
+            pid = pid or (selected_period.id if selected_period else None)
             db.commit()
             return RedirectResponse('/structure' + (f'?period_id={pid}' if pid else ''), 303)
         except (HTTPException, IntegrityError) as exc:

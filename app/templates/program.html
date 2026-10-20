@@ -3,7 +3,7 @@
 {% block page_subtitle %}{{ period.year }} · Performans kartları, kaynak kontrolü ve ekonomik tablolar{% endblock %}
 {% macro token() %}<input type="hidden" name="csrf_token" value="{{ request.session.get('csrf_token') }}"><input type="hidden" name="period_id" value="{{ period.id }}">{% endmacro %}
 {% block content %}
-<p><a class="button" href="/department/{{ department.id }}">Gösterge ve Faaliyet Girişi</a></p>
+<p><a class="button" href="/department/{{ department.id }}?period_id={{ period.id }}">Gösterge ve Faaliyet Girişi</a></p>
 {% if errors %}<details class="return-note"><summary>{{ errors|length }} eksik / tutarsız kayıt</summary><ul>{% for error in errors %}<li>{{ error }}</li>{% endfor %}</ul></details>{% else %}<p class="ok-text">Kart ve mali tablo kontrolleri tamamlandı.</p>{% endif %}
 {% if warnings %}<details><summary>İncelenecek birim uyarıları</summary><ul>{% for warning in warnings %}<li>{{ warning }}</li>{% endfor %}</ul></details>{% endif %}
 {% set labels={'source_title':'Bütçe yılı / kart başlığı','administration':'İdare / Birim Adı','responsible':'Sorumlu İdare','rationale':'Gerekçe ve Açıklamalar','goal':'Alt Programın Hedefi','explanation':'Göstergeye İlişkin Ortak Açıklama','calculation_method':'Ortak Hesaplama Yöntemi','data_source':'Verinin Kaynağı','footnote':'Dipnot','source_page':'Kaynak Sayfa','service_area':'Hizmet Alanı','strategic_link':'Stratejik Plan / PH Bağlantısı'} %}

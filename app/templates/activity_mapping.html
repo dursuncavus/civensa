@@ -12,7 +12,7 @@
 
 {% if groups %}
 <section class="mapping-help">
-  <div class="section-head"><div><h2>Nasıl kullanılır?</h2><p class="muted">Civensa yalnız güvenli kaynak ilişkilerini otomatik bağlar. Buradaki kayıtlar için tahmin zorlamaz. Uygun Program / Alt Programı seçip topluca kaydedebilirsiniz.</p></div><div class="rowbuttons"><a class="button" href="/api/activity-mappings/export.csv">Kuyruğu CSV indir</a><button id="selectStrongSuggestions" class="button">Güçlü önerileri seç</button><button id="saveAllMappings" class="button primary">Seçimleri Kaydet</button></div></div>
+  <div class="section-head"><div><h2>Nasıl kullanılır?</h2><p class="muted">Civensa yalnız güvenli kaynak ilişkilerini otomatik bağlar. Buradaki kayıtlar için tahmin zorlamaz. Uygun Program / Alt Programı seçip topluca kaydedebilirsiniz.</p></div><div class="rowbuttons"><a class="button" href="/api/activity-mappings/export.csv?period_id={{ period.id }}">Kuyruğu CSV indir</a><button id="selectStrongSuggestions" class="button">Güçlü önerileri seç</button><button id="saveAllMappings" class="button primary">Seçimleri Kaydet</button></div></div>
   <p class="muted">Öneriler hiçbir zaman kendiliğinden seçilmez veya kaydedilmez. “Güçlü önerileri seç” yalnız güveni en az %50 olan önerileri forma taşır; kaydetmeden önce kullanıcı onayı gerekir.</p>
   <div class="mapping-csv-import">
     <label>Doldurulmuş eşleştirme CSV'si<input id="mappingCsvFile" type="file" accept=".csv,text/csv"></label>
@@ -29,7 +29,7 @@
 <div id="mappingGroups" class="mapping-groups">
 {% for g in groups %}
 <section class="mapping-group" data-department="{{ g.department.id }}">
-  <div class="section-head"><div><h2>{{ department_names[g.department.id] }}</h2><p class="muted">{{ g.activities|length }} faaliyet eşleştirme bekliyor · {{ g.choices|length }} Program / Alt Program seçeneği</p></div><a class="button small" href="/department/{{ g.department.id }}">Müdürlüğü Aç</a></div>
+  <div class="section-head"><div><h2>{{ department_names[g.department.id] }}</h2><p class="muted">{{ g.activities|length }} faaliyet eşleştirme bekliyor · {{ g.choices|length }} Program / Alt Program seçeneği</p></div><a class="button small" href="/department/{{ g.department.id }}?period_id={{ period.id }}">Müdürlüğü Aç</a></div>
   {% if not g.choices %}<div class="issue-list">Bu müdürlük için performans göstergelerinden türetilebilen Program / Alt Program bulunamadı. Önce gösterge yapısını kontrol edin.</div>{% endif %}
   <div class="mapping-list">
   {% for a in g.activities %}
@@ -53,6 +53,6 @@
 </div>
 <div class="sticky-save"><span><b id="selectedMappingCount">0</b> faaliyet seçildi</span><button id="saveMappingsBottom" class="button primary">Seçimleri Kaydet</button></div>
 {% else %}
-<section class="empty-state mapping-empty"><h2>Eşleştirme kuyruğu temiz</h2><p>Bu dönem için Program / Alt Program bağlantısı eksik faaliyet bulunmuyor.</p><a class="button primary" href="/dashboard">Genel Bakışa Dön</a></section>
+<section class="empty-state mapping-empty"><h2>Eşleştirme kuyruğu temiz</h2><p>Bu dönem için Program / Alt Program bağlantısı eksik faaliyet bulunmuyor.</p><a class="button primary" href="/dashboard?period_id={{ period.id }}">Genel Bakışa Dön</a></section>
 {% endif %}
 {% endblock %}

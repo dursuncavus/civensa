@@ -24,6 +24,8 @@ SCENARIOS = {
     "login_redirect": """reply(200, null, {redirected:true,url:'https://civensa.invalid/login',broken:true}); const result=await run(); assert.equal(result.r.ok,false); assert.match(result.j.detail,/Yeniden giriş yapın/); assert.equal(jsonCalls,0);""",
     "csrf": """reply(403, {detail:'Güvenlik doğrulaması başarısız. Sayfayı yenileyip tekrar deneyin.'}); await check('Güvenlik doğrulaması başarısız. Sayfayı yenileyip tekrar deneyin.'); assert.equal(sent.options.headers.get('X-CSRF-Token'),'test-token'); assert.equal(sent.options.headers.get('Content-Type'),'application/json'); assert.equal(sent.options.body,'original-input');""",
     "success": """const payload={ok:true,issues:[],updated:2}; reply(200,payload); const result=await run(); assert.equal(result.r.ok,true); assert.equal(result.j,payload);""",
+    "pp_period": """context.document.querySelector=selector=>({content:selector.includes('pp-period-id')?'7':'test-token'}); reply(200,{ok:true}); await vm.runInContext(`jsonFetch('/api/activities',{method:'POST'})`,context); assert.equal(sent.url,'/api/activities?period_id=7');""",
+    "pp_explicit_period": """context.document.querySelector=()=>({content:'7'}); reply(200,{ok:true}); await vm.runInContext(`jsonFetch('/api/activities?period_id=8',{method:'POST'})`,context); assert.equal(sent.url,'/api/activities?period_id=8');""",
     "toast_safe_text": """vm.runInContext(`toast({detail:['<img src=x onerror=alert(1)>','Alanı kontrol edin.']})`,context); assert.equal(toastElement.textContent,'<img src=x onerror=alert(1)> · Alanı kontrol edin.'); assert.equal(toastElement.innerHTML,undefined);""",
 }
 
@@ -38,7 +40,7 @@ const context=vm.createContext({
   location:{origin:'https://civensa.invalid'},window:{},
   setTimeout(){},clearTimeout(){},
   document:{
-    querySelector(selector){return selector.startsWith('meta')?{content:'test-token'}:null},
+    querySelector(selector){return selector==='meta[name="csrf-token"]'?{content:'test-token'}:null},
     querySelectorAll(){return []},
     getElementById(id){return id==='toast'?toastElement:null},
     addEventListener(){},

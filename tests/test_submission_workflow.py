@@ -15,7 +15,7 @@ def events(db):
 def test_return_correct_resubmit_approve(client, db, sample):
     sub = db.scalar(select(Submission))
     path = f'/api/submissions/{sub.id}/decision'
-    assert client.post('/api/departments/1/submit').json() == {'ok': True, 'revision': 1}
+    assert client.post('/api/departments/1/submit').json() == {'ok': True, 'revision': 1, 'period_id': 1, 'year': 2027, 'redirect_url': '/department/1?period_id=1'}
     db.refresh(sub)
     assert sub.status == 'submitted' and sub.submitted_at is not None
     original_snapshot = events(db)[0].snapshot_json
@@ -31,7 +31,7 @@ def test_return_correct_resubmit_approve(client, db, sample):
     assert sub.reviewed_at is not None and sub.revision == 1
     actor(sample, 'user')
     assert client.post('/api/indicators/1/save', json={'value_2027_target': '2,5'}).status_code == 200
-    assert client.post('/api/departments/1/submit').json() == {'ok': True, 'revision': 2}
+    assert client.post('/api/departments/1/submit').json() == {'ok': True, 'revision': 2, 'period_id': 1, 'year': 2027, 'redirect_url': '/department/1?period_id=1'}
     db.refresh(sub)
     assert sub.status == 'submitted' and sub.return_note == ''
     assert events(db)[0].snapshot_json == original_snapshot

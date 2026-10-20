@@ -2,7 +2,7 @@
 {% block page_title %}Sistem Durumu{% endblock %}
 {% block page_subtitle %}Civensa {{ operations.version }} · {{ period.year }} döneminin operasyon özeti{% endblock %}
 {% block content %}<div class="section-head"><div><h2>Operasyonel görünürlük</h2><p class="muted">Canlı sağlık, kayıt bütünlüğü ve sürüm hazırlığı.</p></div><a class="button" href="/api/operations/backup.json">Mantıksal Yedek İndir</a></div>
-<section class="release-gate {{ 'release-ready' if readiness.status=='ready' else 'release-blocked' }}"><div class="section-head"><div><h2>Yayın Uygunluk Kapısı · {{ readiness.status|upper }}</h2><p class="muted">Şema, veri bütünlüğü ve temel operasyon kontrolleri.</p></div><a class="button" href="/api/release/readiness">JSON Görünümü</a></div><div class="release-checks">{% for name,ok in readiness.checks.items() %}<span class="{{ 'ok' if ok else 'bad' }}">{{ '✓' if ok else '✕' }} {{ name }}</span>{% endfor %}</div>{% if readiness.warnings %}<div class="issue-list">{% for warning in readiness.warnings %}<div>{{ warning }}</div>{% endfor %}</div>{% endif %}</section>
+<section class="release-gate {{ 'release-ready' if readiness.status=='ready' else 'release-blocked' }}"><div class="section-head"><div><h2>Yayın Uygunluk Kapısı · {{ readiness.status|upper }}</h2><p class="muted">Şema, veri bütünlüğü ve temel operasyon kontrolleri.</p></div><a class="button" href="/api/release/readiness?period_id={{ period.id }}">JSON Görünümü</a></div><div class="release-checks">{% for name,ok in readiness.checks.items() %}<span class="{{ 'ok' if ok else 'bad' }}">{{ '✓' if ok else '✕' }} {{ name }}</span>{% endfor %}</div>{% if readiness.warnings %}<div class="issue-list">{% for warning in readiness.warnings %}<div>{{ warning }}</div>{% endfor %}</div>{% endif %}</section>
 <div class="cards strategy-cards">
   <div class="card"><span>Uygulama</span><b class="ok">{{ operations.status|upper }}</b><small>{{ operations.environment }}</small></div>
   <div class="card"><span>Veritabanı</span><b class="ok">{{ operations.database.status|upper }}</b><small>{{ operations.database.backend }} · {{ operations.database.latency_ms }} ms</small></div>
@@ -10,7 +10,7 @@
   <div class="card"><span>Dönem</span><b>{{ period.year }}</b><small>{{ period.status }}</small></div>
 </div>
 <section>
-  <div class="section-head"><div><h2>Kayıt Özeti</h2><p class="muted">Aktif olarak görüntülenen dönemin veritabanı sayıları.</p></div><div class="rowbuttons"><a class="button" href="/activity-mapping">Eşleştirme kuyruğunu aç</a><a class="button" href="/api/operations/status">JSON Görünümü</a></div></div>
+  <div class="section-head"><div><h2>Kayıt Özeti</h2><p class="muted">Aktif olarak görüntülenen dönemin veritabanı sayıları.</p></div><div class="rowbuttons"><a class="button" href="/activity-mapping?period_id={{ period.id }}">Eşleştirme kuyruğunu aç</a><a class="button" href="/api/operations/status?period_id={{ period.id }}">JSON Görünümü</a></div></div>
   <div class="table-wrap"><table><thead><tr><th>Kaynak</th><th>Kayıt</th></tr></thead><tbody>
     <tr><td>Müdürlükler</td><td><b>{{ operations.records.departments }}</b></td></tr>
     <tr><td>Müdürlük kullanıcı hesapları</td><td><b>{{ operations.records.department_accounts }}</b></td></tr>

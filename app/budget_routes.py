@@ -104,6 +104,11 @@ def register(app):
     @app.post('/api/activities/{activity_id}/contract-bound')
     async def flag(activity_id: int, request: Request, db: Session = Depends(get_db), user=Depends(require_user)):
         data = await body(request)
+        from .main import pp_period
+        from .models import Activity
+        activity = db.get(Activity, activity_id)
+        if activity:
+            pp_period(request, db, user, activity.department_id, data, activity.period_id)
         return commit(db, lambda: service.set_contract_bound(db, user, activity_id, data.get('contract_bound') if isinstance(data, dict) else None))
 
     @app.post('/api/budget-reallocations/delegations')

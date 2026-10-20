@@ -30,6 +30,7 @@ from alembic.script import ScriptDirectory
 
 from .db import Base, engine, get_db, SessionLocal
 from .db_privileges import assert_runtime_restricted
+from .models import DepartmentScope
 from .models import (
     User, Department, ReportingPeriod, Indicator, IndicatorValue, Activity,
     ActivityCostValue, DepartmentCostValue, Submission, AuditLog, Program,
@@ -308,10 +309,56 @@ def active_period(db: Session):
     return period or db.scalar(select(ReportingPeriod).order_by(ReportingPeriod.year.desc()))
 
 
-def session_period(request: Request, db: Session):
-    pid = request.session.get("period_id")
-    period = db.get(ReportingPeriod, pid) if pid else None
-    return period or active_period(db)
+def session_period(request: Request, db: Session, data=None):
+    """Resolve PP context from this request; another tab's session is not context."""
+    query_id = request.query_params.get("period_id") if request else None
+    if data is not None and not hasattr(data, "get"):
+        raise HTTPException(422, "İstek bilgileri geçersiz. Raporlama dönemi ve form alanlarını kontrol edin.")
+    body_id = data.get("period_id") if data is not None else None
+    ids = []
+    for value in (query_id, body_id):
+        if value is None:
+            continue
+        if isinstance(value, bool) or not str(value).isascii() or not str(value).isdecimal() or len(str(value)) > 18 or int(value) < 1:
+            raise HTTPException(422, "Raporlama dönemi geçersiz. Bağlantıdaki veya formdaki dönemi kontrol edin.")
+        ids.append(int(value))
+    if len(set(ids)) > 1:
+        raise HTTPException(422, "Bağlantı ve form farklı raporlama dönemleri içeriyor. Sayfayı seçtiğiniz yıl için yeniden açın.")
+    if not ids:
+        return active_period(db)
+    period = db.get(ReportingPeriod, ids[0])
+    if not period:
+        raise HTTPException(404, "Seçilen raporlama dönemi bulunamadı. Dönem bağlantısını kontrol edin veya Strateji Geliştirme birimine başvurun.")
+    return period
+
+
+def check_pp_access(db: Session, user: User, department_id: int, period: ReportingPeriod):
+    department = db.get(Department, department_id)
+    if not department:
+        raise HTTPException(404, "Müdürlük bulunamadı. Müdürlük bağlantısını kontrol edin.")
+    if user.role == "department":
+        from .structure_service import department_in_year
+        scope = db.scalar(select(DepartmentScope).where(
+            DepartmentScope.department_id == department_id, DepartmentScope.period_id == period.id))
+        if (user.department_id != department_id or not scope or scope.status == "excluded"
+                or not department_in_year(db, department, period.year)):
+            raise HTTPException(403, f"{period.year} yılı Performans Programı için bu müdürlüğe erişim yetkiniz yok. Dönem ve müdürlük yetkinizi kontrol ettirmek için Strateji Geliştirme birimine başvurun.")
+
+
+def pp_period(request, db, user, department_id, data=None, record_period_id=None):
+    period = session_period(request, db, data)
+    if not period:
+        raise HTTPException(404, "Raporlama dönemi bulunamadı. Strateji Geliştirme biriminden dönem oluşturmasını isteyin.")
+    check_pp_access(db, user, department_id, period)
+    if record_period_id is not None and record_period_id != period.id:
+        record_period = db.get(ReportingPeriod, record_period_id)
+        raise HTTPException(409, f"Kayıt {record_period.year} yılına ait; seçilen dönem {period.year}. Kaydın yılını açıp tekrar deneyin.")
+    return period
+
+
+def pp_write_result(period, department_id, **values):
+    return {"ok": True, **values, "period_id": period.id, "year": period.year,
+            "redirect_url": f"/department/{department_id}?period_id={period.id}"}
 
 
 def indicator_columns(year: int):
@@ -430,6 +477,12 @@ def editable_submission(db: Session, department_id: int, period_id: int | None =
 def ensure_department_editable(db: Session, user: User, department_id: int, period_id: int | None = None):
     if user.role != "department" or user.department_id != department_id:
         raise HTTPException(403)
+    period = db.get(ReportingPeriod, period_id) if period_id else active_period(db)
+    if not period:
+        raise HTTPException(404, "Raporlama dönemi bulunamadı. Strateji Geliştirme birimine başvurun.")
+    check_pp_access(db, user, department_id, period)
+    if period.status == "closed":
+        raise HTTPException(409, f"{period.year} yılı dönemi kapalı; kayıt değiştirilemez. Strateji Geliştirme birimine başvurun.")
     sub = editable_submission(db, department_id, period_id)
     if sub and sub.status in {"submitted", "approved"}:
         raise HTTPException(409, "Kayıt incelemede veya onaylı; değiştirilemez.")
@@ -515,10 +568,11 @@ def activity_report_workspace(request: Request, year: int = 2026, db: Session = 
 
 @app.get("/dashboard", response_class=HTMLResponse)
 def dashboard(request: Request, db: Session = Depends(get_db), user: User = Depends(require_user)):
-    period = active_period(db) if user.role == "department" else session_period(request, db)
+    period = session_period(request, db)
     if not period:
         return templates.TemplateResponse(request, "first_period.html", {"user": user, "attempted_year": datetime.now(UTC).year, "error": ""})
     if user.role == "department":
+        period = pp_period(request, db, user, user.department_id)
         dept = db.get(Department, user.department_id)
         submission = ensure_submission(db, dept.id, period.id)
         db.commit()
@@ -548,12 +602,10 @@ def dashboard(request: Request, db: Session = Depends(get_db), user: User = Depe
 
 @app.get("/department/{department_id}", response_class=HTMLResponse)
 def department_page(department_id: int, request: Request, db: Session = Depends(get_db), user: User = Depends(require_user)):
-    if user.role == "department" and user.department_id != department_id:
-        raise HTTPException(403)
     dept = db.get(Department, department_id)
     if not dept:
         raise HTTPException(404)
-    period = active_period(db) if user.role == "department" else session_period(request, db)
+    period = pp_period(request, db, user, department_id)
     indicators = db.scalars(
         select(Indicator).where(Indicator.department_id == department_id, Indicator.period_id == period.id)
         .options(selectinload(Indicator.values), selectinload(Indicator.subprogram).selectinload(SubProgram.program))
@@ -605,11 +657,9 @@ async def save_indicator(indicator_id: int, request: Request, db: Session = Depe
     ind = db.scalar(select(Indicator).where(Indicator.id == indicator_id).options(selectinload(Indicator.values)))
     if not ind:
         raise HTTPException(404)
-    if user.role != "department" or user.department_id != ind.department_id:
-        raise HTTPException(403)
-    ensure_department_editable(db, user, ind.department_id, ind.period_id)
-    period = db.get(ReportingPeriod, ind.period_id)
     data = await request.json()
+    period = pp_period(request, db, user, ind.department_id, data, ind.period_id)
+    ensure_department_editable(db, user, ind.department_id, period.id)
     name = str(data.get("name", ind.name)).strip()
     unit = str(data.get("unit", ind.unit)).strip()
     if not name or not unit or len(name) > 300 or len(unit) > 50:
@@ -641,7 +691,7 @@ async def save_indicator(indicator_id: int, request: Request, db: Session = Depe
     db.commit()
     log(db, user, "indicator_update", "indicator", ind.id)
     refreshed = db.scalar(select(Indicator).where(Indicator.id == ind.id).options(selectinload(Indicator.values)))
-    return {"ok": True, "issues": indicator_issues(refreshed, period.year)}
+    return pp_write_result(period, ind.department_id, issues=indicator_issues(refreshed, period.year))
 
 
 def activity_subprogram_id(value):
@@ -659,9 +709,9 @@ def activity_subprogram_id(value):
 async def create_activity(request: Request, db: Session = Depends(get_db), user: User = Depends(require_user)):
     if user.role != "department" or not user.department_id:
         raise HTTPException(403)
-    period = active_period(db)
-    ensure_department_editable(db, user, user.department_id, period.id)
     data = await request.json()
+    period = pp_period(request, db, user, user.department_id, data)
+    ensure_department_editable(db, user, user.department_id, period.id)
     name = str(data.get("name", "")).strip()
     if not name:
         raise HTTPException(422, "Faaliyet adı zorunlu.")
@@ -677,23 +727,23 @@ async def create_activity(request: Request, db: Session = Depends(get_db), user:
     save_activity_costs(db, act, period.year, data, actor=user)
     db.commit(); db.refresh(act)
     log(db, user, "activity_create", "activity", act.id)
-    return {"ok": True, "id": act.id}
+    return pp_write_result(period, act.department_id, id=act.id)
 
 
 @app.put("/api/activities/{activity_id}")
 async def update_activity(activity_id: int, request: Request, db: Session = Depends(get_db), user: User = Depends(require_user)):
     body = await request.body()
-    return _update_activity(activity_id, body, db, user)
+    return _update_activity(activity_id, body, db, user, request)
 
 
-def _update_activity(activity_id: int, body: bytes, db: Session, user: User):
+def _update_activity(activity_id: int, body: bytes, db: Session, user: User, request=None):
     # Read the complete body before locking; keep the original validation order.
     act = db.scalar(select(Activity).where(Activity.id == activity_id).with_for_update().options(selectinload(Activity.cost_values)))
     if not act:
         raise HTTPException(404)
-    ensure_department_editable(db, user, act.department_id, act.period_id)
-    period = db.get(ReportingPeriod, act.period_id)
     data = json.loads(body)
+    period = pp_period(request, db, user, act.department_id, data, act.period_id)
+    ensure_department_editable(db, user, act.department_id, period.id)
     name = str(data.get("name", act.name)).strip()
     if not name:
         raise HTTPException(422, "Faaliyet adı zorunlu.")
@@ -713,30 +763,31 @@ def _update_activity(activity_id: int, body: bytes, db: Session, user: User):
     db.commit()
     log(db, user, "activity_update", "activity", act.id)
     db.expire(act, ["cost_values"])
-    return {"ok": True, "cost_totals": {
+    return pp_write_result(period, act.department_id, cost_totals={
         f"{v.year}:{v.value_kind}": str(v.amount) if v.amount is not None else None
         for v in act.cost_values if v.funding_type == "total"
-    }}
+    })
 
 
 @app.delete("/api/activities/{activity_id}")
-def delete_activity(activity_id: int, db: Session = Depends(get_db), user: User = Depends(require_user)):
+def delete_activity(activity_id: int, request: Request, db: Session = Depends(get_db), user: User = Depends(require_user)):
     act = db.get(Activity, activity_id)
     if not act:
         raise HTTPException(404)
+    period = pp_period(request, db, user, act.department_id, record_period_id=act.period_id)
     ensure_department_editable(db, user, act.department_id, act.period_id)
     from .models import ActivityCatalogueLink
     db.execute(ActivityCatalogueLink.__table__.delete().where(ActivityCatalogueLink.activity_id == act.id))
     db.delete(act); db.commit()
     log(db, user, "activity_delete", "activity", activity_id)
-    return {"ok": True}
+    return pp_write_result(period, user.department_id)
 
 
 @app.post("/api/departments/{department_id}/personnel-costs")
 async def save_personnel_costs(department_id: int, request: Request, db: Session = Depends(get_db), user: User = Depends(require_user)):
-    period = active_period(db)
-    ensure_department_editable(db, user, department_id, period.id)
     data = await request.json()
+    period = pp_period(request, db, user, department_id, data)
+    ensure_department_editable(db, user, department_id, period.id)
     existing = db.scalars(select(DepartmentCostValue).where(DepartmentCostValue.department_id == department_id, DepartmentCostValue.period_id == period.id, DepartmentCostValue.category == "personnel_sgk")).all()
     value_map = {(v.year, v.value_kind): v for v in existing}
     for col in activity_columns(period.year):
@@ -758,17 +809,28 @@ async def save_personnel_costs(department_id: int, request: Request, db: Session
         else:
             db.add(DepartmentCostValue(department_id=department_id, period_id=period.id, year=col["year"], value_kind=col["kind"], category="personnel_sgk", amount=amount))
     db.commit(); log(db, user, "personnel_cost_update", "department", department_id)
-    return {"ok": True}
+    return pp_write_result(period, department_id)
 
 
 @app.post("/api/departments/{department_id}/submit")
-def submit_department(department_id: int, db: Session = Depends(get_db), user: User = Depends(require_user)):
+async def submit_department_request(department_id: int, request: Request, db: Session = Depends(get_db), user: User = Depends(require_user)):
+    data = await request.json() if "application/json" in request.headers.get("content-type", "") else await request.form()
+    period = pp_period(request, db, user, department_id, data)
+    from starlette.concurrency import run_in_threadpool
+    result = await run_in_threadpool(submit_department, department_id, db, user, period.id)
+    if isinstance(result, dict):
+        return pp_write_result(period, department_id, revision=result["revision"])
+    return result
+
+
+def submit_department(department_id: int, db: Session, user: User, period_id: int | None = None):
     # Callers may pass an actor from another Session; use this transaction's copy.
     user = db.get(User, user.id, populate_existing=True)
     if user.role != "department" or user.department_id != department_id:
         raise HTTPException(403, "Bu PP paketini gönderemezsiniz. Paketin müdürlüğüne ait Müdür veya gönderim yetkili Personel hesabıyla giriş yapın; yetki için Müdürünüze başvurun.")
     released_permissions.require_submit(user)
-    period = active_period(db)
+    period = db.get(ReportingPeriod, period_id) if period_id else active_period(db)
+    ensure_department_editable(db, user, department_id, period.id)
     # Serialize submission creation and repeated sends for this department.
     department = db.scalar(select(Department).where(Department.id == department_id).with_for_update())
     if not department:
@@ -799,7 +861,7 @@ def submit_department(department_id: int, db: Session = Depends(get_db), user: U
     db.add(Notification(
         role="strategy", event_type="submission_submitted",
         message=f"{period_name(db, period.id, department)} revizyon {submission.revision} incelemeye gönderildi.",
-        link=f"/department/{department_id}",
+        link=f"/department/{department_id}?period_id={period.id}",
     ))
     db.commit(); log(db, user, "department_submit", "submission", submission.id, f"revision={submission.revision}")
     return {"ok": True, "revision": submission.revision}
@@ -968,7 +1030,7 @@ async def preview_activity_mapping_csv(
     request: Request, file: UploadFile = File(...), db: Session = Depends(get_db),
     user: User = Depends(require_strategy),
 ):
-    period = session_period(request, db)
+    period = session_period(request, db, await request.form())
     data = await read_upload_limited(file, 512 * 1024, "CSV dosyası")
     rows, errors = validate_mapping_csv(data, db, period)
     return {
@@ -989,7 +1051,7 @@ async def apply_activity_mapping_csv(
     request: Request, file: UploadFile = File(...), db: Session = Depends(get_db),
     user: User = Depends(require_strategy),
 ):
-    period = session_period(request, db)
+    period = session_period(request, db, await request.form())
     data = await read_upload_limited(file, 512 * 1024, "CSV dosyası")
     rows, errors = validate_mapping_csv(data, db, period)
     if errors:
@@ -1072,7 +1134,7 @@ async def save_activity_mappings(request: Request, db: Session = Depends(get_db)
     assignments = data.get("assignments", [])
     if not isinstance(assignments, list) or not assignments:
         raise HTTPException(422, "Kaydedilecek eşleştirme seçilmedi.")
-    period = session_period(request, db)
+    period = session_period(request, db, data)
     validated = []
     errors = []
     seen = set()
@@ -1134,7 +1196,7 @@ def users_page(request: Request, db: Session = Depends(get_db), user: User = Dep
     assigned_department_ids = {item.department_id for item in users if item.role == "department" and item.department_id and item.is_active}
     missing_departments = [item for item in departments if item.is_active and item.id not in assigned_department_ids]
     return templates.TemplateResponse(request, "users.html", {
-        "user": user, "users": users, "departments": departments,
+        "user": user, "period": session_period(request, db), "users": users, "departments": departments,
         "missing_departments": missing_departments,
         "department_account_count": len(assigned_department_ids),
     })
@@ -1425,6 +1487,7 @@ async def submission_decision(submission_id: int, request: Request, db: Session 
     scope = db.get(Submission, submission_id, populate_existing=True)
     if not scope:
         raise HTTPException(404, "Paket bulunamadı. İnceleme kuyruğunu yenileyin.")
+    pp_period(request, db, user, scope.department_id, data, scope.period_id)
     # A decision cannot target a draft that becomes submitted while this request
     # waits for the department lock. Recheck the state under the locks below too.
     if scope.status != "submitted":
@@ -1466,7 +1529,7 @@ async def submission_decision(submission_id: int, request: Request, db: Session 
         role="department", department_id=sub.department_id,
         event_type=f"submission_{decision}",
         message=f"{period_name(db, sub.period_id, department)} revizyon {sub.revision or 1} {decision_label}.",
-        link=f"/department/{sub.department_id}",
+        link=f"/department/{sub.department_id}?period_id={sub.period_id}",
     ))
     db.commit(); log(db, user, f"submission_{decision}", "submission", sub.id, f"revision={sub.revision or 1};note={note}")
     return {"ok": True, "status": sub.status}
@@ -1715,7 +1778,7 @@ def select_period(period_id: int, request: Request, db: Session = Depends(get_db
     if not period:
         raise HTTPException(404)
     request.session["period_id"] = period.id
-    return RedirectResponse("/dashboard", 303)
+    return RedirectResponse(f"/dashboard?period_id={period.id}", 303)
 
 
 def create_period_record(db: Session, user: User, data):
@@ -1779,7 +1842,7 @@ async def create_period_form(request: Request, db: Session = Depends(get_db), us
             "error": exc.detail if isinstance(exc, HTTPException) else "Dönem başka bir işlemde oluşturuldu. Genel Bakış ekranından dönemi seçin."},
             status_code=exc.status_code if isinstance(exc, HTTPException) else 409)
     request.session["period_id"] = period.id
-    return RedirectResponse("/dashboard", 303)
+    return RedirectResponse(f"/dashboard?period_id={period.id}", 303)
 
 
 @app.post("/api/periods/{period_id}/verify-template")
@@ -2033,7 +2096,7 @@ def audit_page(request: Request, db: Session = Depends(get_db), user: User = Dep
     users = {item.id: item for item in db.scalars(select(User).where(User.id.in_(user_ids))).all()} if user_ids else {}
     actions = db.scalars(select(AuditLog.action).distinct().order_by(AuditLog.action)).all()
     return templates.TemplateResponse(request, "audit.html", {
-        "user": user, "rows": rows[:per_page], "users": users, "actions": actions,
+        "user": user, "period": session_period(request, db), "rows": rows[:per_page], "users": users, "actions": actions,
         "selected_action": action, "user_text": user_text, "page": page,
         "has_next": len(rows) > per_page, "safe_details": safe_audit_details,
     })

@@ -26,16 +26,16 @@ def integer(value, label='Kimlik'):
 
 
 def register(app):
-    from .main import require_user, require_strategy, ensure_department_editable, templates, session_period, log
+    from .main import require_user, require_strategy, ensure_department_editable, templates, session_period, pp_period, check_pp_access, log
 
     def context(db, user, did, pid, edit=False):
         if not db.get(Department,did) or not db.get(ReportingPeriod,pid): raise HTTPException(404)
-        if user.role == 'department' and user.department_id != did: raise HTTPException(403)
+        check_pp_access(db,user,did,db.get(ReportingPeriod,pid))
         if edit: ensure_department_editable(db,user,did,pid)
 
     @app.get('/program/{department_id}')
     def workbench(department_id:int, request:Request, period_id:int|None=None, group:str='service', fund:str='inside', db:Session=Depends(get_db), user:User=Depends(require_user)):
-        period = db.get(ReportingPeriod,period_id) if period_id else session_period(request,db)
+        period = pp_period(request,db,user,department_id)
         if not period: raise HTTPException(404)
         context(db,user,department_id,period.id)
         sub = db.scalar(select(Submission).where(Submission.department_id==department_id,Submission.period_id==period.id))
@@ -46,7 +46,7 @@ def register(app):
         return templates.TemplateResponse(request,'program.html',dict(user=user,department=db.get(Department,department_id),period=period,
             snapshot=snapshot,cards=rows(db,ReportCard,period.id,department_id),subprograms=rows(db,SubProgram,period.id),
             economic_map=economic_map,selected_group=group,selected_fund=fund,catalogue=rows(db,OfficialActivity,period.id), fields=CARD_FIELDS,errors=errors,warnings=warnings,
-            editable=user.role=='department' and (not sub or sub.status in {'draft','returned'}),
+            editable=user.role=='department' and period.status!='closed' and (not sub or sub.status in {'draft','returned'}),
             categories=ECONOMIC_CATEGORIES,groups=PROGRAM_GROUPS,columns=economic_columns(period.year),cost_columns=cost_columns(period.year)))
 
     def split_screen(request, db, user, department_id, period_id, data=None, error=None, status=200, saved=0):
@@ -74,13 +74,14 @@ def register(app):
             data=data or {},error=error,blocked=blocked,saved=saved),status_code=status)
 
     @app.get('/program/{department_id}/economic-split')
-    def economic_split_page(department_id:int, request:Request, period_id:int,
+    def economic_split_page(department_id:int, request:Request, period_id:int|None=None,
             saved:int=0, db:Session=Depends(get_db), user:User=Depends(require_strategy)):
-        return split_screen(request,db,user,department_id,period_id,saved=saved)
+        period=pp_period(request,db,user,department_id)
+        return split_screen(request,db,user,department_id,period.id,saved=saved)
 
     def apply_economic_split(department_id, request, data, db, user):
         from .economic_split_service import split_economic_cells, SPLIT_GROUPS
-        pid=integer(data.get('period_id'),'Dönem')
+        pid=session_period(request,db,data).id
         context(db,user,department_id,pid)
         cells=[{'id':integer(cell_id,'Kaynak hücre'), 'fingerprint':data.get(f'fingerprint_{cell_id}'),
             'shares':{g:data.get(f'share_{cell_id}_{g}','') for g in SPLIT_GROUPS},
@@ -113,7 +114,7 @@ def register(app):
 
     @app.post('/program/{department_id}/cards')
     async def save_card(department_id:int,request:Request,db:Session=Depends(get_db),user:User=Depends(require_user)):
-        data=await request.form();pid=integer(data.get('period_id'));context(db,user,department_id,pid,True)
+        data=await request.form();pid=session_period(request,db,data).id;context(db,user,department_id,pid,True)
         card=db.get(ReportCard,integer(data['id'])) if data.get('id') else None
         if data.get('id') and not card: raise HTTPException(404)
         if card and (card.department_id!=department_id or card.period_id!=pid): raise HTTPException(403)
@@ -130,7 +131,7 @@ def register(app):
 
     @app.post('/program/{department_id}/assign')
     async def assign(department_id:int,request:Request,db:Session=Depends(get_db),user:User=Depends(require_user)):
-        data=await request.form();pid=integer(data.get('period_id'));context(db,user,department_id,pid,True)
+        data=await request.form();pid=session_period(request,db,data).id;context(db,user,department_id,pid,True)
         card=db.get(ReportCard,integer(data.get('card_id')))
         if not card or card.department_id!=department_id or card.period_id!=pid:raise HTTPException(422,'Kart bu müdürlük/döneme ait değil.')
         model=Indicator if data.get('kind')=='indicator' else Activity if data.get('kind')=='activity' else None
@@ -144,18 +145,18 @@ def register(app):
 
     @app.post('/program/{department_id}/indicator')
     async def add_indicator(department_id:int,request:Request,db:Session=Depends(get_db),user:User=Depends(require_user)):
-        data=await request.form();pid=integer(data.get('period_id'));context(db,user,department_id,pid,True)
+        data=await request.form();pid=session_period(request,db,data).id;context(db,user,department_id,pid,True)
         card=db.get(ReportCard,integer(data.get('card_id')))
         if not card or card.department_id!=department_id or card.period_id!=pid:raise HTTPException(422,'Kart kapsamı geçersiz.')
         name=str(data.get('name','')).strip();unit=str(data.get('unit','')).strip()
         if not name or not unit or len(name)>300 or len(unit)>50:raise HTTPException(422,'Gösterge adı ve birimini kontrol edin.')
         obj=Indicator(period_id=pid,department_id=department_id,card_id=card.id,subprogram_id=card.subprogram_id,name=name,unit=unit)
         db.add(obj);db.commit();log(db,user,'indicator_create','indicator',obj.id)
-        return RedirectResponse(f'/department/{department_id}',303)
+        return RedirectResponse(f'/department/{department_id}?period_id={pid}',303)
 
     @app.post('/program/{department_id}/finance/{activity_id}')
     async def finance(department_id:int,activity_id:int,request:Request,db:Session=Depends(get_db),user:User=Depends(require_user)):
-        data=await request.form();pid=integer(data.get('period_id'));context(db,user,department_id,pid,True)
+        data=await request.form();pid=session_period(request,db,data).id;context(db,user,department_id,pid,True)
         act=db.scalar(select(Activity).where(Activity.id==activity_id).with_for_update())
         if not act or act.department_id!=department_id or act.period_id!=pid:raise HTTPException(403)
         save_activity_costs(db,act,db.get(ReportingPeriod,pid).year,data,actor=user)
@@ -164,7 +165,7 @@ def register(app):
 
     @app.post('/program/{department_id}/economic')
     async def economic(department_id:int,request:Request,db:Session=Depends(get_db),user:User=Depends(require_user)):
-        data=await request.form();pid=integer(data.get('period_id'));context(db,user,department_id,pid,True)
+        data=await request.form();pid=session_period(request,db,data).id;context(db,user,department_id,pid,True)
         year=integer(data.get('year'));kind=data.get('value_kind');cat=data.get('category');group=data.get('program_group');fund=data.get('funding_type')
         if (year,kind) not in economic_columns(db.get(ReportingPeriod,pid).year) or cat not in ECONOMIC_CATEGORIES or group not in PROGRAM_GROUPS or fund not in {'inside','outside'}:
             raise HTTPException(422,'Ekonomik tablo boyutları geçersiz.')
@@ -180,7 +181,7 @@ def register(app):
 
     @app.post('/program/{department_id}/economic-grid')
     async def economic_grid(department_id:int,request:Request,db:Session=Depends(get_db),user:User=Depends(require_user)):
-        data=await request.form();pid=integer(data.get('period_id'));context(db,user,department_id,pid,True)
+        data=await request.form();pid=session_period(request,db,data).id;context(db,user,department_id,pid,True)
         group=data.get('program_group');fund=data.get('funding_type')
         if group not in PROGRAM_GROUPS or fund not in {'inside','outside'}:raise HTTPException(422)
         values={}
@@ -207,7 +208,8 @@ def register(app):
     async def verify_value(department_id:int,value_id:int,request:Request,db:Session=Depends(get_db),user:User=Depends(require_user)):
         data=await request.form();v=db.get(IndicatorValue,value_id)
         if not v:raise HTTPException(404)
-        context(db,user,department_id,v.indicator.period_id,True)
+        period=pp_period(request,db,user,department_id,data,v.indicator.period_id)
+        context(db,user,department_id,period.id,True)
         if v.indicator.department_id!=department_id:raise HTTPException(403)
         kind=str(data.get('value_kind',v.value_kind));period=db.get(ReportingPeriod,v.indicator.period_id)
         from .main import indicator_columns
@@ -230,7 +232,8 @@ def register(app):
         value=db.get(model,value_id)
         if not value:raise HTTPException(404)
         owner=value.activity if kind=='activity' else value
-        context(db,user,department_id,owner.period_id,True)
+        period=pp_period(request,db,user,department_id,data,owner.period_id)
+        context(db,user,department_id,period.id,True)
         if owner.department_id!=department_id:raise HTTPException(403)
         try:amount=parse_number(data.get('amount'),money=True)
         except ValueError as exc:raise HTTPException(422,str(exc)) from None
@@ -270,7 +273,7 @@ def register(app):
 
     @app.post('/report-builder/scope')
     async def scope(request:Request,db:Session=Depends(get_db),user:User=Depends(require_strategy)):
-        data=await request.form();pid=integer(data.get('period_id'));did=integer(data.get('department_id'))
+        data=await request.form();pid=session_period(request,db,data).id;did=integer(data.get('department_id'))
         from .master_data_service import active_department, audit_change, period_record
         period_record(db,pid)  # Share the lock used by master-data responsibilities.
         context(db,user,did,pid)
@@ -287,11 +290,11 @@ def register(app):
         obj.position=integer(data.get('position',0));obj.status=status;obj.reason=reason;obj.display_name=str(data.get('display_name','')).strip()
         audit_change(db,user,'scope_save',obj,old,{f:getattr(obj,f) for f in fields})
         db.commit()
-        return RedirectResponse('/report-builder',303)
+        return RedirectResponse(f'/report-builder?period_id={pid}',303)
 
     @app.post('/report-builder/section')
     async def section(request:Request,db:Session=Depends(get_db),user:User=Depends(require_strategy)):
-        data=await request.form();pid=integer(data.get('period_id'))
+        data=await request.form();pid=session_period(request,db,data).id
         if not db.get(ReportingPeriod,pid):raise HTTPException(404)
         obj=db.get(ReportSection,integer(data['id'])) if data.get('id') else None
         if data.get('id') and not obj:raise HTTPException(404)
@@ -322,11 +325,11 @@ def register(app):
         if not obj:obj=ReportSection(period_id=pid);db.add(obj)
         obj.title=title;obj.kind=kind;obj.position=integer(data.get('position',0));obj.content_json=json_dumps(payload,ensure_ascii=False)
         db.commit();log(db,user,'section_save','report_section',obj.id)
-        return RedirectResponse('/report-builder',303)
+        return RedirectResponse(f'/report-builder?period_id={pid}',303)
 
     @app.post('/report-builder/catalogue')
     async def catalogue(request:Request,db:Session=Depends(get_db),user:User=Depends(require_strategy)):
-        data=await request.form();pid=integer(data.get('period_id'))
+        data=await request.form();pid=session_period(request,db,data).id
         if not db.get(ReportingPeriod,pid):raise HTTPException(404)
         fields=['program_code','program_name','subprogram_code','subprogram_name','code','name'];values={f:str(data.get(f,'')).strip() for f in fields}
         if any(not v for v in values.values()):raise HTTPException(422,'Katalog kod/ad alanları zorunlu.')
@@ -336,11 +339,11 @@ def register(app):
         if data.get('id') and not obj:raise HTTPException(404)
         save_catalogue_entry(db,pid,values,ids,user,obj=obj)
         db.commit()
-        return RedirectResponse('/report-builder',303)
+        return RedirectResponse(f'/report-builder?period_id={pid}',303)
 
     @app.post('/program/{department_id}/catalogue-link')
     async def catalogue_link(department_id:int,request:Request,db:Session=Depends(get_db),user:User=Depends(require_user)):
-        data=await request.form();pid=integer(data.get('period_id'));context(db,user,department_id,pid,True)
+        data=await request.form();pid=session_period(request,db,data).id;context(db,user,department_id,pid,True)
         activity=db.get(Activity,integer(data.get('activity_id')))
         if not activity or activity.department_id!=department_id or activity.period_id!=pid:raise HTTPException(403)
         ids={integer(v) for v in data.getlist('official_ids')}
@@ -350,7 +353,7 @@ def register(app):
 
     @app.post('/report-builder/publish')
     async def publish(request:Request,db:Session=Depends(get_db),user:User=Depends(require_strategy)):
-        data=await request.form();pid=integer(data.get('period_id'));period=db.scalar(select(ReportingPeriod).where(ReportingPeriod.id==pid).with_for_update())
+        data=await request.form();pid=session_period(request,db,data).id;period=db.scalar(select(ReportingPeriod).where(ReportingPeriod.id==pid).with_for_update())
         if not period:raise HTTPException(404)
         errors=[]
         for dept in period_departments(db,pid):
@@ -371,7 +374,7 @@ def register(app):
         db.add(obj);db.flush()
         attach_publication_definitions(db, obj, definitions, user)
         db.commit();log(db,user,'publication_freeze','publication',obj.id)
-        return RedirectResponse('/report-builder',303)
+        return RedirectResponse(f'/report-builder?period_id={pid}',303)
 
     @app.get('/publications/{publication_id}.{format}')
     def publication_export(publication_id:int,format:str,db:Session=Depends(get_db),user:User=Depends(require_strategy)):
