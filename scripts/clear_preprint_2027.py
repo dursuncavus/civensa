@@ -240,7 +240,7 @@ def check_department(db, did, source, period_id):
 
 def build_plan(db, organization_id, actor_id):
     from app import models as m
-    from app.import_service import build_department_plan, department_key
+    from app.import_service import build_department_plan, department_key, _clean
     period = base_context(db, organization_id, actor_id)
     pid = period.id
     for model, label in ((m.ReportCard, 'rapor kartı'), (m.EconomicValue, 'ekonomik değer'),
@@ -300,8 +300,8 @@ def build_plan(db, organization_id, actor_id):
     programmes, subprogrammes = set(), set()
     for source in catalogue_sources:
         for block in source['blocks']:
-            p = (block.get('program', '').strip() or 'Program adı belirtilmedi')
-            sp = (block.get('subprogram', '').strip() or 'Alt program adı belirtilmedi')
+            p = (_clean(block.get('program', '')) or 'Program adı belirtilmedi')
+            sp = (_clean(block.get('subprogram', '')) or 'Alt program adı belirtilmedi')
             programmes.add(p)
             subprogrammes.add((p, sp))
     programs = db.scalars(select(m.Program).where(m.Program.period_id == pid)).all()

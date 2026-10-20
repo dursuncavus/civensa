@@ -118,6 +118,9 @@ def test_clear_chain_and_preserved_rows(target, printed):
     assert plan['counts'] == dict(indicators=33, indicator_values=33, activities=33,
         activity_cost_values=66, submissions=33, submission_events=0,
         activity_catalogue_links=0, department_scopes=0, subprogram_scopes=0)
+    with Session(engine) as db:
+        audit_before = {a.id: tuple(getattr(a, c.name) for c in m.AuditLog.__table__.columns)
+                        for a in db.scalars(select(m.AuditLog))}
     applied = clear.execute(engine, apply=True, **ids)
     assert applied['counts'] == plan['counts']
     with Session(engine) as db:
@@ -129,7 +132,10 @@ def test_clear_chain_and_preserved_rows(target, printed):
         assert len(db.scalars(select(m.Program)).all()) == 2
         assert len(db.scalars(select(m.ImportBatch)).all()) == 8
         assert set(db.scalars(select(m.ImportBatch.status))) == {'superseded'}
-        assert len(db.scalars(select(m.AuditLog)).all()) == 2
+        assert len(db.scalars(select(m.AuditLog)).all()) == len(audit_before) + 1
+        assert {aid: tuple(getattr(db.get(m.AuditLog, aid), c.name)
+                          for c in m.AuditLog.__table__.columns)
+                for aid in audit_before} == audit_before
         receipt = db.scalar(select(m.AuditLog).where(m.AuditLog.action == clear.ACTION))
         assert json.loads(receipt.details)['counts'] == plan['counts']
     after = state(engine)

@@ -17,7 +17,7 @@ sys.path.insert(0, str(ROOT))
 from scripts.first_load_dryrun import environment, local_test_url
 from scripts import first_load_live as live
 from scripts import clear_preprint_2027 as clear
-from ops.release_rehearsal import database_state, require_fresh_backup
+from ops.release_rehearsal import database_state, require_fresh_backup, RehearsalFailure
 
 EXPECTED = dict(departments=33, cards=61, indicators=256, activities=285, economic_values=1300)
 
@@ -89,7 +89,10 @@ def source_backup(path):
     # A production ARTIFACT may be older than 60 minutes. CIV-050's 48-hour
     # freshness applies to the source; applies require a NEW verified clone dump.
     saved = json.loads(path.with_suffix('.manifest.json').read_text())
-    require_fresh_backup(saved.get('utc_timestamp'))
+    try:
+        require_fresh_backup(saved.get('utc_timestamp'))
+    except RehearsalFailure:
+        raise live.Refusal('Kaynak üretim yedeği 48 saatten yeni olmalıdır. Mevcut yeşil yedek artifact tarihini sorumluya kontrol ettirin.') from None
     stamp = datetime.fromisoformat(saved['utc_timestamp'].replace('Z', '+00:00'))
     live.verify_backup(path, now=stamp)  # Integrity/head only; source age checked above.
     return saved
