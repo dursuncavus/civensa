@@ -330,7 +330,9 @@ def build_plan(db, organization_id, actor_id):
         try:
             snapshot = json.loads(batch.snapshot_json)
             affected = {int(d['department_id']) for d in snapshot['departments']}
-            affected.update(int(x) for x in snapshot['created_department_ids'])
+            # Same legacy snapshot contract as the importer's revert path:
+            # an absent created-ID list contributes no extra departments.
+            affected.update(int(x) for x in snapshot.get('created_department_ids', []))
             phase = 'arşiv planı'
             plan = build_department_plan(db, archived_payload(json.loads(batch.payload_json)),
                                          json.loads(batch.decisions_json or '[]'))

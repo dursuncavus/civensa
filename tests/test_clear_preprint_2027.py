@@ -509,6 +509,9 @@ def test_legacy_payload_defaults_are_exact_and_batches_remain_unchanged(target):
                         row.pop('state', None)
                         row.pop('raw_text', None)
             batch.payload_json = json.dumps(payload, ensure_ascii=False)
+            snapshot = json.loads(batch.snapshot_json)
+            snapshot.pop('created_department_ids', None)
+            batch.snapshot_json = json.dumps(snapshot)
         for row in db.scalars(select(m.IndicatorValue).join(m.Indicator).where(
                 m.Indicator.period_id == extra['period_id'])):
             row.raw_text = '2.5'
