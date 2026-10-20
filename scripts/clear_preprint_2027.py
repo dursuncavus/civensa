@@ -302,6 +302,10 @@ def build_plan(db, organization_id, actor_id):
     # September legacy importer never generated the official catalogue.
     if db.scalar(select(m.OfficialActivity.id).where(m.OfficialActivity.period_id == pid).limit(1)):
         refuse('2027 resmî katalog satırının ön baskı paketinde oluşturulma izi yok')
+    if db.scalar(select(m.SubProgramScope).where(
+            m.SubProgramScope.subprogram_id.in_(select(m.SubProgram.id).where(
+                m.SubProgram.period_id == pid))).limit(1)):
+        refuse('2027 alt program kapsam bağlantısı ön baskı planına izlenemiyor')
     ids = {name: [] for name in FIELDS}
     counts, departments = Counter({k: 0 for k in FIELDS}), []
     target_dids = set()
@@ -352,6 +356,18 @@ def build_plan(db, organization_id, actor_id):
         if 'period_id' in table.c and table.name not in allowed:
             if db.scalar(select(table).where(table.c.period_id == pid).limit(1)):
                 refuse('2027 ek dönem satırı ön baskı planına izlenemiyor')
+    # Guard indirect/cross-period references too; never rely on a late FK error
+    # after starting deletes, and never cascade into another period's history.
+    for table in Base.metadata.sorted_tables:
+        for fk in table.foreign_keys:
+            parent = fk.column.table.name
+            if parent not in ids or not ids[parent]:
+                continue
+            condition = fk.parent.in_(ids[parent])
+            if table.name in ids and 'id' in table.c and ids[table.name]:
+                condition &= table.c.id.not_in(ids[table.name])
+            if db.scalar(select(table).where(condition).limit(1)):
+                refuse('2027 satırına ön baskı planı dışında bağlı kayıt var')
     return period, dict(mode='clear-preprint-plan', counts=dict(counts), departments=departments,
                         batches=sorted(BATCH_STATES), already_cleared=False), ids
 
