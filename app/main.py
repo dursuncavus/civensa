@@ -311,7 +311,7 @@ def active_period(db: Session):
 
 def session_period(request: Request, db: Session, data=None):
     """Resolve PP context from this request; another tab's session is not context."""
-    query_id = request.query_params.get("period_id") if request else None
+    query_id = getattr(request, "query_params", {}).get("period_id") if request else None
     if data is not None and not hasattr(data, "get"):
         raise HTTPException(422, "İstek bilgileri geçersiz. Raporlama dönemi ve form alanlarını kontrol edin.")
     body_id = data.get("period_id") if data is not None else None
