@@ -1,0 +1,7 @@
+{% extends "base.html" %}
+{% block page_title %}İç Kontrol Eylemlerimiz{% endblock %}
+{% block page_subtitle %}Etkin plandaki sorumluluk ve işbirliği görevleri{% endblock %}
+{% block content %}
+{% if plan %}<section class="card"><h2>{{ plan.title }} · {{ plan.version_label }}</h2><p>{{ plan.start_year }}–{{ plan.end_year }} · Salt okunur. Düzeltme için Strateji Geliştirme birimine başvurun.</p></section>{% else %}<p>Henüz etkin bir İç Kontrol planı yok.</p>{% endif %}
+{% for title, actions in [('Sorumlu olduğumuz eylemler', responsible), ('İşbirliği yapacağımız eylemler', cooperating)] %}<section class="card"><h2>{{ title }} ({{ actions|length|trnum }})</h2>{% for a in actions %}<article class="card"><h3>{{ a.action_code_raw }}</h3><p>{{ a.text }}</p><p>Çıktı / Sonuç: {{ a.output_text }}</p><p>Başlama: {{ a.start_raw or 'Belirtilmedi' }} · Tamamlanma: {{ a.due_raw or 'Belirtilmedi' }}</p>{% if a.note %}<p>Açıklama: {{ a.note }}</p>{% endif %}</article>{% else %}<p>Bu bölümde eylem bulunmuyor.</p>{% endfor %}</section>{% endfor %}
+{% endblock %}

@@ -190,6 +190,11 @@ def slot(db, doc, row, frozen=False):
             problems.append('Beyanın sürüm veya dosya doğrulama kodu uyuşmuyor. Sistem sorumlusuyla iletişime geçin.')
         problems.extend(missing_fields(item['variables'], year, active_to=active_to if code == 'EK-2' else None,
                                        department_name=department_name))
+        # Snapshot the resolved legal text together with the entered variables.
+        # Existing freezes retain any view already stored; never replace it with live text.
+        item = dict(item)
+        if 'rendered' not in item:
+            item['rendered'] = view(item)
         items.append(item)
         missing.extend(f'{code}: {problem}' for problem in problems)
     if error: missing.insert(0, error)

@@ -389,3 +389,20 @@ def report_workflow_eligibility(db, actor, action, organization_id, state='assem
         # unpublished candidate (controlled recovery); Strategy never may.
         return action=='view_candidate' or (action in {'final_approve','final_return'} and state in {'final_review','final_approved'})
     except HTTPException:return False
+
+
+def require_internal_control_access(db, actor, *, strategy=False):
+    """CIV-048 catalogue grant; independent of PP/Activity workflow activation.
+
+    Strategy administers the institution's plan. Directorate readers are scoped
+    by department in the IC query and never receive the institution catalogue.
+    """
+    actor = active_actor(db, actor)
+    if actor.role == 'strategy':
+        return actor
+    if not strategy and actor.role == 'department' and actor.department_id:
+        department = db.get(Department, actor.department_id)
+        if department:
+            scope_department(db, department.organization_id, actor.department_id)
+            return actor
+    fail('İç Kontrol için yetkiniz yok. İçe aktarma ve plan yönetimi için Strateji Geliştirme birimine başvurun.')

@@ -545,3 +545,5 @@ class StructureChangeCancellation(Base):
     created_by: Mapped[int] = mapped_column(ForeignKey('users.id'))
     created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(UTC).replace(tzinfo=None))
 from .budget_models import BudgetOperation, BudgetOperationLine
+from .internal_control_models import (ICPlan, ICStandard, ICCondition, ICAction, ICActionParty,
+                                      ICUnitAlias, ICImport, ICImportAudit)
