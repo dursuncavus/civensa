@@ -15,8 +15,10 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     strategy:
+      fail-fast: false
       matrix:
         postgres: ['18']
+        shard: [0, 1]
     services:
       postgres:
         image: postgres:${{ matrix.postgres }}
@@ -43,6 +45,8 @@ jobs:
             requirements-dev.txt
             requirements.txt
       - run: python -m pip install -r requirements-dev.txt
+      - name: Report runner CPU count
+        run: nproc
       - name: Resolve Playwright version
         id: playwright
         run: echo "version=$(python -c 'from importlib.metadata import version; print(version("playwright"))')" >> "$GITHUB_OUTPUT"
@@ -55,6 +59,11 @@ jobs:
       - run: python -m playwright install --with-deps chromium
       # Keep each module on one worker: role tests mutate cluster-wide roles,
       # and migration tests within a module can share the public schema.
-      - run: python -m pytest -q --require-postgres -n 4 --dist loadfile --max-worker-restart=0
-      - run: python -m compileall -q app
-      - run: node --check app/static/app.js
+      - run: >-
+          python -m pytest -q --require-postgres -n 2 --dist loadfile
+          --max-worker-restart=0 --ci-shard-index=${{ matrix.shard }}
+          --ci-shard-count=2 --durations=15
+      - if: matrix.shard == 0
+        run: python -m compileall -q app
+      - if: matrix.shard == 0
+        run: node --check app/static/app.js

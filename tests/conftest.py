@@ -15,10 +15,20 @@ from app.models import *
 def pytest_addoption(parser):
     parser.addoption('--require-postgres', action='store_true',
                      help='Fail if the disposable PostgreSQL test URL is missing.')
+    parser.addoption('--ci-shard-index', type=int, default=None,
+                     help='Zero-based CI shard index; omit to run the complete suite.')
+    parser.addoption('--ci-shard-count', type=int, default=None,
+                     help='Number of CI shards; must be supplied with --ci-shard-index.')
 
 
 def pytest_configure(config):
     config.addinivalue_line('markers', 'postgres: requires a disposable PostgreSQL database')
+    index = config.getoption('--ci-shard-index')
+    count = config.getoption('--ci-shard-count')
+    if (index is None) != (count is None) or (
+        index is not None and (count < 1 or not 0 <= index < count)
+    ):
+        raise pytest.UsageError('CI sharding needs both options with 0 <= index < count')
     if config.getoption('--require-postgres') and not os.getenv('CIVENSA_TEST_POSTGRES_URL'):
         raise pytest.UsageError('--require-postgres needs CIVENSA_TEST_POSTGRES_URL')
     worker = os.getenv('PYTEST_XDIST_WORKER')
@@ -42,6 +52,31 @@ def pytest_configure(config):
             raise pytest.UsageError('Could not create disposable xdist worker database') from None
         config._civensa_worker_database = (admin, name, url)
         os.environ['CIVENSA_TEST_POSTGRES_URL'] = target.set(database=name).render_as_string(hide_password=False)
+
+
+def pytest_collection_modifyitems(config, items):
+    index = config.getoption('--ci-shard-index')
+    if index is None:
+        return
+    count = config.getoption('--ci-shard-count')
+    # Partition whole files deterministically, balancing collected test counts.
+    # Every file belongs to exactly one shard. Keep original order within each
+    # shard, including modules that share public-schema or cluster-role state.
+    modules = {}
+    for item in items:
+        modules.setdefault(item.nodeid.split('::', 1)[0], []).append(item)
+    loads = [0] * count
+    assignment = {}
+    for module in sorted(modules, key=lambda name: (-len(modules[name]), name)):
+        shard = min(range(count), key=lambda candidate: (loads[candidate], candidate))
+        assignment[module] = shard
+        loads[shard] += len(modules[module])
+    selected, deselected = [], []
+    for item in items:
+        target = selected if assignment[item.nodeid.split('::', 1)[0]] == index else deselected
+        target.append(item)
+    items[:] = selected
+    config.hook.pytest_deselected(items=deselected)
 
 
 def pytest_unconfigure(config):
