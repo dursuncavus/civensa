@@ -48,6 +48,7 @@ from .config import validate_runtime_settings, session_secret, cookie_secure, de
 from .file_security import read_upload_limited, validate_office_zip
 from .report_export import build_department_docx
 from .csv_safety import csv_row, csv_text, csv_cell_matches
+from .activity_mapping_service import activity_mapping_states, mapping_gap_counts, activity_mapping_counts
 
 BASE_DIR = Path(__file__).resolve().parent
 APP_VERSION = "5.0.0"
@@ -617,7 +618,7 @@ def dashboard(request: Request, db: Session = Depends(get_db), user: User = Depe
     imports = db.scalars(select(ImportBatch).where(ImportBatch.period_id == period.id).order_by(ImportBatch.created_at.desc())).all()
     submissions = db.scalars(select(Submission).where(Submission.period_id == period.id)).all()
     status_map = {s.department_id: s.status for s in submissions}
-    unresolved_count = len(db.scalars(select(Activity).where(Activity.period_id == period.id, Activity.subprogram_id.is_(None))).all())
+    unresolved_count = activity_mapping_counts(db, period.id)["total"]
     progress = department_progress_overview(db, period)
     return templates.TemplateResponse(request, "dashboard.html", {
         "user": user, "period": period, "periods": periods, "snapshots": snapshots,
@@ -900,8 +901,10 @@ def submit_department(department_id: int, db: Session, user: User, period_id: in
 @app.get("/activity-mapping", response_class=HTMLResponse)
 def activity_mapping_page(request: Request, db: Session = Depends(get_db), user: User = Depends(require_strategy)):
     period = session_period(request, db)
+    mapping_states = activity_mapping_states(db, period.id)
+    pending_ids = [aid for aid, state in mapping_states.items() if not state["ready"]]
     activities = db.scalars(
-        select(Activity).where(Activity.period_id == period.id, Activity.subprogram_id.is_(None))
+        select(Activity).where(Activity.period_id == period.id, Activity.id.in_(pending_ids))
         .options(selectinload(Activity.department))
         .order_by(Activity.department_id, Activity.id)
     ).all()
@@ -916,7 +919,7 @@ def activity_mapping_page(request: Request, db: Session = Depends(get_db), user:
         group["choices"] = choices
         suggestions = {}
         for act in group["activities"]:
-            suggested, score = _activity_mapping_suggestion(act, choices, by_sp)
+            suggested, score = _activity_mapping_suggestion(act, choices, by_sp) if not act.subprogram_id else (None, 0)
             suggestions[act.id] = {"subprogram_id": suggested.id if suggested else None, "score": score}
             if suggested:
                 suggestion_count += 1
@@ -951,7 +954,8 @@ def activity_mapping_page(request: Request, db: Session = Depends(get_db), user:
     return templates.TemplateResponse(request, "activity_mapping.html", {
         "user": user, "period": period, "groups": list(departments.values()),
         "department_names": {did: period_name(db, period.id, group["department"]) for did, group in departments.items()},
-        "unresolved_count": len(activities), "suggestion_count": suggestion_count,
+        "unresolved_count": len(activities), "mapping_counts": mapping_gap_counts(mapping_states),
+        "mapping_states": mapping_states, "suggestion_count": suggestion_count,
         "strong_suggestion_count": strong_suggestion_count, "recent_batches": recent_batches,
     })
 
@@ -959,8 +963,10 @@ def activity_mapping_page(request: Request, db: Session = Depends(get_db), user:
 @app.get("/api/activity-mappings/export.csv")
 def export_activity_mapping_queue(request: Request, db: Session = Depends(get_db), user: User = Depends(require_strategy)):
     period = session_period(request, db)
+    mapping_states = activity_mapping_states(db, period.id)
+    pending_ids = [aid for aid, state in mapping_states.items() if not state["ready"]]
     activities = db.scalars(
-        select(Activity).where(Activity.period_id == period.id, Activity.subprogram_id.is_(None))
+        select(Activity).where(Activity.period_id == period.id, Activity.id.in_(pending_ids))
         .options(selectinload(Activity.department))
         .order_by(Activity.department_id, Activity.id)
     ).all()
@@ -969,16 +975,18 @@ def export_activity_mapping_queue(request: Request, db: Session = Depends(get_db
         grouped.setdefault(activity.department_id, []).append(activity)
     output = io.StringIO()
     writer = csv.writer(output)
-    writer.writerow(csv_row(MAPPING_CSV_HEADERS))
+    writer.writerow(csv_row(MAPPING_CSV_HEADERS + MAPPING_CSV_STATE_HEADERS))
     for department_id, pending in grouped.items():
         choices, by_sp = _department_mapping_choices(db, department_id, period.id)
         for activity in pending:
-            suggested, score = _activity_mapping_suggestion(activity, choices, by_sp)
+            suggested, score = _activity_mapping_suggestion(activity, choices, by_sp) if not activity.subprogram_id else (None, 0)
             suggestion = f"{suggested.program.name} / {suggested.name}" if suggested else ""
             level = "Güçlü" if suggested and score >= 0.50 else "Kontrol gerekli" if suggested else "Öneri yok"
             writer.writerow(csv_row([
                 period_name(db, period.id, activity.department), activity.id, activity.name, suggestion,
                 round(score * 100), level, "",
+                *["Tamam" if mapping_states[activity.id][kind] else "Eksik"
+                  for kind in ("subprogram", "card", "catalogue")],
             ]))
     data = ("\ufeff" + output.getvalue()).encode("utf-8")
     headers = {"Content-Disposition": 'attachment; filename="civensa-faaliyet-eslestirme-kuyrugu.csv"'}
@@ -991,6 +999,9 @@ MAPPING_CSV_HEADERS = [
 ]
 
 
+MAPPING_CSV_STATE_HEADERS = ["Alt program durumu", "Kart durumu", "Resmî katalog durumu"]
+
+
 def validate_mapping_csv(data: bytes, db: Session, period: ReportingPeriod):
     try:
         text = data.decode("utf-8-sig")
@@ -999,7 +1010,8 @@ def validate_mapping_csv(data: bytes, db: Session, period: ReportingPeriod):
     if "\x00" in text:
         return [], ["CSV dosyasında geçersiz karakter bulundu."]
     reader = csv.DictReader(io.StringIO(text))
-    if reader.fieldnames != MAPPING_CSV_HEADERS:
+    # Accept both existing templates and the export's informational state columns.
+    if reader.fieldnames not in (MAPPING_CSV_HEADERS, MAPPING_CSV_HEADERS + MAPPING_CSV_STATE_HEADERS):
         return [], ["Sütun başlıkları indirilen eşleştirme şablonuyla aynı olmalı."]
     try:
         source_rows = list(reader)
@@ -1099,10 +1111,8 @@ async def apply_activity_mapping_csv(
             entity_id=activity.id, details=f"batch={batch_id};subprogram_id={subprogram.id}",
         ))
     db.commit()
-    remaining = db.scalar(select(func.count(Activity.id)).where(
-        Activity.period_id == period.id, Activity.subprogram_id.is_(None)
-    ))
-    return {"ok": True, "updated": len(rows), "remaining": remaining, "batch_id": batch_id}
+    counts = activity_mapping_counts(db, period.id)
+    return {"ok": True, "updated": len(rows), "remaining": counts["total"], "mapping_gaps": counts, "batch_id": batch_id}
 
 
 @app.post("/api/activity-mappings/batches/{batch_id}/revert", dependencies=[Depends(require_pp_period)])
@@ -1216,8 +1226,8 @@ async def save_activity_mappings(request: Request, db: Session = Depends(get_db)
         db.commit()
     else:
         db.rollback()
-    remaining = len(db.scalars(select(Activity).where(Activity.period_id == period.id, Activity.subprogram_id.is_(None))).all())
-    return {"ok": bool(validated), "updated": len(validated), "remaining": remaining, "errors": []}
+    counts = activity_mapping_counts(db, period.id)
+    return {"ok": bool(validated), "updated": len(validated), "remaining": counts["total"], "mapping_gaps": counts, "errors": []}
 
 
 @app.get("/users", response_class=HTMLResponse)
@@ -1969,8 +1979,10 @@ def operations_status(request: Request, db: Session = Depends(get_db), user: Use
         .group_by(Submission.status)
     ).all()
     latest_audit = db.scalar(select(AuditLog).order_by(AuditLog.created_at.desc()).limit(1))
+    mapping_states = activity_mapping_states(db, period.id)
     unresolved = db.scalars(
-        select(Activity).where(Activity.period_id == period.id, Activity.subprogram_id.is_(None))
+        select(Activity).where(Activity.period_id == period.id,
+                               Activity.id.in_([aid for aid, state in mapping_states.items() if not state["ready"]]))
     ).all()
     mapping_suggestions = 0
     strong_mapping_suggestions = 0
@@ -1980,6 +1992,8 @@ def operations_status(request: Request, db: Session = Depends(get_db), user: Use
     for department_id, pending in unresolved_by_department.items():
         choices, by_sp = _department_mapping_choices(db, department_id, period.id)
         for activity in pending:
+            if activity.subprogram_id:
+                continue
             suggested, score = _activity_mapping_suggestion(activity, choices, by_sp)
             if suggested:
                 mapping_suggestions += 1
@@ -2002,6 +2016,7 @@ def operations_status(request: Request, db: Session = Depends(get_db), user: Use
             "indicators": count(Indicator, Indicator.period_id == period.id),
             "activities": count(Activity, Activity.period_id == period.id),
             "unresolved_activities": len(unresolved),
+            "mapping_gaps": mapping_gap_counts(mapping_states),
             "mapping_suggestions": mapping_suggestions,
             "strong_mapping_suggestions": strong_mapping_suggestions,
             "workflow_events": count(SubmissionEvent, SubmissionEvent.period_id == period.id),
@@ -2035,6 +2050,7 @@ def release_readiness(request: Request, db: Session = Depends(get_db), user: Use
         "departments_present": operations["records"]["departments"] > 0,
         "indicators_present": operations["records"]["indicators"] > 0,
         "activities_present": operations["records"]["activities"] > 0,
+        "activity_mappings_complete": operations["records"]["unresolved_activities"] == 0,
         "no_orphan_activities": orphan_activities == 0,
         "no_orphan_indicators": orphan_indicators == 0,
         "no_duplicate_active_department_accounts": len(duplicate_accounts) == 0,
@@ -2173,6 +2189,7 @@ def department_progress_overview(db: Session, period: ReportingPeriod):
     ).all()
     indicators_by_department = {}
     activities_by_department = {}
+    mapping_states = activity_mapping_states(db, period.id)
     for indicator in indicators:
         indicators_by_department.setdefault(indicator.department_id, []).append(indicator)
     for activity in activities:
@@ -2210,7 +2227,8 @@ def department_progress_overview(db: Session, period: ReportingPeriod):
         indicator_problem_count = sum(
             len(indicator_issues(indicator, period.year)) for indicator in dept_indicators
         )
-        unresolved_count = sum(1 for activity in dept_activities if not activity.subprogram_id)
+        mapping_counts = mapping_gap_counts({activity.id: mapping_states[activity.id] for activity in dept_activities})
+        unresolved_count = mapping_counts["total"]
         total_checks = len(dept_indicators) * 6 + len(dept_activities)
         completed_checks = max(
             0,
@@ -2254,6 +2272,7 @@ def department_progress_overview(db: Session, period: ReportingPeriod):
             "warning_count": warning_count,
             "indicator_issues": indicator_problem_count,
             "unresolved_activities": unresolved_count,
+            "mapping_gaps": mapping_counts,
             "indicator_count": len(dept_indicators),
             "activity_count": len(dept_activities),
             "has_department_user": has_department_user,
