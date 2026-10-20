@@ -13,6 +13,12 @@ diye durdu. Sahibin 20 Ekim 2026, 16:30 (Türkiye) salt okunur envanterinde dön
 Son uygulama sonrasında PP içerik düzenlemesi bulunmadığı bildirildi.
 Araç bu beyanı yeterli saymaz; her çalışmada tekrar denetler.
 
+**D-135 kapsam kararı:** doğrulanmış 20 Ekim 16:47 Türkiye saati yedeğinde
+31 müdürlük için 93 müdürlük maliyet değeri bulundu. Yalnız personnel_sgk
+kategorisi, ön baskı paketlerine izlenen müdürlükler ve arşiv planıyla tam eşleşen
+personel değerleri temizlenebilir. Başka kategori, eksik/fazla/değişmiş hücre veya
+son uygulamadan sonraki herhangi bir müdürlük denetim kaydı temizliği durdurur.
+
 Bu görevde canlı veritabanı, Render, merge veya deploy çalıştırılmaz. Aşağıdaki
 canlı adımları ayrı operasyon zamanında sahibi yürütür. Hedef release #50,
 main 6b4d834, Alembic c048a1b2c3d4; farklıysa durun. Migrasyon veya Render
@@ -102,6 +108,11 @@ planı (0 yazma) çalıştırır. Planlarda bütün satırlar ve sıra sayaçlar
 İki uygulamadan hemen önce geçici hedefin **yeni gerçek yedeği** alınır; başka
 boş veritabanına geri yüklenip satır/sıra/sayım/şema doğrulanır. Bu hedef yedekleri
 60 dakikadan yeni olmalıdır. Üretim artifact'inin tarihi değiştirilmez.
+
+D-135 provasında temizleme planı **tam 93 department_cost_values** göstermelidir;
+her müdürlüğün sayımı JSON'a yazılır. Fark varsa hiçbir uygulama başlamaz.
+Kaynak olarak en güncel mevcut yeşil artifact'i seçin; kaynak en çok 48 saatlik,
+her apply öncesi üretilen doğrulanmış geçici hedef yedeği 60 dakikadan yeni olmalıdır.
 
 İki yazma için ayrı istemde sırasıyla **2027 ON BASKI TASLAGINI SIL** ve
 **261cd17fd0be** yazın. Yalnız geçici yerel kopya değişir.
@@ -197,15 +208,21 @@ BASH
 
 Beklenen: PLAN: Hedefe 0 satır yazıldı.; her müdürlükte Temizle satırı,
 paket numarası ve gösterge/değer/faaliyet/maliyet/teslim sayısı; ardından
-JSON counts ve departments. Salt okunur işlem sıra sayaçlarını da değiştirmez.
+JSON counts ve departments; ayrıca her müdürlüğün personel/SGK maliyet sayısı. Salt okunur işlem sıra sayaçlarını da değiştirmez.
 Sahibi tüm müdürlükleri/sayımları yerel PASS provasıyla karşılaştırsın.
 
 Araç şu durumların her birinde Türkçe gerekçeyle **0 satır yazıp durur**:
 
-- Herhangi bir 2027 rapor kartı, ekonomik değer, müdürlük maliyet değeri veya yayın;
-  taslak dışı teslim; first_load_department işareti.
-- Son uygulanan ön baskı paketinden sonra PP içerik denetim kaydı; silinmiş
-  kayda veya dönemi belirsiz kayda ilişkin düzenleme de durdurur.
+- Herhangi bir 2027 rapor kartı, ekonomik değer veya yayın; taslak dışı teslim;
+  first_load_department işareti.
+- Müdürlük maliyetlerinde personnel_sgk dışında kategori; pakete izlenmeyen
+  müdürlük; arşiv personel planına göre eksik/fazla/değişmiş hücre.
+  Importer'ın seen_personnel döngüsü gibi uygun ilk (year, kind) kaydı alınır;
+  (year, value_kind, category, amount, raw_text, state) çoklu kümesi birebir eşleşmelidir.
+  Boş ile sıfır ve ham metin/durum farkları korunur.
+- Son uygulanan ön baskı paketinden sonra personnel_cost_update veya herhangi
+  bir department denetim kaydı; başka PP içerik düzenlemesi, silinmiş kayda veya
+  dönemi belirsiz kayda ilişkin düzenleme de durdurur.
 - 3–10 dışı/değişmiş paket envanteri veya 21 Eylül dışı uygulama zamanı.
 - Son ilgili paket planıyla birebir uyuşmayan gösterge/faaliyet/değer,
   inceleme geçmişi, kalıcı gösterge kimliği veya kökeni kanıtlanamayan başka
@@ -216,7 +233,8 @@ olayı için oluşturma kökeni taşımıyor. Böyle kayıtlar varsa “ön bask
 diye varsayılmaz; oluşturulma izi olmadığı için temizleme reddedilir. Koruma gevşetilmez.
 Yalnız login, doğrulanmış kullanıcı işlemleri, yedek dışa aktarma, dönem
 etkinleştirme ve civ025_tracking_started gibi içerik dışı kayıtlar engel değildir.
-2026'ya kesin bağlanabilen içerik denetimleri de korunur.
+2026'ya kesin bağlanabilen tekil gösterge/faaliyet gibi içerik denetimleri korunur;
+müdürlük denetimleri, açıklamasında 2026 yazsa da D-135 gereği reddedilir.
 
 ## 5. Veri girişini durdurun; yeni doğrulanmış yedek alın
 
@@ -288,7 +306,8 @@ isteminden sonra ve kilit/köken kontrolleri bitip ilk silme başlamadan hemen �
 tekrar denetlenir; tablo kilidi beklemesi 10 saniye ile sınırlıdır.
 
 Tek işlemde yalnız 2027 göstergelerinin değerleri/göstergeler, faaliyet maliyetleri/
-faaliyetler ve kökeni doğrulanmış taslak teslimler temizlenir. Denetim tüm
+faaliyetler, arşiv planına birebir eşlenen personel/SGK müdürlük maliyetleri ve
+kökeni doğrulanmış taslak teslimler temizlenir. Denetim tüm
 ret kontrollerini kilitler alındıktan sonra yapar. Hata olursa tüm temizlik geri
 alınır. Temizlenecek kapsam/bağlantı/olay varsa oluşturulma kökeni de zorunludur;
 bu onaylı eski paketlerde böyle bir köken bulunmadığından varlıkları reddedilir.
@@ -297,7 +316,7 @@ Müdürlükler, kullanıcılar, dönemler, 2026 verisi, program/alt program kata
 tüm audit_log ve import_batches satırları tutulur. Paketlerin içerik/snapshot/
 hash/tarih alanları değişmez; 3–10 paketlerinin durumu **superseded** olur.
 Bu durum eski preview/apply/revert düğmelerinin artık kullanılmasını engeller.
-Tek preprint_2027_cleared denetim kaydı D-131, silinen sayımlar ve korunan
+Tek preprint_2027_cleared denetim kaydı sürüm 2 / D-135, personel/SGK dahil silinen sayımlar ve korunan
 paket/katalog hash'lerini içerir.
 
 Bloktaki ikinci komut artık normal ilk yükleme planını vermelidir:
@@ -417,6 +436,9 @@ meşru değişikliklerin korunmasını sorumlu ayrıca planlar.
 Disposable PostgreSQL 18 testleri planın bütün tablo/sıra değerlerini korumasını,
 ret koşullarını, atomik geri almayı, 2026 ve korunan kayıtları, ikinci temizlemenin
 0 yazmasını ve 33/61/256/285/1300 basılı yükleme zincirini doğrular.
+D-135 regresyonları eşleşen 93 personel/SGK satırının kaldırılmasını, tek tutar/ham
+metin/durum değişikliğini, eksik/fazla satırı, başka kategoriyi ve sonradan
+personnel_cost_update/müdürlük denetimini 0 yazmayla reddetmeyi kapsar.
 **Sentetik CI verisi gerçek üretim yedeği provası değildir.** Gerçek yedek
 provasının kanıtı 2. adımda sahibin ürettiği PASS JSON'udur; bu kanıt olmadan
 canlı işleme geçilmez. Canlı bağlantı/rol, doğru artifact, gerçek veri giriş

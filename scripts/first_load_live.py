@@ -341,7 +341,7 @@ def main(argv=None):
     parser.add_argument('--backup', type=Path, help='Doğrulanmış, 60 dakikadan yeni .dump dosyası')
     parser.add_argument('--resume', action='store_true', help='Tamamlanmış müdürlükleri hiç değiştirmeden atla')
     parser.add_argument('--clear-preprint', action='store_true',
-                        help='D-131 ön baskı temizleme planı; yalnız --apply ile yazar')
+                        help='D-131 / D-135 ön baskı temizleme planı; yalnız --apply ile yazar')
     args = parser.parse_args(argv)
     try:
         # The app.db module creates a default engine on import. It must only see
@@ -389,7 +389,8 @@ def main(argv=None):
                 print(f"Temizle: {department['name']} (müdürlük #{department['department_id']}, "
                       f"paket #{department['batch_id']}) · {c['indicators']} gösterge, "
                       f"{c['indicator_values']} gösterge değeri, {c['activities']} faaliyet, "
-                      f"{c['activity_cost_values']} faaliyet maliyeti, {c['submissions']} taslak teslim")
+                      f"{c['activity_cost_values']} faaliyet maliyeti, "
+                      f"{c['department_cost_values']} personel/SGK maliyeti, {c['submissions']} taslak teslim")
             if result['already_cleared']:
                 print('Ön baskı zaten temizlenmiş; 0 satır yazıldı.')
         elif not args.apply:

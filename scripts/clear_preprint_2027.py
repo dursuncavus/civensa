@@ -1,5 +1,6 @@
 """CIV-058: fail-closed pre-print removal; CLI lives in first_load_live.py."""
 from collections import Counter
+from copy import deepcopy
 from datetime import date, timedelta
 from decimal import Decimal, ROUND_HALF_UP
 import hashlib
@@ -16,7 +17,7 @@ CONFIRMATION = '2027 ON BASKI TASLAGINI SIL'
 BATCH_STATES = {3: 'preview', 4: 'applied', 5: 'applied', 6: 'reverted',
                 7: 'applied', 8: 'applied', 9: 'applied', 10: 'applied'}
 FIELDS = ('indicator_values', 'indicators', 'activity_cost_values', 'activity_catalogue_links',
-          'activities', 'submission_events', 'submissions', 'subprogram_scopes', 'department_scopes')
+          'activities', 'department_cost_values', 'submission_events', 'submissions', 'subprogram_scopes', 'department_scopes')
 CATALOGUE = ('programs', 'subprograms', 'official_activities', 'activity_responsibilities')
 
 
@@ -62,7 +63,7 @@ def clearance(db, period_id):
         details = json.loads(logs[0].details)
         batches = db.scalars(select(ImportBatch).where(ImportBatch.period_id == period_id)).all()
         actual = {str(b.id): digest(batch_state(b)) for b in batches}
-        valid = (details['version'] == 1 and details['year'] == 2027
+        valid = (details['version'] == 2 and details['decision'] == 'D-135' and details['year'] == 2027
                  and details['head'] == HEAD and set(actual) == set(map(str, BATCH_STATES))
                  and all(b.status == 'superseded' for b in batches)
                  and details['batches'] == actual
@@ -108,6 +109,8 @@ def audit_guard(db, period_id, cutoff, terminal_batch_id):
               'economic_value': m.EconomicValue, 'economic_values': m.EconomicValue,
               'department_cost_values': m.DepartmentCostValue}
     for log in db.scalars(select(m.AuditLog).where(m.AuditLog.created_at >= cutoff)):
+        if log.entity_type == 'department' or log.action == 'personnel_cost_update':
+            refuse('Son ön baskı uygulamasından sonra personel maliyeti veya müdürlük denetim kaydı var')
         if (log.action in safe_user and log.entity_type in {'user', 'user_batch'}):
             continue
         if ((log.action == 'operations_backup_export' and log.entity_type == 'database')
@@ -119,14 +122,6 @@ def audit_guard(db, period_id, cutoff, terminal_batch_id):
                 and log.entity_id == terminal_batch_id
                 and log.created_at <= cutoff + timedelta(seconds=1)):
             continue
-        if log.action == 'pp_data_change' and log.entity_type == 'department':
-            # This existing audit contract carries an exact, unambiguous period.
-            other = db.scalar(select(m.ReportingPeriod.id).where(
-                m.ReportingPeriod.id != period_id,
-                text("'period_id=' || CAST(reporting_periods.id AS TEXT) = :audit_period")
-            ).params(audit_period=log.details))
-            if other is not None:
-                continue
         model = models.get(log.entity_type)
         obj = db.get(model, log.entity_id) if model and log.entity_id else None
         if obj is not None and obj.period_id != period_id:
@@ -177,6 +172,62 @@ def source_values(rows, money=False):
 def row_values(rows, money=False):
     return sorted((value_signature({c.name: getattr(v, c.name) for c in v.__table__.columns},
                                    money) for v in rows), key=encoded)
+
+
+def archived_payload(payload):
+    """Fill only the old importer's documented defaults, without editing the batch.
+
+    Current preview review helpers require state. Legacy Word payloads predate
+    that field; the write loops used verified, str(amount) for indicator/activity
+    raw text, and empty raw text for personnel. Explicit fields stay untouched.
+    """
+    payload = deepcopy(payload)
+    for department in payload['departments']:
+        for block in department.get('blocks', []):
+            for indicator in block.get('indicators', []):
+                for row in indicator.get('values', []):
+                    row.setdefault('state', 'verified')
+                    row.setdefault('raw_text', str(row.get('value')))
+        for activity in department.get('activities', []):
+            for row in activity.get('costs', []):
+                row.setdefault('state', 'verified')
+                row.setdefault('raw_text', str(row.get('amount')))
+        for row in department.get('personnel', []):
+            row.setdefault('state', 'verified')
+            row.setdefault('raw_text', '')
+    return payload
+
+
+def personnel_signature(row):
+    return (int(row['year']), str(row.get('kind', row.get('value_kind'))),
+            row.get('category', 'personnel_sgk'), number(row.get('amount'), True),
+            row.get('raw_text', ''), row.get('state', 'verified'))
+
+
+def source_personnel(rows):
+    """Exactly the importer's seen_personnel loop: first eligible (year, kind)."""
+    signatures, seen_personnel = [], set()
+    for row in rows:
+        key = (row.get('year'), row.get('kind'))
+        amount = row.get('amount')
+        if (key[0] is None or not key[1]
+                or (amount is None and row.get('state') not in {'needs_review', 'not_applicable'})
+                or key in seen_personnel):
+            continue
+        seen_personnel.add(key)
+        signatures.append(personnel_signature(dict(row, category='personnel_sgk')))
+    return Counter(signatures)
+
+
+def check_personnel(db, did, source, period_id):
+    from app.models import DepartmentCostValue
+    rows = db.scalars(select(DepartmentCostValue).where(
+        DepartmentCostValue.period_id == period_id, DepartmentCostValue.department_id == did)).all()
+    actual = Counter(personnel_signature({c.name: getattr(row, c.name)
+                                          for c in row.__table__.columns}) for row in rows)
+    if actual != source_personnel(source.get('personnel', [])):
+        refuse('2027 personel/SGK maliyet satırı arşiv paket planına izlenemiyor (eksik/fazla/değişmiş)')
+    return [row.id for row in rows]
 
 
 def check_department(db, did, source, period_id):
@@ -244,15 +295,18 @@ def build_plan(db, organization_id, actor_id):
     period = base_context(db, organization_id, actor_id)
     pid = period.id
     for model, label in ((m.ReportCard, 'rapor kartı'), (m.EconomicValue, 'ekonomik değer'),
-                         (m.DepartmentCostValue, 'müdürlük maliyet değeri'), (m.Publication, 'yayın')):
+                         (m.Publication, 'yayın')):
         if db.scalar(select(model.id).where(model.period_id == pid).limit(1)):
             refuse('2027 ' + label + ' var; ön baskı temizlenemez')
+    if db.scalar(select(m.DepartmentCostValue.id).where(m.DepartmentCostValue.period_id == pid,
+            m.DepartmentCostValue.category != 'personnel_sgk').limit(1)):
+        refuse('2027 müdürlük maliyetinde personnel_sgk dışında kategori var')
     submissions = db.scalars(select(m.Submission).where(m.Submission.period_id == pid)).all()
     if any(s.status != 'draft' for s in submissions):
         refuse('2027 teslim kaydı taslak (draft) değil')
     if clearance(db, pid):
         # A receipt is never a licence to delete rows introduced after clearing.
-        for model in (m.Indicator, m.Activity, m.Submission, m.SubmissionEvent, m.DepartmentScope):
+        for model in (m.Indicator, m.Activity, m.DepartmentCostValue, m.Submission, m.SubmissionEvent, m.DepartmentScope):
             if db.scalar(select(model).where(model.period_id == pid).limit(1)):
                 refuse('Temizleme sonrası yeni 2027 satırı var')
         return period, dict(mode='clear-preprint-plan', counts={k: 0 for k in FIELDS},
@@ -276,7 +330,7 @@ def build_plan(db, organization_id, actor_id):
             snapshot = json.loads(batch.snapshot_json)
             affected = {int(d['department_id']) for d in snapshot['departments']}
             affected.update(int(x) for x in snapshot['created_department_ids'])
-            plan = build_department_plan(db, json.loads(batch.payload_json),
+            plan = build_department_plan(db, archived_payload(json.loads(batch.payload_json)),
                                          json.loads(batch.decisions_json or '[]'))
             if plan['unresolved'] or plan['unresolved_conflicts']:
                 raise ValueError
@@ -321,7 +375,7 @@ def build_plan(db, organization_id, actor_id):
     ids = {name: [] for name in FIELDS}
     counts, departments = Counter({k: 0 for k in FIELDS}), []
     target_dids = set()
-    for model in (m.Indicator, m.Activity, m.Submission, m.DepartmentScope, m.SubmissionEvent):
+    for model in (m.Indicator, m.Activity, m.DepartmentCostValue, m.Submission, m.DepartmentScope, m.SubmissionEvent):
         target_dids.update(db.scalars(select(model.department_id).where(model.period_id == pid)))
     if target_dids - sources.keys():
         refuse('2027 satırı ön baskı paket müdürlüklerine izlenemiyor')
@@ -329,9 +383,13 @@ def build_plan(db, organization_id, actor_id):
     # scopes/catalogue links. Never infer ownership from department membership.
     if db.scalar(select(m.DepartmentScope.id).where(m.DepartmentScope.period_id == pid).limit(1)):
         refuse('2027 kapsam/alt program bağlantısının ön baskı paketinde oluşturulma izi yok')
+    # Include every traced department: deleting a whole personnel group cannot
+    # hide missing archived rows merely by removing its last live row.
+    target_dids.update(sources)
     for did in sorted(target_dids):
         indicators, activities = check_department(db, did, sources[did], pid)
         local = {k: [] for k in FIELDS}
+        local['department_cost_values'] = check_personnel(db, did, sources[did], pid)
         local['indicators'] = [i.id for i in indicators]
         local['activities'] = [a.id for a in activities]
         local['indicator_values'] = list(db.scalars(select(m.IndicatorValue.id).where(
@@ -416,7 +474,7 @@ def execute(engine, *, organization_id, actor_id, apply=False, before_write=None
                 for batch in batches:
                     batch.status = 'superseded'
                 db.flush()
-                receipt = dict(version=1, year=2027, head=HEAD, decision='D-131',
+                receipt = dict(version=2, year=2027, head=HEAD, decision='D-135',
                                counts=result['counts'],
                                batches={str(b.id): digest(batch_state(b)) for b in batches},
                                retained_catalogue=catalogue_state(db, period.id))

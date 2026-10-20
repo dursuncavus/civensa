@@ -165,7 +165,11 @@ def rehearse(backup, organization_id, actor_id, record):
                 raise
             if snapshot(engine) != before:
                 raise live.Refusal('Temizleme planı satır/sıra değiştirdi.')
-            record['steps'].append(dict(step='clear-plan', counts=plan['counts'], writes=0))
+            record['steps'].append(dict(step='clear-plan', counts=plan['counts'], writes=0,
+                rows_and_sequences_unchanged=True,
+                departments=[{k: d[k] for k in ('department_id', 'batch_id', 'counts')} for d in plan['departments']]))
+            if plan['counts']['department_cost_values'] != 93:
+                raise live.Refusal('D-135 provası tam 93 personel/SGK maliyet satırı planlamalıdır; 0 satır yazıldı.')
             print('Temizleme planı: ' + json.dumps(plan['counts'], ensure_ascii=False))
             if input(f'Yalnız geçici yerel kopya için {clear.CONFIRMATION} yazın: ') != clear.CONFIRMATION:
                 raise live.Refusal('Yerel temizleme onayı uyuşmuyor.')
