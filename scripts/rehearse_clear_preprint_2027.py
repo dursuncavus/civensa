@@ -193,12 +193,17 @@ def main(argv=None):
     parser.add_argument('--actor-id', type=int, required=True)
     parser.add_argument('--out', type=Path, default=Path('civ058-rehearsal-counts.json'))
     args = parser.parse_args(argv)
+    if args.out.resolve() in {args.backup.resolve(), args.backup.with_suffix('.manifest.json').resolve()}:
+        print('DURDU: Sayım raporu yedek/manifest dosyasının üzerine yazılamaz.', file=sys.stderr)
+        return 1
     record = dict(status='FAIL', steps=[])
     # No source contents, source URL, database password or row values in output.
     previous_mask = os.umask(0o077)
     try:
         rehearse(args.backup, args.organization_id, args.actor_id, record)
         record['status'] = 'PASS'
+    except KeyboardInterrupt:
+        print('DURDU: Yerel prova kesildi; geçici kopyalar kaldırıldı.', file=sys.stderr)
     except live.Refusal as exc:
         print('DURDU: ' + str(exc), file=sys.stderr)
     except Exception:
