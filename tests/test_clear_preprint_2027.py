@@ -308,3 +308,37 @@ def test_private_rehearsal_child_diagnostics_are_suppressed(monkeypatch, capsys)
     with pytest.raises(live.Refusal):
         rehearsal.private(['pg_restore', 'sentinel-private-path'], {})
     assert 'sentinel-private-path' not in str(capsys.readouterr())
+
+
+def test_runbook_blocks_are_independent_bash():
+    import re
+    import subprocess
+    blocks = re.findall(r'```bash\n(.*?)```', (live.ROOT / 'docs/first-load/live-runbook.md').read_text(), re.S)
+    assert len(blocks) >= 9
+    for block in blocks:
+        assert block.startswith("bash <<'BASH'\n")
+        result = subprocess.run(['bash', '-n'], input=block, capture_output=True, text=True)
+        assert result.returncode == 0, result.stderr
+        if 'CIVENSA_FIRST_LOAD_DATABASE_URL' in block and 'export CIVENSA_FIRST_LOAD_DATABASE_URL' in block:
+            assert "read -r -s -p " in block and '</dev/tty' in block
+            assert "trap 'unset CIVENSA_FIRST_LOAD_DATABASE_URL' EXIT" in block
+
+
+@pytest.mark.postgres
+def test_proven_2026_edit_is_preserved_and_retained_state_cannot_drift(target, printed):
+    engine, ids, extra = target
+    with Session(engine) as db:
+        db.add_all([m.AuditLog(action='indicator_update', entity_type='indicator',
+                              entity_id=extra['old_indicator_id'], created_at=datetime(2026, 10, 20)),
+                    m.AuditLog(action='pp_data_change', entity_type='department',
+                              entity_id=extra['department_id'], details='period_id=1',
+                              created_at=datetime(2026, 10, 20))])
+        db.commit()
+    clear.execute(engine, apply=True, **ids)
+    with Session(engine) as db:
+        db.get(m.ImportBatch, 3).payload_json = '{"changed":true}'
+        db.commit()
+    before = state(engine)
+    with pytest.raises(live.Refusal, match='denetim izi değişmiş'):
+        live.execute(engine, printed, **ids)
+    assert state(engine) == before
