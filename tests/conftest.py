@@ -7,6 +7,8 @@ from sqlalchemy import create_engine, event, select, inspect, text, MetaData, Ta
 from sqlalchemy.schema import CreateSchema, DropSchema
 from sqlalchemy.orm import Session, with_expression
 from sqlalchemy.pool import StaticPool
+from sqlalchemy.engine import make_url
+from psycopg import sql
 from app.db import Base
 from app.models import *
 
@@ -19,6 +21,41 @@ def pytest_configure(config):
     config.addinivalue_line('markers', 'postgres: requires a disposable PostgreSQL database')
     if config.getoption('--require-postgres') and not os.getenv('CIVENSA_TEST_POSTGRES_URL'):
         raise pytest.UsageError('--require-postgres needs CIVENSA_TEST_POSTGRES_URL')
+    worker = os.getenv('PYTEST_XDIST_WORKER')
+    url = os.getenv('CIVENSA_TEST_POSTGRES_URL')
+    if worker and url:
+        # Do this before any fixture runs, including module-local migration
+        # fixtures and their Alembic subprocesses. Schemas alone do not isolate
+        # tests that migrate the public schema.
+        target = make_url(url)
+        if target.get_backend_name() != 'postgresql':
+            raise pytest.UsageError('xdist requires a disposable PostgreSQL test URL')
+        name = f'civensa_xdist_{worker}_{uuid4().hex}'
+        admin = create_engine(target, isolation_level='AUTOCOMMIT', hide_parameters=True)
+        try:
+            with admin.connect() as connection:
+                connection.exec_driver_sql(
+                    sql.SQL('CREATE DATABASE {}').format(sql.Identifier(name)).as_string()
+                )
+        except Exception:
+            admin.dispose()
+            raise pytest.UsageError('Could not create disposable xdist worker database') from None
+        config._civensa_worker_database = (admin, name, url)
+        os.environ['CIVENSA_TEST_POSTGRES_URL'] = target.set(database=name).render_as_string(hide_password=False)
+
+
+def pytest_unconfigure(config):
+    database = getattr(config, '_civensa_worker_database', None)
+    if database is not None:
+        admin, name, original_url = database
+        try:
+            with admin.connect() as connection:
+                connection.exec_driver_sql(
+                    sql.SQL('DROP DATABASE {} WITH (FORCE)').format(sql.Identifier(name)).as_string()
+                )
+        finally:
+            admin.dispose()
+            os.environ['CIVENSA_TEST_POSTGRES_URL'] = original_url
 
 
 @pytest.fixture(autouse=True)
