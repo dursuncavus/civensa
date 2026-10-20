@@ -585,3 +585,28 @@ def test_preview_and_reverted_archives_trace_retained_catalogue_only(target):
     clear.execute(engine, apply=True, **ids)
     with Session(engine) as db:
         assert len(db.scalars(select(m.Program).where(m.Program.period_id == extra['period_id'])).all()) == 3
+
+
+
+@pytest.mark.postgres
+def test_snapshot_preexisting_catalogue_is_preserved_without_claiming_content_ownership(target):
+    engine, ids, extra = target
+    with Session(engine) as db:
+        program = m.Program(period_id=extra['period_id'], name='Paket öncesi sabit katalog')
+        db.add(program)
+        db.flush()
+        sp = m.SubProgram(period_id=extra['period_id'], program_id=program.id, name='Paket öncesi sabit alt program')
+        db.add(sp)
+        db.flush()
+        batch = db.get(m.ImportBatch, 4)
+        snapshot = json.loads(batch.snapshot_json)
+        snapshot.update(preexisting_program_ids=[program.id], preexisting_subprogram_ids=[sp.id])
+        batch.snapshot_json = json.dumps(snapshot)
+        db.commit()
+    before = state(engine)
+    assert clear.execute(engine, **ids)['counts']['department_cost_values'] == 93
+    assert state(engine) == before
+    clear.execute(engine, apply=True, **ids)
+    after = state(engine)
+    for table in ('programs', 'subprograms'):
+        assert after[0][table] == before[0][table]

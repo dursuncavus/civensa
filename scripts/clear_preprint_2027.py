@@ -336,6 +336,11 @@ def build_plan(db, organization_id, actor_id):
     try:
         catalogue_sources = [source for batch in batches
             for source in json.loads(batch.payload_json)['departments']]
+        catalog_snapshots = [json.loads(batch.snapshot_json) for batch in batches]
+        baseline_programs = {int(i) for snapshot in catalog_snapshots
+            for i in snapshot.get('preexisting_program_ids', [])}
+        baseline_subprograms = {int(i) for snapshot in catalog_snapshots
+            for i in snapshot.get('preexisting_subprogram_ids', [])}
     except (KeyError, TypeError, ValueError):
         refuse('Ön baskı katalog planı kökeni doğrulanamadı')
     for batch in applied:
@@ -382,10 +387,11 @@ def build_plan(db, organization_id, actor_id):
             subprogrammes.add((p, sp))
     programs = db.scalars(select(m.Program).where(m.Program.period_id == pid)).all()
     program_names = {p.id: p.name for p in programs}
-    if any(p.name not in programmes for p in programs):
+    if any(p.id not in baseline_programs and p.name not in programmes for p in programs):
         refuse('2027 program satırı ön baskı planına izlenemiyor')
     for sp in db.scalars(select(m.SubProgram).where(m.SubProgram.period_id == pid)):
-        if (program_names.get(sp.program_id), sp.name) not in subprogrammes:
+        if (sp.program_id not in program_names or (sp.id not in baseline_subprograms
+                and (program_names[sp.program_id], sp.name) not in subprogrammes)):
             refuse('2027 alt program satırı ön baskı planına izlenemiyor')
     # The approved legacy plans provide no creation proof for official entries.
     if db.scalar(select(m.OfficialActivity.id).where(m.OfficialActivity.period_id == pid).limit(1)):

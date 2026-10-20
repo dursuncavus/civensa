@@ -55,6 +55,8 @@ def payload_shape(db, period_id):
             values = [v for i in indicators for v in i.get('values', [])]
             costs = [v for d in departments for a in d.get('activities', []) for v in a.get('costs', [])]
             result[str(batch.id)] = dict(
+                snapshot_preexisting_programs=len(snapshot.get('preexisting_program_ids', [])),
+                snapshot_preexisting_subprograms=len(snapshot.get('preexisting_subprogram_ids', [])),
                 snapshot_has_created_ids='created_department_ids' in snapshot,
                 snapshot_has_departments='departments' in snapshot,
                 snapshot_affected_ids=[d.get('department_id') for d in snapshot.get('departments', [])],
