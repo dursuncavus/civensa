@@ -119,6 +119,14 @@ def audit_guard(db, period_id, cutoff, terminal_batch_id):
                 and log.entity_id == terminal_batch_id
                 and log.created_at <= cutoff + timedelta(seconds=1)):
             continue
+        if log.action == 'pp_data_change' and log.entity_type == 'department':
+            # This existing audit contract carries an exact, unambiguous period.
+            other = db.scalar(select(m.ReportingPeriod.id).where(
+                m.ReportingPeriod.id != period_id,
+                text("'period_id=' || CAST(reporting_periods.id AS TEXT) = :audit_period")
+            ).params(audit_period=log.details))
+            if other is not None:
+                continue
         model = models.get(log.entity_type)
         obj = db.get(model, log.entity_id) if model and log.entity_id else None
         if obj is not None and obj.period_id != period_id:
@@ -252,6 +260,9 @@ def build_plan(db, organization_id, actor_id):
     batches = db.scalars(select(m.ImportBatch).where(m.ImportBatch.period_id == pid)).all()
     if {b.id: b.status for b in batches} != BATCH_STATES:
         refuse('2027 ön baskı paket envanteri D-131 ile uyuşmuyor (3–10)')
+    if (any(b.created_at.date() != date(2026, 9, 21) for b in batches)
+            or len({b.created_by for b in batches}) != 1 or batches[0].created_by is None):
+        refuse('Ön baskı paket oluşturma zamanı/aktörü onaylı envanterle uyuşmuyor')
     applied = sorted((b for b in batches if b.status == 'applied'),
                      key=lambda b: (b.applied_at or b.created_at, b.id))
     if any(b.applied_at is None or b.applied_at.date() != date(2026, 9, 21)
