@@ -342,3 +342,51 @@ def test_proven_2026_edit_is_preserved_and_retained_state_cannot_drift(target, p
     with pytest.raises(live.Refusal, match='denetim izi değişmiş'):
         live.execute(engine, printed, **ids)
     assert state(engine) == before
+
+
+@pytest.mark.postgres
+def test_earlier_import_catalogue_is_kept_and_late_reapply_audit_is_refused(target):
+    engine, ids, extra = target
+    with Session(engine) as db:
+        batch = db.get(m.ImportBatch, 4)
+        payload = json.loads(batch.payload_json)
+        for dept in payload['departments']:
+            for block in dept['blocks']:
+                block['program'] = 'Önceki paket programı'
+                block['subprogram'] = 'Önceki paket alt programı'
+        batch.payload_json = json.dumps(payload, ensure_ascii=False)
+        program = m.Program(period_id=extra['period_id'], name='Önceki paket programı')
+        db.add(program)
+        db.flush()
+        sp = m.SubProgram(period_id=extra['period_id'], program_id=program.id,
+                          name='Önceki paket alt programı')
+        db.add(sp)
+        db.commit()
+        saved_sp = sp.id
+    before = state(engine)
+    clear.execute(engine, **ids)
+    assert state(engine) == before
+    with Session(engine) as db:
+        db.add(m.AuditLog(action='data_import_apply', entity_type='import_batch', entity_id=10,
+                         created_at=datetime(2026, 10, 20)))
+        db.commit()
+    before = state(engine)
+    with pytest.raises(live.Refusal, match='denetim kaydı'):
+        clear.execute(engine, apply=True, **ids)
+    assert state(engine) == before
+    with Session(engine) as db:
+        assert db.get(m.SubProgram, saved_sp).name == 'Önceki paket alt programı'
+
+
+@pytest.mark.postgres
+def test_backup_freshness_is_rechecked_after_guards_before_first_delete(target):
+    engine, ids, _ = target
+    before = state(engine)
+    calls = []
+    def expired():
+        calls.append('checked')
+        raise live.Refusal('Yedek süresi doldu')
+    with pytest.raises(live.Refusal, match='Yedek süresi doldu'):
+        clear.execute(engine, apply=True, before_write=expired, **ids)
+    assert calls == ['checked']
+    assert state(engine) == before

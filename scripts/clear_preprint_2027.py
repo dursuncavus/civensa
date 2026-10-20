@@ -270,7 +270,7 @@ def build_plan(db, organization_id, actor_id):
         refuse('Ön baskı paket uygulama zamanı onaylı 21 Eylül envanteriyle uyuşmuyor')
     audit_guard(db, pid, applied[-1].applied_at, applied[-1].id)
     # Rebuild archived plans without any write service or trial writes.
-    sources, provenance = {}, {}
+    sources, provenance, catalogue_sources = {}, {}, []
     for batch in applied:
         try:
             snapshot = json.loads(batch.snapshot_json)
@@ -283,6 +283,7 @@ def build_plan(db, organization_id, actor_id):
             mapping = {department_key(x['source_name']): x for x in plan['mappings']}
             matched = set()
             for source in plan['parsed']['departments']:
+                catalogue_sources.append(source)
                 item = mapping[department_key(source['name'])]
                 did = item.get('department_id')
                 if item['action'] != 'match' or item['confidence'] != 1:
@@ -297,7 +298,7 @@ def build_plan(db, organization_id, actor_id):
             refuse('Ön baskı paket planı/snapshot kökeni doğrulanamadı')
     # All retained period catalogue records must also occur in archived plans.
     programmes, subprogrammes = set(), set()
-    for source in sources.values():
+    for source in catalogue_sources:
         for block in source['blocks']:
             p = (block.get('program', '').strip() or 'Program adı belirtilmedi')
             sp = (block.get('subprogram', '').strip() or 'Alt program adı belirtilmedi')
@@ -310,7 +311,7 @@ def build_plan(db, organization_id, actor_id):
     for sp in db.scalars(select(m.SubProgram).where(m.SubProgram.period_id == pid)):
         if (program_names.get(sp.program_id), sp.name) not in subprogrammes:
             refuse('2027 alt program satırı ön baskı planına izlenemiyor')
-    # September legacy importer never generated the official catalogue.
+    # The approved legacy plans provide no creation proof for official entries.
     if db.scalar(select(m.OfficialActivity.id).where(m.OfficialActivity.period_id == pid).limit(1)):
         refuse('2027 resmî katalog satırının ön baskı paketinde oluşturulma izi yok')
     if db.scalar(select(m.SubProgramScope).where(
@@ -324,8 +325,8 @@ def build_plan(db, organization_id, actor_id):
         target_dids.update(db.scalars(select(model.department_id).where(model.period_id == pid)))
     if target_dids - sources.keys():
         refuse('2027 satırı ön baskı paket müdürlüklerine izlenemiyor')
-    # Legacy pre-print import did not create scopes/catalogue links. A scope or
-    # link therefore has no creation provenance in these batches: refuse it.
+    # The archived legacy plan/snapshot format carries no creation proof for
+    # scopes/catalogue links. Never infer ownership from department membership.
     if db.scalar(select(m.DepartmentScope.id).where(m.DepartmentScope.period_id == pid).limit(1)):
         refuse('2027 kapsam/alt program bağlantısının ön baskı paketinde oluşturulma izi yok')
     for did in sorted(target_dids):
@@ -347,7 +348,7 @@ def build_plan(db, organization_id, actor_id):
         events = db.scalars(select(m.SubmissionEvent).where(
             (m.SubmissionEvent.period_id == pid) | m.SubmissionEvent.submission_id.in_(local['submissions']))).all()
         events = [e for e in events if e.department_id == did or e.submission_id in local['submissions']]
-        # These imports never generated workflow events. Unproven history is
+        # The archived plans contain no workflow-event provenance. Unproven history is
         # deliberately not erased, even if the current submission says draft.
         if events:
             refuse('2027 teslim olayının ön baskı paketinde oluşturulma izi yok')
@@ -383,7 +384,7 @@ def build_plan(db, organization_id, actor_id):
                         batches=sorted(BATCH_STATES), already_cleared=False), ids
 
 
-def execute(engine, *, organization_id, actor_id, apply=False):
+def execute(engine, *, organization_id, actor_id, apply=False, before_write=None):
     """One READ ONLY snapshot for plan; one locked transaction for the entire apply."""
     from app.models import AuditLog, ImportBatch
     from app.db import Base
@@ -395,6 +396,7 @@ def execute(engine, *, organization_id, actor_id, apply=False):
                 else:
                     if not db.scalar(text('SELECT pg_try_advisory_xact_lock(:key)'), {'key': LOCK}):
                         refuse('Başka ilk yükleme/temizleme çalışıyor')
+                    db.execute(text("SET LOCAL lock_timeout = '10s'"))
                     # Cover ordinary application writers and inserts into guard tables,
                     # including audit/batches/catalogue. Lock BEFORE all guard reads.
                     names = ', '.join('"' + t.name + '"' for t in Base.metadata.sorted_tables)
@@ -402,6 +404,8 @@ def execute(engine, *, organization_id, actor_id, apply=False):
                 period, result, ids = build_plan(db, organization_id, actor_id)
                 if not apply or result['already_cleared']:
                     return result
+                if before_write is not None:
+                    before_write()  # Recheck backup freshness after every guard/lock wait.
                 for name in FIELDS:
                     table = Base.metadata.tables[name]
                     if ids[name]:

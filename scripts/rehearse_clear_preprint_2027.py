@@ -154,7 +154,7 @@ def rehearse(backup, organization_id, actor_id, record):
                 raise live.Refusal('Yerel temizleme onayı uyuşmuyor.')
             dump = fresh_clone_backup(engine, Path(directory), admin_url)
             live.verify_backup(dump)
-            applied = clear.execute(engine, apply=True, **ids)
+            applied = clear.execute(engine, apply=True, before_write=lambda: live.verify_backup(dump), **ids)
             if applied['counts'] != plan['counts'] or applied['already_cleared']:
                 raise live.Refusal('Temizleme uygulama sayımı plan ile uyuşmuyor.')
             record['steps'].append(dict(step='clear-apply', counts=applied['counts']))

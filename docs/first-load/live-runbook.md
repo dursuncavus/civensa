@@ -183,9 +183,9 @@ Araç şu durumların her birinde Türkçe gerekçeyle **0 satır yazıp durur**
   inceleme geçmişi, kalıcı gösterge kimliği veya kökeni kanıtlanamayan başka
   2027 dönem satırı.
 
-21 Eylül'deki eski içe aktarıcı kapsam/katalog bağlantısı veya teslim olayı
-oluşturmuyordu. Böyle kayıtlar varsa “ön baskıda oluşturuldu” diye varsayılmaz;
-oluşturulma izi olmadığı için temizleme reddedilir. Koruma gevşetilmez.
+Onaylı eski paket planı/snapshot biçimi kapsam/katalog bağlantısı veya teslim
+olayı için oluşturma kökeni taşımıyor. Böyle kayıtlar varsa “ön baskıda oluşturuldu”
+diye varsayılmaz; oluşturulma izi olmadığı için temizleme reddedilir. Koruma gevşetilmez.
 Yalnız login, doğrulanmış kullanıcı işlemleri, yedek dışa aktarma, dönem
 etkinleştirme ve civ025_tracking_started gibi içerik dışı kayıtlar engel değildir.
 2026'ya kesin bağlanabilen içerik denetimleri de korunur.
@@ -256,7 +256,8 @@ BASH
 
 Temizleme istemine **2027 ON BASKI TASLAGINI SIL** yazın. Eksik/yanlış onay,
 eski yedek, yanlış şema/kurum/aktör veya kilit yazmayı engeller. Yedek onay
-isteminden sonra tekrar denetlenir.
+isteminden sonra ve kilit/köken kontrolleri bitip ilk silme başlamadan hemen önce
+tekrar denetlenir; tablo kilidi beklemesi 10 saniye ile sınırlıdır.
 
 Tek işlemde yalnız 2027 göstergelerinin değerleri/göstergeler, faaliyet maliyetleri/
 faaliyetler ve kökeni doğrulanmış taslak teslimler temizlenir. Denetim tüm

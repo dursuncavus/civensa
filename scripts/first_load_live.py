@@ -375,7 +375,8 @@ def main(argv=None):
                 if args.clear_preprint:
                     from scripts.clear_preprint_2027 import execute as clear_execute
                     result = clear_execute(engine, organization_id=args.organization_id,
-                                           actor_id=args.actor_id, apply=args.apply)
+                                           actor_id=args.actor_id, apply=args.apply,
+                                           before_write=(lambda: verify_backup(args.backup)) if args.apply else None)
                 else:
                     result = execute(engine, parsed, organization_id=args.organization_id, actor_id=args.actor_id,
                                      apply=args.apply, resume=args.resume)
