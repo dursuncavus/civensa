@@ -1,7 +1,7 @@
 """CIV-058: fail-closed pre-print removal; CLI lives in first_load_live.py."""
 from collections import Counter
-from datetime import date
-from decimal import Decimal
+from datetime import date, timedelta
+from decimal import Decimal, ROUND_HALF_UP
 import hashlib
 import json
 
@@ -91,12 +91,13 @@ def base_context(db, organization_id, actor_id):
     return period
 
 
-def audit_guard(db, period_id, cutoff):
+def audit_guard(db, period_id, cutoff, terminal_batch_id):
     """Unknown/deleted/department-only content targets fail closed, never guessed safe."""
     from app import models as m
     safe_user = {'login', 'self_password_change', 'user_create', 'user_activate',
                  'user_deactivate', 'user_password_reset', 'user_change',
-                 'user_position_change', 'user_permission_change',
+                 'user_position_change', 'user_permission_change', 'user_is_active_change',
+                 'user_can_submit_change',
                  'user_bulk_create_item', 'user_bulk_create', 'user_bulk_create_revert'}
     models = {'indicator': m.Indicator, 'indicators': m.Indicator,
               'activity': m.Activity, 'activities': m.Activity,
@@ -115,8 +116,8 @@ def audit_guard(db, period_id, cutoff):
             continue
         # The terminal import's own audit is commonly a few milliseconds later.
         if (log.action == 'data_import_apply' and log.entity_type == 'import_batch'
-                and log.entity_id in BATCH_STATES
-                and BATCH_STATES[log.entity_id] == 'applied'):
+                and log.entity_id == terminal_batch_id
+                and log.created_at <= cutoff + timedelta(seconds=1)):
             continue
         model = models.get(log.entity_type)
         obj = db.get(model, log.entity_id) if model and log.entity_id else None
@@ -135,15 +136,16 @@ def audit_guard(db, period_id, cutoff):
         refuse('Son ön baskı uygulamasından sonra 2027 PP içerik düzenlemesi veya dönemi belirsiz denetim kaydı var')
 
 
-def number(value):
-    return None if value is None else str(Decimal(str(value)).normalize())
+def number(value, money=False):
+    quantum = Decimal('.01') if money else Decimal('.000001')
+    return None if value is None else str(Decimal(str(value)).quantize(quantum, rounding=ROUND_HALF_UP).normalize())
 
 
 def value_signature(row, money=False):
     amount = row.get('amount' if money else 'value')
     return (int(row['year']), row.get('kind', row.get('value_kind')),
             row.get('funding_type', 'total') if money else '',
-            number(amount), row.get('raw_text', ''), row.get('state', 'verified'))
+            number(amount, money), row.get('raw_text', ''), row.get('state', 'verified'))
 
 
 def source_values(rows, money=False):
@@ -255,7 +257,7 @@ def build_plan(db, organization_id, actor_id):
     if any(b.applied_at is None or b.applied_at.date() != date(2026, 9, 21)
            or b.created_at.date() != date(2026, 9, 21) for b in applied):
         refuse('Ön baskı paket uygulama zamanı onaylı 21 Eylül envanteriyle uyuşmuyor')
-    audit_guard(db, pid, applied[-1].applied_at)
+    audit_guard(db, pid, applied[-1].applied_at, applied[-1].id)
     # Rebuild archived plans without any write service or trial writes.
     sources, provenance = {}, {}
     for batch in applied:
