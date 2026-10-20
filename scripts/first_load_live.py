@@ -405,10 +405,12 @@ def main(argv=None):
     except Refusal as exc:
         print(f'DURDU: {exc}', file=sys.stderr)
     except KeyboardInterrupt:
-        print('DURDU: İşlem kesildi; tamamlanmış müdürlükler korunur. Yeniden yazmadan önce --resume ile plan alın.', file=sys.stderr)
+        print('DURDU: İşlem kesildi; yeniden yazmadan önce ' +
+              ('--clear-preprint' if args.clear_preprint else '--resume') + ' ile plan alın.', file=sys.stderr)
     except Exception as exc:
         print(f'DURDU: İşlem tamamlanamadı ({type(exc).__name__}); bağlantı/dosya ayrıntıları gizlendi. '
-              'Günlüğü sorumluya iletin; yeniden uygulamadan önce --resume ile plan alın.', file=sys.stderr)
+              'Günlüğü sorumluya iletin; yeniden uygulamadan önce ' +
+              ('--clear-preprint' if args.clear_preprint else '--resume') + ' ile plan alın.', file=sys.stderr)
     return 1
 
 
