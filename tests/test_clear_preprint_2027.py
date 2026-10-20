@@ -558,3 +558,30 @@ def test_importer_resolved_name_match_still_requires_snapshot_identity_and_exact
     assert planned['counts']['department_cost_values'] == 93
     assert state(engine) == before
     assert clear.execute(engine, apply=True, **ids)['counts'] == planned['counts']
+
+
+
+@pytest.mark.postgres
+def test_preview_and_reverted_archives_trace_retained_catalogue_only(target):
+    engine, ids, extra = target
+    with Session(engine) as db:
+        for bid in (3, 6):
+            batch = db.get(m.ImportBatch, bid)
+            payload = json.loads(batch.payload_json)
+            for department in payload['departments']:
+                for block in department['blocks']:
+                    block['program'] = f'Korunan arşiv programı {bid}'
+                    block['subprogram'] = f'Korunan arşiv alt programı {bid}'
+            batch.payload_json = json.dumps(payload, ensure_ascii=False)
+            program = m.Program(period_id=extra['period_id'], name=f'Korunan arşiv programı {bid}')
+            db.add(program)
+            db.flush()
+            db.add(m.SubProgram(period_id=extra['period_id'], program_id=program.id,
+                name=f'Korunan arşiv alt programı {bid}'))
+        db.commit()
+    before = state(engine)
+    assert clear.execute(engine, **ids)['counts']['department_cost_values'] == 93
+    assert state(engine) == before
+    clear.execute(engine, apply=True, **ids)
+    with Session(engine) as db:
+        assert len(db.scalars(select(m.Program).where(m.Program.period_id == extra['period_id'])).all()) == 3

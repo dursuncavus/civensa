@@ -225,8 +225,14 @@ def check_personnel(db, did, source, period_id):
         DepartmentCostValue.period_id == period_id, DepartmentCostValue.department_id == did)).all()
     actual = Counter(personnel_signature({c.name: getattr(row, c.name)
                                           for c in row.__table__.columns}) for row in rows)
-    if actual != source_personnel(source.get('personnel', [])):
-        refuse('2027 personel/SGK maliyet satırı arşiv paket planına izlenemiyor (eksik/fazla/değişmiş)')
+    expected = source_personnel(source.get('personnel', []))
+    if actual != expected:
+        fields = ('year', 'value_kind', 'category', 'amount', 'raw_text', 'state')
+        differing = [field for index, field in enumerate(fields)
+            if Counter(v[index] for v in actual.elements()) != Counter(v[index] for v in expected.elements())]
+        refuse(f'2027 personel/SGK maliyet satırı arşiv paket planına izlenemiyor '
+               f'(müdürlük #{did}; beklenen {sum(expected.values())}, bulunan {len(rows)}; '
+               f'alanlar: {", ".join(differing) or "satır eşleşmesi"})')
     return [row.id for row in rows]
 
 
@@ -324,7 +330,14 @@ def build_plan(db, organization_id, actor_id):
         refuse('Ön baskı paket uygulama zamanı onaylı 21 Eylül envanteriyle uyuşmuyor')
     audit_guard(db, pid, applied[-1].applied_at, applied[-1].id)
     # Rebuild archived plans without any write service or trial writes.
-    sources, provenance, catalogue_sources = {}, {}, []
+    sources, provenance = {}, {}
+    # Catalogue is retained. Preview/reverted archives can trace retained names
+    # left behind by an earlier apply/revert; only applied batches own deletions.
+    try:
+        catalogue_sources = [source for batch in batches
+            for source in json.loads(batch.payload_json)['departments']]
+    except (KeyError, TypeError, ValueError):
+        refuse('Ön baskı katalog planı kökeni doğrulanamadı')
     for batch in applied:
         phase = 'snapshot'
         try:
@@ -347,7 +360,6 @@ def build_plan(db, organization_id, actor_id):
             mapping = {department_key(x['source_name']): x for x in plan['mappings']}
             matched = set()
             for source in plan['parsed']['departments']:
-                catalogue_sources.append(source)
                 item = mapping[department_key(source['name'])]
                 did = item.get('department_id')
                 if item['action'] != 'match':
