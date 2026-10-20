@@ -114,7 +114,7 @@ def audit_user_change(db, actor, target, field, old, new, reason=None):
 
 
 def register(app):
-    from .main import require_user, require_strategy, templates
+    from .main import require_user, require_strategy, templates, session_period
 
     @app.get('/submit-authorizations')
     def authorizations(request: Request, db: Session = Depends(get_db), user=Depends(require_user)):
@@ -123,7 +123,7 @@ def register(app):
         users = db.scalars(select(User).where(User.department_id == user.department_id,
                                              User.role == 'department', User.position == 'staff').order_by(User.full_name)).all()
         return templates.TemplateResponse(request, 'submit_authorizations.html',
-                                          {'user': user, 'users': users, 'department': db.get(Department, user.department_id)})
+                                          {'user': user, 'period': session_period(request, db), 'users': users, 'department': db.get(Department, user.department_id)})
 
     @app.post('/api/users/{user_id}/submit-authorization')
     async def submit_authorization(user_id: int, request: Request, db: Session = Depends(get_db), user=Depends(require_user)):

@@ -12,7 +12,7 @@ from . import authorization_service as auth
 
 
 def register(app):
-    from .main import require_user, templates
+    from .main import require_pp_period, require_user, templates
 
     def context(db, user, period_id=None):
         org_id, _ = service.authorize(db, user)
@@ -101,9 +101,14 @@ def register(app):
             service.fail('Geri alma bilgileri geçersiz. Dayanağı ve gerekçeyi yeniden girin.')
         return commit(db, lambda: service.reverse(db, user, operation_id, data))
 
-    @app.post('/api/activities/{activity_id}/contract-bound')
+    @app.post('/api/activities/{activity_id}/contract-bound', dependencies=[Depends(require_pp_period)])
     async def flag(activity_id: int, request: Request, db: Session = Depends(get_db), user=Depends(require_user)):
         data = await body(request)
+        from .main import pp_period
+        from .models import Activity
+        activity = db.get(Activity, activity_id)
+        if activity:
+            pp_period(request, db, user, activity.department_id, data, activity.period_id)
         return commit(db, lambda: service.set_contract_bound(db, user, activity_id, data.get('contract_bound') if isinstance(data, dict) else None))
 
     @app.post('/api/budget-reallocations/delegations')

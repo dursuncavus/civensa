@@ -454,7 +454,7 @@ def persist(db, user, data, ctx, result, ref, *, reverses_id=None):
             delta = sum((Decimal(s['change']) for s in result['summaries'] if s['department_id'] == dep.id), ZERO)
             db.add(Notification(role='department', department_id=dep.id, event_type='budget_reallocation',
                 message=f'{ctx["names"][dep.id]}: {money(delta)} TL bütçe aktarması. {REFERENCES[ref["reference_type"]]} {ref["reference_date"]} / {ref["reference_number"]}'[:500],
-                link=f'/department/{dep.id}'))
+                link=f'/department/{dep.id}?period_id={operation.period_id}'))
         db.add(AuditLog(user_id=user.id, action='budget_reallocation', entity_type='budget_operation', entity_id=operation.id, details=f'{", ".join(ctx["names"].values())}: {note}'))
     return operation
 

@@ -90,6 +90,8 @@ def test_exact_amounts_protected_lines_rounding_history_and_reverse(db, sample, 
     db.expire_all()
     assert all(s.status=='approved' and s.revision==2 for s in db.scalars(select(Submission)))
     assert db.scalar(select(func.count(Notification.id))) == 2
+    assert all(n.link == f'/department/{n.department_id}?period_id={budget["period_id"]}'
+               for n in db.scalars(select(Notification)))
     assert all('Başkanlık talimatı ile aktarma' in s.note for s in db.scalars(select(SubmissionEvent)))
     for row in db.scalars(select(EconomicValue).where(EconomicValue.category.in_(['personnel','sgk']))):
         assert service.state(row) == before[(row.__tablename__,row.id)]
@@ -201,7 +203,7 @@ def test_staff_denied_delegation_grant_and_revocation(db,actors,budget,http):
 
 def test_flag_audited_approved_status_and_stale(db,sample,budget,http):
     client=http('strategy_director');p=preview(client,budget)
-    path=f"/api/activities/{sample['activity'].id}/contract-bound"
+    path=f"/api/activities/{sample['activity'].id}/contract-bound?period_id=1"
     assert http('other').post(path,json={'contract_bound':True}).status_code==403
     assert http('staff').post(path,json={'contract_bound':True}).status_code==200
     assert apply(client,p).status_code==409

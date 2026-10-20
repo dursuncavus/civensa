@@ -277,14 +277,14 @@ def test_restricted_http_flows_and_immutable_history(roles_db, monkeypatch):
             with Session(db.runtime) as session:
                 assert session.scalars(select(LoginAttempt.email_cleared)).all() == [True]
             assert directorate.get(f'/department/{did}').status_code == 200
-            assert directorate.post(f'/api/indicators/{iid}/save', json={'value_2027_target': '2,5'}).status_code == 200
-            assert directorate.post(f'/api/departments/{did}/submit').json() == {'ok': True, 'revision': 1}
+            assert directorate.post(f'/api/indicators/{iid}/save?period_id={pid}', json={'value_2027_target': '2,5'}).status_code == 200
+            assert directorate.post(f'/api/departments/{did}/submit?period_id={pid}').json() == {'ok': True, 'revision': 1, 'period_id': pid, 'year': 2027, 'redirect_url': f'/department/{did}?period_id={pid}'}
             with Session(db.runtime) as session:
                 sub_id = session.scalar(select(Submission.id))
-            decision = f'/api/submissions/{sub_id}/decision'
+            decision = f'/api/submissions/{sub_id}/decision?period_id={pid}'
             assert strategy.post(decision, json={'decision': 'return', 'note': 'Hedefi düzeltin.'}).status_code == 200
-            assert directorate.post(f'/api/indicators/{iid}/save', json={'value_2027_target': '3,5'}).status_code == 200
-            assert directorate.post(f'/api/departments/{did}/submit').json() == {'ok': True, 'revision': 2}
+            assert directorate.post(f'/api/indicators/{iid}/save?period_id={pid}', json={'value_2027_target': '3,5'}).status_code == 200
+            assert directorate.post(f'/api/departments/{did}/submit?period_id={pid}').json() == {'ok': True, 'revision': 2, 'period_id': pid, 'year': 2027, 'redirect_url': f'/department/{did}?period_id={pid}'}
             assert strategy.post(decision, json={'decision': 'approve'}).json() == {'ok': True, 'status': 'approved'}
             assert strategy.post('/report-builder/section', data={'period_id': pid, 'title': 'Genel Bilgiler', 'kind': 'text', 'content': 'Onaylı içerik'}).status_code == 303
             response = strategy.post('/report-builder/publish', data={'period_id': pid})

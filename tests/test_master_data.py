@@ -30,7 +30,7 @@ BASE_REVISION = 'a6c006e9b241'
 
 
 def post(browser, token, url, **data):
-    return browser.post(url, data={'csrf_token': token, **data})
+    return browser.post(url, data={'csrf_token': token, 'period_id': 1, **data})
 
 
 def strategy(live_client, sample):
@@ -138,7 +138,7 @@ def test_directorate_gets_turkish_403_on_every_new_route(db, sample, live_client
 @pytest.mark.parametrize('method,url', NEW_ROUTES)
 def test_new_routes_require_session_and_csrf(db, sample, live_client, method, url):
     browser = live_client()
-    response = browser.request(method, url)
+    response = browser.request(method, url, params={'period_id': 1})
     assert response.status_code == 401
     if method == 'POST':
         login(browser, sample['strategy'].email)
@@ -200,7 +200,7 @@ def test_rename_leaves_publication_and_approved_snapshot_names_frozen(db, sample
     browser, token = strategy(live_client, sample)
     submission = db.scalar(select(Submission)); submission.status = 'submitted'; submission.revision = 1
     db.add(ReportSection(period_id=sample['period'].id, title='Genel Bilgiler', content_json='{"text":"Onaylı içerik"}')); db.commit()
-    response = browser.post(f'/api/submissions/{submission.id}/decision', headers={'X-CSRF-Token': token}, json={'decision': 'approve'})
+    response = browser.post(f'/api/submissions/{submission.id}/decision?period_id=1', headers={'X-CSRF-Token': token}, json={'decision': 'approve'})
     assert response.status_code == 200, response.text
     approved = db.scalar(select(SubmissionEvent).where(SubmissionEvent.event_type == 'approve'))
     assert approved
@@ -289,7 +289,8 @@ def test_migration_with_case_duplicates_warning_and_non_destructive_downgrade(fo
     from app.security import hash_password
     from fastapi.testclient import TestClient
     user = User(email='pilot@example.invalid', role='strategy', full_name='Strateji', password_hash=hash_password('pilot-test-only'))
-    db.add(user); db.commit()
+    p = ReportingPeriod(year=2027)
+    db.add_all([user, p]); db.commit()
     app.dependency_overrides[get_db] = lambda: db
     try:
         with TestClient(app, follow_redirects=False) as browser:
@@ -301,7 +302,6 @@ def test_migration_with_case_duplicates_warning_and_non_destructive_downgrade(fo
             assert all(d.name in warning for d in departments)
             assert post(browser, token, '/structure/departments/2/active', active='0').status_code == 303
     finally: app.dependency_overrides.clear()
-    p = ReportingPeriod(year=2027); db.add(p); db.flush()
     pr = Program(period_id=p.id, name='Program'); db.add(pr); db.flush()
     sp = SubProgram(period_id=p.id, program_id=pr.id, name='Alt'); scope = DepartmentScope(period_id=p.id, department_id=1)
     db.add_all([sp, scope]); db.flush(); db.add(SubProgramScope(subprogram_id=sp.id, scope_id=scope.id)); db.commit()

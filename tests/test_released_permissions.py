@@ -67,12 +67,12 @@ def http(db, actors):
 
 
 def decision(client, sample, action='approve'):
-    return client.post('/api/submissions/1/decision', json={'decision': action, 'note': 'Kaynağı kontrol edip yeniden gönderin.'})
+    return client.post('/api/submissions/1/decision?period_id=1', json={'decision': action, 'note': 'Kaynağı kontrol edip yeniden gönderin.'})
 
 
 @pytest.mark.parametrize('actor', ['director', 'authorized'])
 def test_director_and_authorized_staff_submit(http, sample, actor):
-    response = http(actor).post(f"/api/departments/{sample['department'].id}/submit")
+    response = http(actor).post(f"/api/departments/{sample['department'].id}/submit?period_id=1")
     assert response.status_code == 200 and response.json()['revision'] == 1
 
 
@@ -80,13 +80,13 @@ def test_unauthorized_staff_refused_and_csrf_required(http, db, sample):
     client = http('staff')
     assert client.get('/department/1').status_code == 200
     assert http('strategy_staff').get('/department/1').status_code == 200
-    response = client.post('/api/departments/1/submit')
+    response = client.post('/api/departments/1/submit?period_id=1')
     assert response.status_code == 403
     assert all(word in response.json()['detail'] for word in ['Müdür', 'Personel', 'Gönderim Yetkileri', 'Kullanıcılar'])
     assert db.scalar(select(Submission)).status == 'draft'
     assert db.scalar(select(func.count(SubmissionEvent.id))) == 0
     client = http('director'); client.headers.pop('X-CSRF-Token')
-    assert client.post('/api/departments/1/submit').status_code == 403
+    assert client.post('/api/departments/1/submit?period_id=1').status_code == 403
 
 
 @pytest.mark.parametrize('grantor', ['director', 'strategy_staff'])
@@ -95,10 +95,10 @@ def test_grant_revoke_scopes_audits_and_existing_session(http, db, actors, grant
     path = f"/api/users/{actors['staff'].id}/submit-authorization"
     assert authority.post(path, json={'can_submit': True}).status_code == 200
     # A session opened before the grant sees it immediately.
-    assert staff.post('/api/departments/1/submit').status_code == 200
+    assert staff.post('/api/departments/1/submit?period_id=1').status_code == 200
     assert decision(http('strategy_director'), None, 'return').status_code == 200
     assert authority.post(path, json={'can_submit': False}).status_code == 200
-    assert staff.post('/api/departments/1/submit').status_code == 403
+    assert staff.post('/api/departments/1/submit?period_id=1').status_code == 403
     audits = db.scalars(select(AuditLog).where(AuditLog.action == 'user_can_submit_change').order_by(AuditLog.id)).all()
     assert [(a.user_id, a.entity_id, json.loads(a.details)) for a in audits] == [
         (actors[grantor].id, actors['staff'].id, {'field': 'can_submit', 'old': False, 'new': True}),
@@ -126,7 +126,7 @@ def test_second_director_refused_then_replacement_audited(http, db, actors):
     assert refused.status_code == 409 and 'önce mevcut' in refused.json()['detail']
     assert strategy.post(f"/api/users/{actors['director'].id}/position", json={'position': 'staff'}).status_code == 200
     assert strategy.post(path, json={'position': 'director'}).status_code == 200
-    assert http('staff').post('/api/departments/1/submit').status_code == 200
+    assert http('staff').post('/api/departments/1/submit?period_id=1').status_code == 200
     logs = db.scalars(select(AuditLog).where(AuditLog.action == 'user_position_change').order_by(AuditLog.id)).all()
     assert [(a.entity_id, json.loads(a.details)['old'], json.loads(a.details)['new']) for a in logs] == [
         (actors['director'].id, 'director', 'staff'), (actors['staff'].id, 'staff', 'director')]
@@ -305,7 +305,7 @@ def test_director_reactivation_conflict_and_new_staff_default(http, db, actors):
 
 @pytest.mark.parametrize('action', ['approve', 'return'])
 def test_strategy_staff_cannot_decide_director_can(http, db, sample, action):
-    assert http('director').post('/api/departments/1/submit').status_code == 200
+    assert http('director').post('/api/departments/1/submit?period_id=1').status_code == 200
     response = decision(http('strategy_staff'), sample, action)
     assert response.status_code == 403 and 'Strateji Geliştirme Müdürü' in response.json()['detail']
     assert db.scalar(select(Submission)).status == 'submitted'
@@ -319,13 +319,13 @@ def test_strategy_director_edit_blocks_approval_until_return(http, db, sample, a
     # Existing Strategy data-write route; no new ex-officio correction path.
     assert strategy.post('/report-builder/scope', data={'period_id': sample['period'].id,
         'department_id': sample['department'].id, 'status': 'required', 'display_name': 'Güncel Müdürlük'}).status_code == 303
-    assert http('director').post('/api/departments/1/submit').status_code == 200
+    assert http('director').post('/api/departments/1/submit?period_id=1').status_code == 200
     blocked = decision(strategy, sample)
     assert blocked.status_code == 403 and 'Görevler ayrılığı' in blocked.json()['detail']
     assert db.scalar(select(Submission)).status == 'submitted'
     assert db.scalar(select(AuditLog).where(AuditLog.action == 'pp_data_change', AuditLog.user_id == actors['strategy_director'].id))
     assert decision(strategy, sample, 'return').status_code == 200
-    assert http('director').post('/api/departments/1/submit').status_code == 200
+    assert http('director').post('/api/departments/1/submit?period_id=1').status_code == 200
     assert decision(strategy, sample).status_code == 200
 
 
@@ -337,26 +337,26 @@ def test_prior_editor_still_blocked_after_role_change_and_another_edit(http, db,
     actors['strategy_director'].position = 'staff'
     db.commit()
     actors['strategy_director'].department_id = sample['department'].id; db.commit()
-    assert editor.post('/api/indicators/1/save', json={'value_2027_target': '3'}).status_code == 200
-    assert http('staff').post('/api/indicators/1/save', json={'value_2027_target': '4'}).status_code == 200
+    assert editor.post('/api/indicators/1/save?period_id=1', json={'value_2027_target': '3'}).status_code == 200
+    assert http('staff').post('/api/indicators/1/save?period_id=1', json={'value_2027_target': '4'}).status_code == 200
     actors['strategy_director'].role = 'strategy'
     actors['strategy_director'].department_id = actors['strategy_staff'].department_id
     actors['strategy_director'].position = 'director'; db.commit()
-    assert http('director').post('/api/departments/1/submit').status_code == 200
+    assert http('director').post('/api/departments/1/submit?period_id=1').status_code == 200
     assert decision(editor, sample).status_code == 403
 
 
 def test_deleted_data_keeps_scoped_authorship(http, db, sample, actors):
     staff = http('staff')
-    created = staff.post('/api/activities', json={'name': 'Geçici faaliyet', 'subprogram_id': sample['subprogram'].id})
+    created = staff.post('/api/activities?period_id=1', json={'name': 'Geçici faaliyet', 'subprogram_id': sample['subprogram'].id})
     assert created.status_code == 200, created.text
-    assert staff.delete('/api/activities/'+str(created.json()['id'])).status_code == 200
+    assert staff.delete('/api/activities/'+str(created.json()['id'])+'?period_id=1').status_code == 200
     # Demote original Strategy director and promote the former data editor.
     strategy = http('strategy_director')
     assert strategy.post(f"/api/users/{actors['strategy_director'].id}/active", json={'active': False}).status_code == 200
     actors['staff'].role = 'strategy'; actors['staff'].department_id = actors['strategy_staff'].department_id; db.commit()
     assert http('strategy_staff').post(f"/api/users/{actors['staff'].id}/position", json={'position': 'director'}).status_code == 200
-    assert http('director').post('/api/departments/1/submit').status_code == 200
+    assert http('director').post('/api/departments/1/submit?period_id=1').status_code == 200
     assert decision(staff, sample).status_code == 403
 
 
@@ -427,10 +427,10 @@ def test_pp_edit_paths_retain_authorship(http, db, sample, actors, edit_kind):
             EconomicValue.year == 2027, EconomicValue.category == 'goods_services',
             EconomicValue.funding_type == 'inside'))
         row.state = 'needs_review'; row.raw_text = '130'; db.commit()
-        response = staff.post(f'/program/1/verify-money/economic/{row.id}',
+        response = staff.post(f'/program/1/verify-money/economic/{row.id}?period_id=1',
             data={'amount': '130', 'program_group': 'service'})
     elif edit_kind == 'personnel':
-        response = staff.post('/api/departments/1/personnel-costs', json={'cost_2027_budget': '25'})
+        response = staff.post('/api/departments/1/personnel-costs?period_id=1', json={'cost_2027_budget': '25'})
     else:
         response = staff.post('/program/1/catalogue-link', data={'period_id': 1, 'activity_id': sample['activity'].id})
     assert response.status_code in (200, 303), response.text
@@ -461,7 +461,7 @@ def test_noop_and_other_department_edits_do_not_block_approval(http, db, sample,
     # Existing scope has exactly these values, so this is not an edit.
     assert strategy.post('/report-builder/scope', data={'period_id': 1, 'department_id': 1,
         'status': 'required', 'position': 0, 'display_name': '', 'reason': ''}).status_code == 303
-    assert http('director').post('/api/departments/1/submit').status_code == 200
+    assert http('director').post('/api/departments/1/submit?period_id=1').status_code == 200
     assert decision(strategy, sample).status_code == 200
 
 
@@ -470,7 +470,7 @@ def test_pre_migration_audit_blocks_pilot_approval(http, db, sample, actors, del
     db.add(AuditLog(id=-1, user_id=actors['strategy_director'].id, action='activity_mapping',
                     entity_type='activity', entity_id=99999 if deleted else sample['activity'].id))
     db.commit()
-    assert http('director').post('/api/departments/1/submit').status_code == 200
+    assert http('director').post('/api/departments/1/submit?period_id=1').status_code == 200
     assert decision(http('strategy_director'), sample).status_code == 403
 
 
@@ -499,7 +499,7 @@ def test_concurrent_director_assignments_have_one_winner(http, db, actors):
 
 
 def test_submitted_data_cannot_change_after_approval_check(http, db, sample):
-    assert http('director').post('/api/departments/1/submit').status_code == 200
+    assert http('director').post('/api/departments/1/submit?period_id=1').status_code == 200
     response = http('strategy_staff').post('/report-builder/scope', data={'period_id': 1, 'department_id': 1,
         'status': 'required', 'display_name': 'Eşzamanlı değişiklik'})
     assert response.status_code == 409 and 'iade' in response.json()['detail']
@@ -527,12 +527,12 @@ def test_economic_import_tracks_department_period_and_blocks_self_approval(http,
     assert audit is not None
     submission = db.scalar(select(Submission).where(Submission.department_id == did, Submission.period_id == period.id))
     submission.status = 'submitted'; db.commit()
-    response = strategy.post(f'/api/submissions/{submission.id}/decision', json={'decision': 'approve'})
+    response = strategy.post(f'/api/submissions/{submission.id}/decision?period_id=1', json={'decision': 'approve'})
     assert response.status_code == 403 and 'Görevler ayrılığı' in response.json()['detail']
     # Imported economic review uses the same department scope and package lock.
     actors['authorized'].department_id = did; db.commit()
     writer = http('authorized')
-    path = f'/program/{did}/verify-money/economic/{economic.id}'
+    path = f'/program/{did}/verify-money/economic/{economic.id}?period_id=1'
     assert strategy.post(path, data={'amount': '100', 'program_group': 'service'}).status_code == 403
     assert writer.post(path, data={'amount': '100', 'program_group': 'service'}).status_code == 409
     submission.status = 'returned'; db.commit()
@@ -564,7 +564,7 @@ def test_economic_verification_reads_body_before_package_lock(http, db, sample, 
     monkeypatch.setattr(Request, 'form', read_form)
     event.listen(db, 'do_orm_execute', observe_lock)
     try:
-        response = writer.post(f'/program/1/verify-money/economic/{row.id}',
+        response = writer.post(f'/program/1/verify-money/economic/{row.id}?period_id=1',
             data={'amount': '130', 'program_group': 'service'})
         assert response.status_code == 303, response.text
         assert 'body' in order and 'lock' in order
