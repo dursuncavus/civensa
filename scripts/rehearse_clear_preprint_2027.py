@@ -91,6 +91,39 @@ def snapshot(engine):
     return hashes, seqs
 
 
+def retained_rows(engine):
+    """Hashes only: prove clear preserved every non-target row, audit and batch."""
+    from sqlalchemy import select, text
+    from sqlalchemy.orm import Session
+    from app.db import Base
+    from app.models import ReportingPeriod, Indicator, Activity, SubProgram, AuditLog, ImportBatch
+    with Session(engine) as db:
+        db.execute(text('SET TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY'))
+        pid = db.scalar(select(ReportingPeriod.id).where(ReportingPeriod.year == 2027))
+        rows = {}
+        for table in Base.metadata.sorted_tables:
+            if table.name in {'audit_log', 'import_batches'}:
+                continue
+            query = select(table)
+            if table.name in clear.FIELDS:
+                if 'period_id' in table.c:
+                    query = query.where(table.c.period_id != pid)
+                else:
+                    parent, column = {'indicator_values': (Indicator, 'indicator_id'),
+                        'activity_cost_values': (Activity, 'activity_id'),
+                        'activity_catalogue_links': (Activity, 'activity_id'),
+                        'subprogram_scopes': (SubProgram, 'subprogram_id')}[table.name]
+                    query = query.where(table.c[column].not_in(select(parent.id).where(parent.period_id == pid)))
+            rows[table.name] = clear.digest(sorted(
+                [dict(row) for row in db.execute(query).mappings()], key=clear.encoded))
+        audit = {a.id: clear.digest({c.name: getattr(a, c.name) for c in a.__table__.columns})
+                 for a in db.scalars(select(AuditLog))}
+        batches = {b.id: clear.digest(dict(clear.batch_state(b),
+            status='preprint' if b.period_id == pid and b.id in clear.BATCH_STATES else b.status))
+            for b in db.scalars(select(ImportBatch))}
+        return dict(rows=rows, audit=audit, batches=batches)
+
+
 def source_backup(path):
     # A production ARTIFACT may be older than 60 minutes. CIV-050's 48-hour
     # freshness applies to the source; applies require a NEW verified clone dump.
@@ -154,6 +187,7 @@ def rehearse(backup, organization_id, actor_id, record):
                 raise live.Refusal('Üretim yedeği restore sayımları/şeması manifest ile uyuşmuyor.')
             record['restored_table_counts'] = state(engine)['public_table_row_counts']
             before = snapshot(engine)
+            retained_before = retained_rows(engine)
             try:
                 plan = clear.execute(engine, **ids)
             except live.Refusal:
@@ -178,7 +212,15 @@ def rehearse(backup, organization_id, actor_id, record):
             applied = clear.execute(engine, apply=True, before_write=lambda: live.verify_backup(dump), **ids)
             if applied['counts'] != plan['counts'] or applied['already_cleared']:
                 raise live.Refusal('Temizleme uygulama sayımı plan ile uyuşmuyor.')
-            record['steps'].append(dict(step='clear-apply', counts=applied['counts']))
+            retained_after = retained_rows(engine)
+            if (retained_before['rows'] != retained_after['rows']
+                    or retained_before['batches'] != retained_after['batches']
+                    or len(retained_after['audit']) != len(retained_before['audit']) + 1
+                    or any(retained_after['audit'].get(k) != v for k, v in retained_before['audit'].items())):
+                raise live.Refusal('Temizleme korunacak satır/paket/denetim parmak izini değiştirdi.')
+            record['steps'].append(dict(step='clear-apply', counts=applied['counts'],
+                retained_rows_unchanged=True, existing_audit_unchanged=True,
+                batches_preserved=True, table_counts=state(engine)['public_table_row_counts']))
             again_before = snapshot(engine)
             again = clear.execute(engine, apply=True, **ids)
             if not again['already_cleared'] or snapshot(engine) != again_before:
@@ -188,7 +230,12 @@ def rehearse(backup, organization_id, actor_id, record):
             plan = live.execute(engine, parsed, **ids)
             if snapshot(engine) != before or any(plan['counts'][k] != v for k, v in EXPECTED.items()):
                 raise live.Refusal('Basılı ilk yükleme planı 33/61/256/285/1300 veya sıfır yazma ile uyuşmuyor.')
-            record['steps'].append(dict(step='first-load-plan', counts=dict(plan['counts']), writes=0))
+            skipped = [d['name'] for d in plan['skipped']]
+            if skipped != [live.SKIPPED]:
+                raise live.Refusal('Basılı plan yalnız İşletme ve İştirakler Müdürlüğünü atlamalıdır.')
+            record['steps'].append(dict(step='first-load-plan', counts=dict(plan['counts']), writes=0,
+                created_source_names=[d['source_name'] for d in plan['departments'] if d['action'] == 'create'],
+                skipped_source_names=skipped))
             print('İlk yükleme planı: ' + json.dumps(dict(plan['counts']), ensure_ascii=False))
             if input(f'Yalnız geçici yerel yükleme için {live.BOOK_SHA256[:12]} yazın: ') != live.BOOK_SHA256[:12]:
                 raise live.Refusal('Yerel kitap SHA256 onayı uyuşmuyor.')

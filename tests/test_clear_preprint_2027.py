@@ -661,3 +661,21 @@ def test_pre_october_archives_replay_recorded_float_migrations_without_ignoring_
     with pytest.raises(live.Refusal, match='raw_text'):
         clear.execute(engine, apply=True, **ids)
     assert state(engine) == changed
+
+
+
+@pytest.mark.postgres
+def test_rehearsal_retention_fingerprint_detects_2026_damage(target):
+    from scripts.rehearse_clear_preprint_2027 import retained_rows
+    engine, ids, extra = target
+    before = retained_rows(engine)
+    clear.execute(engine, apply=True, **ids)
+    after = retained_rows(engine)
+    assert before['rows'] == after['rows']
+    assert before['batches'] == after['batches']
+    assert len(after['audit']) == len(before['audit']) + 1
+    assert all(after['audit'].get(k) == v for k, v in before['audit'].items())
+    with Session(engine) as db:
+        db.get(m.DepartmentCostValue, extra['old_cost_id']).amount = 78
+        db.commit()
+    assert retained_rows(engine)['rows'] != after['rows']

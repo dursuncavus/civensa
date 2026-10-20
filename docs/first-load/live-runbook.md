@@ -104,7 +104,11 @@ BASH
 
 Betik sırayla temizleme planı → temizleme uygulaması → ikinci temizleme
 (0 yazma) → ilk yükleme planı → ilk yükleme uygulaması → --resume ile son
-planı (0 yazma) çalıştırır. Planlarda bütün satırlar ve sıra sayaçları karşılaştırılır.
+planı (0 yazma) çalıştırır. Planlarda bütün satırlar ve sıra sayaçları karşılaştırılır. Temizleme sonrası
+2026 ve diğer korunacak satırların, mevcut denetim kayıtlarının ve paketlerin
+durum dışındaki alanlarının parmak izleri de karşılaştırılır. JSON, basılı planda
+oluşturulacak müdürlüğün kaynak adını ve atlanan müdürlüğü ayrıca gösterir;
+sahibi her Oluştur kararını canlı plan öncesinde gözden geçirsin.
 İki uygulamadan hemen önce geçici hedefin **yeni gerçek yedeği** alınır; başka
 boş veritabanına geri yüklenip satır/sıra/sayım/şema doğrulanır. Bu hedef yedekleri
 60 dakikadan yeni olmalıdır. Üretim artifact'inin tarihi değiştirilmez.
@@ -230,6 +234,12 @@ Araç şu durumların her birinde Türkçe gerekçeyle **0 satır yazıp durur**
 - Son ilgili paket planıyla birebir uyuşmayan gösterge/faaliyet/değer,
   inceleme geçmişi, kalıcı gösterge kimliği veya kökeni kanıtlanamayan başka
   2027 dönem satırı.
+
+Korunan program/alt programlar onaylı paketlerin plan adlarına veya snapshot'taki
+preexisting_program_ids / preexisting_subprogram_ids listelerine izlenir. Bu
+kataloglar silinmez; kayıtlı katalog ve paket hash'leri temizlik makbuzuna yazılır.
+Belirsiz müdürlük eşleşmesi kabul edilmez; ithalatçının çözümlenmiş eşleşmesi,
+snapshot kimliği ve bütün içerik alanlarının tam eşitliği birlikte aranır.
 
 Onaylı eski paket planı/snapshot biçimi kapsam/katalog bağlantısı veya teslim
 olayı için oluşturma kökeni taşımıyor. Böyle kayıtlar varsa “ön baskıda oluşturuldu”
