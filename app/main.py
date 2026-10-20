@@ -501,8 +501,8 @@ def editable_submission(db: Session, department_id: int, period_id: int | None =
     return db.scalar(select(Submission).where(Submission.department_id == department_id, Submission.period_id == period.id))
 
 
-def ensure_department_editable(db: Session, user: User, department_id: int, period_id: int | None = None):
-    if user.role != "department" or user.department_id != department_id:
+def ensure_department_editable(db: Session, user: User, department_id: int, period_id: int | None = None, *, allow_strategy: bool = False):
+    if not (allow_strategy and user.role == "strategy") and (user.role != "department" or user.department_id != department_id):
         raise HTTPException(403)
     period = db.get(ReportingPeriod, period_id) if period_id else active_period(db)
     if not period:
@@ -667,9 +667,11 @@ def department_page(department_id: int, request: Request, db: Session = Depends(
         general_totals[key] = (sum(activity_values) + personnel_map[key]
                                if complete and personnel_map.get(key) is not None else None)
     from .program_service import activity_source_disagreements
+    from .draft_removal_service import removal_available
     return templates.TemplateResponse(request, "department.html", {
         "user": user, "department": dept, "department_label": period_name(db, period.id, dept), "indicators": indicators, "activities": activities,
         "submission": submission, "issue_map": issue_map, "subprograms": subprograms, "period": period,
+        "removable": removal_available(db, user, department_id, period),
         "indicator_columns": ind_cols, "activity_columns": act_cols, "indicator_value_maps": ind_value_maps,
         "activity_maps": activity_maps, "personnel_map": personnel_map, "activity_totals": activity_totals,
         "general_totals": general_totals, "workflow_events": workflow_events,
