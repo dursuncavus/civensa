@@ -290,6 +290,9 @@ def parse_optional_nonnegative_money(raw, field="Tutar"):
 
 
 from .time_display import turkey_time
+from .pp_display import status_label, actor_label
+templates.env.filters['status_label'] = status_label
+templates.env.filters['actor_label'] = actor_label
 templates.env.filters['turkey_time'] = turkey_time
 templates.env.filters["trnum"] = lambda v: format_number(v)
 templates.env.filters['contract_targets'] = format_contract_targets
@@ -1494,7 +1497,7 @@ def review(request: Request, db: Session = Depends(get_db), user: User = Depends
     if submissions:
         events = db.scalars(
             select(SubmissionEvent).where(SubmissionEvent.submission_id.in_([s.id for s in submissions]))
-            .order_by(SubmissionEvent.created_at.desc())
+            .order_by(SubmissionEvent.created_at.desc(), SubmissionEvent.id.desc())
         ).all()
         for event in events:
             event_map.setdefault(event.submission_id, []).append(event)
