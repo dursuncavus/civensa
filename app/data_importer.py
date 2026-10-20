@@ -120,11 +120,12 @@ def _indicator_header_spec(header):
     years = set(re.findall(r'(?<!\d)20\d{2}(?!\d)', header))
     key = _key(header)
     markers = {'actual': 'gerceklesme', 'target': 'hedef', 'forecast': 'tahmin',
-               'planned': 'planlanan', 'budget': 'butce', 'value': 'deger',
+               'planned': 'planlanan', 'budget': 'butce',
                'midyear_spend': 'haziran', 'year_end_estimate': 'yil sonu'}
     kinds = {kind for kind, marker in markers.items() if marker in key}
-    # Preserve the legacy generic kind of the explicit “Gerçekleşen” label.
-    if 'gerceklesen' in key:
+    # “Değer” qualifies explicit kinds (“Hedef Değeri”); only use the generic
+    # kind on its own. Preserve the legacy kind of the “Gerçekleşen” label.
+    if not kinds and ('deger' in key or 'gerceklesen' in key):
         kinds.add('value')
     # “Yıl Sonu Gerçekleşme Tahmini” is one Ministry kind, not three kinds.
     if 'year_end_estimate' in kinds:

@@ -303,6 +303,20 @@ def test_d3_two_row_header_retains_value_kinds():
         (2026, 'actual', '1234.50'), (2027, 'target', '12'), (2028, 'forecast', '0')]
 
 
+@pytest.mark.parametrize('suffix', ['Değer', 'Değeri'])
+def test_two_row_header_value_word_does_not_override_kind(suffix):
+    doc = Document(io.BytesIO(word_document(variant='two_row_header')))
+    for col in range(2, 5):
+        doc.tables[0].cell(7, col).text += ' ' + suffix
+    stream = io.BytesIO()
+    doc.save(stream)
+    parsed = parse_performance_docx(stream.getvalue())
+    assert parsed['errors'] == []
+    values = parsed['departments'][0]['blocks'][0]['indicators'][0]['values']
+    assert [(v['year'], v['kind'], v['value']) for v in values] == [
+        (2026, 'actual', '1234.50'), (2027, 'target', '12'), (2028, 'forecast', '0')]
+
+
 @pytest.mark.parametrize('layout', ['vertical_labels', 'kind_above_year', 'grouped_year'])
 def test_two_row_header_preview_apply_preserves_year_and_kind(db, import_client, import_context, layout):
     doc = Document(io.BytesIO(word_document(variant='two_row_header')))
