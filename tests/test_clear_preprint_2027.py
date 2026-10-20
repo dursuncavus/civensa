@@ -59,7 +59,7 @@ def target(printed):
             payload = dict(departments=[], summary={'source_years': [2027]})
             for index, dept in enumerate(departments):
                 indicator = dict(name=f'Taslak gösterge {index}', unit='Adet',
-                                 values=[dict(year=2027, kind='target', value='2.5', raw_text='2,5')])
+                                 values=[dict(year=2027, kind='target', value='2.5', raw_text='2,5', state='verified')])
                 activity = dict(name=f'Taslak faaliyet {index}', explanation='Kaynak açıklama',
                                 costs=[dict(year=2027, kind='budget', amount='10.25',
                                             funding_type='total', raw_text='10,25'),
