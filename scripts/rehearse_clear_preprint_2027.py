@@ -154,7 +154,15 @@ def rehearse(backup, organization_id, actor_id, record):
                 raise live.Refusal('Üretim yedeği restore sayımları/şeması manifest ile uyuşmuyor.')
             record['restored_table_counts'] = state(engine)['public_table_row_counts']
             before = snapshot(engine)
-            plan = clear.execute(engine, **ids)
+            try:
+                plan = clear.execute(engine, **ids)
+            except live.Refusal:
+                unchanged = snapshot(engine) == before
+                record['steps'].append(dict(step='clear-plan', status='REFUSED',
+                    rows_and_sequences_unchanged=unchanged, writes=0 if unchanged else 'UNKNOWN'))
+                if not unchanged:
+                    raise live.Refusal('Reddedilen temizleme planı satır/sıra durumunu değiştirdi.') from None
+                raise
             if snapshot(engine) != before:
                 raise live.Refusal('Temizleme planı satır/sıra değiştirdi.')
             record['steps'].append(dict(step='clear-plan', counts=plan['counts'], writes=0))

@@ -101,7 +101,22 @@ def identify_context(url, dump, saved, record):
             record['organization_id'], record['actor_id'] = org, actor.id
             period = db.scalar(select(ReportingPeriod).where(ReportingPeriod.year == 2027))
             if period:
+                from sqlalchemy import func
+                from app.models import DepartmentCostValue, Indicator, Activity, Submission, ReportCard, EconomicValue, Publication
                 record['source_shape_counts'] = payload_shape(db, period.id)
+                record['source_2027_counts'] = {
+                    model.__tablename__: db.scalar(select(func.count()).select_from(model).where(model.period_id == period.id))
+                    for model in (Indicator, Activity, Submission, ReportCard, EconomicValue, DepartmentCostValue, Publication)}
+                record['source_2027_department_cost_counts'] = [
+                    dict(department_id=did, rows=count) for did, count in db.execute(
+                        select(DepartmentCostValue.department_id, func.count()).where(
+                            DepartmentCostValue.period_id == period.id).group_by(DepartmentCostValue.department_id)
+                        .order_by(DepartmentCostValue.department_id))]
+                record['source_2027_department_cost_year_counts'] = [
+                    dict(year=year, rows=count) for year, count in db.execute(
+                        select(DepartmentCostValue.year, func.count()).where(
+                            DepartmentCostValue.period_id == period.id).group_by(DepartmentCostValue.year)
+                        .order_by(DepartmentCostValue.year))]
             return org, actor.id
 
 
