@@ -7,18 +7,90 @@ from sqlalchemy import create_engine, event, select, inspect, text, MetaData, Ta
 from sqlalchemy.schema import CreateSchema, DropSchema
 from sqlalchemy.orm import Session, with_expression
 from sqlalchemy.pool import StaticPool
+from sqlalchemy.engine import make_url
+from psycopg import sql
 from app.db import Base
 from app.models import *
 
 def pytest_addoption(parser):
     parser.addoption('--require-postgres', action='store_true',
                      help='Fail if the disposable PostgreSQL test URL is missing.')
+    parser.addoption('--ci-shard-index', type=int, default=None,
+                     help='Zero-based CI shard index; omit to run the complete suite.')
+    parser.addoption('--ci-shard-count', type=int, default=None,
+                     help='Number of CI shards; must be supplied with --ci-shard-index.')
 
 
 def pytest_configure(config):
     config.addinivalue_line('markers', 'postgres: requires a disposable PostgreSQL database')
+    index = config.getoption('--ci-shard-index')
+    count = config.getoption('--ci-shard-count')
+    if (index is None) != (count is None) or (
+        index is not None and (count < 1 or not 0 <= index < count)
+    ):
+        raise pytest.UsageError('CI sharding needs both options with 0 <= index < count')
     if config.getoption('--require-postgres') and not os.getenv('CIVENSA_TEST_POSTGRES_URL'):
         raise pytest.UsageError('--require-postgres needs CIVENSA_TEST_POSTGRES_URL')
+    worker = os.getenv('PYTEST_XDIST_WORKER')
+    url = os.getenv('CIVENSA_TEST_POSTGRES_URL')
+    if worker and url:
+        # Do this before any fixture runs, including module-local migration
+        # fixtures and their Alembic subprocesses. Schemas alone do not isolate
+        # tests that migrate the public schema.
+        target = make_url(url)
+        if target.get_backend_name() != 'postgresql':
+            raise pytest.UsageError('xdist requires a disposable PostgreSQL test URL')
+        name = f'civensa_xdist_{worker}_{uuid4().hex}'
+        admin = create_engine(target, isolation_level='AUTOCOMMIT', hide_parameters=True)
+        try:
+            with admin.connect() as connection:
+                connection.exec_driver_sql(
+                    sql.SQL('CREATE DATABASE {}').format(sql.Identifier(name)).as_string()
+                )
+        except Exception:
+            admin.dispose()
+            raise pytest.UsageError('Could not create disposable xdist worker database') from None
+        config._civensa_worker_database = (admin, name, url)
+        os.environ['CIVENSA_TEST_POSTGRES_URL'] = target.set(database=name).render_as_string(hide_password=False)
+
+
+def pytest_collection_modifyitems(config, items):
+    index = config.getoption('--ci-shard-index')
+    if index is None:
+        return
+    count = config.getoption('--ci-shard-count')
+    # Partition whole files deterministically, balancing collected test counts.
+    # Every file belongs to exactly one shard. Keep original order within each
+    # shard, including modules that share public-schema or cluster-role state.
+    modules = {}
+    for item in items:
+        modules.setdefault(item.nodeid.split('::', 1)[0], []).append(item)
+    loads = [0] * count
+    assignment = {}
+    for module in sorted(modules, key=lambda name: (-len(modules[name]), name)):
+        shard = min(range(count), key=lambda candidate: (loads[candidate], candidate))
+        assignment[module] = shard
+        loads[shard] += len(modules[module])
+    selected, deselected = [], []
+    for item in items:
+        target = selected if assignment[item.nodeid.split('::', 1)[0]] == index else deselected
+        target.append(item)
+    items[:] = selected
+    config.hook.pytest_deselected(items=deselected)
+
+
+def pytest_unconfigure(config):
+    database = getattr(config, '_civensa_worker_database', None)
+    if database is not None:
+        admin, name, original_url = database
+        try:
+            with admin.connect() as connection:
+                connection.exec_driver_sql(
+                    sql.SQL('DROP DATABASE {} WITH (FORCE)').format(sql.Identifier(name)).as_string()
+                )
+        finally:
+            admin.dispose()
+            os.environ['CIVENSA_TEST_POSTGRES_URL'] = original_url
 
 
 @pytest.fixture(autouse=True)

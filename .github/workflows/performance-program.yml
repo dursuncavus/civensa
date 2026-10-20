@@ -1,6 +1,9 @@
 name: Performance program validation
 on:
   pull_request:
+    paths-ignore:
+      - 'docs/**'
+      - '**/*.md'
   workflow_dispatch:
 permissions:
   contents: read
@@ -10,9 +13,12 @@ concurrency:
 jobs:
   test:
     runs-on: ubuntu-24.04
+    timeout-minutes: 45
     strategy:
+      fail-fast: false
       matrix:
         postgres: ['18']
+        shard: [0, 1]
     services:
       postgres:
         image: postgres:${{ matrix.postgres }}
@@ -34,8 +40,30 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+          cache: pip
+          cache-dependency-path: |
+            requirements-dev.txt
+            requirements.txt
       - run: python -m pip install -r requirements-dev.txt
+      - name: Report runner CPU count
+        run: nproc
+      - name: Resolve Playwright version
+        id: playwright
+        run: echo "version=$(python -c 'from importlib.metadata import version; print(version("playwright"))')" >> "$GITHUB_OUTPUT"
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-${{ runner.arch }}-playwright-${{ steps.playwright.outputs.version }}-chromium
+      # OS packages are not part of the browser cache. Always install them, and
+      # let Playwright verify/install the matching Chromium revision on cache hits.
       - run: python -m playwright install --with-deps chromium
-      - run: python -m pytest -q --require-postgres
-      - run: python -m compileall -q app
-      - run: node --check app/static/app.js
+      # Keep each module on one worker: role tests mutate cluster-wide roles,
+      # and migration tests within a module can share the public schema.
+      - run: >-
+          python -m pytest -q --require-postgres -n 4 --dist loadfile
+          --max-worker-restart=0 --ci-shard-index=${{ matrix.shard }}
+          --ci-shard-count=2 --durations=15
+      - if: matrix.shard == 0
+        run: python -m compileall -q app
+      - if: matrix.shard == 0
+        run: node --check app/static/app.js
