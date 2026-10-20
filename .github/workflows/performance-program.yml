@@ -60,7 +60,7 @@ jobs:
       # Keep each module on one worker: role tests mutate cluster-wide roles,
       # and migration tests within a module can share the public schema.
       - run: >-
-          python -m pytest -q --require-postgres -n 2 --dist loadfile
+          python -m pytest -q --require-postgres -n 4 --dist loadfile
           --max-worker-restart=0 --ci-shard-index=${{ matrix.shard }}
           --ci-shard-count=2 --durations=15
       - if: matrix.shard == 0
