@@ -196,8 +196,12 @@ def main(argv=None):
     parser.add_argument('--actor-id', type=int, required=True)
     parser.add_argument('--out', type=Path, default=Path('civ058-rehearsal-counts.json'))
     args = parser.parse_args(argv)
-    if args.out.resolve() in {args.backup.resolve(), args.backup.with_suffix('.manifest.json').resolve()}:
-        print('DURDU: Sayım raporu yedek/manifest dosyasının üzerine yazılamaz.', file=sys.stderr)
+    try:
+        if args.out.resolve() in {args.backup.resolve(), args.backup.with_suffix('.manifest.json').resolve()}:
+            print('DURDU: Sayım raporu yedek/manifest dosyasının üzerine yazılamaz.', file=sys.stderr)
+            return 1
+    except Exception:
+        print('DURDU: Rapor/yedek dosya yolu doğrulanamadı; ayrıntılar gizlendi.', file=sys.stderr)
         return 1
     record = dict(status='FAIL', steps=[])
     # No source contents, source URL, database password or row values in output.
@@ -215,6 +219,10 @@ def main(argv=None):
     finally:
         try:
             args.out.write_text(json.dumps(record, ensure_ascii=False, indent=2) + '\n')
+        except Exception:
+            record['status'] = 'FAIL'
+            print('DURDU: Sayım raporu yazılamadı; çıktı klasörünü sorumluya kontrol ettirin. Dosya ayrıntıları gizlendi.',
+                  file=sys.stderr)
         finally:
             os.umask(previous_mask)
     print('CIV-058 yerel prova: ' + record['status'])

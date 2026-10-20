@@ -396,3 +396,15 @@ def test_backup_freshness_is_rechecked_after_guards_before_first_delete(target):
         clear.execute(engine, apply=True, before_write=expired, **ids)
     assert calls == ['checked']
     assert state(engine) == before
+
+
+def test_rehearsal_report_write_failure_does_not_expose_paths(monkeypatch, tmp_path, capsys):
+    from scripts import rehearse_clear_preprint_2027 as rehearsal
+    monkeypatch.setattr(rehearsal, 'rehearse', lambda *args: None)
+    out = tmp_path / 'private-sentinel-connection' / 'counts.json'
+    assert rehearsal.main(['--backup', str(tmp_path / 'source.dump'),
+                           '--out', str(out), '--organization-id', '1', '--actor-id', '1']) == 1
+    captured = capsys.readouterr()
+    assert 'Sayım raporu yazılamadı' in captured.err
+    assert 'private-sentinel-connection' not in captured.out + captured.err
+    assert 'Traceback' not in captured.out + captured.err
