@@ -314,14 +314,80 @@ def proof_text(cells, stage):
                      for v in cells)
 
 
+def institution_reference(value):
+    return f"s.{value['page']} / {value['table']} / r{value['row']}c{value['column']}"
+
+
+def institution_evidence(audit):
+    if not audit.get('evidence'):
+        return []
+    lines = ['### Büyük farklar — katkı ve kapsam kanıtı', '',
+             'Aşağıdaki hesaplar kaynak hücrelerine kadar izlenir. CHECK satırındaki hesaplanan tutar '
+             'tanısal aday toplamdır; farklı faaliyet kapsamlarını eşit kabul etmez ve basılı tutarın '
+             'düzeltmesi değildir. UNKNOWN, iki basılı kaynak arasındaki farkın hangi taraftan '
+             'geldiğinin belirlenemediğini gösterir. Kart listesi kaynak bağlamıdır; aynı ekonomik '
+             'hücre kart sayısı ile çarpılmaz. Tüm kaynak hücreleri fiziksel tablo / satır / sütun '
+             'kimliğine göre bir kez sayılır.', '']
+    for i, f in enumerate(audit.get('evidence', []), 1):
+        lines += [f"#### Kanıt {i} — s.{f['page']} / {f['table']} / r{f['row']}c{f['column']}", '',
+                  f"Sınıf: **{f['classification'] or '—'}**; basılı: **{money(f['printed'])}**; "
+                  f"hesaplanan: **{money(f['computed'])}**; Fark: **{money(f['difference'])}**.", '',
+                  cell(f['coverage_basis']), '',
+                  'Basılı toplamın doğrudan kapsadığı satır / bileşenler:', '',
+                  '| Kaynak hücresi | Basılı satır | Basılı değer |', '| --- | --- | ---: |']
+        for ref in f['printed_components']:
+            lines.append('| ' + ' | '.join(cell(v) for v in (
+                institution_reference(ref), ref['label'], ref['raw'] if ref['raw'] is not None else 'BOŞ')) + ' |')
+        if f.get('printed_leaves'):
+            lines += ['', 'Bu alt programların kapsadığı faaliyet satırları (alt toplamlarla birlikte tekrar toplanmaz):', '',
+                      '| Kaynak hücresi | Faaliyet | Basılı değer |', '| --- | --- | ---: |']
+            for ref in f['printed_leaves']:
+                lines.append('| ' + ' | '.join(cell(v) for v in (
+                    institution_reference(ref), ref['label'], ref['raw'] if ref['raw'] is not None else 'BOŞ')) + ' |')
+        if f.get('coverage'):
+            c = f['coverage']
+            lines += ['', f"Kapsam karşılaştırması: **{'Eşleşiyor' if c['comparable'] else 'Eşleşmiyor / tekil değil'}**. "
+                      f"Yalnız kurumda: {len(c['summary_only'])}; yalnız müdürlüklerde: {len(c['directorate_only'])}. "
+                      'Bu sayılar tutar dağılımı veya yeni program eşlemesi üretmez.', '',
+                      'Kurum tablosundaki sonraki Kurumsal Genel Yönetim Giderleri / Diğer Destek, Denetim ve '
+                      'Hizmet Birimleri satırları, program başlığının bütün müdürlük kartlarıyla aynı kapsam '
+                      'olduğunu kanıtlamaz; bu satırlardan programa tutar taşınmadı.', '']
+        if f['check'] == 'Sütun toplamı':
+            lines += ['', 'Hesaplanan tutar yukarıda gösterilen doğrudan basılı satırların toplamıdır. '
+                      'Alt programlar ve faaliyetler ayrıca eklenmedi; sonraki kurumsal giderler dışarıda bırakıldı.', '']
+            continue
+        lines += ['', 'Hesaplamaya giren kaynak hücreleri:', '',
+                  '| Müdürlük | Bağlı kartlar (sayfa / tablo; program / alt program) | Kaynak hücresi | Kaynak satır | Ham değer | Katkı |',
+                  '| --- | --- | --- | --- | --- | ---: |']
+        for ref in f['contributors']:
+            cards = '; '.join(f"s.{c['page']} / {c['table']} r{c['programme_row']}c2 / r{c['subprogramme_row']}c2; "
+                              f"{c['programme']} / {c['subprogramme']}"
+                              for c in ref.get('cards', [])) or '—'
+            lines.append('| ' + ' | '.join(cell(v) for v in (
+                ref.get('department', '—'), cards, institution_reference(ref), ref['label'] or '—',
+                ref['raw'] if ref['raw'] is not None else 'BOŞ', money(ref['amount']))) + ' |')
+        lines += ['', f"Tekil kaynak hücresi: {len(f['contributors'])}; "
+                  f"katkılar toplamı: {money(sum((r['amount'] for r in f['contributors'] if r['amount'] is not None), Decimal(0)))}. "
+                  'Bu bilinen ara toplamdır; eksik hücre varsa genel hesap Bilinmiyor kalır.', '']
+    return lines
+
+
 def institution_report(audit):
     from app.numbers import format_number
 
     findings = audit['findings']
     failures = sum(f['status'] == 'FAIL' for f in findings)
+    classes = Counter(f['classification'] for f in findings if f['status'] == 'FAIL')
+    if any(k not in {'BOOK', 'CHECK', 'UNKNOWN'} for k in classes):
+        raise ValueError('Kurum bulgusunun BOOK / CHECK / UNKNOWN sınıfı eksik; denetim çıktısını kontrol edin.')
     lines = ['## Kurum özet tabloları', '',
              f"Kurum kontrolü: **{len(findings) - failures} PASS / {failures} FAIL**. "
              'Bu bulgular müdürlük SOURCE/SYSTEM mesajlarına ve kitap kontrol maddesi sayımına eklenmez.', '',
+             f"FAIL sınıfları: **BOOK {classes['BOOK']} / CHECK {classes['CHECK']} / UNKNOWN {classes['UNKNOWN']}**.", '',
+             'BOOK = aynı basılı tablonun kendi kapsamı içinde aritmetik yanlış; aşağıda toplanan hücreler '
+             'gösterilir. CHECK = kapsam / program eşlemesi / tekil dağılım veya okuma sınırı; kitap hatası '
+             'sayılmaz. UNKNOWN = farklı basılı kaynaklar uyuşmuyor veya hücre okunamıyor; kaynaktan hangi '
+             'tarafın yanlış olduğu belirlenemedi. Sayısal fark tek başına BOOK kanıtı değildir.', '',
              'Tablolar başlık metniyle bulunur; sayfa numarası yalnız kaynak kanıtıdır. '
              'Fark = basılı − hesaplanan. Boş, çizgi veya okunamayan tutar sıfır sayılmaz; '
              'eksik toplam ve hesaplanamayan karşılaştırma FAIL olur. '
@@ -343,19 +409,22 @@ def institution_report(audit):
     for reserve in audit.get('reserves', []):
         values = [f"s.{reserve['page']} / {reserve['table']} / {reserve['row']}", reserve['year'], *reserve['values']]
         lines.append('| ' + ' | '.join(cell(v) for v in values) + ' |')
-    lines += ['', '| Durum | Kontrol | Kitap sayfası | Tablo | Satır | Sütun | Basılı değer | Hesaplanan değer | Fark | Açıklama |',
-              '| --- | --- | --- | --- | --- | --- | ---: | ---: | ---: | --- |']
+    lines += ['', '| Durum | Sınıf | Kontrol | Kitap sayfası | Tablo | Satır | Sütun | Basılı değer | Hesaplanan değer | Fark | Açıklama |',
+              '| --- | --- | --- | --- | --- | --- | --- | ---: | ---: | ---: | --- |']
     for f in findings:
         def display(value):
             if value is None:
                 return 'Bilinmiyor'
             return format_number(value, money=not f['check'].startswith('Yüzde'))
         raw = display(f['printed']) if f['printed'] is not None else f"«{f['raw'] or 'BOŞ'}»"
-        values = [f['status'], f['check'], f['page'], f"{f['table']} — {f['name']}",
+        note = f['note']
+        if f['status'] == 'FAIL' and f['classification'] == 'BOOK':
+            note += ' Kanıt: ' + '; '.join(f"{institution_reference(r)} = «{r['raw']}»" for r in f['contributors'])
+        values = [f['status'], f['classification'] or '—', f['check'], f['page'], f"{f['table']} — {f['name']}",
                   f"{f['row']} — {f['label']}", f['column'], raw,
-                  display(f['computed']), display(f['difference']), f['note']]
+                  display(f['computed']), display(f['difference']), note]
         lines.append('| ' + ' | '.join(cell(v) for v in values) + ' |')
-    return lines + ['']
+    return lines + [''] + institution_evidence(audit) + ['']
 
 
 def report(parsed, inspection, path, digest, output_path=None):
@@ -527,7 +596,7 @@ def report(parsed, inspection, path, digest, output_path=None):
                       + cell('; '.join(conversion['unmapped']) or 'Yok') + '.', '',
                       'Basılı sayfaya bağlı olmayan tablolar (dışlama seçeneğinden bağımsız; yüklemeye alınmaz): '
                       + cell(json.dumps(conversion['unplaced'], ensure_ascii=False)) + '.', ''])
-    lines.extend(['Teyit bekleyen ad eşlemeleri: ' + ('; '.join(inspection['pending']) or 'Yok (D-94, 19 Ekim 2026 teyidi)') + '. '
+    lines.extend(['Teyit bekleyen ad eşlemeleri: ' + ('; '.join(inspection['pending']) or 'Yok (D-94, 19 Ekim 2026 proje sahibi teyidi)') + '. '
                   'Program/alt program kodları kitapta yoktur ve boş bırakılır. Tekil müdürlük içi faaliyet '
                   'kodu üyeliği belirler. Resmî katalog 0006 Özel Kalem gibi maliyet karşılığı bulunmayan '
                   'üyelikleri korur; yeni maliyet üretilmez. Nihai kitap dışlamasız yeniden denenmelidir.', ''])

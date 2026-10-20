@@ -30,12 +30,14 @@ def economic():
 
 
 def directorates(amount='30.00'):
-    return dict(departments=[dict(blocks=[], economic_tables=[dict(
-        categories=['personnel'], values=[
+    raw = f'{Decimal(amount):.2f}'.replace('.', ',') if amount is not None else ''
+    return dict(departments=[dict(name='Test Müdürlüğü', blocks=[], economic_tables=[dict(
+        table_number=1, categories=['personnel'], values=[
             dict(category='personnel', year=2027, kind='budget', funding_type='inside',
                  amount=amount, state='needs_review'),
             dict(category='personnel', year=2027, kind='budget', funding_type='outside', amount='0.00'),
-        ])])])
+        ])])], source_tables={'1': dict(id='economic1', page='12')},
+        rehearsal_tables={'1': dict(book=[['Ekonomik Ad', '2027 Bütçe'], ['Personel Giderleri', raw]])})
 
 
 @pytest.mark.parametrize('value,status,difference', [('30,00', 'PASS', '0'), ('29,00', 'FAIL', '-1')])
@@ -106,6 +108,9 @@ def test_programme_group_category_totals_require_source_allocation():
     for v in values:
         v['program_group'] = 'service'
     other = deepcopy(parsed['departments'][0])
+    other['economic_tables'][0]['table_number'] = 2
+    parsed['source_tables']['2'] = dict(id='economic2', page='13')
+    parsed['rehearsal_tables']['2'] = dict(book=[['Ekonomik Ad', '2027 Bütçe'], ['Personel Giderleri', '20,00']])
     for v in other['economic_tables'][0]['values']:
         v['program_group'] = 'management'
         if v['funding_type'] == 'inside':
@@ -173,10 +178,10 @@ def detail():
 
 
 def programme_source(value='3,00'):
-    return dict(departments=[dict(blocks=[dict(program='Parklar', activity_memberships=[dict(
-        table_number=1, row_number=3)])])], rehearsal_tables={'1': dict(book=[
+    return dict(departments=[dict(name='Test Müdürlüğü', blocks=[dict(program='Parklar', activity_memberships=[dict(
+        table_number=1, row_number=3), dict(table_number=1, row_number=4)])])], rehearsal_tables={'1': dict(book=[
             ['Alt Program Kapsamında Yürütülecek Faaliyet Maliyetleri', '→'],
-            ['Faaliyetler', '2027 Bütçe'], ['0001.Dikim', value]])})
+            ['Faaliyetler', '2027 Bütçe'], ['0001.Dikim', value], ['0002.Bakım', '0,00']])})
 
 
 def test_hierarchical_subtotals_cover_direct_children():
@@ -294,7 +299,8 @@ def test_printed_book_summary_defects_and_separate_directorate_counts(printed):
 def test_owner_confirmed_name_map_preserves_values_and_checksums():
     mapping = json.loads((FIXTURES / 'name_map.json').read_text())
     assert mapping['pending_ali'] == []
-    assert '19 Ekim 2026' in mapping['note'] and 'D-94' in mapping['note']
+    assert mapping['note'] == ('Kitaptaki ad -> sistemdeki ad. Beş ad eşlemesi 19 Ekim 2026 tarihinde '
+                              'proje sahibi tarafından teyit edildi (D-94); teyit bekleyen eşleme yok.')
     assert mapping['map']['Harita ve Planlama Müdürlüğü'] == 'Plan Proje Müdürlüğü'
     for line in (FIXTURES / 'SHA256SUMS').read_text().splitlines():
         if line.startswith('#'):
