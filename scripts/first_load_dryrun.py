@@ -171,12 +171,12 @@ def disposable_database(url):
 def inspect_import(db, parsed, filename):
     from sqlalchemy import select
     from sqlalchemy.exc import SQLAlchemyError
-    from app.import_service import (DISPLAY_OVERRIDES, apply_import_batch,
+    from app.import_service import (DISPLAY_OVERRIDES,
                                     build_department_plan, department_key,
                                     import_validation_errors)
     from app.models import Department, ImportBatch, Organization, ReportingPeriod, User
     from app.program_service import validate_department, department_snapshot
-    from app.first_load_service import load_first_load_catalogue
+    from app.first_load_service import apply_first_load_batch
 
     names = json.loads(NAME_MAP.read_text(encoding='utf-8'))
     system_names = set(names['map'].values())
@@ -206,8 +206,7 @@ def inspect_import(db, parsed, filename):
     # Exercise the real gate even if preview reports blocking issues. Never choose
     # source candidates or remove a bad directorate to make the book applicable.
     try:
-        applied = apply_import_batch(db, batch)
-        catalogue = load_first_load_catalogue(db, period.id, parsed, strategy)
+        applied, catalogue, _ = apply_first_load_batch(db, batch, strategy)
         db.commit()
     except ValueError as exc:
         db.rollback()

@@ -10,6 +10,29 @@ from .models import (Activity, ActivityCatalogueLink, ActivityResponsibility, De
 from .program_service import save_activity_catalogue_links, save_catalogue_entry
 
 
+def apply_first_load_batch(db, batch, actor):
+    """The shared dry-run/live write path; caller owns the transaction.
+
+    D-111: keep importer cell states and draft submissions. Department validation
+    is diagnostic; structural import/catalogue guards still apply unchanged.
+    """
+    import json
+    from .import_service import apply_import_batch
+    from .program_service import validate_department
+
+    parsed = json.loads(batch.payload_json)
+    applied = apply_import_batch(db, batch)
+    catalogue = load_first_load_catalogue(db, batch.period_id, parsed, actor)
+    validations = []
+    keys = {department_key(d['name']) for d in parsed['departments']}
+    for department in db.scalars(select(Department).order_by(Department.name)):
+        if department_key(department.name) in keys:
+            errors, warnings = validate_department(db, batch.period_id, department.id)
+            validations.append(dict(department_id=department.id, name=department.name,
+                                    errors=errors, warnings=warnings))
+    return applied, catalogue, validations
+
+
 def load_first_load_catalogue(db, period_id, parsed, actor):
     """Add exact book entries/responsibilities/links idempotently, with service audit.
 
