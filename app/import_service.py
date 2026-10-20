@@ -634,8 +634,16 @@ def revert_import_batch(db: Session, batch: ImportBatch) -> dict:
 
 
 def apply_import_batch(db: Session, batch: ImportBatch, preserve_existing: bool = False) -> dict:
+    # Serialize every caller, including CLI/service callers, before reading the
+    # status or building a department plan. Refresh the identity-map entry too:
+    # a waiting session may already have cached this batch as a preview.
+    batch_id = batch.id
+    batch = db.scalar(select(ImportBatch).where(ImportBatch.id == batch_id)
+                      .with_for_update().execution_options(populate_existing=True))
+    if batch is None:
+        raise ValueError(f"İçe aktarma paketi #{batch_id} bulunamadı. Dosyayı yeniden yükleyip yeni önizleme oluşturun.")
     if batch.status != "preview":
-        raise ValueError("Bu içe aktarma paketi artık önizleme durumunda değil.")
+        raise ValueError(f"Bu içe aktarma paketi artık önizleme durumunda değil. Paket #{batch.id} için tekrar uygulama durduruldu. İçe aktarma geçmişinden sonucu kontrol edin; yeni veri için yeni önizleme oluşturun.")
     period = db.get(ReportingPeriod, batch.period_id)
     if not period:
         raise ValueError("Raporlama dönemi bulunamadı.")

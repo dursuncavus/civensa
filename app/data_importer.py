@@ -93,12 +93,57 @@ def iter_document_tables(doc):
             yield Table(element, doc)
 
 
+def _use_accepted_view(doc):
+    """Project visible OOXML into the structure python-docx reads.
+
+    Work only on the in-memory import document. Unwrap inserted/moved-to text
+    and displayed content controls, including block controls around paragraphs
+    or tables; discard deleted/moved-from subtrees altogether.
+    """
+    hidden = {qn('w:del'), qn('w:moveFrom')}
+    wrappers = {qn('w:ins'), qn('w:moveTo'), qn('w:sdt')}
+    for element in reversed(list(doc.element.iter())):
+        parent = element.getparent()
+        if element.tag in hidden:
+            parent.remove(element)
+        elif element.tag in wrappers:
+            content = element.find(qn('w:sdtContent')) if element.tag == qn('w:sdt') else element
+            index = parent.index(element)
+            for child in list(content) if content is not None else []:
+                parent.insert(index, child)
+                index += 1
+            parent.remove(element)
+
+
+def _indicator_header_spec(header):
+    """Require an explicit, unique year AND kind, never infer from position."""
+    years = set(re.findall(r'(?<!\d)20\d{2}(?!\d)', header))
+    key = _key(header)
+    markers = {'actual': 'gerceklesme', 'target': 'hedef', 'forecast': 'tahmin',
+               'planned': 'planlanan', 'budget': 'butce',
+               'midyear_spend': 'haziran', 'year_end_estimate': 'yil sonu'}
+    kinds = {kind for kind, marker in markers.items() if marker in key}
+    # “Değer” qualifies explicit kinds (“Hedef Değeri”); only use the generic
+    # kind on its own. Preserve the legacy kind of the “Gerçekleşen” label.
+    if not kinds and ('deger' in key or 'gerceklesen' in key):
+        kinds.add('value')
+    # “Yıl Sonu Gerçekleşme Tahmini” is one Ministry kind, not three kinds.
+    if 'year_end_estimate' in kinds:
+        kinds.difference_update({'actual', 'forecast'})
+    if 'midyear_spend' in kinds:
+        kinds.discard('actual')
+    if len(years) != 1 or len(kinds) != 1:
+        return None
+    return int(next(iter(years))), next(iter(kinds))
+
+
 def _parse_indicator_table(table):
     rows=table.rows
     header_idx = next((idx for idx, row in enumerate(rows)
                        if _label_key(row.cells[0].text).startswith(
                            ("performansgostergesi", "performansgostergeleri"))
-                       and any(_value_kind(cell.text) for cell in row.cells[1:])), None)
+                       and any(_label_key(cell.text) == 'olcubirimi' or _value_kind(cell.text)
+                               for cell in row.cells[1:])), None)
     if header_idx is None:
         return None
 
@@ -116,14 +161,40 @@ def _parse_indicator_table(table):
     rationale = label_value("gerekceveaciklamalar")
     goal = label_value("altprograminhedefi")
     headers=[_clean(c.text) for c in rows[header_idx].cells]
+    header_cells = rows[header_idx].cells
+    data_start = header_idx + 1
+    unit_column = max((col for col, text in enumerate(headers)
+                       if _label_key(text) == 'olcubirimi'), default=1)
+    if data_start < len(rows):
+        continuation = [_clean(c.text) for c in rows[data_start].cells]
+        # Blank or vertically merged label cells distinguish the second header
+        # row from an indicator. Join by grid column, preserving year and kind.
+        if all(not text or text == headers[col]
+               for col, text in enumerate(continuation[:unit_column + 1])):
+            header_cells = rows[data_start].cells
+            headers = [' '.join(dict.fromkeys((text, continuation[col]))).strip()
+                       if col < len(continuation) else text for col, text in enumerate(headers)]
+            data_start += 1
     value_columns=[]
-    for col,h in enumerate(headers):
-        spec=_value_kind(h)
-        if spec: value_columns.append((col,*spec))
+    header_errors=[]
+    for col in range(unit_column + 1, len(headers)):
+        spec = _indicator_header_spec(headers[col])
+        if spec:
+            value_columns.append((col, *spec))
+        else:
+            header_errors.append(col + 1)
+    for col, year, kind in value_columns:
+        # Word repeats a horizontally merged header cell in the grid. Preserve
+        # that established source representation; independent duplicate headers
+        # cannot identify distinct values and must be refused.
+        if any((other_year, other_kind) == (year, kind)
+               and header_cells[other_col]._tc is not header_cells[col]._tc
+               for other_col, other_year, other_kind in value_columns):
+            header_errors.append(col + 1)
     indicators=[]
     metadata={"explanation":"","calculation_method":"","data_source":"","responsible":""}
     stop_idx=len(rows)
-    for idx in range(header_idx+1,len(rows)):
+    for idx in range(data_start,len(rows)):
         first=_clean(rows[idx].cells[0].text)
         lower=_label_key(first)
         if lower.startswith(("gostergeye", "gostergelere")):
@@ -155,7 +226,7 @@ def _parse_indicator_table(table):
             metadata["responsible"]=val
     for ind in indicators:
         ind.update(metadata)
-    return {"department":department,"budget_year":budget_year,"program":program,"subprogram":subprogram,"rationale":rationale,"goal":goal,"source_title":budget_year_text,"administration":administration,"metadata":metadata,"indicators":indicators}
+    return {"department":department,"budget_year":budget_year,"program":program,"subprogram":subprogram,"rationale":rationale,"goal":goal,"source_title":budget_year_text,"administration":administration,"metadata":metadata,"indicators":indicators,"header_errors":header_errors}
 
 
 def _parse_activity_table(table, table_number=None, budget_year=None):
@@ -238,6 +309,7 @@ def _parse_activity_table(table, table_number=None, budget_year=None):
 
 def parse_performance_docx(data: bytes):
     doc=Document(io.BytesIO(data))
+    _use_accepted_view(doc)
     departments=OrderedDict(); current_department=None; errors=[]; coverage_items=[]
     indicator_table_count=0; activity_table_count=0; economic_table_count=0
     pending_blocks=[]; rejected_economic_tables=[]
@@ -246,6 +318,8 @@ def parse_performance_docx(data: bytes):
         perf=_parse_indicator_table(table)
         if perf and perf["indicators"]:
             indicator_table_count+=1; current_department=None
+            for column in perf['header_errors']:
+                errors.append(f"Tablo {index+1}, sütun {column}: gösterge başlık bilgisinde tek bir yıl ve değer türü belirlenemedi. Başlığı yıl ve Gerçekleşme/Hedef/Tahmin gibi tek bir tür içerecek şekilde düzeltip dosyayı yeniden yükleyin.")
             if perf["budget_year"] is None:
                 errors.append(f"Tablo {index+1}: Bütçe Yılı alanında tek bir yıl bulunamadı (alan eksik, boş veya birden fazla farklı yıl içeriyor). Bütçe Yılı alanına tek bir dört haneli yıl yazıp dosyayı yeniden yükleyin.")
             required_fields = (
