@@ -364,7 +364,7 @@ document.querySelectorAll('.save-password-reset').forEach(button=>button.addEven
 // Strategy activity mapping queue: designed for high-volume Word imports.
 (function(){
   const selects=[...document.querySelectorAll('.mapping-select')];
-  if(!selects.length)return;
+  if(!document.getElementById('mappingGroups'))return;
   const topSave=document.getElementById('saveAllMappings');
   const bottomSave=document.getElementById('saveMappingsBottom');
   const count=document.getElementById('selectedMappingCount');
