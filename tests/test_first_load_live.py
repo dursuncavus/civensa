@@ -65,6 +65,7 @@ def test_printed_plan_apply_repeat_resume_preserves_corrections(target, printed)
     applied = live.execute(engine, printed, apply=True, **ids)
     assert not applied['failed']
     assert applied['counts'] == plan['counts']
+    assert applied['departments'] == plan['departments']
     assert len(applied['validation']) == 33
     assert any(v['errors'] for v in applied['validation'])
     after = state(engine)
@@ -86,6 +87,7 @@ def test_printed_plan_apply_repeat_resume_preserves_corrections(target, printed)
     resumed = live.execute(engine, printed, apply=True, resume=True, **ids)
     assert sum(resumed['counts'].values()) == 0
     assert len(resumed['skipped']) == 34
+    assert all(d['action'] == 'skip' for d in resumed['departments'])
     assert state(engine) == after_correction
     with Session(engine) as db:
         assert db.get(Indicator, saved[0]).explanation == saved[1]
@@ -105,6 +107,44 @@ def test_cli_plan_on_release50_schema_writes_nothing(target, monkeypatch, capsys
     assert 'İşletme ve İştirakler Müdürlüğü' in output
     assert '1300' in output
     assert engine.url.render_as_string(hide_password=False) not in output
+
+
+@pytest.mark.postgres
+def test_plan_lists_department_actions_without_writes(target, printed, monkeypatch, capsys):
+    engine, ids = target
+    data = deepcopy(printed)
+    data['departments'] = data['departments'][:4] + [data['departments'][-1]]
+    sources = data['departments']
+    with Session(engine) as db:
+        exact = [Department(organization_id=ids['organization_id'], name=sources[i]['name']) for i in (0, 2)]
+        renamed = Department(organization_id=ids['organization_id'], name=sources[1]['name'] + ' Yeni')
+        db.add_all([*exact, renamed])
+        db.commit()
+        exact_ids = [d.id for d in exact]
+    before = state(engine)
+    plan = live.execute(engine, data, **ids)
+    assert state(engine) == before
+    actions = plan['departments']
+    assert len(actions) == len(sources)
+    assert actions[0] == dict(source_name=sources[0]['name'], action='match',
+                             department_id=exact_ids[0], name=sources[0]['name'])
+    assert actions[1]['source_name'] == sources[1]['name']
+    assert actions[1]['action'] == 'skip'
+    assert 'Tekil kesin müdürlük eşleşmesi yok' in actions[1]['reason']
+    assert actions[2] == dict(source_name=sources[2]['name'], action='match',
+                             department_id=exact_ids[1], name=sources[2]['name'])
+    assert actions[3] == dict(source_name=sources[3]['name'], action='create', name=sources[3]['name'])
+    assert actions[4] == dict(source_name=live.SKIPPED, action='skip', reason=plan['skipped'][-1]['reason'])
+    monkeypatch.setattr(live, 'verify_book', lambda path: data)
+    monkeypatch.setenv(live.TARGET_ENV, engine.url.set(query={}).render_as_string(hide_password=False))
+    assert live.main(['--organization-id', str(ids['organization_id']), '--actor-id', str(ids['actor_id'])]) == 0
+    assert state(engine) == before
+    text_output, json_output = capsys.readouterr().out.split('\n{', 1)
+    assert f"Eşleştir: {sources[0]['name']} → {sources[0]['name']} (müdürlük #{exact_ids[0]})" in text_output
+    assert f"Oluştur: {sources[3]['name']} → {sources[3]['name']}" in text_output
+    assert f"Atla: {sources[1]['name']} · " in text_output
+    assert f'Atla: {live.SKIPPED} · ' in text_output
+    assert json.loads('{' + json_output)['departments'] == actions
 
 
 @pytest.mark.postgres
@@ -205,6 +245,8 @@ def test_department_failure_rolls_back_alone_and_resume_retries_only_failure(tar
     result = live.execute(engine, data, apply=True, **ids)
     assert result['counts']['departments'] == 1
     assert [f['name'] for f in result['failed']] == [data['departments'][0]['name']]
+    assert result['departments'][0] == dict(source_name=data['departments'][0]['name'], action='skip',
+                                           reason=result['failed'][0]['reason'])
     with Session(engine) as db:
         assert db.scalar(select(Department.id).where(Department.name == data['departments'][0]['name'])) is None
         assert len(list(db.scalars(select(ImportBatch)))) == 1
@@ -240,7 +282,7 @@ def test_locked_submission_is_skipped_and_existing_draft_remains_draft(target, p
         assert list(db.scalars(select(Submission.status).order_by(Submission.id))) == ['approved', 'draft']
 
 
-@pytest.mark.parametrize('damage', ['missing', 'manifest', 'stale', 'future', 'checksum', 'size', 'name', 'head', 'mtime', 'format'])
+@pytest.mark.parametrize('damage', ['missing', 'manifest', 'stale', 'future', 'checksum', 'size', 'name', 'head', 'format'])
 def test_backup_guard(tmp_path, damage):
     dump, manifest = backup_files(tmp_path)
     if damage == 'missing':
@@ -257,8 +299,6 @@ def test_backup_guard(tmp_path, damage):
         manifest['file_name'] = 'other.dump'
     elif damage == 'head':
         manifest['alembic_version']['version_num'] = ['other_head']
-    elif damage == 'mtime':
-        os.utime(dump, (0, 0))
     elif damage == 'format':
         dump.write_bytes(b'wrong-format')
         manifest.update(file_size_bytes=dump.stat().st_size, sha256=hashlib.sha256(dump.read_bytes()).hexdigest())
@@ -270,6 +310,8 @@ def test_backup_guard(tmp_path, damage):
 
 def test_fresh_backup_and_book_checksum(tmp_path):
     dump, _ = backup_files(tmp_path)
+    # ZIP tools may preserve an old file mtime; the recovery point is in the manifest.
+    os.utime(dump, (0, 0))
     live.verify_backup(dump)
     wrong_book = tmp_path / 'book.idml'
     wrong_book.write_bytes(b'edited')
@@ -286,6 +328,20 @@ def test_target_guard(monkeypatch, url):
     with pytest.raises(live.Refusal) as error:
         live.target_url()
     assert 'secret' not in str(error.value)
+
+
+def test_neon_channel_binding_require_is_accepted(monkeypatch):
+    monkeypatch.setenv(live.TARGET_ENV,
+                      'postgresql://unused@neon.example/db?sslmode=require&channel_binding=require')
+    assert dict(live.target_url().query) == dict(sslmode='require', channel_binding='require')
+
+
+@pytest.mark.parametrize('query', ['channel_binding=disable', 'channel_binding=prefer', 'channel_binding=',
+                                 'channel_binding=require&application_name=extra'])
+def test_neon_channel_binding_other_values_and_extra_keys_are_refused(monkeypatch, query):
+    monkeypatch.setenv(live.TARGET_ENV, 'postgresql://unused@neon.example/db?sslmode=require&' + query)
+    with pytest.raises(live.Refusal):
+        live.target_url()
 
 
 @pytest.mark.parametrize('confirmation', ['', 'incorrect', live.BOOK_SHA256])

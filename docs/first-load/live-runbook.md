@@ -59,7 +59,9 @@ veritabanı bağlantısı veya migrasyon çalışmaz.
 ## 3. Bağlantıyı yalnız gizli istemde girin
 
 Neon'da hedef canlı dal/veritabanı/rolü ve **doğrudan, havuzsuz** bağlantıyı doğrulayın.
-Bağlantı `sslmode=require` veya daha güçlü TLS doğrulaması içermelidir. Bağlantıyı
+Bağlantı `sslmode=require` veya daha güçlü TLS doğrulaması içermelidir. Neon Console'un
+eklediği `channel_binding=require` kabul edilir; bu parametrenin başka değeri veya
+başka ek bağlantı parametresi kabul edilmez. Bağlantıyı
 chat, dosya, `.env`, komut satırı, ekran görüntüsü veya PR'a yapıştırmayın. Terminal
 kaydını ve kabuk izlemeyi kapatın. Aşağıdaki gizli istem yazdığınızı göstermez ve
 bağlantıyı komut geçmişine kaydetmez:
@@ -85,7 +87,21 @@ python scripts/first_load_live.py \
   --organization-id "$CIV052_ORG_ID" --actor-id "$CIV052_ACTOR_ID"
 ```
 
-Beklenen: `PLAN: Hedefe 0 satır yazıldı.` ve JSON sayımları:
+Beklenen: `PLAN: Hedefe 0 satır yazıldı.`, her kaynak müdürlük için kısa bir Türkçe
+işlem satırı ve ardından JSON çıktısı. `departments` listesinde her müdürlük için:
+
+- `match`: mevcut müdürlüğün `department_id` numarası ve `name` adı; satır `Eşleştir:` ile başlar.
+- `create`: oluşturulacak müdürlüğün `name` adı; satır `Oluştur:` ile başlar.
+- `skip`: atlama gerekçesi `reason`; satır `Atla:` ile başlar.
+
+Sahibi her `match` numarasını/adını ve her `create` kaydını tek tek kontrol etmelidir.
+Her `create` gerçekten **yeni bir müdürlük** olmalıdır; sistemde adı değiştirilmiş
+mevcut bir müdürlük için yeni kayıt oluşturmayın. **Beklenmeyen her `create` veya
+`skip` = DURUN**; sorumlu eşleşmeyi doğrulamadan uygulamayın. İşletme ve İştirakler'in
+Meclis verisi gerekçesiyle atlanması beklenir. Uygulama çıktısı da `departments`
+listesini içerir; hizmetin reddettiği müdürlük `skip` ve gerekçesiyle gösterilir.
+
+JSON içindeki `counts` sayımları:
 
 | Alan | Beklenen |
 | --- | ---: |
@@ -129,7 +145,7 @@ read -r -p 'İndirilen .dump dosyasının tam yolu: ' CIV052_BACKUP
 
 Beklenen: yakın tarihli yeşil yedeğin iki dosyası yan yanadır. **Yedeğin alındığı
 andan uygulamaya kadar 60 dakikadan az** geçmiş olmalıdır; indirme zamanı yetmez.
-Yükleyici manifest zamanı, dosya yaşı, SHA256, boyut, biçim ve Alembic başlığını
+Yükleyici manifestteki yedek zamanını, SHA256, boyut, biçim ve Alembic başlığını
 kontrol eder. Yerel dosya bu yedeğin canlı hedefe ait olduğunu ispatlayamaz; bunu
 sahibi doğru yeşil çalıştırma/dal ve hedef üzerinden doğrular. Yedek başarısızsa,
 eskiyse veya yanlış hedefe aitse durun ve yeni yedek alın.

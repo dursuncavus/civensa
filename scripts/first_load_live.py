@@ -10,6 +10,7 @@ import os
 from pathlib import Path
 import sys
 from tempfile import TemporaryDirectory
+from urllib.parse import parse_qsl
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
@@ -53,7 +54,7 @@ def verify_book(path):
 
 
 def verify_backup(path, now=None):
-    """Check the actual recovery point, not just a recently downloaded file's mtime."""
+    """Check the manifest recovery point against the verified dump."""
     if path is None:
         raise Refusal('--backup gerekli. Başarılı doğrulanmış yedeğin .dump yolunu belirtin.')
     try:
@@ -61,12 +62,11 @@ def verify_backup(path, now=None):
         stamp = datetime.fromisoformat(manifest['utc_timestamp'].replace('Z', '+00:00'))
         current = now or datetime.now(timezone.utc)
         age = (current - stamp).total_seconds()
-        file_age = current.timestamp() - path.stat().st_mtime
         with path.open('rb') as stream:
             magic = stream.read(5)
             stream.seek(0)
             digest = hashlib.file_digest(stream, 'sha256').hexdigest()
-        valid = (stamp.tzinfo is not None and 0 <= age < 3600 and 0 <= file_age < 3600
+        valid = (stamp.tzinfo is not None and 0 <= age < 3600
                  and path.is_file() and magic == b'PGDMP'
                  and manifest['file_name'] == path.name
                  and manifest['file_size_bytes'] == path.stat().st_size
@@ -91,8 +91,14 @@ def target_url():
                 raw = 'postgresql+psycopg://' + raw[len(prefix):]
         url = make_url(raw)
         # libpq host/service overrides can silently redirect a reviewed endpoint.
+        # Retain blank values: make_url otherwise drops e.g. channel_binding=.
+        query_pairs = parse_qsl(raw.partition('?')[2], keep_blank_values=True)
+        if any(key not in {'sslmode', 'channel_binding'}
+               or (key == 'channel_binding' and value != 'require') for key, value in query_pairs):
+            raise ValueError
         if (url.drivername != 'postgresql+psycopg' or not url.host or not url.database
-                or ',' in url.host or set(url.query) - {'sslmode'}
+                or ',' in url.host or set(url.query) - {'sslmode', 'channel_binding'}
+                or url.query.get('channel_binding', 'require') != 'require'
                 or url.query.get('sslmode', 'require') not in {'require', 'verify-ca', 'verify-full'}):
             raise ValueError
         if url.host not in {'localhost', '127.0.0.1', '::1'}:
@@ -100,7 +106,8 @@ def target_url():
                 raise ValueError
     except Exception:
         raise Refusal('Hedef bağlantı geçersiz. Doğrudan PostgreSQL adresi ve uzak hedefte '
-                      'sslmode=require (veya verify-ca/verify-full) kullanın; yönlendirme parametresi eklemeyin.') from None
+                      'sslmode=require (veya verify-ca/verify-full) kullanın; isteğe bağlı channel_binding '
+                      'yalnız require olabilir. Başka bağlantı parametresi eklemeyin.') from None
     return url
 
 
@@ -197,6 +204,17 @@ def department_plan(db, parsed, completed):
     return items
 
 
+def department_action(item):
+    result = dict(source_name=item['source']['name'])
+    if item['skip']:
+        return dict(result, action='skip', reason=item['skip'])
+    mapping = item['mapping']
+    result.update(action=mapping['action'], name=mapping['target_name'])
+    if mapping['action'] == 'match':
+        result['department_id'] = mapping['department_id']
+    return result
+
+
 def execute(engine, parsed, *, organization_id, actor_id, apply=False, resume=False):
     """Plan never invokes a write service, including rollback-only trial writes.
 
@@ -210,7 +228,7 @@ def execute(engine, parsed, *, organization_id, actor_id, apply=False, resume=Fa
     from app.import_service import department_key
 
     totals = Counter({key: 0 for key in ('departments', 'created_departments', 'cards', 'indicators', 'activities', 'economic_values')})
-    output = dict(mode='uygula' if apply else 'plan', counts=totals, skipped=[], failed=[], validation=[])
+    output = dict(mode='uygula' if apply else 'plan', counts=totals, departments=[], skipped=[], failed=[], validation=[])
     with engine.connect() as connection:
         locked = False
         try:
@@ -223,6 +241,7 @@ def execute(engine, parsed, *, organization_id, actor_id, apply=False, resume=Fa
                 db.execute(text('SET TRANSACTION READ ONLY'))
                 actor, period, completed = context(db, organization_id, actor_id, resume)
                 items = department_plan(db, parsed, completed)
+                output['departments'] = [department_action(item) for item in items]
                 period_id = period.id if period else None
                 db.rollback()
                 if not apply:
@@ -233,7 +252,7 @@ def execute(engine, parsed, *, organization_id, actor_id, apply=False, resume=Fa
                             totals.update(planned_counts(item['source']))
                             totals['created_departments'] += item['mapping']['action'] == 'create'
                     return output
-                for item in items:
+                for index, item in enumerate(items):
                     source = item['source']
                     if item['skip']:
                         output['skipped'].append(dict(name=source['name'], reason=item['skip']))
@@ -298,6 +317,7 @@ def execute(engine, parsed, *, organization_id, actor_id, apply=False, resume=Fa
                             'Mevcut içe aktarma/katalog hizmeti paketi kabul etmedi; müdürlük işlemi geri alındı '
                             f'({type(exc).__name__}). Yerel provada sorumluya inceletin.')
                         output['failed'].append(dict(name=source['name'], reason=reason))
+                        output['departments'][index] = dict(source_name=source['name'], action='skip', reason=reason)
                 return output
         finally:
             connection.rollback()
@@ -341,6 +361,15 @@ def main(argv=None):
             finally:
                 engine.dispose()
         print('PLAN: Hedefe 0 satır yazıldı.' if not args.apply else 'UYGULAMA SONUCU:')
+        if not args.apply:
+            for department in result['departments']:
+                source = department['source_name']
+                if department['action'] == 'match':
+                    print(f"Eşleştir: {source} → {department['name']} (müdürlük #{department['department_id']})")
+                elif department['action'] == 'create':
+                    print(f"Oluştur: {source} → {department['name']}")
+                else:
+                    print(f"Atla: {source} · {department['reason']}")
         print(json.dumps(result, ensure_ascii=False, indent=2))
         return 2 if result['failed'] else 0
     except Refusal as exc:
