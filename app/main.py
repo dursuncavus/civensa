@@ -338,9 +338,16 @@ def check_pp_access(db: Session, user: User, department_id: int, period: Reporti
         raise HTTPException(404, "Müdürlük bulunamadı. Müdürlük bağlantısını kontrol edin.")
     if user.role == "department":
         from .structure_service import department_in_year
+        from .models import ReportCard, EconomicValue
         scope = db.scalar(select(DepartmentScope).where(
             DepartmentScope.department_id == department_id, DepartmentScope.period_id == period.id))
-        if (user.department_id != department_id or not scope or scope.status == "excluded"
+        # Historical imports can contain owned PP data without a scope row.
+        # A submission alone is not a grant: older GET routes created those rows.
+        historical = scope is None and any(db.scalar(select(model.id).where(
+            model.department_id == department_id, model.period_id == period.id).limit(1))
+            for model in (Indicator, Activity, ReportCard, DepartmentCostValue, EconomicValue))
+        if (user.department_id != department_id or (scope and scope.status == "excluded")
+                or (not scope and not historical)
                 or not department_in_year(db, department, period.year)):
             raise HTTPException(403, f"{period.year} yılı Performans Programı için bu müdürlüğe erişim yetkiniz yok. Dönem ve müdürlük yetkinizi kontrol ettirmek için Strateji Geliştirme birimine başvurun.")
 
@@ -1082,7 +1089,8 @@ async def revert_activity_mapping_batch(
 ):
     if len(batch_id) != 16 or any(char not in "0123456789abcdef" for char in batch_id):
         raise HTTPException(404)
-    period = session_period(request, db)
+    data = await request.json() if "application/json" in request.headers.get("content-type", "") else await request.form()
+    period = session_period(request, db, data)
     audits = db.scalars(
         select(AuditLog).where(
             AuditLog.action == "activity_mapping_csv",

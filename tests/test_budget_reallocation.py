@@ -90,6 +90,8 @@ def test_exact_amounts_protected_lines_rounding_history_and_reverse(db, sample, 
     db.expire_all()
     assert all(s.status=='approved' and s.revision==2 for s in db.scalars(select(Submission)))
     assert db.scalar(select(func.count(Notification.id))) == 2
+    assert all(n.link == f'/department/{n.department_id}?period_id={budget["period_id"]}'
+               for n in db.scalars(select(Notification)))
     assert all('Başkanlık talimatı ile aktarma' in s.note for s in db.scalars(select(SubmissionEvent)))
     for row in db.scalars(select(EconomicValue).where(EconomicValue.category.in_(['personnel','sgk']))):
         assert service.state(row) == before[(row.__tablename__,row.id)]

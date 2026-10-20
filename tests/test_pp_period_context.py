@@ -116,7 +116,9 @@ def test_strategy_headers(client, db, sample, two_periods, path, monkeypatch):
 
 @pytest.mark.parametrize('access', ['excluded', 'missing'])
 def test_unpermitted_period_names_year_and_next_action(client, db, sample, two_periods, access):
-    period, _ = two_periods
+    period, other = two_periods
+    if access == 'missing':
+        period = other
     scope = db.scalar(select(DepartmentScope).where(DepartmentScope.period_id == period.id))
     if access == 'excluded':
         scope.status = 'excluded'
@@ -127,13 +129,13 @@ def test_unpermitted_period_names_year_and_next_action(client, db, sample, two_p
     for path in ['/dashboard', '/department/1', '/program/1']:
         response = client.get(f'{path}?period_id={period.id}')
         assert response.status_code == 403
-        assert '2027' in response.json()['detail']
+        assert str(period.year) in response.json()['detail']
         assert 'Strateji' in response.json()['detail']
     response = client.post('/api/departments/1/personnel-costs', json={
-        'period_id': period.id, 'cost_2027_budget': '999',
+        'period_id': period.id, f'cost_{period.year}_budget': '999',
     })
     assert response.status_code == 403
-    assert '2027' in response.json()['detail']
+    assert str(period.year) in response.json()['detail']
 
 
 @pytest.mark.parametrize('status', ['closed', 'approved', 'submitted'])
