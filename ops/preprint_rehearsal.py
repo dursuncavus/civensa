@@ -43,6 +43,7 @@ def download_verified_run(run_id):
 def payload_shape(db, period_id):
     """Only counts/known field coverage; never source text, values or user names."""
     from app.models import ImportBatch, AuditLog
+    from app.import_service import build_department_plan
     result = {}
     batches = db.scalars(select(ImportBatch).where(ImportBatch.period_id == period_id)).all()
     applied = [b for b in batches if b.status == 'applied' and b.applied_at]
@@ -54,12 +55,28 @@ def payload_shape(db, period_id):
             values = [v for i in indicators for v in i.get('values', [])]
             costs = [v for d in departments for a in d.get('activities', []) for v in a.get('costs', [])]
             result[str(batch.id)] = dict(
+                snapshot_has_created_ids='created_department_ids' in snapshot,
+                snapshot_has_departments='departments' in snapshot,
+                snapshot_affected_ids=[d.get('department_id') for d in snapshot.get('departments', [])],
+                snapshot_created_ids=snapshot.get('created_department_ids', []),
                 departments=len(departments), indicators=len(indicators), indicator_values=len(values),
                 indicator_values_missing_state=sum('state' not in v for v in values),
                 indicator_values_missing_raw_text=sum('raw_text' not in v for v in values),
                 activity_costs=len(costs), activity_costs_missing_state=sum('state' not in v for v in costs),
                 snapshot_departments=len(snapshot.get('departments', [])),
                 snapshot_created_departments=len(snapshot.get('created_department_ids', [])))
+            try:
+                plan = build_department_plan(db, clear.archived_payload(payload),
+                                             json.loads(batch.decisions_json or '[]'))
+                result[str(batch.id)]['plan_contract'] = dict(
+                    unresolved=len(plan['unresolved']), unresolved_conflicts=len(plan['unresolved_conflicts']),
+                    actions={action: sum(m['action'] == action for m in plan['mappings'])
+                             for action in ('match', 'create', 'unresolved')},
+                    exact_department_ids=sorted(m['department_id'] for m in plan['mappings']
+                        if m['action'] == 'match' and m['confidence'] == 1))
+            except (KeyError, TypeError, ValueError) as exc:
+                result[str(batch.id)]['plan_contract'] = dict(failure_kind=type(exc).__name__)
+
         except (TypeError, ValueError, KeyError):
             result[str(batch.id)] = {'shape_readable': False}
     if applied:

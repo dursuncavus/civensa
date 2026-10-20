@@ -326,14 +326,17 @@ def build_plan(db, organization_id, actor_id):
     # Rebuild archived plans without any write service or trial writes.
     sources, provenance, catalogue_sources = {}, {}, []
     for batch in applied:
+        phase = 'snapshot'
         try:
             snapshot = json.loads(batch.snapshot_json)
             affected = {int(d['department_id']) for d in snapshot['departments']}
             affected.update(int(x) for x in snapshot['created_department_ids'])
+            phase = 'arşiv planı'
             plan = build_department_plan(db, archived_payload(json.loads(batch.payload_json)),
                                          json.loads(batch.decisions_json or '[]'))
             if plan['unresolved'] or plan['unresolved_conflicts']:
                 raise ValueError
+            phase = 'müdürlük eşleştirmesi'
             mapping = {department_key(x['source_name']): x for x in plan['mappings']}
             matched = set()
             for source in plan['parsed']['departments']:
@@ -349,7 +352,7 @@ def build_plan(db, organization_id, actor_id):
             if matched != affected:
                 raise ValueError
         except (KeyError, TypeError, ValueError):
-            refuse('Ön baskı paket planı/snapshot kökeni doğrulanamadı')
+            refuse(f'Ön baskı paket #{batch.id} {phase} kökeni doğrulanamadı')
     # All retained period catalogue records must also occur in archived plans.
     programmes, subprogrammes = set(), set()
     for source in catalogue_sources:
