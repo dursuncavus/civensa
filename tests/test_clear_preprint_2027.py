@@ -414,3 +414,21 @@ def test_rehearsal_report_write_failure_does_not_expose_paths(monkeypatch, tmp_p
     assert 'Sayım raporu yazılamadı' in captured.err
     assert 'private-sentinel-connection' not in captured.out + captured.err
     assert 'Traceback' not in captured.out + captured.err
+
+
+def test_restore_selects_database_explicitly_and_credentials_stay_in_environment(monkeypatch, tmp_path):
+    from types import SimpleNamespace
+    from sqlalchemy.engine import make_url
+    from scripts import rehearse_clear_preprint_2027 as rehearsal
+    engine = SimpleNamespace(url=make_url('postgresql+psycopg://local_user:sentinel_private_password@127.0.0.1:5432/generated_copy'))
+    calls = []
+    monkeypatch.setattr(rehearsal, 'private', lambda command, env: calls.append((command, env)))
+    rehearsal.restore(engine, tmp_path / 'source.dump')
+    command, env = calls[0]
+    assert command[command.index('--dbname') + 1] == 'generated_copy'
+    assert 'sentinel_private_password' not in repr(command)
+    assert env['PGDATABASE'] == 'generated_copy'
+    assert env['PGHOST'] == env['PGHOSTADDR'] == '127.0.0.1'
+    assert env['PGPORT'] == '5432'
+    assert env['PGUSER'] == 'local_user'
+    assert env['PGPASSWORD'] == 'sentinel_private_password'

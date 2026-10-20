@@ -83,7 +83,8 @@ jobs:
           CIV058_CLIENT_TOOL="$(basename "$0")"
           exec docker run --rm --log-driver=none --network host \
             --user "$(id -u):$(id -g)" \
-            --env PGDATABASE --env PGHOSTADDR --env PGCONNECT_TIMEOUT \
+            --env PGDATABASE --env PGHOST --env PGHOSTADDR --env PGPORT \
+            --env PGUSER --env PGPASSWORD --env PGCONNECT_TIMEOUT \
             --volume "$GITHUB_WORKSPACE:$GITHUB_WORKSPACE:ro" \
             --volume "$CIV058_TMP_ROOT:$CIV058_TMP_ROOT" \
             --workdir "$GITHUB_WORKSPACE" postgres:18 "$CIV058_CLIENT_TOOL" "$@"

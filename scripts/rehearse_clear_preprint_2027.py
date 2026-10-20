@@ -32,7 +32,13 @@ def pg_environment(url):
     # Credentials go only in the child environment, never argv or output.
     env = {k: v for k, v in os.environ.items() if not k.startswith('PG')
            and k not in {'DATABASE_URL', 'MIGRATION_DATABASE_URL', live.TARGET_ENV}}
-    env['PGDATABASE'] = url.set(drivername='postgresql', query={}).render_as_string(hide_password=False)
+    env['PGDATABASE'] = url.database
+    env['PGHOST'] = url.host
+    env['PGPORT'] = str(url.port or 5432)
+    if url.username is not None:
+        env['PGUSER'] = url.username
+    if url.password is not None:
+        env['PGPASSWORD'] = url.password
     env['PGHOSTADDR'] = '::1' if url.host == '::1' else '127.0.0.1'
     env['PGCONNECT_TIMEOUT'] = '10'
     return env
@@ -99,7 +105,7 @@ def source_backup(path):
 
 
 def restore(engine, dump):
-    private(['pg_restore', '--exit-on-error', '--single-transaction', '--no-owner',
+    private(['pg_restore', '--dbname', engine.url.database, '--exit-on-error', '--single-transaction', '--no-owner',
              '--no-privileges', str(dump)], pg_environment(engine.url))
 
 
