@@ -98,11 +98,17 @@ def remove_draft(db, user, department_id, period_id, model, record_id):
     if obj.period_id != period_id:
         record_period = db.get(ReportingPeriod, obj.period_id)
         raise HTTPException(409, f'Kayıt {record_period.year} yılına ait; seçilen dönem {period.year}. Kaydın yılını açıp tekrar deneyin.')
+    label = obj.name if model is Indicator else obj.source_title or 'Performans kartı'
     # Refresh workflow projections after waiting for the department lock.
     available = removal_available(db, user, department_id, period)
-    ensure_department_editable(db, user, department_id, period_id, allow_strategy=True)
+    try:
+        ensure_department_editable(db, user, department_id, period_id, allow_strategy=True)
+    except HTTPException as exc:
+        if exc.status_code != 409:
+            raise
+        raise HTTPException(409, f'“{label}” kaldırılamadı: {exc.detail} Dönem ve paket durumunu Strateji Geliştirme birimiyle kontrol edin.') from None
     if not available:
-        raise HTTPException(409, 'Müdürlük paketi taslak veya iade durumunda değil; kayıt kaldırılamaz. Paketin iade edilmesini isteyin.')
+        raise HTTPException(409, f'“{label}” kaldırılamadı: Müdürlük paketi taslak veya iade durumunda değil. Paketin iade edilmesini isteyin.')
     previous = record(obj)
     if model is Indicator:
         if obj.persistent_indicator_id:

@@ -85,7 +85,8 @@ def test_refuse_locked_package_or_period(client, db, sample, fresh, kind, state,
     else:
         db.scalar(select(Submission)).status = state
     db.commit()
-    refuse(client, db, kind, fresh[kind])
+    message = refuse(client, db, kind, fresh[kind])
+    assert (fresh[kind].name if kind == 'indicator' else fresh[kind].source_title) in message
     for path in ['/program/1?period_id=1', '/department/1?period_id=1']:
         assert 'data-draft-removal' not in client.get(path).text
 
