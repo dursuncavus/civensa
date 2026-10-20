@@ -121,16 +121,22 @@ def test_clear_chain_and_preserved_rows(target, printed):
     with Session(engine) as db:
         audit_before = {a.id: tuple(getattr(a, c.name) for c in m.AuditLog.__table__.columns)
                         for a in db.scalars(select(m.AuditLog))}
+        batches_before = {b.id: clear.batch_state(b) for b in db.scalars(select(m.ImportBatch))}
     applied = clear.execute(engine, apply=True, **ids)
     assert applied['counts'] == plan['counts']
     with Session(engine) as db:
         assert db.get(m.Indicator, extra['old_indicator_id']).name == '2026 kalır'
         assert db.get(m.Activity, extra['old_activity_id']).name == '2026 kalır'
+        assert db.scalar(select(m.IndicatorValue.value).where(
+            m.IndicatorValue.indicator_id == extra['old_indicator_id'])) == 77
+        assert db.scalar(select(m.ActivityCostValue.amount).where(
+            m.ActivityCostValue.activity_id == extra['old_activity_id'])) == 77
         assert len(db.scalars(select(m.User)).all()) == 1
         assert len(db.scalars(select(m.Department)).all()) == 33
         assert len(db.scalars(select(m.ReportingPeriod)).all()) == 2
         assert len(db.scalars(select(m.Program)).all()) == 2
         assert len(db.scalars(select(m.ImportBatch)).all()) == 8
+        assert {b.id: clear.batch_state(b) for b in db.scalars(select(m.ImportBatch))} == batches_before
         assert set(db.scalars(select(m.ImportBatch.status))) == {'superseded'}
         assert len(db.scalars(select(m.AuditLog)).all()) == len(audit_before) + 1
         assert {aid: tuple(getattr(db.get(m.AuditLog, aid), c.name)
