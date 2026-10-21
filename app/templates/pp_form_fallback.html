@@ -1,0 +1,22 @@
+{# A rejected row can disappear from the ordinary list (for example, an inactive department). #}
+{% if request.state.pp_attempt is defined and not request.state.pp_attempt_rendered|default(false) %}
+{% set path, attempted, failure = request.state.pp_attempt %}
+<form class="record" method="post" action="{{ path }}" enctype="multipart/form-data">
+<h3>Kaydedilemeyen form</h3><p class="return-note" role="alert">{{ failure.detail }}</p>
+<input type="hidden" name="csrf_token" value="{{ request.session.get('csrf_token', '') }}">
+{% for field, value in attempted.multi_items() if field != 'csrf_token' %}
+{% set field_errors = failure.errors|selectattr('field','equalto',field)|list %}
+{% if field in ['id','record_id','activity_id','department_id','period_id'] %}
+<input type="hidden" name="{{ field }}" value="{{ value }}">
+{% elif value.filename is defined %}
+<label>{{ pp_labels.get(field, 'Görsel dosyası') }}<input type="file" name="{{ field }}"></label>
+<p class="field-error">Görsel dosyasını yeniden seçip kaydedin.</p>
+{% else %}
+<label>{{ pp_labels.get(field, 'Gönderilen alan') }}<textarea name="{{ field }}" {% if field_errors %}aria-invalid="true"{% endif %}>
+{{ value }}</textarea></label>
+{% endif %}
+{% for error in field_errors %}<span class="field-error" role="alert">{{ error.message }}</span>{% endfor %}
+{% endfor %}
+<button class="button">Düzeltip Yeniden Kaydet</button>
+</form>
+{% endif %}

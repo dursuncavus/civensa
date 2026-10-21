@@ -3,6 +3,9 @@ from functools import wraps
 from html import escape
 from html.parser import HTMLParser
 from http import HTTPStatus
+from urllib.parse import urlencode
+
+from starlette.requests import Request
 
 from fastapi import HTTPException
 from fastapi.exception_handlers import http_exception_handler, request_validation_exception_handler
@@ -72,12 +75,17 @@ def wants_json(request):
 
 def install(app, templates):
     templates.env.filters['pp_form'] = retain_form
+    templates.env.globals['pp_labels'] = LABELS
 
     @app.exception_handler(StarletteHTTPException)
     async def http_error(request, exc):
         if not is_pp_path(request.url.path) or exc.status_code < 400:
             return await http_exception_handler(request, exc)
         body = payload(exc)
+        if exc.status_code == 422 and 'text/html' in request.headers.get('accept', ''):
+            recovered = recover_dependency_form(request, body)
+            if recovered is not None:
+                return recovered
         if wants_json(request) or 'text/html' not in request.headers.get('accept', ''):
             return JSONResponse(body, status_code=exc.status_code, headers=exc.headers)
         return templates.TemplateResponse(request, 'pp_error.html', body,
@@ -118,8 +126,60 @@ def recover_form(screen):
                 response = screen(request, db, kwargs['user'], kwargs.get('department_id'), data)
                 response.status_code = 422
                 return response
+        wrapped.pp_screen = screen
         return wrapped
     return decorate
+
+
+def recover_dependency_form(request, body):
+    """Recover a period-guard rejection without accepting or mutating that request.
+
+    A safe GET context is used only to display the form. The failed POST retains
+    422, and every subsequent POST must still pass the explicit-period guard.
+    """
+    endpoint = getattr(request.scope.get('route'), 'endpoint', None)
+    screen = getattr(endpoint, 'pp_screen', None)
+    context = getattr(request.state, 'pp_form_context', None)
+    if not context or wants_json(request):
+        return None
+    db, user, data = context
+    if not request.headers.get('content-type', '').startswith((
+            'application/x-www-form-urlencoded', 'multipart/form-data')):
+        return None
+    request.state.pp_attempt = (request.url.path, data, body)
+    if not screen:
+        return None
+    from .main import active_period
+    from .models import ReportingPeriod
+    db.rollback()
+    period = None
+    for value in (request.query_params.get('period_id'), data.get('period_id')):
+        if value is not None and str(value).isascii() and str(value).isdecimal() and len(str(value)) < 19:
+            period = db.get(ReportingPeriod, int(value))
+            if period:
+                break
+    period = period or active_period(db)
+    if not period:
+        return None
+    department_id = request.path_params.get('department_id')
+    if department_id is not None:
+        if not str(department_id).isascii() or not str(department_id).isdecimal():
+            return None
+        department_id = int(department_id)
+    request.state.pp_attempt = (request.url.path, data, body)
+    # Do not carry the invalid/mismatched POST period into read authorization.
+    display_request = Request({**request.scope, 'query_string': urlencode({'period_id': period.id}).encode()})
+    try:
+        response = screen(display_request, db, user, department_id, {**data, 'period_id': period.id})
+    except HTTPException:
+        # A read refusal must never replace the original guard's 422 or expose records.
+        return None
+    finally:
+        # Dependency cleanup may have run before the exception handler. Release
+        # the display transaction here as well; TemplateResponse is already rendered.
+        db.rollback()
+    response.status_code = 422
+    return response
 
 
 class Controls(HTMLParser):
@@ -156,6 +216,7 @@ def retain_form(html, request):
             return html
     if 'id' in data and 'id' not in controls.hidden:
         return html
+    request.state.pp_attempt_rendered = True
     parser = RetainedControls(data, body)
     parser.feed(str(html))
     return Markup(''.join(parser.output))
@@ -187,6 +248,18 @@ class RetainedControls(HTMLParser):
         if tag == 'form':
             self.emit(tag, attrs)
             self.output.append('<div class="return-note" role="alert">' + escape(self.body['detail']) + '</div>')
+            return
+        if tag == 'input' and name == 'period_id' and name in self.messages:
+            # Offer a correction without asking staff to know internal period IDs.
+            current = attrs.get('value', '')
+            attempted = str(self.data.get(name, ''))
+            self.emit('select', {'name': name, 'aria-label': 'Raporlama dönemi',
+                'aria-invalid': 'true', 'aria-describedby': 'pp-error-' + name})
+            self.emit('option', {'value': attempted, 'selected': None})
+            self.output.append('Gönderilen dönem — yeniden seçin</option>')
+            self.emit('option', {'value': current})
+            self.output.append('Bu ekranda görünen dönem</option></select>')
+            self.field_error(name)
             return
         if tag == 'input' and name != 'csrf_token' and name in self.data:
             kind = attrs.get('type', 'text')

@@ -300,3 +300,38 @@ def test_invalid_number_stays_visible_in_browser_and_retry_saves(client, db, sam
     data['position']='7'
     assert client.post(path,data=data,follow_redirects=False).status_code==303
     db.refresh(sample['card']); assert sample['card'].position==7 and sample['card'].goal=='Taslak hedef'
+
+
+@pytest.mark.parametrize('period_data', [{}, {'period_id':'bozuk'}, {'period_id':'2'}])
+def test_period_guard_still_422_and_retains_attempts_before_endpoint(client, db, sample, period_data):
+    path='/program/1/cards'
+    data={'subprogram_id':1,'goal':'  Dönem hatasında saklanacak hedef  ','source_title':'Başlık',**period_data}
+    before=len(db.scalars(select(ReportCard)).all())
+    response=client.post(path+'?period_id=1' if period_data else path,data=data,headers={'Accept':'text/html'})
+    result=form(response,path,id=None)
+    assert result['fields']['goal']==data['goal'] and result['fields']['source_title']=='Başlık'
+    assert 'period_id' in result['invalid']
+    assert len(db.scalars(select(ReportCard)).all())==before
+    if period_data:
+        assert result['fields']['period_id']==[period_data['period_id']]
+    assert 'Bu ekranda görünen dönem' in response.text
+    # The rejected request did not write; explicitly selecting the displayed period can retry.
+    data['period_id']=1
+    assert client.post(path,data=data,follow_redirects=False).status_code==303
+    assert len(db.scalars(select(ReportCard)).all())==before+1
+
+
+def test_inactive_scope_row_disappearing_from_list_keeps_form_and_error(client, db, sample):
+    from app.models import ReportingPeriod
+    strategy(sample)
+    sample['department'].is_active=False
+    period=ReportingPeriod(year=2028)
+    db.add(period);db.commit()
+    path='/report-builder/scope'
+    data={'period_id':period.id,'department_id':1,'status':'required',
+        'display_name':'  Denenen birim adı  ','reason':'Denenen açıklama','position':'3'}
+    response=client.post(path,data=data)
+    result=form(response,path,department_id=1)
+    assert 'pasif' in response.text and 'Kurum Yapısı' in response.text
+    assert result['fields']['display_name']==data['display_name']
+    assert result['fields']['reason']==data['reason']

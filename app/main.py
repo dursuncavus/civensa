@@ -355,6 +355,7 @@ async def require_pp_period(request: Request, db: Session = Depends(get_db),
             data = None
     else:
         data = await request.form()
+    request.state.pp_form_context = (db, user, data)
     return session_period(request, db, data, require=True)
 
 
