@@ -352,6 +352,7 @@ def consolidate_source_departments(parsed: dict) -> dict:
                 "activities": [],
                 "personnel": [],
                 "economic_tables": [],
+                "economic_assertions": [],
                 "total_assertions": [],
             }
             order.append(key)
@@ -364,6 +365,7 @@ def consolidate_source_departments(parsed: dict) -> dict:
         target = grouped[key]
         target["blocks"].extend(dept.get("blocks", []))
         target["economic_tables"].extend(deepcopy(dept.get("economic_tables", [])))
+        target["economic_assertions"].extend(deepcopy(dept.get("economic_assertions", [])))
         target["total_assertions"].extend(deepcopy(dept.get("total_assertions", [])))
         target["activities"].extend(deepcopy(dept.get("activities", [])))
         target["personnel"] = _merge_unique_costs(target["personnel"], dept.get("personnel", []))

@@ -419,3 +419,18 @@ def test_preserved_economic_values_match_business_scope_when_document_tables_mov
     db.add(batch); db.flush(); apply_import_batch(db, batch, preserve_existing=True); db.commit()
     rows = [r for r in comparison(db, import_context)['rows'] if r['batch_id'] == batch.id and r['model'] == 'economic']
     assert len(rows) == 30 and all(r['status'] == 'Eşleşiyor' and r['table'] == 4 for r in rows)
+
+
+def test_legacy_economic_batch_keeps_all_source_cells_with_unknown_locations(db, import_context):
+    from test_pp_import_submit_ready import source_document
+    batch, _ = imported(db, import_context, data=source_document())
+    payload = json.loads(batch.payload_json)
+    payload.pop('source_assertion_version'); payload.pop('document_sha256')
+    for department in payload['departments']:
+        department.pop('economic_assertions', None)
+    snapshot = json.loads(batch.snapshot_json); snapshot.pop('source_comparison')
+    batch.payload_json = json.dumps(payload); batch.snapshot_json = json.dumps(snapshot); db.commit()
+    rows = [r for r in comparison(db, import_context)['rows'] if r['model'] == 'economic' and r['batch_id']]
+    assert len(rows) == 30
+    assert all(r['status'] == 'Eşleşiyor' and r['row'] == r['column'] == 'Bilinmiyor' for r in rows)
+    assert any(r['source_amount'] == '200,00' for r in rows)

@@ -232,7 +232,8 @@ def source_comparison(db, period_id, department_id=None):
                     'split_from', {}).get('original_id') in binding['economic_ids']]
             for table in source.get('economic_tables', []):
                 source_groups = {v['program_group'] for v in table['values']}
-                assertions = table.get('source_assertions')
+                assertions = ([v for v in source['economic_assertions'] if v['table_number'] == table['table_number']]
+                    if source.get('economic_assertions') else table.get('source_assertions'))
                 if assertions is None:
                     # Older payloads retain raw category cells and source totals.
                     assertions = [{**v, 'amount': source_cell(v.get('raw_text'), money=True)['number']}

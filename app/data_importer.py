@@ -372,6 +372,8 @@ def parse_performance_docx(data: bytes):
                 rejected_economic_tables.append(economic)
                 errors.append(economic['error'])
             else:
+                departments[current_department].setdefault('economic_assertions', []).extend(
+                    economic.pop('source_assertions'))
                 departments[current_department].setdefault('economic_tables', []).append(economic)
             pending_blocks=[]
             continue
@@ -529,12 +531,13 @@ def _parse_economic_table(table, table_number, blocks):
                      if label.startswith(prefix)), None)
         if not category and not total:
             continue
-        values = [{'year': y, 'kind': k, 'table_number': table_number, 'row_number': row_number,
-                   'column_number': columns[(y, k)] + 1 if (y, k) in columns else None,
-                   **_economic_cell(row, columns.get((y, k), -1))}
+        values = [{'year': y, 'kind': k, **_economic_cell(row, columns.get((y, k), -1))}
                   for y, k in expected]
         assertions.extend({**v, 'category': category, 'funding_type': 'inside' if category else total,
-                           'label': _clean(row.cells[0].text)} for v in values)
+                           'label': _clean(row.cells[0].text), 'table_number': table_number,
+                           'row_number': row_number,
+                           'column_number': columns[(v['year'], v['kind'])] + 1
+                               if (v['year'], v['kind']) in columns else None} for v in values)
         if category:
             if category in source_rows:
                 for previous, value in zip(source_rows[category], values):
