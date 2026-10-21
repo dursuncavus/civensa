@@ -111,6 +111,10 @@ def install(app, templates):
             message = f'{LABELS.get(field, "Kayıt alanı")} geçersiz. Alan biçimini ve seçilen kaydı kontrol edip yeniden deneyin.'
             errors.append({'field': field, 'message': message})
         body = {'detail': ' '.join(e['message'] for e in errors), 'errors': errors}
+        if 'text/html' in request.headers.get('accept', ''):
+            recovered = recover_dependency_form(request, body)
+            if recovered is not None:
+                return recovered
         if wants_json(request):
             return JSONResponse(body, status_code=422)
         return templates.TemplateResponse(request, 'pp_error.html', body, status_code=422)
