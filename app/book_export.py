@@ -63,11 +63,16 @@ def blocks(payload):
             for fund,label in [('inside','Bütçe İçi'),('outside','Bütçe Dışı'),('total','Toplam')]:
                 table.append([f'{a.get("code", "")} {a["name"]}\n{label} (TL)']+[cell(vals.get((y,k,fund)),'amount',True) for y,k in costcols])
         personnel={(v['year'],v['value_kind']):v for v in d['department_costs'] if v['category']=='personnel_sgk'}
+        reconciled = {(r['year'], r['value_kind']): r for r in payload.get('cost_reconciliation', [])
+                      if r['level'] == 'department_total' and r['department_id'] == d['department_id']}
         activity_totals=[];general=[]
         for y,k in costcols:
             vals=[next((v for v in a['costs'] if (v['year'],v['value_kind'],v['funding_type'])==(y,k,'total')),None) for a in activities]
             complete=bool(vals) and all(v and v.get('amount') is not None and v.get('state','verified')=='verified' for v in vals)
             total=sum((Decimal(v['amount']) for v in vals),Decimal(0)) if complete else None
+            if (y,k) in reconciled:
+                current = reconciled[y,k]['amount']
+                total = Decimal(current) if current is not None else None
             p=personnel.get((y,k));pval=Decimal(p['amount']) if p and p.get('amount') is not None and p.get('state','verified')=='verified' else None
             activity_totals.append(format_number(total,True));general.append(format_number(total+pval,True) if total is not None and pval is not None else 'Eksik veri')
         table.extend([['Faaliyetler Toplamı (TL)']+activity_totals,['Personel ve SGK Giderleri (TL)']+[cell(personnel.get(c),'amount',True) for c in costcols],['Genel Toplam (TL)']+general])
@@ -97,6 +102,17 @@ def blocks(payload):
                 vals={v['year']:v['amount'] for v in items if v['funding_type']==fund}
                 table.append([f'{a["program"]} / {a["subprogram"]} / {a["name"]}',{'inside':'Bütçe İçi','outside':'Bütçe Dışı','total':'Toplam'}[fund]]+[format_number(vals.get(y),True) for y in range(year,year+3)])
         out.append(('table',table))
+    if payload.get('cost_reconciliation'):
+        out.append(('heading', 'Maliyet Ara Toplamları ve Kaynak Mutabakatı'))
+        table = [['Program / Alt Program / Müdürlük', 'Yıl / Değer Türü', 'Hesaplanan (TL)',
+                  'Kaynak (TL)', 'Fark (TL)', 'Durum / Yapılacak İşlem']]
+        for row in payload['cost_reconciliation']:
+            table.append([row['label'], f"{row['year']} {LABELS[row['value_kind']]}",
+                format_number(row['amount'], True) if row['complete'] else 'Eksik ara toplam',
+                format_number(row['source_amount'], True) if row['source_amount'] is not None else 'kaynak toplamı yok',
+                format_number(row['difference'], True),
+                '\n'.join([row['status']] + row['errors'] + row['warnings'])])
+        out.append(('table', table))
     if payload.get('catalogue'):
         out.append(('heading','Faaliyetlerden Sorumlu Harcama Birimleri'))
         names={d['department_id']:d['department'] for d in payload['departments']}

@@ -84,7 +84,8 @@ def release_checklist(db, period, technical, version, migration, measurements):
     for check in publication_checks(db, period.id):
         automatic.append(dict(id='publication:' + check['id'], label=check['label'],
             status='Engelli' if check['errors'] else 'Geçti', owner='Strateji / ilgili Müdürlük Müdürü',
-            source=check['source'], evidence=dict(period_id=period.id, observed=check['observed'], errors=check['errors']),
+            source=check['source'], evidence=dict(period_id=period.id, observed=check['observed'], errors=check['errors'],
+                warnings=check.get('warnings', [])),
             next_step='İlgili müdürlük kayıtlarını, kapsamı ve Strateji onayını Nihai Rapor ekranında tamamlayın.' if check['errors'] else ''))
     history = db.scalars(select(ReleaseConfirmation).where(
         ReleaseConfirmation.period_id == period.id).order_by(ReleaseConfirmation.id)).all()
