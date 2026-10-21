@@ -66,6 +66,9 @@ def test_reopen_records_approved_snapshot_reason_notification_and_audit(db, samp
     assert (audit.user_id, audit.entity_type, audit.entity_id) == (ev.actor_user_id, 'submission', approved.id)
     assert json.loads(audit.details) == {'revision': 1, 'reason': REASON}
     assert count(db, SubmissionEvent) == count(db, Notification) == 1
+    page = http('director').get(notice.link)
+    assert 'Düzeltme için açıldı' in page.text
+    assert 'Bilinmeyen işlem (reopen)' not in page.text
 
 
 @pytest.mark.parametrize('reason', ['', ' \n\t ', None, False, 123, [], {}])

@@ -12,6 +12,7 @@ from .main import current_user, pp_period, require_pp_period, require_strategy, 
 from .models import (AuditLog, Department, Notification, ReportingPeriod, Submission,
                      SubmissionEvent, User)
 from .pp_errors import pp_error, recover_form
+from .pp_display import EVENT_LABELS, STATUS_LABELS
 from .program_service import department_snapshot
 from .released_permissions import require_strategy_director
 from .serialization import json_dumps
@@ -25,6 +26,9 @@ def require_active_reopen_session(request: Request, db: Session = Depends(get_db
     if user and not user.is_active:
         raise pp_error(403, "Etkin olmayan hesap paketi düzeltme için açamaz. Strateji Geliştirme Müdürüne başvurun.")
 
+
+# Register the new event with both existing PP history renderers.
+EVENT_LABELS['reopen'] = STATUS_LABELS['reopen'] = 'Düzeltme için açıldı'
 
 router = APIRouter(dependencies=[Depends(require_active_reopen_session), Depends(require_pp_period)])
 
