@@ -60,6 +60,7 @@ def parse_pp_import(data: bytes) -> dict:
     table_numbers = {table._tbl: index for index, table in enumerate(iter_document_tables(doc), 1)}
     informational = {item['table_number'] for item in parsed.get('coverage_items', [])}
     sections = []; current = None; context = 'general'; seen_cards = False
+    section_warnings = []
     paragraphs = []
 
     def finish():
@@ -118,7 +119,7 @@ def parse_pp_import(data: bytes) -> dict:
                 rid = blip.get(qn('r:embed'))
                 part = doc.part.related_parts.get(rid)
                 if part is None or part.content_type not in {'image/png', 'image/jpeg'}:
-                    parsed['warnings'].append(f'“{current["title"]}” görseli PNG/JPEG olarak okunamadı. Kitap Bölümleri ekranından görseli yeniden ekleyin.')
+                    section_warnings.append(f'“{current["title"]}” görseli PNG/JPEG olarak okunamadı. Kitap Bölümleri ekranından görseli yeniden ekleyin.')
                     continue
                 from PIL import Image
                 try:
@@ -129,7 +130,7 @@ def parse_pp_import(data: bytes) -> dict:
                             raise ValueError()
                         im.verify()
                 except Exception:
-                    parsed['warnings'].append(f'“{current["title"]}” görseli geçersiz veya çok büyük. Kitap Bölümleri ekranından en fazla 5 MB ve 16 megapiksel PNG/JPEG görseli yeniden ekleyin.')
+                    section_warnings.append(f'“{current["title"]}” görseli geçersiz veya çok büyük. Kitap Bölümleri ekranından en fazla 5 MB ve 16 megapiksel PNG/JPEG görseli yeniden ekleyin.')
                     continue
                 sections.append({'title': current['title'] + ' — Görsel', 'kind': 'image',
                     'position': source_position, 'content': {'data': base64.b64encode(part.blob).decode(),
@@ -154,6 +155,7 @@ def parse_pp_import(data: bytes) -> dict:
         section['position'] = index
     if sections:
         parsed['general_sections'] = sections
+        parsed['general_section_warnings'] = section_warnings
         parsed['summary']['general_section_count'] = len(sections)
         # A narrative-only PP is a valid section import, while malformed data
         # tables still retain every specific validation error from the parser.
@@ -164,12 +166,9 @@ def parse_pp_import(data: bytes) -> dict:
             if len(section['title']) > 300 or len(section['content'].get('text', '')) > 500000:
                 message = f'“{section["title"][:80]}” genel bölümü çok uzun. Başlığı 300, metni 500.000 karakterin altına indirip Word dosyasını yeniden yükleyin.'
                 parsed['errors'].append(message); parsed['warnings'].append(message)
-        parsed['warnings'].append(f'{len(sections)} genel kitap bölümü/tablosu bulundu: ' +
-            ', '.join(s['title'] for s in sections) + '. Önizleme bölüm kayıtlarını değiştirmez; mevcut hedef bölümler korunur.')
-        imported_tables = {s['content']['source']['table_number'] for s in sections if s['kind'] == 'table'}
-        for item in parsed['coverage_items']:
-            if item['table_number'] in imported_tables:
-                item['message'] = f'Tablo {item["table_number"]}: {item["first_cell_text"]} — genel kitap tablosu olarak önizlemeye alındı; uygulama sırasında mevcut hedef bölüm korunur.'
+        # Retain the financial parser's warnings/coverage contract. General
+        # sections and their warnings are additive fields; the UI removes
+        # imported general tables from the old financial-only coverage list.
     return parsed
 
 

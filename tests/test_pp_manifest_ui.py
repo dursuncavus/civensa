@@ -1,9 +1,12 @@
 """CIV-071 real Chromium navigation, period isolation and copy conflict display."""
 import os
+import base64
+from io import BytesIO
 from pathlib import Path
 from urllib.parse import urlparse, parse_qs
 
 import pytest
+from docx import Document
 from playwright.sync_api import expect
 from sqlalchemy import select
 
@@ -99,6 +102,14 @@ def test_explicit_copy_form_lists_conflict_and_does_not_overwrite(browser, clien
 def test_word_preview_displays_sections_and_applies_and_reverts_in_browser(browser, db, import_client, import_context):
     app.dependency_overrides[require_user] = lambda: import_context.user
     period = import_context.period
+    source = Document(BytesIO(section_document()))
+    # Valid PNG structure with a deliberately invalid CRC: retain a visible
+    # recovery warning without changing the financial preview's legacy fields.
+    source.add_picture(BytesIO(base64.b64decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aWQ0AAAAASUVORK5CYII=')))
+    table = source.add_table(rows=2, cols=2)
+    for cell, text in zip(table.rows[0].cells, ['Donanım Tablosu', 'Adet']): cell.text = text
+    for cell, text in zip(table.rows[1].cells, ['Bilgisayar', '0']): cell.text = text
+    buffer = BytesIO(); source.save(buffer)
     with browser.new_context() as context:
         errors = []
         def serve(route):
@@ -112,9 +123,12 @@ def test_word_preview_displays_sections_and_applies_and_reverts_in_browser(brows
         page.goto(f'http://testserver/dashboard?period_id={period.id}')
         page.locator('#dataImportUpload').set_input_files({
             'name':'genel.docx', 'mimeType':'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-            'buffer':section_document()})
+            'buffer':buffer.getvalue()})
         expect(page.locator('#importResult')).to_contain_text('Genel Kitap Bölümleri')
         expect(page.locator('#importResult')).to_contain_text('A- Yetki, Görev ve Sorumluluklar · Eklenecek')
+        expect(page.locator('#importResult')).to_contain_text('Donanım Tablosu · Eklenecek')
+        expect(page.locator('#importResult')).to_contain_text('görseli geçersiz veya çok büyük')
+        expect(page.locator('.import-coverage')).to_have_count(0)
         assert not db.scalar(select(ReportSection.id))
         page.get_by_role('link', name='Genel Bölüm İçeriklerini İncele').click()
         expect(page).to_have_url(f'http://testserver/report-builder/import/1?period_id={period.id}')
@@ -123,6 +137,7 @@ def test_word_preview_displays_sections_and_applies_and_reverts_in_browser(brows
         page.get_by_role('button', name='Önizlemeyi Uygula', exact=True).click()
         expect(page).to_have_url(f'http://testserver/report-builder/manifest?period_id={period.id}')
         expect(page.locator('tr[data-key="authority"]')).to_contain_text('Tamam')
+        expect(page.locator('tr[data-key="hardware"]')).to_contain_text('Tamam')
         page.goto(f'http://testserver/report-builder/import/1?period_id={period.id}')
         page.get_by_role('button', name='İçe Aktarmayı Geri Al', exact=True).click()
         expect(page).to_have_url(f'http://testserver/report-builder/manifest?period_id={period.id}')

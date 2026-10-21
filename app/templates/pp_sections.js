@@ -1,7 +1,8 @@
 
 const renderPPImport = renderImportReport;
 renderImportReport = function(result) {
-  renderPPImport(result);
+  const generalTables=new Set((result.general_sections||[]).filter(s=>s.kind==='table').map(s=>s.content.source?.table_number));
+  renderPPImport({...result, coverage_items:(result.coverage_items||[]).filter(item=>!generalTables.has(item.table_number))});
   if (!result.general_sections?.length) return;
   const content=document.createElement('div');
   const heading=document.createElement('h3'); heading.textContent='Genel Kitap Bölümleri'; content.append(heading);
@@ -9,6 +10,9 @@ renderImportReport = function(result) {
     const line=document.createElement('p');
     line.textContent=section.title+' · '+({create:'Eklenecek',keep:'Mevcut bölüm korunacak',conflict:'Çakışma — hedef bölüm korunacak'}[section.action]);
     content.append(line);
+  }
+  for (const warning of result.general_section_warnings||[]) {
+    const line=document.createElement('p'); line.className='bad'; line.textContent=warning; content.append(line);
   }
   const link=document.createElement('a'); link.href=result.section_preview_url; link.textContent='Genel Bölüm İçeriklerini İncele'; content.append(link);
   document.getElementById('importResult').prepend(content);

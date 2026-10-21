@@ -11,6 +11,7 @@
 </details>
 {% else %}<p>Kaynakta tanınan genel bölüm bulunamadı. Kitap Bölümleri ekranından eksik içeriği ekleyin.</p>{% endfor %}
 {% for warning in preview.warnings %}<p class="bad">{{ warning }}</p>{% endfor %}
+{% for warning in preview.general_section_warnings %}<p class="bad">{{ warning }}</p>{% endfor %}
 {% if preview.can_apply %}<button class="button primary" id="applySections" data-batch-id="{{ batch.id }}" data-period-id="{{ period.id }}">Önizlemeyi Uygula</button>{% elif preview.can_revert %}<button class="button danger" id="revertSections" data-batch-id="{{ batch.id }}" data-period-id="{{ period.id }}">İçe Aktarmayı Geri Al</button>{% elif batch.status=='applied' %}<p>{{ preview.revert_reason }}</p>{% endif %}
 <p><a href="/report-builder/manifest?period_id={{ period.id }}">PP Tamamlanma Listesi</a> · <a href="/dashboard?period_id={{ period.id }}">İçe Aktarma Geçmişi</a></p>
 </section>
