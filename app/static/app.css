@@ -71,3 +71,9 @@ progress{width:140px;height:12px;accent-color:#287a57}.status.not_started{backgr
 .operations-content .section-head>*,.operations-content .rowbuttons>*{min-width:0;max-width:100%}
 .operations-content .button{white-space:normal}
 @media(max-width:620px){.app:has(.operations-content){grid-template-columns:64px minmax(0,1fr)}.app:has(.operations-content) .sidebar-account .logout{white-space:normal;padding:6px 2px;font-size:9px}}
+
+/* The source comparison keeps wide evidence tables inside their scroll region. */
+.app:has(#source-comparison) header{height:auto;min-height:78px;flex-wrap:wrap;gap:12px;padding-block:14px}
+.app:has(#source-comparison) header>div{min-width:0;max-width:100%;overflow-wrap:anywhere}
+#source-comparison code{overflow-wrap:anywhere}
+@media(max-width:620px){.app:has(#source-comparison){grid-template-columns:64px minmax(0,1fr)}.app:has(#source-comparison) .sidebar-account .logout{white-space:normal;padding:6px 2px;font-size:9px}}

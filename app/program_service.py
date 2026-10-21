@@ -398,7 +398,7 @@ def period_departments(db, period_id):
             if department_in_year(db, d, period.year)]
 
 
-def cost_reconciliation(db, period_id, snapshots=None):
+def cost_reconciliation(db, period_id, snapshots=None, *, include_historical=False):
     """One live-row calculation for screens, publication gates and frozen exports.
 
     Parent source totals are available only with complete ActivityCostValue source
@@ -459,7 +459,7 @@ def cost_reconciliation(db, period_id, snapshots=None):
     def make_rows(key, label, path, program_id=None, subprogram_id=None, department_id=None):
         group = members[key]
         result = []
-        for year, kind in cost_columns(period.year)[3:]:
+        for year, kind in cost_columns(period.year)[0 if include_historical else 3:]:
             errors = list(dict.fromkeys(problems[a['id']] for a in group if a['id'] in problems))
             if not group and (departments[department_id]['scope'] or {}).get('status') != 'zero':
                 errors.append(f'{path} / {year}: faaliyet kaydı yok; faaliyetleri ve maliyetlerini tamamlayın '
