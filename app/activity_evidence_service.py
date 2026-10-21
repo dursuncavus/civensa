@@ -33,6 +33,27 @@ def validate_file(data, filename):
     return Path(filename).name[:200]
 
 
+def ensure_upload_writable(db, report, revision, department_id):
+    from .models import ARDocument, ARDocumentFreeze
+    schema = db.connection().get_execution_options().get('schema_translate_map', {}).get(None)
+    inspector = inspect(db.connection())
+    sealed = inspector.has_table('activity_evidence_freezes', schema=schema) and db.scalar(
+        select(ActivityEvidenceFreeze.id).where(ActivityEvidenceFreeze.report_revision_id == revision.id))
+    if inspector.has_table('ar_documents', schema=schema):
+        # Match the frozen core revision explicitly: a later correction revision
+        # must not inherit a freeze of an older indicator snapshot.
+        documents = db.scalars(select(ARDocument).where(ARDocument.organization_id == report.organization_id,
+            ARDocument.period_id == report.period_id,
+            (ARDocument.department_id == department_id) | ARDocument.department_id.is_(None))
+            .order_by(ARDocument.id).with_for_update()).all()
+        for document in documents:
+            frozen = db.scalar(select(ARDocumentFreeze).where(ARDocumentFreeze.document_id == document.id))
+            if frozen and json.loads(frozen.payload_json).get('core', {}).get('revision_id') == revision.id:
+                sealed = True
+    if sealed:
+        fail('Bu gösterge revizyonu dondurulmuş rapor içeriğinde yer alıyor. Yeni kanıt dosyası için Strateji ile düzeltme revizyonu oluşturun.', status=409)
+
+
 def prepare(db, item, previous, evidence, uploads):
     """Resolve identities from the previous realisation, never trust client hashes."""
     old = {s['source_id']: s for s in json.loads(previous.evidence_json) if s.get('source_id')} if previous else {}

@@ -222,3 +222,21 @@ def test_concurrent_uploads_serialize_realisation_and_version(client, db, sample
         results = list(pool.map(lambda _: upload_once(), range(2)))
     assert sorted(results) == [200, 409]
     assert db.scalar(select(func.count()).select_from(ActivityEvidenceFile)) == 1
+
+
+@pytest.mark.parametrize('scope', ['birim', 'idare'])
+def test_frozen_section_snapshot_refuses_new_evidence_files(client, db, sample, scope):
+    from app.models import ARDocument, ARDocumentFreeze
+    report, slot = setup(client, db, sample)
+    actual = upload(client, slot).json()
+    doc = ARDocument(organization_id=sample['department'].organization_id, period_id=sample['period'].id,
+        department_id=sample['department'].id if scope == 'birim' else None,
+        scope=f"birim:{sample['department'].id}" if scope == 'birim' else 'idare',
+        definition_version=1, revision=0, created_by=sample['strategy'].id)
+    db.add(doc); db.flush()
+    raw = contract.canonical({'core': {'revision_id': report['revision_id'], 'indicators': [{'evidence': actual['evidence']}]}})
+    db.add(ARDocumentFreeze(document_id=doc.id, payload_json=raw, sha256=contract.digest(raw), created_by=sample['strategy'].id)); db.commit()
+    response = upload(client, slot, revision=2)
+    assert response.status_code == 409 and 'dondurulmuş rapor' in response.text
+    assert client.get(actual['evidence'][0]['files'][0]['download_url']).content == PDF
+    assert db.scalar(select(func.count()).select_from(ActivityEvidenceFile)) == 1

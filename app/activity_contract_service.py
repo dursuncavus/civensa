@@ -452,6 +452,8 @@ def save_actual(db, user, report_indicator_id, expected_revision, value, state, 
         if len(content) > limit:
             raise HTTPException(422, {'message': f'{label} çok uzun. Alanı kısaltıp yeniden kaydedin.', 'field': field})
     from . import activity_evidence_service as attachments
+    if uploads:
+        attachments.ensure_upload_writable(db, report, revision, binding.department_id)
     evidence, pending = attachments.prepare(db, item, previous, evidence, uploads)
     definition = db.get(IndicatorDefinitionRevision, binding.definition_revision_id)
     target = json.loads(definition.definition_json)['targets']

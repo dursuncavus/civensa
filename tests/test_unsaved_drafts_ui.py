@@ -254,3 +254,24 @@ def test_ar_multiple_sources_upload_error_and_remove_in_browser(editor, db):
     draft(record); editor.save(record); saved(record)
     expect(record.locator('[data-evidence-row]')).to_have_count(1)
     assert db.scalar(select(ActivityEvidenceFile)).file_data == pdf
+
+
+@pytest.mark.parametrize('editor', ['ar'], indirect=True)
+def test_ar_file_selected_during_pending_save_stays_unsaved(editor, db):
+    import json
+    record = editor.records[0]
+    record.locator(editor.field).fill('2,5')
+    file_input = record.locator('[name="source_file"]')
+    file_input.set_input_files({'name': 'first.pdf', 'mimeType': 'application/pdf', 'buffer': b'%PDF-1.7\nfirst'})
+    editor.pending['hold'] = True
+    editor.save(record)
+    expect(record.get_by_role('button', name='Yeni gerçekleşme revizyonu kaydet')).to_be_disabled()
+    file_input.set_input_files({'name': 'second.pdf', 'mimeType': 'application/pdf', 'buffer': b'%PDF-1.7\nsecond'})
+    editor.release()
+    draft(record)
+    expect(record.get_by_role('button', name='Yeni gerçekleşme revizyonu kaydet')).to_be_enabled()
+    assert record.locator('[name="source_file"]').evaluate('(input)=>input.files[0].name') == 'second.pdf'
+    editor.save(record); saved(record)
+    db.expire_all()
+    actual = db.scalar(select(ActualRevision).where(ActualRevision.report_indicator_id == editor.slots[0]).order_by(ActualRevision.revision.desc()))
+    assert [f['filename'] for f in json.loads(actual.evidence_json)[0]['files']] == ['first.pdf', 'second.pdf']
