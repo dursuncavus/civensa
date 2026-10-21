@@ -1,8 +1,8 @@
 """JSON contract and server-rendered workflow share the same guarded services."""
 import json
 from typing import Any
-from fastapi import Depends, HTTPException, Request
-from fastapi.responses import RedirectResponse
+from fastapi import Depends, HTTPException, Request, UploadFile, File, Form
+from fastapi.responses import RedirectResponse, Response
 from pydantic import BaseModel, Field, StrictInt, StrictStr
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError, OperationalError
@@ -162,46 +162,99 @@ def register(app):
         except HTTPException as error:
             return ui_error(request, user, error, '/activity-reports')
 
+    @app.post('/api/activity-reports/indicators/{report_indicator_id}/evidence-files')
+    async def upload_evidence(report_indicator_id: int, expected_revision: int = Form(...),
+            source_index: int = Form(...), file: UploadFile = File(...),
+            db: Session = Depends(get_db), user=Depends(require_user)):
+        from .models import ActualRevision, ReportIndicator
+        from .activity_evidence_service import MAX_FILE
+        data = await file.read(MAX_FILE + 1)
+        item = db.get(ReportIndicator, report_indicator_id)
+        if not item:
+            raise HTTPException(404, 'Rapor göstergesi bulunamadı. Güncel raporu açın.')
+        binding = db.get(PublicationIndicatorBinding, item.publication_binding_id)
+        service.authorize(user, binding.department_id)
+        latest = db.scalar(select(ActualRevision).where(ActualRevision.report_indicator_id == item.id).order_by(ActualRevision.revision.desc()))
+        if not latest:
+            raise HTTPException(422, 'Dosya için gerçekleşme kaydı bulunamadı. Önce kaynak satırını kaydedin.')
+        result = transact(db, user, 'actual_revision_create', 'actual_revision', lambda: service.save_actual(db, user,
+            report_indicator_id, expected_revision, str(latest.value) if latest.value is not None else None,
+            latest.state, json.loads(latest.evidence_json), latest.explanation, json.loads(latest.deviation_json),
+            uploads={source_index: (data, file.filename or '')}))
+        return service.actual_data(result)
+
+    @app.get('/api/activity-reports/indicators/{report_indicator_id}/evidence/{source_id}/{version}')
+    def download_evidence(report_indicator_id: int, source_id: str, version: int,
+            db: Session = Depends(get_db), user=Depends(require_user)):
+        from . import activity_evidence_service as attachments
+        row = transact(db, user, 'activity_evidence_access', 'activity_evidence_file',
+            lambda: attachments.download(db, user, report_indicator_id, source_id, version))
+        suffix = '.pdf' if row.filename.lower().endswith('.pdf') else '.xlsx'
+        return Response(row.file_data,
+            media_type='application/pdf' if suffix == '.pdf' else 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            headers={'Content-Disposition': f'attachment; filename="kanit-v{row.version}{suffix}"',
+                     'X-Content-Type-Options': 'nosniff', 'Cache-Control': 'private, no-store', 'X-Evidence-SHA256': row.sha256})
+
     @app.post('/activity-reports/indicators/{report_indicator_id}/actuals')
     async def actual_form(report_indicator_id: int, request: Request, db: Session = Depends(get_db), user=Depends(require_user)):
-        data = await request.form()
-        back = '/activity-reports'
-        item = None
+        from .models import ActualRevision, ReportIndicator
+        from .activity_evidence_service import MAX_FILE
+        data = await request.form(max_files=30)
+        back, item, evidence = '/activity-reports', None, []
+        # Repeated fields preserve row order, including blank/invalid rows.
+        titles, locators, revisions, identities = (data.getlist(k) for k in
+            ('source_title', 'source_locator', 'source_revision', 'source_id'))
+        for index in range(max(len(titles), len(locators), len(revisions), len(identities))):
+            source = {k: values[index] if index < len(values) else '' for k, values in
+                (('title', titles), ('locator', locators), ('source_revision', revisions))}
+            if index < len(identities) and identities[index]:
+                source['source_id'] = identities[index]
+            evidence.append(source)
+        uploads = {}
         try:
-            from .models import ReportIndicator
+            for index, file in enumerate(data.getlist('source_file')):
+                if hasattr(file, 'read') and file.filename:
+                    uploads[index] = (await file.read(MAX_FILE + 1), file.filename)
             item = db.get(ReportIndicator, report_indicator_id)
-            if item:
-                back = f'/activity-reports/revisions/{item.report_revision_id}'
-                from .models import ActualRevision, PublicationIndicatorBinding
-                binding = db.get(PublicationIndicatorBinding, item.publication_binding_id)
-                service.authorize(user, binding.department_id)
-                latest = db.scalar(select(ActualRevision).where(ActualRevision.report_indicator_id == item.id).order_by(ActualRevision.revision.desc()))
-                if latest and len(json.loads(latest.evidence_json)) > 1:
-                    raise HTTPException(422, 'Bu kayıtta birden fazla kanıt var. Tüm kaynakları koruyarak API üzerinden yeni revizyon oluşturun.')
-            raw = data.get('value', '')
+            if not item:
+                raise HTTPException(404, 'Rapor göstergesi bulunamadı. Güncel raporu açın.')
+            back = f'/activity-reports/revisions/{item.report_revision_id}'
+            binding = db.get(PublicationIndicatorBinding, item.publication_binding_id)
+            service.authorize(user, binding.department_id)
+            latest = db.scalar(select(ActualRevision).where(ActualRevision.report_indicator_id == item.id).order_by(ActualRevision.revision.desc()))
+            if latest and len(json.loads(latest.evidence_json)) > 1 and data.get('evidence_rows') != '1':
+                raise HTTPException(422, 'Bu kayıtta birden fazla kanıt var. Güncel formu açıp tüm kaynak satırlarını kontrol edin.')
             try:
-                parsed = parse_number(raw)
-            except ValueError as error:
-                raise HTTPException(422, 'Gerçekleşme alanındaki sayı okunamadı. Sayısal bir değer girin; örneğin 12.500,23. Ondalık için virgül kullanın.') from None
-            evidence = []
-            if any(data.get(k, '').strip() for k in ('source_title', 'source_locator', 'source_revision')):
-                evidence = [{'title': data.get('source_title', ''), 'locator': data.get('source_locator', ''),
-                             'source_revision': data.get('source_revision', '')}]
+                parsed = parse_number(data.get('value', ''))
+            except ValueError:
+                raise HTTPException(422, {'message': 'Gerçekleşme alanındaki sayı okunamadı. Sayısal bir değer girin; örneğin 12.500,23. Ondalık için virgül kullanın.', 'field': 'value'}) from None
+            # A sole untouched empty row represents no evidence, not a partial source.
+            if len(evidence) == 1 and not uploads and not any(evidence[0].values()):
+                evidence = []
             transact(db, user, 'actual_revision_create', 'actual_revision', lambda: service.save_actual(db, user,
                 report_indicator_id, integer(data.get('expected_revision')), str(parsed) if parsed is not None else None,
                 data.get('state', 'verified'), evidence, data.get('explanation', ''),
-                {**(json.loads(latest.deviation_json) if item and latest else {}), 'corrective_action': data.get('corrective_action', '')}))
+                {**(json.loads(latest.deviation_json) if latest else {}), 'corrective_action': data.get('corrective_action', '')}, uploads=uploads))
             return RedirectResponse(back, 303)
         except HTTPException as error:
-            if item and error.status_code in {422, 409}:
+            if item and error.status_code in {422, 409, 413}:
                 report = service.report_data(db, user, item.report_revision_id)
-                row = next(r for r in report['indicators'] if r['report_indicator_id'] == report_indicator_id)
+                indicator = next(row for row in report['indicators'] if row['report_indicator_id'] == item.id)
+                # Restore server-owned attachment lists; retain every attempted text value.
+                previous_sources = {s.get('source_id'): s for r in report['indicators'] if r['report_indicator_id'] == item.id
+                    for actual in r['actuals'] for s in actual['evidence'] if s.get('source_id')}
+                for index, source in enumerate(evidence):
+                    source['files'] = previous_sources.get(source.get('source_id'), {}).get('files', [])
+                    if index in uploads:
+                        source['attempted_filename'] = uploads[index][1]
                 pubs = db.scalars(select(Publication).where(Publication.period_id == db.get(ActivityReport, report['report_id']).period_id).order_by(Publication.version.desc())).all() if user.role == 'strategy' else []
+                detail = error.detail if isinstance(error.detail, dict) else {'message': error.detail}
+                message = detail['message']
+                field = detail.get('field', 'source_title' if any(k in str(message).lower() for k in ('kaynak', 'kanıt')) else 'state')
                 return templates.TemplateResponse(request, 'activity_contract_detail.html',
                     {'user': user, 'report': report, 'publications': pubs,
-                     'attempted_slot': report_indicator_id, 'attempted': dict(data),
-                     'form_error': f"{row['definition']['name']} — Gerçekleşme / veri durumu / kaynak: {error.detail}",
-                     'error_field': 'value' if 'sayı' in str(error.detail).lower() or 'ondalık' in str(error.detail).lower() else ('source_title' if 'kaynak' in str(error.detail).lower() or 'kanıt' in str(error.detail).lower() else 'state')}, status_code=error.status_code)
+                     'attempted_slot': report_indicator_id, 'attempted': dict(data), 'attempted_sources': evidence,
+                     'form_error': f"{indicator['definition']['name']} — {message}", 'error_field': field, 'error_source_index': detail.get('source_index')}, status_code=error.status_code)
             return ui_error(request, user, error, back)
 
     @app.post('/activity-reports/revisions/{revision_id}/approve')
