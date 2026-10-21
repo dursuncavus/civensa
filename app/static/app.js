@@ -109,8 +109,14 @@ document.querySelectorAll('.tab').forEach(btn=>btn.addEventListener('click',()=>
 const drafts=(()=>{
   const states=new WeakMap();
   const fields=record=>[...record.querySelectorAll('[data-field], [data-actual-form] input:not([type="hidden"]), [data-actual-form] textarea, [data-actual-form] select')];
-  const key=field=>field.dataset.field||field.name;
-  const values=record=>Object.fromEntries(fields(record).map(field=>[key(field),field.value]));
+  const key=field=>{
+    if(field.closest('[data-actual-form]')&&field.name.startsWith('source_')){
+      const peers=[...field.form.elements].filter(peer=>peer.name===field.name);
+      return `${field.name}:${peers.indexOf(field)}`;
+    }
+    return field.dataset.field||field.name;
+  };
+  const values=record=>Object.fromEntries(fields(record).map(field=>[key(field),field.type==='file'?[...field.files].map(file=>`${file.name}:${file.size}:${file.lastModified}`).join('|'):field.value]));
   let navigationApproved=false;
   function render(record){
     const state=states.get(record);
@@ -202,13 +208,25 @@ async function saveIndicatorCard(card){
   }finally{drafts.finish(card)}
 }
 
+document.addEventListener('click',event=>{
+  const add=event.target.closest('[data-add-evidence]'),remove=event.target.closest('[data-remove-evidence]');
+  if(!add&&!remove)return;
+  const form=event.target.closest('[data-actual-form]'),rows=form.querySelector('[data-evidence-rows]');
+  if(add){
+    if(rows.children.length>=30){toast('En fazla 30 kaynak ekleyebilirsiniz. Mevcut kaynakları kontrol edin.');return}
+    rows.append(form.querySelector('[data-evidence-template]').content.cloneNode(true));
+    rows.lastElementChild.querySelector('input:not([type="hidden"])').focus();
+  }else remove.closest('[data-evidence-row]').remove();
+  form.dispatchEvent(new Event('input',{bubbles:true}));
+});
+
 document.addEventListener('submit',async event=>{
   const form=event.target;if(!form.matches('[data-actual-form]'))return;
   event.preventDefault();
   const record=form.closest('[data-draft-record]'),sent=drafts.begin(record);if(!sent)return;
   try{
     const token=document.querySelector('meta[name="csrf-token"]')?.content;
-    const response=await fetch(form.action,{method:'POST',headers:token?{'X-CSRF-Token':token}:{},body:new URLSearchParams(new FormData(form))});
+    const response=await fetch(form.action,{method:'POST',headers:token?{'X-CSRF-Token':token}:{},body:new FormData(form)});
     if(response.status===401||(response.redirected&&new URL(response.url).pathname==='/login')){
       drafts.error(record,'Oturumunuz sona ermiş veya giriş yapmanız gerekiyor. Yeniden giriş yapın; ardından kayıt durumunu kontrol edin.');return;
     }
@@ -225,6 +243,7 @@ document.addEventListener('submit',async event=>{
     }
     if(!replacement?.querySelector('[data-actual-form]')){drafts.error(record,'Kayıt sonucu ekranda doğrulanamadı. '+requestFailure);return}
     const current=drafts.values(record),focused=document.activeElement;
+    const pendingFiles=new Map(drafts.fields(record).filter(field=>field.type==='file').map(field=>[drafts.key(field),field.files]));
     const focusKey=record.contains(focused)?drafts.key(focused):null;
     const selection=focused?.selectionStart;
     const detailsOpen=record.querySelector('details')?.open;
@@ -232,7 +251,7 @@ document.addEventListener('submit',async event=>{
     const baseline=drafts.values(replacement);
     // The server response carries the new CAS revision and complete history.
     // Preserve only changes made after submitting, atop the saved baseline.
-    drafts.fields(replacement).forEach(field=>{const key=drafts.key(field);if(current[key]!==sent[key])field.value=current[key]});
+    drafts.fields(replacement).forEach(field=>{const key=drafts.key(field);if(current[key]!==undefined&&current[key]!==sent[key]){if(field.type==='file')field.files=pendingFiles.get(key);else field.value=current[key]}});
     if(detailsOpen&&replacement.querySelector('details'))replacement.querySelector('details').open=true;
     drafts.saved(replacement,baseline);
     if(focusKey){const next=drafts.fields(replacement).find(field=>drafts.key(field)===focusKey);next?.focus();if(selection!=null&&next?.setSelectionRange)next.setSelectionRange(selection,selection)}

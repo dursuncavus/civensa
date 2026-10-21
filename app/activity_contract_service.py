@@ -44,7 +44,7 @@ def authorize(user, department_id=None):
     if user.role != 'department' or not user.department_id:
         raise HTTPException(403, 'Müdürlük atamanız bulunmuyor. Strateji biriminden yetkinizi kontrol etmesini isteyin.')
     if department_id is not None and user.department_id != department_id:
-        raise HTTPException(403, 'Bu gösterge yetkili olduğunuz müdürlüğe ait değil.')
+        raise HTTPException(403, 'Bu gösterge yetkili olduğunuz müdürlüğe ait değil. Kendi müdürlüğünüzün göstergesini açın veya Stratejiden yetkinizi kontrol etmesini isteyin.')
 
 
 def checked_publication(db, publication_id):
@@ -407,7 +407,7 @@ def parse_actual(value):
         raise HTTPException(422, 'Sonlu bir sayı ve en fazla 6 ondalık basamak girin.') from None
 
 
-def save_actual(db, user, report_indicator_id, expected_revision, value, state, evidence, explanation, deviation):
+def save_actual(db, user, report_indicator_id, expected_revision, value, state, evidence, explanation, deviation, uploads=None):
     item = db.get(ReportIndicator, report_indicator_id)
     if not item:
         raise HTTPException(404, 'Rapor göstergesi bulunamadı.')
@@ -423,20 +423,36 @@ def save_actual(db, user, report_indicator_id, expected_revision, value, state, 
     previous = db.scalar(select(ActualRevision).where(ActualRevision.report_indicator_id == item.id).order_by(ActualRevision.revision.desc()))
     if expected_revision != (previous.revision if previous else 0):
         raise HTTPException(409, 'Bu gerçekleşme başka bir kullanıcı tarafından güncellendi. Son sürümü açın.')
-    number = parse_actual(value)
+    uploads = uploads or {}
+    if uploads and (user.role != 'department' or user.department_id != binding.department_id):
+        raise HTTPException(403, 'Kanıt dosyasını yalnız göstergenin müdürlüğü ekleyebilir. Kendi müdürlüğünüzün kullanıcısıyla giriş yapın; Strateji dosyaları okuyabilir.')
+    try:
+        number = parse_actual(value)
+    except HTTPException as error:
+        raise HTTPException(error.status_code, {'message': error.detail, 'field': 'value'}) from None
     if state not in {'verified', 'needs_review', 'missing'} or (state == 'verified' and number is None) or (state == 'missing' and number is not None):
         raise HTTPException(422, 'Gerçekleşme ve veri durumu uyumsuz. Doğrulanmış için sayı girin; veri yoksa Eksik seçip alanı boş bırakın. Boş değer sıfır değildir.')
     if not isinstance(evidence, list) or len(evidence) > 30:
         raise HTTPException(422, 'Kanıtlar en fazla 30 kaynak kaydı içermeli.')
-    for source in evidence:
-        if not isinstance(source, dict) or not all(isinstance(source.get(k), str) and source[k].strip() for k in ('title', 'locator', 'source_revision')):
-            raise HTTPException(422, 'Eksik kaynak kaydı: kaynak adı, konumu ve sabit kaynak sürümünü doldurun.')
+    for index, source in enumerate(evidence):
+        if not isinstance(source, dict):
+            raise HTTPException(422, 'Kanıt satırı geçersiz. Kaynak alanlarını yeniden doldurun.')
+        missing = next((key for key in ('title', 'locator', 'source_revision')
+                        if not isinstance(source.get(key), str) or not source[key].strip()), None)
+        if missing:
+            field = {'title': 'source_title', 'locator': 'source_locator', 'source_revision': 'source_revision'}[missing]
+            raise HTTPException(422, {'message': f'Eksik kaynak kaydı ({index + 1}. satır): kaynak adı, konumu ve sabit kaynak sürümünü doldurun.',
+                                      'field': field, 'source_index': index})
     if state == 'verified' and not evidence:
         raise HTTPException(422, 'Doğrulanmış gerçekleşme için kaynak bulunmuyor. En az bir tam kaynak ekleyin veya veri durumunu İncelenmeli seçin.')
     if not isinstance(explanation, str) or not isinstance(deviation, dict):
         raise HTTPException(422, 'Açıklama metin, sapma kaydı bir nesne olmalı.')
-    if len(canonical(evidence)) > 50000 or len(explanation) > 10000 or len(canonical(deviation)) > 10000:
-        raise HTTPException(422, 'Kanıt, açıklama veya sapma kaydı çok uzun.')
+    for content, field, limit, label in ((canonical(evidence), 'source_title', 50000, 'Kanıt kaynakları'),
+            (explanation, 'explanation', 10000, 'Açıklama'), (canonical(deviation), 'corrective_action', 10000, 'Sapma / düzeltici işlem')):
+        if len(content) > limit:
+            raise HTTPException(422, {'message': f'{label} çok uzun. Alanı kısaltıp yeniden kaydedin.', 'field': field})
+    from . import activity_evidence_service as attachments
+    evidence, pending = attachments.prepare(db, item, previous, evidence, uploads)
     definition = db.get(IndicatorDefinitionRevision, binding.definition_revision_id)
     target = json.loads(definition.definition_json)['targets']
     target_value = None
@@ -449,7 +465,8 @@ def save_actual(db, user, report_indicator_id, expected_revision, value, state, 
     actual = ActualRevision(report_indicator_id=item.id, revision=(previous.revision if previous else 0) + 1,
         supersedes_id=previous.id if previous else None, value=number, raw_text=value or '', state=state,
         evidence_json=canonical(evidence), explanation=explanation, deviation_json=canonical(calculated), created_by=user.id)
-    db.add(actual); db.flush()
+    db.add(actual)
+    attachments.persist(db, user, actual, evidence, pending)
     return actual
 
 
@@ -484,6 +501,8 @@ def approve_report(db, user, revision_id):
         raise HTTPException(409, {'message': 'Rapor onaylanmadı. Aşağıdaki göstergelerde belirtilen eksikleri giderip yeniden onaylayın.', 'blockers': blockers})
     approval = ActivityReportApproval(report_revision_id=revision.id, created_by=user.id)
     db.add(approval); db.flush()
+    from .activity_evidence_service import freeze
+    freeze(db, revision.id)
     return approval
 
 
@@ -521,6 +540,15 @@ def report_data(db, user, revision_id):
         differences = [dict(d, **{side: d.get(side) if (d.get(side) or {}).get('department_id') == user.department_id else None for side in ('before', 'after')}) for d in differences]
     approval = db.scalar(select(ActivityReportApproval).where(ActivityReportApproval.report_revision_id == revision.id))
     from .structure_service import closure_notes
+    from .models import ActivityEvidenceFreeze
+    frozen_manifest = None
+    if inspect(db.connection()).has_table('activity_evidence_freezes', schema=db.connection().get_execution_options().get('schema_translate_map', {}).get(None)):
+        frozen = db.scalar(select(ActivityEvidenceFreeze).where(ActivityEvidenceFreeze.report_revision_id == revision.id))
+        if frozen:
+            if digest(frozen.manifest_json) != frozen.sha256:
+                raise HTTPException(409, 'Dondurulmuş kanıt listesi doğrulanamadı. Sistem sorumlusuyla iletişime geçin.')
+            permitted = {row['report_indicator_id'] for row in result}
+            frozen_manifest = [entry for entry in json.loads(frozen.manifest_json) if entry['report_indicator_id'] in permitted]
     return {'closure_notes': closure_notes(db, report.period_id, user, report.organization_id), 'approval': {'created_by': approval.created_by, 'name': db.get(User, approval.created_by).full_name, 'created_at': approval.created_at.isoformat()} if approval else None, 'report_id': report.id, 'organization_id': report.organization_id, 'revision_id': revision.id,
         'revision': revision.revision, 'current_revision': report.current_revision, 'year': payload['period'],
         'publication_id': pub.id, 'publication_version': pub.version, 'publication_sha256': revision.publication_sha256,
@@ -528,4 +556,4 @@ def report_data(db, user, revision_id):
         'revision_reason': revision.revision_reason, 'contract_version': revision.contract_version,
         'approved': bool(db.scalar(select(ActivityReportApproval.id).where(ActivityReportApproval.report_revision_id == revision.id))),
         'returned_after_approval': returned_after_approval(db, revision) if approval else False,
-        'differences': differences, 'indicators': result}
+        'differences': differences, 'indicators': result, 'evidence_manifest': frozen_manifest}

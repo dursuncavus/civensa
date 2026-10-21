@@ -549,3 +549,5 @@ class StructureChangeCancellation(Base):
 from .budget_models import BudgetOperation, BudgetOperationLine
 from .internal_control_models import (ICPlan, ICStandard, ICCondition, ICAction, ICActionParty,
                                       ICUnitAlias, ICImport, ICImportAudit)
+
+from .activity_evidence_models import ActivityEvidenceFile, ActivityEvidenceFreeze

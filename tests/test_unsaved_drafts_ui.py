@@ -84,7 +84,7 @@ def editor(request, browser, client, db, sample):
                 record.locator('[name="source_locator"]').fill('Sayfa 3')
                 record.locator('[name="source_revision"]').fill('2027 kayıt 4')
         def save(record):
-            record.locator('.save-indicator' if module == 'pp' else 'form button').click()
+            record.locator('.save-indicator' if module == 'pp' else 'form button[type="submit"]').click()
         def screenshot(name):
             output = os.getenv('CIVENSA_UI_SCREENSHOTS')
             if output:
@@ -220,3 +220,37 @@ def test_logout_confirmation_cancels_before_session_is_closed(editor):
     dialog.get_by_role('button', name='Sayfada kal', exact=True).click()
     expect(a.locator(editor.field)).to_have_value('7,5'); draft(a)
     assert not any(url.endswith('/logout') for _, url, _ in editor.requests)
+
+
+@pytest.mark.parametrize('editor', ['ar'], indirect=True)
+def test_ar_multiple_sources_upload_error_and_remove_in_browser(editor, db):
+    import hashlib
+    import json
+    from app.models import ActivityEvidenceFile
+    record = editor.records[0]
+    record.locator(editor.field).fill('2,5')
+    record.get_by_role('button', name='Kaynak ekle', exact=True).click()
+    rows = record.locator('[data-evidence-row]')
+    expect(rows).to_have_count(2)
+    rows.nth(1).locator('[name="source_title"]').fill('İkinci tarayıcı kaynağı')
+    rows.nth(1).locator('[name="source_revision"]').fill('2027/2')
+    pdf = b'%PDF-1.7\nbrowser evidence\n%%EOF'
+    rows.nth(0).locator('[name="source_file"]').set_input_files({'name': 'tarayici.pdf', 'mimeType': 'application/pdf', 'buffer': pdf})
+    editor.save(record)
+    expect(record.locator('.draft-error')).to_be_visible()
+    expect(rows).to_have_count(2)
+    expect(rows.nth(1).locator('[name="source_title"]')).to_have_value('İkinci tarayıcı kaynağı')
+    expect(rows.nth(1).locator('[name="source_locator"]')).to_have_attribute('aria-invalid', 'true')
+    # AJAX validation retains the selected file in the browser as well.
+    assert rows.nth(0).locator('[name="source_file"]').evaluate('(input)=>input.files[0].name') == 'tarayici.pdf'
+    rows.nth(1).locator('[name="source_locator"]').fill('Sayfa 2')
+    editor.save(record); saved(record)
+    expect(record.get_by_role('link', name='tarayici.pdf · Dosya sürümü 1').last).to_be_visible()
+    db.expire_all()
+    actual = db.scalar(select(ActualRevision).where(ActualRevision.report_indicator_id == editor.slots[0]).order_by(ActualRevision.revision.desc()))
+    sources = json.loads(actual.evidence_json)
+    assert len(sources) == 2 and sources[0]['files'][0]['sha256'] == hashlib.sha256(pdf).hexdigest()
+    record.locator('[data-evidence-row]').nth(0).get_by_role('button', name='Kaynağı kaldır', exact=True).click()
+    draft(record); editor.save(record); saved(record)
+    expect(record.locator('[data-evidence-row]')).to_have_count(1)
+    assert db.scalar(select(ActivityEvidenceFile)).file_data == pdf
