@@ -392,6 +392,25 @@ def _similarity(a: str, b: str) -> float:
     return SequenceMatcher(None, department_key(a), department_key(b)).ratio()
 
 
+def existing_source_binding(db, source, period_id, department_id):
+    """Read-only exact ownership for retained records and historical batches.
+
+    Names identify a target only when unique within the department and period.
+    New imports that create records bind their actual allocated IDs instead.
+    """
+    def unique(model, name):
+        if department_id is None:
+            return None
+        found = db.scalars(select(model.id).where(model.period_id == period_id,
+            model.department_id == department_id, model.name == name)).all()
+        return found[0] if len(found) == 1 else None
+    return dict(department_id=department_id, source=deepcopy(source),
+        indicator_ids=[[unique(Indicator, i['name']) for i in b['indicators']] for b in source['blocks']],
+        activity_ids=[unique(Activity, a['name']) for a in source['activities']],
+        economic_ids=list(db.scalars(select(EconomicValue.id).where(
+            EconomicValue.period_id == period_id, EconomicValue.department_id == department_id))))
+
+
 def _source_activity_linkable(dept: dict) -> bool:
     activities = dept.get("activities", [])
     if not activities:
@@ -899,6 +918,8 @@ def apply_import_batch(db: Session, batch: ImportBatch, preserve_existing: bool 
     for skey, src in source_by_key.items():
         mapping = mapping_by_key[skey]
         if mapping["action"] == "match" and preserve_existing:
+            comparison['departments'].append({**existing_source_binding(db, src, period.id, mapping['department_id']),
+                                              'preserved': True})
             result["skipped_existing_departments"] += 1
             continue
         if mapping["action"] == "match":

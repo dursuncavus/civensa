@@ -383,3 +383,39 @@ def test_existing_budget_decision_explains_only_its_recorded_amount(db, import_c
     current.amount += Decimal('1'); db.commit()
     row = next(r for r in comparison(db, import_context)['rows'] if r['model'] == 'activity' and r['year'] == 2027 and r['funding'] == 'Toplam')
     assert row['status'] == 'Fark var' and 'güncel tutarı açıklamıyor' in row['note']
+
+
+def test_preserved_existing_import_also_compares_every_source_without_changing_values(db, import_context):
+    from app.import_service import parse_pp_import, apply_import_batch, _serialize_department_state
+    from app.serialization import json_dumps
+    _, binding = imported(db, import_context)
+    before = _serialize_department_state(db, binding['department_id'], import_context.period.id)
+    doc = Document(io.BytesIO(totals_document())); doc.tables[1].cell(1, 1).text = '2.000,00'
+    stream = io.BytesIO(); doc.save(stream)
+    batch = ImportBatch(period_id=import_context.period.id, filename='Korunan kayıt kaynağı.docx',
+        payload_json=json_dumps(parse_pp_import(stream.getvalue())))
+    db.add(batch); db.flush()
+    result = apply_import_batch(db, batch, preserve_existing=True); db.commit()
+    assert result['skipped_existing_departments'] == 1 and result['activities'] == 0
+    assert _serialize_department_state(db, binding['department_id'], import_context.period.id) == before
+    rows = [r for r in comparison(db, import_context)['rows'] if r['batch_id'] == batch.id]
+    assert len(rows) == 24
+    changed = next(r for r in rows if r['model'] == 'activity' and r['year'] == 2027 and r['funding'] == 'Toplam')
+    assert (changed['source_amount'], changed['stored_amount'], changed['status']) == ('2.000,00', '1.234,50', 'Fark var')
+    assert 'Mevcut kayıtlar korunarak' in changed['note']
+
+
+def test_preserved_economic_values_match_business_scope_when_document_tables_move(db, import_context):
+    from app.import_service import parse_pp_import, apply_import_batch
+    from app.serialization import json_dumps
+    from test_pp_import_submit_ready import source_document
+    imported(db, import_context, data=source_document())
+    doc = Document(io.BytesIO(source_document()))
+    note = doc.add_table(rows=1, cols=1); note.cell(0, 0).text = 'Bağımsız not çizelgesi'
+    doc.tables[0]._tbl.addprevious(note._tbl)
+    stream = io.BytesIO(); doc.save(stream)
+    batch = ImportBatch(period_id=import_context.period.id, filename='Yeni tablo sırası.docx',
+        payload_json=json_dumps(parse_pp_import(stream.getvalue())))
+    db.add(batch); db.flush(); apply_import_batch(db, batch, preserve_existing=True); db.commit()
+    rows = [r for r in comparison(db, import_context)['rows'] if r['batch_id'] == batch.id and r['model'] == 'economic']
+    assert len(rows) == 30 and all(r['status'] == 'Eşleşiyor' and r['table'] == 4 for r in rows)

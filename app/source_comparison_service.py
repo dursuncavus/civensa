@@ -11,7 +11,8 @@ from types import SimpleNamespace
 from sqlalchemy import select
 
 from .data_importer import _label_key
-from .import_service import consolidate_source_departments, department_key, general_section_plan
+from .import_service import (consolidate_source_departments, department_key, general_section_plan,
+                             existing_source_binding)
 from .models import (Activity, ActivityCostValue, Department, DepartmentCostValue,
                      EconomicValue, ImportBatch, Indicator, IndicatorValue,
                      ReportSection, User, BudgetOperation, BudgetOperationLine)
@@ -40,17 +41,7 @@ def _legacy_bindings(db, batch, payload):
         departments = [d for d in db.scalars(select(Department))
                        if department_key(d.name) == department_key(source['name'])]
         did = departments[0].id if len(departments) == 1 else None
-        def unique(model, name):
-            if did is None:
-                return None
-            found = db.scalars(select(model.id).where(model.period_id == batch.period_id,
-                model.department_id == did, model.name == name)).all()
-            return found[0] if len(found) == 1 else None
-        result.append(dict(department_id=did, source=source,
-            indicator_ids=[[unique(Indicator, i['name']) for i in b['indicators']] for b in source['blocks']],
-            activity_ids=[unique(Activity, a['name']) for a in source['activities']],
-            economic_ids=list(db.scalars(select(EconomicValue.id).where(
-                EconomicValue.period_id == batch.period_id, EconomicValue.department_id == did)))))
+        result.append(existing_source_binding(db, source, batch.period_id, did))
     return result
 
 
@@ -184,6 +175,11 @@ def source_comparison(db, period_id, department_id=None):
                 for occurrence in values(source_value):
                     decision = kwargs.get('decision')
                     note = kwargs.get('note', '')
+                    if binding.get('preserved'):
+                        note = (note + ' Mevcut kayıtlar korunarak içe aktarıldı; kaynak, korunan güncel değerle karşılaştırıldı.').strip()
+                        if owner is None and model in {'indicator', 'activity'}:
+                            kwargs.update(present=True, incomplete=True)
+                            note += ' Tekil güncel kayıt eşleştirmesi Bilinmiyor; kayıt adlarını ve kapsamını kontrol edin.'
                     if not evidence and current is None:
                         kwargs['present'] = True
                         kwargs['incomplete'] = True
@@ -235,6 +231,7 @@ def source_comparison(db, period_id, department_id=None):
                 if v.id in binding['economic_ids'] or json.loads(v.source_context_json or '{}').get(
                     'split_from', {}).get('original_id') in binding['economic_ids']]
             for table in source.get('economic_tables', []):
+                source_groups = {v['program_group'] for v in table['values']}
                 assertions = table.get('source_assertions')
                 if assertions is None:
                     # Older payloads retain raw category cells and source totals.
@@ -243,7 +240,9 @@ def source_comparison(db, period_id, department_id=None):
                     assertions += [{**v, 'category': None, 'funding_type': fund, 'label': 'Ekonomik toplam'}
                         for fund, rows in table['totals'].items() for v in rows]
                 for value in assertions:
-                    matches = [v for v in economic if v.source_table_number == table['table_number'] and
+                    matches = [v for v in economic if
+                        ((binding.get('preserved') and (v.program_group in source_groups or 'unallocated' in source_groups))
+                         or (not binding.get('preserved') and v.source_table_number == table['table_number'])) and
                         (v.year, v.value_kind) == (value['year'], value['kind']) and
                         (not value.get('category') or v.category == value['category']) and
                         (value['funding_type'] == 'total' or v.funding_type == value['funding_type'])]
