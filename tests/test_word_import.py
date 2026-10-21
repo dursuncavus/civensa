@@ -6,15 +6,17 @@ conftest.py. No municipal document or application database is used.
 import io
 import json
 import threading
+import time
 from concurrent.futures import ThreadPoolExecutor
 from decimal import Decimal
+from queue import Queue
 from types import SimpleNamespace
 
 import pytest
 from docx import Document
 from docx.oxml import OxmlElement
 from fastapi.testclient import TestClient
-from sqlalchemy import func, select
+from sqlalchemy import func, select, text
 from sqlalchemy.orm import Session
 
 import app.import_service as service
@@ -497,6 +499,166 @@ def test_concurrent_http_apply_refuses_second_and_audits_once(db, import_client,
         AuditLog.action == 'data_import_apply', AuditLog.entity_id == batch_id)).all()
     assert len(audits) == 1
     assert json.loads(audits[0].details)['created_departments'] == 1
+
+
+def assert_waiting_for_institution_lock(db, pids):
+    """Observe real PostgreSQL waits before releasing the manual-creation lock."""
+    deadline = time.monotonic() + 5
+    while time.monotonic() < deadline:
+        db.execute(text('SELECT pg_stat_clear_snapshot()'))
+        waiting = db.execute(text(
+            'SELECT pid, query FROM pg_stat_activity '
+            'WHERE pid = ANY(:pids) AND cardinality(pg_blocking_pids(pid)) > 0'
+        ), {'pids': pids}).all()
+        if len(waiting) == len(pids) and all(
+                'organizations' in query and 'FOR UPDATE' in query for _, query in waiting):
+            return
+        time.sleep(.02)
+    pytest.fail('Import must wait on the institution row before planning or writing departments')
+
+
+@pytest.mark.parametrize('preserve_existing', [False, True])
+@pytest.mark.parametrize('names', [
+    ('Park Bahçeler Müdürlüğü', 'PARK VE BAHÇELER MÜDÜRLÜĞÜ'),
+    ('İmar Müdürlüğü', '  imar   mu\u0308du\u0308rlu\u0308g\u0306u\u0308  '),
+    ('Yazı İşleri Müdürlüğü', 'YAZI İŞLERİ MÜDÜRLÜĞÜ'),
+], ids=['alias', 'nfc-whitespace-dotted-i', 'dotless-i'])
+def test_equivalent_batches_wait_for_institution_and_create_once(
+        db, import_client, import_context, preserve_existing, names):
+    batch_ids = [preview(import_client, import_context, department=name)['batch_id']
+                 for name in names]
+    assert service.department_key(names[0]) == service.department_key(names[1])
+    bind = db.get_bind()
+    pids = Queue()
+
+    def database():
+        with Session(bind, expire_on_commit=False) as session:
+            session.execute(text("SET LOCAL lock_timeout = '10s'"))
+            session.execute(text("SET LOCAL statement_timeout = '15s'"))
+            pids.put(session.scalar(text('SELECT pg_backend_pid()')))
+            yield session
+
+    previous = app.dependency_overrides[get_db]
+    app.dependency_overrides[get_db] = database
+    db.scalar(select(Organization).where(Organization.id == import_context.org.id).with_for_update())
+    try:
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            futures = [pool.submit(import_client.post, f'/api/import-batches/{bid}/apply',
+                                   params={'preserve_existing': preserve_existing})
+                       for bid in batch_ids]
+            try:
+                assert_waiting_for_institution_lock(db, [pids.get(timeout=5) for _ in futures])
+            finally:
+                db.commit()  # Release only after both requests have reached the shared lock.
+            responses = [future.result(timeout=25) for future in futures]
+    finally:
+        app.dependency_overrides[get_db] = previous
+
+    assert sorted(response.status_code for response in responses) == (
+        [200, 200] if preserve_existing else [200, 409])
+    successful = [response.json() for response in responses if response.status_code == 200]
+    assert sum(result['created_departments'] for result in successful) == 1
+    if preserve_existing:
+        assert sum(result['skipped_existing_departments'] for result in successful) == 1
+    else:
+        refused = next(response.json()['detail'] for response in responses if response.status_code == 409)
+        assert 'kart ekranını kullanın veya yeni taslak dönem açın' in refused
+    db.expire_all()
+    for model in (Department, Program, SubProgram, Submission, ReportCard, Indicator, Activity):
+        assert db.scalar(select(func.count()).select_from(model)) == 1
+    assert db.scalar(select(func.count()).select_from(IndicatorValue)) == 3
+    assert db.scalar(select(func.count()).select_from(ActivityCostValue)) == 6
+    batches = [db.get(ImportBatch, bid) for bid in batch_ids]
+    creator = next(batch for batch in batches
+                   if json.loads(batch.snapshot_json or '{}').get('created_department_ids'))
+    assert creator.status == 'applied' and creator.applied_hash
+    assert sum(batch.status == 'applied' for batch in batches) == len(successful)
+    audits = db.scalars(select(AuditLog).where(AuditLog.action == 'data_import_apply')).all()
+    assert len(audits) == len(successful)
+    assert len({audit.entity_id for audit in audits}) == len(successful)
+    assert sum(json.loads(audit.details)['created_departments'] for audit in audits) == 1
+    # A refused/skipped equivalent batch must not invalidate the creator's rollback.
+    response = import_client.post(f'/api/import-batches/{creator.id}/revert')
+    assert response.status_code == 200, response.text
+    db.expire_all()
+    for model in (Department, Program, SubProgram, Submission, ReportCard, Indicator, Activity):
+        assert db.scalar(select(func.count()).select_from(model)) == 0
+
+
+@pytest.mark.parametrize('manual_change', ['create', 'rename'])
+def test_import_waits_for_manual_department_change(db, import_client, import_context, manual_change):
+    from app.master_data_service import check_department_name
+
+    existing = None
+    if manual_change == 'rename':
+        existing = Department(organization_id=import_context.org.id, name='Fen İşleri Müdürlüğü')
+        db.add(existing)
+        db.commit()
+    batch_id = preview(import_client, import_context, department='İmar Müdürlüğü')['batch_id']
+    bind = db.get_bind()
+    pids = Queue()
+    # Use the existing manual creation path, not a separate import-only lock.
+    check_department_name(db, import_context.org.id, 'İMAR MÜDÜRLÜĞÜ',
+                          exclude_id=existing.id if existing else None)
+
+    def worker():
+        with Session(bind) as session:
+            session.execute(text("SET LOCAL lock_timeout = '10s'"))
+            session.execute(text("SET LOCAL statement_timeout = '15s'"))
+            batch = session.get(ImportBatch, batch_id)
+            cached = session.get(Department, existing.id) if existing else None
+            pids.put(session.scalar(text('SELECT pg_backend_pid()')))
+            result = service.apply_import_batch(session, batch, preserve_existing=True)
+            if cached:
+                assert cached.name == 'İMAR MÜDÜRLÜĞÜ'
+            session.commit()
+            return result
+
+    with ThreadPoolExecutor(max_workers=1) as pool:
+        future = pool.submit(worker)
+        try:
+            assert_waiting_for_institution_lock(db, [pids.get(timeout=5)])
+            if existing:
+                existing.name = 'İMAR MÜDÜRLÜĞÜ'
+            else:
+                db.add(Department(organization_id=import_context.org.id, name='İMAR MÜDÜRLÜĞÜ'))
+        finally:
+            db.commit()
+        result = future.result(timeout=25)
+    assert result['created_departments'] == 0
+    assert result['skipped_existing_departments'] == 1
+    assert db.scalar(select(func.count()).select_from(Department)) == 1
+    assert db.scalar(select(func.count()).select_from(Indicator)) == 0
+
+
+def test_revert_waits_for_institution_lock(db, import_client, import_context):
+    batch_id = preview(import_client, import_context)['batch_id']
+    apply(import_client, batch_id)
+    bind = db.get_bind()
+    pids = Queue()
+    db.scalar(select(Organization).where(Organization.id == import_context.org.id).with_for_update())
+
+    def worker():
+        with Session(bind) as session:
+            session.execute(text("SET LOCAL lock_timeout = '10s'"))
+            session.execute(text("SET LOCAL statement_timeout = '15s'"))
+            batch = session.get(ImportBatch, batch_id)
+            pids.put(session.scalar(text('SELECT pg_backend_pid()')))
+            result = service.revert_import_batch(session, batch)
+            session.commit()
+            return result
+
+    with ThreadPoolExecutor(max_workers=1) as pool:
+        future = pool.submit(worker)
+        try:
+            assert_waiting_for_institution_lock(db, [pids.get(timeout=5)])
+        finally:
+            db.commit()
+        result = future.result(timeout=25)
+    assert result == {'departments_restored': 0, 'departments_removed': 1}
+    db.expire_all()
+    assert db.get(ImportBatch, batch_id).status == 'reverted'
+    assert db.scalar(select(func.count()).select_from(Department)) == 0
 
 
 def test_d6_return_note_survives_import(db, import_client, import_context):
