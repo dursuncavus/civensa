@@ -19,7 +19,7 @@ from fastapi import FastAPI, Request, Depends, Form, HTTPException, UploadFile, 
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from sqlalchemy import select, inspect, func, exists, false, update
+from sqlalchemy import select, inspect, func, exists, false, update, or_
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, selectinload
 from starlette.middleware.sessions import SessionMiddleware
@@ -291,8 +291,9 @@ def parse_optional_nonnegative_money(raw, field="Tutar"):
 
 
 from .time_display import turkey_time
-from .pp_display import status_label, actor_label
+from .pp_display import status_label, actor_label, event_label
 templates.env.filters['status_label'] = status_label
+templates.env.filters['event_label'] = event_label
 templates.env.filters['actor_label'] = actor_label
 templates.env.filters['turkey_time'] = turkey_time
 templates.env.filters["trnum"] = lambda v: format_number(v)
@@ -659,7 +660,8 @@ def department_page(department_id: int, request: Request, db: Session = Depends(
     personnel_map = {f"{r.year}:{r.value_kind}": r.amount for r in personnel_rows}
     workflow_events = db.scalars(
         select(SubmissionEvent).where(SubmissionEvent.submission_id == submission.id)
-        .order_by(SubmissionEvent.created_at.desc())
+        .options(selectinload(SubmissionEvent.actor))
+        .order_by(SubmissionEvent.created_at.desc(), SubmissionEvent.id.desc())
     ).all()
     activity_totals = {}
     general_totals = {}
@@ -931,7 +933,7 @@ def activity_mapping_page(request: Request, db: Session = Depends(get_db), user:
         group["suggestions"] = suggestions
     batch_rows = db.scalars(
         select(AuditLog).where(AuditLog.action == "activity_mapping_csv")
-        .order_by(AuditLog.created_at.desc()).limit(500)
+        .order_by(AuditLog.created_at.desc(), AuditLog.id.desc()).limit(500)
     ).all()
     batch_groups = {}
     for audit in batch_rows:
@@ -940,7 +942,8 @@ def activity_mapping_page(request: Request, db: Session = Depends(get_db), user:
         if not batch_id:
             continue
         group = batch_groups.setdefault(batch_id, {
-            "id": batch_id, "created_at": audit.created_at, "count": 0, "can_revert": True,
+            "id": batch_id, "created_at": audit.created_at, "actor_user_id": audit.user_id,
+            "status": "applied", "count": 0, "can_revert": True,
         })
         group["count"] += 1
         activity = db.get(Activity, audit.entity_id)
@@ -954,6 +957,27 @@ def activity_mapping_page(request: Request, db: Session = Depends(get_db), user:
         if submission and submission.status in {"submitted", "approved"}:
             group["can_revert"] = False
     recent_batches = list(batch_groups.values())[:10]
+    if recent_batches:
+        reverts = db.scalars(
+            select(AuditLog).where(
+                AuditLog.action == "activity_mapping_csv_revert",
+                or_(*(AuditLog.details.startswith(f"batch={batch['id']};", autoescape=True)
+                      for batch in recent_batches)),
+            ).order_by(AuditLog.created_at.desc(), AuditLog.id.desc())
+        ).all()
+        # Descending timestamp/id makes the latest revert authoritative.
+        for audit in reverts:
+            details = dict(part.split("=", 1) for part in audit.details.split(";") if "=" in part)
+            batch = batch_groups.get(details.get("batch"))
+            if batch and batch["status"] != "reverted":
+                batch.update(status="reverted", created_at=audit.created_at,
+                             actor_user_id=audit.user_id, can_revert=False)
+    actor_ids = {batch["actor_user_id"] for batch in recent_batches if batch["actor_user_id"] is not None}
+    batch_actors = {actor.id: actor for actor in db.scalars(
+        select(User).where(User.id.in_(actor_ids))
+    )} if actor_ids else {}
+    for batch in recent_batches:
+        batch["actor"] = batch_actors.get(batch["actor_user_id"])
     return templates.TemplateResponse(request, "activity_mapping.html", {
         "user": user, "period": period, "groups": list(departments.values()),
         "department_names": {did: period_name(db, period.id, group["department"]) for did, group in departments.items()},

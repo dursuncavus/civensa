@@ -32,6 +32,17 @@ def status_label(value):
     return STATUS_LABELS.get(value, f"Bilinmeyen durum ({value})")
 
 
+EVENT_LABELS = {
+    "submitted": "İncelemeye gönderildi",
+    "approve": "Onaylandı",
+    "return": "İade edildi",
+}
+
+
+def event_label(value):
+    return EVENT_LABELS.get(value, f"Bilinmeyen işlem ({value})")
+
+
 def actor_label(user):
     if user is None:
         return "Sistem"
