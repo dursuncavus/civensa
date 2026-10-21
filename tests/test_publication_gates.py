@@ -32,8 +32,8 @@ def test_invalid_package_cannot_publish(client, db, sample, problem, expected):
         scope = db.scalar(select(DepartmentScope)); scope.status = 'excluded'; scope.reason = 'Test gerekçesi'
     db.commit()
     response = client.post('/report-builder/publish', data={'period_id': 1}, follow_redirects=False)
-    assert response.status_code == 409
-    assert any(expected in message for message in response.json()['detail'])
+    assert response.status_code == 422
+    assert expected in response.text
     assert db.scalar(select(func.count()).select_from(Publication)) == 0
     assert db.scalar(select(func.count()).select_from(AuditLog).where(AuditLog.action == 'publication_freeze')) == 0
 
@@ -44,7 +44,7 @@ def test_failed_republication_preserves_frozen_version(client, db, sample):
     publication = db.scalar(select(Publication))
     before = (publication.version, publication.snapshot_json, publication.sha256)
     db.scalar(select(DepartmentCostValue)).state = 'needs_review'; db.commit()
-    assert client.post('/report-builder/publish', data={'period_id': 1}, follow_redirects=False).status_code == 409
+    assert client.post('/report-builder/publish', data={'period_id': 1}, follow_redirects=False).status_code == 422
     db.expire_all()
     assert (publication.version, publication.snapshot_json, publication.sha256) == before
     assert db.scalar(select(func.count()).select_from(Publication)) == 1

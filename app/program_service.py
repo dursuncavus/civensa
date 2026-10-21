@@ -5,6 +5,7 @@ from decimal import Decimal
 from collections import defaultdict
 from sqlalchemy import select, or_
 from fastapi import HTTPException
+from .pp_errors import pp_error
 from .models import (ReportCard, Indicator, IndicatorValue, Activity, ActivityCostValue,
     DepartmentCostValue, EconomicValue, DepartmentScope, Department, Program, SubProgram,
     ReportingPeriod, ReportSection, OfficialActivity, ActivityResponsibility, ActivityCatalogueLink,
@@ -24,14 +25,14 @@ PROGRAM_GROUPS = {'service': 'Hizmet Programları', 'management': 'Yönetim ve D
 def save_catalogue_entry(db, period_id, values, department_ids, actor, obj=None, source=None):
     """Shared catalogue write path. Caller owns the transaction; audit is atomic."""
     if not db.get(ReportingPeriod, period_id):
-        raise HTTPException(404)
+        raise pp_error(404, 'Katalog dönemi bulunamadı. Raporlama dönemi seçimini kontrol edin.', 'period_id')
     ids = set(department_ids)
     if not ids or any(not db.get(Department, did) for did in ids):
         raise HTTPException(422, 'Geçerli sorumlu birimleri seçin.')
     if any(not str(values.get(f, '')).strip() for f in ('program_name', 'subprogram_name', 'code', 'name')):
         raise HTTPException(422, 'Katalog kod/ad alanları zorunlu.')
     if obj and obj.period_id != period_id:
-        raise HTTPException(403)
+        raise pp_error(403, 'Katalog kaydı bu döneme ait değil. Kaydın dönemini seçip yeniden deneyin.', 'id')
     existing = {r.department_id: r for r in db.scalars(select(ActivityResponsibility).where(
         ActivityResponsibility.official_activity_id == obj.id))} if obj else {}
     linked = set(db.scalars(select(Activity.department_id).join(ActivityCatalogueLink,
@@ -147,7 +148,7 @@ def save_activity_costs(db, activity, year, data, actor=None):
                 try:
                     values[funding] = parse_number(data[key], money=True)
                 except ValueError as exc:
-                    raise HTTPException(422, str(exc)) from None
+                    raise pp_error(422, f'{activity.name} / {y}: Finansman tutarı geçersiz. Türkçe sayı biçiminde girin (ör. 1.250,50).', key) from None
             else:
                 row = existing.get((y, kind, funding))
                 values[funding] = row.amount if row else None
@@ -155,14 +156,14 @@ def save_activity_costs(db, activity, year, data, actor=None):
             try:
                 total = parse_number(data[prefix], money=True)
             except ValueError as exc:
-                raise HTTPException(422, str(exc)) from None
+                raise pp_error(422, f'{activity.name} / {y}: Toplam tutar geçersiz. Bütçe içi ve dışını ayrı girin.', prefix+'_inside') from None
             old = existing.get((y, kind, 'total'))
             if total is not None and (old is None or total != old.amount):
-                raise HTTPException(422, 'Bütçe içi ve bütçe dışı tutarları ayrı girin.')
+                raise pp_error(422, f'{activity.name} / {y}: Bütçe içi ve bütçe dışı tutarları ayrı girin.', prefix+'_inside')
             if total is None:
                 values = {'inside': None, 'outside': None}
         if (values['inside'] is None) != (values['outside'] is None):
-            raise HTTPException(422, f'{y}: Bütçe içi ve dışını birlikte girin; kaynak yoksa açıkça 0 yazın.')
+            raise pp_error(422, f'{activity.name} / {y}: Bütçe içi ve dışını birlikte girin; kaynak yoksa açıkça 0 yazın.', prefix+('_inside' if values['inside'] is None else '_outside'))
         values['total'] = values['inside'] + values['outside'] if values['inside'] is not None else None
         total_row = existing.get((y, kind, 'total'))
         decision = None
@@ -174,12 +175,12 @@ def save_activity_costs(db, activity, year, data, actor=None):
                 message += ' Karşılaştırılan toplamdan onaylı aktarma etkisi çıkarılmıştır.'
             confirmation = data.get(prefix+'_use_computed')
             if confirmation is not True and confirmation not in ('true', 'on'):
-                raise HTTPException(422, message)
+                raise pp_error(422, message, prefix+'_inside')
             reason = data.get(prefix+'_reason')
             if not isinstance(reason, str) or len(reason.strip()) < 10:
-                raise HTTPException(422, message + ' Karar gerekçesi en az 10 karakter olmalı.')
+                raise pp_error(422, message + ' Karar gerekçesi en az 10 karakter olmalı.', prefix+'_reason')
             if actor is None or values['total'] is None:
-                raise HTTPException(422, message)
+                raise pp_error(422, message, prefix+'_inside')
             decision = {"actor": actor.id, "time": datetime.now(UTC).isoformat(), "activity": activity.id,
                         "activity_name": activity.name, "year": y, "kind": kind,
                         "source_total": str(total_row.source_amount), "source_raw_text": total_row.source_raw_text,

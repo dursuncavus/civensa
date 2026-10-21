@@ -116,7 +116,10 @@ def remove_draft(db, user, department_id, period_id, model, record_id):
                 IndicatorIdentity.indicator_id == obj.persistent_indicator_id).with_for_update())
         blockers = _indicator_blockers(db, obj)
         if blockers:
-            raise HTTPException(409, f'“{obj.name}” kaldırılamadı: ' + '; '.join(blockers) + '. Geçmişi korumak için kaydı saklayın; Strateji Geliştirme birimine başvurun.')
+            hint = ('Önce göstergenin değerlerini silip kaydedin, sonra kaldırın.'
+                if len(blockers) == 1 and obj.values else
+                'Geçmişi korumak için kaydı saklayın; Strateji Geliştirme birimine başvurun.')
+            raise HTTPException(409, f'“{obj.name}” kaldırılamadı: ' + '; '.join(blockers) + '. ' + hint)
         previous['values'] = [record(value) for value in obj.values]
     else:
         economic_ids = set(db.scalars(select(EconomicValue.id).where(EconomicValue.source_card_id == obj.id)))

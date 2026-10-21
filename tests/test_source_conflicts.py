@@ -122,7 +122,8 @@ def test_total_disagreement_http_unchanged_and_explicit_decision(db, sample, liv
     # The old money-verification route must not bypass a reasoned total decision.
     verify = browser.post(f"/program/{sample['department'].id}/verify-money/activity/{total.id}?period_id=1",
                           headers=headers, data={'amount': '133,50'})
-    assert verify.status_code == 422 and '140,00' in verify.json()['detail']
+    assert verify.status_code == 422 and '140,00' in verify.text
+    assert verify.headers['content-type'].startswith('text/html')
     body['cost_2027_budget_use_computed'] = True
     assert browser.put(endpoint, headers=headers, json=body).status_code == 422
     body['cost_2027_budget_reason'] = 'Finansman dağılımı kontrol edildi.'

@@ -156,6 +156,8 @@ app.mount("/static", StaticFiles(directory=BASE_DIR / "static"), name="static")
 from .structure_service import period_name
 
 templates = Jinja2Templates(directory=BASE_DIR / "templates")
+from .pp_errors import install as install_pp_errors, pp_error
+install_pp_errors(app, templates)
 
 
 _PASSWORD_FINGERPRINT_KEY = session_secret().encode()
@@ -317,24 +319,24 @@ def session_period(request: Request, db: Session, data=None, *, require=False):
     """Resolve PP context from this request; another tab's session is not context."""
     query_id = getattr(request, "query_params", {}).get("period_id") if request else None
     if data is not None and not hasattr(data, "get"):
-        raise HTTPException(422, "İstek bilgileri geçersiz. Raporlama dönemi ve form alanlarını kontrol edin.")
+        raise pp_error(422, "İstek bilgileri geçersiz. Raporlama dönemi ve form alanlarını kontrol edin.", "period_id")
     body_id = data.get("period_id") if data is not None else None
     ids = []
     for value in (query_id, body_id):
         if value is None:
             continue
         if isinstance(value, bool) or not str(value).isascii() or not str(value).isdecimal() or len(str(value)) > 18 or int(value) < 1:
-            raise HTTPException(422, "Raporlama dönemi geçersiz. Bağlantıdaki veya formdaki dönemi kontrol edin.")
+            raise pp_error(422, "Raporlama dönemi geçersiz. Bağlantıdaki veya formdaki dönemi kontrol edin.", "period_id")
         ids.append(int(value))
     if len(set(ids)) > 1:
-        raise HTTPException(422, "Bağlantı ve form farklı raporlama dönemleri içeriyor. Sayfayı seçtiğiniz yıl için yeniden açın.")
+        raise pp_error(422, "Bağlantı ve form farklı raporlama dönemleri içeriyor. Sayfayı seçtiğiniz yıl için yeniden açın.", "period_id")
     if not ids:
         if require:
-            raise HTTPException(422, "Raporlama dönemi belirtilmedi. Sayfayı yenileyip seçtiğiniz yıl üzerinden tekrar deneyin.")
+            raise pp_error(422, "Raporlama dönemi belirtilmedi. Sayfayı yenileyip seçtiğiniz yıl üzerinden tekrar deneyin.", "period_id")
         return active_period(db)
     period = db.get(ReportingPeriod, ids[0])
     if not period:
-        raise HTTPException(404, "Seçilen raporlama dönemi bulunamadı. Dönem bağlantısını kontrol edin veya Strateji Geliştirme birimine başvurun.")
+        raise pp_error(404, "Seçilen raporlama dönemi bulunamadı. Dönem bağlantısını kontrol edin veya Strateji Geliştirme birimine başvurun.", "period_id")
     return period
 
 
@@ -507,7 +509,7 @@ def editable_submission(db: Session, department_id: int, period_id: int | None =
 
 def ensure_department_editable(db: Session, user: User, department_id: int, period_id: int | None = None, *, allow_strategy: bool = False):
     if not (allow_strategy and user.role == "strategy") and (user.role != "department" or user.department_id != department_id):
-        raise HTTPException(403)
+        raise pp_error(403, "Müdürlük kaydı değiştirilemedi. Kendi müdürlüğünüzün ekranını yetkili hesabınızla açın.", "department_id")
     period = db.get(ReportingPeriod, period_id) if period_id else active_period(db)
     if not period:
         raise HTTPException(404, "Raporlama dönemi bulunamadı. Strateji Geliştirme birimine başvurun.")
@@ -635,7 +637,7 @@ def dashboard(request: Request, db: Session = Depends(get_db), user: User = Depe
 def department_page(department_id: int, request: Request, db: Session = Depends(get_db), user: User = Depends(require_user)):
     dept = db.get(Department, department_id)
     if not dept:
-        raise HTTPException(404)
+        raise pp_error(404, "Müdürlük bulunamadı. Seçilen dönem ve kayıt bağlantısını kontrol edin.", "department_id")
     period = pp_period(request, db, user, department_id)
     indicators = db.scalars(
         select(Indicator).where(Indicator.department_id == department_id, Indicator.period_id == period.id)
@@ -689,7 +691,7 @@ def department_page(department_id: int, request: Request, db: Session = Depends(
 async def save_indicator(indicator_id: int, request: Request, db: Session = Depends(get_db), user: User = Depends(require_user)):
     ind = db.scalar(select(Indicator).where(Indicator.id == indicator_id).options(selectinload(Indicator.values)))
     if not ind:
-        raise HTTPException(404)
+        raise pp_error(404, "Gösterge bulunamadı. Seçilen dönem ve kayıt bağlantısını kontrol edin.", "indicator_id")
     data = await request.json()
     period = pp_period(request, db, user, ind.department_id, data, ind.period_id)
     ensure_department_editable(db, user, ind.department_id, period.id)
@@ -741,7 +743,7 @@ def activity_subprogram_id(value):
 @app.post("/api/activities", dependencies=[Depends(require_pp_period)])
 async def create_activity(request: Request, db: Session = Depends(get_db), user: User = Depends(require_user)):
     if user.role != "department" or not user.department_id:
-        raise HTTPException(403)
+        raise pp_error(403, "Faaliyet için işlem yetkiniz yok. Kendi müdürlüğünüzün ekranını yetkili hesabınızla açın.", "activity_id")
     data = await request.json()
     period = pp_period(request, db, user, user.department_id, data)
     ensure_department_editable(db, user, user.department_id, period.id)
@@ -773,7 +775,7 @@ def _update_activity(activity_id: int, body: bytes, db: Session, user: User, req
     # Read the complete body before locking; keep the original validation order.
     act = db.scalar(select(Activity).where(Activity.id == activity_id).with_for_update().options(selectinload(Activity.cost_values)))
     if not act:
-        raise HTTPException(404)
+        raise pp_error(404, "Faaliyet bulunamadı. Seçilen dönem ve kayıt bağlantısını kontrol edin.", "activity_id")
     data = json.loads(body)
     period = pp_period(request, db, user, act.department_id, data, act.period_id)
     ensure_department_editable(db, user, act.department_id, period.id)
@@ -807,7 +809,7 @@ def delete_activity(activity_id: int, request: Request, db: Session = Depends(ge
                     period: ReportingPeriod = Depends(require_pp_period)):
     act = db.get(Activity, activity_id)
     if not act:
-        raise HTTPException(404)
+        raise pp_error(404, "Faaliyet bulunamadı. Seçilen dönem ve kayıt bağlantısını kontrol edin.", "activity_id")
     period = pp_period(request, db, user, act.department_id, {"period_id": period.id}, record_period_id=act.period_id)
     ensure_department_editable(db, user, act.department_id, act.period_id)
     from .models import ActivityCatalogueLink
@@ -868,7 +870,7 @@ def submit_department(department_id: int, db: Session, user: User, period_id: in
     # Serialize submission creation and repeated sends for this department.
     department = db.scalar(select(Department).where(Department.id == department_id).with_for_update())
     if not department:
-        raise HTTPException(404)
+        raise pp_error(404, "Müdürlük paketi bulunamadı. Seçilen dönem ve kayıt bağlantısını kontrol edin.", "department_id")
     # Recheck permission after waiting for any concurrent grant/revoke.
     user = db.get(User, user.id, populate_existing=True)
     released_permissions.require_submit(user)
@@ -1124,7 +1126,7 @@ async def revert_activity_mapping_batch(
     user: User = Depends(require_strategy),
 ):
     if len(batch_id) != 16 or any(char not in "0123456789abcdef" for char in batch_id):
-        raise HTTPException(404)
+        raise pp_error(404, "Faaliyet eşleştirme işlem grubu bulunamadı. Seçilen dönem ve kayıt bağlantısını kontrol edin.", "batch_id")
     data = await request.json() if "application/json" in request.headers.get("content-type", "") else await request.form()
     period = session_period(request, db, data)
     audits = db.scalars(
@@ -1540,7 +1542,7 @@ async def submission_decision(submission_id: int, request: Request, db: Session 
     sub = db.scalar(select(Submission).where(Submission.id == submission_id)
                     .with_for_update().execution_options(populate_existing=True))
     if not sub:
-        raise HTTPException(404)
+        raise pp_error(404, "İnceleme paketi bulunamadı. İnceleme kuyruğunu yenileyip kaydı yeniden seçin.", "submission_id")
     if sub.status != "submitted":
         raise HTTPException(409, "Yalnızca incelemedeki paket için karar verilebilir.")
     from .program_service import department_snapshot
@@ -1653,7 +1655,7 @@ async def change_own_password(request: Request, db: Session = Depends(get_db), u
 async def upload_template(period_id: int, file: UploadFile = File(...), db: Session = Depends(get_db), user: User = Depends(require_strategy)):
     period = db.get(ReportingPeriod, period_id)
     if not period:
-        raise HTTPException(404)
+        raise pp_error(404, "Bakanlık şablonunun dönemi bulunamadı. Sayfayı yenileyip dönem ve kayıt seçimini kontrol edin.", "period_id")
     filename = (file.filename or "template").replace("/", "_").replace("\\", "_")
     suffix = Path(filename).suffix.lower()
     if suffix not in {".docx", ".xlsx", ".xlsm"}:
@@ -1680,7 +1682,7 @@ async def upload_template(period_id: int, file: UploadFile = File(...), db: Sess
 def template_snapshot(snapshot_id: int, db: Session = Depends(get_db), user: User = Depends(require_strategy)):
     s = db.get(TemplateSnapshot, snapshot_id)
     if not s:
-        raise HTTPException(404)
+        raise pp_error(404, "Bakanlık şablonu kaydı bulunamadı. Sayfayı yenileyip dönem ve kayıt seçimini kontrol edin.", "snapshot_id")
     return {"id": s.id, "period_id": s.period_id, "filename": s.filename, "present": json.loads(s.fields_json), "missing": json.loads(s.missing_json), "extra": json.loads(s.extra_json), "departments": json.loads(s.departments_json)}
 
 
@@ -1688,7 +1690,7 @@ def template_snapshot(snapshot_id: int, db: Session = Depends(get_db), user: Use
 async def data_import_preview(period_id: int, file: UploadFile = File(...), db: Session = Depends(get_db), user: User = Depends(require_strategy)):
     period = db.get(ReportingPeriod, period_id)
     if not period:
-        raise HTTPException(404)
+        raise pp_error(404, "İçe aktarma dönemi bulunamadı. Sayfayı yenileyip dönem ve kayıt seçimini kontrol edin.", "period_id")
     filename = (file.filename or "data.docx").replace("/", "_").replace("\\", "_")
     if Path(filename).suffix.lower() != ".docx":
         raise HTTPException(415, "Veri içe aktarma önizlemesi şu anda DOCX destekliyor.")
@@ -1730,7 +1732,7 @@ async def data_import_preview(period_id: int, file: UploadFile = File(...), db: 
 def import_batch_detail(batch_id: int, db: Session = Depends(get_db), user: User = Depends(require_strategy)):
     batch = db.get(ImportBatch, batch_id)
     if not batch:
-        raise HTTPException(404)
+        raise pp_error(404, "İçe aktarma kaydı bulunamadı. Sayfayı yenileyip dönem ve kayıt seçimini kontrol edin.", "batch_id")
     parsed = json.loads(batch.payload_json)
     plan = build_department_plan(db, parsed, json.loads(batch.decisions_json or "[]"))
     period = db.get(ReportingPeriod, batch.period_id)
@@ -1768,7 +1770,7 @@ def _import_conflict_decision(batch_id: int, conflict_id: str, body: bytes, db: 
     # No await can occur while the batch lock is held.
     batch = db.scalar(select(ImportBatch).where(ImportBatch.id == batch_id).with_for_update())
     if not batch:
-        raise HTTPException(404)
+        raise pp_error(404, "İçe aktarma çelişki kaydı bulunamadı. Sayfayı yenileyip dönem ve kayıt seçimini kontrol edin.", "batch_id")
     data = json.loads(body)
     from .import_service import decide_import_conflict
     try:
@@ -1784,7 +1786,7 @@ def _import_conflict_decision(batch_id: int, conflict_id: str, body: bytes, db: 
 def apply_data_import(batch_id: int, preserve_existing: bool = False, db: Session = Depends(get_db), user: User = Depends(require_strategy)):
     batch = db.scalar(select(ImportBatch).where(ImportBatch.id == batch_id).with_for_update())
     if not batch:
-        raise HTTPException(404)
+        raise pp_error(404, "İçe aktarma kaydı bulunamadı. Sayfayı yenileyip dönem ve kayıt seçimini kontrol edin.", "batch_id")
     try:
         result = apply_import_batch(db, batch, preserve_existing=preserve_existing)
         db.commit()
@@ -1802,7 +1804,7 @@ def apply_data_import(batch_id: int, preserve_existing: bool = False, db: Sessio
 def revert_data_import(batch_id: int, db: Session = Depends(get_db), user: User = Depends(require_strategy)):
     batch = db.scalar(select(ImportBatch).where(ImportBatch.id == batch_id).with_for_update())
     if not batch:
-        raise HTTPException(404)
+        raise pp_error(404, "İçe aktarma kaydı bulunamadı. Sayfayı yenileyip dönem ve kayıt seçimini kontrol edin.", "batch_id")
     try:
         result = revert_import_batch(db, batch)
         db.commit()
@@ -1820,7 +1822,7 @@ def revert_data_import(batch_id: int, db: Session = Depends(get_db), user: User 
 def select_period(period_id: int, request: Request, db: Session = Depends(get_db), user: User = Depends(require_strategy)):
     period = db.get(ReportingPeriod, period_id)
     if not period:
-        raise HTTPException(404)
+        raise pp_error(404, "Raporlama dönemi bulunamadı. Sayfayı yenileyip dönem ve kayıt seçimini kontrol edin.", "period_id")
     request.session["period_id"] = period.id
     return RedirectResponse(f"/dashboard?period_id={period.id}", 303)
 
@@ -1893,7 +1895,7 @@ async def create_period_form(request: Request, db: Session = Depends(get_db), us
 def verify_period_template(period_id: int, db: Session = Depends(get_db), user: User = Depends(require_strategy)):
     period = db.get(ReportingPeriod, period_id)
     if not period:
-        raise HTTPException(404)
+        raise pp_error(404, "Raporlama dönemi bulunamadı. Seçilen dönem ve kayıt bağlantısını kontrol edin.", "period_id")
     period.template_status = "verified"; db.commit()
     log(db, user, "template_verify", "reporting_period", period.id)
     return {"ok": True}
@@ -1903,7 +1905,7 @@ def verify_period_template(period_id: int, db: Session = Depends(get_db), user: 
 def activate_period(period_id: int, db: Session = Depends(get_db), user: User = Depends(require_strategy)):
     period = db.get(ReportingPeriod, period_id)
     if not period:
-        raise HTTPException(404)
+        raise pp_error(404, "Raporlama dönemi bulunamadı. Seçilen dönem ve kayıt bağlantısını kontrol edin.", "period_id")
     if period.template_status != "verified":
         raise HTTPException(409, "Bakanlık şablonu doğrulanmadan dönem aktif edilemez.")
     for p in db.scalars(select(ReportingPeriod)).all():
@@ -1942,7 +1944,7 @@ def health():
 def export_department(department_id: int, request: Request, db: Session = Depends(get_db), user: User = Depends(require_strategy)):
     dept = db.get(Department, department_id)
     if not dept:
-        raise HTTPException(404)
+        raise pp_error(404, "Müdürlük raporu bulunamadı. Seçilen dönem ve kayıt bağlantısını kontrol edin.", "department_id")
     period = session_period(request, db)
     submission = db.scalar(select(Submission).where(Submission.department_id == department_id, Submission.period_id == period.id))
     if not submission or submission.status != "approved":
@@ -1955,7 +1957,7 @@ def export_department(department_id: int, request: Request, db: Session = Depend
 def export_department_docx(department_id: int, request: Request, db: Session = Depends(get_db), user: User = Depends(require_strategy)):
     dept = db.get(Department, department_id)
     if not dept:
-        raise HTTPException(404)
+        raise pp_error(404, "Müdürlük raporu bulunamadı. Seçilen dönem ve kayıt bağlantısını kontrol edin.", "department_id")
     period = session_period(request, db)
     submission = db.scalar(select(Submission).where(Submission.department_id == department_id, Submission.period_id == period.id))
     if not submission or submission.status != "approved":
