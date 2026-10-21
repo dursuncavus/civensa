@@ -42,11 +42,11 @@ DEFAULTS = {
 }
 
 
-def pp_error(status, message=None, field='request'):
+def pp_error(status, message=None, field='request', messages=None):
     """One status/detail/field contract, also usable by domain services."""
     message = message or DEFAULTS.get(status, 'Kayıt işlenemedi. Sayfayı yenileyip tekrar deneyin.')
     exc = HTTPException(status, message)
-    exc.pp_errors = [{'field': field, 'message': message}]
+    exc.pp_errors = [{'field': field, 'message': item} for item in (messages or [message])]
     return exc
 
 
@@ -64,7 +64,10 @@ def payload(exc):
                'deneyin', 'isteyin', 'kaldırın', 'düzeltin', 'tamamlayın', 'karşılaştırın')
     if exc.status_code in DEFAULTS and not any(action in message.lower() for action in actions):
         message += ' İlgili alanı veya kaydı kontrol edip yeniden deneyin.'
-    return {'detail': message, 'errors': [{'field': 'request', 'message': message}]}
+    field_message = message
+    if not any(action in message.lower() for action in actions):
+        field_message += ' İlgili kayıt veya paket durumunu Strateji Geliştirme birimiyle kontrol edip yeniden deneyin.'
+    return {'detail': message, 'errors': [{'field': 'request', 'message': field_message}]}
 
 
 def is_pp_path(path):

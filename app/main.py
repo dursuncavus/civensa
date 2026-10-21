@@ -156,7 +156,7 @@ app.mount("/static", StaticFiles(directory=BASE_DIR / "static"), name="static")
 from .structure_service import period_name
 
 templates = Jinja2Templates(directory=BASE_DIR / "templates")
-from .pp_errors import install as install_pp_errors, pp_error
+from .pp_errors import install as install_pp_errors, pp_error, payload as pp_error_payload
 install_pp_errors(app, templates)
 
 
@@ -883,7 +883,10 @@ def submit_department(department_id: int, db: Session, user: User, period_id: in
     from .program_service import validate_department, department_snapshot
     errors, warnings = validate_department(db, period.id, department_id)
     if errors:
-        return JSONResponse({"ok": False, "message": "Kart ve mali tablo kontrollerini tamamlayın.", "errors": errors, "warnings": warnings}, status_code=422)
+        message = "Kart ve mali tablo kontrollerini tamamlayın."
+        failure = pp_error(422, message + " " + " ".join(errors), "department_id",
+            messages=[issue + " Eksik kaydı tamamlayıp yeniden gönderin." for issue in errors])
+        return JSONResponse({"ok": False, "message": message, **pp_error_payload(failure), "warnings": warnings}, status_code=422)
     submission.status = "submitted"
     submission.submitted_at = datetime.now(UTC).replace(tzinfo=None)
     submission.return_note = ""
@@ -1220,10 +1223,10 @@ async def save_activity_mappings(request: Request, db: Session = Depends(get_db)
         validated.append((act, sp))
     if errors:
         db.rollback()
-        return JSONResponse({
-            "ok": False, "message": "Tüm seçimler doğrulanamadı; hiçbir eşleştirme kaydedilmedi.",
-            "updated": 0, "errors": errors[:20],
-        }, status_code=422)
+        message = "Tüm seçimler doğrulanamadı; hiçbir eşleştirme kaydedilmedi."
+        failure = pp_error(422, message + " " + " ".join(errors[:20]) + " Seçimleri düzeltip yeniden kaydedin.",
+            "assignments", messages=[issue + " İlgili eşleştirmeyi düzeltip yeniden kaydedin." for issue in errors[:20]])
+        return JSONResponse({"ok": False, "message": message, "updated": 0, **pp_error_payload(failure)}, status_code=422)
     for act, sp in validated:
         if act.card and act.card.subprogram_id != sp.id: act.card_id = None
         act.subprogram_id = sp.id

@@ -60,7 +60,10 @@ def test_return_correct_resubmit_approve(client, db, sample):
 def test_invalid_submission_has_no_workflow_side_effects(client, db, sample):
     db.scalar(select(DepartmentCostValue)).state = 'needs_review'; db.commit()
     response = client.post('/api/departments/1/submit?period_id=1')
-    assert response.status_code == 422 and response.json()['errors']
+    assert response.status_code == 422
+    body = response.json()
+    assert isinstance(body['detail'], str) and body['errors']
+    assert all(error['field'] == 'department_id' and error['message'] for error in body['errors'])
     db.expire_all()
     sub = db.scalar(select(Submission))
     assert sub.status == 'draft' and sub.revision == 0 and sub.submitted_at is None
@@ -73,7 +76,10 @@ def test_approval_revalidates_current_data(client, db, sample):
     db.scalar(select(DepartmentCostValue)).state = 'needs_review'; db.commit()
     actor(sample, 'strategy')
     response = client.post('/api/submissions/1/decision?period_id=1', json={'decision': 'approve'})
-    assert response.status_code == 409 and isinstance(response.json()['detail'], list)
+    assert response.status_code == 409
+    body = response.json()
+    assert isinstance(body['detail'], str) and 'personel ve SGK gideri eksik' in body['detail']
+    assert body['errors'] and all(error['field'] and error['message'] for error in body['errors'])
     db.expire_all()
     assert db.scalar(select(Submission)).status == 'submitted'
     assert len(events(db)) == 1

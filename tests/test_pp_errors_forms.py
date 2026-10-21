@@ -356,3 +356,28 @@ def test_every_declared_pp_path_and_query_field_has_a_turkish_label():
         if is_pp_path(getattr(route, 'path', '')) and hasattr(route, 'dependant'):
             for field in route.dependant.path_params + route.dependant.query_params:
                 assert field.name in LABELS, (route.path, field.name)
+
+
+def test_bulk_mapping_manual_rejection_uses_shared_json_contract(client, db, sample):
+    strategy(sample)
+    before=sample['activity'].subprogram_id
+    response=client.post('/api/activity-mappings/bulk',json={'period_id':1,
+        'assignments':[{'activity_id':sample['activity'].id,'subprogram_id':999}]})
+    assert response.status_code==422
+    body=response.json()
+    assert isinstance(body['detail'],str) and body['errors']
+    assert body['updated']==0 and not body['ok']
+    assert all(error['field']=='assignments' and 'yeniden kaydedin' in error['message'] for error in body['errors'])
+    db.refresh(sample['activity']);assert sample['activity'].subprogram_id==before
+
+
+def test_legacy_workflow_conflict_keeps_status_and_adds_recovery_step():
+    api=FastAPI()
+    install(api,Jinja2Templates(directory=Path(__file__).parents[1]/'app/templates'))
+    @api.post('/program/workflow')
+    def blocked(): raise HTTPException(409,'Paket henüz incelemede değil.')
+    response=TestClient(api).post('/program/workflow',headers={'Accept':'application/json'})
+    assert response.status_code==409
+    assert response.json()['detail']=='Paket henüz incelemede değil.'
+    assert 'Strateji Geliştirme' in response.json()['errors'][0]['message']
+    assert 'yeniden deneyin' in response.json()['errors'][0]['message']
