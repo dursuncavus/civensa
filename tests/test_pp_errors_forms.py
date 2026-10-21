@@ -224,6 +224,10 @@ def test_pp_route_error_response_scan(client, sample):
         ('post','/report-builder/section',{'period_id':1,'id':999}),
         ('get','/publications/999.json',None),
         ('delete','/program/1',None),
+        ('get','/budget-reallocations/bozuk',None),
+        ('get','/api/budget-reallocations/missing',None),
+        ('delete','/api/progress',None),
+        ('delete','/operations',None),
     ]:
         response=client.request(method,path,data=data,headers={'Accept':'application/json'})
         assert response.status_code in {403,404,405,422}
@@ -343,3 +347,11 @@ def test_unresolved_read_context_keeps_attempts_and_releases_display_transaction
     assert response.status_code==422
     assert 'Korunan taslak' in response.text
     assert not db.in_transaction()
+
+
+def test_every_declared_pp_path_and_query_field_has_a_turkish_label():
+    from app.pp_errors import is_pp_path, LABELS
+    for route in app.routes:
+        if is_pp_path(getattr(route, 'path', '')) and hasattr(route, 'dependant'):
+            for field in route.dependant.path_params + route.dependant.query_params:
+                assert field.name in LABELS, (route.path, field.name)

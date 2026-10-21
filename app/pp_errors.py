@@ -24,6 +24,14 @@ LABELS = {
     'publish': 'Nihai yayın', 'status': 'Müdürlük kapsamı', 'reason': 'Gerekçe',
     'department_ids': 'Sorumlu müdürlükler', 'official_ids': 'Resmî faaliyet bağlantısı',
     'request': 'Performans programı isteği', 'format': 'Dosya biçimi',
+    'operation_id': 'Bütçe aktarma kaydı', 'delegation_id': 'Bütçe aktarma yetkisi',
+    'activity_id': 'Faaliyet kaydı', 'indicator_id': 'Gösterge kaydı',
+    'period_indicator_id': 'Dönem göstergesi', 'program_id': 'Program kaydı',
+    'batch_id': 'İçe aktarma veya eşleştirme işlem grubu', 'change_id': 'Kurum yapısı kararı',
+    'conflict_id': 'Kaynak çelişkisi', 'publication_id': 'Yayın sürümü',
+    'snapshot_id': 'Bakanlık şablonu kaydı', 'submission_id': 'İnceleme paketi',
+    'value_id': 'Kaynak değer kaydı', 'group': 'Program grubu', 'fund': 'Bütçe kaynağı',
+    'preserve_existing': 'Mevcut kayıtları koruma seçimi', 'saved': 'Kaydedilen hücre sayısı',
 }
 DEFAULTS = {
     401: 'Oturum doğrulanamadı. Yeniden giriş yapın.',
@@ -66,6 +74,8 @@ def is_pp_path(path):
         '/period', '/periods', '/api/indicators', '/api/activities',
         '/api/departments', '/api/submissions', '/api/activity-mappings', '/api/periods',
         '/api/import-batches', '/api/template-snapshots',
+        '/budget-reallocations', '/api/budget-reallocations', '/api/progress',
+        '/operations', '/api/operations', '/api/release',
     )) or path.startswith('/publications/')
 
 
