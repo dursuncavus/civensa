@@ -2094,11 +2094,60 @@ def release_readiness(request: Request, db: Session = Depends(get_db), user: Use
         warnings.append(f"{operations['records']['missing_department_accounts']} müdürlüğün etkin hesabı yok.")
     if operations["records"]["unresolved_activities"]:
         warnings.append(f"{operations['records']['unresolved_activities']} faaliyet insan eşleştirmesi bekliyor.")
+    from .release_service import release_checklist
+    measurements = {
+        "database": operations["database"],
+        "migration_head": {"actual": migration, "expected": migration_head()},
+        "period_active": operations["period"],
+        "departments_present": operations["records"]["departments"],
+        "indicators_present": operations["records"]["indicators"],
+        "activities_present": operations["records"]["activities"],
+        "activity_mappings_complete": operations["records"]["mapping_gaps"],
+        "no_orphan_activities": orphan_activities,
+        "no_orphan_indicators": orphan_indicators,
+        "no_duplicate_active_department_accounts": [dict(department_id=did, count=count) for did, count in duplicate_accounts],
+        "workflow_schema_present": {"submission_events": inspect(engine).has_table("submission_events"),
+                                    "notifications": inspect(engine).has_table("notifications")},
+    }
     return {
         "status": "ready" if all(checks.values()) else "blocked",
+        "scope": "technical",
         "version": APP_VERSION, "checks": checks, "warnings": warnings,
         "migration": migration, "checked_at": datetime.now(UTC).isoformat(),
+        "release": release_checklist(db, session_period(request, db), checks, APP_VERSION, migration, measurements),
     }
+
+
+@app.post("/api/release/confirmations")
+async def release_confirmation_api(request: Request, db: Session = Depends(get_db), user: User = Depends(require_strategy)):
+    from .release_service import append_confirmation
+    period = session_period(request, db, require=True)
+    try:
+        data = await request.json()
+    except ValueError:
+        raise HTTPException(422, "Yayın onay kaydı okunamadı. Geçerli JSON ile madde, karar, gerekçe ve kanıt gönderin.") from None
+    if not isinstance(data, dict):
+        raise HTTPException(422, "Yayın onay kaydı geçersiz. Madde, karar, gerekçe ve kanıt alanlarını gönderin.")
+    session_period(request, db, data, require=True)
+    readiness = release_readiness(request, db, user)
+    return append_confirmation(db, user, period, data, readiness["release"]["context_sha256"])
+
+
+@app.post("/release/confirmations", response_class=HTMLResponse)
+async def release_confirmation_form(request: Request, db: Session = Depends(get_db), user: User = Depends(require_strategy)):
+    from .release_service import append_confirmation
+    period = session_period(request, db, require=True)
+    data = await request.form()
+    session_period(request, db, data, require=True)
+    readiness = release_readiness(request, db, user)
+    try:
+        append_confirmation(db, user, period, data, readiness["release"]["context_sha256"])
+    except HTTPException as exc:
+        return templates.TemplateResponse(request, "operations.html", {
+            "user": user, "operations": operations_status(request, db, user), "readiness": readiness,
+            "period": period, "confirmation_error": exc.detail, "attempted": data,
+        }, status_code=exc.status_code)
+    return RedirectResponse(f"/operations?period_id={period.id}", 303)
 
 
 @app.get("/operations", response_class=HTMLResponse)

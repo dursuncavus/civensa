@@ -55,3 +55,19 @@ progress{width:140px;height:12px;accent-color:#287a57}.status.not_started{backgr
 /* Persistent PP field errors after a failed form submission. */
 .field-error{display:block;color:var(--bad);font-size:12px;text-transform:none;letter-spacing:normal}
 [aria-invalid="true"]{border-color:var(--bad)}
+
+/* PP release evidence remains readable on narrow operations screens. */
+#technical-readiness .section-head{flex-wrap:wrap}
+.pp-release-items{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr))}
+.pp-release-item{min-width:0;padding:12px;border:1px solid var(--line);border-radius:10px;overflow-wrap:anywhere}
+.pp-release-item h4{margin:0 0 8px}.pp-release-item p{margin:8px 0}
+.pp-release-item pre{white-space:pre-wrap;overflow-wrap:anywhere;font-size:11px}
+.pp-release-form{display:grid;gap:12px;max-width:740px}.pp-release-form>*{min-width:0}
+.pp-release-history{margin-top:18px}.pp-release-history article{margin-top:10px}
+#pp-release-checklist{min-width:0;overflow-wrap:anywhere}
+@media(max-width:620px){#technical-readiness .button{white-space:normal}#pp-release-checklist .pp-release-items{grid-template-columns:minmax(0,1fr)}}
+
+.operations-content .section-head,.operations-content .rowbuttons{flex-wrap:wrap}
+.operations-content .section-head>*,.operations-content .rowbuttons>*{min-width:0;max-width:100%}
+.operations-content .button{white-space:normal}
+@media(max-width:620px){.app:has(.operations-content){grid-template-columns:64px minmax(0,1fr)}.app:has(.operations-content) .sidebar-account .logout{white-space:normal;padding:6px 2px;font-size:9px}}

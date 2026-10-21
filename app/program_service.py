@@ -9,7 +9,7 @@ from .pp_errors import pp_error
 from .models import (ReportCard, Indicator, IndicatorValue, Activity, ActivityCostValue,
     DepartmentCostValue, EconomicValue, DepartmentScope, Department, Program, SubProgram,
     ReportingPeriod, ReportSection, OfficialActivity, ActivityResponsibility, ActivityCatalogueLink,
-    Submission, AuditLog)
+    Submission, SubmissionEvent, AuditLog)
 from .numbers import parse_number, format_number
 from .value_labels import value_kind_label, funding_label
 import json
@@ -396,6 +396,45 @@ def period_departments(db, period_id):
     period = db.get(ReportingPeriod, period_id)
     return [d for d in db.scalars(select(Department).where(or_(Department.is_active.is_(True), *historical)).order_by(Department.name)).all()
             if department_in_year(db, d, period.year)]
+
+
+def publication_checks(db, period_id):
+    """Read-only gates shared by publication and the release checklist."""
+    checks = []
+    for dept in period_departments(db, period_id):
+        scope = db.scalar(select(DepartmentScope).where(
+            DepartmentScope.department_id == dept.id, DepartmentScope.period_id == period_id))
+        checks.append(dict(id=f'scope:{dept.id}', label=f'{dept.name}: dönem kapsamı',
+            source='program_service.publication_checks / DepartmentScope',
+            observed=record(scope) if scope else None,
+            errors=[] if scope else [f'{dept.name}: dönem kapsamı belirtilmeli.']))
+        if not scope:
+            continue
+        issues, _ = validate_department(db, period_id, dept.id)
+        checks.append(dict(id=f'data:{dept.id}', label=f'{dept.name}: kayıt ve toplam doğrulaması',
+            source='program_service.validate_department', observed=dict(department_id=dept.id),
+            errors=[f'{dept.name}: {e}' for e in issues]))
+        if scope.status == 'required':
+            sub = db.scalar(select(Submission).where(
+                Submission.department_id == dept.id, Submission.period_id == period_id))
+            decision = db.scalar(select(SubmissionEvent).where(
+                SubmissionEvent.submission_id == sub.id, SubmissionEvent.event_type == 'approve',
+                SubmissionEvent.revision == sub.revision).order_by(SubmissionEvent.id.desc())) if sub else None
+            checks.append(dict(id=f'approval:{dept.id}', label=f'{dept.name}: Strateji onayı',
+                source='Submission.status / submission_decision',
+                observed=dict(submission=record(sub) if sub else None,
+                    approval_event_id=decision.id if decision else None,
+                    approver=decision.actor.full_name if decision and decision.actor else None,
+                    approver_id=decision.actor_user_id if decision else None),
+                errors=[] if sub and sub.status == 'approved' else [f'{dept.name}: onay eksik.']))
+    for model, key, label, error in (
+        (ReportSection, 'sections', 'Kitabın genel bilgi bölümleri', 'Kitabın genel bilgi bölümleri hazırlanmalı.'),
+        (OfficialActivity, 'catalogue', 'Sorumlu harcama birimleri kataloğu', 'Sorumlu harcama birimleri kataloğu hazırlanmalı.'),
+    ):
+        records = rows(db, model, period_id)
+        checks.append(dict(id=key, label=label, source=f'{model.__name__} / publication_checks',
+                           observed=dict(record_ids=[r.id for r in records]), errors=[] if records else [error]))
+    return checks
 
 
 def book_snapshot(db, period_id):
