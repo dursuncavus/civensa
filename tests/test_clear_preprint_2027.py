@@ -10,7 +10,8 @@ from sqlalchemy.orm import Session
 
 from scripts import first_load_live as live
 from scripts import clear_preprint_2027 as clear
-from scripts.first_load_dryrun import disposable_database, local_test_url
+from scripts.first_load_dryrun import local_test_url
+from tests.first_load_checkpoint import disposable_release50_database
 from app import models as m
 
 
@@ -33,7 +34,7 @@ def state(engine):
 
 @pytest.fixture
 def target(printed):
-    with disposable_database(local_test_url()) as engine:
+    with disposable_release50_database(local_test_url()) as engine:
         with Session(engine) as db:
             org = m.Organization(name='CIV-058 disposable')
             actor = m.User(email='clear@example.invalid', full_name='Strateji Kullanıcısı',
