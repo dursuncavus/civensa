@@ -1,0 +1,107 @@
+name: CIV-058 verified backup rehearsal
+
+on:
+  workflow_dispatch:
+    inputs:
+      backup_run_id:
+        description: 'main dalındaki yeşil Daily verified database backup çalışma numarası'
+        required: true
+        default: '39433446455'
+        type: string
+      confirmation:
+        description: 'Yalnız geçici kopya için: 2027 ON BASKI TASLAGINI SIL'
+        required: true
+        type: string
+      book_confirmation:
+        description: 'Yalnız geçici kopya için kitap SHA256 öneki: 261cd17fd0be'
+        required: true
+        type: string
+      organization_id:
+        description: 'İsteğe bağlı kurum kimliği; boşsa yedekteki tek kurum'
+        type: string
+      actor_id:
+        description: 'İsteğe bağlı etkin Strateji/yönetici kimliği; boşsa mevcut etkin hesap'
+        type: string
+  # Manual bootstrap on this same-repository PR before the workflow reaches main.
+  # Normal pushes and ordinary description edits never download a backup.
+  pull_request:
+    types: [edited]
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: civ058-backup-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  rehearsal:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.pull_request.head.repo.full_name == github.repository &&
+       github.event.pull_request.head.ref == 'task/civ-058-clear-preprint-2027' &&
+       github.event.changes.body.from != null &&
+       contains(github.event.pull_request.body, 'CIV058_PROVA_BASLAT 2027 ON BASKI TASLAGINI SIL 261cd17fd0be') &&
+       !contains(github.event.changes.body.from, 'CIV058_PROVA_BASLAT 2027 ON BASKI TASLAGINI SIL 261cd17fd0be'))
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_DB: civ058_rehearsal
+          POSTGRES_USER: civ058_rehearsal
+          POSTGRES_PASSWORD: disposable_rehearsal_only
+        ports:
+          - 5432:5432
+        options: >-
+          --log-driver=none
+          --health-cmd "pg_isready -U civ058_rehearsal -d civ058_rehearsal"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    env:
+      CIVENSA_TEST_POSTGRES_URL: postgresql+psycopg://civ058_rehearsal:disposable_rehearsal_only@127.0.0.1:5432/civ058_rehearsal
+      CIV058_TMP_ROOT: ${{ github.workspace }}/civ058-private
+      TMPDIR: ${{ github.workspace }}/civ058-private
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install dependencies and PostgreSQL 18 clients
+        run: |
+          python -m pip install -r requirements.txt
+          docker pull postgres:18
+          mkdir -m 700 civ058-private civ058-client-bin
+          cat > civ058-client-bin/pg-client <<'SH'
+          #!/usr/bin/env bash
+          set -euo pipefail
+          CIV058_CLIENT_TOOL="$(basename "$0")"
+          exec docker run --rm --log-driver=none --network host \
+            --user "$(id -u):$(id -g)" \
+            --env PGDATABASE --env PGHOST --env PGHOSTADDR --env PGPORT \
+            --env PGUSER --env PGPASSWORD --env PGCONNECT_TIMEOUT \
+            --volume "$GITHUB_WORKSPACE:$GITHUB_WORKSPACE:ro" \
+            --volume "$CIV058_TMP_ROOT:$CIV058_TMP_ROOT" \
+            --workdir "$GITHUB_WORKSPACE" postgres:18 "$CIV058_CLIENT_TOOL" "$@"
+          SH
+          chmod 700 civ058-client-bin/pg-client
+          ln -s pg-client civ058-client-bin/pg_dump
+          ln -s pg-client civ058-client-bin/pg_restore
+          echo "$GITHUB_WORKSPACE/civ058-client-bin" >> "$GITHUB_PATH"
+      - name: Restore verified artifact and rehearse only in disposable PostgreSQL
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CIVENSA_REHEARSAL_BACKUP_RUN: ${{ inputs.backup_run_id || '39433446455' }}
+          CIVENSA_REHEARSAL_CONFIRM: ${{ inputs.confirmation || '2027 ON BASKI TASLAGINI SIL' }}
+          CIVENSA_REHEARSAL_BOOK_CONFIRM: ${{ inputs.book_confirmation || '261cd17fd0be' }}
+          CIVENSA_REHEARSAL_ORG_ID: ${{ inputs.organization_id }}
+          CIVENSA_REHEARSAL_ACTOR_ID: ${{ inputs.actor_id }}
+        run: python -m ops.preprint_rehearsal
+      - name: Delete private backup copies
+        if: always()
+        run: rm -rf -- rehearsal-backup civ058-private civ058-client-bin

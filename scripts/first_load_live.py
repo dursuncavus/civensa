@@ -164,6 +164,12 @@ def context(db, organization_id, actor_id, resume):
         existing = content_departments(db, period.id)
         other = any(db.scalar(select(model.id).where(model.period_id == period.id).limit(1))
                     for model in (Program, OfficialActivity, ImportBatch))
+        # CIV-058 keeps approved import history/catalogue. Only the exact,
+        # unchanged clearance receipt permits an otherwise empty first load.
+        if other and not existing and not completed:
+            from scripts.clear_preprint_2027 import clearance
+            if clearance(db, period.id):
+                other = False
         if (existing or other or completed) and not resume:
             raise Refusal('2027 PP verisi zaten var; 0 satır yazıldı. Yalnız belgelenmiş --resume ile devam edin.')
         if resume and ((existing - completed) or (other and not completed)):
@@ -334,6 +340,8 @@ def main(argv=None):
     parser.add_argument('--apply', action='store_true', help='Sahibin yazma onayı; diğer korumalar da zorunlu')
     parser.add_argument('--backup', type=Path, help='Doğrulanmış, 60 dakikadan yeni .dump dosyası')
     parser.add_argument('--resume', action='store_true', help='Tamamlanmış müdürlükleri hiç değiştirmeden atla')
+    parser.add_argument('--clear-preprint', action='store_true',
+                        help='D-131 / D-135 ön baskı temizleme planı; yalnız --apply ile yazar')
     args = parser.parse_args(argv)
     try:
         # The app.db module creates a default engine on import. It must only see
@@ -341,27 +349,51 @@ def main(argv=None):
         cleared = {key: None for key in os.environ if key.startswith('PG')}
         with environment(DATABASE_URL='sqlite://', MIGRATION_DATABASE_URL=None, **cleared):
             url = target_url()
+            if args.clear_preprint and args.resume:
+                raise Refusal('--clear-preprint ile --resume birlikte kullanılamaz; 0 satır yazıldı.')
             parsed = verify_book(args.book)
             if args.apply:
                 verify_backup(args.backup)
                 try:
-                    confirmation = input(f'Yazma onayı: kitap SHA256 ilk 12 karakterini yazın ({BOOK_SHA256[:12]}): ')
+                    if args.clear_preprint:
+                        from scripts.clear_preprint_2027 import CONFIRMATION
+                        confirmation = input(f'Temizleme onayı: {CONFIRMATION} yazın: ')
+                    else:
+                        confirmation = input(f'Yazma onayı: kitap SHA256 ilk 12 karakterini yazın ({BOOK_SHA256[:12]}): ')
                 except (EOFError, KeyboardInterrupt):
                     raise Refusal('Yazma onayı alınamadı; 0 satır yazıldı.') from None
-                if confirmation != BOOK_SHA256[:12]:
-                    raise Refusal('Kitap SHA256 onayı uyuşmuyor; 0 satır yazıldı.')
+                expected = CONFIRMATION if args.clear_preprint else BOOK_SHA256[:12]
+                if confirmation != expected:
+                    raise Refusal('Temizleme onayı uyuşmuyor; 0 satır yazıldı.' if args.clear_preprint else
+                                  'Kitap SHA256 onayı uyuşmuyor; 0 satır yazıldı.')
                 verify_backup(args.backup)  # A long pause at the prompt cannot bypass freshness.
             from sqlalchemy import create_engine
             from sqlalchemy.pool import NullPool
             engine = create_engine(url, poolclass=NullPool, hide_parameters=True,
                                    connect_args={'connect_timeout': 10, 'options': '-c search_path=public'})
             try:
-                result = execute(engine, parsed, organization_id=args.organization_id, actor_id=args.actor_id,
-                                 apply=args.apply, resume=args.resume)
+                if args.clear_preprint:
+                    from scripts.clear_preprint_2027 import execute as clear_execute
+                    result = clear_execute(engine, organization_id=args.organization_id,
+                                           actor_id=args.actor_id, apply=args.apply,
+                                           before_write=(lambda: verify_backup(args.backup)) if args.apply else None)
+                else:
+                    result = execute(engine, parsed, organization_id=args.organization_id, actor_id=args.actor_id,
+                                     apply=args.apply, resume=args.resume)
             finally:
                 engine.dispose()
         print('PLAN: Hedefe 0 satır yazıldı.' if not args.apply else 'UYGULAMA SONUCU:')
-        if not args.apply:
+        if args.clear_preprint:
+            for department in result['departments']:
+                c = department['counts']
+                print(f"Temizle: {department['name']} (müdürlük #{department['department_id']}, "
+                      f"paket #{department['batch_id']}) · {c['indicators']} gösterge, "
+                      f"{c['indicator_values']} gösterge değeri, {c['activities']} faaliyet, "
+                      f"{c['activity_cost_values']} faaliyet maliyeti, "
+                      f"{c['department_cost_values']} personel/SGK maliyeti, {c['submissions']} taslak teslim")
+            if result['already_cleared']:
+                print('Ön baskı zaten temizlenmiş; 0 satır yazıldı.')
+        elif not args.apply:
             for department in result['departments']:
                 source = department['source_name']
                 if department['action'] == 'match':
@@ -371,16 +403,19 @@ def main(argv=None):
                 else:
                     print(f"Atla: {source} · {department['reason']}")
         print(json.dumps(result, ensure_ascii=False, indent=2))
-        return 2 if result['failed'] else 0
+        return 2 if result.get('failed') else 0
     except Refusal as exc:
         print(f'DURDU: {exc}', file=sys.stderr)
     except KeyboardInterrupt:
-        print('DURDU: İşlem kesildi; tamamlanmış müdürlükler korunur. Yeniden yazmadan önce --resume ile plan alın.', file=sys.stderr)
+        print('DURDU: İşlem kesildi; yeniden yazmadan önce ' +
+              ('--clear-preprint' if args.clear_preprint else '--resume') + ' ile plan alın.', file=sys.stderr)
     except Exception as exc:
         print(f'DURDU: İşlem tamamlanamadı ({type(exc).__name__}); bağlantı/dosya ayrıntıları gizlendi. '
-              'Günlüğü sorumluya iletin; yeniden uygulamadan önce --resume ile plan alın.', file=sys.stderr)
+              'Günlüğü sorumluya iletin; yeniden uygulamadan önce ' +
+              ('--clear-preprint' if args.clear_preprint else '--resume') + ' ile plan alın.', file=sys.stderr)
     return 1
 
 
 if __name__ == '__main__':
+    sys.modules['scripts.first_load_live'] = sys.modules[__name__]
     raise SystemExit(main())
