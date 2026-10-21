@@ -129,7 +129,8 @@ def test_operations_gate_shows_ready_at_head(readiness, client):
     readiness()
     response = client.get("/operations")
     assert response.status_code == 200
-    assert "Yayın Uygunluk Kapısı · Hazır" in response.text
+    assert "Teknik hazırlık · Geçti" in response.text
+    assert "PP yayın kontrol listesi · Engelli" in response.text
     assert "✕ migration_head" not in response.text
 
 

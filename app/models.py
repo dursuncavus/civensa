@@ -250,6 +250,22 @@ class AuditLog(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(UTC).replace(tzinfo=None))
 
 
+class ReleaseConfirmation(Base):
+    """Append-only Strategy evidence; later events supersede without rewriting."""
+    __tablename__ = "release_confirmations"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    period_id: Mapped[int] = mapped_column(ForeignKey("reporting_periods.id"), index=True)
+    item_id: Mapped[str] = mapped_column(String(40))
+    context_sha256: Mapped[str] = mapped_column(String(64))
+    decision: Mapped[str] = mapped_column(String(20))
+    actor_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    actor_name: Mapped[str] = mapped_column(String(200))
+    reason: Mapped[str] = mapped_column(Text)
+    evidence: Mapped[str] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(UTC).replace(tzinfo=None))
+    __table_args__ = (CheckConstraint("decision IN ('confirmed', 'revoked')", name="ck_release_confirmation_decision"),)
+
+
 class ReportCard(Base):
     __tablename__ = "report_cards"
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -472,7 +488,7 @@ def _immutable_revision(mapper, connection, target):
     raise ValueError('Geçmiş sürüm değiştirilemez; yeni revizyon oluşturun.')
 
 
-for _model in (Publication, IndicatorIdentity, IndicatorDefinitionRevision,
+for _model in (ReleaseConfirmation, Publication, IndicatorIdentity, IndicatorDefinitionRevision,
                PublicationIndicatorBinding, ActivityReportRevision, ReportIndicator,
                ActualRevision, ActivityReportApproval):
     event.listen(_model, 'before_update', _immutable_revision)

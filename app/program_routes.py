@@ -411,16 +411,7 @@ def register(app):
     async def publish(request:Request,db:Session=Depends(get_db),user:User=Depends(require_strategy)):
         data=await request.form();pid=session_period(request,db,data).id;period=db.scalar(select(ReportingPeriod).where(ReportingPeriod.id==pid).with_for_update())
         if not period:raise pp_error(404)
-        errors=[]
-        for dept in period_departments(db,pid):
-            scope=db.scalar(select(DepartmentScope).where(DepartmentScope.department_id==dept.id,DepartmentScope.period_id==pid))
-            if not scope:errors.append(f'{dept.name}: dönem kapsamı belirtilmeli.');continue
-            issues,_=validate_department(db,pid,dept.id);errors.extend(f'{dept.name}: {e}' for e in issues)
-            if scope.status=='required':
-                sub=db.scalar(select(Submission).where(Submission.department_id==dept.id,Submission.period_id==pid))
-                if not sub or sub.status!='approved':errors.append(f'{dept.name}: onay eksik.')
-        if not rows(db,ReportSection,pid):errors.append('Kitabın genel bilgi bölümleri hazırlanmalı.')
-        if not rows(db,OfficialActivity,pid):errors.append('Sorumlu harcama birimleri kataloğu hazırlanmalı.')
+        errors=[error for check in publication_checks(db,pid) for error in check['errors']]
         if errors:raise pp_error(422, 'Nihai yayın oluşturulamadı: ' + ' '.join(errors) + ' İlgili müdürlük kayıtlarını, kapsamı ve onayları tamamlayıp yeniden deneyin.', 'publish')
         from .activity_contract_service import freeze_program_payload, attach_publication_definitions
         payload, definitions = freeze_program_payload(db, pid, user)
