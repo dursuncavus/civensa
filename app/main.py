@@ -2401,3 +2401,5 @@ budget_routes.register(app)
 
 from .internal_control_routes import register as register_internal_control_routes
 register_internal_control_routes(app)
+
+from . import pp_reopen_routes; app.include_router(pp_reopen_routes.router)
