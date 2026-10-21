@@ -76,3 +76,23 @@ def test_json_fetch(scenario):
         [NODE, "-e", script, str(APP_JS)], capture_output=True, text=True, timeout=10
     )
     assert result.returncode == 0, result.stderr
+
+
+def test_department_submission_renders_structured_field_messages():
+    assert NODE, 'Node.js is required for the PP error contract regression'
+    source=APP_JS.read_text()
+    converter=source[source.index('const errorMessage='):source.index('const jsonFetch=')]
+    handler=source[source.index("const submit=document.getElementById('submitDepartment')"):source.index('\n\nfunction setActivityEditMode')]
+    harness=r"""
+const assert=require('node:assert/strict');
+let listener,box;
+const submitControl={dataset:{department:'1'},addEventListener:(event,fn)=>{listener=fn},after:node=>{box=node}};
+const document={getElementById:()=>submitControl,createElement:()=>({children:[],textContent:'',append(...nodes){this.children.push(...nodes)},scrollIntoView(){}})};
+const toast=()=>{};
+const jsonFetch=async()=>({r:{ok:false},j:{detail:'Kontrolleri tamamlayın.',errors:[{field:'department_id',message:'2027 personel tutarı eksik. Tutarı girin.'}]}});
+CONVERTER
+HANDLER
+(async()=>{await listener();assert.equal(box.children[0].children[0].textContent,'2027 personel tutarı eksik. Tutarı girin.');})().catch(error=>{console.error(error);process.exitCode=1});
+""".replace('CONVERTER',converter).replace('HANDLER',handler)
+    result=subprocess.run([NODE,'-e',harness],capture_output=True,text=True,timeout=10)
+    assert result.returncode==0,result.stderr

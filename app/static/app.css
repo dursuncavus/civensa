@@ -51,3 +51,7 @@ progress{width:140px;height:12px;accent-color:#287a57}.status.not_started{backgr
 #structure-wizard input[type=checkbox]{width:auto}
 #structure-wizard [data-old-departments] label,#structure-wizard [data-receivers] label{display:flex;align-items:center;gap:10px;padding:6px 0}
 #structure-summary p{margin:10px 0;overflow-wrap:anywhere}
+
+/* Persistent PP field errors after a failed form submission. */
+.field-error{display:block;color:var(--bad);font-size:12px;text-transform:none;letter-spacing:normal}
+[aria-invalid="true"]{border-color:var(--bad)}

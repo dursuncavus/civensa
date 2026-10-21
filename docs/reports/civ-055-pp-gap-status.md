@@ -6,7 +6,7 @@ Bu belge, [CIV-008](civ-008-performance-programme-audit.md) raporunun 13 Ekim ta
 
 **Yöntem:** Git geçmişi, mevcut kaynak ve test tanımları okundu. Aşağıdaki test adları mevcut regresyon kapsamını gösterir; bu görevde çalıştırıldıkları anlamına gelmez. 13 Ekim E/B/X senaryoları tekrarlanmadı; uygulama/test/migrasyon/iş akışı değiştirilmedi; veritabanı, Render, merge ve deploy kullanılmadı. Dosya:satır atıfları yukarıdaki tabana aittir. PR numaraları görev numaralarından farklı olabilir.
 
-**Durum sözleşmesi:** DONE = özgün eksik için birleşmiş uygulama ve ilgili test var (PP-26 için CIV-059 PR'ındaki uygulama/test kapsamı gösterilir; birleşme beklenir); PARTIAL = somut ilerleme var, özgün çıkış ölçütünün bir bölümü açık; OPEN = belirtilen açık davranış kaynakta sürüyor; UNKNOWN = karar verecek kanıt yok. Canlı yapılandırma ve kullanıcı kabulü yalnız test adıyla kapanmaz. Sayım: **11 DONE, 11 PARTIAL, 4 OPEN, 0 UNKNOWN**. Canlı rol doğrulamasının bilinmemesi, kodu tamamlanmış ama rollout kapısı açık olan kaydın PARTIAL olmasına engel değildir.
+**Durum sözleşmesi:** DONE = özgün eksik için birleşmiş uygulama ve ilgili test var (PP-17/18 için CIV-064, PP-26 için CIV-059 PR uygulama/test kapsamı gösterilir; birleşme beklenir); PARTIAL = somut ilerleme var, özgün çıkış ölçütünün bir bölümü açık; OPEN = belirtilen açık davranış kaynakta sürüyor; UNKNOWN = karar verecek kanıt yok. Canlı yapılandırma ve kullanıcı kabulü yalnız test adıyla kapanmaz. Sayım: **13 DONE, 9 PARTIAL, 4 OPEN, 0 UNKNOWN**. Canlı rol doğrulamasının bilinmemesi, kodu tamamlanmış ama rollout kapısı açık olan kaydın PARTIAL olmasına engel değildir.
 
 ## Eksiklerin durumu
 
@@ -28,8 +28,8 @@ Bu belge, [CIV-008](civ-008-performance-programme-audit.md) raporunun 13 Ekim ta
 | PP-14 | Onay sonrası gerekçeli düzeltme ve yeniden onay | PARTIAL | #41 → `a98fe3fd0f7af3a52ea86be75607e155c1e80840`, `tests/test_budget_reallocation.py::test_exact_amounts_protected_lines_rounding_history_and_reverse`, `test_flag_audited_approved_status_and_stale` onaylı PP bütçe aktarma/ters kayıt yolunu kapsar; `app/main.py:1430` genel karar yolunu yalnız submitted ile sınırlar. | Bütçe aktarma dışındaki gösterge/kart hataları için gerekçeli düzeltme, yeniden onay ve yeni yayın yolu tanımlanmalı. |
 | PP-15 | İlk dönem boş durumundan kurulum | DONE | #27 → `2d325863638936a17c24e6830c65d49feb4651c7`; `tests/test_master_data.py::test_empty_installation_dashboard_and_first_period_creation`, `test_period_form_has_same_validation_as_api`. | Özgün eksik kapandı. |
 | PP-16 | Program ve alt program maliyet mutabakatı | PARTIAL | #51 → `beff5e36a3263f026f2653db4ab46cad1c08d0fa`, `tests/test_institution_summary.py::test_hierarchical_subtotals_cover_direct_children`, `test_missing_programme_column_does_not_allow_a_partial_total`; kitap kaynağını kontrol eder. Uygulama çıktısı `app/program_service.py:419` hâlâ faaliyet kimliğiyle gruplanır; `app/book_export.py:94` faaliyet satırları üretir. | Güncel kayıtlardan program/alt program/müdürlük ara toplamları ve resmî toplam mutabakatı yayın çıktısına bağlanmalı. |
-| PP-17 | Ortak Türkçe hata sözleşmesi | PARTIAL | `app/main.py:1427` sonrası inceleme hataları artık bağlamlı Türkçe; `tests/test_review_errors.py::test_review_errors` kapsar. Buna karşılık `app/program_routes.py:32`, `:33`, `:139` ve `app/main.py:552` çıplak 403/404 üretir; ortak HTTP/doğrulama çevirisi yok. | Kimlik/izin/yol doğrulaması dahil tüm PP hataları alan, kayıt ve düzeltme eylemi belirtmeli. |
-| PP-18 | Form hatasında ekran ve girilen değerleri koruma | PARTIAL | #27'nin `tests/test_master_data.py::test_hierarchy_validation_keeps_attempted_fields_and_prevents_duplicates` ve #44 → `4efcd3bebdf8cc4204d4093709279e7bc0731697` ekonomik bölme formu korumaları ilerleme sağlar; `app/program_routes.py:157` finans, `:182` ekonomik ızgara, `:293` bölüm ve `:352` yayın yollarında ortak form yeniden gösterimi yok; `:191` ayrıştırma hatası HTTPException olur. | Finans/kart/katalog/bölüm/yayın formları denenen veriyi koruyup kalıcı, bağlamlı Türkçe hata göstermeli. |
+| PP-17 | Ortak Türkçe hata sözleşmesi | DONE | CIV-064 (bu PR; birleşme beklenir): `app/pp_errors.py` ortak durum/alan/mesaj sözleşmesi; PP yollarında varsayılan 401/403/404/405/422 Türkçe karşılanır. `tests/test_pp_errors_forms.py::test_framework_defaults_are_turkish_and_do_not_leak_internals`, `test_pp_route_error_response_scan`, `test_json_errors_have_field_contract`; CIV-059 değer engeline koşullu düzeltme adımı `test_draft_removal_fix_hint_only_when_values_are_sole_blocker` ile korunur. | Kod/test kapsamı tamamlandı; bu PR birleşmeli. Canlıya geçiş iddiası yok. |
+| PP-18 | Form hatasında ekran ve girilen değerleri koruma | DONE | CIV-064 (bu PR; birleşme beklenir): finans, ekonomik ızgara/tek hücre, kart, atama, gösterge, kapsam, katalog, bölüm ve yayın için ortak 422 yeniden gösterimi; denenen değerler yalnız ilgili formda korunur, alan mesajları kalıcıdır. `tests/test_pp_errors_forms.py` form bazlı PostgreSQL ve Chromium regresyonları; `tests/test_publication_gates.py` yayın engellerini ve donmuş sürümü korur. #27 hiyerarşi ve #44 ekonomik bölme davranışları korunur. | Kod/test kapsamı tamamlandı; bu PR birleşmeli. Tarayıcı güvenliği nedeniyle dosya alanı yeniden seçilir; başlık/açıklama/seçimler korunur. |
 | PP-19 | Kısıtlı çalışma rolü ve üretim güvencesi | PARTIAL | #23 → `d14535051e3b8f4bf3c15a3d6f4d1479c9e35c75`; `tests/test_db_roles.py::test_production_lifespan_migrates_as_owner_and_requests_use_app`, `test_restricted_http_flows_and_immutable_history`, `test_startup_guard_fails_before_migration`; `docs/operations/db-roles.md:3` ve `:192` üretim doğrulamasını açık kapı olarak bırakır. | Ayrı yetkili rollout'ta gerçek sahiplik/rol/izin/bağlantı ve yedek kanıtı alınmalı; canlı durum UNKNOWN. |
 | PP-20 | Parola ve çıkış düğmelerinin çakışması | DONE | #19 → `5377fef2984e771a466d697a2638324e089478ff`; `tests/test_sidebar_ui.py::test_sidebar_controls_separate_and_clickable` iki rol ve parametrik ekran boyutlarında bağımsız kontrolleri kapsar. | Özgün eksik kapandı. |
 | PP-21 | Giriş denemelerini sınırlama | DONE | #20 → `c3d959e2814a3d757959b1b1966f0a8bb061f5a4`; `tests/test_login_throttling.py::test_email_locks_at_five_and_correct_password_is_refused`, `test_email_lock_persists_in_a_fresh_database_session`, `test_email_unlocks_at_exact_expiry_without_extending_lock`, `test_concurrent_failures_count_once_per_attempt`. | Özgün eksik kapandı; IP kilidi varsayılan kapalı, e-posta sınırı PostgreSQL'de kalıcıdır. |
@@ -48,7 +48,7 @@ Bu belge, [CIV-008](civ-008-performance-programme-audit.md) raporunun 13 Ekim ta
 | D3 — Strateji inceleme, iade ve yeniden onay | **Tanımlı onay öncesi akış test kapsamıyla korunuyor; genel iyileştirme PARTIAL:** İade bağlamı/geri alma korunuyor, Müdür ve bağımsız onay kuralları eklendi; bütçe aktarma dışındaki onaylı kayıt düzeltmesi eksik. |
 | D4 — Değişmez ve hash'li yayın | **Kod/test düzeyinde korunuyor; üretim güvencesi PARTIAL:** Kısıtlı runtime ve ayrı migrasyon rolü testleri mevcut, gerçek üretim yetki doğrulaması yapılmış sayılmaz. |
 | D5 — Kaynak karşılaştırması ve toplamlar | **PARTIAL:** Açık gerekçeli çelişki kararları, ekonomik kaynaklar ve kitap özet kontrolleri eklendi; genel Word toplamları ve güncel yayın ara toplam mutabakatı eksik. |
-| D6 — Her hatada Türkçe ne/nerede/eylem | **Karşılanmıyor, PARTIAL:** Bazı yeni ekranlar bağlamlı hata korur; eski PP yollarında çıplak HTTP hataları ve formdan kopma devam eder. |
+| D6 — Her hatada Türkçe ne/nerede/eylem | **Kod/test kapsamı tamamlandı (CIV-064 PR birleşmesi beklenir):** Ortak Türkçe HTTP/alan hataları ve form değerlerini koruyan 422 yeniden gösterimi eklendi. |
 | D7 — Kitap, Word ve PDF | **PARTIAL:** Mevcut PP dışa aktarımı var; AR şablonu PP'yi tamamlamaz, resmî PP düzeni/sayfalama kabulü ve ara toplamlar eksik. |
 | D8 — Teknik olmayan Strateji yönetimi | **PARTIAL:** Kurum yapısı, ilk dönem ve hesap/unvan yönetimi ilerledi; eşleştirme tamamlanma göstergesi, aynı hesapta rol/müdürlük transferi ve hata kurtarma eksik. |
 
@@ -56,7 +56,7 @@ CIV-008'in D9 sürüm kapısı bu görevde yeni bir D ölçütü olarak genişle
 
 ## Open items in priority order for 1 January
 
-Sıra, önce canlı ilk yükleme ve müdürlük veri girişi, ardından Strateji inceleme/onayı, ardından kitap/Word çıktısına etkiye göredir; aynı grupta veri kaybı ve kilitlenme öne alınır. Boyutlar kalan iş içindir: **S ≤ yarım gün, M ≤ iki gün, L > iki gün**; kullanıcı/kurum kararı ve rollout bekleme süresi dahil değildir. Aşağıdaki 16 satır yukarıdaki bütün OPEN/PARTIAL kayıtları kapsar; UNKNOWN kayıt yoktur. Canlı kontrol burada yapılması önerilen bir işlem değildir; ayrı yetkili iş paketine aittir.
+Sıra, önce canlı ilk yükleme ve müdürlük veri girişi, ardından Strateji inceleme/onayı, ardından kitap/Word çıktısına etkiye göredir; aynı grupta veri kaybı ve kilitlenme öne alınır. Boyutlar kalan iş içindir: **S ≤ yarım gün, M ≤ iki gün, L > iki gün**; kullanıcı/kurum kararı ve rollout bekleme süresi dahil değildir. Aşağıdaki 14 satır yukarıdaki bütün OPEN/PARTIAL kayıtları kapsar; UNKNOWN kayıt yoktur. Canlı kontrol burada yapılması önerilen bir işlem değildir; ayrı yetkili iş paketine aittir.
 
 | Sıra | Kayıt | Etki grubu | Kalan iş / çıkış ölçütü | Boyut |
 | --- | --- | --- | --- | --- |
@@ -66,16 +66,14 @@ Sıra, önce canlı ilk yükleme ve müdürlük veri girişi, ardından Strateji
 | 4 | PP-02 | İlk yükleme | Genel bölümler dahil kapsam manifesti, eksik işler ve bilinçli dönem devrini tamamla. | L |
 | 5 | PP-13 | Müdürlük girişi | Ekleme/kaydetme/gezinme/gönderimde aynı izinli dönemi koru. | M |
 | 6 | PP-26 | Müdürlük girişi | Yanlış taslak kart/göstergeyi geçmişi bozmadan kaldırılabilir yap. | M |
-| 7 | PP-18 | Müdürlük girişi | Hatalı doğal form gönderimlerinde veriyi ve alan bazlı düzeltme yolunu koru. | L |
-| 8 | PP-17 | Müdürlük girişi | Ortak Türkçe kimlik/izin/doğrulama hata sözleşmesini tüm PP yollarına uygula. | M |
-| 9 | PP-08 | Müdürlük girişi / Strateji | Eşleştirme kuyruğunu kart ve katalog eksikleri bitmeden hazır göstermeyi engelle. | M |
-| 10 | PP-23 | Strateji yönetimi | Transfer politikasını onayla; aynı kimlikle transfer veya açıkça kabul edilmiş alternatifin denetim kanıtını tamamla. | M |
-| 11 | PP-11 | Strateji incelemesi | Tüm kaynak toplamları/konumları ve güncel değerler için tam karşılaştırma sağla. | L |
-| 12 | PP-14 | Strateji onayı | Bütçe dışı onaylı veri hataları için gerekçeli düzeltme/yeniden onay/yeni yayın yolunu tamamla. | L |
-| 13 | PP-22 | Strateji sürüm kararı | Dar hazırlık yanıtını açık adlandır; tüm zorunlu kapıları kanıtlarıyla birleştir. | M |
-| 14 | PP-25 | Strateji incelemesi | Türkçe durum, aktör ve etiketli Türkiye saatini PP ekranlarına uygula. | S |
-| 15 | PP-16 | Kitap / Word | Güncel program-alt program-müdürlük ara toplamlarını tamlık ve kaynak mutabakatıyla çıktıya bağla. | L |
-| 16 | PP-24 | Kitap / Word | Resmî PP referansı üzerinde büyük Word/PDF kabulünü kaydet; dizgi işlerini çıkan bulgulara göre ayır. | M |
+| 7 | PP-08 | Müdürlük girişi / Strateji | Eşleştirme kuyruğunu kart ve katalog eksikleri bitmeden hazır göstermeyi engelle. | M |
+| 8 | PP-23 | Strateji yönetimi | Transfer politikasını onayla; aynı kimlikle transfer veya açıkça kabul edilmiş alternatifin denetim kanıtını tamamla. | M |
+| 9 | PP-11 | Strateji incelemesi | Tüm kaynak toplamları/konumları ve güncel değerler için tam karşılaştırma sağla. | L |
+| 10 | PP-14 | Strateji onayı | Bütçe dışı onaylı veri hataları için gerekçeli düzeltme/yeniden onay/yeni yayın yolunu tamamla. | L |
+| 11 | PP-22 | Strateji sürüm kararı | Dar hazırlık yanıtını açık adlandır; tüm zorunlu kapıları kanıtlarıyla birleştir. | M |
+| 12 | PP-25 | Strateji incelemesi | Türkçe durum, aktör ve etiketli Türkiye saatini PP ekranlarına uygula. | S |
+| 13 | PP-16 | Kitap / Word | Güncel program-alt program-müdürlük ara toplamlarını tamlık ve kaynak mutabakatıyla çıktıya bağla. | L |
+| 14 | PP-24 | Kitap / Word | Resmî PP referansı üzerinde büyük Word/PDF kabulünü kaydet; dizgi işlerini çıkan bulgulara göre ayır. | M |
 
 ## Doğrulama ve onay sınırı
 
