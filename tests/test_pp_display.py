@@ -127,6 +127,7 @@ def test_publication_html_system_fallback(client, sample):
     html = templates.get_template("report_builder.html").render(
         request=request, user=sample["strategy"], period=sample["period"],
         departments=[], sections=[], catalogue=[],
+        publication_reopens={1: []}, superseded_by={}, stale_departments=[],
         publications=[SimpleNamespace(id=1, version=1, creator=None,
             created_at=datetime(2026, 10, 20, 11, 5))])
     assert '20.10.2026 14:05 TSİ · Sistem' in html
