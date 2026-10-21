@@ -160,3 +160,57 @@ def test_department_dashboard_status(client, sample):
     response = client.get(f"/dashboard?period_id={sample['period'].id}")
     assert response.status_code == 200
     assert "<b>Taslak</b>" in response.text
+
+
+@pytest.mark.postgres
+@pytest.mark.parametrize("actor", ["user", "strategy", None])
+def test_department_history_display(client, db, sample, actor):
+    submission = db.scalar(select(Submission))
+    stamp = datetime(2026, 10, 20, 22, 5)
+    for kind, actor_id in [("submitted", sample["user"].id),
+                           ("return", sample[actor].id if actor else None)]:
+        db.add(SubmissionEvent(submission_id=submission.id,
+            department_id=sample["department"].id, period_id=sample["period"].id,
+            actor_user_id=actor_id, event_type=kind, revision=1, created_at=stamp))
+        db.flush()
+    db.commit()
+    before = [(e.id, e.created_at, e.actor_user_id) for e in db.scalars(select(SubmissionEvent))]
+    db.expire_all()
+    response = client.get(f"/department/{sample['department'].id}?period_id={sample['period'].id}")
+    assert response.status_code == 200
+    assert "Revizyon 1 · İade edildi</b>" in response.text
+    assert "Revizyon 1 · İncelemede</b>" in response.text
+    expected_actor = {"user": "Test (Personel)", "strategy": "Strateji (Müdür)", None: "Sistem"}[actor]
+    assert f"21.10.2026 01:05 TSİ · {expected_actor}" in response.text
+    assert response.text.index("Revizyon 1 · İade edildi") < response.text.index("Revizyon 1 · İncelemede")
+    db.expire_all()
+    assert [(e.id, e.created_at, e.actor_user_id) for e in db.scalars(select(SubmissionEvent))] == before
+
+
+@pytest.mark.postgres
+@pytest.mark.parametrize("actor", ["user", "strategy", None])
+def test_activity_mapping_history_display(client, db, sample, actor):
+    from app.main import app, require_user
+    from app.models import AuditLog
+    app.dependency_overrides[require_user] = lambda: sample["strategy"]
+    # Keep a gap so the mapping queue and its recent CSV history are rendered.
+    sample["activity"].card_id = None
+    stamp = datetime(2026, 10, 20, 22, 5)
+    for batch, actor_id in [("older", sample["user"].id),
+                            ("latest", sample["user"].id),
+                            ("latest", sample[actor].id if actor else None)]:
+        db.add(AuditLog(user_id=actor_id, action="activity_mapping_csv", entity_type="activity",
+            entity_id=sample["activity"].id, created_at=stamp,
+            details=f"batch={batch};subprogram_id={sample['subprogram'].id}"))
+        db.flush()
+    db.commit()
+    before = [(a.id, a.created_at, a.user_id, a.details) for a in db.scalars(select(AuditLog))]
+    db.expire_all()
+    response = client.get(f"/activity-mapping?period_id={sample['period'].id}")
+    assert response.status_code == 200
+    expected_actor = {"user": "Test (Personel)", "strategy": "Strateji (Müdür)", None: "Sistem"}[actor]
+    assert f"21.10.2026 01:05 TSİ · {expected_actor}" in response.text
+    assert "Uygulandı · İşlem latest" in response.text
+    assert response.text.index("İşlem latest") < response.text.index("İşlem older")
+    db.expire_all()
+    assert [(a.id, a.created_at, a.user_id, a.details) for a in db.scalars(select(AuditLog))] == before

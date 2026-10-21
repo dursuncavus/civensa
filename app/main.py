@@ -659,7 +659,8 @@ def department_page(department_id: int, request: Request, db: Session = Depends(
     personnel_map = {f"{r.year}:{r.value_kind}": r.amount for r in personnel_rows}
     workflow_events = db.scalars(
         select(SubmissionEvent).where(SubmissionEvent.submission_id == submission.id)
-        .order_by(SubmissionEvent.created_at.desc())
+        .options(selectinload(SubmissionEvent.actor))
+        .order_by(SubmissionEvent.created_at.desc(), SubmissionEvent.id.desc())
     ).all()
     activity_totals = {}
     general_totals = {}
@@ -931,8 +932,12 @@ def activity_mapping_page(request: Request, db: Session = Depends(get_db), user:
         group["suggestions"] = suggestions
     batch_rows = db.scalars(
         select(AuditLog).where(AuditLog.action == "activity_mapping_csv")
-        .order_by(AuditLog.created_at.desc()).limit(500)
+        .order_by(AuditLog.created_at.desc(), AuditLog.id.desc()).limit(500)
     ).all()
+    actor_ids = {audit.user_id for audit in batch_rows if audit.user_id is not None}
+    batch_actors = {actor.id: actor for actor in db.scalars(
+        select(User).where(User.id.in_(actor_ids))
+    )} if actor_ids else {}
     batch_groups = {}
     for audit in batch_rows:
         details = dict(part.split("=", 1) for part in audit.details.split(";") if "=" in part)
@@ -940,7 +945,8 @@ def activity_mapping_page(request: Request, db: Session = Depends(get_db), user:
         if not batch_id:
             continue
         group = batch_groups.setdefault(batch_id, {
-            "id": batch_id, "created_at": audit.created_at, "count": 0, "can_revert": True,
+            "id": batch_id, "created_at": audit.created_at, "actor": batch_actors.get(audit.user_id),
+            "count": 0, "can_revert": True,
         })
         group["count"] += 1
         activity = db.get(Activity, audit.entity_id)
