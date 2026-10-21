@@ -15,7 +15,19 @@
 {% for item in catalogue + [none] %}<details class="record" {% if request.state.pp_attempt is defined %}open{% endif %}><summary>{{ item.name if item else 'Katalog Faaliyeti Ekle' }}</summary>{% filter pp_form(request) %}<form method="post" action="/report-builder/catalogue">{{ token() }}{% if item %}<input type="hidden" name="id" value="{{ item.id }}">{% endif %}{% for name,label in [('program_code','Program Kodu'),('program_name','Program Adı'),('subprogram_code','Alt Program Kodu'),('subprogram_name','Alt Program Adı'),('code','Faaliyet Kodu'),('name','Faaliyet Adı')] %}<label>{{ label }}<input name="{{ name }}" value="{{ item|attr(name) if item else '' }}" required></label>{% endfor %}<label>Sorumlu Harcama Birimleri<select multiple name="department_ids" size="8" required>{% for dept in departments %}<option value="{{ dept.id }}" {{ 'selected' if item and dept.id in responsibilities[item.id] else '' }}>{{ department_names[dept.id] }}</option>{% endfor %}</select></label><button class="button">Kataloğu Kaydet</button></form>{% endfilter %}</details>{% endfor %}
 <h2>Nihai Sürüm</h2><p>Yayın öncesinde bütün müdürlük onayları, kapsam ve mali mutabakat yeniden kontrol edilir. Oluşturulan sürüm sonraki düzenlemelerden etkilenmez.</p>{% filter pp_form(request) %}<form method="post" action="/report-builder/publish">{{ token() }}<button class="button primary">Kontrol Et ve Nihai Sürümü Oluştur</button></form>{% endfilter %}
 {% include 'pp_form_fallback.html' %}
-{% for publication in publications %}<p><b>Sürüm {{ publication.version }}</b> · {{ publication.created_at|turkey_time }} · {{ publication.creator|actor_label }} · <a href="/publications/{{ publication.id }}.docx">Word</a> · <a href="/publications/{{ publication.id }}.pdf">PDF</a> · <a href="/publications/{{ publication.id }}.json">Veri Arşivi</a></p>{% endfor %}
+<section aria-label="Yayın sürümleri" id="publication-history">
+{% if stale_departments %}<p class="bad" role="alert">Güncel sürümden sonra şu müdürlüklerin paketi gerekçeyle açıldı: {{ stale_departments|join(', ') }}. Yeniden onaydan sonra yeni sürüm oluşturun.</p>{% endif %}
+{% for publication in publications %}
+<article class="record" data-publication-version="{{ publication.version }}">
+<h3>Sürüm {{ publication.version }} · {% if loop.first %}Güncel sürüm{% else %}Önceki sürüm — Sürüm {{ superseded_by[publication.id] }} ile değiştirildi{% endif %}</h3>
+<p>{{ publication.created_at|turkey_time }} · {{ publication.creator|actor_label }}</p>
+<p><a href="/publications/{{ publication.id }}.docx">Word</a> · <a href="/publications/{{ publication.id }}.pdf">PDF</a> · <a href="/publications/{{ publication.id }}.json">Veri Arşivi</a></p>
+{% if publication_reopens[publication.id] %}<h4>Önceki sürümden sonra düzeltme için açılan paketler</h4>
+{% for item in publication_reopens[publication.id] %}<div><p><b>{{ item.department_name }}</b> · {{ item.event.actor|actor_label }} · {{ item.event.created_at|turkey_time }}</p><p>{{ item.event.note }}</p></div>{% endfor %}
+{% endif %}
+</article>
+{% endfor %}
+</section>
 {% endblock %}
 
 {% block scripts %}<script src="/report-builder/sections.js"></script>{% endblock %}
