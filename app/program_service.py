@@ -406,6 +406,7 @@ def cost_reconciliation(db, period_id, snapshots=None):
     explicit source decisions and approved reallocations keep their semantics.
     """
     from .activity_mapping_service import activity_mapping_states
+    from types import SimpleNamespace
     period = db.get(ReportingPeriod, period_id)
     if snapshots is None:
         snapshots = [department_snapshot(db, period_id, d.id) for d in period_departments(db, period_id)]
@@ -417,8 +418,14 @@ def cost_reconciliation(db, period_id, snapshots=None):
     subprograms = {s.id: s for s in rows(db, SubProgram, period_id) if s.program_id in programs}
     cards = {c.id: c for c in rows(db, ReportCard, period_id)}
     states = activity_mapping_states(db, period_id)
-    live = {a.id: a for a in rows(db, Activity, period_id)}
-    conflicts = {aid: activity_source_disagreements(a) for aid, a in live.items()}
+    # Use the same serialized rows as the aggregate. Older frozen schema
+    # adapters omit source fields; absence is a warning, never a new DB query.
+    source_activities = {a['id']: SimpleNamespace(name=a['name'], cost_values=[SimpleNamespace(**{
+        **v, 'amount': Decimal(v['amount']) if v['amount'] is not None else None,
+        'source_amount': Decimal(v['source_amount']) if v.get('source_amount') is not None else None,
+        'source_resolution_json': v.get('source_resolution_json', '{}'),
+    }) for v in a['costs']]) for a in activities}
+    conflicts = {aid: activity_source_disagreements(a) for aid, a in source_activities.items()}
     members = defaultdict(list)
     for did in departments:
         members['department_total', did] = []
@@ -483,7 +490,7 @@ def cost_reconciliation(db, period_id, snapshots=None):
                 if conflict:
                     computed = conflict['computed_total']; original = conflict['source_total']
                     difference = computed - original if computed is not None else None
-                    errors.append(source_total_message(live[a['id']], year, kind, original, computed)
+                    errors.append(source_total_message(source_activities[a['id']], year, kind, original, computed)
                         + f' Fark: {format_number(difference, money=True)} TL. Kaynakla karşılaştırın.')
             difference = amount - source if amount is not None and source is not None else None
             if difference:
