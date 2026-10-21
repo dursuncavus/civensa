@@ -301,3 +301,23 @@ def test_visible_word_sections_keep_tracked_text_tables_and_images(db, import_cl
     target = create_period_record(db, import_context.user, {'year':'2028', 'base_period_id':import_context.period.id})
     original = records(db, import_context.period.id); copied = records(db, target.id)
     assert [(s.kind,s.title,s.position,s.content_json) for s in copied] == [(s.kind,s.title,s.position,s.content_json) for s in original]
+
+
+def test_parent_section_intro_without_subheadings_is_imported(db, import_client, import_context):
+    source = Document()
+    source.add_heading('Genel Bilgiler', level=1)
+    source.add_paragraph('Ana bölümün alt başlığı olmayan genel açıklaması.')
+    source.add_heading('Performans Bilgileri', level=1)
+    source.add_paragraph('Performans bölümünün giriş açıklaması.')
+    buffer = BytesIO(); source.save(buffer)
+    preview = scan(import_client, import_context.period.id, buffer.getvalue())
+    assert preview['can_apply'] and len(preview['general_sections']) == 2
+    assert [s['content']['text'] for s in preview['general_sections']] == [
+        'Ana bölümün alt başlığı olmayan genel açıklaması.', 'Performans bölümünün giriş açıklaması.']
+    assert records(db, import_context.period.id) == []
+    response = import_client.post(f'/api/import-batches/{preview["batch_id"]}/apply')
+    assert response.status_code == 200, response.text
+    manifest = {r['key']: r for r in completion_manifest(db, import_context.period.id)['rows']}
+    assert manifest['general']['status'] == manifest['performance']['status'] == 'Tamam'
+    assert import_client.post(f'/api/import-batches/{preview["batch_id"]}/revert').status_code == 200
+    assert records(db, import_context.period.id) == []

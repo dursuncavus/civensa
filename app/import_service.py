@@ -65,7 +65,7 @@ def parse_pp_import(data: bytes) -> dict:
 
     def finish():
         nonlocal current, paragraphs
-        if current is not None:
+        if current is not None and (paragraphs or normalized_title(current['title']) not in {'genel bilgiler', 'performans bilgileri'}):
             current['content']['text'] = '\n'.join(paragraphs).strip()
             sections.append(current)
         current = None; paragraphs = []
@@ -102,7 +102,6 @@ def parse_pp_import(data: bytes) -> dict:
         key = normalized_title(text)
         if key in {'genel bilgiler', 'performans bilgileri'}:
             finish(); context = 'performance' if key == 'performans bilgileri' else 'general'
-            continue
         family = section_type(text, context)
         is_heading = family or (style.startswith(('heading', 'başlık')) and text)
         if is_heading:
