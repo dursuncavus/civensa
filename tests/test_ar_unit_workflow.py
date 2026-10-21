@@ -126,7 +126,8 @@ def test_idare_uses_latest_approved_snapshot_after_reopen_edits_and_resubmit(sec
     during = client.get(f'/api/activity-sections/reports/{idare.id}').json()
     assert during['resources'] == before['resources']
     assert during['core'] == before['core']
-    assert during['unit_snapshots'] == before['unit_snapshots']
+    assert during['unit_manifest'] == before['unit_manifest']
+    assert 'unit_snapshots' not in during
     token = login(client, sample['strategy'].email)
     second = post(client, token, doc, 'approve').json()
     after = client.get(f'/api/activity-sections/reports/{idare.id}').json()

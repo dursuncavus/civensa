@@ -421,7 +421,6 @@ def report_data(db,user,document_id,use_freeze=True):
         result['unit_manifest']=[{'document_id':a.document_id,'approval_id':a.id,'sha256':a.sha256,
             'revision':p['revision'],'department_id':p['department_id'],'department':p['department']} for a,p in approved]
         result['missing_units']=missing_units
-        result['unit_snapshots']=[p for _,p in approved]
         indicators=[i for _,p in approved for i in p['core'].get('indicators',[])]
         core={'status':'ready' if approved and not missing_units and all(p['core']['status']=='ready' for _,p in approved) else 'empty',
             'total':sum(p['core']['total'] for _,p in approved),'verified':sum(p['core']['verified'] for _,p in approved),
