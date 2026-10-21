@@ -275,3 +275,13 @@ def test_ar_file_selected_during_pending_save_stays_unsaved(editor, db):
     db.expire_all()
     actual = db.scalar(select(ActualRevision).where(ActualRevision.report_indicator_id == editor.slots[0]).order_by(ActualRevision.revision.desc()))
     assert [f['filename'] for f in json.loads(actual.evidence_json)[0]['files']] == ['first.pdf', 'second.pdf']
+
+    # Recreating a row with identical text still removes its source identity and
+    # attachments. That structural edit must remain an unsaved draft.
+    values = {name: record.locator(f'[name="{name}"]').input_value()
+              for name in ('source_title', 'source_locator', 'source_revision')}
+    record.get_by_role('button', name='Kaynağı kaldır', exact=True).click()
+    record.get_by_role('button', name='Kaynak ekle', exact=True).click()
+    for name, value in values.items():
+        record.locator(f'[name="{name}"]').fill(value)
+    draft(record)

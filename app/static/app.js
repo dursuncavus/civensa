@@ -108,7 +108,7 @@ document.querySelectorAll('.tab').forEach(btn=>btn.addEventListener('click',()=>
 // baseline; edits made while a request is pending remain unsaved.
 const drafts=(()=>{
   const states=new WeakMap();
-  const fields=record=>[...record.querySelectorAll('[data-field], [data-actual-form] input:not([type="hidden"]), [data-actual-form] textarea, [data-actual-form] select')];
+  const fields=record=>[...record.querySelectorAll('[data-field], [data-actual-form] input:not([type="hidden"]), [data-actual-form] input[name="source_id"], [data-actual-form] textarea, [data-actual-form] select')];
   const key=field=>{
     if(field.closest('[data-actual-form]')&&field.name.startsWith('source_')){
       const peers=[...field.form.elements].filter(peer=>peer.name===field.name);
