@@ -11,6 +11,7 @@ from sqlalchemy.orm import Session
 
 from scripts import first_load_live as live
 from scripts.first_load_dryrun import disposable_database, local_test_url
+from tests.first_load_checkpoint import disposable_release50_database
 from app.models import (Activity, AuditLog, Department, EconomicValue, ImportBatch,
                         Indicator, IndicatorValue, Organization, ReportingPeriod, Submission, User)
 
@@ -22,7 +23,7 @@ def printed():
 
 @pytest.fixture
 def target():
-    with disposable_database(local_test_url()) as engine:
+    with disposable_release50_database(local_test_url()) as engine:
         with Session(engine) as db:
             org = Organization(name='Yerel ilk yükleme testi')
             actor = User(email='strategy@example.invalid', full_name='Strateji test',
@@ -371,3 +372,14 @@ def test_secret_cli_argument_is_rejected_without_echo(capsys):
     with pytest.raises(SystemExit):
         live.main(['--organization-id', '1', '--actor-id', '1', '--database-url', 'secret-connection'])
     assert 'secret-connection' not in capsys.readouterr().err
+
+
+@pytest.mark.postgres
+def test_live_scripts_still_refuse_new_application_schema():
+    # Application migrations must not widen the release-pinned operator tool.
+    with disposable_database(local_test_url()) as engine:
+        before = state(engine)
+        with Session(engine) as db:
+            with pytest.raises(live.Refusal, match='Hedef şema uyuşmuyor'):
+                live.require_head(db)
+        assert state(engine) == before

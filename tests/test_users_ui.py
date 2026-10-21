@@ -10,7 +10,10 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 import pytest
 from playwright.sync_api import sync_playwright, expect
 from sqlalchemy import select
+from sqlalchemy.orm import Session
 
+from app.db import get_db
+from app.main import app
 from app.models import AuditLog, User
 from tests.test_users_personal_accounts import accounts, csv_bytes, row
 
@@ -18,10 +21,17 @@ pytestmark = pytest.mark.postgres
 
 
 @pytest.fixture
-def local_accounts_http(accounts):
+def local_accounts_http(accounts, db):
     # A loopback HTTP bridge lets Chromium follow the app's actual 303 redirects.
-    # A single server thread also serializes access to the disposable DB Session.
     client = accounts[0]()
+    previous_database = app.dependency_overrides[get_db]
+    def request_database():
+        # Browser requests can overlap assertions on the fixture's Session.
+        # Match production's per-request lifetime: rollback/close must never
+        # close the assertion thread's in-use connection.
+        with Session(db.get_bind(), expire_on_commit=False) as request_db:
+            yield request_db
+    app.dependency_overrides[get_db] = request_database
     class Handler(BaseHTTPRequestHandler):
         def serve(self):
             body = self.rfile.read(int(self.headers.get('content-length', '0')))
@@ -43,6 +53,7 @@ def local_accounts_http(accounts):
         yield 'http://127.0.0.1:' + str(server.server_port)
     finally:
         server.shutdown(); server.server_close(); thread.join(timeout=5)
+        app.dependency_overrides[get_db] = previous_database
 
 
 def test_strategy_six_step_import_retirement_and_first_login(db, sample, accounts, local_accounts_http):

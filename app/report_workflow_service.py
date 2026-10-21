@@ -607,6 +607,8 @@ def final_decision(db,actor,org,candidate_id,action,version,sha,reason=''):
         event=event_notice(db,actor,candidate,action,state.state,destination,state.version+1,reason)
         if action=='final_approve' and candidate.activity_revision_id and not approval:
             approval=ActivityReportApproval(report_revision_id=candidate.activity_revision_id,created_by=actor.id);db.add(approval);db.flush()
+            from .activity_evidence_service import freeze
+            freeze(db,candidate.activity_revision_id)
         decision=ReportDecision(candidate_id=candidate.id,action=action,candidate_sha256=candidate.sha256,
             assignment_id=current.id,workflow_event_id=event.id,activity_approval_id=approval.id if approval else None)
         db.add(decision);db.flush();move(db,state,destination)
