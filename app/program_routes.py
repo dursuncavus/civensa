@@ -85,7 +85,7 @@ def register(app):
         economic_map={f"{v['category']}:{v['year']}:{v['value_kind']}":v['amount'] for v in snapshot['economics'] if v['program_group']==group and v['funding_type']==fund}
         from .draft_removal_service import removal_available
         return templates.TemplateResponse(request,'program.html',dict(user=user,department=db.get(Department,department_id),period=period,
-            snapshot=snapshot,cards=rows(db,ReportCard,period.id,department_id),subprograms=rows(db,SubProgram,period.id),
+            snapshot=snapshot,reconciliation=[r for r in cost_reconciliation(db,period.id) if r['department_id']==department_id],cards=rows(db,ReportCard,period.id,department_id),subprograms=rows(db,SubProgram,period.id),
             economic_map=economic_map,selected_group=group,selected_fund=fund,catalogue=rows(db,OfficialActivity,period.id), fields=CARD_FIELDS,errors=errors,warnings=warnings,
             editable=user.role=='department' and period.status!='closed' and (not sub or sub.status in {'draft','returned'}),
             removable=removal_available(db,user,department_id,period),
@@ -322,7 +322,7 @@ def register(app):
         return templates.TemplateResponse(request,'report_builder.html',dict(user=user,period=period,
             source_periods=db.scalars(select(ReportingPeriod).where(ReportingPeriod.id != period.id).order_by(ReportingPeriod.year.desc())).all(),
             section_copy_result=getattr(request.state, 'section_copy_result', None) or (json.loads(section_copy_audit.details)['new'] if section_copy_audit else None),
-            departments=period_departments(db,period.id),scopes=scopes,
+            departments=period_departments(db,period.id),scopes=scopes,reconciliation=cost_reconciliation(db,period.id),
             department_names={d.id:period_name(db,period.id,d) for d in period_departments(db,period.id)},
             sections=rows(db,ReportSection,period.id),catalogue=rows(db,OfficialActivity,period.id),responsibilities={i.id:[r.department_id for r in db.scalars(select(ActivityResponsibility).where(ActivityResponsibility.official_activity_id==i.id)).all()] for i in rows(db,OfficialActivity,period.id)},publications=rows(db,Publication,period.id)))
 
