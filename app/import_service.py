@@ -250,7 +250,9 @@ def _merge_unique_costs(existing: list, incoming: list):
             candidates = [] if row.get("amount") is None else [{
                 "amount": str(Decimal(str(row["amount"]))),
                 "locations": [{"table_number": row.get("table_number"),
-                               "row_number": row.get("row_number"), "raw_text": row.get("raw_text", "")}],
+                               "row_number": row.get("row_number"),
+                               **({"column_number": row['column_number']} if row.get('column_number') is not None else {}),
+                               "raw_text": row.get("raw_text", "")}],
             }]
         for candidate in candidates:
             amount = Decimal(candidate["amount"])
@@ -350,6 +352,7 @@ def consolidate_source_departments(parsed: dict) -> dict:
                 "activities": [],
                 "personnel": [],
                 "economic_tables": [],
+                "total_assertions": [],
             }
             order.append(key)
         else:
@@ -361,6 +364,7 @@ def consolidate_source_departments(parsed: dict) -> dict:
         target = grouped[key]
         target["blocks"].extend(dept.get("blocks", []))
         target["economic_tables"].extend(deepcopy(dept.get("economic_tables", [])))
+        target["total_assertions"].extend(deepcopy(dept.get("total_assertions", [])))
         target["activities"].extend(deepcopy(dept.get("activities", [])))
         target["personnel"] = _merge_unique_costs(target["personnel"], dept.get("personnel", []))
 
@@ -867,6 +871,9 @@ def apply_import_batch(db: Session, batch: ImportBatch, preserve_existing: bool 
     source_by_key = {department_key(d["name"]): d for d in plan["parsed"]["departments"]}
     mapping_by_key = {department_key(m["source_name"]): m for m in plan["mappings"]}
     snapshot = _build_preimport_snapshot(db, plan, period.id)
+    # Additive provenance in the existing transactional batch snapshot. Source
+    # assertions never become activities or participate in the revert hash.
+    comparison = snapshot['source_comparison'] = {'version': 1, 'departments': [], 'sections': []}
     if preserve_existing:
         # Existing departments are left byte-for-byte untouched. The snapshot only
         # tracks newly created departments so the batch remains safely reversible.
@@ -902,6 +909,9 @@ def apply_import_batch(db: Session, batch: ImportBatch, preserve_existing: bool 
             snapshot["created_department_ids"].append(dept.id)
 
         _delete_department_period_data(db, dept.id, period.id)
+        binding = {'department_id': dept.id, 'source': deepcopy(src),
+                   'indicator_ids': [], 'activity_ids': [], 'economic_ids': []}
+        comparison['departments'].append(binding)
         submission = db.scalar(select(Submission).where(Submission.department_id == dept.id, Submission.period_id == period.id))
         if not submission:
             submission = Submission(department_id=dept.id, period_id=period.id, status="draft")
@@ -910,6 +920,8 @@ def apply_import_batch(db: Session, batch: ImportBatch, preserve_existing: bool 
         block_subprograms = []
         block_cards = []
         for block_index, block in enumerate(src.get("blocks", []), 1):
+            indicator_ids = []
+            binding['indicator_ids'].append(indicator_ids)
             program = _get_or_create_program(db, period.id, block.get("program", ""))
             subprogram = _get_or_create_subprogram(db, period.id, program, block)
             block_subprograms.append(subprogram)
@@ -930,6 +942,7 @@ def apply_import_batch(db: Session, batch: ImportBatch, preserve_existing: bool 
                     data_source=_clean(item.get("data_source", "")), status="draft",
                 )
                 db.add(ind); db.flush(); result["indicators"] += 1
+                indicator_ids.append(ind.id)
                 seen_values = set()
                 for value in item.get("values", []):
                     year, kind = value.get("year"), value.get("kind")
@@ -957,6 +970,7 @@ def apply_import_batch(db: Session, batch: ImportBatch, preserve_existing: bool 
                 explanation=_clean(item.get("explanation", "")),
             )
             db.add(act); db.flush(); result["activities"] += 1
+            binding['activity_ids'].append(act.id)
             from .program_service import mark_source_disagreements
             seen_costs = set()
             for cost in item.get("costs", []):
@@ -1015,6 +1029,8 @@ def apply_import_batch(db: Session, batch: ImportBatch, preserve_existing: bool 
                         row.issue = (row.issue + ' Kaynak program bloklarının müdürlük kapsamını kontrol edin.').strip()
                 economic_rows[key] = row
                 db.add(row); result['economic_values'] += 1
+        db.flush()
+        binding['economic_ids'] = [row.id for row in economic_rows.values()]
         result["departments"] += 1
 
     result['sections_created'] = 0
@@ -1024,6 +1040,8 @@ def apply_import_batch(db: Session, batch: ImportBatch, preserve_existing: bool 
         snapshot['created_sections'] = []
     for item in general_section_plan(db, raw, period.id):
         if item['action'] != 'create':
+            if item['kind'] == 'table':
+                comparison['sections'].append({'source': item, 'id': item['target_ids'][0]})
             if item['action'] == 'conflict':
                 result['section_conflicts'].append({'title': item['title'], 'target_ids': item['target_ids'],
                     'message': f'“{item["title"]}” hedef dönemde farklı. Mevcut bölüm korundu; Kitap Bölümleri ekranında kaynakla karşılaştırın.'})
@@ -1034,6 +1052,9 @@ def apply_import_batch(db: Session, batch: ImportBatch, preserve_existing: bool 
         row = ReportSection(period_id=period.id, title=item['title'], kind=item['kind'],
                             position=item['position'], content_json=json_dumps(item['content'], ensure_ascii=False))
         db.add(row); created_sections.append(row)
+        if item['kind'] == 'table':
+            db.flush()
+            comparison['sections'].append({'source': item, 'id': row.id})
         result['sections_created'] += 1
     if created_sections:
         db.flush()
