@@ -335,3 +335,11 @@ def test_inactive_scope_row_disappearing_from_list_keeps_form_and_error(client, 
     assert 'pasif' in response.text and 'Kurum Yapısı' in response.text
     assert result['fields']['display_name']==data['display_name']
     assert result['fields']['reason']==data['reason']
+
+
+def test_unresolved_read_context_keeps_attempts_and_releases_display_transaction(client, db, sample):
+    response=client.post('/program/bozuk/cards?period_id=1',data={'period_id':'bozuk',
+        'goal':'  Korunan taslak  '},headers={'Accept':'text/html'})
+    assert response.status_code==422
+    assert 'Korunan taslak' in response.text
+    assert not db.in_transaction()

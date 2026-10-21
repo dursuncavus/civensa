@@ -152,34 +152,34 @@ def recover_dependency_form(request, body):
     from .main import active_period
     from .models import ReportingPeriod
     db.rollback()
-    period = None
-    for value in (request.query_params.get('period_id'), data.get('period_id')):
-        if value is not None and str(value).isascii() and str(value).isdecimal() and len(str(value)) < 19:
-            period = db.get(ReportingPeriod, int(value))
-            if period:
-                break
-    period = period or active_period(db)
-    if not period:
-        return None
-    department_id = request.path_params.get('department_id')
-    if department_id is not None:
-        if not str(department_id).isascii() or not str(department_id).isdecimal():
-            return None
-        department_id = int(department_id)
-    request.state.pp_attempt = (request.url.path, data, body)
-    # Do not carry the invalid/mismatched POST period into read authorization.
-    display_request = Request({**request.scope, 'query_string': urlencode({'period_id': period.id}).encode()})
     try:
-        response = screen(display_request, db, user, department_id, {**data, 'period_id': period.id})
-    except HTTPException:
-        # A read refusal must never replace the original guard's 422 or expose records.
-        return None
+        period = None
+        for value in (request.query_params.get('period_id'), data.get('period_id')):
+            if value is not None and str(value).isascii() and str(value).isdecimal() and len(str(value)) < 19:
+                period = db.get(ReportingPeriod, int(value))
+                if period:
+                    break
+        period = period or active_period(db)
+        if not period:
+            return None
+        department_id = request.path_params.get('department_id')
+        if department_id is not None:
+            if not str(department_id).isascii() or not str(department_id).isdecimal():
+                return None
+            department_id = int(department_id)
+        # Do not carry the invalid/mismatched POST period into read authorization.
+        display_request = Request({**request.scope, 'query_string': urlencode({'period_id': period.id}).encode()})
+        try:
+            response = screen(display_request, db, user, department_id, {**data, 'period_id': period.id})
+        except HTTPException:
+            # A read refusal must never replace the original guard's 422 or expose records.
+            return None
+        response.status_code = 422
+        return response
     finally:
         # Dependency cleanup may have run before the exception handler. Release
-        # the display transaction here as well; TemplateResponse is already rendered.
+        # every display transaction, including unresolved context and read refusals.
         db.rollback()
-    response.status_code = 422
-    return response
 
 
 class Controls(HTMLParser):
