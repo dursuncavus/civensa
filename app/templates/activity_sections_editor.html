@@ -5,7 +5,7 @@
 <link rel="stylesheet" href="/static/activity_sections.css">
 <p><a href="/activity-sections">← Tamamlanma görünümü</a></p>
 {% if user.role=='strategy' or (report.department_id and report.department_id==user.department_id) %}
-<p><a class="button" href="/activity-sections/reports/{{ report.id }}/export.docx">Word olarak indir</a></p>
+<p><a class="button" href="/activity-sections/reports/{{ report.id }}/export.docx">Word olarak indir</a> <a class="button" href="/activity-sections/reports/{{ report.id }}/export.pdf">PDF olarak indir</a></p>
 {% endif %}
 {% if form_error %}<div class="ar-error" role="alert">{{ form_error }} Girdiğiniz alanlar aşağıda korunmuştur.</div>{% endif %}
 <div class="ar-layout"><nav class="panel ar-tree" aria-label="EK-1 bölümleri">{% for s in report.sections %}<a href="?code={{ s.code }}" class="{% if s.code==section.code %}ar-selected{% endif %}" style="padding-left:{{ 12+s.depth*12 }}px"><span>{{ s.title }}</span><small>{{ statuses[s.status] }}</small></a>{% endfor %}</nav>
