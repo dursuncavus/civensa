@@ -56,6 +56,30 @@ def local_accounts_http(accounts, db):
         app.dependency_overrides[get_db] = previous_database
 
 
+@pytest.fixture
+def policy_browser():
+    with sync_playwright() as pw:
+        options = {'headless': True}
+        if os.getenv('CIVENSA_CHROMIUM_PATH'):
+            options['executable_path'] = os.environ['CIVENSA_CHROMIUM_PATH']
+        with pw.chromium.launch(**options) as browser:
+            yield browser
+
+
+def test_account_change_policy_visible_by_table_and_in_new_user_form(policy_browser, local_accounts_http):
+    policy = ('Rol veya müdürlük değişiminde hesap taşınmaz. '
+              'Mevcut hesabı gerekçe yazarak kapatın, kişiye yeni hesap açın. '
+              'Eski işlemler eski müdürlükte kalır.')
+    with policy_browser.new_page() as page:
+        page.goto(local_accounts_http + '/users')
+        expect(page.locator('#accountChangePolicy')).to_have_text(policy)
+        expect(page.locator('#accountChangePolicy')).to_be_visible()
+        expect(page.locator('#accountChangePolicy + .table-wrap table')).to_be_visible()
+        expect(page.locator('#newUserForm')).to_be_hidden()
+        page.get_by_role('button', name='Kullanıcı Ekle', exact=True).click()
+        expect(page.locator('#newUserForm').get_by_text(policy, exact=True)).to_be_visible()
+
+
 def test_strategy_six_step_import_retirement_and_first_login(db, sample, accounts, local_accounts_http):
     base = local_accounts_http
     with sync_playwright() as pw:
