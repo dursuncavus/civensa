@@ -317,10 +317,57 @@ def register(app):
         if not period:raise pp_error(404)
         from .structure_service import period_name
         scopes={r.department_id:r for r in rows(db,DepartmentScope,period.id)}
+        section_copy_audit = db.scalar(select(AuditLog).where(AuditLog.action == 'section_period_copy',
+            AuditLog.entity_id == period.id).order_by(AuditLog.id.desc()))
         return templates.TemplateResponse(request,'report_builder.html',dict(user=user,period=period,
+            source_periods=db.scalars(select(ReportingPeriod).where(ReportingPeriod.id != period.id).order_by(ReportingPeriod.year.desc())).all(),
+            section_copy_result=getattr(request.state, 'section_copy_result', None) or (json.loads(section_copy_audit.details)['new'] if section_copy_audit else None),
             departments=period_departments(db,period.id),scopes=scopes,reconciliation=cost_reconciliation(db,period.id),
             department_names={d.id:period_name(db,period.id,d) for d in period_departments(db,period.id)},
             sections=rows(db,ReportSection,period.id),catalogue=rows(db,OfficialActivity,period.id),responsibilities={i.id:[r.department_id for r in db.scalars(select(ActivityResponsibility).where(ActivityResponsibility.official_activity_id==i.id)).all()] for i in rows(db,OfficialActivity,period.id)},publications=rows(db,Publication,period.id)))
+
+    @app.get('/report-builder/sections.js', include_in_schema=False)
+    def section_script(user:User=Depends(require_strategy)):
+        # Same-origin external script preserves the app's strict CSP. Keep this
+        # task's UI asset with its templates; no shared static bundle is changed.
+        return Response(templates.env.get_template('pp_sections.js').render(), media_type='application/javascript')
+
+    @app.get('/report-builder/manifest')
+    def manifest(request:Request, period_id:int|None=None, db:Session=Depends(get_db), user:User=Depends(require_strategy)):
+        from .pp_manifest import completion_manifest
+        period = session_period(request, db, {'period_id': period_id} if period_id else None)
+        if not period: raise pp_error(404)
+        return templates.TemplateResponse(request, 'pp_manifest.html', dict(user=user, period=period,
+            manifest=completion_manifest(db, period.id), periods=db.scalars(select(ReportingPeriod).order_by(ReportingPeriod.year.desc())).all()))
+
+    @app.get('/report-builder/manifest.json')
+    def manifest_json(request:Request, period_id:int|None=None, db:Session=Depends(get_db), user:User=Depends(require_strategy)):
+        from .pp_manifest import completion_manifest
+        period = session_period(request, db, {'period_id': period_id} if period_id else None)
+        if not period: raise pp_error(404)
+        return completion_manifest(db, period.id)
+
+    @app.get('/report-builder/import/{batch_id}')
+    def section_import_preview(batch_id:int, request:Request, db:Session=Depends(get_db), user:User=Depends(require_strategy)):
+        from .main import import_batch_detail
+        batch = db.get(ImportBatch, batch_id)
+        if not batch: raise pp_error(404)
+        period = session_period(request, db, require=True)
+        if period.id != batch.period_id: raise pp_error(403)
+        return templates.TemplateResponse(request, 'pp_section_import.html', dict(user=user, period=period,
+            batch=batch, preview=import_batch_detail(batch_id, db, user)))
+
+    @app.post('/report-builder/copy-sections', dependencies=[Depends(require_pp_period)])
+    @recover_form(form_screen)
+    async def copy_sections(request:Request, db:Session=Depends(get_db), user:User=Depends(require_strategy)):
+        from .structure_service import copy_general_sections
+        data = await request.form()
+        period = session_period(request, db, data, require=True)
+        base = db.get(ReportingPeriod, integer(data.get('base_period_id'), 'Kaynak dönem'))
+        if not base: raise pp_error(404)
+        request.state.section_copy_result = await run_in_threadpool(copy_general_sections, db, user, base, period)
+        db.commit()
+        return builder(request=request, db=db, user=user, period_id=period.id)
 
     @app.post('/report-builder/scope', dependencies=[Depends(require_pp_period)])
     @recover_form(form_screen)
@@ -349,7 +396,12 @@ def register(app):
     async def section(request:Request,db:Session=Depends(get_db),user:User=Depends(require_strategy)):
         data=await request.form();pid=session_period(request,db,data).id
         if not db.get(ReportingPeriod,pid):raise pp_error(404)
-        obj=db.get(ReportSection,integer(data['id'])) if data.get('id') else None
+        from .structure_service import lock_organization
+        from .master_data_service import period_record
+        for oid in db.scalars(select(Organization.id).order_by(Organization.id)):
+            lock_organization(db, oid)
+        period_record(db, pid)
+        obj=db.get(ReportSection,integer(data['id']),populate_existing=True) if data.get('id') else None
         if data.get('id') and not obj:raise pp_error(404)
         if obj and obj.period_id!=pid:raise pp_error(403)
         title=str(data.get('title','')).strip();kind=data.get('kind','text');content=str(data.get('content',''))
