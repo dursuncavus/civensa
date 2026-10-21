@@ -260,7 +260,8 @@ def _link_subprograms(block_subprograms: list, activity_count: int, activities=N
 def build_department_plan(db: Session, parsed: dict, decisions=()) -> dict:
     consolidated = consolidate_source_departments(parsed)
     conflicts = source_conflicts(consolidated, decisions)
-    existing = db.scalars(select(Department).order_by(Department.name)).all()
+    existing = db.scalars(select(Department).order_by(Department.name)
+                          .execution_options(populate_existing=True)).all()
     existing_by_key = {}
     for dept in existing:
         existing_by_key.setdefault(department_key(dept.name), []).append(dept)
@@ -577,7 +578,26 @@ def _restore_department_state(db: Session, state: dict, period_id: int) -> None:
         db.delete(current)
 
 
+def _lock_import_context(db: Session, batch: ImportBatch) -> tuple[ImportBatch, Organization]:
+    # Lock order for apply/revert: batch -> institution -> department/report and
+    # shared program writes. Routes already lock the batch; never acquire another
+    # batch lock while holding the institution lock. Reuse check_department_name's
+    # institution row lock so imports also serialize with manual creation/renames.
+    # Hold both locks until the caller commits/rolls back. Refresh cached previews
+    # before checking status, and plan only after the institution lock is acquired.
+    batch_id = batch.id
+    batch = db.scalar(select(ImportBatch).where(ImportBatch.id == batch_id)
+                      .with_for_update().execution_options(populate_existing=True))
+    if batch is None:
+        raise ValueError(f"İçe aktarma paketi #{batch_id} bulunamadı. Dosyayı yeniden yükleyip yeni önizleme oluşturun.")
+    organization = db.scalar(select(Organization).order_by(Organization.id).limit(1).with_for_update())
+    if not organization:
+        raise ValueError(f"İçe aktarma paketi #{batch_id} için kurum kaydı bulunamadı. Kurum Yapısı ekranında kurum kaydını kontrol edip yeniden deneyin.")
+    return batch, organization
+
+
 def revert_import_batch(db: Session, batch: ImportBatch) -> dict:
+    batch, _ = _lock_import_context(db, batch)
     can_revert, reason = import_revert_status(db, batch)
     if not can_revert:
         raise ValueError(reason)
@@ -634,14 +654,7 @@ def revert_import_batch(db: Session, batch: ImportBatch) -> dict:
 
 
 def apply_import_batch(db: Session, batch: ImportBatch, preserve_existing: bool = False) -> dict:
-    # Serialize every caller, including CLI/service callers, before reading the
-    # status or building a department plan. Refresh the identity-map entry too:
-    # a waiting session may already have cached this batch as a preview.
-    batch_id = batch.id
-    batch = db.scalar(select(ImportBatch).where(ImportBatch.id == batch_id)
-                      .with_for_update().execution_options(populate_existing=True))
-    if batch is None:
-        raise ValueError(f"İçe aktarma paketi #{batch_id} bulunamadı. Dosyayı yeniden yükleyip yeni önizleme oluşturun.")
+    batch, organization = _lock_import_context(db, batch)
     if batch.status != "preview":
         raise ValueError(f"Bu içe aktarma paketi artık önizleme durumunda değil. Paket #{batch.id} için tekrar uygulama durduruldu. İçe aktarma geçmişinden sonucu kontrol edin; yeni veri için yeni önizleme oluşturun.")
     period = db.get(ReportingPeriod, batch.period_id)
@@ -672,10 +685,6 @@ def apply_import_batch(db: Session, batch: ImportBatch, preserve_existing: bool 
     if plan["unresolved"]:
         names = ", ".join(x["source_name"] for x in plan["unresolved"][:5])
         raise ValueError(f"Müdürlük eşleştirmesi netleşmeden içe aktarma uygulanamaz: {names}")
-
-    organization = db.scalar(select(Organization).order_by(Organization.id))
-    if not organization:
-        raise ValueError("Kurum kaydı bulunamadı.")
 
     source_by_key = {department_key(d["name"]): d for d in plan["parsed"]["departments"]}
     mapping_by_key = {department_key(m["source_name"]): m for m in plan["mappings"]}
