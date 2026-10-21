@@ -92,7 +92,7 @@ def install(app, templates):
 
     @app.exception_handler(StarletteHTTPException)
     async def http_error(request, exc):
-        if not is_pp_path(request.url.path) or exc.status_code < 400:
+        if (not is_pp_path(request.url.path) and not hasattr(exc, 'pp_errors')) or exc.status_code < 400:
             return await http_exception_handler(request, exc)
         body = payload(exc)
         if exc.status_code == 422 and 'text/html' in request.headers.get('accept', ''):

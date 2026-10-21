@@ -41,7 +41,7 @@ def migrated(request, tmp_path):
         with Session(engine, expire_on_commit=False) as db:
             sample = sample_fixture.__wrapped__(db)
             actor_id, period_id = sample['strategy'].id, sample['period'].id
-        assert migrate('upgrade', 'head').returncode == 0
+        assert migrate('upgrade', 'c067a1b2c3d4').returncode == 0
         yield engine, migrate, actor_id, period_id
     finally:
         engine.dispose()

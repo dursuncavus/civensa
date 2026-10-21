@@ -35,7 +35,7 @@ def financial_context(db,user,doc,report):
         'entry_columns':service.ENTRY_FIELDS,'entry_titles':{'assets':'Varlıklar ve Yükümlülükler','aid':'Yardım Yapılan Birlik ve Kuruluşlar','audit':'Malî Denetim Sonuçları','explanations':'Birim Sapma Açıklamaları'},
         'financial_slots':service.SLOTS,
         'financial_central':not report['frozen'] and not doc.department_id and (user.role=='strategy' or sections.finance(db,user)),
-        'financial_own':not report['frozen'] and bool(doc.department_id and (user.role=='strategy' or doc.department_id==user.department_id)),
+        'financial_own':not report['frozen'] and report.get('workflow',{}).get('status')!='submitted' and bool(doc.department_id and (user.role=='strategy' or doc.department_id==user.department_id)),
         'financial_departments':departments,
         'financial_programs':db.scalars(select(Program).where(Program.period_id==doc.period_id)).all(),
         'financial_subprograms':db.scalars(select(SubProgram).where(SubProgram.period_id==doc.period_id)).all(),
