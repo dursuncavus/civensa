@@ -56,18 +56,18 @@ CIV-008'in D9 sürüm kapısı bu görevde yeni bir D ölçütü olarak genişle
 
 ## Open items in priority order for 1 January
 
-Sıra, önce canlı ilk yükleme ve müdürlük veri girişi, ardından Strateji inceleme/onayı, ardından kitap/Word çıktısına etkiye göredir; aynı grupta veri kaybı ve kilitlenme öne alınır. Boyutlar kalan iş içindir: **S ≤ yarım gün, M ≤ iki gün, L > iki gün**; kullanıcı/kurum kararı ve rollout bekleme süresi dahil değildir. Aşağıdaki 8 satır yukarıdaki bütün OPEN/PARTIAL kayıtları kapsar; UNKNOWN kayıt yoktur. Canlı kontrol burada yapılması önerilen bir işlem değildir; ayrı yetkili iş paketine aittir.
+Sıra, önce canlı ilk yükleme ve müdürlük veri girişi, ardından Strateji inceleme/onayı, ardından kitap/Word çıktısına etkiye göredir; aynı grupta veri kaybı ve kilitlenme öne alınır. Boyutlar kalan iş içindir: **S ≤ yarım gün, M ≤ iki gün, L > iki gün**; kullanıcı/kurum kararı ve rollout bekleme süresi dahil değildir. Sıra numaraları önceki öncelik sırasını korur; tamamlanan kayıtlar çıkarılmıştır. Aşağıdaki 8 satır yukarıdaki bütün OPEN/PARTIAL kayıtları kapsar; UNKNOWN kayıt yoktur. Canlı kontrol burada yapılması önerilen bir işlem değildir; ayrı yetkili iş paketine aittir.
 
 | Sıra | Kayıt | Etki grubu | Kalan iş / çıkış ölçütü | Boyut |
 | --- | --- | --- | --- | --- |
 | 1 | PP-19 | İlk yükleme | Gerçek runtime rolü ve geri dönüş/yedek kanıtıyla ayrı rollout kapısını kapat. | L |
 | 2 | PP-05 | İlk yükleme | Aynı batch'in eşzamanlı uygulamasında tek müdürlük ve tek sonuç kanıtla; strict xfail'i kapat. | M |
-| 3 | PP-02 | İlk yükleme | Genel bölümler dahil kapsam manifesti, eksik işler ve bilinçli dönem devrini tamamla. | L |
-| 4 | PP-11 | Strateji incelemesi | Tüm kaynak toplamları/konumları ve güncel değerler için tam karşılaştırma sağla. | L |
-| 5 | PP-14 | Strateji onayı | Bütçe dışı onaylı veri hataları için gerekçeli düzeltme/yeniden onay/yeni yayın yolunu tamamla. | L |
-| 6 | PP-22 | Strateji sürüm kararı | Dar hazırlık yanıtını açık adlandır; tüm zorunlu kapıları kanıtlarıyla birleştir. | M |
-| 7 | PP-16 | Kitap / Word | Güncel program-alt program-müdürlük ara toplamlarını tamlık ve kaynak mutabakatıyla çıktıya bağla. | L |
-| 8 | PP-24 | Kitap / Word | Resmî PP referansı üzerinde büyük Word/PDF kabulünü kaydet; dizgi işlerini çıkan bulgulara göre ayır. | M |
+| 4 | PP-02 | İlk yükleme | Genel bölümler dahil kapsam manifesti, eksik işler ve bilinçli dönem devrini tamamla. | L |
+| 9 | PP-11 | Strateji incelemesi | Tüm kaynak toplamları/konumları ve güncel değerler için tam karşılaştırma sağla. | L |
+| 10 | PP-14 | Strateji onayı | Bütçe dışı onaylı veri hataları için gerekçeli düzeltme/yeniden onay/yeni yayın yolunu tamamla. | L |
+| 11 | PP-22 | Strateji sürüm kararı | Dar hazırlık yanıtını açık adlandır; tüm zorunlu kapıları kanıtlarıyla birleştir. | M |
+| 13 | PP-16 | Kitap / Word | Güncel program-alt program-müdürlük ara toplamlarını tamlık ve kaynak mutabakatıyla çıktıya bağla. | L |
+| 14 | PP-24 | Kitap / Word | Resmî PP referansı üzerinde büyük Word/PDF kabulünü kaydet; dizgi işlerini çıkan bulgulara göre ayır. | M |
 
 ## Doğrulama ve onay sınırı
 
