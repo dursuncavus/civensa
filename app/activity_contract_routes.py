@@ -239,6 +239,7 @@ def register(app):
         except HTTPException as error:
             if item and error.status_code in {422, 409, 413}:
                 report = service.report_data(db, user, item.report_revision_id)
+                indicator = next(row for row in report['indicators'] if row['report_indicator_id'] == item.id)
                 # Restore server-owned attachment lists; retain every attempted text value.
                 previous_sources = {s.get('source_id'): s for r in report['indicators'] if r['report_indicator_id'] == item.id
                     for actual in r['actuals'] for s in actual['evidence'] if s.get('source_id')}
@@ -253,7 +254,7 @@ def register(app):
                 return templates.TemplateResponse(request, 'activity_contract_detail.html',
                     {'user': user, 'report': report, 'publications': pubs,
                      'attempted_slot': report_indicator_id, 'attempted': dict(data), 'attempted_sources': evidence,
-                     'form_error': message, 'error_field': field, 'error_source_index': detail.get('source_index')}, status_code=error.status_code)
+                     'form_error': f"{indicator['definition']['name']} — {message}", 'error_field': field, 'error_source_index': detail.get('source_index')}, status_code=error.status_code)
             return ui_error(request, user, error, back)
 
     @app.post('/activity-reports/revisions/{revision_id}/approve')
