@@ -179,10 +179,10 @@ def test_department_history_display(client, db, sample, actor):
     response = client.get(f"/department/{sample['department'].id}?period_id={sample['period'].id}")
     assert response.status_code == 200
     assert "Revizyon 1 · İade edildi</b>" in response.text
-    assert "Revizyon 1 · İncelemede</b>" in response.text
+    assert "Revizyon 1 · İncelemeye gönderildi</b>" in response.text
     expected_actor = {"user": "Test (Personel)", "strategy": "Strateji (Müdür)", None: "Sistem"}[actor]
     assert f"21.10.2026 01:05 TSİ · {expected_actor}" in response.text
-    assert response.text.index("Revizyon 1 · İade edildi") < response.text.index("Revizyon 1 · İncelemede")
+    assert response.text.index("Revizyon 1 · İade edildi") < response.text.index("Revizyon 1 · İncelemeye gönderildi")
     db.expire_all()
     assert [(e.id, e.created_at, e.actor_user_id) for e in db.scalars(select(SubmissionEvent))] == before
 
@@ -214,3 +214,89 @@ def test_activity_mapping_history_display(client, db, sample, actor):
     assert response.text.index("İşlem latest") < response.text.index("İşlem older")
     db.expire_all()
     assert [(a.id, a.created_at, a.user_id, a.details) for a in db.scalars(select(AuditLog))] == before
+
+
+@pytest.mark.postgres
+def test_activity_mapping_reverted_batch_display(client, db, sample, monkeypatch):
+    import csv
+    import io
+    import re
+    from app import models
+    from app.main import app, require_user, MAPPING_CSV_HEADERS
+    from app.models import Activity, AuditLog
+
+    app.dependency_overrides[require_user] = lambda: sample["strategy"]
+    stamp = datetime(2026, 10, 20, 11, 5, tzinfo=timezone.utc)
+    monkeypatch.setattr(models, "datetime", SimpleNamespace(now=lambda _: stamp))
+    sample["activity"].subprogram_id = None
+    second = Activity(period_id=sample["period"].id, department_id=sample["department"].id,
+                      name="İkinci faaliyet")
+    db.add(second)
+    db.commit()
+
+    def apply_batch(activity):
+        data = io.StringIO()
+        writer = csv.DictWriter(data, fieldnames=MAPPING_CSV_HEADERS)
+        writer.writeheader()
+        writer.writerow({"Faaliyet ID": activity.id, "Müdürlük": sample["department"].name,
+                         "Faaliyet": activity.name,
+                         "Seçilecek Program / Alt Program":
+                         f"{sample['subprogram'].program.name} / {sample['subprogram'].name}"})
+        response = client.post(f"/api/activity-mappings/import-apply?period_id={sample['period'].id}",
+            files={"file": ("queue.csv", data.getvalue().encode("utf-8-sig"), "text/csv")})
+        assert response.status_code == 200, response.text
+        return response.json()["batch_id"]
+
+    reverted = apply_batch(sample["activity"])
+    applied = apply_batch(second)
+    # A different user performs the revert; the display must use that audit actor/time.
+    sample["user"].role = "strategy"
+    db.commit()
+    app.dependency_overrides[require_user] = lambda: sample["user"]
+    stamp = datetime(2026, 10, 20, 22, 5, tzinfo=timezone.utc)
+    response = client.post(f"/api/activity-mappings/batches/{reverted}/revert?period_id={sample['period'].id}")
+    assert response.status_code == 200, response.text
+    db.expire_all()
+    from sqlalchemy import event
+    revert_queries = []
+
+    def record_revert_query(execute_state):
+        if execute_state.is_select:
+            params = execute_state.statement.compile().params
+            if "activity_mapping_csv_revert" in params.values():
+                revert_queries.append(execute_state.statement)
+
+    event.listen(db, "do_orm_execute", record_revert_query)
+    try:
+        response = client.get(f"/activity-mapping?period_id={sample['period'].id}")
+    finally:
+        event.remove(db, "do_orm_execute", record_revert_query)
+    assert len(revert_queries) == 1  # Both displayed batches share one revert lookup.
+    assert response.status_code == 200
+    items = re.findall(r'<div class="snapshot-item">(.*?)</div>', response.text)
+    reverted_item = next(item for item in items if f"İşlem {reverted}" in item)
+    applied_item = next(item for item in items if f"İşlem {applied}" in item)
+    assert f"Geri alındı · İşlem {reverted}" in reverted_item
+    assert "21.10.2026 01:05 TSİ · Test (Personel)" in reverted_item
+    assert "Uygulandı" not in reverted_item
+    assert "revert-mapping-batch" not in reverted_item
+    assert "20.10.2026 14:05 TSİ · Strateji (Müdür)" in applied_item
+    assert f"Uygulandı · İşlem {applied}" in applied_item
+    assert f'data-batch="{applied}"' in applied_item
+    assert len(list(db.scalars(select(AuditLog).where(AuditLog.action == "activity_mapping_csv")))) == 2
+
+
+@pytest.mark.parametrize("raw,expected", [
+    ("submitted", "İncelemeye gönderildi"), ("approve", "Onaylandı"),
+    ("return", "İade edildi"), ("future", "Bilinmeyen işlem (future)"),
+    (None, "Bilinmeyen işlem (None)"), ("", "Bilinmeyen işlem ()"),
+])
+def test_event_labels(raw, expected):
+    from app.pp_display import event_label
+    assert event_label(raw) == expected
+
+
+def test_unknown_event_remains_escaped():
+    from app.main import templates
+    html = templates.env.from_string("{{ value|event_label }}").render(value="<script>")
+    assert html == "Bilinmeyen işlem (&lt;script&gt;)"
