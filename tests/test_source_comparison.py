@@ -89,7 +89,7 @@ def test_apply_stores_totals_and_compares_shared_current_subtotal(db, import_con
 
 
 @pytest.mark.parametrize('case,expected', [('match', 'Eşleşiyor'), ('changed', 'Fark var'),
-    ('missing_store', 'Kayıtta yok'), ('missing_source', 'Kaynakta yok')])
+    ('missing_store', 'Kayıtta yok'), ('null_store', 'Kayıtta yok'), ('missing_source', 'Kaynakta yok')])
 def test_statuses_and_missing_values(db, import_context, case, expected):
     from app.models import IndicatorValue
     _, binding = imported(db, import_context)
@@ -97,6 +97,7 @@ def test_statuses_and_missing_values(db, import_context, case, expected):
     current = db.scalar(select(IndicatorValue).where(IndicatorValue.indicator_id == iid, IndicatorValue.year == 2027))
     if case == 'changed': current.value = Decimal('99')
     if case == 'missing_store': db.delete(current)
+    if case == 'null_store': current.value = None
     if case == 'missing_source':
         db.add(IndicatorValue(indicator_id=iid, year=2030, value_kind='forecast', value=Decimal('0')))
     db.commit()
@@ -351,3 +352,34 @@ def test_historical_preview_decisions_without_columns_still_apply_and_compare(db
     rows = [r for r in comparison(db, import_context)['rows'] if r['model'] == 'personnel' and r['year'] == 2027]
     assert {r['status'] for r in rows} == {'Eşleşiyor', 'Kararla değişti'}
     assert all(r['column'] == 'Bilinmiyor' and 'Eski önizleme kaynak seçimi doğrulandı.' in r['decision'] for r in rows)
+
+
+def test_current_record_without_any_values_stays_visible(db, import_context):
+    _, binding = imported(db, import_context)
+    activity = Activity(period_id=import_context.period.id, department_id=binding['department_id'], name='Henüz tutarı girilmemiş faaliyet')
+    db.add(activity); db.commit()
+    row = next(r for r in comparison(db, import_context)['rows'] if r['record'] == 'Faaliyet: Henüz tutarı girilmemiş faaliyet')
+    assert row['status'] == 'Kaynakta yok' and row['stored_amount'] == '—'
+    assert 'henüz girilmemiş' in row['note']
+
+
+def test_existing_budget_decision_explains_only_its_recorded_amount(db, import_context):
+    from app.models import ActivityCostValue, BudgetOperation, BudgetOperationLine
+    _, binding = imported(db, import_context)
+    current = db.scalar(select(ActivityCostValue).where(ActivityCostValue.activity_id == binding['activity_ids'][0],
+        ActivityCostValue.year == 2027, ActivityCostValue.funding_type == 'total'))
+    original = current.amount
+    operation = BudgetOperation(organization_id=import_context.org.id, period_id=import_context.period.id,
+        actor_id=import_context.user.id, year=2027, value_kind='budget', phase='pre_publication',
+        reference_type='mayor_instruction', reference_date='2026-10-21', reference_number='K-73',
+        reason='Kayıtlı bütçe aktarma gerekçesi.', request_json='{}', preview_json='{}')
+    db.add(operation); db.flush()
+    db.add(BudgetOperationLine(operation_id=operation.id, department_id=binding['department_id'],
+        value_table='activity_cost_values', value_id=current.id, label='Park bakımı', funding_type='total',
+        before=original, after=original+Decimal('10'), before_json='{}', after_json='{}'))
+    current.amount += Decimal('10'); db.commit()
+    row = next(r for r in comparison(db, import_context)['rows'] if r['model'] == 'activity' and r['year'] == 2027 and r['funding'] == 'Toplam')
+    assert row['status'] == 'Kararla değişti' and 'K-73' in row['decision'] and operation.reason in row['decision']
+    current.amount += Decimal('1'); db.commit()
+    row = next(r for r in comparison(db, import_context)['rows'] if r['model'] == 'activity' and r['year'] == 2027 and r['funding'] == 'Toplam')
+    assert row['status'] == 'Fark var' and 'güncel tutarı açıklamıyor' in row['note']

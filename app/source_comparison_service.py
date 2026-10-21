@@ -108,7 +108,7 @@ def source_comparison(db, period_id, department_id=None):
         return decision, 'Önceki karar güncel tutarı açıklamıyor: ' + ' | '.join(history) if history and not valid else ''
 
     def add(source, current, *, batch=None, payload=None, did=None, label='', model='', owner=None,
-            note='', decision=None, present=None, money=True, department_name=None):
+            note='', decision=None, present=None, money=True, department_name=None, incomplete=False):
         source = source or {}
         amount = source.get('amount', source.get('value'))
         stored = getattr(current, 'amount', getattr(current, 'value', None)) if current is not None else None
@@ -120,7 +120,7 @@ def source_comparison(db, period_id, department_id=None):
         elif amount is None:
             status = 'Kaynakta yok'
         elif not present or stored is None:
-            status = 'Kayıtta yok' if not present else 'Fark var'
+            status = 'Fark var' if incomplete and present else 'Kayıtta yok'
         elif _same(amount, stored) and state == 'verified':
             status = 'Eşleşiyor'
         elif decision and state == 'verified':
@@ -186,6 +186,7 @@ def source_comparison(db, period_id, department_id=None):
                     note = kwargs.get('note', '')
                     if not evidence and current is None:
                         kwargs['present'] = True
+                        kwargs['incomplete'] = True
                         note = (note + ' Eski içe aktarmada kayıt kimliği saklanmadı; güncel kayıt eşleştirmesi Bilinmiyor. Kaynak ve kayıt kimliklerini kontrol edin.').strip()
                     # An import decision applies only to its exact candidates and
                     # chosen stored amount. A later unexplained edit stays red.
@@ -302,7 +303,7 @@ def source_comparison(db, period_id, department_id=None):
                 decision = {'formatted': ' | '.join(dict.fromkeys(proofs))} if explained and proofs and _same(baseline, value.get('amount')) else None
                 present = bool(subtotal and subtotal['activity_ids']) or any(db.get(Activity, aid) for aid in ids)
                 emit(value, current, f"Kaynak toplamı: {value['label']}", 'total', did,
-                    note=note, decision=decision, present=present)
+                    note=note, decision=decision, present=present, incomplete=True)
 
         # Institutional table amounts are visible to Strategy only. Keep exact
         # source cells, including numbers in tables that were retained as a conflict.
@@ -354,6 +355,19 @@ def source_comparison(db, period_id, department_id=None):
                 current, did=current.department_id, label=(f'{title}: {ECONOMIC_CATEGORIES.get(current.category, UNKNOWN)} / '
                     f'{PROGRAM_GROUPS.get(current.program_group, UNKNOWN)}' if tag == 'economic' else title),
                 model=tag, owner=current.department_id)
+    # Empty newly entered records are still visible; an absent value collection
+    # must not make a user's entire activity/indicator disappear from the screen.
+    owners_seen = {(r['model'], r['owner_id']) for r in records}
+    for model, value_model, foreign_key, tag, title in (
+        (Indicator, IndicatorValue, 'indicator_id', 'indicator', 'Gösterge'),
+        (Activity, ActivityCostValue, 'activity_id', 'activity', 'Faaliyet'),
+    ):
+        for owner in db.scalars(select(model).where(model.period_id == period_id,
+                ~model.id.in_(select(getattr(value_model, foreign_key))))):
+            if (department_id is not None and owner.department_id != department_id) or (tag, owner.id) in owners_seen:
+                continue
+            add(None, None, did=owner.department_id, label=f'{title}: {owner.name}', model=tag, owner=owner.id,
+                note='Bu güncel kaydın kaynak hücresi bulunamadı; güncel değerleri de henüz girilmemiş.')
     if department_id is None:
         for section in db.scalars(select(ReportSection).where(ReportSection.period_id == period_id, ReportSection.kind == 'table')):
             for ri, cells in enumerate(json.loads(section.content_json).get('rows', [])):
