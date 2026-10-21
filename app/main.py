@@ -42,8 +42,7 @@ from . import login_throttling
 from . import released_permissions
 from .seed import seed
 from .template_parser import analyze_template
-from .data_importer import parse_performance_docx
-from .import_service import build_department_plan, apply_import_batch, import_revert_status, revert_import_batch, import_validation_errors
+from .import_service import build_department_plan, apply_import_batch, import_revert_status, revert_import_batch, import_validation_errors, parse_pp_import, general_section_plan
 from .config import validate_runtime_settings, session_secret, cookie_secure, demo_seed_enabled, is_production
 from .file_security import read_upload_limited, validate_office_zip
 from .report_export import build_department_docx
@@ -1725,7 +1724,7 @@ async def data_import_preview(period_id: int, file: UploadFile = File(...), db: 
     data = await read_upload_limited(file, 30 * 1024 * 1024, "Veri dosyası")
     validate_office_zip(data, ".docx")
     try:
-        parsed = parse_performance_docx(data)
+        parsed = parse_pp_import(data)
     except Exception as e:
         raise HTTPException(422, f"Performans verisi okunamadı: {e}")
     plan = build_department_plan(db, parsed)
@@ -1749,6 +1748,8 @@ async def data_import_preview(period_id: int, file: UploadFile = File(...), db: 
         "ok": True, "batch_id": batch.id, "status": batch.status,
         "summary": plan["summary"], "warnings": warnings,
         "errors": errors, "coverage_items": plan["parsed"].get("coverage_items", []),
+        "general_sections": general_section_plan(db, parsed, period.id),
+        "section_preview_url": f'/report-builder/import/{batch.id}?period_id={period.id}',
         "conflicts": plan["conflicts"], "decisions": json.loads(batch.decisions_json or "[]"),
         "review_items": plan["parsed"].get("review_items", []),
         "departments": preview_departments, "mappings": plan["mappings"],
@@ -1775,6 +1776,8 @@ def import_batch_detail(batch_id: int, db: Session = Depends(get_db), user: User
         "id": batch.id, "filename": batch.filename, "status": batch.status,
         "summary": plan["summary"], "warnings": warnings,
         "errors": errors, "coverage_items": plan["parsed"].get("coverage_items", []),
+        "general_sections": general_section_plan(db, parsed, batch.period_id),
+        "section_preview_url": f'/report-builder/import/{batch.id}?period_id={batch.period_id}',
         "conflicts": plan["conflicts"], "decisions": json.loads(batch.decisions_json or "[]"),
         "review_items": plan["parsed"].get("review_items", []),
         "departments": [{
