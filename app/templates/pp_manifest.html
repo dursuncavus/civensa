@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+{% block page_title %}PP Tamamlanma Listesi{% endblock %}
+{% block page_subtitle %}{{ period.year }} · Resmî bölümler ve tablo türleri{% endblock %}
+{% block content %}
+<section>
+<form method="get" action="/report-builder/manifest"><label>Raporlama dönemi<select name="period_id">{% for p in periods %}<option value="{{ p.id }}" {{ 'selected' if p.id==period.id else '' }}>{{ p.year }}</option>{% endfor %}</select></label><button class="button">Dönemi Göster</button></form>
+<p><a class="button" href="/report-builder?period_id={{ period.id }}">Kitap Bölümleri ve Dönem Kopyalama</a> <a class="button" href="/dashboard?period_id={{ period.id }}">Word İçe Aktarma</a></p>
+<p><b>Tamam:</b> içerik var. <b>Boş:</b> kayıt var, içerik yok. <b>Eksik:</b> kayıt yok. Adet, ilgili bölüm/tablo veya veri kaydı sayısıdır. Sıfır tutarı içerik sayılır.</p>
+<p class="muted">Bu liste içerik varlığını gösterir. Mali tutarlılık ve yayın onayları ayrıca kontrol edilir. Toplam tabloları, mevcut mali kayıtlardan üretilebiliyorsa listede gösterilir.</p>
+<div class="table-wrap"><table id="pp-manifest"><thead><tr><th>Bölüm / Tablo Adı</th><th>Tür</th><th>Durum</th><th>Adet</th><th>İşlem</th></tr></thead><tbody>
+{% for row in manifest.rows %}<tr data-key="{{ row.key }}"><td>{{ row.name }}</td><td>{{ row.kind }}</td><td><span class="{{ 'ok' if row.status=='Tamam' else 'bad' }}">{{ row.status }}</span></td><td>{{ row.count }}</td><td><a href="{{ row.href }}">İçeriği Aç</a></td></tr>{% endfor %}
+</tbody></table></div>
+<p class="muted">Kapsam kaynağı: {{ manifest.source }}</p>
+</section>
+{% endblock %}

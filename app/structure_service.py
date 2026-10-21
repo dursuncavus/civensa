@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session
 
 from .models import (Activity, ActivityCatalogueLink, ActivityResponsibility, AuditLog,
     Department, DepartmentScope, Indicator, OfficialActivity, Organization, ReportCard,
-    ReportingPeriod, StructureChange, StructureChangeCancellation, StructureChangeLink,
+    ReportingPeriod, ReportSection, StructureChange, StructureChangeCancellation, StructureChangeLink,
     StructureChangeTransfer, Submission)
 from .master_data_service import audit_change, check_department_name, name_value
 
@@ -320,7 +320,70 @@ def unresolved_work(db, base_id, target_year):
     return result
 
 
+def copy_general_sections(db, actor, base, period):
+    """Explicit carry-forward; existing target records are never replaced.
+
+    Audit links identify a previously copied section even after its title changes.
+    Organization -> target period is also the import/manual section lock order.
+    """
+    from .pp_errors import pp_error
+    from .pp_manifest import section_identity
+    if actor.role != 'strategy':
+        raise pp_error(403)
+    if base.id == period.id:
+        raise pp_error(422, 'Kaynak ve hedef dönem aynı. Bölüm kopyalamak için farklı bir kaynak dönem seçin.', 'period_id')
+    for oid in db.scalars(select(Organization.id).order_by(Organization.id)):
+        lock_organization(db, oid)
+    from .master_data_service import period_record
+    period_record(db, period.id)
+    targets = db.scalars(select(ReportSection).where(ReportSection.period_id == period.id)
+                         .order_by(ReportSection.position, ReportSection.id)
+                         .execution_options(populate_existing=True)).all()
+    history = db.scalars(select(AuditLog).where(AuditLog.action == 'section_period_copy',
+        AuditLog.entity_type == 'reporting_periods', AuditLog.entity_id == period.id).order_by(AuditLog.id)).all()
+    previous = [json.loads(row.details)['new'] for row in history]
+    previous = [row for row in previous if row['base_period_id'] == base.id]
+    links = {int(k): v for row in previous for k, v in row['links'].items()}
+    by_id = {row.id: row for row in targets}
+    consumed = set()
+    result = {'base_period_id': base.id, 'copied': 0, 'kept': 0, 'conflicts': [], 'links': dict(links)}
+    for source in db.scalars(select(ReportSection).where(ReportSection.period_id == base.id)
+                             .order_by(ReportSection.position, ReportSection.id)):
+        matches = [by_id[links[source.id]]] if source.id in links and links[source.id] in by_id else [
+            row for row in targets if row.id not in consumed and section_identity(row) == section_identity(source)][:1]
+        if matches:
+            consumed.update(row.id for row in matches)
+            result['kept'] += len(matches)
+            result['links'][source.id] = matches[0].id
+            if len(matches) > 1 or any((row.title, row.kind, row.position, row.content_json) !=
+                    (source.title, source.kind, source.position, source.content_json) for row in matches):
+                result['conflicts'].append({'source_id': source.id, 'title': source.title,
+                    'target_ids': [row.id for row in matches],
+                    'message': f'“{source.title}” hedef dönemde farklı içerik taşıyor. Mevcut bölüm korundu; Kitap Bölümleri ekranında iki dönemi karşılaştırın.'})
+            continue
+        row = ReportSection(period_id=period.id, title=source.title, kind=source.kind,
+                            position=source.position, content_json=source.content_json)
+        db.add(row); db.flush()
+        targets.append(row); by_id[row.id] = row
+        result['links'][source.id] = row.id
+        consumed.add(row.id)
+        result['copied'] += 1
+    # A repeated action with the same result writes neither data nor duplicate evidence.
+    if result['copied'] or not previous or previous[-1]['conflicts'] != result['conflicts']:
+        audit_change(db, actor, 'section_period_copy', period, None, result)
+    return result
+
+
 def copy_period_work(db, actor, base, period, sub_map):
+    copy_general_sections(db, actor, base, period)
+    prior = db.scalar(select(AuditLog).where(AuditLog.action == 'structure_period_copy',
+        AuditLog.entity_type == 'reporting_periods', AuditLog.entity_id == period.id).order_by(AuditLog.id.desc()))
+    if prior:
+        from .pp_errors import pp_error
+        previous = json.loads(prior.details)['new']
+        if previous['base_period_id'] != base.id:
+            raise pp_error(409, 'Hedef dönemin yapısı başka bir dönemden kopyalanmış. Genel bölümler için Kitap Bölümleri ekranındaki kopyalama işlemini kullanın.', 'period_id')
+        return previous['untransferred']
     routes, closed, used = routing(db, base.id, period.year)
     departments = db.scalars(select(Department).order_by(Department.id)).all()
     eligible = {d.id for d in departments if d.is_active and department_in_year(db,d,period.year)}

@@ -13,7 +13,7 @@ from sqlalchemy.orm import Session, selectinload
 from .models import (
     Organization, Department, ReportingPeriod, Program, SubProgram,
     Indicator, IndicatorValue, Activity, ActivityCostValue,
-    DepartmentCostValue, Submission, ImportBatch, User, ReportCard, EconomicValue, ActivityCatalogueLink, DepartmentScope, SubmissionEvent, AuditLog,
+    DepartmentCostValue, Submission, ImportBatch, User, ReportCard, ReportSection, EconomicValue, ActivityCatalogueLink, DepartmentScope, SubmissionEvent, AuditLog,
 )
 
 # Only obvious spelling/title variants observed in the supplied 2026 source are normalized.
@@ -37,6 +37,172 @@ DISPLAY_OVERRIDES = {
 
 def _clean(text: str) -> str:
     return re.sub(r"\s+", " ", (text or "").replace("\xa0", " ")).strip()
+
+
+def parse_pp_import(data: bytes) -> dict:
+    """Extend the existing table parser without changing its financial contract.
+
+    Extract accepted-view, body-level narrative and informational tables. A
+    structured performance table ends narrative capture until a new heading;
+    department explanations never become institution sections by accident.
+    """
+    import base64
+    import io
+    from docx import Document
+    from docx.oxml.ns import qn
+    from docx.text.paragraph import Paragraph
+    from docx.table import Table
+    from .data_importer import parse_performance_docx, _use_accepted_view, iter_document_tables
+    from .pp_manifest import section_type, table_type, normalized_title
+
+    parsed = parse_performance_docx(data)
+    doc = Document(io.BytesIO(data)); _use_accepted_view(doc)
+    table_numbers = {table._tbl: index for index, table in enumerate(iter_document_tables(doc), 1)}
+    informational = {item['table_number'] for item in parsed.get('coverage_items', [])}
+    sections = []; current = None; context = 'general'; seen_cards = False
+    section_warnings = []
+    paragraphs = []
+
+    def finish():
+        nonlocal current, paragraphs
+        if current is not None and (paragraphs or normalized_title(current['title']) not in {'genel bilgiler', 'performans bilgileri'}):
+            current['content']['text'] = '\n'.join(paragraphs).strip()
+            sections.append(current)
+        current = None; paragraphs = []
+
+    for source_position, element in enumerate(doc.element.body, 1):
+        if element.tag == qn('w:tbl'):
+            number = table_numbers[element]
+            if number not in informational:
+                finish(); seen_cards = True
+                continue
+            table = Table(element, doc)
+            grid = [[cell.text for cell in row.cells] for row in table.rows]
+            title = next((str(c).strip() for row in grid[:3] for c in row if str(c).strip()), f'Kurumsal tablo {number}')
+            family = table_type(' '.join(str(c) for row in grid[:3] for c in row))
+            if not family and current is None:
+                continue  # Unclassified tables remain in the existing coverage list.
+            if family:
+                from .pp_manifest import TABLE_TYPES, STRUCTURED_TYPES
+                title = next(label for key, label, *_ in (*TABLE_TYPES, *STRUCTURED_TYPES) if key == family)
+            repeated_title = bool(grid and len(grid[0]) > 1 and len(set(grid[0])) == 1)
+            sections.append({'title': title, 'kind': 'table', 'position': source_position,
+                'content': {'rows': grid, 'placement': 'after' if seen_cards else 'before',
+                            'header_rows': 2 if repeated_title and len(grid) > 1 else 1,
+                            'source': {'table_number': number}}})
+            continue
+        if element.tag != qn('w:p'):
+            continue
+        paragraph = Paragraph(element, doc)
+        text = paragraph.text.strip()
+        style = paragraph.style.name.lower() if paragraph.style else ''
+        # TOC fields/styles list headings, but are not the actual book sections.
+        if style.startswith(('toc', 'içindekiler')) or element.xpath('.//w:instrText'):
+            continue
+        key = normalized_title(text)
+        if key in {'genel bilgiler', 'performans bilgileri'}:
+            finish(); context = 'performance' if key == 'performans bilgileri' else 'general'
+        family = section_type(text, context)
+        is_heading = family or (style.startswith(('heading', 'başlık')) and text)
+        if is_heading:
+            finish()
+            # Disambiguate the two official "Diğer Hususlar" sections by context.
+            title = ('Genel Bilgiler — Diğer Hususlar' if family == 'general_other' else
+                     'Performans Bilgileri — Diğer Hususlar' if family == 'performance_other' else text)
+            current = {'title': title, 'kind': 'text', 'position': source_position,
+                       'content': {'placement': 'after' if seen_cards else 'before'}}
+        elif current and text:
+            paragraphs.append(text)
+        if current:
+            for blip in element.xpath('.//a:blip'):
+                rid = blip.get(qn('r:embed'))
+                part = doc.part.related_parts.get(rid)
+                if part is None or part.content_type not in {'image/png', 'image/jpeg'}:
+                    section_warnings.append(f'“{current["title"]}” görseli PNG/JPEG olarak okunamadı. Kitap Bölümleri ekranından görseli yeniden ekleyin.')
+                    continue
+                from PIL import Image
+                try:
+                    if len(part.blob) > 5 * 1024 * 1024:
+                        raise ValueError()
+                    with Image.open(io.BytesIO(part.blob)) as im:
+                        if im.format not in {'PNG', 'JPEG'} or im.width * im.height > 16000000:
+                            raise ValueError()
+                        im.verify()
+                except Exception:
+                    section_warnings.append(f'“{current["title"]}” görseli geçersiz veya çok büyük. Kitap Bölümleri ekranından en fazla 5 MB ve 16 megapiksel PNG/JPEG görseli yeniden ekleyin.')
+                    continue
+                sections.append({'title': current['title'] + ' — Görsel', 'kind': 'image',
+                    'position': source_position, 'content': {'data': base64.b64encode(part.blob).decode(),
+                        'caption': '', 'placement': current['content']['placement']}})
+    finish()
+    # Repeated contents-page headings and repeated source headings do not create
+    # duplicate target sections. Retain all substantive narrative in source order.
+    unique = {}
+    for section in sections:
+        key = (section['kind'], section_type(section['title']) or normalized_title(section['title']),
+               section['content']['placement'])
+        if section['kind'] == 'text' and key in unique:
+            old = unique[key]['content']
+            old['text'] = '\n'.join(t for t in (old['text'], section['content']['text']) if t)
+        else:
+            # Separate tables/images with the same heading must retain their data.
+            if section['kind'] != 'text':
+                key = (*key, len(unique))
+            unique[key] = section
+    sections = sorted(unique.values(), key=lambda item: item['position'])
+    for index, section in enumerate(sections, 1):
+        section['position'] = index
+    if sections:
+        parsed['general_sections'] = sections
+        parsed['general_section_warnings'] = section_warnings
+        parsed['summary']['general_section_count'] = len(sections)
+        # A narrative-only PP is a valid section import, while malformed data
+        # tables still retain every specific validation error from the parser.
+        missing_table = 'Dosyada tanınan performans göstergesi tablosu bulunamadı.'
+        for field in ('errors', 'warnings'):
+            parsed[field] = [e for e in parsed[field] if not e.startswith(missing_table)]
+        for section in sections:
+            if len(section['title']) > 300 or len(section['content'].get('text', '')) > 500000:
+                message = f'“{section["title"][:80]}” genel bölümü çok uzun. Başlığı 300, metni 500.000 karakterin altına indirip Word dosyasını yeniden yükleyin.'
+                parsed['errors'].append(message); parsed['warnings'].append(message)
+        # Retain the financial parser's warnings/coverage contract. General
+        # sections and their warnings are additive fields; the UI removes
+        # imported general tables from the old financial-only coverage list.
+    return parsed
+
+
+def general_section_plan(db, parsed, period_id):
+    from .pp_manifest import section_identity
+    from types import SimpleNamespace
+    targets = db.scalars(select(ReportSection).where(ReportSection.period_id == period_id)
+                         .order_by(ReportSection.position, ReportSection.id)
+                         .execution_options(populate_existing=True)).all()
+    result = []
+    consumed = set()
+    for source in parsed.get('general_sections', []):
+        content = json_dumps(source['content'], ensure_ascii=False)
+        candidate = SimpleNamespace(**{key: source[key] for key in ('title', 'kind', 'position')}, content_json=content)
+        matches = [row for row in targets if row.id not in consumed and section_identity(row) == section_identity(candidate)][:1]
+        consumed.update(row.id for row in matches)
+        conflict = bool(matches and any((row.title, row.kind, row.content_json) !=
+                                       (candidate.title, candidate.kind, candidate.content_json) for row in matches))
+        result.append({**source, 'action': 'conflict' if conflict else 'keep' if matches else 'create',
+                       'target_ids': [row.id for row in matches]})
+    return result
+
+
+def _section_records(db, ids, period_id):
+    return [{c.name: getattr(row, c.name) for c in ReportSection.__table__.columns}
+            for row in db.scalars(select(ReportSection).where(ReportSection.id.in_(ids),
+                ReportSection.period_id == period_id).order_by(ReportSection.id))]
+
+
+def _batch_state_hash(db, affected, period_id, snapshot):
+    department_hash = _state_hash(db, affected, period_id, include_source=bool(snapshot.get('source_conflict_version')))
+    if 'created_sections' not in snapshot:
+        return department_hash  # Old batches retain the exact pre-CIV-071 contract.
+    sections = _section_records(db, [row['id'] for row in snapshot['created_sections']], period_id)
+    return hashlib.sha256(json_dumps([department_hash, sections], ensure_ascii=False, sort_keys=True).encode()).hexdigest()
 
 
 def _validate_import_field_lengths(plan: dict) -> None:
@@ -334,7 +500,7 @@ def import_validation_errors(parsed: dict) -> list[str]:
         if table['error'] not in errors:
             errors.append(table['error'])
     blocks = [block for dept in parsed.get("departments", []) for block in dept.get("blocks", [])]
-    if not blocks and not errors:
+    if not blocks and not errors and not parsed.get('general_sections'):
         errors.append("Dosyada tanınan performans göstergesi tablosu bulunamadı. Bakanlık gösterge şablonunu ve Performans Göstergeleri başlığını kontrol edip dosyayı yeniden yükleyin.")
     for dept in parsed.get("departments", []):
         for index, block in enumerate(dept.get("blocks", []), 1):
@@ -502,9 +668,9 @@ def import_revert_status(db: Session, batch: ImportBatch) -> tuple[bool, str]:
     except json.JSONDecodeError:
         return False, "Geri alma snapshot'ı okunamıyor."
     affected = [d["department_id"] for d in snapshot.get("departments", [])] + snapshot.get("created_department_ids", [])
-    if not affected or not batch.applied_hash:
+    if (not affected and not snapshot.get('created_sections')) or not batch.applied_hash:
         return False, "Bu içe aktarma için güvenli geri alma verisi yok."
-    current = _state_hash(db, affected, batch.period_id, include_source=bool(snapshot.get("source_conflict_version")))
+    current = _batch_state_hash(db, affected, batch.period_id, snapshot)
     if current != batch.applied_hash:
         return False, "İçe aktarma sonrasında veriler değiştiği için otomatik geri alma güvenli değil."
     existing_submissions = {d["department_id"]: d.get("submission") for d in snapshot.get("departments", [])}
@@ -598,6 +764,8 @@ def _lock_import_context(db: Session, batch: ImportBatch) -> tuple[ImportBatch, 
 
 def revert_import_batch(db: Session, batch: ImportBatch) -> dict:
     batch, _ = _lock_import_context(db, batch)
+    from .master_data_service import period_record
+    period_record(db, batch.period_id)
     can_revert, reason = import_revert_status(db, batch)
     if not can_revert:
         raise ValueError(reason)
@@ -606,6 +774,9 @@ def revert_import_batch(db: Session, batch: ImportBatch) -> dict:
     existing_ids = [int(d["department_id"]) for d in existing_states]
     created_ids = [int(x) for x in snapshot.get("created_department_ids", [])]
     affected = existing_ids + created_ids
+
+    for row in _section_records(db, [s['id'] for s in snapshot.get('created_sections', [])], batch.period_id):
+        db.delete(db.get(ReportSection, row['id']))
 
     # Retain existing submissions and their immutable history during restoration.
     for did in affected:
@@ -650,7 +821,10 @@ def revert_import_batch(db: Session, batch: ImportBatch) -> dict:
     batch.status = "reverted"
     batch.reverted_at = datetime.now(UTC).replace(tzinfo=None)
     db.flush()
-    return {"departments_restored": len(existing_ids), "departments_removed": len(created_ids)}
+    result = {"departments_restored": len(existing_ids), "departments_removed": len(created_ids)}
+    if 'created_sections' in snapshot:
+        result['sections_removed'] = len(snapshot['created_sections'])
+    return result
 
 
 def apply_import_batch(db: Session, batch: ImportBatch, preserve_existing: bool = False) -> dict:
@@ -662,6 +836,10 @@ def apply_import_batch(db: Session, batch: ImportBatch, preserve_existing: bool 
         raise ValueError("Raporlama dönemi bulunamadı.")
     if period.template_status != "verified":
         raise ValueError("Bakanlık şablonu doğrulanmadan veri içe aktarılamaz.")
+    # Organization is already locked by #66; share the target-period lock with
+    # manual section saves and explicit period copies before reading sections.
+    from .master_data_service import period_record
+    period_record(db, period.id)
 
     raw = json.loads(batch.payload_json)
     errors = import_validation_errors(raw)
@@ -839,11 +1017,33 @@ def apply_import_batch(db: Session, batch: ImportBatch, preserve_existing: bool 
                 db.add(row); result['economic_values'] += 1
         result["departments"] += 1
 
+    result['sections_created'] = 0
+    result['section_conflicts'] = []
+    created_sections = []
+    if raw.get('general_sections'):
+        snapshot['created_sections'] = []
+    for item in general_section_plan(db, raw, period.id):
+        if item['action'] != 'create':
+            if item['action'] == 'conflict':
+                result['section_conflicts'].append({'title': item['title'], 'target_ids': item['target_ids'],
+                    'message': f'“{item["title"]}” hedef dönemde farklı. Mevcut bölüm korundu; Kitap Bölümleri ekranında kaynakla karşılaştırın.'})
+            continue
+        if not item['title'].strip() or len(item['title']) > 300 or item['kind'] not in {'text', 'table', 'image'}:
+            from .pp_errors import pp_error
+            raise pp_error(422, 'Genel bölüm başlığı veya türü geçersiz. Word dosyasını kontrol edip önizlemeyi yeniden oluşturun.', 'title')
+        row = ReportSection(period_id=period.id, title=item['title'], kind=item['kind'],
+                            position=item['position'], content_json=json_dumps(item['content'], ensure_ascii=False))
+        db.add(row); created_sections.append(row)
+        result['sections_created'] += 1
+    if created_sections:
+        db.flush()
+        snapshot['created_sections'] = _section_records(db, [row.id for row in created_sections], period.id)
+
     batch.snapshot_json = json_dumps(snapshot, ensure_ascii=False, sort_keys=True)
     batch.status = "applied"
     batch.applied_at = datetime.now(UTC).replace(tzinfo=None)
     db.flush()
     affected = [d["department_id"] for d in snapshot["departments"]] + snapshot["created_department_ids"]
-    batch.applied_hash = _state_hash(db, affected, period.id)
+    batch.applied_hash = _batch_state_hash(db, affected, period.id, snapshot)
     result["plan_summary"] = plan["summary"]
     return result
