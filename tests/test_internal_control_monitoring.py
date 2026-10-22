@@ -539,3 +539,17 @@ def test_new_active_plan_without_monitoring_keeps_readonly_catalogue(db, monitor
     assert 'Geçmiş izleme dönemlerini gör' in page.text
     history = client.get(f"/internal-control/our-actions?period_id={d['period'].id}")
     assert history.status_code == 200 and 'Eğitim düzenle' in history.text
+
+
+def test_overview_also_names_directorates_without_responsible_actions(db, monitoring, client):
+    from app.main import app, require_user
+    d = monitoring
+    department = Department(organization_id=d['department'].organization_id, name='Yeni Hizmet Müdürlüğü')
+    db.add(department)
+    db.commit()
+    app.dependency_overrides[require_user] = lambda: d['strategy']
+    response = client.get(f"/internal-control/monitoring?period_id={d['period'].id}")
+    assert response.status_code == 200 and 'Yeni Hizmet Müdürlüğü' in response.text
+    assert 'Sorumlu eylem yok; gönderim beklenmiyor.' in response.text
+    response = client.get(f"/internal-control/monitoring/periods/{d['period'].id}/report.xlsx?draft=gecersiz")
+    assert response.status_code == 422 and 'Taslak seçimi geçersiz' in response.text

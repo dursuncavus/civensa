@@ -9,7 +9,7 @@ from .internal_control_monitoring_models import (ICMonitoringPeriod as Period,
     ICMonitoringPeriodEvent as PeriodEvent, ICMonitoringBatch as Batch,
     ICMonitoringTarget as Target, ICMonitoringEvent as Event, ICMonitoringEntry as Entry,
     ICMonitoringNote as Note)
-from .models import Department, User
+from .models import Department, Organization, User
 from .pp_errors import pp_error
 from .released_permissions import require_submit, require_strategy_director, SOD_ERROR
 
@@ -54,7 +54,14 @@ def get_period(db, actor, period_id, *, lock=False, writable=False):
 
 
 def lock_actor(db, actor, *, strategy=False):
-    # Serialize grants/revocations with decisions, then reload current authority.
+    # User administration locks organizations before departments/users. Take the
+    # same institution lock before the actor row and before inserting owner FKs.
+    # This prevents a grant change from racing a decision or deadlocking a note.
+    department = db.get(Department, actor.department_id) if actor.department_id else None
+    organizations = select(Organization).order_by(Organization.id)
+    if department:
+        organizations = organizations.where(Organization.id == department.organization_id)
+    db.scalars(organizations.with_for_update()).all()
     db.scalar(select(User).where(User.id == actor.id).with_for_update()
               .execution_options(populate_existing=True))
     return require_access(db, actor, strategy=strategy)
