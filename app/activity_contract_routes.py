@@ -129,6 +129,7 @@ def register(app):
                 revisions.append({'id': rev.id, 'year': db.get(ReportingPeriod, report.period_id).year,
                     'revision': rev.revision, 'publication_version': pub.version,
                     'revision_reason': rev.revision_reason,
+                    'status_badges': service.revision_status_badges(db, report, rev),
                     'organization': db.get(Organization, report.organization_id).name})
         publications = []
         if user.role == 'strategy':
@@ -158,7 +159,9 @@ def register(app):
             report = service.report_data(db, user, revision_id)
             pubs = db.scalars(select(Publication).where(Publication.period_id == db.get(ActivityReport, report['report_id']).period_id).order_by(Publication.version.desc())).all() if user.role == 'strategy' else []
             return templates.TemplateResponse(request, 'activity_contract_detail.html',
-                {'user': user, 'report': report, 'publications': pubs})
+                {'user': user, 'report': report, 'publications': pubs,
+                 'comparison': service.newer_publication_comparison(db, user, revision_id)
+                     if request.query_params.get('compare') == 'newer' else None})
         except HTTPException as error:
             return ui_error(request, user, error, '/activity-reports')
 

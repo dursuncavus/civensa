@@ -295,7 +295,8 @@ def ensure_legacy_writable(db, report, revision=None):
 
 def returned_after_approval(db, revision):
     """A1-F1: a successor returned from final_approved keeps its freeze as history; never show it as approved."""
-    if not inspect(db.connection()).has_table('report_candidates'):
+    schema = db.connection().get_execution_options().get('schema_translate_map', {}).get(None)
+    if not inspect(db.connection()).has_table('report_candidates', schema=schema):
         return False
     return bool(db.scalar(select(ReportCandidate.id).join(ReportCandidateState, ReportCandidateState.candidate_id == ReportCandidate.id)
         .where(ReportCandidate.activity_revision_id == revision.id, ReportCandidateState.state == 'returned_to_strategy')))
@@ -516,6 +517,46 @@ def actual_data(actual):
         'created_by': actual.created_by, 'created_at': actual.created_at.isoformat()}
 
 
+def revision_status_badges(db, report, revision):
+    """Display existing revision states without changing workflow state."""
+    approved = bool(db.scalar(select(ActivityReportApproval.id).where(
+        ActivityReportApproval.report_revision_id == revision.id)))
+    state = ('Nihai onay sonrası iade edildi' if approved and returned_after_approval(db, revision)
+             else 'Onaylı' if approved else 'Taslak')
+    return ['Güncel' if revision.revision == report.current_revision else 'Geçmiş revizyon', state]
+
+
+def newer_publication_comparison(db, user, revision_id):
+    """Compare immutable definitions using explicit identities; never create bindings."""
+    report, revision, base, _ = report_revision(db, user, revision_id)
+    newer = db.scalar(select(Publication).where(Publication.period_id == base.period_id,
+        Publication.version > base.version).order_by(Publication.version.desc()))
+    if newer is None:
+        return None
+    newer, payload = checked_publication(db, newer.id)
+    before = revision_definitions(db, revision)
+    if user.role == 'department':
+        payload = dict(payload, departments=[department for department in payload['departments']
+            if department['department_id'] == user.department_id])
+    rows = snapshot_rows(payload)
+    has_rows = any(department and department.organization_id == report.organization_id
+                   for row in rows.values()
+                   for department in [db.get(Department, row['department_id'])])
+    bindings = publication_bindings(db, newer, payload, report.organization_id) if has_rows else []
+    after = {db.get(IndicatorDefinitionRevision, b.definition_revision_id).indicator_id:
+        dict(json.loads(db.get(IndicatorDefinitionRevision, b.definition_revision_id).definition_json),
+             definition_revision_id=b.definition_revision_id) for b in bindings}
+    # Apply scope to each side before comparing: transfers disclose only the permitted side.
+    def permitted(definitions):
+        return {key: value for key, value in definitions.items()
+                if user.role != 'department' or value['department_id'] == user.department_id}
+    before, after = permitted(before), permitted(after)
+    changes = [{'indicator_id': identity, 'before': before.get(identity), 'after': after.get(identity)}
+               for identity in sorted(before.keys() | after.keys())
+               if before.get(identity) != after.get(identity)]
+    return {'version': newer.version, 'differences': changes}
+
+
 def report_data(db, user, revision_id):
     report, revision, pub, payload = report_revision(db, user, revision_id)
     rows = snapshot_rows(payload)
@@ -554,7 +595,7 @@ def report_data(db, user, revision_id):
     return {'closure_notes': closure_notes(db, report.period_id, user, report.organization_id), 'approval': {'created_by': approval.created_by, 'name': db.get(User, approval.created_by).full_name, 'created_at': approval.created_at.isoformat()} if approval else None, 'report_id': report.id, 'organization_id': report.organization_id, 'revision_id': revision.id,
         'revision': revision.revision, 'current_revision': report.current_revision, 'year': payload['period'],
         'publication_id': pub.id, 'publication_version': pub.version, 'publication_sha256': revision.publication_sha256,
-        'newer_publication_available': latest > pub.version, 'previous_revision_id': revision.previous_revision_id,
+        'latest_publication_version': latest, 'newer_publication_available': latest > pub.version, 'previous_revision_id': revision.previous_revision_id,
         'revision_reason': revision.revision_reason, 'contract_version': revision.contract_version,
         'approved': bool(db.scalar(select(ActivityReportApproval.id).where(ActivityReportApproval.report_revision_id == revision.id))),
         'returned_after_approval': returned_after_approval(db, revision) if approval else False,
