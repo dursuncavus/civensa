@@ -537,11 +537,11 @@ def freeze_document(db,user,document_id,expected_revision):
     missing=completeness(payload)
     if missing:
         raise pp_error(409,'İçerik onaylanmadı. Şu bölümleri tamamlayın: '+'; '.join(missing),'sections')
-    if previous:
-        # Advance the edit token so a waiting stale reopen cannot open N+1.
-        doc.revision+=1
-        payload['revision']=doc.revision
-        db.flush()
+    # Every release advances the edit token, including the first freeze: a
+    # waiting request read while draft must not reopen a newly frozen release.
+    doc.revision+=1
+    payload['revision']=doc.revision
+    db.flush()
     text=numeric_canonical(payload)
     freeze=ARDocumentFreeze(document_id=doc.id,version=previous.version+1 if previous else 1,
         payload_json=text,sha256=digest(text),created_by=user.id)

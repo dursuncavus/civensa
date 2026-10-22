@@ -233,3 +233,19 @@ def test_service_cycle_with_real_postgres_content_guards(release, db, sample):
         with db.begin_nested():
             db.execute(text("UPDATE ar_section_contents SET blocks_json='bad' WHERE document_id=:doc"),{'doc':doc.id})
     db.rollback()
+
+
+def test_first_freeze_invalidates_a_waiting_reopen_token(section_client,db,sample):
+    """A request read while draft cannot reopen a just-created first release."""
+    from types import SimpleNamespace
+    client,docs,_,_=section_client
+    token=login(client,'strategy@example.invalid');doc=docs['idare']
+    # Prepare complete content through the shared fixture, withholding only its
+    # final freeze so the production decision below creates the first release.
+    with patch.object(service,'freeze_document',return_value=SimpleNamespace(id=0,sha256='')):
+        ready_and_freeze(client,token,doc)
+    expected=doc.revision
+    assert freeze(client,token,doc).status_code==200
+    response=reopen(client,token,doc,revision=expected)
+    assert response.status_code==409
+    assert service.frozen(db,doc).version==1
