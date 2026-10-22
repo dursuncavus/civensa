@@ -54,8 +54,70 @@ def document(db, user, document_id):
     return doc
 
 
+def latest_release(db, doc, version=None):
+    query=select(ARDocumentFreeze).where(ARDocumentFreeze.document_id==doc.id)
+    if version is not None:query=query.where(ARDocumentFreeze.version==version)
+    return db.scalar(query.order_by(ARDocumentFreeze.version.desc()).limit(1))
+
+
+def release_reopen(db, doc, release):
+    if doc.department_id or not release:return None
+    for item in db.scalars(select(ARContentEvent).where(ARContentEvent.document_id==doc.id,
+            ARContentEvent.action=='reopen').order_by(ARContentEvent.id.desc())):
+        if json.loads(item.after_json).get('freeze_id')==release.id:return item
+    return None
+
+
 def frozen(db, doc):
-    return db.scalar(select(ARDocumentFreeze).where(ARDocumentFreeze.document_id==doc.id))
+    release=latest_release(db,doc)
+    return None if release_reopen(db,doc,release) else release
+
+
+def release_history(db, doc):
+    if doc.department_id:return {}
+    releases=db.scalars(select(ARDocumentFreeze).where(ARDocumentFreeze.document_id==doc.id)
+        .order_by(ARDocumentFreeze.version)).all()
+    reopens={json.loads(e.after_json)['freeze_id']:(e,json.loads(e.after_json)) for e in db.scalars(
+        select(ARContentEvent).where(ARContentEvent.document_id==doc.id,ARContentEvent.action=='reopen')
+        .order_by(ARContentEvent.id))}
+    rows=[]
+    for index,release in enumerate(releases):
+        row={'version':release.version,'sha256':release.sha256,'created_at':release.created_at.isoformat(),
+            'label':f'Önceki sürüm — Sürüm {releases[index+1].version} ile değiştirildi' if index+1<len(releases)
+                else f'Sürüm {release.version} · Güncel sürüm'}
+        if release.id in reopens:
+            e,data=reopens[release.id]
+            row['reopen']={'actor_id':e.actor_id,'actor_name':data['actor_name'],
+                'created_at':e.created_at.isoformat(),'reason':data['reason']}
+        rows.append(row)
+    return {'releases':rows,'reopened':bool(releases and releases[-1].id in reopens)}
+
+
+def reopen_document(db,user,document_id,expected_revision,reason):
+    doc=document(db,user,document_id)
+    lock_documents(db,doc)
+    user=db.get(User,user.id,populate_existing=True)
+    from .released_permissions import require_strategy_director
+    require_strategy_director(user)
+    dep=db.get(Department,user.department_id,populate_existing=True)
+    if not dep or not dep.is_active or dep.organization_id!=doc.organization_id:
+        raise pp_error(403,'Bu kurumun idare faaliyet raporunu açamazsınız. Kendi kurumunuzun etkin Strateji Geliştirme Müdürü hesabını kullanın.','document_id')
+    if doc.department_id:
+        raise pp_error(409,'Birim faaliyet raporu bu ekrandan açılamaz. Birim raporunun gerekçeli yeniden açma işlemini kullanın.','document_id')
+    if not isinstance(reason,str) or not reason.strip() or len(reason)>10000:
+        raise pp_error(422,'İdare faaliyet raporu açılamadı. Gerekçe alanına düzeltilecek noktaları en fazla 10.000 karakterle yazın.','reason')
+    if doc.revision!=expected_revision:
+        raise pp_error(409,'İdare faaliyet raporu başka bir işlemle güncellendi. Sayfayı yenileyip güncel sürüm üzerinden yeniden açın.','expected_revision')
+    release=frozen(db,doc)
+    if not release:
+        raise pp_error(409,'İdare faaliyet raporu dondurulmuş durumda değil. Güncel raporu kontrol edip düzeltmeden sonra yeni sürüm oluşturun.','document_id')
+    event(db,user,doc,'','reopen',{'sha256':release.sha256},
+        {'freeze_id':release.id,'version':release.version,'reason':reason.strip(),'actor_name':user.full_name})
+    # The database guard must see the appended reopen before the mutable revision.
+    db.flush()
+    doc.revision+=1
+    db.flush()
+    return doc
 
 
 def definitions(db, doc):
@@ -144,7 +206,8 @@ def create_year(db,user,organization_id,period_id,copy_previous=False):
         previous_approval=None
         if copy_previous and previous_period:
             previous=db.scalar(select(ARDocumentFreeze).join(ARDocument,ARDocument.id==ARDocumentFreeze.document_id).where(
-                ARDocument.organization_id==org.id,ARDocument.period_id==previous_period.id,ARDocument.scope==scope))
+                ARDocument.organization_id==org.id,ARDocument.period_id==previous_period.id,ARDocument.scope==scope)
+                .order_by(ARDocumentFreeze.version.desc()).limit(1))
             if dep_id and not previous:
                 from .ar_unit_workflow_service import latest
                 prior_doc=db.scalar(select(ARDocument).where(ARDocument.organization_id==org.id,
@@ -382,9 +445,11 @@ def core_summary(db,doc):
         'message':f'{len(items)} göstergenin {verified} tanesinde doğrulanmış, kaynaklı gerçekleşme var.'}
 
 
-def report_data(db,user,document_id,use_freeze=True):
+def report_data(db,user,document_id,use_freeze=True,version=None):
     doc=document(db,user,document_id)
-    freeze=frozen(db,doc)
+    freeze=latest_release(db,doc,version) if version is not None else frozen(db,doc)
+    if version is not None and not freeze:
+        raise pp_error(404,'Faaliyet raporu sürümü bulunamadı. Sürüm geçmişinden mevcut bir sürüm seçin.','version')
     if freeze and use_freeze:
         if digest(freeze.payload_json)!=freeze.sha256:
             fail('Onaylı faaliyet raporu kopyası doğrulanamadı. Sistem sorumlusuyla iletişime geçin.',409)
@@ -396,6 +461,7 @@ def report_data(db,user,document_id,use_freeze=True):
         from .assurance_service import slot
         for row in result['sections']:
             if row['code'] == 'EKLER': slot(db,doc,row,frozen=True)
+        result.update(release_history(db,doc),release_version=freeze.version,revision=doc.revision)
         return result
     if doc.department_id and use_freeze:
         from .ar_unit_workflow_service import latest, verified_payload, view
@@ -450,6 +516,7 @@ def report_data(db,user,document_id,use_freeze=True):
             from .assurance_service import slot
             slot(db,doc,row)
         result['sections'].append(row)
+    if use_freeze:result.update(release_history(db,doc))
     return result
 
 
@@ -461,6 +528,7 @@ def freeze_document(db,user,document_id,expected_revision):
     if user.role!='strategy':
         fail('Faaliyet raporu içeriğini Strateji onaylayabilir. Strateji ile iletişime geçin.',403)
     writable(db,user,doc,expected_revision)
+    previous=latest_release(db,doc)
     payload=report_data(db,user,doc.id,use_freeze=False)
     if payload['missing_units']:
         raise pp_error(409,'İdare faaliyet raporu dondurulamadı. Onaylı birim sürümü eksik: '+
@@ -469,8 +537,14 @@ def freeze_document(db,user,document_id,expected_revision):
     missing=completeness(payload)
     if missing:
         raise pp_error(409,'İçerik onaylanmadı. Şu bölümleri tamamlayın: '+'; '.join(missing),'sections')
+    # Every release advances the edit token, including the first freeze: a
+    # waiting request read while draft must not reopen a newly frozen release.
+    doc.revision+=1
+    payload['revision']=doc.revision
+    db.flush()
     text=numeric_canonical(payload)
-    freeze=ARDocumentFreeze(document_id=doc.id,payload_json=text,sha256=digest(text),created_by=user.id)
+    freeze=ARDocumentFreeze(document_id=doc.id,version=previous.version+1 if previous else 1,
+        payload_json=text,sha256=digest(text),created_by=user.id)
     db.add(freeze)
     event(db,user,doc,'','freeze',None,{'sha256':freeze.sha256})
     db.flush()
