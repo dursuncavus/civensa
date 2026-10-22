@@ -204,7 +204,10 @@ def official_data(db, actor, period_id, *, draft=False):
             status = m.action_status(entries)
             if status == 'ongoing' and any(e and e.status == 'partial' for e in entries):
                 status = 'partial'
-            explanation = [OFFICIAL_PHRASES[status]]
+            if record['due'] is False and not any(u['approved_entry'] for u in record['units']):
+                explanation = ['Eylem süresi bu dönemde dolmamaktadır.']
+            else:
+                explanation = [OFFICIAL_PHRASES[status]]
             for unit in record['units']:
                 entry = unit['entry']
                 if entry and entry.explanation:

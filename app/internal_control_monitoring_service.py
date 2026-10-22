@@ -397,11 +397,13 @@ def official_metrics(db, actor, period, *, records=None):
     components = []
     for code, label in COMPONENTS.items():
         selected = [r for r in records if STANDARD_COMPONENTS[db.get(ICCondition, r['action'].condition_id).standard_code] == code]
-        realised = sum(r['status'] == 'completed' for r in selected)
-        ongoing = sum(r['status'] == 'ongoing' for r in selected)
+        period_selected = [r for r in selected if r['due'] is True]
+        realised = sum(r['status'] == 'completed' for r in period_selected)
+        ongoing = sum(r['status'] == 'ongoing' for r in period_selected)
+        completed_total = sum(r['status'] == 'completed' for r in selected)
         rate_completed = sum(r['status'] == 'completed' and r['due'] is not None for r in selected)
-        components.append([label, len(selected), realised, len(selected) - realised - ongoing,
-                           ongoing, realised, rate_text(rate_completed, len(eligible))])
+        components.append([label, len(selected), realised, len(period_selected) - realised - ongoing,
+                           ongoing, completed_total, rate_text(rate_completed, len(eligible))])
     unreadable = [r['action'].action_code_raw for r in records if r['due'] is None]
     return dict(plan_total=len(records), eligible_total=len(eligible), due_total=len(due),
                 completed=completed, due_completed=due_completed,

@@ -78,7 +78,7 @@ def test_synthetic_rates_official_columns_and_assurance(db, official_plan):
     assert metrics['plan_rate'] == '30,00% (9/30)'
     assert metrics['components'][0] == ['Kontrol Ortamı', 11, 5, 0, 6, 5, '16,67% (5/30)']
     assert metrics['components'][-1][1:6] == [0, 0, 0, 0, 0]
-    assert sum(row[4] for row in metrics['components']) == 16
+    assert [sum(row[column] for row in metrics['components']) for column in range(1, 6)] == [30, 9, 0, 16, 9]
     book = load_workbook(BytesIO(export.official_export(db, d['strategy'], d['period'].id, 'xlsx')))
     rows = list(book['Resmî İzleme'].values)
     assert list(rows[0]) == export.OFFICIAL_HEADERS and len(rows) == 32
@@ -91,6 +91,19 @@ def test_synthetic_rates_official_columns_and_assurance(db, official_plan):
     assert [c.text for c in doc.tables[1].rows[0].cells] == export.OFFICIAL_HEADERS
     assert doc.tables[1].rows[1].cells[3].text == ''
     assert '30,00% (9/30)' in '\n'.join(p.text for p in doc.paragraphs)
+
+    # Reopening removes approval while keeping the period's draft entries.
+    m.transition(db, d['strategy'], d['owned'].id, 'reopen', m.state(db, d['owned'].id)[1], 'Dönem dışı eylemlerin kontrolü')
+    db.commit()
+    not_due_codes = {r['action'].action_code_raw for r in m.action_records(db, d['period']) if r['due'] is False}
+    assert len(not_due_codes) == 5
+    phrase = 'Eylem süresi bu dönemde dolmamaktadır.'
+    draft_book = load_workbook(BytesIO(export.official_export(db, d['strategy'], d['period'].id, 'xlsx', draft=True)))
+    not_due_rows = [row for row in list(draft_book['Resmî İzleme'].values)[1:] if row[3] in not_due_codes]
+    assert len(not_due_rows) == 5 and all(row[-1].startswith(phrase) for row in not_due_rows)
+    draft_doc = Document(BytesIO(export.official_export(db, d['strategy'], d['period'].id, 'docx', draft=True)))
+    not_due_rows = [row for row in draft_doc.tables[1].rows[1:] if row.cells[3].text in not_due_codes]
+    assert len(not_due_rows) == 5 and all(row.cells[-1].text.startswith(phrase) for row in not_due_rows)
 
 
 @pytest.mark.parametrize('half,due,start,continuous,expected', [
@@ -361,3 +374,19 @@ def test_new_statuses_survive_approval_and_official_summary(db, monitoring):
     explanations = [row[-1] for row in list(book['Resmî İzleme'].values)[1:]]
     assert sum(e.startswith('(KISMEN TAMAMLANDI (DEVAM EDİYOR))') for e in explanations) == 2
     assert any(e.startswith('Eylem Uygun Görülmemiştir.') and 'Kurul uygun görmedi.' in e for e in explanations)
+
+
+@pytest.mark.parametrize('future_status', ['completed', 'ongoing', 'not_approved'])
+def test_component_period_counts_preserve_all_completed_total_and_rates(db, official_plan, future_status):
+    d = official_plan
+    records = m.action_records(db, d['period'])
+    # A completed action with an unreadable date also stays outside period counts.
+    records[0]['due'] = None
+    for record in records:
+        if record['due'] is False:
+            record['status'] = future_status
+    metrics = m.official_metrics(db, d['strategy'], d['period'], records=records)
+    completed_total = 14 if future_status == 'completed' else 9
+    assert [sum(row[column] for row in metrics['components']) for column in range(1, 6)] == [30, 8, 0, 16, completed_total]
+    assert metrics['period_rate'] == '33,33% (8/24)'
+    assert metrics['plan_rate'] == ('44,83% (13/29)' if future_status == 'completed' else '27,59% (8/29)')
