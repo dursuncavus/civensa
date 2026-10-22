@@ -111,10 +111,7 @@ def register(app):
     def data(document_id:int,db:Session=Depends(get_db),user=Depends(require_user)):
         return service.report_data(db,user,document_id)
 
-    @router.get('/activity-sections/reports/{document_id}/export.docx')
-    def export_docx(document_id:int,db:Session=Depends(get_db),user=Depends(require_user)):
-        from .ar_export import build_activity_report_docx, TEMPLATE_PATH
-        from docx.opc.exceptions import PackageNotFoundError
+    def export_payload(document_id,db,user):
         doc=service.document(db,user,document_id)
         if user.role!='strategy' and (doc.department_id is None or doc.department_id!=user.department_id):
             service.fail('Bu faaliyet raporunu indiremezsiniz. Kendi birim raporunuzu açın; idare raporu için Strateji ile iletişime geçin.',403)
@@ -125,7 +122,14 @@ def register(app):
             name=unicodedata.normalize('NFKD',name).encode('ascii','ignore').decode().lower()
             slug=re.sub(r'[^a-z0-9]+','-',name).strip('-') or 'birim'
         state='onayli' if payload['frozen'] else 'taslak'
-        filename=f"{payload['year']}-faaliyet-raporu-{slug}-{state}.docx"
+        filename=f"{payload['year']}-faaliyet-raporu-{slug}-{state}"
+        return payload,filename
+
+    @router.get('/activity-sections/reports/{document_id}/export.docx')
+    def export_docx(document_id:int,db:Session=Depends(get_db),user=Depends(require_user)):
+        from .ar_export import build_activity_report_docx, TEMPLATE_PATH
+        from docx.opc.exceptions import PackageNotFoundError
+        payload,filename=export_payload(document_id,db,user)
         try:
             content=build_activity_report_docx(payload,TEMPLATE_PATH)
         except (FileNotFoundError,PackageNotFoundError):
@@ -134,7 +138,20 @@ def register(app):
             service.fail(str(error),503)
         return Response(content,
             media_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-            headers={'Content-Disposition':f'attachment; filename="{filename}"',
+            headers={'Content-Disposition':f'attachment; filename="{filename}.docx"',
+                     'Cache-Control':'private, no-store','X-Content-Type-Options':'nosniff'})
+
+    @router.get('/activity-sections/reports/{document_id}/export.pdf')
+    def export_pdf(document_id:int,db:Session=Depends(get_db),user=Depends(require_user)):
+        from .ar_pdf_export import build_activity_report_pdf
+        from reportlab.pdfbase.ttfonts import TTFError
+        payload,filename=export_payload(document_id,db,user)
+        try:
+            content=build_activity_report_pdf(payload)
+        except (OSError,TTFError):
+            service.fail('Faaliyet raporu PDF yazı tipleri açılamadı. Sistem sorumlusundan app/fonts dosyalarını kontrol etmesini isteyin.',503)
+        return Response(content,media_type='application/pdf',
+            headers={'Content-Disposition':f'attachment; filename="{filename}.pdf"',
                      'Cache-Control':'private, no-store','X-Content-Type-Options':'nosniff'})
 
     @router.post('/api/activity-sections/reports/{document_id}/sections/{code}')

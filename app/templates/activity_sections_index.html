@@ -18,8 +18,8 @@
 <div class="ar-scroll"><table class="ar-table"><thead><tr><th>Yıl / Rapor</th><th>Bölüm</th><th>Durum</th><th>Sahibi</th><th>Eksikler</th></tr></thead><tbody>
 {% for item in reports %}{% for s in item.matches %}<tr><td>{{ item.report.year }} · {{ item.report.department }}{% if item.report.workflow %}<br><strong>{{ item.report.workflow.label }}</strong>{% endif %}{% if item.report.frozen %}<br><strong>Onaylı kopya</strong>{% endif %}</td><td><a href="/activity-sections/reports/{{ item.report.id }}?code={{ s.code }}">{{ s.code }} · {{ s.title }}</a></td><td><span class="ar-status ar-{{ s.status }}">{{ statuses[s.status] }}</span></td><td>{{ owners[s.owner] }}</td><td>{% for missing in s.missing %}<div>{{ missing }}</div>{% else %}—{% endfor %}</td></tr>{% endfor %}{% else %}<tr><td colspan="5">Bu filtrelerle rapor bulunamadı. Yıl raporlarını oluşturun veya filtreleri değiştirin.</td></tr>{% endfor %}
 </tbody></table></div></section>
-<section class="panel ar-panel"><h2>Word çıktıları</h2>
+<section class="panel ar-panel"><h2>Word ve PDF çıktıları</h2>
 {% for item in reports %}{% if user.role=='strategy' or (item.report.department_id and item.report.department_id==user.department_id) %}
-<p>{{ item.report.year }} · {{ item.report.department }} · <a class="button" href="/activity-sections/reports/{{ item.report.id }}/export.docx">Word olarak indir</a></p>
+<p>{{ item.report.year }} · {{ item.report.department }} · <a class="button" href="/activity-sections/reports/{{ item.report.id }}/export.docx">Word olarak indir</a> <a class="button" href="/activity-sections/reports/{{ item.report.id }}/export.pdf">PDF olarak indir</a></p>
 {% endif %}{% endfor %}</section>
 {% endblock %}
