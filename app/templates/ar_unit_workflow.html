@@ -1,0 +1,25 @@
+{% if report.department_id and report.workflow %}
+<section class="panel ar-panel" aria-label="Birim raporu iş akışı">
+<h2>Birim raporu · <span data-ar-workflow-status>{{ report.workflow.label }}</span></h2>
+{% if report.workflow.reason %}<p><strong>Gerekçe:</strong> {{ report.workflow.reason }}</p>{% endif %}
+{% if report.workflow.status in ['draft','returned'] and user.department_id==report.department_id and (user.position=='director' or user.can_submit) %}
+<form method="post" action="/activity-sections/reports/{{ report.id }}/workflow/submit">
+<input type="hidden" name="csrf_token" value="{{ request.session.get('csrf_token') }}"><input type="hidden" name="expected_revision" value="{{ report.revision }}">
+<p>Tüm bölümleri tamamladıktan sonra inceleme için gönderin. Gönderilen sürüm inceleme sırasında değiştirilemez.</p>
+<button class="button primary">{{ 'Yeniden gönder' if report.workflow.status=='returned' else 'Strateji’ye gönder' }}</button></form>
+{% endif %}
+{% if user.role=='strategy' and user.position=='director' and report.workflow.status in ['submitted','approved'] %}
+{% if report.workflow.status=='submitted' %}<form method="post" action="/activity-sections/reports/{{ report.id }}/workflow/approve">
+<input type="hidden" name="csrf_token" value="{{ request.session.get('csrf_token') }}"><input type="hidden" name="expected_revision" value="{{ report.revision }}">
+<p>Bu inceleme turunda içerik düzenlememiş bağımsız Strateji Geliştirme Müdürü onaylayabilir.</p><button class="button primary">Birimi onayla</button></form>{% endif %}
+<form method="post" action="/activity-sections/reports/{{ report.id }}/workflow/{{ 'return' if report.workflow.status=='submitted' else 'reopen' }}">
+<input type="hidden" name="csrf_token" value="{{ request.session.get('csrf_token') }}"><input type="hidden" name="expected_revision" value="{{ report.revision }}">
+<label>{{ 'İade gerekçesi' if report.workflow.status=='submitted' else 'Yeniden açma gerekçesi' }}<textarea name="reason" rows="3" maxlength="10000" required></textarea></label>
+<button class="button">{{ 'Gerekçeyle iade et' if report.workflow.status=='submitted' else 'Gerekçeyle yeniden aç' }}</button></form>
+{% endif %}
+{% if report.workflow.events %}<h3>Gönderim ve onay geçmişi</h3>
+{% for event in report.workflow.events %}<p>{{ event.created_at }} · {{ event.actor_name }} · {{ event.label }}{% if event.reason %} · {{ event.reason }}{% endif %}</p>{% endfor %}{% endif %}
+</section>
+{% endif %}
+{% if not report.department_id and report.missing_units %}<section class="panel ar-panel ar-warning"><h2>Onaylı birim sürümü eksik</h2><p>İdare raporunu dondurmadan önce şu birimlerin gönderim ve bağımsız onayını tamamlayın:</p><ul>{% for unit in report.missing_units %}<li>{{ unit.department }}</li>{% endfor %}</ul></section>{% endif %}
+{% if not report.department_id and report.unit_manifest %}<section class="panel ar-panel"><h2>Konsolidasyondaki onaylı birim sürümleri</h2>{% for unit in report.unit_manifest %}<p>{{ unit.department }} · Onay kaydı {{ unit.approval_id }} · <code>{{ unit.sha256 }}</code></p>{% endfor %}</section>{% endif %}

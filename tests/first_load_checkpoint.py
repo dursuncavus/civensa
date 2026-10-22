@@ -23,8 +23,8 @@ def disposable_release50_database(url):
         # tables to a database that deliberately remains at the old checkpoint.
         names = set(inspect(engine).get_table_names())
         checkpoint = MetaData()
-        for table in Base.metadata.sorted_tables:
-            if table.name in names:
-                table.to_metadata(checkpoint)
+        # Reflect columns and references too: copying today's models can retain
+        # a new FK to a table deliberately absent at this historical checkpoint.
+        checkpoint.reflect(bind=engine, only=sorted(names & set(Base.metadata.tables)))
         with patch.object(Base, 'metadata', checkpoint):
             yield engine

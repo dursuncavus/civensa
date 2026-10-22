@@ -77,7 +77,13 @@ def resource(client,token,doc,kind,rows):
     return client.post(f'/api/activity-sections/reports/{doc.id}/resources/{kind}',headers={'X-CSRF-Token':token},json={'expected_revision':revision,'rows':rows})
 
 
-def ready_and_freeze(client,token,doc):
+def ready_and_freeze(client,token,doc,legacy=False):
+    from ar_unit_workflow_helpers import approve_sources, ensure_core_ready, reviewer
+    from app import ar_unit_workflow_service as workflow
+    from app.main import require_user
+    db=next(app.dependency_overrides[get_db]())
+    if not doc.department_id:
+        approve_sources(db,doc)
     data=client.get(f'/api/activity-sections/reports/{doc.id}').json()
     for section in data['sections']:
         if section['code'] not in {service.CORE,'EKLER'}:
@@ -87,8 +93,26 @@ def ready_and_freeze(client,token,doc):
             assert result.status_code==200,result.text
     from test_assurance_helpers import complete_assurances
     complete_assurances(client,doc)
+    if legacy:
+        # Historical content-freeze fixture: keep the pre-AR-11 format and its
+        # original copy/provenance assertions, including ARDocumentFreeze IDs.
+        actor=db.scalar(select(User).where(User.email=='strategy@example.invalid'))
+        payload=service.report_data(db,actor,doc.id,use_freeze=False)
+        text=service.numeric_canonical(payload)
+        freeze=ARDocumentFreeze(document_id=doc.id,payload_json=text,sha256=service.digest(text),created_by=actor.id)
+        db.add(freeze);db.commit()
+        return {'freeze_id':freeze.id,'sha256':freeze.sha256}
+    if doc.department_id:
+        sender=db.scalar(select(User).where(User.department_id==doc.department_id,User.role=='department'))
+        sender.can_submit=True
+        ensure_core_ready(db,doc,sender)
+        workflow.transition(db,sender,doc.id,'submit',doc.revision)
+        db.commit()
+        approver=reviewer(db,doc);db.commit()
+        app.dependency_overrides[require_user]=lambda:approver
     revision=client.get(f'/api/activity-sections/reports/{doc.id}').json()['revision']
     response=client.post(f'/api/activity-sections/reports/{doc.id}/freeze',headers={'X-CSRF-Token':token},json={'expected_revision':revision})
+    if doc.department_id:app.dependency_overrides.pop(require_user,None)
     assert response.status_code==200,response.text
     return response.json()
 
@@ -151,14 +175,14 @@ def test_tables_consolidate_without_turning_blank_into_zero(section_client,sampl
     assert resource(client,token,own,'buildings',[{'name':'Ana bina','category':'Hizmet','address':'Merkez','area':12500.23,'ownership':'mülk'}]).status_code==200
     data=client.get(f"/api/activity-sections/reports/{docs['idare'].id}").json()
     table=data['resources']['employment']
-    assert table['totals']['count']=={'value':12503,'missing':1}
-    assert [r['count'] for r in table['rows']]==[12500,None,0,3]
-    assert table['groups'][0]['count']==12503
+    assert table['totals']['count']=={'value':None,'missing':0}
+    assert [r['count'] for r in table['rows']]==[]
+    assert table['groups']==[]
     assert resource(client,token,docs['idare'],'hardware',[{'category':'PC','count':10}]).status_code==403
     page=client.get(f"/activity-sections/reports/{docs['idare'].id}?code=I.C.4")
-    assert page.status_code==200 and '12.503' in page.text and '1 boş değer' in page.text
+    assert page.status_code==200 and 'Onaylı birim sürümü eksik' in page.text and '12.503' not in page.text
     page=client.get(f"/activity-sections/reports/{docs['idare'].id}?code=I.C.1")
-    assert '12.500,23' in page.text
+    assert '12.500,23' not in page.text
     assert resource(client,token,own,'hardware',[{'category':'PC','count':'1'}]).status_code==422
     assert resource(client,token,own,'hardware',[{'category':'PC','count':1.5}]).status_code==422
     assert resource(client,token,own,'hardware',[{'category':'PC','count':-1}]).status_code==422
@@ -184,7 +208,7 @@ def test_frozen_content_and_previous_year_copy(section_client,db,sample):
     own=docs['birim:'+str(sample['department'].id)]
     assert resource(client,token,own,'employment',[{'category':'memur','count':None},{'category':'diğer','count':0}]).status_code==200
     assert resource(client,token,own,'buildings',[{'name':'Hizmet binası','category':'Bina','address':'Merkez','area':12500.23,'ownership':'mülk'}]).status_code==200
-    approval=ready_and_freeze(client,token,own)
+    approval=ready_and_freeze(client,token,own,legacy=True)
     before=client.get(f'/api/activity-sections/reports/{own.id}').json()
     assert before['frozen'] and before['sha256']==approval['sha256']
     assert save(client,token,own).status_code==409
@@ -215,12 +239,14 @@ def test_frozen_content_and_previous_year_copy(section_client,db,sample):
     assert client.get(f'/api/activity-sections/reports/{own.id}').json()==before
 
 
-def test_frozen_idare_preserves_computed_sources(section_client,sample):
+def test_frozen_idare_preserves_computed_sources(section_client,sample,db):
     client,docs,_,_=section_client;token=login(client,'strategy@example.invalid')
     unit=docs['birim:'+str(sample['department'].id)];idare=docs['idare']
     assert resource(client,token,unit,'hardware',[{'category':'PC','count':5}]).status_code==200
     ready_and_freeze(client,token,idare)
     before=client.get(f'/api/activity-sections/reports/{idare.id}').json()
+    from app.ar_unit_workflow_service import transition
+    transition(db,sample['strategy'],unit.id,'reopen',unit.revision,'Yeni birim kaynak kaydı');db.commit()
     assert resource(client,token,unit,'hardware',[{'category':'PC','count':7}]).status_code==200
     assert client.get(f'/api/activity-sections/reports/{idare.id}').json()==before
     assert before['resources']['hardware']['totals']['count']['value']==5
@@ -243,14 +269,15 @@ def test_core_is_live_readonly_summary(section_client,db,sample):
     pub=db.scalar(select(Publication))
     revision=activity_contract_service.create_report_revision(db,sample['strategy'],pub.id,sample['department'].organization_id)
     db.commit()
-    data=client.get(f"/api/activity-sections/reports/{docs['idare'].id}").json()
+    unit=docs['birim:'+str(sample['department'].id)]
+    data=client.get(f"/api/activity-sections/reports/{unit.id}").json()
     assert data['core']['total']==1 and data['core']['verified']==0
     assert data['core']['link']==f'/activity-reports/revisions/{revision.id}'
     from app.models import ReportIndicator
     slot=db.scalar(select(ReportIndicator).where(ReportIndicator.report_revision_id==revision.id))
     result=client.post(f'/api/activity-reports/indicators/{slot.id}/actuals',headers={'X-CSRF-Token':token},json=actual_payload())
     assert result.status_code==200,result.text
-    updated=client.get(f"/api/activity-sections/reports/{docs['idare'].id}").json()
+    updated=client.get(f"/api/activity-sections/reports/{unit.id}").json()
     assert updated['core']['verified']==1
     assert next(s for s in updated['sections'] if s['code']==service.CORE)['status']=='ready'
 

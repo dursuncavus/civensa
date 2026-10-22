@@ -205,8 +205,8 @@ def test_dynamic_statements_hash_assets_aid_and_audit(section_client,sample,db):
     report=client.get(f'/api/activity-sections/reports/{own.id}').json()
     assert next(s for s in report['sections'] if s['code']=='III.A.4')['missing']==[]
     token=login(client,'strategy@example.invalid')
-    assert len(financial(client,doc)['entries']['aid_directorates'])==1
-    assert len(financial(client,doc)['entries']['audit_directorates'])==2
+    assert len(financial(client,doc)['entries']['aid_directorates'])==0
+    assert len(financial(client,doc)['entries']['audit_directorates'])==0
     assert post(client,token,doc,'/entries/aid',rows=[aid]).status_code==200
     assert db.scalar(select(ARContentEvent).where(ARContentEvent.action=='financial_save',ARContentEvent.actor_id==sample['strategy'].id))
 
