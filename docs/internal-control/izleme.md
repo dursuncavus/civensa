@@ -8,10 +8,12 @@ Tüm müdürlüklerin sorumlu olduğu eylemler her müdürlük için ayrı giril
 
 | Başlangıç | İşlem | Yetkili | Sonuç |
 |---|---|---|---|
-| Taslak / İade edildi | Gönder | Sorumlu müdürlüğün Müdürü veya gönderim yetkili Personeli; kurul kaydında yetkili Strateji | Gönderildi |
+| Taslak / İade edildi | Gönder | Sorumlu müdürlüğün Müdürü veya gönderim yetkili Personeli; kurul kaydında Strateji Müdürü | Gönderildi |
 | Gönderildi | Gerekçeli iade | Strateji Müdürü | İade edildi |
-| Gönderildi | Onayla | Bu revizyonun verisini girmemiş/göndermemiş Strateji Müdürü | Onaylandı |
+| Gönderildi | Onayla | Bu revizyonun verisini girmemiş/değiştirmemiş Strateji Müdürü | Onaylandı |
 | Onaylandı | Gerekçeli yeniden aç | Strateji Müdürü | Taslak |
+
+Kurul/ekip kayıtlarında Strateji Personeli veriyi girer; bu veriyi değiştirmemiş Strateji Müdürü incelemeye gönderip onaylayabilir. Görevler ayrılığı, PP ile aynı biçimde veri girişini/değişikliğini esas alır; yalnız gönderme işlemi veri yazarlığı sayılmaz.
 
 Her kaydetme ve karar yeni bir geçmiş kaydı oluşturur. Eski girişler ve onaylar değiştirilemez; yeniden açma önceki onayı silmez. İşlem geçmişi aktör, gerekçe ve TSİ saatini gösterir. Başka biri kaydı değiştirdiyse sayfayı yenileyerek güncel revizyonla devam edin. Son giriş tarihinden sonra kayıt/gönderim yapılamaz. İnceleme sonrasında Strateji dönemi gerekçeyle kapatır; kapanan dönem yeniden açılamaz.
 

@@ -62,6 +62,8 @@ def lock_actor(db, actor, *, strategy=False):
     if department:
         organizations = organizations.where(Organization.id == department.organization_id)
     db.scalars(organizations.with_for_update()).all()
+    if department:
+        db.scalar(select(Department).where(Department.id == department.id).with_for_update())
     db.scalar(select(User).where(User.id == actor.id).with_for_update()
               .execution_options(populate_existing=True))
     return require_access(db, actor, strategy=strategy)
@@ -264,7 +266,7 @@ def transition(db, actor, batch_id, action, expected_revision, reason=''):
         boundary = db.scalar(select(Event.revision).where(Event.batch_id == batch.id,
             Event.action.in_(['return', 'reopen'])).order_by(Event.revision.desc()).limit(1)) or 0
         if db.scalar(select(Event.id).where(Event.batch_id == batch.id, Event.revision > boundary,
-            Event.actor_id == actor.id, Event.action.in_(['save', 'submit'])).limit(1)):
+            Event.actor_id == actor.id, Event.action == 'save').limit(1)):
             fail(SOD_ERROR.format(record='İç Kontrol izleme paketi'), status=403)
     content = snapshot(db, batch) if action in ('submit', 'approve') else []
     return event(db, actor, batch, revision, action, status, destination, reason, content)

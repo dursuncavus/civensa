@@ -42,7 +42,7 @@ def monitoring(db, sample):
     collaborator = User(email='coop@civ079.invalid', full_name='Katkı Personeli', role='department',
         department_id=other.id, password_hash='unused', can_submit=True)
     staff = User(email='ic-staff@civ079.invalid', full_name='Strateji Personeli', role='strategy',
-        department_id=sample['department'].id, password_hash='unused', can_submit=True)
+        department_id=sample['department'].id, password_hash='unused', can_submit=False)
     db.add_all([collaborator, staff])
     db.commit()
     due = (m.today(db) - timedelta(days=1)).strftime('%d.%m.%Y')
@@ -83,7 +83,8 @@ def fill(db, data, batch, actor=None, **changes):
 
 def approve(db, data, batch, **changes):
     actor = fill(db, data, batch, **changes)
-    m.transition(db, actor, batch.id, 'submit', m.state(db, batch.id)[1])
+    sender = data['strategy'] if batch.body_name else actor
+    m.transition(db, sender, batch.id, 'submit', m.state(db, batch.id)[1])
     db.commit()
     m.transition(db, data['strategy'], batch.id, 'approve', m.state(db, batch.id)[1])
     db.commit()
@@ -553,3 +554,19 @@ def test_overview_also_names_directorates_without_responsible_actions(db, monito
     assert 'Sorumlu eylem yok; gönderim beklenmiyor.' in response.text
     response = client.get(f"/internal-control/monitoring/periods/{d['period'].id}/report.xlsx?draft=gecersiz")
     assert response.status_code == 422 and 'Taslak seçimi geçersiz' in response.text
+
+
+def test_body_staff_entry_then_independent_director_submit_and_approve(db, monitoring, client):
+    from app.main import app, require_user
+    d = monitoring
+    assert not d['staff'].can_submit
+    fill(db, d, d['body'], actor=d['staff'])
+    with pytest.raises(HTTPException) as exc:
+        m.transition(db, d['staff'], d['body'].id, 'submit', 1)
+    assert exc.value.status_code == 403
+    app.dependency_overrides[require_user] = lambda: d['strategy']
+    path = f"/internal-control/monitoring/batches/{d['body'].id}"
+    assert 'İncelemeye gönder' in client.get(path).text
+    assert client.post(path + '/transition', data={'action': 'submit', 'expected_revision': 1}, follow_redirects=False).status_code == 303
+    assert client.post(path + '/transition', data={'action': 'approve', 'expected_revision': 2}, follow_redirects=False).status_code == 303
+    assert m.state(db, d['body'].id) == ('approved', 3)

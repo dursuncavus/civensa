@@ -57,8 +57,8 @@ BEGIN
  END IF;
  IF NEW.action='approve' THEN
   SELECT COALESCE(max(revision),0) INTO boundary FROM ic_monitoring_events WHERE batch_id=b.id AND action IN ('return','reopen');
-  IF EXISTS (SELECT 1 FROM ic_monitoring_events WHERE batch_id=b.id AND revision>boundary AND actor_id=u.id AND action IN ('save','submit')) THEN
-   RAISE EXCEPTION 'Görevler ayrılığı: veriyi giren veya gönderen onaylayamaz.';
+  IF EXISTS (SELECT 1 FROM ic_monitoring_events WHERE batch_id=b.id AND revision>boundary AND actor_id=u.id AND action='save') THEN
+   RAISE EXCEPTION 'Görevler ayrılığı: veriyi giren veya değiştiren onaylayamaz.';
   END IF;
   SELECT * INTO sub FROM ic_monitoring_events WHERE batch_id=b.id AND action='submit' ORDER BY revision DESC LIMIT 1;
   IF NEW.snapshot_json::jsonb IS DISTINCT FROM sub.snapshot_json::jsonb THEN RAISE EXCEPTION 'Onay gönderilen içeriği korumalıdır.'; END IF;
