@@ -132,3 +132,6 @@ class ICImportAudit(Base):
 for model in (ICPlan, ICCondition, ICAction, ICActionParty, ICUnitAlias, ICImport, ICImportAudit):
     event.listen(model, 'before_update', reject_history_change)
     event.listen(model, 'before_delete', reject_history_change)
+
+# Register monitoring metadata wherever the existing IC models are imported.
+from . import internal_control_monitoring_models  # noqa: E402,F401
