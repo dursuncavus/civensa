@@ -138,6 +138,17 @@ def test_reopen_csrf_and_non_director_and_unknown_release(release, sample):
     assert client.get(f'/activity-sections/reports/{doc.id}/export.json?version=1').status_code==403
 
 
+def test_reopened_default_downloads_render_the_editable_draft(release):
+    client, _, token, doc=release
+    assert reopen(client,token,doc).status_code==200
+    draft=downloads(client,doc)
+    payload=json.loads(draft['json'])
+    assert payload['frozen'] is False and payload['reopened'] is True
+    assert payload['releases'][0]['reopen']['reason']==REASON
+    assert isinstance(payload['releases'][0]['created_at'],str)
+    assert json.loads(downloads(client,doc,1)['json'])['revision'] < payload['revision']
+
+
 def test_new_release_keeps_approval_and_completeness_gates(release, db):
     client, _, token, doc = release
     assert reopen(client, token, doc).status_code==200

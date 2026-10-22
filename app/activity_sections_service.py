@@ -82,13 +82,13 @@ def release_history(db, doc):
         .order_by(ARContentEvent.id))}
     rows=[]
     for index,release in enumerate(releases):
-        row={'version':release.version,'sha256':release.sha256,'created_at':release.created_at,
+        row={'version':release.version,'sha256':release.sha256,'created_at':release.created_at.isoformat(),
             'label':f'Önceki sürüm — Sürüm {releases[index+1].version} ile değiştirildi' if index+1<len(releases)
                 else f'Sürüm {release.version} · Güncel sürüm'}
         if release.id in reopens:
             e,data=reopens[release.id]
             row['reopen']={'actor_id':e.actor_id,'actor_name':data['actor_name'],
-                'created_at':e.created_at,'reason':data['reason']}
+                'created_at':e.created_at.isoformat(),'reason':data['reason']}
         rows.append(row)
     return {'releases':rows,'reopened':bool(releases and releases[-1].id in reopens)}
 
