@@ -462,7 +462,7 @@ def register(app):
             upload=data.get('image')
             if upload and getattr(upload,'filename',''):
                 raw=await upload.read(5*1024*1024+1)
-                if len(raw)>5*1024*1024:raise pp_error(422, 'Bölüm görseli çok büyük. En fazla 5 MB PNG/JPEG dosyasını yeniden seçin.', 'image')
+                if len(raw)>5*1024*1024:raise pp_error(422, 'Dosya çok büyük. En fazla 5 MB yüklenebilir.', 'image')
                 try:
                     with Image.open(io.BytesIO(raw)) as im:
                         if im.format not in {'PNG','JPEG'} or im.width*im.height>16000000:raise ValueError()
