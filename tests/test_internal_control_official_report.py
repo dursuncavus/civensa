@@ -311,6 +311,17 @@ def test_new_status_form_mobile_desktop(db, monitoring, client):
 def test_existing_export_payloads_unchanged(db, monitoring, monkeypatch):
     """ZIP container timestamps aside, every existing report member stays identical."""
     from zipfile import ZipFile
+    from xml.etree import ElementTree
+    def payload(archive, name):
+        data = archive.read(name)
+        if name == 'docProps/core.xml':
+            root = ElementTree.fromstring(data)
+            for tag in ('created', 'modified'):
+                stamp = root.find('{http://purl.org/dc/terms/}' + tag)
+                if stamp is not None:
+                    stamp.text = '[creation time]'
+            data = ElementTree.tostring(root)
+        return data
     d = monitoring
     for batch in d['batches']:
         approve(db, d, batch)
@@ -321,7 +332,7 @@ def test_existing_export_payloads_unchanged(db, monitoring, monkeypatch):
             original = export.period_export(db, d['strategy'], d['period'].id, fmt)
         with ZipFile(BytesIO(current)) as actual, ZipFile(BytesIO(original)) as previous:
             assert actual.namelist() == previous.namelist()
-            assert all(actual.read(name) == previous.read(name) for name in actual.namelist())
+            assert all(payload(actual, name) == payload(previous, name) for name in actual.namelist())
 
 
 def test_new_status_database_constraints(db, monitoring):
