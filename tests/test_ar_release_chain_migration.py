@@ -29,7 +29,7 @@ def migrated():
         assert (result.returncode==0)==ok,result.stderr
         return result
     try:
-        migrate('upgrade','c074a1b2c3d4')
+        migrate('upgrade','c079a1b2c3d4')
         with engine.begin() as conn:
             for statement in (
                 "INSERT INTO organizations(id,name) VALUES (1,'Deneme Belediyesi')",
@@ -59,7 +59,7 @@ def test_backfill_and_safe_single_release_downgrade(migrated):
     with engine.connect() as conn:
         assert conn.execute(text('SELECT version FROM ar_document_freezes ORDER BY id')).scalars().all()==[1,1]
         assert conn.execute(text('SELECT payload_json,sha256 FROM ar_document_freezes WHERE id=1')).one()==('{"retained":true}','retained-hash')
-    migrate('downgrade','c074a1b2c3d4')
+    migrate('downgrade','c079a1b2c3d4')
     assert 'version' not in {c['name'] for c in inspect(engine).get_columns('ar_document_freezes')}
     with pytest.raises(DBAPIError,match='değiştirilemez'):
         with engine.begin() as conn:conn.execute(text('UPDATE ar_documents SET revision=revision+1 WHERE id=1'))
@@ -95,7 +95,7 @@ def test_reopen_preserves_immutable_history_and_blocks_unsafe_downgrade(migrated
     with pytest.raises(DBAPIError):
         with engine.begin() as conn:
             conn.execute(text("INSERT INTO ar_document_freezes(document_id,version,payload_json,sha256,created_by) VALUES (1,1,'{}','hash',1)"))
-    result=migrate('downgrade','c074a1b2c3d4',ok=False)
+    result=migrate('downgrade','c079a1b2c3d4',ok=False)
     assert 'Veriyi koruyan' in result.stderr
     with engine.connect() as conn:
         assert conn.execute(text('SELECT payload_json,sha256 FROM ar_document_freezes WHERE id=1')).one()==('{"retained":true}','retained-hash')
