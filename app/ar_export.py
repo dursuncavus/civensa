@@ -1,6 +1,7 @@
 """Render an EK-1 report snapshot using the owner's Word styles; no database access."""
 from io import BytesIO
 from pathlib import Path
+from zipfile import ZipFile, ZIP_DEFLATED
 
 from docx import Document
 from docx.enum.section import WD_SECTION, WD_ORIENT
@@ -311,4 +312,11 @@ def build_activity_report_docx(payload, template_path) -> bytes:
     _render_activity_report(report)
     output = BytesIO()
     report.doc.save(output)
-    return output.getvalue()
+    # OPC parts are deterministic; ZIP's wall-clock member timestamps are not.
+    # Normalize the archive so retained releases download identically later.
+    stable = BytesIO()
+    with ZipFile(output) as source, ZipFile(stable, 'w', compression=ZIP_DEFLATED) as target:
+        for part in source.infolist():
+            part.date_time = (1980, 1, 1, 0, 0, 0)
+            target.writestr(part, source.read(part.filename))
+    return stable.getvalue()

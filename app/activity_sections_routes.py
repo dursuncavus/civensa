@@ -38,6 +38,10 @@ class Freeze(BaseModel):
     expected_revision: StrictInt = Field(ge=0)
 
 
+class Reopen(Freeze):
+    reason: StrictStr = ''
+
+
 def transact(db, operation):
     try:
         result=operation();db.commit();return result
@@ -85,7 +89,7 @@ class TurkishValidationRoute(APIRoute):
                     'copy_previous':'Önceki yıldan kopyalama','document_id':'Faaliyet raporu',
                     'lower_rate':'Alt gerçekleşme oranı','upper_rate':'Üst gerçekleşme oranı',
                     'metadata':'Malî tablo bilgileri','file':'Dosya','import_id':'İçe aktarma önizlemesi',
-                    'statement_id':'Malî tablo','kind':'Tablo türü'}
+                    'statement_id':'Malî tablo','kind':'Tablo türü','version':'Yayın sürümü'}
                 fields=[]
                 for issue in error.errors():
                     location=issue.get('loc',())
@@ -108,14 +112,14 @@ def register(app):
         return {'documents':[d.id for d in docs]}
 
     @router.get('/api/activity-sections/reports/{document_id}')
-    def data(document_id:int,db:Session=Depends(get_db),user=Depends(require_user)):
-        return service.report_data(db,user,document_id)
+    def data(document_id:int,version:int|None=None,db:Session=Depends(get_db),user=Depends(require_user)):
+        return service.report_data(db,user,document_id,version=version)
 
-    def export_payload(document_id,db,user):
+    def export_payload(document_id,db,user,version=None):
         doc=service.document(db,user,document_id)
         if user.role!='strategy' and (doc.department_id is None or doc.department_id!=user.department_id):
             service.fail('Bu faaliyet raporunu indiremezsiniz. Kendi birim raporunuzu açın; idare raporu için Strateji ile iletişime geçin.',403)
-        payload=service.report_data(db,user,doc.id)
+        payload=service.report_data(db,user,doc.id,version=version)
         slug='idare'
         if payload['department_id']:
             name=payload['department'].translate(str.maketrans('ıİşŞğĞüÜöÖçÇ','iIsSgGuUoOcC'))
@@ -126,10 +130,10 @@ def register(app):
         return payload,filename
 
     @router.get('/activity-sections/reports/{document_id}/export.docx')
-    def export_docx(document_id:int,db:Session=Depends(get_db),user=Depends(require_user)):
+    def export_docx(document_id:int,version:int|None=None,db:Session=Depends(get_db),user=Depends(require_user)):
         from .ar_export import build_activity_report_docx, TEMPLATE_PATH
         from docx.opc.exceptions import PackageNotFoundError
-        payload,filename=export_payload(document_id,db,user)
+        payload,filename=export_payload(document_id,db,user,version)
         try:
             content=build_activity_report_docx(payload,TEMPLATE_PATH)
         except (FileNotFoundError,PackageNotFoundError):
@@ -142,10 +146,10 @@ def register(app):
                      'Cache-Control':'private, no-store','X-Content-Type-Options':'nosniff'})
 
     @router.get('/activity-sections/reports/{document_id}/export.pdf')
-    def export_pdf(document_id:int,db:Session=Depends(get_db),user=Depends(require_user)):
+    def export_pdf(document_id:int,version:int|None=None,db:Session=Depends(get_db),user=Depends(require_user)):
         from .ar_pdf_export import build_activity_report_pdf
         from reportlab.pdfbase.ttfonts import TTFError
-        payload,filename=export_payload(document_id,db,user)
+        payload,filename=export_payload(document_id,db,user,version)
         try:
             content=build_activity_report_pdf(payload)
         except (OSError,TTFError):
@@ -153,6 +157,21 @@ def register(app):
         return Response(content,media_type='application/pdf',
             headers={'Content-Disposition':f'attachment; filename="{filename}.pdf"',
                      'Cache-Control':'private, no-store','X-Content-Type-Options':'nosniff'})
+
+    @router.get('/activity-sections/reports/{document_id}/export.json')
+    def export_json(document_id:int,version:int|None=None,db:Session=Depends(get_db),user=Depends(require_user)):
+        payload,filename=export_payload(document_id,db,user,version)
+        doc=service.document(db,user,document_id)
+        release=service.latest_release(db,doc,version) if version is not None else service.frozen(db,doc)
+        content=release.payload_json if release else service.numeric_canonical(payload)
+        return Response(content,media_type='application/json',headers={
+            'Content-Disposition':f'attachment; filename="{filename}.json"',
+            'Cache-Control':'private, no-store','X-Content-Type-Options':'nosniff'})
+
+    @router.post('/api/activity-sections/reports/{document_id}/reopen')
+    def reopen(document_id:int,data:Reopen,db:Session=Depends(get_db),user=Depends(require_user)):
+        doc=transact(db,lambda:service.reopen_document(db,user,document_id,**data.model_dump()))
+        return {'revision':doc.revision}
 
     @router.post('/api/activity-sections/reports/{document_id}/sections/{code}')
     def save(document_id:int,code:str,data:SectionSave,db:Session=Depends(get_db),user=Depends(require_user)):
@@ -220,7 +239,17 @@ def register(app):
         if not report['frozen']:
             definition,_=service.section_pair(db,doc,code)
         from .activity_financial_routes import financial_context
+        from .released_permissions import require_strategy_director
+        reopen_allowed=False
+        if not doc.department_id and report['frozen']:
+            try:
+                require_strategy_director(user)
+                from .models import Department
+                dep=db.get(Department,user.department_id)
+                reopen_allowed=bool(dep and dep.is_active and dep.organization_id==doc.organization_id)
+            except HTTPException:pass
         return {**financial_context(db,user,doc,report), 'user':user,'report':report,'section':section,'statuses':service.STATUSES,
+            'reopen_allowed':reopen_allowed,
             'editable':not report['frozen'] and service.can_edit(db,user,doc,definition),
             'tables':{k:{**report['resources'][k],'kind':k} for k,v in service.TABLES.items() if v[0]==code},
             'employment':service.EMPLOYMENT,'owners':{'directorate':'Müdürlük','strategy':'Strateji','finance':'Mali Hizmetler'},
@@ -276,5 +305,17 @@ def register(app):
             transact(db,lambda:service.freeze_document(db,user,document_id,integer(form.get('expected_revision'))))
             return RedirectResponse(f'/activity-sections/reports/{document_id}',303)
         except HTTPException as error:return error_page(request,user,error,f'/activity-sections/reports/{document_id}')
+
+    @router.post('/activity-sections/reports/{document_id}/reopen')
+    async def reopen_form(document_id:int,request:Request,db:Session=Depends(get_db),user=Depends(require_user)):
+        form=await request.form()
+        try:
+            transact(db,lambda:service.reopen_document(db,user,document_id,
+                integer(form.get('expected_revision')),str(form.get('reason',''))))
+            return RedirectResponse(f'/activity-sections/reports/{document_id}',303)
+        except HTTPException as error:
+            context=editor_context(db,user,document_id,'I.A')
+            context.update(reopen_error=error.detail,reopen_reason=str(form.get('reason','')))
+            return templates.TemplateResponse(request,'activity_sections_editor.html',context,status_code=error.status_code)
 
     app.include_router(router)
