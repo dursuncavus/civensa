@@ -2,11 +2,22 @@
 {% block page_title %}Faaliyet Raporları{% endblock %}
 {% block page_subtitle %}Seçilen Performans Programı yayınına bağlı gösterge gerçekleşmeleri{% endblock %}
 {% block content %}
+<style>
+.app:has(.activity-contract-content) header{height:auto;min-height:78px;flex-wrap:wrap;gap:12px;padding-block:14px}
+.app:has(.activity-contract-content) header>div{min-width:0;max-width:100%;overflow-wrap:anywhere}
+.activity-contract-content{overflow-wrap:anywhere}
+.activity-contract-content input,.activity-contract-content select{min-width:0;max-width:100%}
+.activity-contract-content .badge{display:inline-block;margin:3px 0;text-transform:none;letter-spacing:normal}
+@media(max-width:620px){.app:has(.activity-contract-content){grid-template-columns:64px minmax(0,1fr)}.app:has(.activity-contract-content) .sidebar-account .logout{white-space:normal;padding:6px 2px;font-size:9px}}
+</style>
+<div class="activity-contract-content">
+
 <section class="card"><p>Her rapor belirli bir program yayınına bağlıdır. Sonraki yayınlar mevcut raporun hedeflerini değiştirmez. Bu bölüm gösterge gerçekleşmelerini kapsar; tam faaliyet kitabı ve dosya üretimi bu bölümden yapılmaz.</p>
-{% if revisions %}<ul>{% for rev in revisions %}<li><a href="/activity-reports/revisions/{{ rev.id }}">{{ rev.organization }} · {{ rev.year }} · Rapor revizyon {{ rev.revision }} · Program v{{ rev.publication_version }}</a>{% if rev.revision_reason %}<p>Revizyon gerekçesi: {{ rev.revision_reason }}</p>{% endif %}</li>{% endfor %}</ul>{% else %}<p>Henüz oluşturulmuş Faaliyet Raporu yok.</p>{% endif %}</section>
+{% if revisions %}<ul>{% for rev in revisions %}<li><a href="/activity-reports/revisions/{{ rev.id }}">{{ rev.organization }} · {{ rev.year }} · Rapor revizyon {{ rev.revision }} · Program v{{ rev.publication_version }}</a> <span aria-label="Revizyon durumu">{% for badge in rev.status_badges %}<span class="badge {{ 'ok' if badge == 'Onaylı' else 'bad' if badge == 'Nihai onay sonrası iade edildi' else '' }}">{{ badge }}</span> {% endfor %}</span>{% if rev.revision_reason %}<p>Revizyon gerekçesi: {{ rev.revision_reason }}</p>{% endif %}</li>{% endfor %}</ul>{% else %}<p>Henüz oluşturulmuş Faaliyet Raporu yok.</p>{% endif %}</section>
 {% if user.role == 'strategy' %}<section class="card"><h2>Yeni rapor oluştur</h2>
 {% if publications %}<form method="post" action="/activity-reports/revisions"><input type="hidden" name="csrf_token" value="{{ request.session.get('csrf_token') }}"><label>Kurum<select name="organization_id" required>{% for org in organizations %}<option value="{{ org.id }}">{{ org.name }}</option>{% endfor %}</select></label><label>Baz program yayını<select name="publication_id" required><option value="">Yıl ve yayın sürümünü seçin</option>{% for pub in publications %}<option value="{{ pub.id }}" {% if not pub.valid %}disabled{% endif %}>{{ pub.year }} · v{{ pub.version }} · {{ pub.created_at|turkey_time }} · {{ 'Bütünlük doğrulandı' if pub.valid else 'Bütünlük hatası' }}</option>{% endfor %}</select></label><p>Seçilen sürüm rapora sabitlenir. Aynı yılın mevcut raporu varsa onun içinden yeni revizyon açın.</p><button class="button primary">Seçilen yayınla rapor oluştur</button></form>
 <h3>Eski yayın kimlik eşlemeleri</h3><ul>{% for pub in publications %}{% if pub.valid %}<li><a href="/activity-reports/publications/{{ pub.id }}/bindings">{{ pub.year }} · Program v{{ pub.version }} · Kimlik ilişkilerini incele</a></li>{% endif %}{% endfor %}</ul>
 {% else %}<p>Yayımlanmış Performans Programı bulunamadı. Önce strateji birimi baz yayını hazırlamalı.</p>{% endif %}</section>{% endif %}
 <a class="button" href="/activity-report">Kaynak kayıt inceleme pilotu</a>
+</div>
 {% endblock %}
