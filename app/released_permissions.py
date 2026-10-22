@@ -232,7 +232,7 @@ def track_pp_authorship(db, flush_context, instances):
 
 def require_independent_pp_approver(db, user, submission):
     returned = db.scalar(select(SubmissionEvent).where(SubmissionEvent.submission_id == submission.id,
-        SubmissionEvent.event_type == 'return').order_by(SubmissionEvent.id.desc()).limit(1))
+        SubmissionEvent.event_type.in_(['return', 'reopen'])).order_by(SubmissionEvent.id.desc()).limit(1))
     query = select(AuditLog).where(AuditLog.user_id == user.id)
     if returned:
         query = query.where(AuditLog.created_at >= returned.created_at)

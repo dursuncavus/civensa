@@ -29,6 +29,51 @@ def integer(value, label='Kimlik'):
 def register(app):
     from .main import require_user, require_strategy, ensure_department_editable, templates, session_period, pp_period, check_pp_access, require_pp_period, log
 
+    def comparison_context(request, db, user, department_id):
+        period = session_period(request, db, require=True)
+        if user.role not in {'strategy', 'department'}:
+            raise pp_error(403)
+        if user.role == 'department':
+            if department_id is not None and department_id != user.department_id:
+                raise pp_error(403)
+            department_id = user.department_id
+            if department_id is None:
+                raise pp_error(403)
+            check_pp_access(db, user, department_id, period)
+        elif department_id is not None:
+            if not db.get(Department, department_id):
+                raise pp_error(404)
+        from .source_comparison_service import source_comparison
+        return period, department_id, source_comparison(db, period.id, department_id)
+
+    @app.get('/source-comparison')
+    def comparison(request: Request, department_id: int | None = None,
+                   db: Session = Depends(get_db), user: User = Depends(require_user)):
+        period, did, result = comparison_context(request, db, user, department_id)
+        return templates.TemplateResponse(request, 'source_comparison.html', dict(
+            user=user, period=period, comparison=result, reconciliation=result['reconciliation'], department_id=did))
+
+    @app.get('/source-comparison.csv')
+    def comparison_csv(request: Request, department_id: int | None = None,
+                       db: Session = Depends(get_db), user: User = Depends(require_user)):
+        import csv
+        from .csv_safety import csv_row
+        period, did, result = comparison_context(request, db, user, department_id)
+        fields = [('department', 'Müdürlük'), ('record', 'Kayıt'), ('year', 'Yıl'),
+            ('kind', 'Değer türü'), ('funding', 'Finansman'), ('document', 'Belge'),
+            ('batch_id', 'İçe aktarma'), ('document_sha256', 'Belge SHA-256'),
+            ('table', 'Tablo'), ('row', 'Satır'), ('column', 'Sütun'), ('page', 'Sayfa'),
+            ('raw_text', 'Kaynak hücre'), ('source_amount', 'Kaynak değer'),
+            ('stored_amount', 'Güncel değer'), ('difference', 'Fark'), ('status', 'Durum'),
+            ('decision', 'Karar ve gerekçe'), ('note', 'Açıklama')]
+        output = io.StringIO(newline='')
+        writer = csv.writer(output, delimiter=';')
+        writer.writerow(csv_row([label for _, label in fields]))
+        for row in result['rows']:
+            writer.writerow(csv_row([row[key] for key, _ in fields]))
+        return Response('\ufeff' + output.getvalue(), media_type='text/csv; charset=utf-8',
+            headers={'Content-Disposition': f'attachment; filename="pp-kaynak-karsilastirma-{period.year}.csv"'})
+
     def form_screen(request, db, user, department_id, data):
         # The write dependency already validated the explicit period before the endpoint.
         period = session_period(request, db, data, require=True)
@@ -319,12 +364,15 @@ def register(app):
         scopes={r.department_id:r for r in rows(db,DepartmentScope,period.id)}
         section_copy_audit = db.scalar(select(AuditLog).where(AuditLog.action == 'section_period_copy',
             AuditLog.entity_id == period.id).order_by(AuditLog.id.desc()))
+        from .publication_history import publication_history
+        department_names = {d.id:period_name(db,period.id,d) for d in period_departments(db,period.id)}
         return templates.TemplateResponse(request,'report_builder.html',dict(user=user,period=period,
             source_periods=db.scalars(select(ReportingPeriod).where(ReportingPeriod.id != period.id).order_by(ReportingPeriod.year.desc())).all(),
             section_copy_result=getattr(request.state, 'section_copy_result', None) or (json.loads(section_copy_audit.details)['new'] if section_copy_audit else None),
             departments=period_departments(db,period.id),scopes=scopes,reconciliation=cost_reconciliation(db,period.id),
-            department_names={d.id:period_name(db,period.id,d) for d in period_departments(db,period.id)},
-            sections=rows(db,ReportSection,period.id),catalogue=rows(db,OfficialActivity,period.id),responsibilities={i.id:[r.department_id for r in db.scalars(select(ActivityResponsibility).where(ActivityResponsibility.official_activity_id==i.id)).all()] for i in rows(db,OfficialActivity,period.id)},publications=rows(db,Publication,period.id)))
+            department_names=department_names,
+            sections=rows(db,ReportSection,period.id),catalogue=rows(db,OfficialActivity,period.id),responsibilities={i.id:[r.department_id for r in db.scalars(select(ActivityResponsibility).where(ActivityResponsibility.official_activity_id==i.id)).all()] for i in rows(db,OfficialActivity,period.id)},
+            **publication_history(db, period.id, user, department_names)))
 
     @app.get('/report-builder/sections.js', include_in_schema=False)
     def section_script(user:User=Depends(require_strategy)):

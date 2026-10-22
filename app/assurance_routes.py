@@ -39,7 +39,7 @@ def register(app):
         if not item:
             sections.fail('Beyan bu raporda bulunamadı. EKLER listesinden bir beyan seçin.', 404)
         return {'user': user, 'report': report, 'statement': service.view(item), 'item': item,
-                'editable': not report['frozen'] and service.can_edit(db, user, doc, code),
+                'editable': not report['frozen'] and report.get('workflow',{}).get('status')!='submitted' and service.can_edit(db, user, doc, code),
                 'variables': item['variables']}
 
     @router.get('/activity-sections/reports/{document_id}/assurances/{code}')

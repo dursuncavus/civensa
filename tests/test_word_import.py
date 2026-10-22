@@ -147,10 +147,10 @@ def import_client(db, import_context):
         app.dependency_overrides.clear()
 
 
-def preview(client, context, **options):
+def preview(client, context, *, document=None, **options):
     response = client.post(
         f'/api/periods/{context.period.id}/data-import-preview',
-        files={'file': ('sentetik.docx', word_document(**options),
+        files={'file': ('sentetik.docx', document if document is not None else word_document(**options),
                         'application/vnd.openxmlformats-officedocument.wordprocessingml.document')},
     )
     assert response.status_code == 200, response.text
@@ -169,7 +169,9 @@ def parsed_values(**options):
 
 
 def test_preview_keeps_payload_and_does_not_write_department_data(db, import_client, import_context):
-    result = preview(import_client, import_context)
+    # DOCX ZIP timestamps can differ between saves; compare the uploaded bytes.
+    document = word_document()
+    result = preview(import_client, import_context, document=document)
     assert result['status'] == 'preview'
     assert result['can_apply'] is True
     assert result['summary']['source_years'] == [2027]
@@ -177,7 +179,7 @@ def test_preview_keeps_payload_and_does_not_write_department_data(db, import_cli
     assert result['summary']['activity_count'] == 1
     assert result['departments'][0]['name'] == 'Park ve Bahçeler Müdürlüğü'
     batch = db.get(ImportBatch, result['batch_id'])
-    assert json.loads(batch.payload_json) == parse_performance_docx(word_document())
+    assert json.loads(batch.payload_json) == parse_performance_docx(document)
     assert db.scalar(select(func.count()).select_from(Department)) == 0
     assert db.scalar(select(func.count()).select_from(Indicator)) == 0
     detail = import_client.get(f'/api/import-batches/{batch.id}').json()

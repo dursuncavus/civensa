@@ -510,7 +510,7 @@ from .revision_workflow_models import RevisionRequest, RevisionRequestState, Rev
 from .login_throttling import LoginAttempt
 
 from .activity_sections_models import (ARSectionDefinition, ARDocument, ARSectionContent,
-    ARResourceRow, ARDocumentFreeze, ARContentEvent)
+    ARResourceRow, ARDocumentFreeze, ARContentEvent, ARUnitWorkflowEvent)
 from .activity_financial_models import (ARBudgetRow, ARFinancialPolicy, ARFinancialEntry,
     ARFinancialStatement, ARFinancialImport)
 

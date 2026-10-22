@@ -2390,6 +2390,8 @@ released_permissions.register(app)
 
 from .activity_sections_routes import register as register_activity_sections_routes
 register_activity_sections_routes(app)
+from .ar_unit_workflow_routes import register as register_ar_unit_workflow_routes
+register_ar_unit_workflow_routes(app)
 
 from .activity_financial_routes import register as register_activity_financial_routes
 register_activity_financial_routes(app)
@@ -2401,3 +2403,5 @@ budget_routes.register(app)
 
 from .internal_control_routes import register as register_internal_control_routes
 register_internal_control_routes(app)
+
+from . import pp_reopen_routes; app.include_router(pp_reopen_routes.router)

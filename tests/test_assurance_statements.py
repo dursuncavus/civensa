@@ -167,7 +167,7 @@ def test_reservations_required_justification_and_empty_render(section_client, db
     assert 'name="reservation_' not in page.text and 'Çekinceler' not in page.text
 
 
-def test_missing_variables_and_unrecorded_period_prevent_ready(section_client):
+def test_missing_variables_and_unrecorded_period_prevent_ready(section_client, db):
     client, docs, _, _ = section_client
     doc = docs['idare']; token = login(client, 'strategy@example.invalid')
     values = variables(); values['place'] = ''; values['signatories'][0]['start_date'] = '2027-02-01'
@@ -176,6 +176,8 @@ def test_missing_variables_and_unrecorded_period_prevent_ready(section_client):
     assert slot['status'] == 'draft'
     assert any('Yer' in m for m in slot['missing']) and any('tamamını' in m for m in slot['missing'])
     # Complete every other section so EKLER is the sole freeze blocker.
+    from ar_unit_workflow_helpers import approve_sources
+    approve_sources(db, doc)
     report = client.get(f'/api/activity-sections/reports/{doc.id}').json()
     for section in report['sections']:
         if section['code'] not in {'EKLER', 'III.B.2.i'}:
@@ -300,6 +302,9 @@ def test_closed_directorate_ek2_requires_coverage_only_through_active_to(section
     assert '2027 Hizmet Müdürlüğü' in assurance_page.text and 'Bugünkü Müdürlük' not in assurance_page.text
 
     # Complete the other sections; EK-2's one missing closure day blocks freeze.
+    from ar_unit_workflow_helpers import ensure_core_ready, reviewer
+    from app.ar_unit_workflow_service import transition
+    ensure_core_ready(db, doc, sample['user']); db.commit()
     token = login(client, sample['strategy'].email)
     report = client.get(f'/api/activity-sections/reports/{doc.id}').json()
     for section in report['sections']:
@@ -310,7 +315,7 @@ def test_closed_directorate_ek2_requires_coverage_only_through_active_to(section
             status='not_applicable' if financial_na else 'ready',
             reason='Bu örnek raporda malî veri bulunmuyor.' if financial_na else '').status_code == 200
     revision = client.get(f'/api/activity-sections/reports/{doc.id}').json()['revision']
-    response = client.post(f'/api/activity-sections/reports/{doc.id}/freeze',
+    response = client.post(f'/api/activity-sections/reports/{doc.id}/workflow/submit',
         headers={'X-CSRF-Token': token}, json={'expected_revision': revision})
     assert response.status_code == 409 and 'EKLER' in response.json()['detail']
 
@@ -319,7 +324,9 @@ def test_closed_directorate_ek2_requires_coverage_only_through_active_to(section
     assert put(client, token, doc, 'EK-2', values).status_code == 200
     assert ekler(client, doc)['status'] == 'ready'
     assert not ekler(client, doc)['missing']
-    token = login(client, sample['strategy'].email)
+    transition(db, sample['user'], doc.id, 'submit', doc.revision)
+    approver = reviewer(db, doc); db.commit()
+    token = login(client, approver.email)
     revision = client.get(f'/api/activity-sections/reports/{doc.id}').json()['revision']
     response = client.post(f'/api/activity-sections/reports/{doc.id}/freeze',
         headers={'X-CSRF-Token': token}, json={'expected_revision': revision})

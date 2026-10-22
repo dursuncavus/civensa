@@ -371,9 +371,17 @@ def financial_data(db,doc):
         'tables':{},'checks':[],'missing':{k:[] for k in ('III.A.1','III.A.2','III.A.3','III.A.4')},'statements':[],'entries':{},'imports':[]}
     refs,pub_id=pp_references(db,doc)
     units=db.scalars(select(ARDocument).where(ARDocument.organization_id==doc.organization_id,ARDocument.period_id==doc.period_id,ARDocument.department_id.is_not(None))).all()
+    approved=[]
+    if not doc.department_id:
+        from .ar_unit_workflow_service import approved_sources
+        approved,_=approved_sources(db,doc)
     overrides={}
-    for unit in units:
-        for entry in entries(db,unit,'explanations'):overrides[entry['row_key']]=entry['explanation']
+    if doc.department_id:
+        for entry in entries(db,doc,'explanations'):overrides[entry['row_key']]=entry['explanation']
+    else:
+        for _,snapshot in approved:
+            for entry in snapshot['financial']['entries']['explanations']:
+                overrides[entry['row_key']]=entry['explanation']
     for kind in ('expenditure','programme','revenue'):
         if doc.department_id and kind=='revenue':continue
         rows=[]
@@ -427,7 +435,8 @@ def financial_data(db,doc):
     for kind in ('assets','aid','audit','explanations'):
         result['entries'][kind]=entries(db,doc,kind)
         if not doc.department_id and kind in {'aid','audit'}:
-            result['entries'][kind+'_directorates']=[{'department':period_name(db,doc.period_id,db.get(Department,u.department_id)),**item} for u in units for item in entries(db,u,kind)]
+            result['entries'][kind+'_directorates']=[{'department':snapshot['department'],**item}
+                for _,snapshot in approved for item in snapshot['financial']['entries'][kind]]
     if not doc.department_id:
         result['statements']=[statement_data(s) for s in db.scalars(select(ARFinancialStatement).where(ARFinancialStatement.document_id==doc.id).order_by(ARFinancialStatement.id))]
         names={s['name'] for s in result['statements']}
