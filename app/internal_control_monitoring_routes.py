@@ -59,6 +59,7 @@ def overview_screen(request, db, user, period_id=None):
     details, counts = m.overview(db, user, period) if period else ([], {})
     return templates.TemplateResponse(request, 'internal_control/monitoring.html', dict(user=user,
         monitoring_period=period, periods=available, details=details, counts=counts,
+        official_metrics=m.official_metrics(db, user, period) if period else None,
         unassigned=db.scalars(select(Department).where(Department.is_active.is_(True),
             Department.id.not_in([d['batch'].department_id for d in details if d['batch'].department_id])).order_by(Department.name)).all() if period else [],
         plans=db.scalars(select(ICPlan).where(ICPlan.status == 'active')).all(),
@@ -139,14 +140,17 @@ def register(app):
             m.number(d.get('id', ''), 'id'), d.get('content', '')),
             lambda: our_screen(request, db, user, period_id), lambda _: f'/internal-control/our-actions?period_id={period_id}')
 
+    @app.get('/internal-control/monitoring/periods/{period_id}/official-report.{format}')
     @app.get('/internal-control/monitoring/periods/{period_id}/report.{format}')
-    def report(period_id: str, format: str, draft: str = 'false', db: Session = Depends(get_db), user=Depends(require_user)):
+    def report(request: Request, period_id: str, format: str, draft: str = 'false', db: Session = Depends(get_db), user=Depends(require_user)):
         period_id = m.number(period_id, 'period_id')
         if draft.lower() not in {'true', 'false', '1', '0'}:
             m.fail('Taslak seçimi geçersiz. Ekrandaki TASLAK veya onaylı rapor bağlantısını kullanın.', 'draft')
         draft = draft.lower() in {'true', '1'}
-        data = export.period_export(db, user, period_id, format, draft=draft)
-        prefix = 'TASLAK-' if draft else ''
+        official = '/official-report.' in request.url.path
+        render = export.official_export if official else export.period_export
+        data = render(db, user, period_id, format, draft=draft)
+        prefix = ('TASLAK-' if draft else '') + ('resmi-' if official else '')
         media = 'application/vnd.openxmlformats-officedocument.' + ('wordprocessingml.document' if format == 'docx' else 'spreadsheetml.sheet')
         return StreamingResponse(BytesIO(data), media_type=media,
             headers={'Content-Disposition': f'attachment; filename="{prefix}ic-izleme-{period_id}.{format}"'})

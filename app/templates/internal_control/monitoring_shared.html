@@ -16,8 +16,8 @@
 {% filter pp_form(request) %}<form method="post" action="/internal-control/monitoring/batches/{{ detail.batch.id }}/entry">{{ token(request) }}
 <input type="hidden" name="id" value="{{ row.target.id }}"><input type="hidden" name="expected_revision" value="{{ detail.revision }}">
 <div class="ic-grid"><label>Durum<select name="status"><option value="">Durum seçin</option>{% for key,label in statuses.items() %}<option value="{{ key }}" {{ 'selected' if e and e.status == key else '' }}>{{ label }}</option>{% endfor %}</select></label>
-<label>Gerçekleşme oranı % (0–100)<input name="percentage" inputmode="numeric" value="{{ e.percentage if e and e.percentage is not none else '' }}"><small>Yalnız Başlanmadı durumunda boş bırakılabilir. Boş değer sıfır değildir.</small></label></div>
-<label>Açıklama<textarea name="explanation" maxlength="10000">{{ e.explanation if e else '' }}</textarea></label>
+<label>Gerçekleşme oranı % (0–100)<input name="percentage" inputmode="numeric" value="{{ e.percentage if e and e.percentage is not none else '' }}"><small>Başlanmadı veya Eylem uygun görülmemiştir durumunda boş bırakılabilir. Kısmen tamamlandı için 1–99 zorunludur. Boş değer sıfır değildir.</small></label></div>
+<label>Açıklama (uygun görülmeyen eylemde zorunlu)<textarea name="explanation" maxlength="10000">{{ e.explanation if e else '' }}</textarea></label>
 <label>Tamamlanmama nedeni<textarea name="reason" maxlength="10000">{{ e.reason if e else '' }}</textarea><small>Süresi geçen tamamlanmamış eylemlerde ve Gecikmede durumunda zorunludur.</small></label>
 <label>Kanıt referansı<input name="evidence" maxlength="10000" value="{{ e.evidence if e else '' }}"><small>EBYS evrak sayısı/tarihi veya bağlantı yazın.</small></label>
 <button class="button primary">Eylemi kaydet</button></form>{% endfilter %}

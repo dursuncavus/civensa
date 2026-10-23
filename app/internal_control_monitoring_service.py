@@ -1,9 +1,12 @@
 """CIV-079 six-month monitoring, scoped reads and serialized append-only writes."""
+import json
+from decimal import Decimal
 from datetime import date
 from zoneinfo import ZoneInfo
 from sqlalchemy import select, update
 from . import authorization_service as auth
-from .internal_control_service import require_access
+from .internal_control_service import require_access, parse_date
+from .numbers import format_number
 from .internal_control_models import ICPlan, ICAction, ICActionParty, ICCondition, STANDARD_COMPONENTS
 from .internal_control_monitoring_models import (ICMonitoringPeriod as Period,
     ICMonitoringPeriodEvent as PeriodEvent, ICMonitoringBatch as Batch,
@@ -14,7 +17,9 @@ from .pp_errors import pp_error
 from .released_permissions import require_submit, require_strategy_director, SOD_ERROR
 
 STATUSES = {'completed': 'Tamamlandı', 'ongoing': 'Devam ediyor',
-            'not_started': 'Başlanmadı', 'delayed': 'Gecikmede'}
+            'not_started': 'Başlanmadı', 'delayed': 'Gecikmede',
+            'partial': 'Kısmen tamamlandı (devam ediyor)',
+            'not_approved': 'Eylem uygun görülmemiştir'}
 STATES = {'draft': 'Taslak', 'submitted': 'Gönderildi', 'returned': 'İade edildi', 'approved': 'Onaylandı'}
 TSI = ZoneInfo('Europe/Istanbul')
 
@@ -181,8 +186,12 @@ def validate_entry(db, action, data):
         fail(f'{action.action_code_raw} durum alanı geçersiz. Listeden durum seçin.', 'status')
     raw = str(data.get('percentage', '')).strip()
     percentage = number(raw, 'percentage') if raw else None
-    if percentage is not None and percentage > 100 or percentage is None and status != 'not_started':
-        fail(f'{action.action_code_raw} gerçekleşme oranı geçersiz. 0–100 girin; yalnız Başlanmadı durumunda boş bırakın.', 'percentage')
+    if status == 'partial' and (percentage is None or not 1 <= percentage <= 99):
+        fail(f'{action.action_code_raw} kısmen tamamlanma oranı geçersiz. 1–99 arasında yüzde girin.', 'percentage')
+    if percentage is not None and percentage > 100 or percentage is None and status not in ('not_started', 'not_approved'):
+        fail(f'{action.action_code_raw} gerçekleşme oranı geçersiz. 0–100 girin; Başlanmadı veya Eylem uygun görülmemiştir durumunda boş bırakabilirsiniz.', 'percentage')
+    if status == 'not_approved' and not str(data.get('explanation', '')).strip():
+        fail(f'{action.action_code_raw} uygun görülmeme açıklaması eksik. Açıklama alanına gerekçeyi yazın.', 'explanation')
     reason = str(data.get('reason', '')).strip()
     if status != 'completed' and (status == 'delayed' or action.due_date and action.due_date < today(db)) and not reason:
         fail(f'{action.action_code_raw} tamamlanmama nedeni eksik. Süresi geçen veya geciken eylemin nedenini yazın.', 'reason')
@@ -324,3 +333,80 @@ def overview(db, actor, period):
             tally = counts.setdefault(key, {**{s: 0 for s in STATUSES}, 'missing': 0})
             tally[row['entry'].status if row['entry'] else 'missing'] += 1
     return result, counts
+
+
+def due_in_period(action, period):
+    """Varsayım — Strateji teyit edecek: bitiş <= yarıyıl sonu; sürekli
+    eylemde başlangıç <= yarıyıl sonu. Yalnız yıl olan başlangıç 1 Ocak'tır.
+    Okunamayan bitiş (sürekli eylemde başlangıç) None döner ve iki orandan da
+    çıkarılır; False ise tarih okunmuştur ancak eylem henüz döneme girmemiştir.
+    """
+    end = date(period.year, 6, 30) if period.half == 1 else date(period.year, 12, 31)
+    if action.is_continuous:
+        raw = action.start_raw.strip()
+        start = date(int(raw), 1, 1) if len(raw) == 4 and raw.isascii() and raw.isdecimal() and 1 <= int(raw) <= 9999 else parse_date(raw)
+        return start <= end if start else None
+    return action.due_date <= end if action.due_date else None
+
+
+def action_status(entries):
+    """Count each action once, using all responsible units' approved entries."""
+    statuses = [entry.status if entry else None for entry in entries]
+    if statuses and all(s == 'completed' for s in statuses):
+        return 'completed'
+    if statuses and all(s == 'not_approved' for s in statuses):
+        return 'not_approved'
+    if any(s in ('completed', 'partial', 'ongoing', 'delayed') for s in statuses):
+        return 'ongoing'
+    return 'not_started'
+
+
+def action_records(db, period, *, draft=False):
+    """Read approved snapshots; draft rows may also show current unapproved text."""
+    grouped = {}
+    batches = db.scalars(select(Batch).where(Batch.period_id == period.id).order_by(Batch.id)).all()
+    for batch in batches:
+        event = latest_event(db, batch.id)
+        approved = event and event.to_status == 'approved'
+        snapshots = {item['target_id']: db.get(Entry, item['entry_id'])
+                     for item in json.loads(event.snapshot_json)} if approved else {}
+        for row in rows(db, batch):
+            entry = snapshots.get(row['target'].id)
+            grouped.setdefault(row['action'].id, []).append(dict(
+                batch=batch, approved_entry=entry, entry=entry if approved else row['entry'] if draft else None))
+    actions = db.scalars(select(ICAction).where(ICAction.plan_id == period.plan_id)
+                         .order_by(ICAction.sort_order, ICAction.id)).all()
+    return [dict(action=a, units=grouped.get(a.id, []),
+                 status=action_status([u['approved_entry'] for u in grouped.get(a.id, [])]),
+                 due=due_in_period(a, period)) for a in actions]
+
+
+def rate_text(completed, total):
+    percentage = format_number(Decimal(completed) * 100 / Decimal(total), money=True) + '%' if total else '—'
+    return f'{percentage} ({format_number(completed)}/{format_number(total)})'
+
+
+def official_metrics(db, actor, period, *, records=None):
+    require_access(db, actor, strategy=True)
+    from .internal_control_models import COMPONENTS
+    records = action_records(db, period) if records is None else records
+    eligible = [r for r in records if r['due'] is not None]
+    due = [r for r in eligible if r['due']]
+    completed = sum(r['status'] == 'completed' for r in eligible)
+    due_completed = sum(r['status'] == 'completed' for r in due)
+    components = []
+    for code, label in COMPONENTS.items():
+        selected = [r for r in records if STANDARD_COMPONENTS[db.get(ICCondition, r['action'].condition_id).standard_code] == code]
+        period_selected = [r for r in selected if r['due'] is True]
+        realised = sum(r['status'] == 'completed' for r in period_selected)
+        ongoing = sum(r['status'] == 'ongoing' for r in period_selected)
+        completed_total = sum(r['status'] == 'completed' for r in selected)
+        rate_completed = sum(r['status'] == 'completed' and r['due'] is not None for r in selected)
+        components.append([label, len(selected), realised, len(period_selected) - realised - ongoing,
+                           ongoing, completed_total, rate_text(rate_completed, len(eligible))])
+    unreadable = [r['action'].action_code_raw for r in records if r['due'] is None]
+    return dict(plan_total=len(records), eligible_total=len(eligible), due_total=len(due),
+                completed=completed, due_completed=due_completed,
+                period_rate=rate_text(due_completed, len(due)), plan_rate=rate_text(completed, len(eligible)),
+                components=components,
+                warning='Bitiş tarihi okunamayan eylemler: ' + ', '.join(unreadable) if unreadable else '')
