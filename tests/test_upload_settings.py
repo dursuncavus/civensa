@@ -60,5 +60,5 @@ def test_word_import_uses_configured_image_pixel_limit(monkeypatch, pixels, imag
     preview = parse_pp_import(output.getvalue())
     assert any(section['kind'] == 'image' for section in preview['general_sections']) == image_kept
     if not image_kept:
-        assert any('PNG/JPEG' in warning and 'yeniden ekleyin' in warning and '3e-06 megapiksel' in warning
+        assert any('PNG/JPEG' in warning and 'yeniden ekleyin' in warning and '0,000003 megapiksel' in warning
                    for warning in preview['general_section_warnings'])

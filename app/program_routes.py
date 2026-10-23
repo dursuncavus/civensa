@@ -13,7 +13,7 @@ from starlette.concurrency import run_in_threadpool
 from .config import pp_image_max_bytes, pp_image_max_pixels
 from .db import get_db
 from .models import *
-from .numbers import parse_number
+from .numbers import parse_number, format_number
 from .serialization import json_dumps
 from .program_service import *
 from .pp_errors import pp_error, recover_form, payload
@@ -468,7 +468,7 @@ def register(app):
                     with Image.open(io.BytesIO(raw)) as im:
                         if im.format not in {'PNG','JPEG'} or im.width*im.height>pp_image_max_pixels():raise ValueError()
                         im.verify()
-                except Exception:raise pp_error(422, f'Bölüm görseli okunamadı. Geçerli PNG/JPEG dosyasını yeniden seçin (en fazla {pp_image_max_pixels() / 1000000:g} megapiksel).', 'image') from None
+                except Exception:raise pp_error(422, f'Bölüm görseli okunamadı. Geçerli PNG/JPEG dosyasını yeniden seçin (en fazla {format_number(pp_image_max_pixels() / 1000000)} megapiksel).', 'image') from None
                 payload={'data':base64.b64encode(raw).decode(),'caption':content}
             elif obj and obj.kind=='image':
                 payload=json.loads(obj.content_json);payload['caption']=content

@@ -213,3 +213,37 @@ def test_closed_revision_keeps_failed_actual_form_values(client, db, sample):
     assert response.status_code == 409 and 'Yeni rapor revizyonu oluşturun' in response.text
     assert all(attempted(response, path)[key] == value for key, value in fields.items())
     assert db.scalar(select(func.count()).select_from(ActualRevision)) == 1
+
+
+@pytest.mark.parametrize('api', [False, True])
+def test_expired_temporary_password_session_reaches_auth_check_on_legacy_router(client, db, sample, api):
+    app.dependency_overrides.pop(require_user)
+    password = 'Gecici-yerel-test-123'
+    sample['user'].password_hash = hash_password(password)
+    sample['user'].must_change_password = True
+    db.commit()
+    assert client.post('/login', data={'email': sample['user'].email, 'password': password}, follow_redirects=False).status_code == 303
+    path = '/api/activity-reports/revisions/1' if api else '/activity-reports'
+    headers = {'Accept': 'application/json' if api else 'text/html'}
+    response = client.get(path, headers=headers, follow_redirects=False)
+    assert response.status_code == 303 and response.headers['location'] == '/change-password'
+    sample['user'].password_hash = hash_password(password + '-degisti')
+    db.commit()
+    response = client.get(path, headers=headers, follow_redirects=False)
+    if api:
+        assert response.status_code == 401 and 'yeniden giriş yapın' in response.json()['message']
+    else:
+        assert response.status_code == 303 and response.headers['location'].startswith('/login?message=')
+
+
+@pytest.mark.parametrize('state,label', [('assembling', 'Hazırlanıyor'), ('final_review', 'Nihai incelemede'), ('final_approved', 'Nihai onaylı')])
+def test_legacy_workflow_conflict_translates_internal_state(client, monkeypatch, state, label):
+    from fastapi import HTTPException
+    from app import activity_contract_service as contract
+    def managed(*args, **kwargs):
+        raise HTTPException(409, f'Bu Faaliyet Raporu aday iş akışı tarafından yönetiliyor (#1 numaralı rapor adayı ({state})). Güncel rapor adayını açın.')
+    monkeypatch.setattr(contract, 'report_data', managed)
+    response = client.get('/api/activity-reports/revisions/1')
+    assert response.status_code == 409
+    assert label in response.json()['message'] and 'Güncel rapor adayını açın' in response.json()['message']
+    assert state not in response.json()['message']

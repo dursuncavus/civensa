@@ -29,6 +29,8 @@ def error_detail(error):
     detail = error.detail
     message = detail.get('message', '') if isinstance(detail, dict) else detail
     message = payload(HTTPException(error.status_code, message))['detail']
+    for state, label in {'assembling': 'Hazırlanıyor', 'final_review': 'Nihai incelemede', 'final_approved': 'Nihai onaylı'}.items():
+        message = message.replace(f'({state})', f'({label})')
     field = detail.get('field') if isinstance(detail, dict) else None
     label = LABELS.get(field, 'Faaliyet raporu')
     if not str(message).casefold().startswith(label.casefold()):

@@ -1,5 +1,6 @@
 import hashlib
 from .config import pp_image_max_bytes, pp_image_max_pixels
+from .numbers import format_number
 import json
 from .serialization import json_dumps
 from decimal import Decimal
@@ -130,7 +131,7 @@ def parse_pp_import(data: bytes) -> dict:
                             raise ValueError()
                         im.verify()
                 except Exception:
-                    section_warnings.append(f'“{current["title"]}” görseli geçersiz veya çok büyük. Kitap Bölümleri ekranından en fazla {pp_image_max_bytes() // (1024 * 1024)} MB ve {pp_image_max_pixels() / 1000000:g} megapiksel PNG/JPEG görseli yeniden ekleyin.')
+                    section_warnings.append(f'“{current["title"]}” görseli geçersiz veya çok büyük. Kitap Bölümleri ekranından en fazla {pp_image_max_bytes() // (1024 * 1024)} MB ve {format_number(pp_image_max_pixels() / 1000000)} megapiksel PNG/JPEG görseli yeniden ekleyin.')
                     continue
                 sections.append({'title': current['title'] + ' — Görsel', 'kind': 'image',
                     'position': source_position, 'content': {'data': base64.b64encode(part.blob).decode(),

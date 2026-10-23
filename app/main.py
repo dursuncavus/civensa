@@ -106,8 +106,18 @@ class FirstPasswordMiddleware:
     def protected_route(self, scope):
         # Protected routes must validate the password fingerprint first, so a
         # stale temporary-password session still gets the existing 401 behavior.
-        for route in scope["app"].routes:
-            if route.matches(scope)[0] == Match.FULL and hasattr(route, "dependant"):
+        routes = list(scope["app"].routes)
+        while routes:
+            route = routes.pop(0)
+            if route.matches(scope)[0] != Match.FULL:
+                continue
+            # FastAPI includes APIRouters through a wrapper. Resolve its routes
+            # so stale temporary sessions still reach require_user first.
+            included = getattr(route, "original_router", None)
+            if included is not None:
+                routes[0:0] = included.routes
+                continue
+            if hasattr(route, "dependant"):
                 dependencies = [route.dependant]
                 while dependencies:
                     dependency = dependencies.pop()
