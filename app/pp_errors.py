@@ -61,7 +61,8 @@ def payload(exc):
     message = str(detail)
     # Preserve existing Turkish explanations; add the missing recovery step.
     actions = ('edin', 'girin', 'seçin', 'açın', 'başvurun', 'yazın', 'kaydedin',
-               'deneyin', 'isteyin', 'kaldırın', 'düzeltin', 'tamamlayın', 'karşılaştırın')
+               'deneyin', 'isteyin', 'kaldırın', 'düzeltin', 'tamamlayın', 'karşılaştırın',
+               'yükleyin', 'gönderin', 'oluşturun')
     if exc.status_code in DEFAULTS and not any(action in message.lower() for action in actions):
         message += ' İlgili alanı veya kaydı kontrol edip yeniden deneyin.'
     field_message = message
@@ -95,6 +96,8 @@ def install(app, templates):
         if (not is_pp_path(request.url.path) and not hasattr(exc, 'pp_errors')) or exc.status_code < 400:
             return await http_exception_handler(request, exc)
         body = payload(exc)
+        if hasattr(exc, 'auth_message'):
+            body['message'] = exc.auth_message
         if exc.status_code == 422 and 'text/html' in request.headers.get('accept', ''):
             recovered = recover_dependency_form(request, body)
             if recovered is not None:
@@ -106,6 +109,12 @@ def install(app, templates):
 
     @app.exception_handler(RequestValidationError)
     async def validation_error(request, exc):
+        if request.url.path == '/login':
+            message = 'Giriş formundaki e-posta veya parola alanı eksik ya da geçersiz. E-posta ve parolanızı doldurup yeniden giriş yapın.'
+            if wants_json(request):
+                return JSONResponse({'detail': message, 'message': message}, status_code=422)
+            data = exc.body if hasattr(exc.body, 'get') else {}
+            return templates.TemplateResponse(request, 'login.html', {'error': message, 'attempted_email': data.get('email', '')}, status_code=422)
         if not is_pp_path(request.url.path):
             return await request_validation_exception_handler(request, exc)
         errors = []

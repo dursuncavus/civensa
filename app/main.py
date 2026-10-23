@@ -191,18 +191,25 @@ async def csrf_valid(request: Request) -> bool:
     return bool(expected and supplied and hmac.compare_digest(str(expected), str(supplied)))
 
 
-CSRF_ERROR = "Güvenlik doğrulaması başarısız. Sayfayı yenileyip tekrar deneyin."
+CSRF_ERROR = "Bu formun güvenlik doğrulaması başarısız. Sayfayı yenileyip tekrar deneyin."
 
 
 async def require_user(request: Request, db: Session = Depends(get_db)):
     user = current_user(request, db)
     if not user or not user.is_active:
         request.session.clear()
-        raise HTTPException(status_code=401)
+        message = 'Oturumunuz doğrulanamadı veya sona erdi. Bu sayfada işlem yapmak için yeniden giriş yapın.'
+        if not request.url.path.startswith('/api/') and 'text/html' in request.headers.get('accept', '') and 'application/json' not in request.headers.get('accept', ''):
+            raise HTTPException(303, message, headers={'Location': '/login?message=' + quote(message)})
+        from .pp_errors import pp_error
+        error = pp_error(401, message)
+        error.auth_message = message
+        raise error
     if user.must_change_password and request.url.path not in {"/change-password", "/api/me/change-password"}:
         request.session["must_change_password"] = True
         raise HTTPException(303, "Devam etmek için kendi parolanızı belirleyin.",
                             headers={"Location": "/change-password"})
+    request.state.contract_user = user
     if request.method in {"POST", "PUT", "PATCH", "DELETE"}:
         if not await csrf_valid(request):
             raise HTTPException(403, CSRF_ERROR)
@@ -542,7 +549,7 @@ def login_page(request: Request, db: Session = Depends(get_db)):
     user = current_user(request, db)
     if user and user.is_active and user.must_change_password:
         return RedirectResponse("/change-password", 303)
-    return templates.TemplateResponse(request, "login.html", {"error": None})
+    return templates.TemplateResponse(request, "login.html", {"error": request.query_params.get("message")})
 
 
 @app.post("/login", response_class=HTMLResponse)
@@ -560,8 +567,8 @@ def login(request: Request, email: str = Form(...), password: str = Form(...), d
         if not locked:
             locked = login_throttling.record_failure(db, email_key, ip_key, now)
         db.commit()
-        error = login_throttling.LOCK_MESSAGE if locked else "E-posta veya parola hatalı."
-        return templates.TemplateResponse(request, "login.html", {"error": error}, status_code=400)
+        error = ("Giriş formu: " + login_throttling.LOCK_MESSAGE) if locked else "Giriş formundaki e-posta veya parola doğrulanamadı. Bilgilerinizi kontrol edip yeniden giriş yapın."
+        return templates.TemplateResponse(request, "login.html", {"error": error, "attempted_email": email}, status_code=400)
     login_throttling.clear_email_failures(db, email_key, now)
     # Never carry role/period context from a previous session into a new login.
     request.session.clear()

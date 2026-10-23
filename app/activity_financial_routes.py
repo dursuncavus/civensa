@@ -33,7 +33,7 @@ def financial_context(db,user,doc,report):
     return {'financial_department_names':{dep.id:period_name(db,doc.period_id,dep) for dep in departments},'financial':report.get('financial',{}),'budget_kinds':{'expenditure':'Gider — Ekonomik Kod','programme':'Gider — Program / Alt Program','revenue':'Gelir'},
         'budget_columns':{k:service.budget_columns(k) for k in ('expenditure','programme','revenue')},
         'entry_columns':service.ENTRY_FIELDS,'entry_titles':{'assets':'Varlıklar ve Yükümlülükler','aid':'Yardım Yapılan Birlik ve Kuruluşlar','audit':'Malî Denetim Sonuçları','explanations':'Birim Sapma Açıklamaları'},
-        'financial_slots':service.SLOTS,
+        'financial_slots':service.SLOTS, 'attachment_limit_mb':service.MAX_FILE // (1024 * 1024),
         'financial_central':not report['frozen'] and not doc.department_id and (user.role=='strategy' or sections.finance(db,user)),
         'financial_own':not report['frozen'] and report.get('workflow',{}).get('status')!='submitted' and bool(doc.department_id and (user.role=='strategy' or doc.department_id==user.department_id)),
         'financial_departments':departments,
@@ -160,6 +160,7 @@ def register(app):
             context={**financial_context(db,user,doc,report),'user':user,'report':report,'section':section,'statuses':sections.STATUSES,
                 'editable':False,'tables':{},'events':[],'owners':{'directorate':'Müdürlük','strategy':'Strateji','finance':'Mali Hizmetler'},
                 'form_error':exc.detail,'financial_attempt':dict(form),'financial_attempt_kind':kind,
+                'financial_attempt_figure_count':min(100,max([int(k.rsplit('_',1)[1])+1 for k in form if k.startswith(('figure_label_', 'figure_amount_')) and k.rsplit('_',1)[1].isdigit()]+[2])),
                 'financial_attempt_count':min(5000,max([int(k.rsplit('_',1)[1])+1 for k in form if k.startswith('include_') and k.rsplit('_',1)[1].isdigit()]+[3]))}
             return templates.TemplateResponse(request,'activity_sections_editor.html',context,status_code=exc.status_code)
         return error(request,user,exc,document_id,kind=kind)

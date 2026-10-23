@@ -45,7 +45,8 @@ SLOTS = {'expenditure':'III.A.1','programme':'III.A.1','revenue':'III.A.1','poli
     'explanations':'III.A.1','statements':'III.A.2','assets':'III.A.2','audit':'III.A.3','aid':'III.A.4'}
 DEFAULT_STATEMENTS = ('Bilanço','Faaliyet Sonuçları Tablosu')
 MONEY_FIELDS = {k for k,_ in EXPENSE_FIELDS + REVENUE_FIELDS}
-MAX_FILE = 10 * 1024 * 1024
+from .config import attachment_max_bytes
+MAX_FILE = attachment_max_bytes()
 
 
 def idare_document(db, doc):
@@ -254,7 +255,7 @@ def validate_date(value):
 
 
 def validate_xlsx(data):
-    if len(data)>MAX_FILE:sections.fail('Dosya 10 MB sınırını aşıyor. Daha küçük bir dosya yükleyin.')
+    if len(data)>MAX_FILE:sections.fail(f'Malî tablo dosyası çok büyük. En fazla {MAX_FILE // (1024 * 1024)} MB yüklenebilir. Daha küçük XLSX dosyasını yeniden seçip yükleyin.')
     try:
         with ZipFile(io.BytesIO(data)) as archive:
             if sum(i.file_size for i in archive.infolist())>50*1024*1024:raise ValueError()
@@ -293,7 +294,8 @@ def save_statement(db,user,document_id,data,expected_revision,file_data=None,fil
         'amount':number(f.get('amount'),'Özet tutar',negative=True)} for f in figures])
     if file_data is not None:
         ext=Path(filename).suffix.lower()
-        if len(file_data)>MAX_FILE or not file_data:sections.fail('Dosya boş veya 10 MB sınırını aşıyor. PDF veya XLSX yükleyin.')
+        if not file_data:sections.fail('Malî tablo dosyası boş. İçeriği olan PDF veya XLSX dosyasını yeniden seçip yükleyin.')
+        if len(file_data)>MAX_FILE:sections.fail(f'Malî tablo dosyası çok büyük. En fazla {MAX_FILE // (1024 * 1024)} MB yüklenebilir. Daha küçük PDF veya XLSX dosyasını yeniden seçip yükleyin.')
         if ext=='.xlsx':validate_xlsx(file_data).close()
         elif ext!='.pdf' or not file_data.startswith(b'%PDF-'):sections.fail('Dosya biçimi geçersiz. PDF veya XLSX yükleyin.')
         row.filename=Path(filename).name[:200];row.file_data=file_data;row.sha256=hashlib.sha256(file_data).hexdigest()
