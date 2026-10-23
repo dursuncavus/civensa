@@ -403,3 +403,40 @@ def test_key_metadata_does_not_change_legacy_report_shape(section_client, db, sa
     keys=client.get(f'/api/activity-sections/reports/{doc.id}/typeset-keys')
     assert keys.status_code==200,keys.text
     assert keys.json()['resources']['hardware'][0]['stable_key']==db.scalar(select(ARResourceRow.stable_key).where(ARResourceRow.document_id==doc.id))
+
+
+def test_indicator_correction_through_unit_approval_changes_only_indicator_hash(section_client, db, sample):
+    from app import ar_unit_workflow_service as workflow
+    from app.models import ActualRevision, ReportIndicator, PublicationIndicatorBinding
+    from ar_unit_workflow_helpers import reviewer
+    client,docs,_,_=section_client
+    unit=docs['birim:'+str(sample['department'].id)]
+    doc=docs['idare']
+    token=login(client,'strategy@example.invalid')
+    assert resource(client,token,unit,'hardware',[{'category':'Bilgisayar','count':5}]).status_code==200
+    ready_and_freeze(client,token,doc)
+    first=typeset(client,doc,version=1).json()
+    payload=json.loads(service.latest_release(db,doc).payload_json)
+    identity=next(key for key in payload['_typeset']['indicators'] if key['document_id']==unit.id)
+    expected=f"ar:{doc.id}:indicator:{unit.id}:{identity['indicator_id']}"
+    workflow.transition(db,reviewer(db,unit),unit.id,'reopen',unit.revision,'Gösterge gerçekleşmesi düzeltilecek.')
+    db.commit()
+    indicator=db.scalar(select(ReportIndicator).join(PublicationIndicatorBinding,
+        PublicationIndicatorBinding.id==ReportIndicator.publication_binding_id).where(
+        PublicationIndicatorBinding.department_id==unit.department_id))
+    previous=db.scalar(select(ActualRevision).where(ActualRevision.report_indicator_id==indicator.id)
+        .order_by(ActualRevision.revision.desc()).limit(1))
+    db.add(ActualRevision(report_indicator_id=indicator.id,revision=previous.revision+1,supersedes_id=previous.id,
+        value=previous.value+Decimal('1.000001'),raw_text='1,000001',state=previous.state,
+        evidence_json=previous.evidence_json,explanation=previous.explanation,deviation_json=previous.deviation_json,
+        created_by=sample['user'].id))
+    db.commit()
+    approve_unit(db,unit,sample['user'])
+    assert reopen(client,token,doc).status_code==200
+    assert freeze(client,token,doc).status_code==200
+    second=typeset(client,doc,version=2).json()
+    old=first['manifest']['items'];new=second['manifest']['items']
+    assert old.keys()==new.keys()
+    assert [key for key in old if old[key]!=new[key]]==[expected]
+    assert first['manifest']['contract_sha256']!=second['manifest']['contract_sha256']
+    assert typeset(client,doc,version=1).json()==first
