@@ -91,7 +91,8 @@ class TurkishValidationRoute(APIRoute):
                     'copy_previous':'Önceki yıldan kopyalama','document_id':'Faaliyet raporu',
                     'lower_rate':'Alt gerçekleşme oranı','upper_rate':'Üst gerçekleşme oranı',
                     'metadata':'Malî tablo bilgileri','file':'Dosya','import_id':'İçe aktarma önizlemesi',
-                    'statement_id':'Malî tablo','kind':'Tablo türü','version':'Yayın sürümü'}
+                    'statement_id':'Malî tablo','kind':'Tablo türü','version':'Yayın sürümü',
+                    'approval_id':'Birim onayı','table_keys':'Tablo ve satır anahtarları'}
                 fields=[]
                 for issue in error.errors():
                     location=issue.get('loc',())
