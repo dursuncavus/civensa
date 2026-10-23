@@ -1,4 +1,5 @@
 """EK-1 HTML and API actions use the same authorization and transactions."""
+import json
 from fastapi import APIRouter, Depends, HTTPException, Request
 import re
 import unicodedata
@@ -27,6 +28,7 @@ class SectionSave(BaseModel):
     blocks: list[dict]
     status: StrictStr
     reason: StrictStr = ''
+    table_keys: list[dict] | None = None
 
 
 class ResourceSave(BaseModel):
@@ -115,10 +117,21 @@ def register(app):
     def data(document_id:int,version:int|None=None,db:Session=Depends(get_db),user=Depends(require_user)):
         return service.report_data(db,user,document_id,version=version)
 
-    def export_payload(document_id,db,user,version=None):
+    @router.get('/api/activity-sections/reports/{document_id}/typeset-keys')
+    def data_keys(document_id:int,db:Session=Depends(get_db),user=Depends(require_user)):
+        from .ar_typeset_source import require_keys
+        payload=service.report_data(db,user,document_id,include_typeset=True)
+        require_keys(payload)
+        return {key:payload['_typeset'][key] for key in ('sections','resources','entries','figures')}
+
+    def export_document(document_id,db,user):
         doc=service.document(db,user,document_id)
         if user.role!='strategy' and (doc.department_id is None or doc.department_id!=user.department_id):
             service.fail('Bu faaliyet raporunu indiremezsiniz. Kendi birim raporunuzu açın; idare raporu için Strateji ile iletişime geçin.',403)
+        return doc
+
+    def export_payload(document_id,db,user,version=None):
+        doc=export_document(document_id,db,user)
         payload=service.report_data(db,user,doc.id,version=version)
         slug='idare'
         if payload['department_id']:
@@ -166,6 +179,15 @@ def register(app):
         content=release.payload_json if release else service.numeric_canonical(payload)
         return Response(content,media_type='application/json',headers={
             'Content-Disposition':f'attachment; filename="{filename}.json"',
+            'Cache-Control':'private, no-store','X-Content-Type-Options':'nosniff'})
+
+    @router.get('/activity-sections/reports/{document_id}/typeset.json')
+    def export_typeset(document_id:int,version:int|None=None,approval_id:int|None=None,db:Session=Depends(get_db),user=Depends(require_user)):
+        from .ar_typeset_download import download
+        doc=export_document(document_id,db,user)
+        content=download(db,user,doc,version,approval_id)
+        return Response(content,media_type='application/json',headers={
+            'Content-Disposition':f'attachment; filename="faaliyet-raporu-{doc.id}-dizgi.json"',
             'Cache-Control':'private, no-store','X-Content-Type-Options':'nosniff'})
 
     @router.post('/api/activity-sections/reports/{document_id}/reopen')
@@ -248,7 +270,19 @@ def register(app):
                 dep=db.get(Department,user.department_id)
                 reopen_allowed=bool(dep and dep.is_active and dep.organization_id==doc.organization_id)
             except HTTPException:pass
-        return {**financial_context(db,user,doc,report), 'user':user,'report':report,'section':section,'statuses':service.STATUSES,
+        from .ar_typeset_keys import section_keys
+        from .models import ARResourceRow, ARSectionContent, ARUnitWorkflowEvent
+        keys=[];resource_keys={}
+        if not report['frozen']:
+            _,content=service.section_pair(db,doc,code)
+            keys=section_keys(db,content)
+            for kind in service.TABLES:
+                resource_keys[kind]=list(db.scalars(select(ARResourceRow.stable_key).where(
+                    ARResourceRow.document_id==doc.id,ARResourceRow.table_kind==kind).order_by(ARResourceRow.position,ARResourceRow.id)))
+        approvals=list(db.scalars(select(ARUnitWorkflowEvent).where(ARUnitWorkflowEvent.document_id==doc.id,
+            ARUnitWorkflowEvent.action=='approve').order_by(ARUnitWorkflowEvent.revision))) if doc.department_id else []
+        return {**financial_context(db,user,doc,report), 'section_table_keys_json':json.dumps(keys),
+            'resource_key_map':resource_keys, 'typeset_approvals':approvals, 'user':user,'report':report,'section':section,'statuses':service.STATUSES,
             'reopen_allowed':reopen_allowed,
             'editable':not report['frozen'] and service.can_edit(db,user,doc,definition),
             'tables':{k:{**report['resources'][k],'kind':k} for k,v in service.TABLES.items() if v[0]==code},
@@ -260,12 +294,19 @@ def register(app):
         try:return templates.TemplateResponse(request,'activity_sections_editor.html',editor_context(db,user,document_id,code))
         except HTTPException as error:return error_page(request,user,error,'/activity-sections')
 
+    def form_section_keys(db,user,document_id,code,form):
+        from .ar_typeset_forms import align_section_keys
+        doc=service.document(db,user,document_id)
+        _,content=service.section_pair(db,doc,code)
+        return align_section_keys(content.blocks_json,form_blocks(str(form.get('text',''))),str(form.get('table_keys','[]')))
+
     @router.post('/activity-sections/reports/{document_id}/sections/{code}')
     async def section_form(document_id:int,code:str,request:Request,db:Session=Depends(get_db),user=Depends(require_user)):
         form=await request.form()
         try:
             transact(db,lambda:service.save_section(db,user,document_id,code,form_blocks(str(form.get('text',''))),
-                str(form.get('status','draft')),str(form.get('reason','')),integer(form.get('expected_revision'))))
+                str(form.get('status','draft')),str(form.get('reason','')),integer(form.get('expected_revision')),
+                form_section_keys(db,user,document_id,code,form)))
             return RedirectResponse(f'/activity-sections/reports/{document_id}?code={code}',303)
         except HTTPException as error:
             if error.status_code in {422,409}:
@@ -283,6 +324,7 @@ def register(app):
             for i in range(2000):
                 if form.get(f'include_{i}')!='on':continue
                 row={key:str(form.get(f'{key}_{i}','')) for key,_ in service.TABLES[kind][2]}
+                row['stable_key']=str(form.get(f'stable_key_{i}',''))
                 for key in ('count','area'):
                     if key in row:
                         try:row[key]=parse_number(row[key])

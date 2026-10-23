@@ -195,6 +195,7 @@ def create_year(db,user,organization_id,period_id,copy_previous=False):
     existing_scopes={d.scope for d in existing}
     result=list(existing)
     previous_period=db.scalar(select(ReportingPeriod).where(ReportingPeriod.year==period.year-1))
+    created_ids=[]
     for dep_id in scopes:
         scope=f'birim:{dep_id}' if dep_id else 'idare'
         if scope in existing_scopes:
@@ -202,6 +203,7 @@ def create_year(db,user,organization_id,period_id,copy_previous=False):
         doc=ARDocument(organization_id=org.id,period_id=period.id,department_id=dep_id,scope=scope,
             definition_version=version,created_by=user.id,revision=0)
         db.add(doc);db.flush()
+        created_ids.append(doc.id)
         previous=None
         previous_approval=None
         if copy_previous and previous_period:
@@ -240,6 +242,12 @@ def create_year(db,user,organization_id,period_id,copy_previous=False):
             'copied_from_approval_id':previous_approval.id if previous_approval else None})
         result.append(doc)
     db.flush()
+    from .ar_typeset_keys import save_section_keys
+    for created in result:
+        if created.id not in created_ids:continue
+        for content in db.scalars(select(ARSectionContent).where(ARSectionContent.document_id==created.id)):
+            if any(b['type']=='table' for b in json.loads(content.blocks_json)):
+                save_section_keys(db,content,json.loads(content.blocks_json))
     return result
 
 
@@ -277,7 +285,7 @@ def content_data(content):
         'edited_by':content.edited_by,'edited_at':content.edited_at.isoformat() if content.edited_at else None}
 
 
-def save_section(db,user,document_id,code,blocks,status,reason,expected_revision):
+def save_section(db,user,document_id,code,blocks,status,reason,expected_revision,table_keys=None):
     doc=document(db,user,document_id)
     if code == 'EKLER':
         from .assurance_service import LOCK_ERROR
@@ -295,6 +303,8 @@ def save_section(db,user,document_id,code,blocks,status,reason,expected_revision
     if status=='ready' and not has_text(blocks) and not has_resources(db,doc,code):
         fail(f'{definition.title}: Hazır işaretlemek için metin veya kaynak tablosu girin; uygulanmıyorsa gerekçe yazın.')
     before=content_data(content)
+    from .ar_typeset_keys import save_section_keys
+    save_section_keys(db,content,blocks,table_keys)
     content.blocks_json=canonical(blocks);content.status=status;content.reason=reason
     content.copied_needs_review=bool((content.copied_from_id or content.copied_from_approval_id) and status not in {'ready','not_applicable'})
     content.edited_by=user.id;content.edited_at=datetime.now(UTC)
@@ -361,7 +371,7 @@ def normalize_rows(kind,rows):
     allowed=dict(TABLES[kind][2])
     result=[]
     for i,row in enumerate(rows,1):
-        if not isinstance(row,dict) or set(row)-set(allowed):
+        if not isinstance(row,dict) or set(row)-set(allowed)-{'stable_key'}:
             fail(f'{TABLES[kind][1]}, {i}. satır: Sütunlar geçersiz. Tablodaki alanları kullanın.')
         item={key:None if key in {'count','area'} else '' for key in RESOURCE_FIELDS}
         for key,label in allowed.items():
@@ -404,10 +414,18 @@ def save_resources(db,user,document_id,kind,rows,expected_revision):
     normalized=normalize_rows(kind,rows)
     existing=db.scalars(select(ARResourceRow).where(ARResourceRow.document_id==doc.id,ARResourceRow.table_kind==kind)).all()
     before=[row_data(r) for r in existing]
-    for row in existing:
-        db.delete(row)
-    for i,row in enumerate(normalized):
-        db.add(ARResourceRow(document_id=doc.id,table_kind=kind,position=i,**row))
+    from .ar_typeset_keys import match_rows,fingerprint
+    incoming=[{**row,'stable_key':raw.get('stable_key')} for row,raw in zip(normalized,rows)]
+    def values(row):
+        return fingerprint({k:(row.get(k) if isinstance(row,dict) else getattr(row,k)) for k in RESOURCE_FIELDS})
+    matched,removed=match_rows(existing,incoming,values)
+    for row in removed:db.delete(row)
+    for i,(values,row) in enumerate(zip(normalized,matched)):
+        if row is None:
+            row=ARResourceRow(document_id=doc.id,table_kind=kind,position=i)
+            db.add(row)
+        for key,value in values.items():setattr(row,key,value)
+        row.position=i
     content.status='draft';content.edited_by=user.id;content.edited_at=datetime.now(UTC)
     doc.revision+=1
     event(db,user,doc,code,'resource_save',{'table':kind,'rows':before},{'table':kind,'rows':normalized})
@@ -445,7 +463,7 @@ def core_summary(db,doc):
         'message':f'{len(items)} göstergenin {verified} tanesinde doğrulanmış, kaynaklı gerçekleşme var.'}
 
 
-def report_data(db,user,document_id,use_freeze=True,version=None):
+def report_data(db,user,document_id,use_freeze=True,version=None,include_typeset=False):
     doc=document(db,user,document_id)
     freeze=latest_release(db,doc,version) if version is not None else frozen(db,doc)
     if version is not None and not freeze:
@@ -454,6 +472,7 @@ def report_data(db,user,document_id,use_freeze=True,version=None):
         if digest(freeze.payload_json)!=freeze.sha256:
             fail('Onaylı faaliyet raporu kopyası doğrulanamadı. Sistem sorumlusuyla iletişime geçin.',409)
         result=json.loads(freeze.payload_json,parse_float=Decimal)
+        if not include_typeset:result.pop('_typeset',None)
         result.update(frozen=True,sha256=freeze.sha256)
         # Presentation metadata for pre-CIV-046 freezes; never replace stored facts.
         for kind, table in result.get('resources',{}).items():
@@ -468,6 +487,7 @@ def report_data(db,user,document_id,use_freeze=True,version=None):
         current=latest(db,doc)
         if current and current.to_status in {'submitted','approved'}:
             result=verified_payload(current)
+            if not include_typeset:result.pop('_typeset',None)
             result.update(revision=doc.revision,workflow=view(db,doc),frozen=current.to_status=='approved')
             if current.to_status=='approved':result['sha256']=current.sha256
             return result
@@ -517,6 +537,9 @@ def report_data(db,user,document_id,use_freeze=True,version=None):
             slot(db,doc,row)
         result['sections'].append(row)
     if use_freeze:result.update(release_history(db,doc))
+    if include_typeset:
+        from .ar_typeset_source import enrich
+        enrich(db,doc,result)
     return result
 
 
@@ -529,7 +552,9 @@ def freeze_document(db,user,document_id,expected_revision):
         fail('Faaliyet raporu içeriğini Strateji onaylayabilir. Strateji ile iletişime geçin.',403)
     writable(db,user,doc,expected_revision)
     previous=latest_release(db,doc)
-    payload=report_data(db,user,doc.id,use_freeze=False)
+    payload=report_data(db,user,doc.id,use_freeze=False,include_typeset=True)
+    from .ar_typeset_source import require_keys
+    require_keys(payload)
     if payload['missing_units']:
         raise pp_error(409,'İdare faaliyet raporu dondurulamadı. Onaylı birim sürümü eksik: '+
             '; '.join(u['department'] for u in payload['missing_units'])+'. Birim raporlarını gönderip bağımsız onayını tamamlayın.','unit_versions')
