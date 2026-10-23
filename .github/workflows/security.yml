@@ -1,0 +1,58 @@
+name: CI security
+on:
+  pull_request:
+permissions:
+  contents: read
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+jobs:
+  secrets:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    env:
+      BASE_SHA: ${{ github.event.pull_request.base.sha }}
+      HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Detect workflow changes
+        id: workflows
+        shell: bash
+        run: |
+          if ! git diff --quiet "$BASE_SHA" "$HEAD_SHA" -- .github/workflows/; then
+            echo 'changed=true' >> "$GITHUB_OUTPUT"
+          fi
+      - name: Install gitleaks 8.30.0 (MIT, verified SHA-256)
+        shell: bash
+        run: |
+          curl --fail --silent --show-error --location --retry 3 \
+            https://github.com/gitleaks/gitleaks/releases/download/v8.30.0/gitleaks_8.30.0_linux_x64.tar.gz \
+            -o "$RUNNER_TEMP/gitleaks.tar.gz"
+          echo "79a3ab579b53f71efd634f3aaf7e04a0fa0cf206b7ed434638d1547a2470a66e  $RUNNER_TEMP/gitleaks.tar.gz" | sha256sum --check --strict
+          tar -xzf "$RUNNER_TEMP/gitleaks.tar.gz" -C "$RUNNER_TEMP" gitleaks
+      - name: Scan every PR commit (blocking)
+        run: >-
+          "$RUNNER_TEMP/gitleaks" git . --config .gitleaks.toml
+          --log-opts="$BASE_SHA..$HEAD_SHA" --ignore-gitleaks-allow
+          --redact=100 --no-banner --log-level error
+      - name: Check annotation helpers
+        if: always()
+        run: python3 -m unittest discover -s ops/ci -p 'test_*.py' -v
+      - name: Install actionlint 1.7.7 (verified SHA-256)
+        if: ${{ !cancelled() && steps.workflows.outputs.changed == 'true' }}
+        continue-on-error: true
+        shell: bash
+        run: |
+          curl --fail --silent --show-error --location --retry 3 \
+            https://github.com/rhysd/actionlint/releases/download/v1.7.7/actionlint_1.7.7_linux_amd64.tar.gz \
+            -o "$RUNNER_TEMP/actionlint.tar.gz"
+          echo "023070a287cd8cccd71515fedc843f1985bf96c436b7effaecce67290e7e0757  $RUNNER_TEMP/actionlint.tar.gz" | sha256sum --check --strict
+          tar -xzf "$RUNNER_TEMP/actionlint.tar.gz" -C "$RUNNER_TEMP" actionlint
+      - name: Lint workflows (warning only)
+        if: ${{ !cancelled() && steps.workflows.outputs.changed == 'true' }}
+        continue-on-error: true
+        run: python3 ops/ci/actionlint_annotations.py "$RUNNER_TEMP/actionlint"
