@@ -63,6 +63,26 @@ jobs:
           python -m pytest -q --require-postgres -n 4 --dist loadfile
           --max-worker-restart=0 --ci-shard-index=${{ matrix.shard }}
           --ci-shard-count=2 --durations=15
+        env:
+          PYTEST_PLUGINS: ops.ci.pytest_annotations
+          CIVENSA_PYTEST_FAILURES: ${{ runner.temp }}/pytest-failures-${{ matrix.shard }}.json
+      # The runner records at most 10 errors per step. Five batches preserve
+      # the full per-shard budget without adding jobs or changing test selection.
+      - name: Annotate failing tests (1/5)
+        if: failure()
+        run: python ops/ci/pytest_annotations.py "${{ runner.temp }}/pytest-failures-${{ matrix.shard }}.json" --batch 0
+      - name: Annotate failing tests (2/5)
+        if: failure()
+        run: python ops/ci/pytest_annotations.py "${{ runner.temp }}/pytest-failures-${{ matrix.shard }}.json" --batch 1
+      - name: Annotate failing tests (3/5)
+        if: failure()
+        run: python ops/ci/pytest_annotations.py "${{ runner.temp }}/pytest-failures-${{ matrix.shard }}.json" --batch 2
+      - name: Annotate failing tests (4/5)
+        if: failure()
+        run: python ops/ci/pytest_annotations.py "${{ runner.temp }}/pytest-failures-${{ matrix.shard }}.json" --batch 3
+      - name: Annotate failing tests (5/5)
+        if: failure()
+        run: python ops/ci/pytest_annotations.py "${{ runner.temp }}/pytest-failures-${{ matrix.shard }}.json" --batch 4
       - if: matrix.shard == 0
         run: python -m compileall -q app
       - if: matrix.shard == 0
