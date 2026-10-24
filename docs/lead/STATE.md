@@ -32,5 +32,5 @@ Tags: DOĞRULANDI (lead checked) · TARİHSEL (past fact) · BEYAN (owner said) 
 9. DeepSeek mirror GUNCEL-DURUM.md is not reachable in scheduled runs; the lead refreshes it in the next live session with the Mac linked.
 
 ## Next IDs
-- Next new task ID: CIV-094.
+- Next new task ID: CIV-095.
 - Next decision: D-222.
