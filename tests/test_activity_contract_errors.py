@@ -198,7 +198,7 @@ def test_csrf_denial_preserves_attempted_text(client, db, sample):
     fields = {'publication_id': '123', 'organization_id': '456', 'revision_reason': 'Korunacak taslak'}
     response = client.post(path, data=fields, headers={'Accept': 'text/html'})
     assert response.status_code == 403
-    assert 'formun güvenlik doğrulaması' in response.text and 'yenileyip tekrar deneyin' in response.text
+    assert 'Güvenlik doğrulaması' in response.text and 'yenileyip tekrar deneyin' in response.text
     assert all(attempted(response, path)[key] == value for key, value in fields.items())
 
 

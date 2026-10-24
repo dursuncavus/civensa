@@ -201,7 +201,7 @@ async def csrf_valid(request: Request) -> bool:
     return bool(expected and supplied and hmac.compare_digest(str(expected), str(supplied)))
 
 
-CSRF_ERROR = "Bu formun güvenlik doğrulaması başarısız. Sayfayı yenileyip tekrar deneyin."
+CSRF_ERROR = "Güvenlik doğrulaması başarısız. Sayfayı yenileyip tekrar deneyin."
 
 
 async def require_user(request: Request, db: Session = Depends(get_db)):
