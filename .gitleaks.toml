@@ -16,3 +16,10 @@ condition = "AND"
 paths = ['''^tests/test_live_pilot_hardening\.py$''']
 regexTarget = "secret"
 regexes = ['''^Eski-Parola-2027$''']
+
+[[rules.allowlists]]
+description = "CIV-087: fake local test password and a form field name in regression tests only"
+condition = "AND"
+paths = ['''^tests/test_activity_contract_errors\.py$''', '''^tests/test_storage_upload_limits\.py$''']
+regexTarget = "secret"
+regexes = ['''^Yerel-test-parolasi-123$''', '''^figure_label_0=$''']
