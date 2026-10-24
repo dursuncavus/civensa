@@ -52,3 +52,7 @@ BEYAN: owner decided full access stays on for Codex tasks. Closes STATE owner it
 
 ## D-211 (24 Oct 2026 ~04:05, lead) — lead writes the CIV-087 D-203 fixes itself
 DOĞRULANDI: the CIV-087 Codex session kept approval_policy=never after the D-209 change and could not push its fix d722e49 even with full access back on. Instead of a new Codex task at 04:00, the lead pushed fde1dfb to `task/civ-087-turkce-hata`: `/login?reason=session` with server-owned messages only (MEDIUM), anonymous error page without the resubmit form (LOW), file warning on the recovery form (LOW); two existing tests updated and one added (listed in the PR comment, D-167). Not run locally (dependencies not installable here) — CI is the judge. Cross-family review: "@codex review" requested. Merge when CI green on fde1dfb and the review has no P0/P1. d722e49 is abandoned.
+
+## D-212 (24 Oct 2026 ~04:10, lead) — PR #82 (CIV-086) review: not mergeable yet; CIV-088 held
+DOĞRULANDI on fb7a88c (CI green, behind 0): MEDIUM — ar-typeset/1 `context` copies release history (reopen actor names, reasons) and workflow data into a file meant for an outside designer (constitution rule 24); LOW — IndexError path in `save_section_keys`. Deploy note: snapshots made before c086 block approval/freeze until resubmitted (BELİRSİZ whether any live AR submissions exist; pre-launch expected). Follow-up given to the owner for the CIV-086 Codex task and posted on #82.
+CIV-088 (AR-16) is not dispatched tonight: same files as #82 (D-137) and depends on Strateji's >%85 normalization decision.
