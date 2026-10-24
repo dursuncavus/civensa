@@ -1,7 +1,7 @@
 """JSON contract and server-rendered workflow share the same guarded services."""
 import json
 from typing import Any
-from fastapi import Depends, HTTPException, Request, UploadFile, File, Form
+from fastapi import APIRouter, Depends, HTTPException, Request, UploadFile, File, Form
 from fastapi.responses import RedirectResponse, Response
 from pydantic import BaseModel, Field, StrictInt, StrictStr
 from sqlalchemy import select
@@ -12,6 +12,7 @@ from .models import (ActivityReport, ActivityReportRevision, Publication, Report
                      Department, Organization, AuditLog, IndicatorIdentity, PublicationIndicatorBinding)
 from . import activity_contract_service as service
 from .numbers import parse_number
+from .activity_contract_errors import LegacyTurkishValidationRoute, render_error, error_detail
 
 
 class NewRevision(BaseModel):
@@ -43,6 +44,7 @@ class PeriodIdentity(BaseModel):
 
 
 def register(app):
+    router = APIRouter(route_class=LegacyTurkishValidationRoute)
     from .main import require_user, templates
 
     def transact(db, user, action, entity, operation, audit_details='Yayın sürümüne bağlı veri sözleşmesi'):
@@ -67,36 +69,36 @@ def register(app):
                 raise HTTPException(409, 'Eşzamanlı işlem çakışması oluştu. Son sürümü açıp tekrar kontrol edin.') from None
             raise HTTPException(503, 'Veritabanına şu anda erişilemiyor. Kaydı tekrar denemeden önce bağlantıyı kontrol edin.') from None
 
-    @app.post('/api/activity-reports/revisions')
+    @router.post('/api/activity-reports/revisions')
     def create_revision(data: NewRevision, db: Session = Depends(get_db), user=Depends(require_user)):
         result = transact(db, user, 'activity_report_revision', 'activity_report_revision',
             lambda: service.create_report_revision(db, user, **data.model_dump()))
         return {'revision_id': result.id, 'report_id': result.report_id, 'revision': result.revision}
 
-    @app.get('/api/activity-reports/revisions/{revision_id}')
+    @router.get('/api/activity-reports/revisions/{revision_id}')
     def get_revision(revision_id: int, db: Session = Depends(get_db), user=Depends(require_user)):
         return service.report_data(db, user, revision_id)
 
-    @app.post('/api/activity-reports/indicators/{report_indicator_id}/actuals')
+    @router.post('/api/activity-reports/indicators/{report_indicator_id}/actuals')
     def actual(report_indicator_id: int, data: NewActual, db: Session = Depends(get_db), user=Depends(require_user)):
         result = transact(db, user, 'actual_revision_create', 'actual_revision',
             lambda: service.save_actual(db, user, report_indicator_id, **data.model_dump()))
         return service.actual_data(result)
 
-    @app.post('/api/activity-reports/revisions/{revision_id}/approve')
+    @router.post('/api/activity-reports/revisions/{revision_id}/approve')
     def approve(revision_id: int, db: Session = Depends(get_db), user=Depends(require_user)):
         result = transact(db, user, 'activity_report_approve', 'activity_report_approval',
             lambda: service.approve_report(db, user, revision_id))
         return {'approved': True, 'approval_id': result.id}
 
-    @app.post('/api/publications/{publication_id}/indicator-bindings')
+    @router.post('/api/publications/{publication_id}/indicator-bindings')
     def legacy_binding(publication_id: int, data: LegacyBinding, db: Session = Depends(get_db), user=Depends(require_user)):
         result = transact(db, user, 'publication_indicator_bind', 'publication_indicator_binding',
             lambda: service.bind_legacy_indicator(db, user, publication_id, data.snapshot_indicator_id,
                                                   data.indicator_id, data.reason))
         return {'binding_id': result.id}
 
-    @app.post('/api/indicators/{period_indicator_id}/identity')
+    @router.post('/api/indicators/{period_indicator_id}/identity')
     def period_identity(period_indicator_id: int, data: PeriodIdentity, db: Session = Depends(get_db), user=Depends(require_user)):
         def operation():
             service.link_period_identity(db, user, period_indicator_id, data.indicator_id, data.reason)
@@ -106,16 +108,20 @@ def register(app):
         return {'indicator_id': data.indicator_id}
 
     def ui_error(request, user, error, back):
-        return templates.TemplateResponse(request, 'activity_contract_error.html',
-            {'user': user, 'message': error.detail.get('message') if isinstance(error.detail, dict) else error.detail, 'blockers': error.detail.get('blockers', []) if isinstance(error.detail, dict) else [], 'back': back}, status_code=error.status_code)
+        return render_error(request, user, error, back)
 
-    def integer(value):
+    def integer(value, field='expected_revision'):
         try:
-            return int(value)
+            parsed = int(value)
+            if parsed < (0 if field == 'expected_revision' else 1):
+                raise ValueError()
+            return parsed
         except (ValueError, TypeError):
-            raise HTTPException(422, 'Seçilen kayıt veya revizyon numarası geçersiz.') from None
+            from .activity_contract_errors import LABELS
+            allowed = 'Sıfır veya pozitif' if field == 'expected_revision' else 'Pozitif'
+            raise HTTPException(422, f'{LABELS[field]} geçersiz. {allowed} tam sayı girip yeniden gönderin.') from None
 
-    @app.get('/activity-reports')
+    @router.get('/activity-reports')
     def index(request: Request, db: Session = Depends(get_db), user=Depends(require_user)):
         service.authorize(user)
         reports = db.scalars(select(ActivityReport).order_by(ActivityReport.id)).all()
@@ -141,19 +147,19 @@ def register(app):
             'revisions': revisions, 'publications': publications,
             'organizations': db.scalars(select(Organization).order_by(Organization.name)).all() if user.role == 'strategy' else []})
 
-    @app.post('/activity-reports/revisions')
+    @router.post('/activity-reports/revisions')
     async def create_form(request: Request, db: Session = Depends(get_db), user=Depends(require_user)):
         data = await request.form()
         try:
             result = transact(db, user, 'activity_report_revision', 'activity_report_revision',
-                lambda: service.create_report_revision(db, user, integer(data.get('publication_id')),
-                    integer(data.get('organization_id')), integer(data['report_id']) if data.get('report_id') else None,
+                lambda: service.create_report_revision(db, user, integer(data.get('publication_id'), 'publication_id'),
+                    integer(data.get('organization_id'), 'organization_id'), integer(data['report_id'], 'report_id') if data.get('report_id') else None,
                     integer(data.get('expected_revision', 0)), data.get('revision_reason', '')))
             return RedirectResponse(f'/activity-reports/revisions/{result.id}', 303)
         except HTTPException as error:
             return ui_error(request, user, error, '/activity-reports')
 
-    @app.get('/activity-reports/revisions/{revision_id}')
+    @router.get('/activity-reports/revisions/{revision_id}')
     def detail(revision_id: int, request: Request, db: Session = Depends(get_db), user=Depends(require_user)):
         try:
             report = service.report_data(db, user, revision_id)
@@ -165,7 +171,7 @@ def register(app):
         except HTTPException as error:
             return ui_error(request, user, error, '/activity-reports')
 
-    @app.post('/api/activity-reports/indicators/{report_indicator_id}/evidence-files')
+    @router.post('/api/activity-reports/indicators/{report_indicator_id}/evidence-files')
     async def upload_evidence(report_indicator_id: int, expected_revision: int = Form(...),
             source_index: int = Form(...), file: UploadFile = File(...),
             db: Session = Depends(get_db), user=Depends(require_user)):
@@ -186,7 +192,7 @@ def register(app):
             uploads={source_index: (data, file.filename or '')}))
         return service.actual_data(result)
 
-    @app.get('/api/activity-reports/indicators/{report_indicator_id}/evidence/{source_id}/{version}')
+    @router.get('/api/activity-reports/indicators/{report_indicator_id}/evidence/{source_id}/{version}')
     def download_evidence(report_indicator_id: int, source_id: str, version: int,
             db: Session = Depends(get_db), user=Depends(require_user)):
         from . import activity_evidence_service as attachments
@@ -198,7 +204,7 @@ def register(app):
             headers={'Content-Disposition': f'attachment; filename="kanit-v{row.version}{suffix}"',
                      'X-Content-Type-Options': 'nosniff', 'Cache-Control': 'private, no-store', 'X-Evidence-SHA256': row.sha256})
 
-    @app.post('/activity-reports/indicators/{report_indicator_id}/actuals')
+    @router.post('/activity-reports/indicators/{report_indicator_id}/actuals')
     async def actual_form(report_indicator_id: int, request: Request, db: Session = Depends(get_db), user=Depends(require_user)):
         from .models import ActualRevision, ReportIndicator
         from .activity_evidence_service import MAX_FILE
@@ -242,6 +248,8 @@ def register(app):
         except HTTPException as error:
             if item and error.status_code in {422, 409, 413}:
                 report = service.report_data(db, user, item.report_revision_id)
+                if report['approved'] or report['revision'] != report['current_revision']:
+                    return ui_error(request, user, error, back)
                 indicator = next(row for row in report['indicators'] if row['report_indicator_id'] == item.id)
                 # Restore server-owned attachment lists; retain every attempted text value.
                 previous_sources = {s.get('source_id'): s for r in report['indicators'] if r['report_indicator_id'] == item.id
@@ -251,7 +259,8 @@ def register(app):
                     if index in uploads:
                         source['attempted_filename'] = uploads[index][1]
                 pubs = db.scalars(select(Publication).where(Publication.period_id == db.get(ActivityReport, report['report_id']).period_id).order_by(Publication.version.desc())).all() if user.role == 'strategy' else []
-                detail = error.detail if isinstance(error.detail, dict) else {'message': error.detail}
+                normalized = error_detail(error)
+                detail = normalized if isinstance(normalized, dict) else {'message': normalized}
                 message = detail['message']
                 field = detail.get('field', 'source_title' if any(k in str(message).lower() for k in ('kaynak', 'kanıt')) else 'state')
                 return templates.TemplateResponse(request, 'activity_contract_detail.html',
@@ -260,7 +269,7 @@ def register(app):
                      'form_error': f"{indicator['definition']['name']} — {message}", 'error_field': field, 'error_source_index': detail.get('source_index')}, status_code=error.status_code)
             return ui_error(request, user, error, back)
 
-    @app.post('/activity-reports/revisions/{revision_id}/approve')
+    @router.post('/activity-reports/revisions/{revision_id}/approve')
     def approve_form(revision_id: int, request: Request, db: Session = Depends(get_db), user=Depends(require_user)):
         back = f'/activity-reports/revisions/{revision_id}'
         try:
@@ -270,7 +279,7 @@ def register(app):
         except HTTPException as error:
             return ui_error(request, user, error, back)
 
-    @app.get('/activity-reports/publications/{publication_id}/bindings')
+    @router.get('/activity-reports/publications/{publication_id}/bindings')
     def bindings_form(publication_id: int, request: Request, db: Session = Depends(get_db), user=Depends(require_user)):
         service.strategy(user)
         pub, payload = service.checked_publication(db, publication_id)
@@ -291,14 +300,16 @@ def register(app):
             'publication': pub, 'year': payload['period'], 'rows': rows,
             'identities': identities})
 
-    @app.post('/activity-reports/publications/{publication_id}/bindings')
+    @router.post('/activity-reports/publications/{publication_id}/bindings')
     async def bind_form(publication_id: int, request: Request, db: Session = Depends(get_db), user=Depends(require_user)):
         data = await request.form()
         back = f'/activity-reports/publications/{publication_id}/bindings'
         try:
             transact(db, user, 'publication_indicator_bind', 'publication_indicator_binding',
-                lambda: service.bind_legacy_indicator(db, user, publication_id, integer(data.get('snapshot_indicator_id')),
+                lambda: service.bind_legacy_indicator(db, user, publication_id, integer(data.get('snapshot_indicator_id'), 'snapshot_indicator_id'),
                     data.get('indicator_id') or None, data.get('reason', '')))
             return RedirectResponse(back, 303)
         except HTTPException as error:
             return ui_error(request, user, error, back)
+
+    app.include_router(router)

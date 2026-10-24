@@ -6,6 +6,7 @@ import sys
 
 import pytest
 from sqlalchemy import event, text
+from unittest.mock import Mock
 from sqlalchemy.exc import DBAPIError
 
 from app.models import ReportingPeriod
@@ -55,7 +56,12 @@ def test_postgres_report_totals_top_five_and_no_content(db):
         {'id': 3, 'bytes': 8}, {'id': 4, 'bytes': 8},
     ]
     image = next(c for c in report['columns'] if c['table'] == 'report_sections')
-    assert image['row_count'] == 1
+    assert image['row_count'] == image['value_count'] == 1
+    assert image['storage'] == 'base64_json_text'
+    assert image['largest_rows'] == [{'id': 1, 'bytes': len(content.encode('utf-8'))}]
+    assert binary['storage'] == 'binary'
+    assert report['skipped_tables'] == []
+    assert report['tables'] == sorted(report['tables'], key=lambda table: (-table['total_bytes'], table['name']))
     assert image['total_bytes'] == image['max_bytes'] == len(content.encode('utf-8'))
     evidence = next(c for c in report['columns'] if c['table'] == 'activity_evidence_files')
     assert (evidence['row_count'], evidence['total_bytes'], evidence['max_bytes'], evidence['largest_rows']) == (0, 0, 0, [])
@@ -87,9 +93,13 @@ def test_read_only_transaction_actually_rejects_writes(db):
 
 
 def test_sqlite_refused_without_connecting(monkeypatch, capsys):
+    engine_factory = Mock()
+    monkeypatch.setattr('ops.db_storage_report.create_engine', engine_factory)
     monkeypatch.setenv('DATABASE_URL', 'sqlite:///:memory:')
     assert main([]) == 1
-    assert 'PostgreSQL only' in capsys.readouterr().err
+    output = capsys.readouterr()
+    assert 'yalnızca PostgreSQL' in output.err and not output.out
+    engine_factory.assert_not_called()
 
 
 @pytest.mark.parametrize('url', [None, 'invalid secret password',
@@ -101,6 +111,44 @@ def test_report_errors_never_disclose_connection_details(monkeypatch, capsys, ur
         monkeypatch.setenv('DATABASE_URL', url)
     assert main([]) == 1
     output = capsys.readouterr()
-    assert output.err and not output.out
+    expected = ('DATABASE_URL ortam değişkeni eksik. Depolama raporu için yerel PostgreSQL bağlantısını ayarlayıp yeniden deneyin.' if url is None else
+                'Depolama raporu alınamadı. Bağlantı, şema ve salt okunur erişim yetkilerini kontrol edin.')
+    assert output.err.strip() == expected and not output.out
     for private in ('PRIVATE', 'SECRET', 'password'):
         assert private not in output.err
+
+
+@pytest.mark.postgres
+@pytest.mark.parametrize('storage', ['binary', 'base64'])
+def test_table_without_id_is_skipped_and_other_tables_are_measured(db, monkeypatch, storage):
+    from ops import db_storage_report as audit
+    schema = db.get_bind().get_execution_options()['schema_translate_map'][None]
+    kind = 'bytea' if storage == 'binary' else 'text'
+    db.execute(text(f'CREATE TABLE "{schema}".no_id_probe (payload {kind}, another_payload {kind})'))
+    db.execute(text(f'CREATE TABLE "{schema}".valid_probe (id integer, payload bytea)'))
+    db.execute(text(f"INSERT INTO \"{schema}\".valid_probe VALUES (3, decode('abcd', 'hex'))"))
+    if storage == 'base64':
+        monkeypatch.setattr(audit, 'BASE64_COLUMNS', audit.BASE64_COLUMNS | {
+            ('no_id_probe', 'payload'), ('no_id_probe', 'another_payload')})
+    db.commit()
+    with read_only_connection(db.get_bind()) as connection:
+        report = collect_report(connection, schema)
+    assert report['skipped_tables'] == [{'table': 'no_id_probe', 'reason':
+        'id sütunu bulunmadığı için kayıt boyutları ölçülemedi. Tablo anahtarını kontrol edin.'}]
+    assert any(table['name'] == 'no_id_probe' for table in report['tables'])
+    assert not any(column['table'] == 'no_id_probe' for column in report['columns'])
+    valid = next(column for column in report['columns'] if column['table'] == 'valid_probe')
+    assert (valid['row_count'], valid['value_count'], valid['total_bytes'], valid['largest_rows']) == (1, 1, 2, [{'id': 3, 'bytes': 2}])
+
+
+@pytest.mark.postgres
+def test_all_model_binary_columns_are_discovered(db):
+    from sqlalchemy import LargeBinary
+    from app.db import Base
+    schema = db.get_bind().get_execution_options()['schema_translate_map'][None]
+    with read_only_connection(db.get_bind()) as connection:
+        report = collect_report(connection, schema)
+    expected = {(table.name, column.name) for table in Base.metadata.tables.values()
+                for column in table.c if isinstance(column.type, LargeBinary)}
+    actual = {(column['table'], column['column']) for column in report['columns'] if column['storage'] == 'binary'}
+    assert actual == expected

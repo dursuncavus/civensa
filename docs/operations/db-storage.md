@@ -34,22 +34,35 @@ kimliğini, dosya adını ve SHA-256 bilgisini taşır; dosya baytlarını kopya
 
 ## Mevcut yükleme sınırları
 
-Yeni ayar gerekmedi; mevcut daha sıkı sınırlar korundu:
+Sınırlar ayarlardan okunur; varsayılan değerler değişmedi. Pozitif tam sayı
+kullanın. `CIVENSA_ATTACHMENT_MAX_MB` kanıt ve malî tablo ekleri için varsayılan
+10 MB, `CIVENSA_PP_IMAGE_MAX_MB` elle/Word ile yüklenen PP görselleri için
+varsayılan 5 MB, `CIVENSA_PP_IMAGE_MAX_PIXELS` bu görseller için varsayılan
+16.000.000 pikseldir. Geçersiz veya sıfır/negatif değer yapılandırma hatası verir.
+Ayarları dağıtım ortamında tanımlayıp uygulamayı yeniden başlatın; ek dosya
+sınırı süreç başlatılırken, PP görsel ayarları yükleme sırasında okunur.
+ZIP açılmış içerik sınırı (50 MB) ayrıca korunur; yükleme boyutu ayarı bu korumayı
+kaldırmaz. Sınıra uygun mevcut kayıtlar değiştirilmez.
 
 | Yükleme | Sınır | Uygulama yeri |
 | --- | --- | --- |
-| Gösterge kanıtı (PDF/XLSX) | Dosya başına 10 MB | `app/activity_financial_service.py:MAX_FILE`, `app/activity_evidence_service.py:validate_file`; API ve form en fazla sınır + 1 bayt okur. |
+| Gösterge kanıtı (PDF/XLSX) | Dosya başına 10 MB | `CIVENSA_ATTACHMENT_MAX_MB`; `app/activity_evidence_service.py:validate_file`; API ve form en fazla sınır + 1 bayt okur. |
 | Elle yüklenen PP bölüm görseli | Görsel başına 5 MB, en fazla 16 megapiksel, PNG/JPEG | `app/program_routes.py`, `/report-builder/section`; sınır + 1 bayt okur, Pillow ile doğrular. |
 | Word'den gelen PP bölüm görseli | Görsel başına 5 MB, en fazla 16 megapiksel, PNG/JPEG | `app/import_service.py:parse_performance_document`; aşan görsel saklanmaz, önizlemeye Türkçe uyarı eklenir. |
 | Malî tablo eki (PDF/XLSX) | Dosya başına 10 MB | `app/activity_financial_service.py:save_statement`; yükleme rotası da sınır + 1 bayt okur. |
 
 Burada MB = 1.048.576 bayt (MiB). Sınıra eşit dosya kabul edilir, bir bayt
 fazlası reddedilir. Elle kanıt/görsel yüklemede HTTP 422 mesajı:
-`Dosya çok büyük. En fazla {N} MB yüklenebilir.` (`N`: 10 veya 5).
+`Kanıt dosyası çok büyük. En fazla {N} MB yüklenebilir. Daha küçük PDF veya
+XLSX dosyasını yeniden seçip yükleyin.` veya `Bölüm görseli çok büyük. En fazla
+{N} MB yüklenebilir. Daha küçük PNG/JPEG dosyasını yeniden seçip kaydedin.`
+(`N`: ayarlanan sınır).
 Başlık, açıklama, kaynak satırları ve diğer form değerleri hata halinde korunur
 (CIV-064 form kurtarma düzeni). Tarayıcı dosya alanı yeniden doldurulamaz;
 kullanıcı daha küçük dosyayı yeniden seçer. Word içe aktarma mevcut uyarı
-davranışını sürdürür. Malî tablo ekinin mevcut Türkçe boyut hatası korunur.
+davranışını sürdürür. Malî tablo ekinde de alan ve sınır açıkça belirtilir:
+`Malî tablo dosyası çok büyük. En fazla {N} MB yüklenebilir. Daha küçük PDF veya
+XLSX dosyasını yeniden seçip yükleyin.` Boş dosya ayrı mesajla reddedilir.
 
 **Toplam kota yoktur.** Dosya/sürüm/sayfa/dönem sayısı arttıkça veritabanı
 büyümeye devam eder. Bu sınırlar kullanıcı başına, kurum başına veya veritabanı
@@ -73,7 +86,7 @@ python -m ops.db_storage_report --schema civensa_test_example
 
 Varsayılan şema `public`'tir. `postgres://`, `postgresql://` ve
 `postgresql+psycopg://` desteklenir. SQLite dahil diğer sistemlerde
-`PostgreSQL only` açıklamasıyla bağlantı kurmadan 1 çıkış kodu döner.
+Türkçe PostgreSQL gereksinimi açıklamasıyla bağlantı kurmadan 1 çıkış kodu döner.
 Bağlantı hataları ayrıntı/kimlik bilgisi yazdırmadan genel Türkçe mesaj verir.
 Uygulama başlatılmaz; migrasyon/seed çalıştırılmaz.
 
@@ -93,8 +106,22 @@ JSON çıktısı:
   `value_count` (NULL olmayanlar), `total_bytes`, `max_bytes` ve boyuta göre en
   büyük beş `largest_rows` (`id`, `bytes`) bulunur. Eşitlikte küçük ID önce gelir.
   Boş tabloda boyutlar 0, liste boştur. NULL değer en büyükler listesine alınmaz.
+- `skipped_tables`: binary/base64 sütunu olup `id` sütunu bulunmayan tablolar
+  ve Türkçe atlama gerekçesi. Tablo fiziksel boyutu `tables` içinde kalır;
+  bu tablonun sütunları ölçülmez, diğer tabloların raporu devam eder.
 - `missing_base64_columns`: henüz uygulanmamış şema sürümü gibi nedenlerle
   bulunamayan envanter sütunları; eksikliği sessizce gizlemez.
+
+Base64 listesi elle tutulur; `bytea` sütunları katalogdan otomatik bulunur.
+`tests/test_storage_column_inventory.py` modeldeki tüm String/Text/JSON
+sütunlarını `BASE64_COLUMNS` ve gözden geçirilmiş normal metin envanteriyle
+karşılaştırır. Yeni sütun görsel/base64 taşıyorsa `BASE64_COLUMNS` listesine ve
+bu belgeye ekleyin; taşımıyorsa inceleme gerekçesini PR'da belirtip
+`tests/fixtures/storage_non_base64_columns.txt` envanterine ekleyin. Bu muhafazakâr
+kontrol yeni normal metin sütunlarında da inceleme ister; tür/ad tahminiyle
+base64 alanını kaçırmaz. Binary model sütunlarının tamamının rapora girdiği de
+PostgreSQL testiyle doğrulanır. Mevcut metin alanının kullanımını base64 taşıyacak
+şekilde değiştirmek kod incelemesinde ayrıca bu listeye eklemeyi gerektirir.
 
 Sütun boyutları `octet_length` ile ölçülür: `bytea` için özgün dosya baytları,
 metin için **base64 dahil tüm JSON'un UTF-8 baytları**. Metin alanındaki her

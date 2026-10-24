@@ -10,9 +10,10 @@ from sqlalchemy import select, func, delete
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 from starlette.concurrency import run_in_threadpool
+from .config import pp_image_max_bytes, pp_image_max_pixels
 from .db import get_db
 from .models import *
-from .numbers import parse_number
+from .numbers import parse_number, format_number
 from .serialization import json_dumps
 from .program_service import *
 from .pp_errors import pp_error, recover_form, payload
@@ -461,13 +462,13 @@ def register(app):
         if kind=='image':
             upload=data.get('image')
             if upload and getattr(upload,'filename',''):
-                raw=await upload.read(5*1024*1024+1)
-                if len(raw)>5*1024*1024:raise pp_error(422, 'Dosya çok büyük. En fazla 5 MB yüklenebilir.', 'image')
+                raw=await upload.read(pp_image_max_bytes()+1)
+                if len(raw)>pp_image_max_bytes():raise pp_error(422, f'Bölüm görseli çok büyük. En fazla {pp_image_max_bytes() // (1024 * 1024)} MB yüklenebilir. Daha küçük PNG/JPEG dosyasını yeniden seçip kaydedin.', 'image')
                 try:
                     with Image.open(io.BytesIO(raw)) as im:
-                        if im.format not in {'PNG','JPEG'} or im.width*im.height>16000000:raise ValueError()
+                        if im.format not in {'PNG','JPEG'} or im.width*im.height>pp_image_max_pixels():raise ValueError()
                         im.verify()
-                except Exception:raise pp_error(422, 'Bölüm görseli okunamadı. Geçerli PNG/JPEG dosyasını yeniden seçin (en fazla 16 megapiksel).', 'image') from None
+                except Exception:raise pp_error(422, f'Bölüm görseli okunamadı. Geçerli PNG/JPEG dosyasını yeniden seçin (en fazla {format_number(pp_image_max_pixels() / 1000000)} megapiksel).', 'image') from None
                 payload={'data':base64.b64encode(raw).decode(),'caption':content}
             elif obj and obj.kind=='image':
                 payload=json.loads(obj.content_json);payload['caption']=content

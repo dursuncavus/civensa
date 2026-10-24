@@ -47,6 +47,7 @@ def collect_report(connection, schema='public'):
         'tables': [],
         'columns': [],
         'missing_base64_columns': [],
+        'skipped_tables': [],
     }
     tables = connection.execute(text("""
         SELECT c.relname AS name, pg_total_relation_size(c.oid) AS total_bytes
@@ -76,7 +77,9 @@ def collect_report(connection, schema='public'):
         if row['type_name'] != 'bytea' and (table, column) not in BASE64_COLUMNS:
             continue
         if (table, 'id') not in found:
-            raise ValueError('Storage table must have an id column')
+            if not any(item['table'] == table for item in report['skipped_tables']):
+                report['skipped_tables'].append({'table': table, 'reason': 'id sütunu bulunmadığı için kayıt boyutları ölçülemedi. Tablo anahtarını kontrol edin.'})
+            continue
         relation = f'{quote(schema)}.{quote(table)}'
         size = f'octet_length({quote(column)})'
         stats = dict(connection.execute(text(f'''
@@ -98,20 +101,20 @@ def collect_report(connection, schema='public'):
 
 
 def main(argv=None):
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--schema', default='public', help='Schema to audit (default: public)')
+    parser = argparse.ArgumentParser(description='PostgreSQL depolama boyutlarını salt okunur ölçer.')
+    parser.add_argument('--schema', default='public', help='Ölçülecek şema (varsayılan: public)')
     args = parser.parse_args(argv)
     engine = None
     try:
         raw = os.environ.get('DATABASE_URL')
         if not raw:
-            print('DATABASE_URL ortam değişkeni gereklidir.', file=sys.stderr)
+            print('DATABASE_URL ortam değişkeni eksik. Depolama raporu için yerel PostgreSQL bağlantısını ayarlayıp yeniden deneyin.', file=sys.stderr)
             return 1
         url = make_url(raw)
         if url.drivername == 'postgres' or url.drivername == 'postgresql':
             url = url.set(drivername='postgresql+psycopg')
         if url.get_backend_name() != 'postgresql':
-            print('PostgreSQL only: Bu rapor yalnızca PostgreSQL üzerinde çalışır.', file=sys.stderr)
+            print('Bu rapor yalnızca PostgreSQL üzerinde çalışır. Yerel PostgreSQL bağlantısı seçip yeniden deneyin.', file=sys.stderr)
             return 1
         engine = create_engine(url, echo=False, hide_parameters=True)
         with read_only_connection(engine) as connection:
