@@ -1,0 +1,18 @@
+title = "Civensa CI secret scan"
+
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Disposable local/CI PostgreSQL password; never used for a deployed service"
+regexTarget = "secret"
+regexes = ['''^disposable_test_only$''']
+
+[[rules]]
+id = "generic-api-key"
+[[rules.allowlists]]
+description = "Historical fake login password in the live-pilot regression fixture only"
+condition = "AND"
+paths = ['''^tests/test_live_pilot_hardening\.py$''']
+regexTarget = "secret"
+regexes = ['''^Eski-Parola-2027$''']
