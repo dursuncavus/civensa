@@ -1,0 +1,28 @@
+name: Lead records guard
+# D-205: only lead branches (lead/...) may change the canonical lead records.
+on:
+  pull_request:
+    paths:
+      - 'docs/lead/**'
+      - 'AGENTS.md'
+      - '.github/workflows/lead-docs-guard.yml'
+permissions:
+  contents: read
+jobs:
+  guard:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Check branch name
+        env:
+          HEAD_REF: ${{ github.head_ref }}
+        run: |
+          case "$HEAD_REF" in
+            lead/*)
+              echo "Lead branch: $HEAD_REF — allowed."
+              ;;
+            *)
+              echo "::error title=Lead records are protected::docs/lead/ ve AGENTS.md yalnızca lead/... dalından değiştirilebilir. Bu dosyalardaki değişiklikleri geri alıp yeniden gönderin (D-205)."
+              exit 1
+              ;;
+          esac
