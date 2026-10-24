@@ -45,10 +45,12 @@ def render_error(request, user, error, back, attempted=None):
     data = attempted if attempted is not None else getattr(request, '_form', None)
     items = [(key, value) for key, value in (data.multi_items() if data else [])
              if isinstance(value, str) and key != 'csrf_token']
+    had_files = any(not isinstance(value, str) and getattr(value, 'filename', None)
+                    for _, value in (data.multi_items() if data else []))
     return templates.TemplateResponse(request, 'activity_contract_error.html', {
         'user': user, 'message': detail.get('message') if isinstance(detail, dict) else detail,
         'blockers': detail.get('blockers', []) if isinstance(detail, dict) else [],
-        'back': back, 'attempted_items': items, 'field_labels': LABELS,
+        'back': back, 'attempted_items': items, 'field_labels': LABELS, 'had_files': had_files,
     }, status_code=error.status_code)
 
 

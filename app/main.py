@@ -202,15 +202,18 @@ async def csrf_valid(request: Request) -> bool:
 
 
 CSRF_ERROR = "Güvenlik doğrulaması başarısız. Sayfayı yenileyip tekrar deneyin."
+SESSION_ERROR = 'Oturumunuz doğrulanamadı veya sona erdi. Bu sayfada işlem yapmak için yeniden giriş yapın.'
+# Login page shows only server-owned messages chosen by a fixed code; URL text is never displayed.
+LOGIN_REASONS = {'session': SESSION_ERROR}
 
 
 async def require_user(request: Request, db: Session = Depends(get_db)):
     user = current_user(request, db)
     if not user or not user.is_active:
         request.session.clear()
-        message = 'Oturumunuz doğrulanamadı veya sona erdi. Bu sayfada işlem yapmak için yeniden giriş yapın.'
+        message = SESSION_ERROR
         if not request.url.path.startswith('/api/') and 'text/html' in request.headers.get('accept', '') and 'application/json' not in request.headers.get('accept', ''):
-            raise HTTPException(303, message, headers={'Location': '/login?message=' + quote(message)})
+            raise HTTPException(303, message, headers={'Location': '/login?reason=session'})
         from .pp_errors import pp_error
         error = pp_error(401, message)
         error.auth_message = message
@@ -559,7 +562,7 @@ def login_page(request: Request, db: Session = Depends(get_db)):
     user = current_user(request, db)
     if user and user.is_active and user.must_change_password:
         return RedirectResponse("/change-password", 303)
-    return templates.TemplateResponse(request, "login.html", {"error": request.query_params.get("message")})
+    return templates.TemplateResponse(request, "login.html", {"error": LOGIN_REASONS.get(request.query_params.get("reason", ""))})
 
 
 @app.post("/login", response_class=HTMLResponse)

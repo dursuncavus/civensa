@@ -77,7 +77,7 @@ def test_session_errors_explain_login_for_html_and_json(client, db, sample, path
     else:
         assert response.status_code == 303
         location = response.headers['location']
-        assert parse_qs(urlparse(location).query)['message'] == [expected]
+        assert parse_qs(urlparse(location).query) == {'reason': ['session']}
         assert expected in client.get(location).text
     response = client.get(path, headers={'Accept': 'application/json'}, follow_redirects=False)
     assert response.status_code == 401 and expected in response.json()['message']
@@ -233,7 +233,7 @@ def test_expired_temporary_password_session_reaches_auth_check_on_legacy_router(
     if api:
         assert response.status_code == 401 and 'yeniden giriş yapın' in response.json()['message']
     else:
-        assert response.status_code == 303 and response.headers['location'].startswith('/login?message=')
+        assert response.status_code == 303 and response.headers['location'] == '/login?reason=session'
 
 
 @pytest.mark.parametrize('state,label', [('assembling', 'Hazırlanıyor'), ('final_review', 'Nihai incelemede'), ('final_approved', 'Nihai onaylı')])
@@ -247,3 +247,16 @@ def test_legacy_workflow_conflict_translates_internal_state(client, monkeypatch,
     assert response.status_code == 409
     assert label in response.json()['message'] and 'Güncel rapor adayını açın' in response.json()['message']
     assert state not in response.json()['message']
+
+
+@pytest.mark.parametrize('query', ['message=Hesab%C4%B1n%C4%B1z+kilitlendi%2C+parolan%C4%B1z%C4%B1+e-postayla+g%C3%B6nderin',
+                                   'reason=unknown', 'reason=session&message=Sahte+uyar%C4%B1'])
+def test_login_page_never_shows_text_from_url(client, query):
+    response = client.get('/login?' + query)
+    assert response.status_code == 200
+    text = unescape(response.text)
+    assert 'kilitlendi' not in text and 'Sahte uyarı' not in text
+    if query.startswith('reason=session'):
+        assert 'Oturumunuz doğrulanamadı' in text
+    else:
+        assert 'errorbox' not in response.text
