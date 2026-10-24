@@ -229,7 +229,7 @@ def register(app):
         service.actor(user)
         query=select(ARDocument).order_by(ARDocument.period_id,ARDocument.id)
         if period_id:query=query.where(ARDocument.period_id==period_id)
-        reports=[];report_errors=[]
+        reports=[];report_errors=[];baseline_cache={}
         for doc in db.scalars(query):
             if user.role!='strategy' and doc.department_id not in {None,user.department_id}:continue
             try:report=service.report_data(db,user,doc.id)
@@ -241,7 +241,8 @@ def register(app):
                     continue
                 raise
             matches=[s for s in report['sections'] if (not section or s['code']==section) and (not status or s['status']==status)]
-            if matches:reports.append({'report':report,'matches':matches,'similarities':ar_similarity.for_report(db,user,report)})
+            if matches:reports.append({'report':report,'matches':matches,'similarities':ar_similarity.for_report(
+                db,user,report,visible_sections=matches,baseline_cache=baseline_cache)})
         return reports,report_errors
 
     @router.get('/activity-sections')

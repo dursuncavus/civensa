@@ -99,15 +99,23 @@ def compare_section(section, baseline):
             'source_url': baseline['source_url'], 'source_label': baseline['source_label']}
 
 
-def for_report(db, user, report):
-    """Separate view context: cannot become completeness blockers or frozen facts."""
+def for_report(db, user, report, *, visible_sections=None, baseline_cache=None):
+    """Read-only advice; listing callers may share a request-local baseline cache."""
     doc = sections.document(db, user, report['id'])
     # Department accounts may read some idare sections, but compare only their unit.
     if user.role != 'strategy' and doc.department_id != user.department_id:
         return {}
-    candidates = [s for s in report['sections'] if eligible(s)
+    shown = report['sections'] if visible_sections is None else visible_sections
+    candidates = [s for s in shown if eligible(s)
                   and len(normalized_words(s['blocks'])) >= MINIMUM_WORDS]
     if not candidates:
         return {}
-    baseline = load_baseline(db, doc, report['year'] - PREVIOUS_YEAR_OFFSET)
+    year = report['year'] - PREVIOUS_YEAR_OFFSET
+    key = (doc.organization_id, doc.scope, doc.department_id, year)
+    if baseline_cache is None:
+        baseline = load_baseline(db, doc, year)
+    else:
+        if key not in baseline_cache:
+            baseline_cache[key] = load_baseline(db, doc, year)
+        baseline = baseline_cache[key]
     return {s['code']: compare_section(s, baseline) for s in candidates}

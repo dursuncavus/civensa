@@ -340,3 +340,53 @@ def test_copy_review_flag_independent_of_similarity(section_client, db, sample, 
     assert not content.copied_needs_review
     html_after = client.get(f'/activity-sections/reports/{copied.id}').text
     assert 'Geçen yıldan kopyalandı — gözden geçirin' not in html_after and '%100 benzer' in html_after
+
+
+@pytest.mark.parametrize('filters', ['', '&section=I.A', '&status=ready', '&section=I.B&status=ready'])
+def test_listing_reuses_baseline_and_only_compares_visible_sections(section_client, db, sample, monkeypatch, filters):
+    client, docs, _, _ = section_client
+    doc = own_report(docs, sample)
+    store_baseline(db, sample, doc)
+    token = login(client, 'strategy@example.invalid')
+    for code, status in [('I.A', 'ready'), ('I.B', 'draft')]:
+        assert save(client, token, doc, code=code, status=status, blocks=narrative()['blocks']).status_code == 200
+    report = sections.report_data(db, sample['strategy'], doc.id)
+    previous = similarity.for_report(db, sample['strategy'], report)
+    original_scalars = db.scalars
+
+    def repeated_reports(query, *args, **kwargs):
+        # The schema permits one document per organization/period/scope. Repeat
+        # the same unit in the listing projection to exercise cache reuse for
+        # three reports with the same complete baseline key.
+        if query.column_descriptions[0].get('entity') is ARDocument and query._order_by_clauses:
+            return [doc, doc, doc]
+        return original_scalars(query, *args, **kwargs)
+
+    monkeypatch.setattr(db, 'scalars', repeated_reports)
+    from app.main import templates
+    original_response = templates.TemplateResponse
+    contexts = []
+
+    def capture(request, name, context, **kwargs):
+        contexts.append(context)
+        return original_response(request, name, context, **kwargs)
+
+    monkeypatch.setattr(templates, 'TemplateResponse', capture)
+    with patch.object(similarity, 'load_baseline', wraps=similarity.load_baseline) as load, \
+         patch.object(similarity, 'compare_section', wraps=similarity.compare_section) as compare:
+        response = client.get(f"/activity-sections?period_id={doc.period_id}{filters}")
+        assert response.status_code == 200, response.text
+        items = contexts[-1]['reports']
+        assert len(items) == (0 if filters == '&section=I.B&status=ready' else 3)
+        expected_calls = []
+        for item in items:
+            visible = {s['code'] for s in item['matches']}
+            expected = {code: value for code, value in previous.items() if code in visible}
+            assert item['similarities'] == expected
+            expected_calls.extend(expected)
+        assert [call.args[0]['code'] for call in compare.call_args_list] == expected_calls
+        assert load.call_count == (1 if expected_calls else 0)
+    # The cache is request-local; a subsequent request reloads its source.
+    with patch.object(similarity, 'load_baseline', wraps=similarity.load_baseline) as load:
+        assert client.get(f'/activity-sections?period_id={doc.period_id}&section=I.A').status_code == 200
+        assert load.call_count == 1
