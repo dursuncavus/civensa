@@ -8,14 +8,11 @@ from pathlib import Path
 import subprocess
 import sys
 from threading import Barrier
-from uuid import uuid4
 import pytest
 from fastapi import HTTPException
-from sqlalchemy import create_engine, select, text, event, func
-from sqlalchemy.engine import make_url
+from sqlalchemy import select, text, event, func
 from sqlalchemy.exc import DBAPIError, IntegrityError
 from sqlalchemy.orm import Session
-from sqlalchemy.schema import CreateSchema, DropSchema
 from app.models import *
 from app import authorization_service as auth
 from tests.conftest import sample as sample_fixture
@@ -25,17 +22,10 @@ pytestmark=pytest.mark.postgres
 
 
 @pytest.fixture
-def foundation_db(request, monkeypatch):
+def foundation_db(request, monkeypatch, postgres_templates):
     url=os.environ.get('CIVENSA_TEST_POSTGRES_URL')
     if not url:pytest.fail('Authorization foundation requires disposable PostgreSQL')
-    admin=create_engine(url);schema='auth_'+uuid4().hex
-    with admin.begin() as c:c.execute(CreateSchema(schema))
-    scoped=make_url(url).update_query_dict({'options':'-csearch_path='+schema}).render_as_string(hide_password=False)
-    result=subprocess.run([sys.executable,'-m','alembic','upgrade',getattr(request,'param','head')],cwd=ROOT,
-        env={**os.environ,'DATABASE_URL':scoped},capture_output=True,text=True)
-    assert result.returncode==0,result.stderr
-    engine=create_engine(scoped)
-    try:
+    with postgres_templates.clone(getattr(request,'param','head')) as engine:
         with Session(engine,expire_on_commit=False) as db:
             # Historical migration probes must use the columns that actually
             # existed at their starting revision, while current tests use the full model.
@@ -90,10 +80,6 @@ def foundation_db(request, monkeypatch):
                     statement = state.statement.options(defer(AuthorityDelegation.authority_kind, raiseload=True))
                     state.statement = visitors.replacement_traverse(statement, {}, legacy_kind)
             yield db
-    finally:
-        engine.dispose()
-        with admin.begin() as c:c.execute(DropSchema(schema,cascade=True))
-        admin.dispose()
 
 
 @pytest.fixture
