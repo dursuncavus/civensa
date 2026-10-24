@@ -146,7 +146,9 @@ def transition(db, user, document_id, action, expected_revision, reason=''):
         # their editor provenance consistent while capturing the unit version.
         db.scalar(select(ActivityReport).where(ActivityReport.organization_id == doc.organization_id,
             ActivityReport.period_id == doc.period_id).with_for_update().execution_options(populate_existing=True))
-        payload = sections.report_data(db, user, doc.id, use_freeze=False)
+        payload = sections.report_data(db, user, doc.id, use_freeze=False, include_typeset=True)
+        from .ar_typeset_source import require_keys
+        require_keys(payload)
         missing = completeness(payload)
         if missing:
             raise pp_error(409, 'Birim faaliyet raporu gönderilemedi. Şu bölümleri tamamlayın: ' + '; '.join(missing), 'sections')
@@ -157,6 +159,9 @@ def transition(db, user, document_id, action, expected_revision, reason=''):
     elif action == 'approve':
         independent(db, user, doc, cursor)
         reviewed = verified_payload(current)
+        from .ar_typeset_source import compatible
+        if not compatible(reviewed):
+            raise pp_error(409, 'Gönderilmiş birim kopyasında dizgi anahtarları yok. Raporu gerekçeyle iade edip yeni anahtarlarla yeniden gönderilmesini sağlayın.', 'document_id')
         if user.id in reviewed['source_editor_ids']:
             raise pp_error(403, SOD_ERROR.format(record='Birim faaliyet raporu'), 'actor_id')
         payload_json, sha256 = current.payload_json, current.sha256

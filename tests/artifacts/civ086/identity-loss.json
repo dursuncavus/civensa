@@ -1,0 +1,16 @@
+{
+  "description": "Sentetik kimlik kaybı örneği; ar-typeset/1 çıktısı değildir.",
+  "accepted_resource_input": [
+    {"category": "Bilgisayar", "count": 5},
+    {"category": "Bilgisayar", "count": 5}
+  ],
+  "accepted_section_blocks": [
+    {"type": "table", "rows": [["Hizmet", "5"], ["Hizmet", "5"]]},
+    {"type": "table", "rows": [["Hizmet", "5"], ["Hizmet", "5"]]}
+  ],
+  "indistinguishable_histories": [
+    {"before": [{"id": 41, "count": 5}, {"id": 42, "count": 5}], "changed_id": 41},
+    {"before": [{"id": 42, "count": 5}, {"id": 41, "count": 5}], "changed_id": 42}
+  ],
+  "explanation": "Başlangıçtaki donmuş satırlar iki geçmişte de aynıdır. İlk satırdaki 5 değeri 6 olduğunda hangi kalıcı kaydın değiştiği yalnız payload'dan belirlenemez. Sıra numarası yasaktır; içerik hash'i ise değer değişince kimliği değiştirir."
+}

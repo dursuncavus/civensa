@@ -510,9 +510,9 @@ from .revision_workflow_models import RevisionRequest, RevisionRequestState, Rev
 from .login_throttling import LoginAttempt
 
 from .activity_sections_models import (ARSectionDefinition, ARDocument, ARSectionContent,
-    ARResourceRow, ARDocumentFreeze, ARContentEvent, ARUnitWorkflowEvent)
+    ARResourceRow, ARDocumentFreeze, ARContentEvent, ARUnitWorkflowEvent, ARSectionTableKey, ARSectionRowKey)
 from .activity_financial_models import (ARBudgetRow, ARFinancialPolicy, ARFinancialEntry,
-    ARFinancialStatement, ARFinancialImport)
+    ARFinancialStatement, ARFinancialImport, ARStatementFigureKey)
 
 class StructureChange(Base):
     __tablename__ = 'structure_changes'

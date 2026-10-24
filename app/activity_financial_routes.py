@@ -7,7 +7,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 from .db import get_db
 from .structure_service import period_name
-from .models import Department, Program, SubProgram, ARFinancialStatement
+from .models import Department, Program, SubProgram, ARFinancialStatement, ARFinancialEntry, ARStatementFigureKey
 from . import activity_financial_service as service
 from . import activity_sections_service as sections
 from .activity_sections_routes import transact, TurkishValidationRoute
@@ -30,7 +30,9 @@ class Revision(BaseModel):
 
 def financial_context(db,user,doc,report):
     departments=db.scalars(select(Department).where(Department.organization_id==doc.organization_id).order_by(Department.name)).all()
-    return {'financial_department_names':{dep.id:period_name(db,doc.period_id,dep) for dep in departments},'financial':report.get('financial',{}),'budget_kinds':{'expenditure':'Gider — Ekonomik Kod','programme':'Gider — Program / Alt Program','revenue':'Gelir'},
+    entry_keys={kind:list(db.scalars(select(ARFinancialEntry.stable_key).where(ARFinancialEntry.document_id==doc.id,ARFinancialEntry.kind==kind).order_by(ARFinancialEntry.position,ARFinancialEntry.id))) for kind in service.ENTRY_FIELDS} if not report['frozen'] else {}
+    figure_keys={statement['id']:list(db.scalars(select(ARStatementFigureKey.stable_key).where(ARStatementFigureKey.statement_id==statement['id']).order_by(ARStatementFigureKey.position,ARStatementFigureKey.id))) for statement in report.get('financial',{}).get('statements',[])} if not report['frozen'] else {}
+    return {'financial_figure_keys':figure_keys,'financial_entry_keys':entry_keys,'financial_department_names':{dep.id:period_name(db,doc.period_id,dep) for dep in departments},'financial':report.get('financial',{}),'budget_kinds':{'expenditure':'Gider — Ekonomik Kod','programme':'Gider — Program / Alt Program','revenue':'Gelir'},
         'budget_columns':{k:service.budget_columns(k) for k in ('expenditure','programme','revenue')},
         'entry_columns':service.ENTRY_FIELDS,'entry_titles':{'assets':'Varlıklar ve Yükümlülükler','aid':'Yardım Yapılan Birlik ve Kuruluşlar','audit':'Malî Denetim Sonuçları','explanations':'Birim Sapma Açıklamaları'},
         'financial_slots':service.SLOTS,
@@ -119,10 +121,13 @@ def register(app):
         return templates.TemplateResponse(request,'activity_contract_error.html',{'user':user,'message':exc.detail,'blockers':[],
             'back':f'/activity-sections/reports/{document_id}?code={service.SLOTS.get(kind,"III.A.1")}'},status_code=exc.status_code)
 
-    def rows_from_form(form,columns):
+    def rows_from_form(form,columns,keyed=False):
         result=[]
         for i in range(5000):
-            if form.get(f'include_{i}')=='on':result.append({key:str(form.get(f'{key}_{i}','')) for key,_ in columns})
+            if form.get(f'include_{i}')=='on':
+                row={key:str(form.get(f'{key}_{i}','')) for key,_ in columns}
+                if keyed and f'stable_key_{i}' in form:row['stable_key']=str(form.get(f'stable_key_{i}',''))
+                result.append(row)
         return result
 
     @router.post(form_prefix+'/budget/{kind}')
@@ -138,7 +143,7 @@ def register(app):
         form=await request.form(max_fields=100000)
         try:
             if kind not in service.ENTRY_FIELDS:sections.fail('Kayıt tablosu bulunamadı. Geçerli tabloyu seçin.',404)
-            transact(db,lambda:service.save_entries(db,user,document_id,kind,rows_from_form(form,service.ENTRY_FIELDS[kind]),revision(form)))
+            transact(db,lambda:service.save_entries(db,user,document_id,kind,rows_from_form(form,service.ENTRY_FIELDS[kind],keyed=True),revision(form)))
             return redirect(document_id,kind)
         except HTTPException as exc:return retained_error(request,user,exc,db,document_id,kind,form)
 
@@ -196,7 +201,8 @@ def register(app):
         values={k:str(form.get(k,'')) for k in ('name','period','statement_date','explanation')}
         figures=[]
         for i in range(100):
-            if form.get(f'figure_label_{i}'):figures.append({'label':str(form.get(f'figure_label_{i}')),'amount':str(form.get(f'figure_amount_{i}',''))})
+            if form.get(f'figure_label_{i}'):figures.append({'label':str(form.get(f'figure_label_{i}')),'amount':str(form.get(f'figure_amount_{i}','')),
+                **({'stable_key':str(form.get(f'figure_stable_key_{i}',''))} if f'figure_stable_key_{i}' in form else {})})
         values['figures']=figures
         try:
             transact(db,lambda:service.save_statement(db,user,document_id,values,revision(form),data,file.filename if hasattr(file,'filename') else ''))

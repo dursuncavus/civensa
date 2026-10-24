@@ -16,7 +16,7 @@ from sqlalchemy import select
 from . import activity_sections_service as sections
 from .structure_service import period_name
 from .models import (ARBudgetRow, ARFinancialPolicy, ARFinancialEntry, ARFinancialStatement,
-    ARFinancialImport, ARDocument, Department, ReportingPeriod, Program, SubProgram, Publication)
+    ARFinancialImport, ARStatementFigureKey, ARDocument, Department, ReportingPeriod, Program, SubProgram, Publication)
 from .numbers import parse_number, format_number
 from .activity_contract_service import digest
 
@@ -217,7 +217,7 @@ def save_entries(db,user,document_id,kind,rows,expected_revision):
     own_keys={r.row_key for r in db.scalars(select(ARBudgetRow).where(ARBudgetRow.document_id==source.id,
         ARBudgetRow.department_id==doc.department_id))} if doc.department_id else set()
     for i,row in enumerate(rows,1):
-        if not isinstance(row,dict) or set(row)-dict(ENTRY_FIELDS[kind]).keys():sections.fail(f'{i}. satır: Geçerli sütunları kullanın.')
+        if not isinstance(row,dict) or set(row)-dict(ENTRY_FIELDS[kind]).keys()-{'stable_key'}:sections.fail(f'{i}. satır: Geçerli sütunları kullanın.')
         item={}
         for key,label in ENTRY_FIELDS[kind]:
             item[key]=number(row.get(key),f'{i}. satır, {label}',negative=kind=='assets') if key in {'amount','previous'} else text(row.get(key,''),f'{i}. satır, {label}',required=True)
@@ -230,8 +230,18 @@ def save_entries(db,user,document_id,kind,rows,expected_revision):
             seen.add(item['row_key'])
         normalized.append(item)
     before=entries(db,doc,kind)
-    for r in db.scalars(select(ARFinancialEntry).where(ARFinancialEntry.document_id==doc.id,ARFinancialEntry.kind==kind)):db.delete(r)
-    for position,item in enumerate(normalized):db.add(ARFinancialEntry(document_id=doc.id,kind=kind,position=position,payload_json=sections.numeric_canonical(item)))
+    from .ar_typeset_keys import match_rows,fingerprint
+    existing=list(db.scalars(select(ARFinancialEntry).where(ARFinancialEntry.document_id==doc.id,ARFinancialEntry.kind==kind).order_by(ARFinancialEntry.position,ARFinancialEntry.id)))
+    incoming=[{**item,**({'stable_key':raw['stable_key']} if 'stable_key' in raw else {})} for item,raw in zip(normalized,rows)]
+    def value(row):
+        return fingerprint({k:row[k] for k,_ in ENTRY_FIELDS[kind]} if isinstance(row,dict) else json.loads(row.payload_json,parse_float=Decimal))
+    matched,removed=match_rows(existing,incoming,value)
+    for row in removed:db.delete(row)
+    for position,(item,row) in enumerate(zip(normalized,matched)):
+        if row is None:
+            row=ARFinancialEntry(document_id=doc.id,kind=kind,position=position)
+            db.add(row)
+        row.position=position;row.payload_json=sections.numeric_canonical(item)
     return finish(db,user,doc,kind,before,normalized)
 
 
@@ -288,15 +298,31 @@ def save_statement(db,user,document_id,data,expected_revision,file_data=None,fil
     row.explanation=text(data.get('explanation',''),'Açıklamalar')
     figures=data.get('figures',[])
     if not isinstance(figures,list) or len(figures)>100:sections.fail('Özet rakamlar geçersiz. En fazla 100 etiket ve tutar girin.')
-    if any(not isinstance(f,dict) or set(f)-{'label','amount'} for f in figures):sections.fail('Özet rakam alanları geçersiz. Etiket ve tutar kullanın.')
-    row.figures_json=sections.numeric_canonical([{'label':text(f.get('label',''),'Özet rakam etiketi',True),
-        'amount':number(f.get('amount'),'Özet tutar',negative=True)} for f in figures])
+    if any(not isinstance(f,dict) or set(f)-{'label','amount','stable_key'} for f in figures):sections.fail('Özet rakam alanları geçersiz. Etiket ve tutar kullanın.')
+    old_figures=json.loads(row.figures_json or '[]',parse_float=Decimal)
+    normalized_figures=[{'label':text(f.get('label',''),'Özet rakam etiketi',True),
+        'amount':number(f.get('amount'),'Özet tutar',negative=True)} for f in figures]
+    row.figures_json=sections.numeric_canonical(normalized_figures)
     if file_data is not None:
         ext=Path(filename).suffix.lower()
         if len(file_data)>MAX_FILE or not file_data:sections.fail('Dosya boş veya 10 MB sınırını aşıyor. PDF veya XLSX yükleyin.')
         if ext=='.xlsx':validate_xlsx(file_data).close()
         elif ext!='.pdf' or not file_data.startswith(b'%PDF-'):sections.fail('Dosya biçimi geçersiz. PDF veya XLSX yükleyin.')
         row.filename=Path(filename).name[:200];row.file_data=file_data;row.sha256=hashlib.sha256(file_data).hexdigest()
+    from .ar_typeset_keys import match_rows,fingerprint
+    db.flush()
+    stored=list(db.scalars(select(ARStatementFigureKey).where(ARStatementFigureKey.statement_id==row.id)
+        .order_by(ARStatementFigureKey.position,ARStatementFigureKey.id)))
+    incoming=[{**item,**({'stable_key':raw['stable_key']} if 'stable_key' in raw else {})} for item,raw in zip(normalized_figures,figures)]
+    def value(item):
+        return fingerprint({k:item[k] for k in ('label','amount')} if isinstance(item,dict) else old_figures[item.position])
+    matched,removed=match_rows(stored,incoming,value)
+    for item in removed:db.delete(item)
+    for position,item in enumerate(matched):
+        if item is None:
+            item=ARStatementFigureKey(document_id=doc.id,statement_id=row.id,position=position)
+            db.add(item)
+        item.position=position
     return finish(db,user,doc,'statements',before,statement_data(row))
 
 
