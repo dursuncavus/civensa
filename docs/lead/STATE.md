@@ -23,14 +23,14 @@ Tags: DOĞRULANDI (lead checked) · TARİHSEL (past fact) · BEYAN (owner said) 
 ## Open queue — lead / scheduled run "Civensa gece kontrol" (05:41, 08:41)
 1. Scheduled-run merges are refused by the session permission check (D-213). Live session: decide how scheduled runs merge (owner merges, or permission change) — BELİRSİZ.
 2. #85: read failing test from annotations on 5ddd8a9, fix (lead), "@codex review", merge.
-3. CIV-088 dispatched (lead defaults: >85% word similarity after normalization, numbers ignored, ≥30 words, previous year approved version). Ask Ali/Strateji to confirm the defaults (add to ~2 Nov list).
+3. CIV-088 merged (#89); its defaults are in the ask-Ali list.
 4. D-177 plan conversion, CIV-085, live first load — owner sets the time, live session only.
-5. ~2 Nov ask-Ali list incl. log 73 BELİRSİZ (a)–(c).
+5. Ask-Ali list (13 items: log 73 (a)–(c), AR-16 defaults, AR-01/02/03/04/13/17/18) published as artifact "Ali Abi Soruları" https://claude.ai/artifact/KVuaFCeKzTv9kQGpwRWiz8 ; ChatGPT e-mails it from the owner's Gmail on Mon 26 Oct. Answers come back as an e-mail reply in "CIVENSA-CEVAPLAR v1" format; the lead reads them via Gmail and records decisions.
 6. Measure scheduled run cost; reduce or stop if costly.
 7. D-205 transition (#86 merged 24 Oct): archive Drive state/log/rule documents with "ESKİ ... KULLANMAYIN", add Drive pointer "KAYITLAR GITHUB'DA", civensa-lead skill (owner saves), scheduled task prompt (DONE 24 Oct 03:30).
 8. Guard may never run (pull_request_target uses default branch `main`, D-213) — check and fix in live session.
 9. DeepSeek mirror GUNCEL-DURUM.md is not reachable in scheduled runs; the lead refreshes it in the next live session with the Mac linked.
 
 ## Next IDs
-- Next new task ID: CIV-093.
-- Next decision: D-221.
+- Next new task ID: CIV-095.
+- Next decision: D-222.
