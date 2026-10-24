@@ -16,7 +16,17 @@
 <label>Bölüm<select name="section"><option value="">Tüm bölümler</option>{% for d in definitions %}<option value="{{ d.code }}" {% if selected_section==d.code %}selected{% endif %}>{{ d.code }} · {{ d.title }}</option>{% endfor %}</select></label>
 <label>Durum<select name="status"><option value="">Tümü</option>{% for k,v in statuses.items() %}<option value="{{ k }}" {% if selected_status==k %}selected{% endif %}>{{ v }}</option>{% endfor %}</select></label><button class="button">Filtrele</button></form>
 <div class="ar-scroll"><table class="ar-table"><thead><tr><th>Yıl / Rapor</th><th>Bölüm</th><th>Durum</th><th>Sahibi</th><th>Eksikler</th></tr></thead><tbody>
-{% for item in reports %}{% for s in item.matches %}<tr><td>{{ item.report.year }} · {{ item.report.department }}{% if item.report.workflow %}<br><strong>{{ item.report.workflow.label }}</strong>{% endif %}{% if item.report.frozen %}<br><strong>Onaylı kopya</strong>{% endif %}</td><td><a href="/activity-sections/reports/{{ item.report.id }}?code={{ s.code }}">{{ s.code }} · {{ s.title }}</a></td><td><span class="ar-status ar-{{ s.status }}">{{ statuses[s.status] }}</span></td><td>{{ owners[s.owner] }}</td><td>{% for missing in s.missing %}<div>{{ missing }}</div>{% else %}—{% endfor %}</td></tr>{% endfor %}{% else %}<tr><td colspan="5">Bu filtrelerle rapor bulunamadı. Yıl raporlarını oluşturun veya filtreleri değiştirin.</td></tr>{% endfor %}
+{% for item in reports %}{% for s in item.matches %}
+<tr><td>{{ item.report.year }} · {{ item.report.department }}{% if item.report.workflow %}<br><strong>{{ item.report.workflow.label }}</strong>{% endif %}{% if item.report.frozen %}<br><strong>Onaylı kopya</strong>{% endif %}</td>
+<td><a href="/activity-sections/reports/{{ item.report.id }}?code={{ s.code }}">{{ s.code }} · {{ s.title }}</a></td>
+<td><span class="ar-status ar-{{ s.status }}">{{ statuses[s.status] }}</span></td><td>{{ owners[s.owner] }}</td>
+<td>{% for missing in s.missing %}<div>{{ missing }}</div>{% else %}—{% endfor %}
+{% set similarity=item.similarities.get(s.code) %}
+{% if similarity %}
+{% if similarity.message %}<p class="ar-warning" role="status" data-ar-similarity>{{ similarity.message }}{% if similarity.source_url %} <a href="{{ similarity.source_url }}">{{ similarity.source_label }}</a>{% endif %}</p>
+{% elif similarity.percent is not none %}<p class="muted" data-ar-similarity-percent>Önceki yıl benzerliği: %{{ similarity.percent }}</p>{% endif %}
+{% endif %}</td></tr>
+{% endfor %}{% else %}<tr><td colspan="5">Bu filtrelerle rapor bulunamadı. Yıl raporlarını oluşturun veya filtreleri değiştirin.</td></tr>{% endfor %}
 </tbody></table></div></section>
 <section class="panel ar-panel"><h2>Word ve PDF çıktıları</h2>
 {% for item in reports %}{% if user.role=='strategy' or (item.report.department_id and item.report.department_id==user.department_id) %}

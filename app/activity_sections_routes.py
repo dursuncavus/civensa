@@ -13,6 +13,7 @@ from sqlalchemy.orm import Session
 from .db import get_db
 from .models import ARDocument, ARSectionDefinition, ARContentEvent, Organization, ReportingPeriod
 from . import activity_sections_service as service
+from . import ar_similarity
 from .numbers import parse_number, format_number
 from .time_display import turkey_time
 
@@ -191,6 +192,19 @@ def register(app):
             'Content-Disposition':f'attachment; filename="faaliyet-raporu-{doc.id}-dizgi.json"',
             'Cache-Control':'private, no-store','X-Content-Type-Options':'nosniff'})
 
+    @router.get('/activity-sections/reports/{document_id}/approvals/{approval_id}.json')
+    def approved_copy(document_id:int,approval_id:int,db:Session=Depends(get_db),user=Depends(require_user)):
+        from .models import ARUnitWorkflowEvent
+        from .ar_unit_workflow_service import verified_payload
+        doc=export_document(document_id,db,user)
+        approval=db.get(ARUnitWorkflowEvent,approval_id)
+        if not doc.department_id or not approval or approval.document_id!=doc.id or approval.action!='approve':
+            service.fail('Birim raporu onayı bulunamadı. Kendi raporunuzun sürüm geçmişini kullanın.',404)
+        verified_payload(approval)
+        return Response(approval.payload_json,media_type='application/json',headers={
+            'Content-Disposition':f'attachment; filename="birim-raporu-{doc.id}-onay-{approval.revision}.json"',
+            'Cache-Control':'private, no-store','X-Content-Type-Options':'nosniff'})
+
     @router.post('/api/activity-sections/reports/{document_id}/reopen')
     def reopen(document_id:int,data:Reopen,db:Session=Depends(get_db),user=Depends(require_user)):
         doc=transact(db,lambda:service.reopen_document(db,user,document_id,**data.model_dump()))
@@ -223,7 +237,7 @@ def register(app):
                 if error.status_code==403:continue
                 raise
             matches=[s for s in report['sections'] if (not section or s['code']==section) and (not status or s['status']==status)]
-            if matches:reports.append({'report':report,'matches':matches})
+            if matches:reports.append({'report':report,'matches':matches,'similarities':ar_similarity.for_report(db,user,report)})
         return reports
 
     @router.get('/activity-sections')
@@ -284,7 +298,7 @@ def register(app):
             ARUnitWorkflowEvent.action=='approve').order_by(ARUnitWorkflowEvent.revision))) if doc.department_id else []
         return {**financial_context(db,user,doc,report), 'section_table_keys_json':json.dumps(keys),
             'resource_key_map':resource_keys, 'typeset_approvals':approvals, 'user':user,'report':report,'section':section,'statuses':service.STATUSES,
-            'reopen_allowed':reopen_allowed,
+            'reopen_allowed':reopen_allowed,'similarities':ar_similarity.for_report(db,user,report),
             'editable':not report['frozen'] and service.can_edit(db,user,doc,definition),
             'tables':{k:{**report['resources'][k],'kind':k} for k,v in service.TABLES.items() if v[0]==code},
             'employment':service.EMPLOYMENT,'owners':{'directorate':'Müdürlük','strategy':'Strateji','finance':'Mali Hizmetler'},
