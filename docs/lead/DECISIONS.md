@@ -75,3 +75,6 @@ DOĞRULANDI: #84 squash-merged (green, behind 0). #86 merged while 1 behind (#84
 
 ## D-216 (24 Oct 2026 ~19:00, lead) — CIV-090 (AR-06) dispatched; third slot left empty
 AR-06 is the only OPEN AR gap that needs no Strateji/Ali answer. Package keeps draft saves allowed and adds the check at unit submission, files disjoint from #85 and CIV-088 (D-137). The third Codex slot stays empty: the remaining PARTIAL items (AR-01/02/03/04/13/17/18) need Ali/Finance decisions or overlap open work; filling it now would waste quota (constitution rule 16).
+
+## D-217 (24 Oct 2026 ~19:10, lead, live session) — password-file item closed by owner
+BEYAN: the owner told the lead to drop the plaintext password files item (log 79) and stop reminding him. Removed from the owner list; the lead does not raise it again. Risk stays with the owner's decision.
