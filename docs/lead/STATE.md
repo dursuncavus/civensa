@@ -15,7 +15,7 @@ Tags: DOĞRULANDI (lead checked) · TARİHSEL (past fact) · BEYAN (owner said) 
 | #86 | Lead records into repo (D-205) | lead/civ-lead-records | Codex P1 fixed (D-207, pull_request_target); re-review requested | Lead merges when Codex re-review has no P0/P1 and tests green |
 
 ## Open — owner
-1. Codex "Tam erişim": DOĞRULANDI still ON in task CIV-087 (owner screenshot 24 Oct 03:38) — owner turns it off.
+1. Codex "Tam erişim": DOĞRULANDI turning it off mid-task (03:40, lead advice) set the session approval policy to "never" and blocked push + PR update of d722e49; "Onay iste" did not restore it. Back on for CIV-087 to push. Do NOT turn it off on a running task again; find a tested permission setup for new tasks in daytime (lead mistake, D-209).
 2. Plaintext password files on Desktop/Downloads/Documents (log 79) → owner moves them into the Passwords app; then lead removes the files.
 
 ## Open queue — lead / scheduled run "Civensa gece kontrol" (05:41, 08:41)
@@ -30,4 +30,4 @@ Tags: DOĞRULANDI (lead checked) · TARİHSEL (past fact) · BEYAN (owner said) 
 
 ## Next IDs
 - Next new task ID: CIV-090 (CIV-088 reserved).
-- Next decision: D-209.
+- Next decision: D-210.

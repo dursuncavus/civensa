@@ -41,3 +41,8 @@ Side effect: `pull_request_target` runs the base branch's file, which does not e
 ## D-208 (24 Oct 2026 ~03:50, lead) — "@codex" PR comments cannot deliver fixes; fix follow-ups go through the owner
 DOĞRULANDI: on #85 the Codex bot answered the lead's fix request with "create an environment for this repo" (no Codex cloud environment exists), and head 124c5aa only changed the CSRF text; `/login?message=` reflection (D-203 MEDIUM) is still in app/main.py:213/562. "@codex review" comments do work (reviews on #85, #86).
 Decision: until a Codex cloud environment exists, the lead writes fix follow-ups in English and the owner pastes them into that task's own Codex conversation. Partly supersedes D-202 ("lead sends follow-ups as @codex PR comments" → reviews only). Whether to set up a Codex cloud environment: BELİRSİZ, to be checked against how the owner runs Codex today; not escalated now.
+
+## D-209 (24 Oct 2026 ~03:50, lead) — lead mistake: turned off Codex full access mid-task
+What failed: the lead told the owner to turn off "Tam erişim" in the running CIV-087 task; the session approval policy became "never" and Codex could not push d722e49 or update PR #85; switching to "Onay iste" did not help on retry (DOĞRULANDI, owner screenshots 03:47/03:49).
+Why: the lead gave a settings instruction for a running task without knowing how the Codex app applies permission changes mid-session (constitution rule 7/8).
+Correct approach: full access back on for this task until the push is done. Prevention: no permission changes on a running Codex task; a permission setup is decided once, tested on a new task in daytime, then recorded.
