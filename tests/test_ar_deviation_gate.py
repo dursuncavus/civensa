@@ -259,3 +259,35 @@ def test_approval_still_uses_the_existing_deviation_message(client, db, sample):
     assert response.json()['detail']['blockers'] == [{
         'indicator': 'Hizmet sayısı', 'report_indicator_id': slot,
         'message': 'Hedef ile gerçekleşme farkı için açıklama girin.'}]
+
+
+def test_captured_identity_without_anchor_still_blocks_submit(deviation_report, db, sample, monkeypatch):
+    create, _ = deviation_report
+    client, doc, report, token = create()
+    save_actual(client, token, report['indicators'][0]['report_indicator_id'])
+    ready_unit(db, doc, sample['user'])
+    original = sections.report_data
+
+    def stale_capture(*args, **kwargs):
+        payload = original(*args, **kwargs)
+        # Simulate an identity captured before its binding moved out of scope.
+        payload['_typeset']['indicators'][0]['indicator_id'] = 'stale-captured-identity'
+        return payload
+
+    monkeypatch.setattr(sections, 'report_data', stale_capture)
+    revision = doc.revision
+    for html in (False, True):
+        response = submit(client, token, doc, html=html)
+        assert response.status_code == 409, response.text
+        message = ('Birim faaliyet raporu gönderilemedi. Şu göstergelerde hedef farkı açıklaması eksik: '
+                   'Hizmet sayısı.')
+        if html:
+            assert message in response.text
+            assert not any('#indicator-' in (link or '') for link in Elements(response.text).links)
+        else:
+            assert response.json()['message'] == message
+            blocker = response.json()['blockers'][0]
+            assert blocker['report_indicator_id'] is None
+            assert blocker['link'] == f"/activity-reports/revisions/{report['revision_id']}"
+    assert doc.revision == revision
+    assert db.scalar(select(func.count()).select_from(ARUnitWorkflowEvent)) == 0

@@ -26,8 +26,8 @@ def require_deviation_explanations(db, payload):
                IndicatorDefinitionRevision.indicator_id.in_([identity for identity, _ in missing]))).all())
     message = ('Birim faaliyet raporu gönderilemedi. Şu göstergelerde hedef farkı açıklaması eksik: '
                + '; '.join(name for _, name in missing) + '.')
-    blockers = [{'indicator': name, 'report_indicator_id': ids[identity],
-                 'link': f"{core['link']}#indicator-{ids[identity]}",
+    blockers = [{'indicator': name, 'report_indicator_id': ids.get(identity),
+                 'link': (f"{core['link']}#indicator-{ids[identity]}" if identity in ids else core['link']),
                  'message': 'Hedef ile gerçekleşme farkı için açıklama girin.'}
                 for identity, name in missing]
     raise HTTPException(409, {'message': message, 'blockers': blockers})
