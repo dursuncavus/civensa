@@ -33,6 +33,9 @@ class WorkflowRoute(APIRoute):
                 return JSONResponse({'detail':'Birim faaliyet raporu işlenemedi. ' + ' '.join(e['message'] for e in errors),
                                      'errors':errors}, status_code=422)
             except HTTPException as error:
+                if isinstance(error.detail, dict) and 'blockers' in error.detail:
+                    return JSONResponse({'detail': error.detail['message'], **error.detail},
+                                        status_code=error.status_code, headers=error.headers)
                 return JSONResponse(payload(error), status_code=error.status_code, headers=error.headers)
         return handler
 
@@ -79,8 +82,10 @@ def register(app):
         except HTTPException as error:
             # The reason and revision remain visible for correction; no redirects
             # with audit reasons in the URL, and Jinja escapes attempted input.
+            detail = error.detail if isinstance(error.detail, dict) else {'message': error.detail}
             return templates.TemplateResponse(request, 'ar_unit_workflow_error.html',
-                {'user': user, 'message': error.detail, 'back': back, 'action': action,
+                {'user': user, 'message': detail['message'], 'blockers': detail.get('blockers', []),
+                 'back': back, 'action': action,
                  'reason': str(form.get('reason', '')), 'revision': str(form.get('expected_revision', ''))},
                 status_code=error.status_code)
 

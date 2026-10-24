@@ -69,3 +69,22 @@ DOĞRULANDI (GitHub REST 02:40–02:50Z):
 
 ## D-214 (24 Oct 2026 ~17:05, lead, live session) — live session merges; #82 merged
 DOĞRULANDI: the live lead session can merge (PUT /pulls/82/merge succeeded, squash 6324c87 into phase5); only the scheduled run is refused. #87 (night record) merged into lead/civ-lead-records. #84 and #86 were behind 1 after #82 → update-branch; merge when green. #85 test (18,0) failure is caused by fde1dfb (124c5aa shard 0 was green); test name not visible until #84's annotations are on phase5. Owner merge list from D-213 is withdrawn — no owner action needed.
+
+## D-215 (24 Oct 2026 ~18:50, lead) — #84 and #86 merged; #85 rebased; CIV-088 dispatched
+DOĞRULANDI: #84 squash-merged (green, behind 0). #86 merged while 1 behind (#84's files do not overlap #86's: workflows differ, docs/lead only) — exception to behind-0 recorded here. #85 update-branch failed on conflict with #82; lead merged phase5 locally (5ddd8a9): activity_financial.html keeps CIV-087 attempt retention + CIV-086 figure_stable_key; civ-062 doc takes AR-14 from CIV-086, AR-15 from CIV-087. CIV-088 (AR-16) package written with lead defaults for the open Strateji decision (named constants, easy to change); forbidden files exclude everything #85 touches (D-137).
+
+## D-216 (24 Oct 2026 ~19:00, lead) — CIV-090 (AR-06) dispatched; third slot left empty
+AR-06 is the only OPEN AR gap that needs no Strateji/Ali answer. Package keeps draft saves allowed and adds the check at unit submission, files disjoint from #85 and CIV-088 (D-137). The third Codex slot stays empty: the remaining PARTIAL items (AR-01/02/03/04/13/17/18) need Ali/Finance decisions or overlap open work; filling it now would waste quota (constitution rule 16).
+
+## D-217 (24 Oct 2026 ~19:10, lead, live session) — password-file item closed by owner
+BEYAN: the owner told the lead to drop the plaintext password files item (log 79) and stop reminding him. Removed from the owner list; the lead does not raise it again. Risk stays with the owner's decision.
+
+## D-218 (24 Oct 2026 ~19:40, lead) — CI blocked by GitHub billing
+DOĞRULANDI: #89 head 5d5f9f3 `secrets` job annotation says the job was not started because account payments failed or the spending limit must be increased. Test jobs on #85 (2f02a42) and #90 (7588a9b) have shown in_progress for ~40 min (BELİRSİZ: likely stuck for the same reason). Escalated to the owner (payment = human-only). After the fix the lead re-runs the jobs; no merges until then. #89 earlier failure (fd280ff, `similarities` undefined) sent to Codex; Codex pushed 5d5f9f3.
+
+## D-219 (24 Oct 2026 ~22:35, lead) — CI cost: raise budget now, CIV-091 to cut minutes
+DOĞRULANDI (Actions API, October): 237 "Performance program validation" runs; pytest takes 37–43 min per shard, 2 shards per push (~80 job-minutes); other workflows are negligible. Owner screenshot: $52 gross metered, $12 included, Actions budget 100% used. Concurrency cancel and docs path filter already exist, so the cost driver is suite duration × pushes (Codex draft iterations). Decision: owner raises the Actions budget (about $80/month) so work continues; CIV-091 skips tests on draft PRs and cuts suite time without removing tests. Making the repo public (free minutes) is rejected for now: institutional data and security exposure (constitution rule 24).
+
+## D-220 (24 Oct 2026 ~23:15, lead) — public repo: prepare first (CIV-092); #90 merged; #85 fixed
+BEYAN: owner says the report data is public and approves preparing the repo for public visibility (free Actions minutes). DOĞRULANDI blocker: daily live-database backups are uploaded unencrypted as Actions artifacts (90-day retention, 16 present); public visibility would expose accounts and password hashes. Workflows are otherwise fork-safe (guard never checks out PR code; backup secrets only on schedule/dispatch); a quick regex scan of 391 commits found no real credential (full gitleaks history scan is part of CIV-092). Decision: CIV-092 encrypts backups with age and adds a full-history scan + readiness report; deleting the old artifacts and flipping visibility each need a separate owner confirmation. GitHub Pro rejected (+1,000 min only).
+#90 (CIV-090) reviewed by the lead, CI green on 7588a9b, merged while 4 behind (base drift docs/lead only — same exception as D-215); LOW notes posted on the PR. #85: shard 0 failure was the storage inventory test (CIV-086 stable_key columns unclassified); lead added them as non-base64 text (87b0b45) and asked "@codex review".

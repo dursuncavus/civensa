@@ -7,6 +7,7 @@ from sqlalchemy import func, select
 
 from . import activity_sections_service as sections
 from .activity_contract_service import digest
+from .ar_deviation_gate import require_deviation_explanations
 from .models import (ARContentEvent, ARDocument, ARUnitWorkflowEvent, Department, DepartmentScope, User,
                      ActivityReport, ActivityReportRevision, ActualRevision, ReportIndicator, PublicationIndicatorBinding)
 from .pp_errors import pp_error
@@ -152,6 +153,7 @@ def transition(db, user, document_id, action, expected_revision, reason=''):
         missing = completeness(payload)
         if missing:
             raise pp_error(409, 'Birim faaliyet raporu gönderilemedi. Şu bölümleri tamamlayın: ' + '; '.join(missing), 'sections')
+        require_deviation_explanations(db, payload)
         payload.pop('workflow', None)
         payload['source_editor_ids'] = source_editors(db, doc)
         payload_json = sections.numeric_canonical(payload)
