@@ -72,3 +72,6 @@ DOĞRULANDI: the live lead session can merge (PUT /pulls/82/merge succeeded, squ
 
 ## D-215 (24 Oct 2026 ~18:50, lead) — #84 and #86 merged; #85 rebased; CIV-088 dispatched
 DOĞRULANDI: #84 squash-merged (green, behind 0). #86 merged while 1 behind (#84's files do not overlap #86's: workflows differ, docs/lead only) — exception to behind-0 recorded here. #85 update-branch failed on conflict with #82; lead merged phase5 locally (5ddd8a9): activity_financial.html keeps CIV-087 attempt retention + CIV-086 figure_stable_key; civ-062 doc takes AR-14 from CIV-086, AR-15 from CIV-087. CIV-088 (AR-16) package written with lead defaults for the open Strateji decision (named constants, easy to change); forbidden files exclude everything #85 touches (D-137).
+
+## D-216 (24 Oct 2026 ~19:00, lead) — CIV-090 (AR-06) dispatched; third slot left empty
+AR-06 is the only OPEN AR gap that needs no Strateji/Ali answer. Package keeps draft saves allowed and adds the check at unit submission, files disjoint from #85 and CIV-088 (D-137). The third Codex slot stays empty: the remaining PARTIAL items (AR-01/02/03/04/13/17/18) need Ali/Finance decisions or overlap open work; filling it now would waste quota (constitution rule 16).

@@ -11,6 +11,7 @@ Tags: DOĞRULANDI (lead checked) · TARİHSEL (past fact) · BEYAN (owner said) 
 | --- | --- | --- | --- | --- |
 | #85 | CIV-087 AR-15 Turkish errors + #80 cleanup | 5ddd8a9 | Lead merged phase5 in (conflicts with #82 resolved); CI running with annotations | Read failing test, lead fixes, merge |
 | (new) | CIV-088 AR-16 similarity warning | — | Package `tasks/CIV-088.md`, dispatched 24 Oct ~18:50 | Review when ready |
+| (new) | CIV-090 AR-06 deviation explanation gate | — | Package `tasks/CIV-090.md`, dispatched 24 Oct ~19:00 | Review when ready |
 
 ## Open — owner
 0. (closed) Merges are done by the lead in live sessions (D-214).
@@ -29,5 +30,5 @@ Tags: DOĞRULANDI (lead checked) · TARİHSEL (past fact) · BEYAN (owner said) 
 9. DeepSeek mirror GUNCEL-DURUM.md is not reachable in scheduled runs; the lead refreshes it in the next live session with the Mac linked.
 
 ## Next IDs
-- Next new task ID: CIV-090.
-- Next decision: D-216.
+- Next new task ID: CIV-091.
+- Next decision: D-217.
