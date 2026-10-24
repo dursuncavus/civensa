@@ -15,7 +15,7 @@ Tags: DOĞRULANDI (lead checked) · TARİHSEL (past fact) · BEYAN (owner said) 
 | #86 | Lead records into repo (D-205) | lead/civ-lead-records | Codex P1 fixed (D-207, pull_request_target); re-review requested | Lead merges when Codex re-review has no P0/P1 and tests green |
 
 ## Open — owner
-1. Codex "Tam erişim": v0.76 says still ON at 02:49 screenshot, log 77 BEYAN says off — owner to confirm it is off.
+1. Codex "Tam erişim": DOĞRULANDI still ON in task CIV-087 (owner screenshot 24 Oct 03:38) — owner turns it off.
 2. Plaintext password files on Desktop/Downloads/Documents (log 79) → owner moves them into the Passwords app; then lead removes the files.
 
 ## Open queue — lead / scheduled run "Civensa gece kontrol" (05:41, 08:41)
