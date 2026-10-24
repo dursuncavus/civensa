@@ -6,16 +6,15 @@ Backup log ("Civensa Yedek Kaydı", Drive + DeepSeek workspace YEDEK-KAYIT.md): 
 
 Tags: DOĞRULANDI (lead checked) · TARİHSEL (past fact) · BEYAN (owner said) · BELİRSİZ (unknown).
 
-## Open pull requests (DOĞRULANDI, GitHub REST ~02:45Z)
-| PR | Task | Head | State | Next action |
-| --- | --- | --- | --- | --- |
-| #85 | CIV-087 AR-15 Turkish errors + #80 cleanup | 5ddd8a9 | Lead merged phase5 in (conflicts with #82 resolved); CI running with annotations | Read failing test, lead fixes, merge |
-| (new) | CIV-088 AR-16 similarity warning | — | Package `tasks/CIV-088.md`, dispatched 24 Oct ~18:50 | Review when ready |
-| (new) | CIV-090 AR-06 deviation explanation gate | — | Package `tasks/CIV-090.md`, dispatched 24 Oct ~19:00 | Review when ready |
+## Open pull requests (DOĞRULANDI ~25 Oct 02:30)
+| PR | Task | State | Next action |
+| --- | --- | --- | --- |
+| (Codex) | CIV-093 UI screen map | running | Review when PR opens |
+| (Codex) | CIV-094 review follow-ups | dispatched | Review when PR opens |
 
 ## Open — owner
 - (resolved 24 Oct ~22:37) D-218 billing blocker — budget raised.
-- (done) Owner raised the Actions budget 24 Oct. CIV-091 running in Codex. CIV-092 public-repo readiness approved by owner (D-220); after it merges: owner approves deleting old plaintext backup artifacts and switching the repo to public (two separate confirmations).
+- Public repo (D-220/D-222): CIV-092 merged into phase5. Next, in order, each with owner confirmation: (1) owner creates age key pair and sets BACKUP_AGE_RECIPIENT / BACKUP_AGE_IDENTITY secrets (lead gives hidden-prompt commands); (2) phase5 → main merge (owner) so scheduled backups encrypt; (3) one encrypted backup run verified; (4) delete old plaintext backup artifacts; (5) run full-history gitleaks (workflow_dispatch) — must be clean; (6) switch repo to public.
 0. (closed) Merges are done by the lead in live sessions (D-214).
 1. (closed) Codex "Tam erişim" stays ON — owner decision D-210.
 2. (closed) Plaintext password files (log 79): owner decision D-217 — not tracked, do not remind the owner.
@@ -33,4 +32,4 @@ Tags: DOĞRULANDI (lead checked) · TARİHSEL (past fact) · BEYAN (owner said) 
 
 ## Next IDs
 - Next new task ID: CIV-095.
-- Next decision: D-222.
+- Next decision: D-223.
