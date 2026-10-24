@@ -46,3 +46,6 @@ Decision: until a Codex cloud environment exists, the lead writes fix follow-ups
 What failed: the lead told the owner to turn off "Tam erişim" in the running CIV-087 task; the session approval policy became "never" and Codex could not push d722e49 or update PR #85; switching to "Onay iste" did not help on retry (DOĞRULANDI, owner screenshots 03:47/03:49).
 Why: the lead gave a settings instruction for a running task without knowing how the Codex app applies permission changes mid-session (constitution rule 7/8).
 Correct approach: full access back on for this task until the push is done. Prevention: no permission changes on a running Codex task; a permission setup is decided once, tested on a new task in daytime, then recorded.
+
+## D-210 (24 Oct 2026 03:52, owner) — Codex keeps "Tam erişim"
+BEYAN: owner decided full access stays on for Codex tasks. Closes STATE owner item 1. Remaining risk accepted by owner: Codex can act freely on the owner's machine; mitigations stay as they are (no secrets in repo, plaintext password files to be moved — owner item 2, lead reviews every PR).
