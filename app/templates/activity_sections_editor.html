@@ -30,7 +30,7 @@
 <div class="ar-body"><section class="panel ar-panel"><p class="muted">{{ section.code }} · Bölüm sahibi: {{ owners[section.owner] }}</p><h2>{{ section.title }}</h2>
 <p>Son düzenleyen: {{ section.editor_name }}{% if section.edited_at %} · {{ section.edited_at|ar_time }}{% endif %}</p>
 {% if section.copied_needs_review %}<p class="ar-warning">Geçen yıldan kopyalandı — gözden geçirin</p>{% endif %}
-{% set similarity=similarities.get(section.code) %}
+{% set similarity=(similarities|default({})).get(section.code) %}
 {% if similarity and similarity.message %}<p class="ar-warning" role="status" data-ar-similarity>{{ similarity.message }}{% if similarity.source_url %} <a href="{{ similarity.source_url }}">{{ similarity.source_label }}</a>{% endif %}</p>{% endif %}
 {% if section.code=='EKLER' %}{% include 'assurance_slot.html' %}
 {% elif section.code=='III.B.2.i' %}<p>{{ report.core.message }}</p><a class="button" href="{{ report.core.link }}">Gösterge gerçekleşmelerini aç</a>
