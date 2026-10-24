@@ -156,7 +156,8 @@ def test_latest_approval_or_freeze_and_scope_isolation(section_client, db, sampl
             store_baseline(db, sample, doc, text='Eski birim dondurması', version=5, kind='freeze')
         result = similarity.load_baseline(db, doc, 2026)
         assert similarity.compare_section(narrative(), result)['percent'] == 100
-        assert str(latest.id) in result['source_url'] if doc.department_id else 'version=2' in result['source_url']
+        expected_source = f'/approvals/{latest.id}.json' if doc.department_id else 'version=2'
+        assert expected_source in result['source_url']
 
 
 def test_missing_baseline_same_code_year_organization_and_no_drafts(section_client, db, sample):
@@ -191,6 +192,12 @@ def test_tampered_baseline_is_nonblocking_turkish_error(section_client, db, samp
         assert '2026 yılı onaylı rapor kopyası doğrulanamadı' in response.text
         assert '%100' not in response.text
         assert not html.fromstring(response.text).xpath('//*[@data-ar-similarity]//a')
+    if invalid == 'sha':
+        # The unfiltered overview also visits the damaged historical report itself.
+        overview = client.get('/activity-sections?section=I.A')
+        assert overview.status_code == 200
+        assert '2026 yılı onaylı rapor kopyası doğrulanamadı' in overview.text
+        assert not html.fromstring(overview.text).xpath('//*[@data-ar-similarity]//a')
 
 
 def test_unit_only_own_percentage_strategy_every_unit_and_download_acl(section_client, db, sample):

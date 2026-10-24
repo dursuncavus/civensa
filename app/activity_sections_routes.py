@@ -229,22 +229,27 @@ def register(app):
         service.actor(user)
         query=select(ARDocument).order_by(ARDocument.period_id,ARDocument.id)
         if period_id:query=query.where(ARDocument.period_id==period_id)
-        reports=[]
+        reports=[];report_errors=[]
         for doc in db.scalars(query):
             if user.role!='strategy' and doc.department_id not in {None,user.department_id}:continue
             try:report=service.report_data(db,user,doc.id)
             except HTTPException as error:
                 if error.status_code==403:continue
+                if error.status_code==409:
+                    report_errors.append({'year':db.get(ReportingPeriod,doc.period_id).year,
+                        'document_id':doc.id,'message':error.detail})
+                    continue
                 raise
             matches=[s for s in report['sections'] if (not section or s['code']==section) and (not status or s['status']==status)]
             if matches:reports.append({'report':report,'matches':matches,'similarities':ar_similarity.for_report(db,user,report)})
-        return reports
+        return reports,report_errors
 
     @router.get('/activity-sections')
     def index(request:Request,period_id:str='',section:str='',status:str='',db:Session=Depends(get_db),user=Depends(require_user)):
         period_id=integer(period_id) if period_id else None
+        reports,report_errors=listing(db,user,period_id,section,status)
         return templates.TemplateResponse(request,'activity_sections_index.html',{'user':user,
-            'reports':listing(db,user,period_id,section,status),'statuses':service.STATUSES,
+            'reports':reports,'report_errors':report_errors,'statuses':service.STATUSES,
             'owners':{'directorate':'Müdürlük','strategy':'Strateji','finance':'Mali Hizmetler'},
             'definitions':db.scalars(select(ARSectionDefinition).order_by(ARSectionDefinition.version.desc(),ARSectionDefinition.position)).all(),
             'organizations':db.scalars(select(Organization).order_by(Organization.name)).all(),
