@@ -15,7 +15,7 @@ Tags: DOĞRULANDI (lead checked) · TARİHSEL (past fact) · BEYAN (owner said) 
 | #85 | CIV-087 AR-15 Turkish errors + #80 cleanup | fde1dfb | test (18,0) red, cause unknown; Codex review stuck "running"; overlaps #82 files | After #84 merges: update branch → read annotations → lead fixes (D-211 code is lead-written) |
 
 ## Open — owner
-0. Merge #82, then #84, then #86 on GitHub (scheduled run cannot merge, D-213).
+0. Merge on GitHub in this order: #87 (this record), #82, #84, #86 (scheduled run cannot merge, D-213).
 1. (closed) Codex "Tam erişim" stays ON — owner decision D-210.
 2. Plaintext password files on Desktop/Downloads/Documents (log 79) → owner moves them into the Passwords app; then lead removes the files.
 
@@ -27,7 +27,8 @@ Tags: DOĞRULANDI (lead checked) · TARİHSEL (past fact) · BEYAN (owner said) 
 5. ~2 Nov ask-Ali list incl. log 73 BELİRSİZ (a)–(c).
 6. Measure scheduled run cost; reduce or stop if costly.
 7. D-205 transition after #86 merges: archive Drive state/log/rule documents with "ESKİ ... KULLANMAYIN", add Drive pointer "KAYITLAR GITHUB'DA", civensa-lead skill (owner saves), scheduled task prompt (DONE 24 Oct 03:30).
-8. DeepSeek mirror GUNCEL-DURUM.md is not reachable in scheduled runs; the lead refreshes it in the next live session with the Mac linked.
+8. Guard may never run (pull_request_target uses default branch `main`, D-213) — check and fix in live session.
+9. DeepSeek mirror GUNCEL-DURUM.md is not reachable in scheduled runs; the lead refreshes it in the next live session with the Mac linked.
 
 ## Next IDs
 - Next new task ID: CIV-090 (CIV-088 reserved).
