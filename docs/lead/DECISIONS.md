@@ -28,3 +28,7 @@ Reason (DOĞRULANDI 24 Oct): Drive documents cannot be edited in place through t
 Safeguards: only `lead/...` branches may change `docs/lead/**` or `AGENTS.md` (CI guard); AGENTS.md tells coding agents not to edit them; no secrets in these files.
 Supersedes: D-196 K5, D-198 reason (3), hierarchy v1.3 §6 "Drive wins". Rule docs bumped: HIERARCHY v1.4, PROJECT_RULES v1.3, BACKUP_LEAD v2.
 Rule 35 sync still open: civensa-lead skill text, scheduled task prompt, DeepSeek mirror — see STATE.md queue item 8.
+
+## D-206 (24 Oct 2026 ~03:35, lead) — PR #84 no longer draft; branch updated
+DOĞRULANDI: #84 draft=false (marked ready by owner or Codex), head f6bfc39 all checks green (test 18/0, 18/1, secrets), proof links in PR text (D-197 met), but behind phase5 by 4 → lead called update-branch; new head 04975b3, CI rerunning. Merge when green and behind 0. D-204 is closed (no owner action needed). Also DOĞRULANDI: the lead session can mark PRs ready via REST `POST /pulls/{n}/ccr/ready_for_review`, so owner un-draft clicks are no longer needed.
+Scheduled task "Civensa gece kontrol" prompt updated to read docs/lead/ and to carry out the D-205 Drive archive steps once #86 is merged.
