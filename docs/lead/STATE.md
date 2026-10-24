@@ -15,6 +15,7 @@ Tags: DOĞRULANDI (lead checked) · TARİHSEL (past fact) · BEYAN (owner said) 
 
 ## Open — owner
 - BLOCKER (D-218): GitHub Actions jobs are not starting — "recent account payments have failed or your spending limit needs to be increased". Owner checks GitHub billing. Until fixed no PR can be TESTED or merged.
+- Owner raises the GitHub Actions budget (D-219: about $80/month until CIV-091 lands). CIV-091 (CI cost cut) dispatched.
 0. (closed) Merges are done by the lead in live sessions (D-214).
 1. (closed) Codex "Tam erişim" stays ON — owner decision D-210.
 2. (closed) Plaintext password files (log 79): owner decision D-217 — not tracked, do not remind the owner.
@@ -31,5 +32,5 @@ Tags: DOĞRULANDI (lead checked) · TARİHSEL (past fact) · BEYAN (owner said) 
 9. DeepSeek mirror GUNCEL-DURUM.md is not reachable in scheduled runs; the lead refreshes it in the next live session with the Mac linked.
 
 ## Next IDs
-- Next new task ID: CIV-091.
-- Next decision: D-219.
+- Next new task ID: CIV-092.
+- Next decision: D-220.
