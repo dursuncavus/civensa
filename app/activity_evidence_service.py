@@ -20,10 +20,10 @@ def fail(message, field='source_file', status=422):
 
 def validate_file(data, filename):
     suffix = Path(filename).suffix.lower()
-    if len(data) > MAX_FILE:
-        fail(f'Dosya çok büyük. En fazla {MAX_FILE // (1024 * 1024)} MB yüklenebilir.')
     if not data:
-        fail('Kanıt dosyası boş. PDF veya XLSX yükleyin.')
+        fail('Kanıt dosyası boş. PDF veya XLSX dosyasını yeniden seçip yükleyin.')
+    if len(data) > MAX_FILE:
+        fail(f'Kanıt dosyası çok büyük. En fazla {MAX_FILE // (1024 * 1024)} MB yüklenebilir. Daha küçük PDF veya XLSX dosyasını yeniden seçip yükleyin.')
     if suffix == '.xlsx':
         try:
             validate_office_zip(data, suffix)

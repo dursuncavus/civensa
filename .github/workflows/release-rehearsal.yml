@@ -1,8 +1,6 @@
 name: Release migration rehearsal
 
 on:
-  pull_request:
-    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -11,8 +9,8 @@ permissions:
 
 jobs:
   rehearsal:
-    # Backups contain private data: only trusted, same-repository release code.
-    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.head.repo.full_name == github.repository
+    # Private data and identity are available only on manual trusted runs.
+    if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     services:
@@ -34,6 +32,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
+      - uses: ./.github/actions/setup-age
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
@@ -43,6 +42,7 @@ jobs:
           docker pull postgres:18
       - name: Restore verified backup, migrate twice, and start application
         env:
+          BACKUP_AGE_IDENTITY: ${{ secrets.BACKUP_AGE_IDENTITY }}
           GH_TOKEN: ${{ github.token }}
           DATABASE_URL: postgresql://release_rehearsal:disposable_rehearsal_only@127.0.0.1:5432/release_rehearsal
         run: python -m ops.release_rehearsal

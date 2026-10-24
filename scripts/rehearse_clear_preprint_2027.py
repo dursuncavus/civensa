@@ -17,6 +17,7 @@ sys.path.insert(0, str(ROOT))
 from scripts.first_load_dryrun import environment, local_test_url
 from scripts import first_load_live as live
 from scripts import clear_preprint_2027 as clear
+from ops.backup_crypto import decrypt_backup
 from ops.release_rehearsal import database_state, require_fresh_backup, RehearsalFailure
 
 EXPECTED = dict(departments=33, cards=61, indicators=256, activities=285, economic_values=1300)
@@ -262,7 +263,11 @@ def main(argv=None):
     parser.add_argument('--out', type=Path, default=Path('civ058-rehearsal-counts.json'))
     args = parser.parse_args(argv)
     try:
-        if args.out.resolve() in {args.backup.resolve(), args.backup.with_suffix('.manifest.json').resolve()}:
+        protected = {args.backup.resolve(), args.backup.with_suffix('.manifest.json').resolve()}
+        if args.backup.name.endswith('.dump.age'):
+            protected.add(args.backup.with_name(
+                args.backup.name.removesuffix('.dump.age') + '.manifest.json.age').resolve())
+        if args.out.resolve() in protected:
             print('DURDU: Sayım raporu yedek/manifest dosyasının üzerine yazılamaz.', file=sys.stderr)
             return 1
     except Exception:
@@ -272,7 +277,13 @@ def main(argv=None):
     # No source contents, source URL, database password or row values in output.
     previous_mask = os.umask(0o077)
     try:
-        rehearse(args.backup, args.organization_id, args.actor_id, record)
+        if args.backup.name.endswith('.dump.age'):
+            with TemporaryDirectory(prefix='civ092-restore-') as directory:
+                dump = decrypt_backup(args.backup.parent, Path(directory) / 'decrypted')
+                rehearse(dump, args.organization_id, args.actor_id, record)
+        else:
+            # Disposable clone dumps remain local and never enter an artifact.
+            rehearse(args.backup, args.organization_id, args.actor_id, record)
         record['status'] = 'PASS'
     except KeyboardInterrupt:
         print('DURDU: Yerel prova kesildi; geçici kopyalar kaldırıldı.', file=sys.stderr)

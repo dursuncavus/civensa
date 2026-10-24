@@ -106,8 +106,18 @@ class FirstPasswordMiddleware:
     def protected_route(self, scope):
         # Protected routes must validate the password fingerprint first, so a
         # stale temporary-password session still gets the existing 401 behavior.
-        for route in scope["app"].routes:
-            if route.matches(scope)[0] == Match.FULL and hasattr(route, "dependant"):
+        routes = list(scope["app"].routes)
+        while routes:
+            route = routes.pop(0)
+            if route.matches(scope)[0] != Match.FULL:
+                continue
+            # FastAPI includes APIRouters through a wrapper. Resolve its routes
+            # so stale temporary sessions still reach require_user first.
+            included = getattr(route, "original_router", None)
+            if included is not None:
+                routes[0:0] = included.routes
+                continue
+            if hasattr(route, "dependant"):
                 dependencies = [route.dependant]
                 while dependencies:
                     dependency = dependencies.pop()
@@ -192,17 +202,27 @@ async def csrf_valid(request: Request) -> bool:
 
 
 CSRF_ERROR = "Güvenlik doğrulaması başarısız. Sayfayı yenileyip tekrar deneyin."
+SESSION_ERROR = 'Oturumunuz doğrulanamadı veya sona erdi. Bu sayfada işlem yapmak için yeniden giriş yapın.'
+# Login page shows only server-owned messages chosen by a fixed code; URL text is never displayed.
+LOGIN_REASONS = {'session': SESSION_ERROR}
 
 
 async def require_user(request: Request, db: Session = Depends(get_db)):
     user = current_user(request, db)
     if not user or not user.is_active:
         request.session.clear()
-        raise HTTPException(status_code=401)
+        message = SESSION_ERROR
+        if not request.url.path.startswith('/api/') and 'text/html' in request.headers.get('accept', '') and 'application/json' not in request.headers.get('accept', ''):
+            raise HTTPException(303, message, headers={'Location': '/login?reason=session'})
+        from .pp_errors import pp_error
+        error = pp_error(401, message)
+        error.auth_message = message
+        raise error
     if user.must_change_password and request.url.path not in {"/change-password", "/api/me/change-password"}:
         request.session["must_change_password"] = True
         raise HTTPException(303, "Devam etmek için kendi parolanızı belirleyin.",
                             headers={"Location": "/change-password"})
+    request.state.contract_user = user
     if request.method in {"POST", "PUT", "PATCH", "DELETE"}:
         if not await csrf_valid(request):
             raise HTTPException(403, CSRF_ERROR)
@@ -542,7 +562,7 @@ def login_page(request: Request, db: Session = Depends(get_db)):
     user = current_user(request, db)
     if user and user.is_active and user.must_change_password:
         return RedirectResponse("/change-password", 303)
-    return templates.TemplateResponse(request, "login.html", {"error": None})
+    return templates.TemplateResponse(request, "login.html", {"error": LOGIN_REASONS.get(request.query_params.get("reason", ""))})
 
 
 @app.post("/login", response_class=HTMLResponse)
@@ -560,8 +580,8 @@ def login(request: Request, email: str = Form(...), password: str = Form(...), d
         if not locked:
             locked = login_throttling.record_failure(db, email_key, ip_key, now)
         db.commit()
-        error = login_throttling.LOCK_MESSAGE if locked else "E-posta veya parola hatalı."
-        return templates.TemplateResponse(request, "login.html", {"error": error}, status_code=400)
+        error = ("Giriş formu: " + login_throttling.LOCK_MESSAGE) if locked else "Giriş formundaki e-posta veya parola doğrulanamadı. Bilgilerinizi kontrol edip yeniden giriş yapın."
+        return templates.TemplateResponse(request, "login.html", {"error": error, "attempted_email": email}, status_code=400)
     login_throttling.clear_email_failures(db, email_key, now)
     # Never carry role/period context from a previous session into a new login.
     request.session.clear()

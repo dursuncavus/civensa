@@ -1,6 +1,7 @@
 name: Performance program validation
 on:
   pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
     paths-ignore:
       - 'docs/**'
       - '**/*.md'
@@ -12,6 +13,7 @@ concurrency:
   cancel-in-progress: true
 jobs:
   test:
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.draft == false
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     strategy:
@@ -29,6 +31,7 @@ jobs:
         ports:
           - 5432:5432
         options: >-
+          --tmpfs /var/lib/postgresql:rw,size=2g
           --health-cmd "pg_isready -U civensa_test -d civensa_test"
           --health-interval 5s
           --health-timeout 5s
@@ -46,7 +49,11 @@ jobs:
             requirements.txt
       - run: python -m pip install -r requirements-dev.txt
       - name: Report runner CPU count
-        run: nproc
+        id: cpu
+        run: |
+          count=$(nproc)
+          echo "$count"
+          echo "count=$count" >> "$GITHUB_OUTPUT"
       - name: Resolve Playwright version
         id: playwright
         run: echo "version=$(python -c 'from importlib.metadata import version; print(version("playwright"))')" >> "$GITHUB_OUTPUT"
@@ -60,9 +67,9 @@ jobs:
       # Keep each module on one worker: role tests mutate cluster-wide roles,
       # and migration tests within a module can share the public schema.
       - run: >-
-          python -m pytest -q --require-postgres -n 4 --dist loadfile
+          python -m pytest -q --require-postgres -n ${{ steps.cpu.outputs.count }} --dist loadfile
           --max-worker-restart=0 --ci-shard-index=${{ matrix.shard }}
-          --ci-shard-count=2 --durations=15
+          --ci-shard-count=2 --durations=25
         env:
           PYTEST_PLUGINS: ops.ci.pytest_annotations
           CIVENSA_PYTEST_FAILURES: ${{ runner.temp }}/pytest-failures-${{ matrix.shard }}.json

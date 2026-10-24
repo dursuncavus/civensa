@@ -50,3 +50,29 @@ def validate_runtime_settings() -> None:
     session_secret()
     cookie_secure()
     login_ip_limit()
+    attachment_max_bytes()
+    pp_image_max_bytes()
+    pp_image_max_pixels()
+
+
+def positive_setting(name: str, default: int) -> int:
+    """Read a positive upload setting; defaults retain the existing limits."""
+    try:
+        value = int(os.getenv(name, str(default)))
+    except ValueError:
+        value = 0
+    if value <= 0:
+        raise RuntimeError(f'{name} pozitif bir tam sayı olmalıdır. Yükleme sınırı ayarını düzeltip uygulamayı yeniden başlatın.')
+    return value
+
+
+def attachment_max_bytes() -> int:
+    return positive_setting('CIVENSA_ATTACHMENT_MAX_MB', 10) * 1024 * 1024
+
+
+def pp_image_max_bytes() -> int:
+    return positive_setting('CIVENSA_PP_IMAGE_MAX_MB', 5) * 1024 * 1024
+
+
+def pp_image_max_pixels() -> int:
+    return positive_setting('CIVENSA_PP_IMAGE_MAX_PIXELS', 16000000)
