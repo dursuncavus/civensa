@@ -1,5 +1,6 @@
 # Reviewed non-base64 String/Text/JSON columns (CIV-087).
 # Classify new image payload columns in BASE64_COLUMNS instead of adding them here.
+# CIV-086 stable_key columns: String(36) UUID text, never base64.
 activities.code
 activities.explanation
 activities.name
@@ -44,6 +45,7 @@ ar_document_freezes.sha256
 ar_documents.scope
 ar_financial_entries.kind
 ar_financial_entries.payload_json
+ar_financial_entries.stable_key
 ar_financial_imports.kind
 ar_financial_imports.preview_json
 ar_financial_imports.source_sha256
@@ -59,6 +61,7 @@ ar_resource_rows.category
 ar_resource_rows.name
 ar_resource_rows.ownership
 ar_resource_rows.purpose
+ar_resource_rows.stable_key
 ar_resource_rows.table_kind
 ar_section_contents.blocks_json
 ar_section_contents.reason
@@ -69,6 +72,9 @@ ar_section_definitions.code
 ar_section_definitions.content_kind
 ar_section_definitions.idare_owner
 ar_section_definitions.title
+ar_section_row_keys.stable_key
+ar_section_table_keys.stable_key
+ar_statement_figure_keys.stable_key
 ar_unit_workflow_events.action
 ar_unit_workflow_events.actor_name
 ar_unit_workflow_events.from_status
