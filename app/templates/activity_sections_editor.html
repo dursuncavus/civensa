@@ -5,8 +5,9 @@
 <link rel="stylesheet" href="/static/activity_sections.css">
 <p><a href="/activity-sections">← Tamamlanma görünümü</a></p>
 {% if user.role=='strategy' or (report.department_id and report.department_id==user.department_id) %}
-<p><a class="button" href="/activity-sections/reports/{{ report.id }}/export.docx">Word olarak indir</a> <a class="button" href="/activity-sections/reports/{{ report.id }}/export.pdf">PDF olarak indir</a></p>
+<p><a class="button" href="/activity-sections/reports/{{ report.id }}/export.docx">Word olarak indir</a> <a class="button" href="/activity-sections/reports/{{ report.id }}/export.pdf">PDF olarak indir</a> <a class="button" href="/activity-sections/reports/{{ report.id }}/typeset.json">Dizgi verisi (JSON)</a></p>
 {% endif %}
+{% for approval in typeset_approvals %}<p>Birim onayı {{ approval.revision }} · <a href="/activity-sections/reports/{{ report.id }}/typeset.json?approval_id={{ approval.id }}">Dizgi verisi (JSON)</a></p>{% endfor %}
 {% if form_error %}<div class="ar-error" role="alert">{{ form_error }} Girdiğiniz alanlar aşağıda korunmuştur.</div>{% endif %}
 {% include 'ar_unit_workflow.html' %}
 {% if not report.department_id %}
@@ -15,7 +16,7 @@
 {% if report.reopened %}<p class="ar-warning" role="alert">Güncel sürüm gerekçeyle açıldı; düzeltmeden sonra yeni sürüm oluşturun.</p>{% endif %}
 {% for release in report.releases %}
 <p><strong>{% if not loop.last %}Sürüm {{ release.version }} · {% endif %}{{ release.label }}</strong> · {{ release.created_at|ar_time }}</p>
-<p>{% for format,label in [('docx','Word'),('pdf','PDF'),('json','JSON')] %}<a class="button" href="/activity-sections/reports/{{ report.id }}/export.{{ format }}?version={{ release.version }}">Sürüm {{ release.version }} {{ label }} indir</a> {% endfor %}</p>
+<p>{% for format,label in [('docx','Word'),('pdf','PDF'),('json','JSON')] %}<a class="button" href="/activity-sections/reports/{{ report.id }}/export.{{ format }}?version={{ release.version }}">Sürüm {{ release.version }} {{ label }} indir</a> {% endfor %} <a class="button" href="/activity-sections/reports/{{ report.id }}/typeset.json?version={{ release.version }}">Dizgi verisi (JSON)</a></p>
 {% if release.reopen %}<p>Gerekçeyle açıldı · {{ release.reopen.actor_name }} (Kullanıcı {{ release.reopen.actor_id }}) · {{ release.reopen.created_at|ar_time }}</p><p class="ar-paragraph">{{ release.reopen.reason }}</p>{% endif %}
 {% else %}<p>Henüz onaylı sürüm oluşturulmadı.</p>{% endfor %}
 {% if reopen_error %}<p class="ar-error" role="alert">{{ reopen_error }}</p>{% endif %}
@@ -36,6 +37,7 @@
 {% if editable %}
 <form method="post" action="/activity-sections/reports/{{ report.id }}/sections/{{ section.code }}" data-ar-section-form>
 <input type="hidden" name="csrf_token" value="{{ request.session.get('csrf_token') }}"><input type="hidden" name="expected_revision" value="{{ report.revision }}">
+<input type="hidden" name="table_keys" value="{{ attempted.table_keys if attempted and attempted.table_keys is defined else section_table_keys_json }}">
 <label>Bölüm içeriği<textarea name="text" rows="12">{{ attempted.text if attempted else section.blocks|ar_text }}</textarea></label>
 <p class="muted">Paragrafları boş satırla ayırın. Madde için “- ” kullanın. Basit tablo için “| Başlık | Değer |” yazın; her satırda aynı sayıda sütun kullanın. Önizleme kaydetmeden güncellenir.</p>
 <label>Durum<select name="status">{% for k,v in statuses.items() %}<option value="{{ k }}" {% if (attempted.status if attempted else section.status)==k %}selected{% endif %}>{{ v }}</option>{% endfor %}</select></label>
@@ -53,7 +55,7 @@
 <p class="muted">Kaydedilecek satırları seçin. Satırı kaldırmak için seçimini kaldırın. Aynı sayfadaki tabloları sırayla kaydedin.</p>
 <div class="ar-scroll"><table class="ar-table"><thead><tr><th>Kaydet</th>{% for key,label in t.columns %}<th>{{ label }}</th>{% endfor %}</tr></thead><tbody>
 {% set row_count=resource_count if resource_kind==kind else [t.rows|length+3,2000]|min %}
-{% for i in range(row_count) %}{% set row=t.rows[i] if i<t.rows|length else {} %}{% set active=(resource_attempt.get('include_'~i)=='on') if resource_kind==kind else i<t.rows|length %}<tr><td><input type="checkbox" name="include_{{ i }}" {% if active %}checked{% endif %} aria-label="{{ i+1 }}. satırı kaydet"></td>
+{% for i in range(row_count) %}{% set row=t.rows[i] if i<t.rows|length else {} %}{% set active=(resource_attempt.get('include_'~i)=='on') if resource_kind==kind else i<t.rows|length %}<tr><td><input type="hidden" name="stable_key_{{ i }}" value="{{ resource_attempt.get('stable_key_'~i,'') if resource_kind==kind else (resource_key_map[kind][i] if kind in resource_key_map and i<resource_key_map[kind]|length else '') }}"><input type="checkbox" name="include_{{ i }}" {% if active %}checked{% endif %} aria-label="{{ i+1 }}. satırı kaydet"></td>
 {% for key,label in t.columns %}{% set value=resource_attempt.get(key~'_'~i,'') if resource_kind==kind else row.get(key) %}<td>
 {% if key=='ownership' or (kind=='employment' and key=='category') %}<select name="{{ key }}_{{ i }}" aria-label="{{ label }} {{ i+1 }}"><option value="">Seçin</option>{% for option in (employment if key=='category' else (['mülk','kira','tahsis'] if kind=='buildings' else ['mülk','kira'])) %}<option {% if value==option %}selected{% endif %}>{{ option }}</option>{% endfor %}</select>
 {% else %}<input name="{{ key }}_{{ i }}" aria-label="{{ label }} {{ i+1 }}" {% if key in ['count','area'] %}inputmode="decimal"{% endif %} value="{{ (value|ar_number if value is not none else '') if key in ['count','area'] and resource_kind!=kind else (value if value is not none else '') }}">{% endif %}

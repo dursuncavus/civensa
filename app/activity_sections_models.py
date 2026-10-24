@@ -5,6 +5,7 @@ from sqlalchemy import (Boolean, CheckConstraint, DateTime, ForeignKey, Integer,
                         Numeric, String, Text, UniqueConstraint, event, func)
 from sqlalchemy.orm import Mapped, mapped_column
 from .db import Base
+from .ar_typeset_keys import new_key, uuid_default
 
 
 class ARSectionDefinition(Base):
@@ -57,11 +58,32 @@ class ARSectionContent(Base):
         CheckConstraint("status <> 'not_applicable' OR length(trim(reason)) > 0"))
 
 
+class ARSectionTableKey(Base):
+    __tablename__ = 'ar_section_table_keys'
+    id: Mapped[int] = mapped_column(primary_key=True)
+    document_id: Mapped[int] = mapped_column(ForeignKey('ar_documents.id'))
+    content_id: Mapped[int] = mapped_column(ForeignKey('ar_section_contents.id'))
+    stable_key: Mapped[str] = mapped_column(String(36), default=new_key, server_default=uuid_default())
+    position: Mapped[int] = mapped_column(Integer)
+    __table_args__ = (UniqueConstraint('content_id', 'stable_key', name='uq_ar_section_table_key'),)
+
+
+class ARSectionRowKey(Base):
+    __tablename__ = 'ar_section_row_keys'
+    id: Mapped[int] = mapped_column(primary_key=True)
+    document_id: Mapped[int] = mapped_column(ForeignKey('ar_documents.id'))
+    table_id: Mapped[int] = mapped_column(ForeignKey('ar_section_table_keys.id'))
+    stable_key: Mapped[str] = mapped_column(String(36), default=new_key, server_default=uuid_default())
+    position: Mapped[int] = mapped_column(Integer)
+    __table_args__ = (UniqueConstraint('table_id', 'stable_key', name='uq_ar_section_row_key'),)
+
+
 class ARResourceRow(Base):
     __tablename__ = 'ar_resource_rows'
     id: Mapped[int] = mapped_column(primary_key=True)
     document_id: Mapped[int] = mapped_column(ForeignKey('ar_documents.id'))
     table_kind: Mapped[str] = mapped_column(String(30))
+    stable_key: Mapped[str] = mapped_column(String(36), default=new_key, server_default=uuid_default())
     position: Mapped[int] = mapped_column(Integer)
     name: Mapped[str] = mapped_column(Text, default='')
     category: Mapped[str] = mapped_column(Text, default='')
@@ -70,7 +92,8 @@ class ARResourceRow(Base):
     ownership: Mapped[str] = mapped_column(String(20), default='')
     count: Mapped[int | None] = mapped_column(Integer)
     area: Mapped[Decimal | None] = mapped_column(Numeric(20, 2))
-    __table_args__ = (CheckConstraint('count IS NULL OR count >= 0'),
+    __table_args__ = (UniqueConstraint('document_id', 'table_kind', 'stable_key', name='uq_ar_resource_stable_key'),
+        CheckConstraint('count IS NULL OR count >= 0'),
         CheckConstraint('area IS NULL OR area >= 0'),
         CheckConstraint("table_kind IN ('employment','education','gender','buildings','vehicles','hardware','software')"))
 
