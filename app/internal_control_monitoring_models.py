@@ -91,8 +91,8 @@ class ICMonitoringEntry(Base):
     reason: Mapped[str] = mapped_column(Text)
     evidence: Mapped[str] = mapped_column(Text)
     __table_args__ = (
-        CheckConstraint("status IN ('completed','ongoing','not_started','delayed')", name='ck_ic_monitoring_entry_status'),
-        CheckConstraint('(percentage BETWEEN 0 AND 100) AND (percentage IS NOT NULL OR status=\'not_started\')', name='ck_ic_monitoring_percentage'),
+        CheckConstraint("status IN ('completed','ongoing','not_started','delayed','partial','not_approved') AND (status != 'partial' OR (percentage IS NOT NULL AND percentage BETWEEN 1 AND 99)) AND (status != 'not_approved' OR length(trim(explanation)) > 0)", name='ck_ic_monitoring_entry_status'),
+        CheckConstraint('(percentage BETWEEN 0 AND 100) AND (percentage IS NOT NULL OR status IN (\'not_started\',\'not_approved\'))', name='ck_ic_monitoring_percentage'),
         CheckConstraint("status != 'delayed' OR length(trim(reason)) > 0", name='ck_ic_monitoring_delay_reason'))
 
 
