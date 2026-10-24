@@ -78,3 +78,6 @@ AR-06 is the only OPEN AR gap that needs no Strateji/Ali answer. Package keeps d
 
 ## D-217 (24 Oct 2026 ~19:10, lead, live session) — password-file item closed by owner
 BEYAN: the owner told the lead to drop the plaintext password files item (log 79) and stop reminding him. Removed from the owner list; the lead does not raise it again. Risk stays with the owner's decision.
+
+## D-218 (24 Oct 2026 ~19:40, lead) — CI blocked by GitHub billing
+DOĞRULANDI: #89 head 5d5f9f3 `secrets` job annotation says the job was not started because account payments failed or the spending limit must be increased. Test jobs on #85 (2f02a42) and #90 (7588a9b) have shown in_progress for ~40 min (BELİRSİZ: likely stuck for the same reason). Escalated to the owner (payment = human-only). After the fix the lead re-runs the jobs; no merges until then. #89 earlier failure (fd280ff, `similarities` undefined) sent to Codex; Codex pushed 5d5f9f3.
