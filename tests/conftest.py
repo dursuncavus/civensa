@@ -4,7 +4,6 @@ from decimal import Decimal
 
 import pytest
 from sqlalchemy import create_engine, event, select, inspect, text, MetaData, Table, literal
-from sqlalchemy.schema import CreateSchema, DropSchema
 from sqlalchemy.orm import Session, with_expression
 from sqlalchemy.pool import StaticPool
 from sqlalchemy.engine import make_url
@@ -113,23 +112,12 @@ def db(request):
         url = os.getenv('CIVENSA_TEST_POSTGRES_URL')
         if not url:
             pytest.skip('Disposable PostgreSQL test database not configured')
-        # Each scenario gets its own schema; migration tests retain the public schema.
-        base_engine = create_engine(url, future=True)
-        if base_engine.dialect.name != 'postgresql':
-            base_engine.dispose()
-            pytest.fail('CIVENSA_TEST_POSTGRES_URL must use PostgreSQL')
-        schema = 'civensa_test_' + uuid4().hex
-        try:
-            with base_engine.begin() as connection:
-                connection.execute(CreateSchema(schema))
-            engine = base_engine.execution_options(schema_translate_map={None: schema})
-            Base.metadata.create_all(engine)
+        # Clone a pristine schema instead of rebuilding all tables per scenario.
+        # Real commits/connections remain independent, including concurrency tests.
+        templates = request.getfixturevalue('postgres_templates')
+        with templates.clone() as engine:
             with Session(engine, expire_on_commit=False) as session:
                 yield session
-        finally:
-            with base_engine.begin() as connection:
-                connection.execute(DropSchema(schema, cascade=True, if_exists=True))
-            base_engine.dispose()
         return
     engine=create_engine('sqlite://',poolclass=StaticPool,connect_args={'check_same_thread':False})
     @event.listens_for(engine,'connect')
@@ -138,6 +126,19 @@ def db(request):
     with Session(engine,expire_on_commit=False) as session:
         yield session
     engine.dispose()
+
+
+@pytest.fixture(scope='session')
+def postgres_templates():
+    from tests.postgres_templates import PostgresTemplates
+    url = os.getenv('CIVENSA_TEST_POSTGRES_URL')
+    if not url:
+        pytest.fail('Disposable PostgreSQL test database not configured')
+    templates = PostgresTemplates(url)
+    try:
+        yield templates
+    finally:
+        templates.close()
 
 @pytest.fixture
 def sample(db):
