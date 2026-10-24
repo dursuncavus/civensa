@@ -14,6 +14,7 @@ Tags: DOĞRULANDI (lead checked) · TARİHSEL (past fact) · BEYAN (owner said) 
 | (new) | CIV-090 AR-06 deviation explanation gate | — | Package `tasks/CIV-090.md`, dispatched 24 Oct ~19:00 | Review when ready |
 
 ## Open — owner
+- BLOCKER (D-218): GitHub Actions jobs are not starting — "recent account payments have failed or your spending limit needs to be increased". Owner checks GitHub billing. Until fixed no PR can be TESTED or merged.
 0. (closed) Merges are done by the lead in live sessions (D-214).
 1. (closed) Codex "Tam erişim" stays ON — owner decision D-210.
 2. (closed) Plaintext password files (log 79): owner decision D-217 — not tracked, do not remind the owner.
@@ -31,4 +32,4 @@ Tags: DOĞRULANDI (lead checked) · TARİHSEL (past fact) · BEYAN (owner said) 
 
 ## Next IDs
 - Next new task ID: CIV-091.
-- Next decision: D-218.
+- Next decision: D-219.
