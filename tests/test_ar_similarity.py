@@ -358,7 +358,7 @@ def test_listing_reuses_baseline_and_only_compares_visible_sections(section_clie
         # The schema permits one document per organization/period/scope. Repeat
         # the same unit in the listing projection to exercise cache reuse for
         # three reports with the same complete baseline key.
-        if query.column_descriptions[0].get('entity') is ARDocument:
+        if query.column_descriptions[0].get('entity') is ARDocument and query._order_by_clauses:
             return [doc, doc, doc]
         return original_scalars(query, *args, **kwargs)
 
