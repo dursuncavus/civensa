@@ -473,6 +473,11 @@ def save_actual(db, user, report_indicator_id, expected_revision, value, state, 
     return actual
 
 
+def needs_deviation_explanation(state, delta, explanation):
+    """Drafts may be saved; only verified nonzero differences need explanation."""
+    return state == 'verified' and delta is not None and Decimal(str(delta)) != 0 and not explanation.strip()
+
+
 def approve_report(db, user, revision_id):
     from .released_permissions import require_strategy_director, SOD_ERROR
     strategy(user)
@@ -498,7 +503,7 @@ def approve_report(db, user, revision_id):
             if not actual:
                 continue
         delta = json.loads(actual.deviation_json)['delta']
-        if delta is not None and Decimal(delta) != 0 and not actual.explanation.strip():
+        if needs_deviation_explanation(actual.state, delta, actual.explanation):
             blockers.append({'indicator': name, 'report_indicator_id': item.id, 'message': 'Hedef ile gerçekleşme farkı için açıklama girin.'})
     if blockers:
         raise HTTPException(409, {'message': 'Rapor onaylanmadı. Aşağıdaki göstergelerde belirtilen eksikleri giderip yeniden onaylayın.', 'blockers': blockers})
@@ -514,6 +519,8 @@ def actual_data(actual):
         'value': format(actual.value, 'f') if actual.value is not None else None,
         'raw_text': actual.raw_text, 'state': actual.state, 'evidence': json.loads(actual.evidence_json),
         'explanation': actual.explanation, 'deviation': json.loads(actual.deviation_json),
+        'needs_deviation_explanation': needs_deviation_explanation(
+            actual.state, json.loads(actual.deviation_json).get('delta'), actual.explanation),
         'created_by': actual.created_by, 'created_at': actual.created_at.isoformat()}
 
 

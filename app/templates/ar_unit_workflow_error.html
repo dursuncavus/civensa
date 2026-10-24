@@ -2,6 +2,7 @@
 {% block page_title %}Birim faaliyet raporu işlemi tamamlanamadı{% endblock %}
 {% block content %}
 <section class="panel" style="padding:24px"><p role="alert">{{ message }}</p>
+{% if blockers %}<ul>{% for blocker in blockers %}<li><a href="{{ blocker.link }}">{{ blocker.indicator }}</a>: {{ blocker.message }}</li>{% endfor %}</ul>{% endif %}
 <p><a href="{{ back }}">Raporun son sürümünü aç</a></p>
 {% if action in ['return','reopen'] %}<form method="post">
 <input type="hidden" name="csrf_token" value="{{ request.session.get('csrf_token') }}">
