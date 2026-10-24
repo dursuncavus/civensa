@@ -6,7 +6,6 @@ on:
       backup_run_id:
         description: 'main dalındaki yeşil Daily verified database backup çalışma numarası'
         required: true
-        default: '39433446455'
         type: string
       confirmation:
         description: 'Yalnız geçici kopya için: 2027 ON BASKI TASLAGINI SIL'
@@ -22,10 +21,6 @@ on:
       actor_id:
         description: 'İsteğe bağlı etkin Strateji/yönetici kimliği; boşsa mevcut etkin hesap'
         type: string
-  # Manual bootstrap on this same-repository PR before the workflow reaches main.
-  # Normal pushes and ordinary description edits never download a backup.
-  pull_request:
-    types: [edited]
 
 permissions:
   contents: read
@@ -37,13 +32,7 @@ concurrency:
 
 jobs:
   rehearsal:
-    if: >-
-      github.event_name == 'workflow_dispatch' ||
-      (github.event.pull_request.head.repo.full_name == github.repository &&
-       github.event.pull_request.head.ref == 'task/civ-058-clear-preprint-2027' &&
-       github.event.changes.body.from != null &&
-       contains(github.event.pull_request.body, 'CIV058_PROVA_BASLAT 2027 ON BASKI TASLAGINI SIL 261cd17fd0be') &&
-       !contains(github.event.changes.body.from, 'CIV058_PROVA_BASLAT 2027 ON BASKI TASLAGINI SIL 261cd17fd0be'))
+    if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     services:
@@ -69,6 +58,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
+      - uses: ./.github/actions/setup-age
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
@@ -95,8 +85,9 @@ jobs:
           echo "$GITHUB_WORKSPACE/civ058-client-bin" >> "$GITHUB_PATH"
       - name: Restore verified artifact and rehearse only in disposable PostgreSQL
         env:
+          BACKUP_AGE_IDENTITY: ${{ secrets.BACKUP_AGE_IDENTITY }}
           GH_TOKEN: ${{ github.token }}
-          CIVENSA_REHEARSAL_BACKUP_RUN: ${{ inputs.backup_run_id || '39433446455' }}
+          CIVENSA_REHEARSAL_BACKUP_RUN: ${{ inputs.backup_run_id }}
           CIVENSA_REHEARSAL_CONFIRM: ${{ inputs.confirmation || '2027 ON BASKI TASLAGINI SIL' }}
           CIVENSA_REHEARSAL_BOOK_CONFIRM: ${{ inputs.book_confirmation || '261cd17fd0be' }}
           CIVENSA_REHEARSAL_ORG_ID: ${{ inputs.organization_id }}

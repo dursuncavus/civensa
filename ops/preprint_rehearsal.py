@@ -7,6 +7,7 @@ from unittest.mock import patch
 from sqlalchemy import select, text
 from sqlalchemy.orm import Session
 
+from ops.backup_crypto import decrypt_backup
 from ops.release_rehearsal import BACKUP_DIR, github_json, require_fresh_backup, run_private
 from scripts.first_load_dryrun import environment, local_test_url
 from scripts import first_load_live as live
@@ -34,10 +35,10 @@ def download_verified_run(run_id):
     BACKUP_DIR.mkdir(mode=0o700)
     run_private(['gh', 'run', 'download', str(run_id), '--repo', repo, '--name',
                  artifacts[0]['name'], '--dir', str(BACKUP_DIR)], 'Yedek artifact indirilemedi.')
-    dumps = list(BACKUP_DIR.glob('*.dump'))
-    if len(dumps) != 1:
-        raise live.Refusal('Artifact içinde tek .dump ve eşleşen manifest bulunmalıdır.')
-    return dumps[0], dict(backup_run_id=run_id, artifact_id=artifacts[0]['id'])
+    dump = decrypt_backup(BACKUP_DIR, BACKUP_DIR / 'decrypted')
+    os.environ.pop('BACKUP_AGE_IDENTITY', None)
+    os.environ.pop('BACKUP_AGE_IDENTITY_FILE', None)
+    return dump, dict(backup_run_id=run_id, artifact_id=artifacts[0]['id'])
 
 
 def payload_shape(db, period_id):
@@ -143,8 +144,8 @@ def main():
     record = dict(status='FAIL', steps=[])
     previous_mask = os.umask(0o077)
     try:
-        if os.environ.get('GITHUB_ACTIONS') != 'true':
-            raise live.Refusal('Bu çalıştırıcı yalnız Actions içinde kullanılır; yerel prova betiğini kullanın.')
+        if os.environ.get('GITHUB_ACTIONS') != 'true' or os.environ.get('GITHUB_EVENT_NAME') != 'workflow_dispatch':
+            raise live.Refusal('Bu çalıştırıcı yalnız elle başlatılan Actions provasında kullanılır; yerel prova betiğini kullanın.')
         if (os.environ.get('CIVENSA_REHEARSAL_CONFIRM') != clear.CONFIRMATION
                 or os.environ.get('CIVENSA_REHEARSAL_BOOK_CONFIRM') != live.BOOK_SHA256[:12]):
             raise live.Refusal('Geçici kopya için iki yazılı prova onayı gerekli.')
@@ -162,7 +163,7 @@ def main():
             record.update(source_sha256=saved['sha256'], source_utc_timestamp=saved['utc_timestamp'])
             record['phase'] = 'restore-and-context'
             org, actor = identify_context(url, dump, saved, record)
-            # Values came from the manual dispatch/PR request and were validated
+            # Values came from the manual dispatch request and were validated
             # above. Only local disposable engines are accepted by rehearse().
             responses = iter([os.environ['CIVENSA_REHEARSAL_CONFIRM'], os.environ['CIVENSA_REHEARSAL_BOOK_CONFIRM']])
             with patch('builtins.input', lambda _: next(responses)):
