@@ -16,7 +16,7 @@ Tags: DOĞRULANDI (lead checked) · TARİHSEL (past fact) · BEYAN (owner said) 
 ## Open — owner
 0. (closed) Merges are done by the lead in live sessions (D-214).
 1. (closed) Codex "Tam erişim" stays ON — owner decision D-210.
-2. Plaintext password files on Desktop/Downloads/Documents (log 79) → owner moves them into the Passwords app; then lead removes the files.
+2. (closed) Plaintext password files (log 79): owner decision D-217 — not tracked, do not remind the owner.
 
 ## Open queue — lead / scheduled run "Civensa gece kontrol" (05:41, 08:41)
 1. Scheduled-run merges are refused by the session permission check (D-213). Live session: decide how scheduled runs merge (owner merges, or permission change) — BELİRSİZ.
@@ -31,4 +31,4 @@ Tags: DOĞRULANDI (lead checked) · TARİHSEL (past fact) · BEYAN (owner said) 
 
 ## Next IDs
 - Next new task ID: CIV-091.
-- Next decision: D-217.
+- Next decision: D-218.
