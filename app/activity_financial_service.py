@@ -232,7 +232,7 @@ def save_entries(db,user,document_id,kind,rows,expected_revision):
     before=entries(db,doc,kind)
     from .ar_typeset_keys import match_rows,fingerprint
     existing=list(db.scalars(select(ARFinancialEntry).where(ARFinancialEntry.document_id==doc.id,ARFinancialEntry.kind==kind).order_by(ARFinancialEntry.position,ARFinancialEntry.id)))
-    incoming=[{**item,'stable_key':raw.get('stable_key')} for item,raw in zip(normalized,rows)]
+    incoming=[{**item,**({'stable_key':raw['stable_key']} if 'stable_key' in raw else {})} for item,raw in zip(normalized,rows)]
     def value(row):
         return fingerprint({k:row[k] for k,_ in ENTRY_FIELDS[kind]} if isinstance(row,dict) else json.loads(row.payload_json,parse_float=Decimal))
     matched,removed=match_rows(existing,incoming,value)
@@ -313,7 +313,7 @@ def save_statement(db,user,document_id,data,expected_revision,file_data=None,fil
     db.flush()
     stored=list(db.scalars(select(ARStatementFigureKey).where(ARStatementFigureKey.statement_id==row.id)
         .order_by(ARStatementFigureKey.position,ARStatementFigureKey.id)))
-    incoming=[{**item,'stable_key':raw.get('stable_key')} for item,raw in zip(normalized_figures,figures)]
+    incoming=[{**item,**({'stable_key':raw['stable_key']} if 'stable_key' in raw else {})} for item,raw in zip(normalized_figures,figures)]
     def value(item):
         return fingerprint({k:item[k] for k in ('label','amount')} if isinstance(item,dict) else old_figures[item.position])
     matched,removed=match_rows(stored,incoming,value)

@@ -68,6 +68,10 @@ def test_resource_rows_keep_keys_and_primary_keys_including_decimal_scale(sectio
     records = list(db.scalars(select(ARResourceRow).where(ARResourceRow.document_id == doc.id).order_by(ARResourceRow.position)))
     assert len(records) == 2 and records[0].stable_key != records[1].stable_key
     assert records[1].stable_key == identity[1]
+    old_keys={row.stable_key for row in records}
+    assert resource(client,token,doc,'buildings',[{**rows[0],'stable_key':''}]).status_code==200
+    new_row=db.scalar(select(ARResourceRow).where(ARResourceRow.document_id==doc.id))
+    assert new_row.stable_key not in old_keys
 
 
 def test_free_tables_and_rows_keep_distinct_keys_across_saves_and_reordering(section_client, db, sample):
@@ -120,6 +124,8 @@ def test_financial_and_statement_figure_keys_survive_edits(section_client, db, s
     rows[0].update(stable_key=record.stable_key, amount='0')
     financial.save_entries(db, actor, doc.id, 'assets', rows, doc.revision); db.commit()
     assert (record.id, record.stable_key) == identity
+    financial.save_entries(db,actor,doc.id,'assets',[{**rows[0],'stable_key':''}],doc.revision);db.commit()
+    assert db.scalar(select(ARFinancialEntry.stable_key).where(ARFinancialEntry.document_id==doc.id))!=identity[1]
     statement = {'name': 'Bilanço', 'period': '2027', 'explanation': 'Kaynak',
                  'figures': [{'label': 'Toplam', 'amount': '12.500,23'}, {'label': 'Toplam', 'amount': '0'}]}
     financial.save_statement(db, actor, doc.id, statement, doc.revision); db.commit()
@@ -132,6 +138,9 @@ def test_financial_and_statement_figure_keys_survive_edits(section_client, db, s
     statement['figures'][1]['stable_key'] = identities[1]
     financial.save_statement(db, actor, doc.id, statement, doc.revision); db.commit()
     assert list(db.scalars(select(ARStatementFigureKey.stable_key).order_by(ARStatementFigureKey.position))) == identities
+    for figure in statement['figures']:figure['stable_key']=''
+    financial.save_statement(db,actor,doc.id,statement,doc.revision);db.commit()
+    assert set(db.scalars(select(ARStatementFigureKey.stable_key))).isdisjoint(identities)
     contract = typeset(client, doc).json()
     check_manifest(contract)
     assert next(t for t in contract['tables'] if t['kind'] == 'statement')['row_ids']
@@ -221,6 +230,7 @@ def test_frozen_bytes_ids_manifest_and_live_independence(section_client, db, sam
     monkeypatch.setattr(service, 'report_data', forbidden)
     monkeypatch.setattr(service, 'resources', forbidden)
     monkeypatch.setattr(service, 'core_summary', forbidden)
+    monkeypatch.setattr(service, 'lock_documents', forbidden)
     monkeypatch.setattr(financial, 'financial_data', forbidden)
     assert typeset(client, doc, version=1).content == first.content
 
@@ -440,3 +450,56 @@ def test_indicator_correction_through_unit_approval_changes_only_indicator_hash(
     assert [key for key in old if old[key]!=new[key]]==[expected]
     assert first['manifest']['contract_sha256']!=second['manifest']['contract_sha256']
     assert typeset(client,doc,version=1).json()==first
+
+
+def test_waiting_draft_download_rechecks_a_release_created_before_source_lock(section_client, db, sample, monkeypatch):
+    client,docs,_,_=section_client
+    doc=docs['idare']
+    token=login(client,'strategy@example.invalid')
+    ready_and_freeze(client,token,doc)
+    assert reopen(client,token,doc).status_code==200
+    original_lock=service.lock_documents
+    published=[]
+    def release_wins_lock(session, current):
+        original_lock(session,current)
+        if not published:
+            published.append(True)
+            service.freeze_document(session,sample['strategy'],current.id,current.revision)
+    monkeypatch.setattr(service,'lock_documents',release_wins_lock)
+    response=typeset(client,doc)
+    assert response.status_code==200,response.text
+    assert response.json()['release_version']==2
+    assert response.json()['frozen'] is True
+    assert response.json()['source_sha256']==service.latest_release(db,doc).sha256
+
+
+def test_explicit_new_free_rows_do_not_reuse_deleted_row_keys(section_client, db, sample):
+    client,docs,_,_=section_client
+    doc=docs['birim:'+str(sample['department'].id)]
+    token=login(client,'strategy@example.invalid')
+    blocks=[{'type':'table','rows':[['A','5'],['A','5']]}]
+    assert post_section(client,token,doc,blocks).status_code==200
+    _,content=service.section_pair(db,doc,'I.A')
+    keys=section_keys(db,content)
+    old=list(keys[0]['rows'])
+    keys[0]['rows'][0]=None
+    assert post_section(client,token,doc,blocks,keys).status_code==200
+    updated=section_keys(db,content)
+    assert updated[0]['rows'][0] not in old
+    assert updated[0]['rows'][1]==old[1]
+    malformed=[{**updated[0],'rows':1}]
+    assert post_section(client,token,doc,blocks,malformed).status_code==422
+
+
+def test_csv_keeps_negative_decimal_scale_and_guards_untrusted_text():
+    import csv
+    import io
+    from app.ar_typeset_csv import table_csv
+    contract={'tables':[{'id':'t','row_ids':['r']}],'rows':[{'id':'r','values':{
+        'name':'=SUM(A1)','amount':{'exact':'-12500.230000','display':'-12.500,230000'},
+        'small':{'exact':'0.00000000','display':'0,00000000'}}}], 'indicators':[], 'activities':[]}
+    output=table_csv(contract,'t').decode('utf-8-sig')
+    row=next(csv.DictReader(io.StringIO(output)))
+    assert row['id']=='r' and row['name']=="'=SUM(A1)"
+    assert row['amount.exact']=='-12500.230000' and row['amount.display']=='-12.500,230000'
+    assert row['small.exact']=='0.00000000'

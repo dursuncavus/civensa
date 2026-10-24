@@ -11,7 +11,7 @@ branch_labels = None
 depends_on = None
 
 KEY_TABLES = ('ar_section_table_keys', 'ar_section_row_keys', 'ar_statement_figure_keys')
-MESSAGE = 'Dizgi anahtarı içeren dondurulmuş rapor kopyası var. Veriyi koruyan geçiş hazırlanmadan sürüm düşürülemez.'
+MESSAGE = 'Dizgi anahtarı içeren sabit rapor kopyası var. Veriyi koruyan geçiş hazırlanmadan sürüm düşürülemez.'
 
 
 def default():
@@ -24,7 +24,10 @@ def change_column(table, parent, constraint, upgrade):
     bind = op.get_bind()
     triggers = bind.execute(sa.text("SELECT sql FROM sqlite_master WHERE type='trigger' AND tbl_name=:table"),
                             {'table': table}).scalars().all() if bind.dialect.name == 'sqlite' else []
-    with op.batch_alter_table(table) as batch:
+    # SQLite reflection omits unnamed CHECKs unless they are restated explicitly.
+    checks = tuple(sa.CheckConstraint(check['sqltext']) for check in sa.inspect(bind).get_check_constraints(table)
+                   if not check['name']) if bind.dialect.name == 'sqlite' else ()
+    with op.batch_alter_table(table, table_args=checks) as batch:
         if upgrade:
             batch.add_column(sa.Column('stable_key', sa.String(36), nullable=False, server_default=default()))
             batch.create_unique_constraint(constraint, [*parent, 'stable_key'])
@@ -114,7 +117,7 @@ def downgrade():
     if bind.dialect.name == 'postgresql':
         op.execute('LOCK TABLE ar_documents, ar_document_freezes, ar_unit_workflow_events, ar_resource_rows, ar_financial_entries, ar_section_contents, ar_section_table_keys, ar_section_row_keys, ar_statement_figure_keys IN ACCESS EXCLUSIVE MODE')
     for query in ('SELECT payload_json FROM ar_document_freezes',
-                  "SELECT payload_json FROM ar_unit_workflow_events WHERE action='approve'"):
+                  "SELECT payload_json FROM ar_unit_workflow_events WHERE payload_json IS NOT NULL"):
         if any('_typeset' in json.loads(raw) for raw in bind.execute(sa.text(query)).scalars() if raw):
             raise RuntimeError(MESSAGE)
     guards(False)

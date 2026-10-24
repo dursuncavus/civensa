@@ -126,7 +126,7 @@ def register(app):
         for i in range(5000):
             if form.get(f'include_{i}')=='on':
                 row={key:str(form.get(f'{key}_{i}','')) for key,_ in columns}
-                if keyed:row['stable_key']=str(form.get(f'stable_key_{i}',''))
+                if keyed and f'stable_key_{i}' in form:row['stable_key']=str(form.get(f'stable_key_{i}',''))
                 result.append(row)
         return result
 
@@ -201,7 +201,8 @@ def register(app):
         values={k:str(form.get(k,'')) for k in ('name','period','statement_date','explanation')}
         figures=[]
         for i in range(100):
-            if form.get(f'figure_label_{i}'):figures.append({'label':str(form.get(f'figure_label_{i}')),'amount':str(form.get(f'figure_amount_{i}','')),'stable_key':str(form.get(f'figure_stable_key_{i}',''))})
+            if form.get(f'figure_label_{i}'):figures.append({'label':str(form.get(f'figure_label_{i}')),'amount':str(form.get(f'figure_amount_{i}','')),
+                **({'stable_key':str(form.get(f'figure_stable_key_{i}',''))} if f'figure_stable_key_{i}' in form else {})})
         values['figures']=figures
         try:
             transact(db,lambda:service.save_statement(db,user,document_id,values,revision(form),data,file.filename if hasattr(file,'filename') else ''))

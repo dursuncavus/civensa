@@ -76,6 +76,8 @@ def match_rows(existing, incoming, values):
             row = by_key.get(key)
             if row is None or key in used:
                 invalid_key()
+        elif 'stable_key' in item:
+            row = None  # Explicitly blank means a NEW row, even if values match.
         else:
             candidates = exact[values(item)]
             while candidates and (candidates[0].stable_key in used or candidates[0].stable_key in reserved):
@@ -106,7 +108,8 @@ def save_section_keys(db, content, blocks, keys=None):
     old = {t.stable_key: t for t in tables}
     if any(not isinstance(item, dict) or not isinstance(item.get('position'), int)
            or item['position'] < 0 or item['position'] >= len(blocks)
-           or blocks[item['position']]['type'] != 'table' for item in (keys or [])):
+           or blocks[item['position']]['type'] != 'table'
+           or not isinstance(item.get('rows', []), list) for item in (keys or [])):
         invalid_key()
     supplied = {item['position']: item for item in (keys or [])}
     if len(supplied) != len(keys or []):
@@ -122,6 +125,8 @@ def save_section_keys(db, content, blocks, keys=None):
             table = old.get(key)
             if table is None or key in used:
                 invalid_key()
+        elif 'stable_key' in identity:
+            table = None
         else:
             table = next((t for t in tables if t.stable_key not in used and t.stable_key not in reserved and
                 t.position < len(old_blocks) and old_blocks[t.position] == block), None)
@@ -138,7 +143,7 @@ def save_section_keys(db, content, blocks, keys=None):
         row_keys = identity.get('rows', [])
         if row_keys and len(row_keys) != len(block['rows']):
             invalid_key()
-        incoming = [{'cells': cells, 'stable_key': row_keys[i] if row_keys else None}
+        incoming = [{'cells': cells, **({'stable_key': row_keys[i]} if row_keys else {})}
                     for i, cells in enumerate(block['rows'])]
         def row_value(row):
             return json.dumps(row['cells'] if isinstance(row, dict) else old_rows[row.position], ensure_ascii=False)

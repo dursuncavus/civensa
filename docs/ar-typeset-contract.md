@@ -20,6 +20,8 @@ bağlantısı vardır:
 İndirme yetkisi Word/PDF ile aynıdır: Strateji; müdürlük hesabında yalnız kendi
 birim raporu. Başka birim ve idare indirmesi müdürlük hesabına kapalıdır.
 Yanıt `application/json`, `private, no-store` ve `nosniff` başlıklarını taşır.
+Taslak kaynak kümesi ve gösterge revizyonuyla tutarlı olarak yakalanır; kilit
+beklerken yayın oluştuysa yeni sabit sürüm seçilir.
 
 Donmuş indirme yalnız `ARDocumentFreeze.payload_json` veya sabit birim onayının
 `payload_json` baytlarını ve değişmez sürüm/SHA metadata'sını kullanır. Canlı
@@ -96,7 +98,7 @@ c086 göçü `down_revision=c084a1b2c3d4` olan tek baştır. Serbest bölüm tab
 satırları ve malî özet rakamları için ayrı anahtar kayıtları; kaynak/serbest
 malî satırlarda `stable_key` sütunu kullanılır. UUID metni **NOT NULL** ve kendi
 üst kaydı içinde **UNIQUE** olur. Var olan canlı kayıtlar geri doldurulur;
-eski payload'lara dokunulmaz. Anahtar taşıyan donmuş idare/birim payload'ı varsa
+eski payload'lara dokunulmaz. Anahtar taşıyan sabit idare/birim payload'ı (gönderim dahil) varsa
 downgrade Türkçe hata ile reddedilir; yoksa içerik korunarak c084'e dönülebilir.
 
 ## Kaydederken anahtarları koruma
@@ -104,7 +106,9 @@ downgrade Türkçe hata ile reddedilir; yoksa içerik korunarak c084'e dönüleb
 HTML formları kaynak/malî satır ve özet rakam anahtarlarını gizli alanlarda;
 serbest bölüm tablosu/satır anahtarlarını `table_keys` alanında taşır. Yeni
 satırın alanı boştur ve ilk kayıtta UUID alır. Mevcut satırlar yerinde güncellenir.
-Anahtarı olmayan, değişmemiş eski istemci girdileri aynı canlı kayıtla eşleşir;
+Alanı hiç göndermeyen eski istemcinin değişmemiş girdisi aynı canlı kayıtla
+eşleşir; alanı bilerek boş/null göndermek aynı değerlerde bile **yeni satır**
+anlamına gelir ve yeni UUID üretir;
 değişen kaydı güncelleyen API istemcisi mevcut anahtarı göndermelidir.
 Başka üst kayda ait veya yinelenen anahtar 422 ile reddedilir.
 
@@ -175,7 +179,10 @@ Araç önce hash'leri doğrular. UTF-8 BOM içeren, virgülle ayrılmış CSV'le
 kimliğinin SHA-256 değerinden gelir. İlk sütun daima `id`; sayılarda
 `actual.exact` ve `actual.display` gibi ayrı alanlar vardır. Serbest metin
 hücreleri `cell_1`, `cell_2` sütunlarıyla korunur. CSV satır sırası tablonun
-sunum sırasıdır; kimlik sütunu sıralamadan etkilenmez.
+sunum sırasıdır; kimlik sütunu sıralamadan etkilenmez. Metin hücreleri
+uygulamanın ortak CSV formül korumasını kullanır; korunan metindeki baştaki
+apostrof JSON kaynağıyla karşılaştırılarak çözümlenebilir. Sayı alanları
+türlüdür; negatif exact/gösterim ve ondalık ölçeği korunur.
 
 InDesign'ın yerleşik Veri Birleştirme özelliği JSON okumaz ve kalıcı kimlikle
 mevcut sayfa öğelerini otomatik güncellemez. Tekrar birleştirme betiği/eklenti:

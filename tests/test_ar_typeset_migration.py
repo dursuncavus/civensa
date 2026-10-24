@@ -100,7 +100,7 @@ def test_upgrade_backfills_every_key_without_rewriting_frozen_bytes_and_downgrad
     migrate('upgrade', 'head')
 
 
-@pytest.mark.parametrize('kind', ['idare', 'unit'])
+@pytest.mark.parametrize('kind', ['idare', 'unit', 'submitted'])
 def test_downgrade_refuses_frozen_keyed_snapshots_without_losing_data(migrated, kind):
     engine, migrate = migrated
     migrate('upgrade', 'head')
@@ -110,11 +110,31 @@ def test_downgrade_refuses_frozen_keyed_snapshots_without_losing_data(migrated, 
             conn.execute(text("INSERT INTO ar_document_freezes(id,document_id,version,payload_json,sha256,created_by) VALUES (2,1,2,:payload,:sha,1)"),
                          {'payload':payload,'sha':'a'*64})
         else:
-            conn.execute(text("INSERT INTO ar_unit_workflow_events(document_id,revision,action,from_status,to_status,reason,actor_id,actor_name,created_at,content_event_cursor,payload_json,sha256) VALUES (2,1,'approve','submitted','approved','',1,'Test',CURRENT_TIMESTAMP,0,:payload,:sha)"),
-                         {'payload':payload,'sha':'a'*64})
+            conn.execute(text("INSERT INTO ar_unit_workflow_events(document_id,revision,action,from_status,to_status,reason,actor_id,actor_name,created_at,content_event_cursor,payload_json,sha256) VALUES (2,1,:action,:before,:after,'',1,'Test',CURRENT_TIMESTAMP,0,:payload,:sha)"),
+                         {'payload':payload,'sha':'a'*64,'action':'submit' if kind=='submitted' else 'approve',
+                          'before':'draft' if kind=='submitted' else 'submitted','after':'submitted' if kind=='submitted' else 'approved'})
     result = migrate('downgrade', 'c084a1b2c3d4', ok=False)
-    assert 'Dizgi anahtarı içeren dondurulmuş rapor kopyası var' in result.stderr
+    assert 'Dizgi anahtarı içeren sabit rapor kopyası var' in result.stderr
     assert 'Veriyi koruyan' in result.stderr
     assert 'ar_section_table_keys' in inspect(engine).get_table_names()
     with engine.connect() as conn:
         assert conn.execute(text('SELECT version_num FROM alembic_version')).scalar_one() == 'c086a1b2c3d4'
+
+
+def test_sqlite_upgrade_and_downgrade_retain_existing_checks(tmp_path):
+    engine=create_engine(f"sqlite:///{tmp_path/'checks.db'}")
+    env={**os.environ,'DATABASE_URL':str(engine.url)}
+    def migrate(revision,command='upgrade'):
+        result=subprocess.run([sys.executable,'-m','alembic',command,revision],cwd=ROOT,env=env,capture_output=True,text=True)
+        assert result.returncode==0,result.stderr
+        assert 'is being omitted' not in result.stderr
+    try:
+        migrate('c084a1b2c3d4')
+        before={table:{row['sqltext'] for row in inspect(engine).get_check_constraints(table)}
+                for table in ('ar_resource_rows','ar_financial_entries')}
+        for revision,command in [('head','upgrade'),('c084a1b2c3d4','downgrade')]:
+            migrate(revision,command)
+            for table,checks in before.items():
+                assert {row['sqltext'] for row in inspect(engine).get_check_constraints(table)}==checks
+    finally:
+        engine.dispose()

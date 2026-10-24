@@ -325,7 +325,7 @@ def register(app):
             for i in range(2000):
                 if form.get(f'include_{i}')!='on':continue
                 row={key:str(form.get(f'{key}_{i}','')) for key,_ in service.TABLES[kind][2]}
-                row['stable_key']=str(form.get(f'stable_key_{i}',''))
+                if f'stable_key_{i}' in form:row['stable_key']=str(form.get(f'stable_key_{i}',''))
                 for key in ('count','area'):
                     if key in row:
                         try:row[key]=parse_number(row[key])

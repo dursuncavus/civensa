@@ -415,7 +415,7 @@ def save_resources(db,user,document_id,kind,rows,expected_revision):
     existing=db.scalars(select(ARResourceRow).where(ARResourceRow.document_id==doc.id,ARResourceRow.table_kind==kind)).all()
     before=[row_data(r) for r in existing]
     from .ar_typeset_keys import match_rows,fingerprint
-    incoming=[{**row,'stable_key':raw.get('stable_key')} for row,raw in zip(normalized,rows)]
+    incoming=[{**row,**({'stable_key':raw['stable_key']} if 'stable_key' in raw else {})} for row,raw in zip(normalized,rows)]
     def values(row):
         return fingerprint({k:(row.get(k) if isinstance(row,dict) else getattr(row,k)) for k in RESOURCE_FIELDS})
     matched,removed=match_rows(existing,incoming,values)
