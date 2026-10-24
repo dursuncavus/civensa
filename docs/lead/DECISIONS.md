@@ -32,3 +32,8 @@ Rule 35 sync still open: civensa-lead skill text, scheduled task prompt, DeepSee
 ## D-206 (24 Oct 2026 ~03:35, lead) — PR #84 no longer draft; branch updated
 DOĞRULANDI: #84 draft=false (marked ready by owner or Codex), head f6bfc39 all checks green (test 18/0, 18/1, secrets), proof links in PR text (D-197 met), but behind phase5 by 4 → lead called update-branch; new head 04975b3, CI rerunning. Merge when green and behind 0. D-204 is closed (no owner action needed). Also DOĞRULANDI: the lead session can mark PRs ready via REST `POST /pulls/{n}/ccr/ready_for_review`, so owner un-draft clicks are no longer needed.
 Scheduled task "Civensa gece kontrol" prompt updated to read docs/lead/ and to carry out the D-205 Drive archive steps once #86 is merged.
+
+## D-207 (24 Oct 2026 ~03:45, lead) — guard runs from the trusted base revision
+Codex review of #86 (P1, on b5231a4) accepted: under `pull_request` a PR runs its own copy of the guard and could rewrite it to pass. Fix: `lead-docs-guard.yml` now uses `pull_request_target` (base branch's copy, no checkout, metadata only, branch name passed through env) and also rejects fork PRs.
+DOĞRULANDI: branch protection is not available on this private repo without GitHub Pro (REST 403), so no check can block a merge; the guard is a signal and the real gate is that only the lead merges into phase5 and never merges a red PR. Not worth paying for Pro for this alone.
+Side effect: `pull_request_target` runs the base branch's file, which does not exist on phase5 until #86 merges, so #86 itself shows no guard run; the first lead PR after #86 is the guard's live test. "@codex review" requested again on the new head before merge.
