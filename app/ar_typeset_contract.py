@@ -10,6 +10,11 @@ from zoneinfo import ZoneInfo
 from .ar_typeset_source import require_keys
 
 SCHEMA_VERSION = 'ar-typeset/1'
+# Designer presentation metadata is opt-in; audit/workflow fields stay in the source.
+CONTEXT_FIELDS = ('id', 'organization_id', 'period_id', 'year', 'organization', 'department_id',
+    'department', 'scope', 'definition_version', 'revision', 'title', 'status')
+SECTION_FIELDS = ('code', 'title', 'position', 'parent_id', 'depth', 'owner', 'content_kind',
+    'status', 'copied_from_id', 'copied_from_approval_id', 'copied_needs_review')
 NUMBER_FIELDS = {'value', 'actual', 'amount', 'previous', 'initial', 'added', 'deducted', 'entered_final',
     'cancelled', 'carried', 'estimate', 'refunds', 'final', 'net', 'rate', 'pp_budget', 'lower_rate',
     'upper_rate', 'count', 'area', 'total', 'verified', 'missing', 'number', 'percentage',
@@ -100,7 +105,7 @@ def build_contract(payload, *, release_version='draft', source_sha256=None):
     for section in payload['sections']:
         code = section['code']
         item = {'id': section_map[code], 'code': code, 'title': section['title'],
-                'values': values({k: v for k, v in section.items() if k != 'blocks'}), 'blocks': [], 'table_ids': []}
+                'values': values({k: section[k] for k in SECTION_FIELDS if k in section}), 'blocks': [], 'table_ids': []}
         keys = {t['position']: t for t in captured['sections'].get(code, [])}
         for position, block in enumerate(section['blocks']):
             if block['type'] == 'table':
@@ -115,7 +120,7 @@ def build_contract(payload, *, release_version='draft', source_sha256=None):
             item['provenance'] = {'kind': 'previous_year_copy',
                 **{key: section[key] for key in ('copied_from_id', 'copied_from_approval_id') if section.get(key)}}
         elif section.get('edited_by') is not None:
-            item['provenance'] = {'kind': 'manual', 'actor_id': section['edited_by']}
+            item['provenance'] = {'kind': 'manual'}
         sections.append(item)
     for kind, resource in payload.get('resources', {}).items():
         identity = f'{root}:resource:{token(kind)}'
@@ -181,7 +186,7 @@ def build_contract(payload, *, release_version='draft', source_sha256=None):
         'frozen': source_sha256 is not None,
         'release_version': release_version, 'generated_at': stamp.astimezone(ZoneInfo('Europe/Istanbul')).isoformat(),
         'source_sha256': source_sha256,
-        'context': values({k: v for k, v in payload.items() if k not in {'sections', 'resources', 'core', 'financial', '_typeset', 'frozen'}}),
+        'context': values({k: payload[k] for k in CONTEXT_FIELDS if k in payload}),
         'financial_context': values({k: v for k, v in financial.items() if k not in {'tables', 'entries', 'statements'}}),
         'core_context': values({k: v for k, v in payload['core'].items() if k != 'indicators'})}
     result['resource_source_context'] = values({kind: data.get('source_documents', []) for kind, data in payload.get('resources', {}).items()})

@@ -146,6 +146,8 @@ def save_section_keys(db, content, blocks, keys=None):
         incoming = [{'cells': cells, **({'stable_key': row_keys[i]} if row_keys else {})}
                     for i, cells in enumerate(block['rows'])]
         def row_value(row):
+            if not isinstance(row, dict) and not 0 <= row.position < len(old_rows):
+                invalid_key()
             return json.dumps(row['cells'] if isinstance(row, dict) else old_rows[row.position], ensure_ascii=False)
         matched, removed = match_rows(stored, incoming, row_value)
         for row in removed:

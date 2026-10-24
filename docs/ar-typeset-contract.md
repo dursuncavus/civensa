@@ -51,14 +51,21 @@ tekrar gönderim gerekir. D-190 bu uyumluluk istisnasını açıkça kabul eder.
 | `frozen` | Sabit kaynak SHA'sı bulunan indirmede `true`; taslakta `false`. |
 | `generated_at` | Kaynağın yakalandığı sabit zaman, ISO 8601 ve TSİ `+03:00`. İndirme anının saati değildir. Taslakta ilgili son kayıt/gösterge/kaynak-onay zamanı kullanılır; tekrar indirme saati değiştirmez. |
 | `source_sha256` | Donmuş payload'ın özgün UTF-8 baytlarının SHA-256 değeri; taslakta `null`. |
-| `sections` | Sıralı bölüm kaydı: `id`, EK-1 kodu/başlığı, metin/liste blokları, tablo referansları, durum, gerekçe, mevcut düzenleme/kopyalama alanları. |
+| `sections` | Sıralı bölüm kaydı: `id`, EK-1 kodu/başlığı, metin/liste blokları, tablo referansları, sunum konumu/türü/sahipliği, durum ve kopyalama referansları. Personel ve denetim metadata'sı alınmaz. |
 | `tables` | Tablo `id`, `kind`, başlık, bölüm kimliği, mevcut sütun tanımları, sunum sırasındaki `row_ids`, toplamlar ve tablo metadata'sı. |
 | `rows` | Satır `id`, `table_id`, kaynak alanlarını koruyan `values`; bilinen köken varsa `provenance`. |
 | `indicators` | Kalıcı kaynak gösterge kimliğiyle `id`, bölüm referansı, kaynak birim/belge kimliği, hedef/gerçekleşme, durum, kanıt, açıklama ve sapma. |
 | `activities` | Bağlı, doğrulanmış PP yayınındaki faaliyet PK'sıyla `id`, bölüm referansı ve faaliyet bilgileri. Maliyetler ayrı, PK'lı tablo satırlarıdır. Canlı faaliyet adı/maliyeti okunmaz. |
-| `context`, `financial_context`, `core_context`, `resource_source_context` | Yayın/revizyon, kaynak birim manifesti, eksikler/kontroller, eşikler, kaynak sürümleri ve diğer mevcut rapor metadata'sı. Öğelerin alt içerik hash'lerini üst öğelere taşımayan kaynak bağlamıdır. |
+| `context` | Yalnız izin verilen sunum alanları: `id`, `organization_id`, `period_id`, `year`, `organization`, `department_id`, `department`, `scope`, `definition_version`, `revision`, `title`, `status` (kaynakta bulunanlar). |
+| `financial_context`, `core_context`, `resource_source_context` | Malî eksikler/kontroller, eşikler, gösterge özeti ve kaynak sürüm referansları. Öğelerin alt içerik hash'lerini üst öğelere taşımayan kaynak bağlamıdır. |
 | `manifest.items` | Belge dahil bütün dizgi öğesi kimliklerinin SHA-256 eşlemesi. |
 | `manifest.contract_sha256` | Aşağıdaki kanonikleştirme kuralıyla bütün sözleşmenin SHA-256 değeri. |
+
+Üst bağlam ve bölüm metadata'sı açık izin listeleriyle seçilir. Yayın/yeniden
+açma geçmişi, birim iş akışı, onay/düzenleme aktörleri, `source_editor_ids`,
+`edited_by`, editör adları ve serbest gerekçeler tasarımcı dosyasına kopyalanmaz.
+Bölüm kökeninde yalnız `kind` ve varsa kopyalanan belge/onay kimlikleri bulunur;
+`manual` kökeni aktör kimliği içermez. Ham donmuş payload ve denetim kaydı değişmez.
 
 Sözlük anahtarları alfabetik; öğe dizileri `id` ile sıralıdır. Bölüm konumu ve
 `row_ids` dizileri sunum sırasını korur. Metin blokları kaydedilmiş sıradadır.
