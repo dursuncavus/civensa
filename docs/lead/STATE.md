@@ -14,8 +14,8 @@ Tags: DOĞRULANDI (lead checked) · TARİHSEL (past fact) · BEYAN (owner said) 
 | (new) | CIV-090 AR-06 deviation explanation gate | — | Package `tasks/CIV-090.md`, dispatched 24 Oct ~19:00 | Review when ready |
 
 ## Open — owner
-- BLOCKER (D-218): GitHub Actions jobs are not starting — "recent account payments have failed or your spending limit needs to be increased". Owner checks GitHub billing. Until fixed no PR can be TESTED or merged.
-- Owner raises the GitHub Actions budget (D-219: about $80/month until CIV-091 lands). CIV-091 (CI cost cut) dispatched.
+- (resolved 24 Oct ~22:37) D-218 billing blocker — budget raised.
+- (done) Owner raised the Actions budget 24 Oct. CIV-091 running in Codex. CIV-092 public-repo readiness approved by owner (D-220); after it merges: owner approves deleting old plaintext backup artifacts and switching the repo to public (two separate confirmations).
 0. (closed) Merges are done by the lead in live sessions (D-214).
 1. (closed) Codex "Tam erişim" stays ON — owner decision D-210.
 2. (closed) Plaintext password files (log 79): owner decision D-217 — not tracked, do not remind the owner.
@@ -32,5 +32,5 @@ Tags: DOĞRULANDI (lead checked) · TARİHSEL (past fact) · BEYAN (owner said) 
 9. DeepSeek mirror GUNCEL-DURUM.md is not reachable in scheduled runs; the lead refreshes it in the next live session with the Mac linked.
 
 ## Next IDs
-- Next new task ID: CIV-092.
-- Next decision: D-220.
+- Next new task ID: CIV-094.
+- Next decision: D-222.
