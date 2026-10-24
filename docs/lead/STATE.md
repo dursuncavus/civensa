@@ -10,7 +10,7 @@ Tags: DOĞRULANDI (lead checked) · TARİHSEL (past fact) · BEYAN (owner said) 
 | PR | Task | Head | State | Next action |
 | --- | --- | --- | --- | --- |
 | #84 | CIV-089 CI gitleaks + failure annotations | 04975b3 | Ready; f6bfc39 fully green; was behind 4 → branch updated 00:30Z (D-206), CI rerunning | Lead/scheduled run merges when green on 04975b3 and behind 0 |
-| #85 | CIV-087 AR-15 Turkish errors + #80 cleanup | 124c5aa | 124c5aa only changed CSRF text; D-203 MEDIUM still open (D-208); CI running | Owner pastes fix follow-up into Codex task CIV-087; re-review new head |
+| #85 | CIV-087 AR-15 Turkish errors + #80 cleanup | fde1dfb | D-203 fixes written by lead (D-211); "@codex review" requested; CI running | Merge into phase5 when both test shards green on fde1dfb, Codex review has no P0/P1, behind 0 |
 | #82 | CIV-086 AR-14 typeset data contract | fb7a88c | Draft, CI running | Review when Codex marks ready (migration c086, single alembic head) |
 | #86 | Lead records into repo (D-205) | lead/civ-lead-records | Codex P1 fixed (D-207, pull_request_target); re-review requested | Lead merges when Codex re-review has no P0/P1 and tests green |
 
@@ -20,7 +20,7 @@ Tags: DOĞRULANDI (lead checked) · TARİHSEL (past fact) · BEYAN (owner said) 
 
 ## Open queue — lead / scheduled run "Civensa gece kontrol" (05:41, 08:41)
 1. #84 merge per D-197/D-206.
-2. #85 re-review after Codex fix (follow-up via owner, D-208).
+2. #85: check Codex review of fde1dfb + CI; merge per D-211. Codex task CIV-087 holds unpushed d722e49 — abandoned, do not ask the owner to push it.
 3. #82 review when ready.
 4. Codex slots: 3 busy (CIV-086, -087, -089). First free slot: CIV-088 = AR-16 (lead writes `tasks/CIV-088.md`).
 5. D-177 plan conversion, CIV-085, live first load — owner sets the time, live session only.
@@ -30,4 +30,4 @@ Tags: DOĞRULANDI (lead checked) · TARİHSEL (past fact) · BEYAN (owner said) 
 
 ## Next IDs
 - Next new task ID: CIV-090 (CIV-088 reserved).
-- Next decision: D-211.
+- Next decision: D-212.

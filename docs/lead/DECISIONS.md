@@ -49,3 +49,6 @@ Correct approach: full access back on for this task until the push is done. Prev
 
 ## D-210 (24 Oct 2026 03:52, owner) — Codex keeps "Tam erişim"
 BEYAN: owner decided full access stays on for Codex tasks. Closes STATE owner item 1. Remaining risk accepted by owner: Codex can act freely on the owner's machine; mitigations stay as they are (no secrets in repo, plaintext password files to be moved — owner item 2, lead reviews every PR).
+
+## D-211 (24 Oct 2026 ~04:05, lead) — lead writes the CIV-087 D-203 fixes itself
+DOĞRULANDI: the CIV-087 Codex session kept approval_policy=never after the D-209 change and could not push its fix d722e49 even with full access back on. Instead of a new Codex task at 04:00, the lead pushed fde1dfb to `task/civ-087-turkce-hata`: `/login?reason=session` with server-owned messages only (MEDIUM), anonymous error page without the resubmit form (LOW), file warning on the recovery form (LOW); two existing tests updated and one added (listed in the PR comment, D-167). Not run locally (dependencies not installable here) — CI is the judge. Cross-family review: "@codex review" requested. Merge when CI green on fde1dfb and the review has no P0/P1. d722e49 is abandoned.
