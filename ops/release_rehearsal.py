@@ -10,6 +10,8 @@ import sys
 from datetime import datetime, timedelta, timezone
 from urllib.parse import urlsplit
 
+from ops.backup_crypto import decrypt_backup
+
 BACKUP_REQUIRED = "Önce Actions → Daily verified database backup → Run workflow çalıştırın, yeşil bittikten sonra bu kontrolü yeniden çalıştırın."
 # table: one-line reason for an intentional deletion (also explain it in the PR).
 ROW_LOSS_ALLOWLIST: dict[str, str] = {}
@@ -86,12 +88,10 @@ def download_backup():
 
 
 def verify_dump():
-    manifests = list(BACKUP_DIR.glob("*.manifest.json"))
-    dumps = list(BACKUP_DIR.glob("*.dump"))
-    if len(manifests) != 1 or len(dumps) != 1:
-        raise RehearsalFailure("Backup must contain one dump and one manifest.")
-    saved = json.loads(manifests[0].read_text())
-    dump = dumps[0]
+    dump = decrypt_backup(BACKUP_DIR, BACKUP_DIR / "decrypted")
+    os.environ.pop("BACKUP_AGE_IDENTITY", None)
+    os.environ.pop("BACKUP_AGE_IDENTITY_FILE", None)
+    saved = json.loads(dump.with_suffix(".manifest.json").read_text())
     require_fresh_backup(saved.get("utc_timestamp"))
     with dump.open("rb") as stream:
         digest = hashlib.file_digest(stream, "sha256").hexdigest()
@@ -151,6 +151,8 @@ def rehearse():
     before, after = {}, {}
     status = "FAIL"
     try:
+        if os.environ.get("GITHUB_EVENT_NAME") != "workflow_dispatch":
+            raise RehearsalFailure("Özel yedek yalnız elle başlatılan provada kullanılabilir.")
         url = os.environ["DATABASE_URL"]
         assert_local_database(url)
         # sitecustomize normalizes DATABASE_URL at Python startup. libpq tools
@@ -171,7 +173,7 @@ def rehearse():
                      f"{BACKUP_DIR.resolve()}:/backup:ro", "--env", "PGDATABASE", "postgres:18",
                      "sh", "-c", 'exec "$@" --dbname="$PGDATABASE"', "pg-client",
                      "pg_restore", "--exit-on-error", "--single-transaction", "--no-owner",
-                     "--no-privileges", f"/backup/{dump.name}"], "Disposable restore failed.", env=env)
+                     "--no-privileges", f"/backup/decrypted/{dump.name}"], "Disposable restore failed.", env=env)
         restored = database_state(url)
         before = restored["public_table_row_counts"]
         if any(restored[key] != saved[key] for key in restored):
