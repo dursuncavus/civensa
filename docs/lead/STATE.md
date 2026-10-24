@@ -1,6 +1,6 @@
 # CIVENSA — CURRENT STATE
 
-Updated: 24 Oct 2026, ~05:50 Istanbul (scheduled run). Replaces Drive "Civensa Güncel Durum v0.77".
+Updated: 24 Oct 2026, ~17:05 Istanbul (live session). Replaces Drive "Civensa Güncel Durum v0.77".
 Rules: AI_WORKING_CONSTITUTION v1.2 (Drive, global) · `HIERARCHY.md` v1.4 · `PROJECT_RULES.md` v1.3 · `BACKUP_LEAD.md` v2.
 Backup log ("Civensa Yedek Kaydı", Drive + DeepSeek workspace YEDEK-KAYIT.md): empty.
 
@@ -9,13 +9,12 @@ Tags: DOĞRULANDI (lead checked) · TARİHSEL (past fact) · BEYAN (owner said) 
 ## Open pull requests (DOĞRULANDI, GitHub REST ~02:45Z)
 | PR | Task | Head | State | Next action |
 | --- | --- | --- | --- | --- |
-| #82 | CIV-086 AR-14 typeset data contract | 6d6969c | Lead review OK (D-213), CI green, behind 0, one alembic head | OWNER merges (scheduled run merge blocked, D-213) — first |
-| #84 | CIV-089 CI gitleaks + failure annotations | 04975b3 | All green, behind 0 | OWNER merges — second |
-| #86 | Lead records into repo (D-205) | lead/civ-lead-records | Codex re-review clean, tests green | OWNER merges — third; then Drive archive steps (queue 7) |
+| #84 | CIV-089 CI gitleaks + failure annotations | updating | Behind 1 after #82 → update-branch 17:00; lead merges when green |
+| #86 | Lead records into repo (D-205) | updating | #87 merged into it; update-branch 17:00; lead merges when green |
 | #85 | CIV-087 AR-15 Turkish errors + #80 cleanup | fde1dfb | test (18,0) red, cause unknown; Codex review stuck "running"; overlaps #82 files | After #84 merges: update branch → read annotations → lead fixes (D-211 code is lead-written) |
 
 ## Open — owner
-0. Merge on GitHub in this order: #87 (this record), #82, #84, #86 (scheduled run cannot merge, D-213).
+0. (closed) Merges are done by the lead in live sessions (D-214).
 1. (closed) Codex "Tam erişim" stays ON — owner decision D-210.
 2. Plaintext password files on Desktop/Downloads/Documents (log 79) → owner moves them into the Passwords app; then lead removes the files.
 
@@ -32,4 +31,4 @@ Tags: DOĞRULANDI (lead checked) · TARİHSEL (past fact) · BEYAN (owner said) 
 
 ## Next IDs
 - Next new task ID: CIV-090 (CIV-088 reserved).
-- Next decision: D-214.
+- Next decision: D-215.
