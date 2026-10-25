@@ -18,7 +18,7 @@ Tüm görseller sentetik “Örnek” verileriyle gerçek uygulamadan, 900 px vi
 | 012 · EK-1 bölüm editörü | [PNG](012-activity-sections-department-1440.png) | [PNG](012-activity-sections-department-390.png) |
 | 039 · Strateji Nihai Rapor | [PNG](039-report-builder-strategy-1440.png) | [PNG](039-report-builder-strategy-390.png) |
 
-Son koşu: **194/194 çekim**, **9.560 eski öğe/hedef**, **0 kayıp/taşma/kırpılma/çakışma**. Kontrast: **19 çift, 0 başarısız**. Chromium 151.0.7922.173. [Görsel boyutları](screenshots.json): en büyük PNG **1.141.820 bayt**.
+Son koşu: **194/194 çekim**, **9.560 eski öğe/hedef**, **0 kayıp/taşma/kırpılma/çakışma**. Kontrast: **18 çift, 0 başarısız**. Chromium 151.0.7922.173. [Görsel boyutları](screenshots.json): en büyük PNG **1.141.820 bayt**.
 
 ## Tekrarlanabilir doğrulama
 
