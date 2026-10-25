@@ -1,6 +1,6 @@
 # CIVENSA — CURRENT STATE
 
-Updated: 25 Oct 2026, ~21:15 Istanbul (live session, CV Lider 22).
+Updated: 25 Oct 2026, ~21:35 Istanbul (live session, CV Lider 22).
 Rules: AI_WORKING_CONSTITUTION v1.2 (Drive, global) · `HIERARCHY.md` v1.4 · `PROJECT_RULES.md` v1.3 · `BACKUP_LEAD.md` v2.
 Backup log ("Civensa Yedek Kaydı", Drive): no entries, last modified 23 Oct (DOĞRULANDI 25 Oct 19:15).
 
@@ -17,6 +17,7 @@ Tags: DOĞRULANDI (lead checked) · TARİHSEL (past fact) · BEYAN (owner said) 
 | PR | Task | State | Next action |
 | --- | --- | --- | --- |
 | #122 | CIV-099 design → 012 section editor | reviewed de89a0e; list-order fix via owner into the CIV-099 Codex task (D-238, D-239) | Check fix commit, CI, behind 0, merge; owner approves look + 77 case changes |
+| — | CIV-100 024 polish (mismatch box, checkbox tick) | package given to owner 21:35 (D-240) | Review screenshots + CI, merge |
 
 ## Open — owner
 - Public repo (D-220/D-222/D-223), in order, each with owner confirmation:
@@ -42,5 +43,5 @@ Tags: DOĞRULANDI (lead checked) · TARİHSEL (past fact) · BEYAN (owner said) 
 7. DeepSeek mirror GUNCEL-DURUM.md: refresh in the next live session with the Mac linked.
 
 ## Next IDs
-- Next new task ID: CIV-100.
-- Next decision: D-240.
+- Next new task ID: CIV-101.
+- Next decision: D-241.
