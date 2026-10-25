@@ -292,7 +292,7 @@ def register(app):
                 reopen_allowed=bool(dep and dep.is_active and dep.organization_id==doc.organization_id)
             except HTTPException:pass
         from .ar_typeset_keys import section_keys
-        from .models import ARResourceRow, ARSectionContent, ARUnitWorkflowEvent
+        from .models import ARResourceRow, ARSectionContent, ARUnitWorkflowEvent, User
         keys=[];resource_keys={}
         if not report['frozen']:
             _,content=service.section_pair(db,doc,code)
@@ -302,13 +302,17 @@ def register(app):
                     ARResourceRow.document_id==doc.id,ARResourceRow.table_kind==kind).order_by(ARResourceRow.position,ARResourceRow.id)))
         approvals=list(db.scalars(select(ARUnitWorkflowEvent).where(ARUnitWorkflowEvent.document_id==doc.id,
             ARUnitWorkflowEvent.action=='approve').order_by(ARUnitWorkflowEvent.revision))) if doc.department_id else []
-        return {**financial_context(db,user,doc,report), 'section_table_keys_json':json.dumps(keys),
+        events=db.scalars(select(ARContentEvent).where(ARContentEvent.document_id==doc.id,
+            ARContentEvent.section_code==code).order_by(ARContentEvent.id.desc())).all()
+        actor_ids={event.actor_id for event in events}
+        event_actor_names=dict(db.execute(select(User.id,User.full_name).where(User.id.in_(actor_ids))).all()) if actor_ids else {}
+        return {**financial_context(db,user,doc,report), 'event_actor_names':event_actor_names, 'section_table_keys_json':json.dumps(keys),
             'resource_key_map':resource_keys, 'typeset_approvals':approvals, 'user':user,'report':report,'section':section,'statuses':service.STATUSES,
             'reopen_allowed':reopen_allowed,'similarities':ar_similarity.for_report(db,user,report),
             'editable':not report['frozen'] and service.can_edit(db,user,doc,definition),
             'tables':{k:{**report['resources'][k],'kind':k} for k,v in service.TABLES.items() if v[0]==code},
             'employment':service.EMPLOYMENT,'owners':{'directorate':'Müdürlük','strategy':'Strateji','finance':'Mali Hizmetler'},
-            'events':db.scalars(select(ARContentEvent).where(ARContentEvent.document_id==doc.id,ARContentEvent.section_code==code).order_by(ARContentEvent.id.desc())).all()}
+            'events':events}
 
     @router.get('/activity-sections/reports/{document_id}')
     def editor(document_id:int,request:Request,code:str='I.A',db:Session=Depends(get_db),user=Depends(require_user)):

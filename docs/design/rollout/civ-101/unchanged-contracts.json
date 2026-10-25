@@ -1,0 +1,65 @@
+{
+  "baseline": "d671eb8",
+  "files": [
+    {
+      "file": "app/static/design/section-editor.css",
+      "unchanged": true,
+      "sha256": "e9a7ff99d3867d94e36f6512c44aae70b6d9a7cebf483d74cf70f0fffe282461"
+    },
+    {
+      "file": "app/static/design/section-editor.js",
+      "unchanged": true,
+      "sha256": "28c0d445a5d6c183cc48ac88d6066e04597382caf4513481f084d621a5b1b101"
+    },
+    {
+      "file": "app/static/design/shell.css",
+      "unchanged": true,
+      "sha256": "d9999ec2a6f78d04c8beb1d4afdb1b6cc71c6085588ef26524112717ff802f62"
+    },
+    {
+      "file": "app/static/design/data-entry.css",
+      "unchanged": true,
+      "sha256": "7d0cb45119893b3964d4a9f5f6946e0191983d3c404f4d0e2de96e7420bd476c"
+    },
+    {
+      "file": "app/static/design/data-entry.js",
+      "unchanged": true,
+      "sha256": "891e605209a9150ce7a0b7f98e985fc7cd22771ce9ccdef925e007750288f341"
+    },
+    {
+      "file": "app/templates/department.html",
+      "unchanged": true,
+      "sha256": "fd139d76098066bc1f5ba9ddd0dba73288971a6eda99f3aa32a34280cbcab15f"
+    },
+    {
+      "file": "app/templates/activity_financial.html",
+      "unchanged": true,
+      "sha256": "b55d135c26a7c9d6721e03cb4f2cebb4f05dd84faedc93573943c7dd4940a915"
+    },
+    {
+      "file": "app/activity_financial_service.py",
+      "unchanged": true,
+      "sha256": "5ad6616e12b1301e68e1784d071effa7b5ed6357fb9dc1391c7aebd51d3067c6"
+    },
+    {
+      "file": "app/ar_export.py",
+      "unchanged": true,
+      "sha256": "23912c56728e2dc8a54bf5997962822f90f2c95352a1e67f9aa4a3511da1f358"
+    },
+    {
+      "file": "tests/fixtures/section_editor_012_contract.json",
+      "unchanged": true,
+      "sha256": "d04064c4ca0d7f051ded5a6a392e8ab1c976356ad67b23224a1ac225abf10b08"
+    },
+    {
+      "file": "AGENTS.md",
+      "unchanged": true,
+      "sha256": "45ca020b08cdb03c5924a6e5cad1078c5cc424ebbd9a9ac7921ec81cd1df36b4"
+    },
+    {
+      "file": "app/ar_pdf_export.py",
+      "unchanged": true,
+      "sha256": "ce5760b3d396ef1814d718724d239c8001820e475578f05ad5b213360499de4a"
+    }
+  ]
+}
