@@ -19,8 +19,8 @@ Tags: DOĞRULANDI (lead checked) · TARİHSEL (past fact) · BEYAN (owner said) 
 ## Open — owner
 - Public repo (D-220/D-222/D-223), in order, each with owner confirmation:
   1. DONE 25 Oct — age secrets set (BEYAN + screenshot), private key in owner's Passwords app.
-  2. DONE 25 Oct — Render answer (D-227): live service civensa-pilot deploys `main`, Auto-Deploy OFF. NEXT: owner confirms switching the repo default branch to phase5 (D-223 proposal); the lead then switches it via REST.
-  3. One encrypted backup run verified.
+  2. DONE 25 Oct (D-228) — default branch is now `feature/authorization-workflow-phase5` (DOĞRULANDI REST). `main` and civensa-pilot untouched (Auto-Deploy off, D-227).
+  3. One encrypted backup run verified — check the next scheduled "Daily verified database backup" run (night check or next live session); no manual dispatch (live database = escalation).
   4. Delete old plaintext backup artifacts.
   5. Full-history gitleaks (workflow_dispatch) — must be clean.
   6. Switch repo to public.
@@ -36,7 +36,7 @@ Tags: DOĞRULANDI (lead checked) · TARİHSEL (past fact) · BEYAN (owner said) 
 3. D-177 plan conversion, CIV-085, live first load — owner sets the time, live session only.
 4. Measure scheduled run cost; reduce or stop if costly.
 5. D-205 transition leftovers: archive Drive state/log/rule documents with "ESKİ ... KULLANMAYIN", add Drive pointer "KAYITLAR GITHUB'DA".
-6. Guard never runs (DOĞRULANDI D-223) — fixed by public-repo step 2.
+6. Guard: default branch switched (D-228); confirm a "Lead records guard" run appears on the next lead PR.
 7. DeepSeek mirror GUNCEL-DURUM.md: refresh in the next live session with the Mac linked.
 
 ## Next IDs
