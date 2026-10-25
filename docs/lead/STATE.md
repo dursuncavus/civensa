@@ -1,6 +1,6 @@
 # CIVENSA — CURRENT STATE
 
-Updated: 25 Oct 2026, ~11:45 Istanbul (live session, CV Lider 19).
+Updated: 25 Oct 2026, ~14:20 Istanbul (live session, CV Lider 20).
 Rules: AI_WORKING_CONSTITUTION v1.2 (Drive, global) · `HIERARCHY.md` v1.4 · `PROJECT_RULES.md` v1.3 · `BACKUP_LEAD.md` v2.
 Backup log ("Civensa Yedek Kaydı", Drive): no entries, last modified 23 Oct (DOĞRULANDI 25 Oct 10:25).
 
@@ -13,21 +13,21 @@ Dispatch format (D-232): platform + exact model (Codex: GPT-6.1 Sol) + effort; t
 
 Tags: DOĞRULANDI (lead checked) · TARİHSEL (past fact) · BEYAN (owner said) · BELİRSİZ (unknown).
 
-## Open pull requests (DOĞRULANDI 25 Oct 11:05)
+## Open pull requests (DOĞRULANDI 25 Oct 14:15; #115 CIV-096 merged d91ea70, D-233)
 | PR | Task | State | Next action |
 | --- | --- | --- | --- |
-| — | CIV-096 design → base shell + 034 | dispatched to Codex 25 Oct ~11:45 (D-231); PR not open yet | Review screenshots + CI, merge |
+| — | CIV-097 design → 024 data entry | package ready (D-233); dispatch after owner approves CIV-096 look | Review screenshots + CI, merge |
 
 ## Open — owner
 - Public repo (D-220/D-222/D-223), in order, each with owner confirmation:
   1. DONE 25 Oct — age secrets set (BEYAN + screenshot), private key in owner's Passwords app.
   2. DONE 25 Oct (D-228) — default branch is now `feature/authorization-workflow-phase5` (DOĞRULANDI REST). `main` and civensa-pilot untouched (Auto-Deploy off, D-227).
   3. One encrypted backup run verified — 25 Oct 05:07 UTC run came from `main` (plaintext, D-230); first phase5 encrypted run expected 26 Oct, check it (night check 08:41 or next live session); no manual dispatch (live database = escalation).
-  4. Delete old plaintext backup artifacts (includes civensa-db-backup-20261025-0507Z, D-230).
+  4. Delete old plaintext backup artifacts (includes civensa-db-backup-20261025-0507Z, D-230) — only after step 3 is verified (D-233).
   5. Full-history gitleaks (workflow_dispatch) — must be clean.
   6. Switch repo to public.
 - Claude Pro ends 3 Nov 2026 (BEYAN 25 Oct 10:22; Billing page shows only "Subscribed via iOS app", no date). iOS subscription is cancelled. Owner renews Pro from claude.ai on the web on 3 Nov; otherwise from 3 Nov the lead is unavailable and DeepSeek runs as backup lead (BACKUP_LEAD.md).
-- UI redesign (D-224/D-225): CIV-095 prototype merged (D-231); CIV-096 applies it to the base shell and 034; owner approves the look from screenshots.
+- UI redesign (D-224/D-225): CIV-095 prototype merged (D-231); CIV-096 shell + 034 merged (D-233) — owner approves the look from the PR #115 screenshots; then CIV-097 (024 data entry) goes to Codex.
 0. (closed) Merges are done by the lead in live sessions (D-214).
 1. (closed) Codex "Tam erişim" stays ON — owner decision D-210.
 2. (closed) Plaintext password files (log 79): owner decision D-217 — not tracked, do not remind the owner.
@@ -42,5 +42,5 @@ Tags: DOĞRULANDI (lead checked) · TARİHSEL (past fact) · BEYAN (owner said) 
 7. DeepSeek mirror GUNCEL-DURUM.md: refresh in the next live session with the Mac linked.
 
 ## Next IDs
-- Next new task ID: CIV-097.
-- Next decision: D-233.
+- Next new task ID: CIV-098.
+- Next decision: D-234.
