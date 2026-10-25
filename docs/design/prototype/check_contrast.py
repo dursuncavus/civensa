@@ -63,9 +63,14 @@ COLLECT = r"""() => {
       if (s.outlineStyle !== 'none' && parseFloat(s.outlineWidth))
         add(el, blend(rgb(s.outlineColor),outside), outside, 'Odak çizgisi', 3);
     }
-    if (el.matches('input:checked')) {
+    if (el.matches('svg.icon')) {
+      // Onay işareti SVG'si, DOM'da kardeşi olan kutunun üzerinde çizilir.
+      const iconBg = el.matches('.choice-check') ? background(el.previousElementSibling) : bg;
+      add(el, blend(rgb(s.stroke), iconBg), iconBg, 'Simge', 3);
+    }
+    if (el.matches('input[type=radio]:checked')) {
       const pseudo = getComputedStyle(el,'::before');
-      add(el, rgb(el.type === 'radio' ? pseudo.backgroundColor : pseudo.color).slice(0,3), bg, 'Seçim işareti', 3);
+      add(el, rgb(pseudo.backgroundColor).slice(0,3), bg, 'Seçim işareti', 3);
     }
   }
   return rows;

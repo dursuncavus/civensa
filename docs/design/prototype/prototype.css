@@ -468,6 +468,11 @@ input[readonly],
 textarea[readonly] {
   background: var(--surface-muted);
 }
+textarea.is-focus[aria-invalid="false"] {
+  border: 1px solid var(--text-secondary);
+  outline: var(--focus);
+  outline-offset: var(--focus-offset);
+}
 input[aria-invalid="true"],
 textarea[aria-invalid="true"],
 select[aria-invalid="true"] {
@@ -550,6 +555,32 @@ legend {
 .accent {
   color: var(--accent);
   background: var(--accent-soft);
+}
+/* Tüm simgeler aynı 16 px SVG çizgi ailesini kullanır. */
+.icon {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  display: inline-block;
+  vertical-align: -3px;
+}
+.icon-down {
+  transform: rotate(90deg);
+}
+details > summary {
+  list-style: none;
+}
+details > summary::marker {
+  content: "";
+}
+details > summary::-webkit-details-marker {
+  display: none;
+}
+details[open] > summary > .disclosure-icon {
+  transform: rotate(90deg);
+}
+details > summary > .disclosure-icon {
+  margin-right: var(--space-2);
 }
 details > summary {
   cursor: pointer;
@@ -849,11 +880,21 @@ input[type="radio"]:checked {
   border-color: var(--accent);
   background: var(--accent);
 }
-input[type="checkbox"]:checked::before {
-  content: "✓";
+.choice-control {
+  position: relative;
+  display: inline-flex;
+  flex-shrink: 0;
+}
+.choice-check {
+  display: none;
+  position: absolute;
+  top: 2px;
+  left: 2px;
   color: var(--surface);
-  font-size: var(--text-sm);
-  font-weight: 600;
+  pointer-events: none;
+}
+input[type="checkbox"]:checked + .choice-check {
+  display: block;
 }
 input[type="radio"]:checked::before {
   content: "";
@@ -867,7 +908,7 @@ input[type="radio"]:disabled {
   background: var(--surface-muted);
   border-color: var(--text-secondary);
 }
-input[type="checkbox"]:disabled:checked::before {
+input[type="checkbox"]:disabled:checked + .choice-check {
   color: var(--text-secondary);
 }
 input[type="radio"]:disabled:checked::before {

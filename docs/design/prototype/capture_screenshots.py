@@ -23,6 +23,13 @@ def assert_layout(page, width):
     # Görünen veya pencerede saklı her alanın açık bir etiketi var.
     assert page.evaluate('''() => [...document.querySelectorAll('input,textarea,select')]
       .every(e => e.labels?.length > 0)'''), 'Etiketsiz alan var.'
+    assert page.evaluate('''() => [...document.querySelectorAll('svg.icon')].every(e =>
+      e.getAttribute('width') === '16' && e.getAttribute('height') === '16' &&
+      e.getAttribute('stroke') === 'currentColor' && e.getAttribute('fill') === 'none' &&
+      e.getAttribute('aria-hidden') === 'true')'''), 'Ortak SVG simge kuralı bozuldu.'
+    assert page.evaluate('''() => [...document.querySelectorAll('summary')].every(e =>
+      e.querySelector(':scope > svg.disclosure-icon') &&
+      getComputedStyle(e).listStyleType === 'none')'''), 'Açılır bölüm simgesi eksik.'
 
 
 def assert_mapping(page, path):
@@ -98,6 +105,17 @@ def run():
                     assert page.locator('.sidebar').bounding_box()['height'] == page.locator('.app-shell').bounding_box()['height']
                 snap(Path(path).stem)
                 if path == 'components.html':
+                    focus = page.locator('#textarea-focus')
+                    assert focus.get_attribute('aria-invalid') == 'false'
+                    focus.focus()
+                    assert focus.evaluate('''e => {
+                      const s = getComputedStyle(e);
+                      return s.borderColor === 'rgb(84, 91, 100)' &&
+                        s.outlineColor === 'rgb(30, 107, 101)' &&
+                        s.outlineStyle === 'solid' && s.outlineWidth === '2px' &&
+                        s.outlineOffset === '2px';
+                    }'''), 'Textarea odak örneği hata rengi kullanıyor.'
+                    assert page.locator('#textarea-error').evaluate('e => getComputedStyle(e).borderColor') == 'rgb(180, 35, 24)'
                     page.get_by_role('button', name='Onay penceresini aç', exact=True).click()
                     expect(page.locator('#confirm-dialog')).to_be_visible()
                     expect(page.get_by_role('button', name='Vazgeç', exact=True)).to_be_focused()
@@ -126,6 +144,23 @@ def run():
                     expect(page.locator('#e024')).to_be_focused()
                     assert page.locator('#e024').get_attribute('aria-invalid') == 'true'
                 if path.endswith('012-section-editor.html'):
+                    history = page.locator('#e058')
+                    expect(history).to_contain_text('Durum: Boş → Taslak')
+                    expect(history).to_contain_text('İçerik: 1 paragraf eklendi')
+                    expect(history.locator(':scope > summary')).to_contain_text('25.10.2026 00:35 TSİ · Kullanıcı 2')
+                    technical = history.locator('.technical-details')
+                    assert not technical.evaluate('e => e.open'), 'Teknik ayrıntı varsayılan kapalı olmalı.'
+                    for raw in technical.locator('pre').all():
+                        expect(raw).to_be_hidden()
+                    technical.locator('summary').click()
+                    for raw in technical.locator('pre').all():
+                        expect(raw).to_be_visible()
+                    source = json.loads((ROOT.parents[1] / 'screenshots/ui-map-v1/screens.json').read_text())
+                    old = next(s for s in source['screens'] if s['filename'].startswith('012-'))
+                    expected = [json.loads(block['text']) for block in old['dom']['blocks'] if block['tag'] == 'pre']
+                    assert [json.loads(text) for text in technical.locator('pre').all_text_contents()] == expected
+                    technical.locator('summary').click()
+                    assert not technical.evaluate('e => e.open')
                     page.locator('.menu > summary').click()
                     expect(page.locator('#e012')).to_be_visible()
                     expect(page.locator('#e013')).to_be_visible()

@@ -9,7 +9,7 @@ Bu klasör uygulamadan bağımsız, yalnız HTML/CSS ile hazırlanmış bir gör
 | [components.html](components.html) | Renk, tipografi ve tüm bileşenlerin durumları. Düğmelerin normal, üzerine gelme, odak, pasif ve yükleniyor örnekleri; alanların boş/dolu/odak/pasif/salt okunur/hata durumları; onay kutuları, radyo, rozetler, sekmeler, adımlar, tablolar, boş durum, bildirim ve ayrı onay penceresi. Yerel select için salt okunur özelliği yoktur; pasif örnek kullanılır. |
 | [screens/034-modules.html](screens/034-modules.html) | Müdürlük rolünde üç raporlama modülü ve bütün eski bağlantılar. |
 | [screens/024-department.html](screens/024-department.html) | Gösterge, yıllık değerler ve açıklamalar; üstte kalan işler ve kayıt eylemi; alan yanında hata ve özet; ikincil menüde kaldırma, ayrı onay penceresi. Faaliyet sekmesi aynı sentetik fixture ile özet görünüm sunar; 068/075/076 ekranlarının tüm form tasarımı bu görevin kapsamı değildir. |
-| [screens/012-section-editor.html](screens/012-section-editor.html) | EK-1 editörü, metin ve durum alanları, 36 bölüm bağlantısı, belirgin durum rozetleri, görsel tablo taslağı, kaydedilmiş içerik önizlemesi ve denetim kayıtları. |
+| [screens/012-section-editor.html](screens/012-section-editor.html) | EK-1 editörü, metin ve durum alanları, 36 bölüm bağlantısı, belirgin durum rozetleri, görsel tablo taslağı, kaydedilmiş içerik önizlemesi ve Türkçe denetim özetleri; ham önce/sonra verileri varsayılan kapalı “Teknik ayrıntı” içinde. |
 | [tokens.css](tokens.css) | İstenen renkler, yazı, boşluk, köşe, kontrol/satır/yan menü boyutları ve odak tokenları. |
 | [fonts.css](fonts.css), [fonts/](fonts/) | Fira Sans 400/500/600; Türkçe için latin ve latin-ext woff2 alt kümeleri. SIL OFL lisansı [fonts/OFL.txt](fonts/OFL.txt). Kaynak: Fontsource `@fontsource/fira-sans` 5.2.7 (npm). Harici font isteği yoktur. Yedek system-ui. |
 | [prototype.css](prototype.css) | Ortak bileşenler ve duyarlı yerleşim. 248 px açık yan menü masaüstünde sayfanın sonuna kadar uzanır. 390 px görünümde içerikten sonra gelir; üstteki “Menüye git” bağlantısı menüye gider. Etiketler 14 px, girişler 16 px, kontroller 40 px. |
@@ -47,7 +47,13 @@ Prototip içindeki karşılığı bulunan `/modules` ve `/department/1` bağlant
 
 `--border` (#E3E1DC) dekoratif kart/ayırıcı çizgisidir; beyaz üzerinde etkileşimli sınır için yeterli değildir. Alanlar, ikincil düğmeler ve menüler `--text-secondary`, etkin eylemler `--accent` ile sınırlandırılır. Ölçüm normal ve pasif metinlerde 4,5:1 şartını korur. Gerçek hover/odak, açık menü, her modal, iki sekme ve 1440/390 görünümü taranır. Galerideki sabit hover/odak örnekleri de ölçülür. Betik bilinmeyen renk veya başarısız çiftte hata koduyla çıkar; çıktısı PR açıklamasındadır. Bu kontrol tüm WCAG uygunluğunun beyanı değildir.
 
-Görsel tablo düzenleyici boş 2 sütun/1 satır taslağıdır. Satır/sütun ekle düğmeleri temsilî pencere açar. Kaydedilmiş metin ve denetim JSON’u değiştirilmez. Saklama biçimi ve canlı önizleme daha sonraki uygulama görevlerinde kararlaştırılacaktır.
+Görsel tablo düzenleyici boş 2 sütun/1 satır taslağıdır. Satır/sütun ekle düğmeleri temsilî pencere açar. Kaydedilmiş metin ve denetim JSON’u değiştirilmez; JSON yalnız varsayılan kapalı “Teknik ayrıntı” içinde gösterilir. Saklama biçimi ve canlı önizleme daha sonraki uygulama görevlerinde kararlaştırılacaktır.
+
+## Lead incelemesi sonrası üç düzeltme
+
+- 012 denetim kaydı aynı tarih/kullanıcıyla “Durum: Boş → Taslak” ve “İçerik: 1 paragraf eklendi” olarak özetlenir. “Önceki kayıt” ve “Yeni kayıt” JSON verileri aynen korunur; yeni “Teknik ayrıntı” bölümü varsayılan kapalıdır. E058 konum açıklaması güncellendi.
+- Rozet, hata, bildirim ve açılır bölüm simgeleri tek SVG çizgi ailesini kullanır: 16 px, `stroke="currentColor"`, dekoratif `aria-hidden="true"`. Yerel disclosure işaretleri gizlenir; ortak SVG oku açık durumda 90 derece döner, animasyon uygulanmaz. Onay kutusunun işareti, geri/menü okları ve ekleme işaretleri de aynı aileye taşındı; görünür sözcükler korunur.
+- “Açıklama · Klavye odağı” örneği açıkça `aria-invalid="false"` olarak işaretlenir. Nötr alan kenarlığı ve yalnız 2 px vurgu odağı/2 px uzaklık kullanır. Kırmızı, `aria-invalid="true"` hata durumuna ayrılır.
 
 ## Metin değişiklikleri
 
@@ -187,4 +193,4 @@ Kaynak: [CIV-093 INDEX.md](../../screenshots/ui-map-v1/INDEX.md). Numaralar her 
 | E055 | DURUM Boş Taslak Hazır Uygulanamaz | [Bölüm editörü / durum](screens/012-section-editor.html#e055) | `POST /activity-sections/reports/2/sections/I.A` |
 | E056 | UYGULANAMAZ GEREKÇESİ | [Bölüm editörü / durum gerekçesi](screens/012-section-editor.html#e056) | `POST /activity-sections/reports/2/sections/I.A` |
 | E057 | Bölümü kaydet | [Üst rapor özeti / birincil eylem](screens/012-section-editor.html#e057) | `POST /activity-sections/reports/2/sections/I.A` |
-| E058 | 25.10.2026 00:35 TSİ · Kullanıcı 2 · Bölüm kaydedildi | [Bölüm denetim geçmişi / açılır kayıt](screens/012-section-editor.html#e058) | `Aynı sayfadaki ayrıntı bölümü` |
+| E058 | 25.10.2026 00:35 TSİ · Kullanıcı 2 · Bölüm kaydedildi | [Bölüm denetim geçmişi / Türkçe değişiklik özeti ve kapalı Teknik ayrıntı](screens/012-section-editor.html#e058) | `Aynı sayfadaki ayrıntı bölümü` |
