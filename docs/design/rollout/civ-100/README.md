@@ -2,7 +2,7 @@
 
 Kaynak farkı kutusu aynı maliyet hücresinde, aynı `.source-disagreement.issue-list` düğümünde kalır. Mevcut `<b>` başlık bir `<summary>` içine taşınır; iki paragraf, `.computed-total`, gerekçe alanı ve onay düğmesi `<details class="source-disclosure">` içinde açılır. Başlık tek satırdır; tehlike rengi ve açıklayıcı metni birlikte kullanır. Enter/Space açar; Escape kapatır ve odağı özete döndürür.
 
-Mevcut gerekçe alanı şablonda `input` olduğundan türü, `minlength="10"`, sınıfı ve `data-field` niteliği aynen korunmuştur. `app.js` ve istek sözleşmesi değişmemiştir. Yeni kullanıcı metni yoktur. Eklenen üç sarmalayıcı kaldırıldığında `department.html`, referans `9b0a5da` sürümüyle bayt düzeyinde aynıdır; mevcut öğeler, nitelikler ve metinler için ayrıca bu karşılaştırma çalıştırılmıştır.
+Mevcut gerekçe alanı şablonda `input` olduğundan türü, `minlength="10"`, sınıfı ve `data-field` niteliği aynen korunmuştur. `app.js` ve istek sözleşmesi değişmemiştir. Yeni kullanıcı metni yoktur. Eklenen üç sarmalayıcı kaldırıldığında `department.html`, referans `e3a0a2f` sürümüyle bayt düzeyinde aynıdır; mevcut öğeler, nitelikler ve metinler için ayrıca bu karşılaştırma çalıştırılmıştır.
 
 Checkbox işareti boş bir pseudo-element üzerinde `currentColor` ile boyanan SVG maskesidir. Yazı glifi kaldırılmıştır; çalışma zamanı bağımlılığı eklenmemiştir.
 
@@ -26,11 +26,11 @@ Boyutlar ve bayt sayıları: [screenshots.json](screenshots.json). Beş PNG'nin 
 
 ## Tüm ekran karşılaştırması
 
-[capture-summary.json](capture-summary.json): **194 çekim (97 ekran × 1440/390), 9.838 öğe/hedef, 0 eksik, 0 belge taşması, 0 kırpılma/örtüşme**. Şablon 024'ün rol/sekme/durum varyantları birlikte değerlendirilmiştir; diğer 178 çekim değişen CSS/JS kaynaklarını yüklemez. Aynı DOM, saat, odak ve kaydırma durumunda piksel karşılaştırması yapılır; 024'ün etkilenmeyen durumlarında referans CSS mevcut CSSOM sayfasında, aynı cascade konumunda denenir.
+[capture-summary.json](capture-summary.json): CIV-099 sonrası güncel `e3a0a2f` referansı üzerinde **194 çekim (97 ekran × 1440/390), 9.880 öğe/hedef, 0 eksik, 0 belge taşması, 0 kırpılma/örtüşme**. Şablon 024'ün rol/sekme/durum varyantları birlikte değerlendirilmiştir; diğer 178 çekim değişen CSS/JS kaynaklarını yüklemez. Aynı DOM, saat, odak ve kaydırma durumunda piksel karşılaştırması yapılır; 024'ün etkilenmeyen durumlarında referans CSS mevcut CSSOM sayfasında, aynı cascade konumunda denenir.
 
-İlk taramada küçük piksel farkı veren 19 çekim yeniden denetlenmiştir. Son ölçümde 024 dışındaki 176 çekimin ham farkı sıfırdır. 390 px rapor oluşturucu ve kullanıcı ekranında toplam 50 pikselde en fazla **1/255** kanal yuvarlaması kalır; bütün DOM öğelerinde hesaplanmış stil ve geometri farkı **0** ve değişen kaynak yüklemesi **0** olduğundan bunlar renderer yuvarlamasıdır. İlk ham farklar, tekrar denemeleri ve son değerler raporda korunur; maske uygulanmaz. Ürün görünümündeki değişiklik yalnız 024 kapsamındadır.
+024 dışındaki 173 çekimin ham piksel farkı sıfırdır. Diğer beş çekimde toplam 132 pikselde en fazla **2/255** kanal yuvarlaması kalır; bütün DOM öğelerinde hesaplanmış stil ve geometri farkı **0**, değişen kaynak yüklemesi **0** olduğundan bunlar renderer yuvarlamasıdır. 024'ün etkilenmeyen iki durumunda ayrıca toplam 33 pikselde en fazla 1/255 yuvarlama vardır; stil/geometri farkı yine 0'dır. Bütün ham değerler ve en çok üç tekrarın sonuçları raporda korunur; maske uygulanmaz. Ürün görünümündeki değişiklik yalnız 024 kapsamındadır; güncel tabandaki 012 görünümü karşılaştırmanın her iki tarafında aynıdır.
 
-Odaklı PostgreSQL 18 çalıştırması: **26 geçti**, mevcut Starlette bağımlılık uyarısı 1. Tam takım ve son PR commit'inin CI sonucu PR açıklamasında tutulur.
+Odaklı PostgreSQL 18 çalıştırması güncel tabanda tekrarlandı: **26 geçti**, mevcut Starlette bağımlılık uyarısı 1. Tam takım ve son PR commit'inin CI sonucu PR açıklamasında tutulur.
 
 ## Test ve seçici değişiklikleri
 
@@ -44,19 +44,21 @@ Odaklı PostgreSQL 18 çalıştırması: **26 geçti**, mevcut Starlette bağım
 
 Yalnız disposable localhost PostgreSQL 16+ ve Chromium kullanın. `CIVENSA_TEST_POSTGRES_URL` test sunucusunu, `CIVENSA_CHROMIUM_PATH` Chromium yolunu belirtir; canlı bağlantı kullanılmaz.
 
-Değişiklik öncesi `9b0a5da` worktree'sinde mevcut CIV-096 yardımcı modülünün `guide.ui_main(SimpleNamespace(out=Path('/tmp/civ100-before') / str(width), viewport_width=width), shell.local_test_url())` çağrısını 1440 ve 390 için çalıştırın. Bu yalnız geçici tam PNG/DOM referansını üretir; CIV-096 betiğinin kendi `main()` fonksiyonu çağrılmaz, eski rollout belgeleri yazılmaz.
+Değişiklik öncesi `e3a0a2f` worktree'sinde mevcut CIV-096 yardımcı modülünün `guide.ui_main(SimpleNamespace(out=Path('/tmp/civ100-before-e3a0a2f') / str(width), viewport_width=width), shell.local_test_url())` çağrısını 1440 ve 390 için çalıştırın. Bu yalnız geçici tam PNG/DOM referansını üretir; CIV-096 betiğinin kendi `main()` fonksiyonu çağrılmaz, eski rollout belgeleri yazılmaz.
 
 Bu dalda:
 
 ```sh
-python docs/design/rollout/civ-100/verify_rollout.py --baseline /tmp/civ100-before --base-ref 9b0a5da
+python docs/design/rollout/civ-100/verify_rollout.py --baseline /tmp/civ100-before-e3a0a2f --base-ref e3a0a2f --capture-out /tmp/civ100-after-e3a0a2f
 # Gerekirse yalnız işaretlenen piksel karşılaştırmalarını kanıtlarıyla tekrarla:
-# python docs/design/rollout/civ-100/verify_rollout.py --baseline /tmp/civ100-before --base-ref 9b0a5da --recheck-failures
+# python docs/design/rollout/civ-100/verify_rollout.py --baseline /tmp/civ100-before-e3a0a2f --base-ref e3a0a2f --capture-out /tmp/civ100-after-e3a0a2f --recheck-failures
 python docs/design/rollout/civ-100/capture_states.py
 python -m pytest -q --require-postgres tests/test_department_design.py tests/test_source_conflicts_ui.py
 python -m pytest -q --require-postgres -n 4 --dist loadfile --max-worker-restart=0 --durations=20
 node --check app/static/design/data-entry.js
 git diff --check
 ```
+
+`--width 1440` / `--width 390` ve `--report-out` seçenekleri iki genişliği bağımsız süreçlerde doğrulamayı sağlar; varsayılan çağrı iki genişliğin tek raporunu üretir.
 
 Kod kapsamı yalnız `department.html`, `design/data-entry.css/js`, iki test dosyası ve bu kanıt klasörüdür. Veritabanı, migration, rota, API, ortak shell ve CIV-099 dosyaları değiştirilmemiştir. Türkçe UI metinleri aynıdır; owner onayı gerektiren yeni metin yoktur.

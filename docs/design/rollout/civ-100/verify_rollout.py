@@ -61,16 +61,18 @@ def failed(row):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--baseline', type=Path, required=True)
+    parser.add_argument('--width', type=int, choices=(1440,390), action='append')
+    parser.add_argument('--report-out', type=Path, default=OUT / 'capture-summary.json')
     parser.add_argument('--base-ref', required=True)
     parser.add_argument('--recheck-failures', action='store_true', help='Retain successful captures; repeat failed comparisons with raw pixel/style/geometry diagnostics.')
     parser.add_argument('--capture-out', type=Path, default=Path('/tmp/civ100-after'))
     args = parser.parse_args()
     baseline_css = subprocess.check_output(['git', 'show', args.base_ref + ':app/static/design/data-entry.css'], cwd=ROOT, text=True)
     setup = guide.ui_setup
-    previous = json.loads((OUT / 'capture-summary.json').read_text()) if args.recheck_failures else None
+    previous = json.loads(args.report_out.read_text()) if args.recheck_failures else None
     results = previous['screens'] if previous else []
     wanted = {(r['width'],r['filename']) for r in results if failed(r)} if previous else None
-    for width in (1440, 390):
+    for width in args.width or (1440, 390):
         if previous and not any(w == width for w, _ in wanted):
             continue
         captured = {s['filename']:s for s in json.loads((args.capture_out / str(width) / 'screens.json').read_text())['screens']} if previous else {}
@@ -176,7 +178,7 @@ def main():
     report = dict(baseline=args.base_ref, browser=json.loads((folder / 'screens.json').read_text())['browser'],
         captures=len(results), elements=sum(r['elements'] for r in results), failures=len(failures),
         pixel_method='Other templates load no changed resources. Same-DOM screenshots, no masks; raw pixel differences/attempts retained. Only <=2/255 raster rounding with exact computed-style and geometry equality is classified as renderer noise. 024 unchanged states also compare the base stylesheet in its original cascade slot.', screens=results)
-    (OUT / 'capture-summary.json').write_text(json.dumps(report, ensure_ascii=False, indent=2) + '\n')
+    args.report_out.write_text(json.dumps(report, ensure_ascii=False, indent=2) + '\n')
     for row in failures:
         print(json.dumps(row, ensure_ascii=False))
     print(f'{len(results)} captures; {len(failures)} failures.')
