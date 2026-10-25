@@ -25,9 +25,9 @@ Evidence rule (D-252): one-screen changes → targeted tests + changed-state scr
 ## Open pull requests (DOĞRULANDI 25 Oct ~23:45)
 | PR | Task | State | Next action |
 | --- | --- | --- | --- |
-| #129 | CIV-101 012 polish (user names, header case) | reviewed OK (D-251); branch updated after #126, head f370a7e, CI running | merge when CI green (see D-251) |
+| — | — | — | — |
 | — | CIV-102 login + password (D-254) | package given to owner ~23:30 | review, merge |
-Merged this session: #126 CIV-100 → b8e063f (D-250).
+Merged this session: #126 CIV-100 → b8e063f (D-250); #129 CIV-101 → b1fcaad (D-251).
 
 ## Open — owner
 - Public repo (D-220/D-222/D-223), in order, each with owner confirmation:
