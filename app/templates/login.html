@@ -1,1 +1,19 @@
-{% extends "base.html" %}{% block title %}Civensa Giriş{% endblock %}{% block anonymous %}<div class="login-shell"><div class="login-card"><div class="login-brand">Civensa<span>PERFORMANS</span></div><h1>Çalışma alanına giriş</h1><p>Yetkinize göre doğru ekranlar otomatik açılır.</p>{% if error %}<div class="errorbox">{{ error }}</div>{% endif %}<form method="post"><label>E-posta</label><input name="email" value="{{ attempted_email|default('') }}" type="email" autocomplete="username" required><label>Parola</label><input name="password" type="password" autocomplete="current-password" required><button class="primary wide">Giriş Yap</button></form></div></div>{% endblock %}
+{% extends "base.html" %}
+{% block title %}Civensa Giriş{% endblock %}
+{% block anonymous %}
+<main class="auth-page">
+  <div class="auth-card">
+    <div class="auth-brand">Civensa<span>Kurumsal raporlama</span></div>
+    <h1>Çalışma alanına giriş</h1>
+    <p>Yetkinize göre doğru ekranlar otomatik açılır.</p>
+    {% if error %}<div class="auth-error" role="alert">{{ error }}</div>{% endif %}
+    <form method="post">
+      <label for="loginEmail">E-posta</label>
+      <input id="loginEmail" name="email" value="{{ attempted_email|default('') }}" type="email" autocomplete="username" required>
+      <label for="loginPassword">Parola</label>
+      <input id="loginPassword" name="password" type="password" autocomplete="current-password" required>
+      <button class="shell-button primary">Giriş yap</button>
+    </form>
+  </div>
+</main>
+{% endblock %}

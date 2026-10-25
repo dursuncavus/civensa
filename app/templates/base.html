@@ -11,6 +11,7 @@
   <link rel="stylesheet" href="/static/design/fonts.css">
   <link rel="stylesheet" href="/static/design/tokens.css">
   <link rel="stylesheet" href="/static/design/shell.css">
+  {% if user or request.url.path in ["/login", "/change-password"] %}<link rel="stylesheet" href="/static/design/auth.css">{% endif %}
 </head>
 <body>
 {% if user %}
@@ -95,12 +96,12 @@
 </div>
 <div id="passwordModal" class="modal" hidden>
   <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="passwordTitle" aria-describedby="passwordHelp">
-    <h2 id="passwordTitle">Parolamı Değiştir</h2>
-    <p id="passwordHelp">Yeni parolanız en az 10 karakter olmalıdır.</p>
+    <h2 id="passwordTitle">Parolamı değiştir</h2>
+    <p id="passwordHelp">Yeni parolanız en az 12 karakter olmalıdır.</p>
     <label for="currentPassword">Mevcut parola</label><input id="currentPassword" type="password" autocomplete="current-password">
     <label for="newPassword">Yeni parola</label><input id="newPassword" type="password" autocomplete="new-password">
     <label for="confirmPassword">Yeni parola tekrar</label><input id="confirmPassword" type="password" autocomplete="new-password">
-    <div class="actions"><button type="button" class="shell-button" id="cancelPasswordChange">Vazgeç</button><button type="button" class="shell-button primary" id="savePasswordChange">Parolayı Değiştir</button></div>
+    <div class="actions"><button type="button" class="shell-button" id="cancelPasswordChange">Vazgeç</button><button type="button" class="shell-button primary" id="savePasswordChange">Parolayı değiştir</button></div>
   </div>
 </div>
 {% else %}{% block anonymous %}{% endblock %}{% endif %}

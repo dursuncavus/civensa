@@ -1,0 +1,80 @@
+{
+  "base_commit": "b8e063fd4c6b29052c80411e94021a5bd2a29c0e",
+  "login": [
+    [
+      "form",
+      {
+        "method": "post"
+      }
+    ],
+    [
+      "input",
+      {
+        "name": "email",
+        "type": "email",
+        "autocomplete": "username",
+        "required": null
+      }
+    ],
+    [
+      "input",
+      {
+        "name": "password",
+        "type": "password",
+        "autocomplete": "current-password",
+        "required": null
+      }
+    ]
+  ],
+  "change_password": [
+    [
+      "form",
+      {
+        "id": "firstPasswordForm"
+      }
+    ],
+    [
+      "input",
+      {
+        "id": "firstCurrentPassword",
+        "type": "password",
+        "autocomplete": "current-password",
+        "required": null
+      }
+    ],
+    [
+      "input",
+      {
+        "id": "firstNewPassword",
+        "type": "password",
+        "autocomplete": "new-password",
+        "required": null,
+        "minlength": "12"
+      }
+    ],
+    [
+      "input",
+      {
+        "id": "firstConfirmPassword",
+        "type": "password",
+        "autocomplete": "new-password",
+        "required": null,
+        "minlength": "12"
+      }
+    ],
+    [
+      "form",
+      {
+        "method": "post",
+        "action": "/logout"
+      }
+    ],
+    [
+      "input",
+      {
+        "name": "csrf_token",
+        "type": "hidden"
+      }
+    ]
+  ]
+}
