@@ -2,7 +2,37 @@
 {% block page_title %}Raporlama modülleri{% endblock %}
 {% block page_subtitle %}Çalışacağınız rapor türünü seçin.{% endblock %}
 {% block content %}
-<section class="card"><h2>Performans Programı</h2><p>Planlanan hedefler, göstergeler, faaliyetler ve bütçe çalışmaları.</p><p>Mevcut modül · Veri eşleme ve inceleme gerektiren kayıtlar ayrıca kontrol edilir.</p><a class="button primary" href="/dashboard">Performans Programı’na gir</a></section>
-<section class="card"><h2>Faaliyet Raporu</h2><p>Yayımlanmış Performans Programı sürümüne bağlı gösterge gerçekleşmeleri, kanıtlar ve revizyon geçmişi.</p><a class="button primary" href="/activity-reports">Gösterge gerçekleşmelerine gir</a><p><strong>Tam rapor hazırlık aşamasında.</strong> Faaliyet ve mali gerçekleşmeler ile nihai kitap üretimi henüz açılmadı.</p><a class="button" href="/activity-report">Kaynak kayıt inceleme pilotu</a></section>
-{% if user.role in ["strategy", "department"] %}<section class="card"><h2>İç Kontrol</h2><p>Kamu İç Kontrol Standartlarına Uyum Eylem Planı ve müdürlük sorumlulukları.</p><a class="button primary" href="/internal-control">{{ "Uyum Eylem Planı" if user.role=="strategy" else "İç Kontrol Eylemlerimiz" }}</a></section>{% endif %}
+<div class="module-list">
+  <article class="module-card module">
+    <span class="module-number">01</span>
+    <div>
+      <h2>Performans Programı</h2>
+      <p>Planlanan hedefler, göstergeler, faaliyetler ve bütçe çalışmaları.</p>
+      <p class="help">Mevcut modül · Veri eşleme ve inceleme gerektiren kayıtlar ayrıca kontrol edilir.</p>
+      <div class="actions"><a class="shell-button" href="/dashboard">Performans Programı’na gir</a></div>
+    </div>
+  </article>
+  <article class="module-card module">
+    <span class="module-number">02</span>
+    <div>
+      <h2>Faaliyet Raporu</h2>
+      <p>Yayımlanmış Performans Programı sürümüne bağlı gösterge gerçekleşmeleri, kanıtlar ve revizyon geçmişi.</p>
+      <p class="help">Tam rapor hazırlık aşamasında. Faaliyet ve mali gerçekleşmeler ile nihai kitap üretimi henüz açılmadı.</p>
+      <div class="actions">
+        <a class="shell-button" href="/activity-reports">Gösterge gerçekleşmelerine gir</a>
+        <a class="shell-button" href="/activity-report">Kaynak kayıt inceleme pilotu</a>
+      </div>
+    </div>
+  </article>
+  {% if user.role in ["strategy", "department"] %}
+  <article class="module-card module">
+    <span class="module-number">03</span>
+    <div>
+      <h2>İç Kontrol</h2>
+      <p>Kamu İç Kontrol Standartlarına Uyum Eylem Planı ve müdürlük sorumlulukları.</p>
+      <div class="actions"><a class="shell-button" href="/internal-control">{{ "Uyum Eylem Planı" if user.role=="strategy" else "İç Kontrol Eylemlerimiz" }}</a></div>
+    </div>
+  </article>
+  {% endif %}
+</div>
 {% endblock %}

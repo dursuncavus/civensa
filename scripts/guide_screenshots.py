@@ -250,6 +250,7 @@ def capture(base, folder, data, results):
     from PIL import Image
     from playwright.sync_api import sync_playwright, expect
 
+    width = data.get('viewport_width', 1440)
     with sync_playwright() as pw:
         options = {'headless': True}
         if os.getenv('CIVENSA_CHROMIUM_PATH'):
@@ -271,7 +272,7 @@ def capture(base, folder, data, results):
 
             for name in ('strategy', 'department', 'anonymous'):
                 context = stack.enter_context(browser.new_context(
-                    viewport={'width': 1440, 'height': 900}, device_scale_factor=1,
+                    viewport={'width': width, 'height': 900}, device_scale_factor=1,
                     color_scheme='light', locale='tr-TR', timezone_id='Europe/Istanbul',
                     reduced_motion='reduce', service_workers='block', accept_downloads=False,
                     extra_http_headers={'X-Guide-Account': name}))
@@ -334,6 +335,8 @@ def capture(base, folder, data, results):
                     check(not errors and not blocked, 'JavaScript hatası veya engellenmiş ağ/yazma isteği var.')
                     if data.get('ui_map'):
                         data['_screen_meta'][shot.filename]['dom'] = page.evaluate(UI_DOM)
+                    if data.get('_verify_page'):
+                        data['_verify_page'](page, shot, data['_screen_meta'][shot.filename])
                     page.screenshot(path=str(target), full_page=shot.full, animations='disabled', caret='hide')
                     if shot.action in {'return', 'password'}:
                         modal = page.locator('#reviewModal' if shot.action == 'return' else '#passwordModal')
@@ -341,7 +344,7 @@ def capture(base, folder, data, results):
                         expect(modal).to_be_hidden()
                     # Lossless optimization only; never scale or quantize guide images.
                     with Image.open(target) as png:
-                        check(png.width == 1440 and (shot.full or png.height == 900),
+                        check(png.width == width and (shot.full or png.height == 900),
                               'Görsel boyutları istenen viewport ile eşleşmiyor.')
                         png.save(target, optimize=True)
                         if data.get('ui_map') and target.stat().st_size >= MAX_PNG_BYTES:
@@ -1936,7 +1939,7 @@ def ui_write(folder, data, results):
         "geçişleriyle kurulur, bitişte veya hatada silinir. Betik CIV-054 ile aynı PostgreSQL/HTTP/Playwright yakalama "
         "akışını kullanır; `--ui-map` verilmezse eski kılavuz modu çalışır.",
         "",
-        "1440 px genişlik, tam sayfa PNG, deviceScaleFactor 1, açık tema, tr-TR, Europe/Istanbul; her PNG <1.500.000 bayt. "
+        f"{data.get('viewport_width', 1440)} px genişlik, tam sayfa PNG, deviceScaleFactor 1, açık tema, tr-TR, Europe/Istanbul; her PNG <1.500.000 bayt. "
         "Uzun ekranlarda boyut sınırını sağlamak için 256 renkli PNG kodlaması kullanılabilir; genişlik ve içerik korunur. Ayrıntı kutuları açık çekilir. Sekme ve pencereler ayrıca çekilir. DOM tablosu aşağı kaydırılarak ulaşılabilen "
         "öğeleri de kapsar; kapalı sekme/pencerelerin gizli öğeleri o durumun ayrı çekiminde bulunur. "
         "Yatay taşan tabloların tüm sütunları DOM dökümünde yer alır.",
@@ -2080,7 +2083,7 @@ def ui_write(folder, data, results):
     # No response bodies, cookie jars, tokens or passwords are serialized.
     manifest = dict(
         version=1,
-        viewport_width=1440,
+        viewport_width=data.get('viewport_width', 1440),
         browser=data.get("browser"),
         inventory=data.get("_inventory", []),
         screens=[
@@ -2216,8 +2219,13 @@ def ui_main(args, url):
                 app_db.engine.dispose()
                 app_db.engine = engine
                 app_db.SessionLocal.configure(bind=engine)
+                # A second viewport in the same process must not retain the
+                # first (already dropped) disposable database in health().
+                import app.main as app_main
+                app_main.engine = engine
                 data = ui_setup(engine)
-                data.update(ui_map=True, _shots=[], _screen_meta={}, _unexpected=[])
+                data.update(ui_map=True, _shots=[], _screen_meta={}, _unexpected=[],
+                            viewport_width=getattr(args, 'viewport_width', 1440))
                 with local_http(engine, data) as base:
                     ui_probe(data)
                     ui_validation(data)
@@ -2246,6 +2254,12 @@ def ui_main(args, url):
                     "Bazı ekran görüntüleri üretilemedi; INDEX raporuna bakın.",
                 )
         except (Exception, KeyboardInterrupt) as exc:
+            if not isinstance(exc, (GuideError, KeyboardInterrupt)):
+                # Only code locations; exception messages may contain DB parameters.
+                import traceback
+                print('Yakalama hata konumu: ' + ' → '.join(
+                    f'{Path(frame.filename).name}:{frame.lineno} ({frame.name})'
+                    for frame in traceback.extract_tb(exc.__traceback__)), file=sys.stderr)
             message = (
                 str(exc)
                 if isinstance(exc, GuideError)
@@ -2276,6 +2290,8 @@ def main():
         action="store_true",
         help="CIV-093: bütün HTML ekranları ve DOM öğeleri",
     )
+    parser.add_argument('--viewport-width', type=int, choices=(1440, 390), default=1440,
+                        help='UI haritası görünüm genişliği (varsayılan: 1440).')
     args = parser.parse_args()
     if args.ui_map and args.out == ROOT / "docs/screenshots/guide-pp-v1":
         args.out = ROOT / "docs/screenshots/ui-map-v1"

@@ -1,0 +1,43 @@
+/* D-224 — değerler onaylı paletten aynen alınmıştır. */
+:root {
+  --bg: #f6f5f2;
+  --surface: #ffffff;
+  --surface-muted: #efede8;
+  --border: #e3e1dc;
+  --text: #1f2328;
+  --text-secondary: #545b64;
+  --accent: #1e6b65;
+  --accent-hover: #17554f;
+  --accent-soft: #e3f0ee;
+  --success: #1e7a46;
+  --success-bg: #e6f4ea;
+  --warning: #8a5a00;
+  --warning-bg: #fff4d6;
+  --danger: #b42318;
+  --danger-bg: #fdecea;
+  --focus: 2px solid var(--accent);
+  --focus-offset: 2px;
+  --font-family: "Fira Sans", system-ui, sans-serif;
+  --font-regular: 400;
+  --font-medium: 500;
+  --font-semibold: 600;
+  --text-sm: 14px;
+  --text-base: 16px;
+  --text-card: 18px;
+  --text-section: 20px;
+  --text-title: 24px;
+  --text-display: 30px;
+  --line-height: 1.5;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-12: 48px;
+  --radius: 6px;
+  --control-height: 40px;
+  --row-height: 40px;
+  --financial-row-height: 32px;
+  --sidebar-width: 248px;
+}
