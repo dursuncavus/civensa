@@ -232,6 +232,10 @@
     "after": "Yardımın Türü"
   },
   {
+    "before": "YENİDEN AÇMA GEREKÇESİ",
+    "after": "Yeniden açma gerekçesi"
+  },
+  {
     "before": "YIL SONU TUTARI",
     "after": "Yıl Sonu Tutarı"
   },
@@ -258,6 +262,10 @@
   {
     "before": "ÜST GERÇEKLEŞME ORANI %",
     "after": "Üst gerçekleşme oranı %"
+  },
+  {
+    "before": "İADE GEREKÇESİ",
+    "after": "İade gerekçesi"
   },
   {
     "before": "İPTAL EDİLEN ÖDENEK",

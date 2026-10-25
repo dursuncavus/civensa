@@ -2,6 +2,7 @@
 """Enumerate every rendered legacy-uppercase → source-case label/header on 012."""
 import json
 import os
+import re
 from pathlib import Path
 import sys
 
@@ -42,6 +43,12 @@ def main():
                         assert page.goto(f'{base}/activity-sections/reports/{document}?code={code}',wait_until='networkidle').status==200
                         pairs.update((row['before'],row['after']) for row in page.evaluate(COLLECT))
                     assert not blocked
+    # Reviewer-only return/reopen fields are conditional, unlike the draft
+    # replay. Their field/action conditions are frozen by the 120-case test.
+    # Extract their exact existing Turkish source wording; only CSS case changes.
+    workflow = (OUT.parents[3]/'app/templates/ar_unit_workflow.html').read_text()
+    for source in set(re.findall(r"'(İade gerekçesi|Yeniden açma gerekçesi)'",workflow)):
+        pairs.add((source.replace('i','İ').upper(),source))
     result = [dict(before=a,after=b) for a,b in sorted(pairs)]
     (OUT/'case-changes.json').write_text(json.dumps(result,ensure_ascii=False,indent=2)+'\n')
     print(f'{len(result)} legacy-uppercase label/header pairs.')
