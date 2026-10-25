@@ -16,7 +16,8 @@ Tags: DOĞRULANDI (lead checked) · TARİHSEL (past fact) · BEYAN (owner said) 
 ## Open pull requests (DOĞRULANDI 25 Oct 14:15; #115 CIV-096 merged d91ea70, D-233)
 | PR | Task | State | Next action |
 | --- | --- | --- | --- |
-| — | CIV-097 design → 024 data entry | package ready (D-233); dispatch after owner approves CIV-096 look | Review screenshots + CI, merge |
+| — | CIV-097 design → 024 data entry | package ready (D-233), given to owner 14:20 | Review screenshots + CI, merge |
+| — | CIV-098 Modüller icon grid | package ready (D-234), given to owner 14:25 | Review screenshots + CI, merge |
 
 ## Open — owner
 - Public repo (D-220/D-222/D-223), in order, each with owner confirmation:
@@ -42,5 +43,5 @@ Tags: DOĞRULANDI (lead checked) · TARİHSEL (past fact) · BEYAN (owner said) 
 7. DeepSeek mirror GUNCEL-DURUM.md: refresh in the next live session with the Mac linked.
 
 ## Next IDs
-- Next new task ID: CIV-098.
-- Next decision: D-234.
+- Next new task ID: CIV-099.
+- Next decision: D-235.
