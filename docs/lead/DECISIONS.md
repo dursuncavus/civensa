@@ -120,3 +120,8 @@ Assessment: a push to `main` does not deploy civensa-pilot by itself (auto-deplo
 
 ## D-228 (25 Oct 2026 ~10:35, owner approved, owner clicked) — repository default branch switched to phase5
 Owner approved the D-223 proposal (10:31). The lead's REST call was refused by the session proxy ("Repository settings writes are not permitted"), so the owner switched it in GitHub settings. Lead mistake: told the owner "I will switch it" before testing the permission (constitution rule 7) — next time test first, then promise. DOĞRULANDI 10:34: default_branch = feature/authorization-workflow-phase5; workflows active incl. "Lead records guard" and "Daily verified database backup". `main` (= live 6b4d834) unchanged. Public-repo step 3: verify the next scheduled encrypted backup run, no manual dispatch.
+
+## D-229 (25 Oct 2026 ~10:55, owner approved; lead reviewed) — CIV-095 design approved, three fixes before merge
+DOĞRULANDI (lead review of PR #109 head 5c06b92, screenshots 1440/390): only docs/design/prototype/** changed; follows D-224 principles; 104/104 old elements mapped; contrast script 33/33 pass; CI security green. BEYAN: owner approved the look ("gayet iyi görünüyor", 10:51).
+Fixes (sent to the CIV-095 Codex task via the owner, D-208): MEDIUM — 012 "Bölüm denetim geçmişi" shows raw JSON to users; replace with a plain Turkish change summary, raw data behind a collapsed technical disclosure. LOW — emoji ⚠️ and text glyphs (‹ ○ ✓) as icons → one inline SVG icon set using currentColor. LOW — components page textarea focus state shows a red border; focus must be the accent only.
+Merge after the fixes when CI is green and behind 0. Next: CIV-096 applies the design system to the real base layout and screen 034 first.

@@ -1,6 +1,6 @@
 # CIVENSA — CURRENT STATE
 
-Updated: 25 Oct 2026, ~10:25 Istanbul (live session, CV Lider 18).
+Updated: 25 Oct 2026, ~10:55 Istanbul (live session, CV Lider 18).
 Rules: AI_WORKING_CONSTITUTION v1.2 (Drive, global) · `HIERARCHY.md` v1.4 · `PROJECT_RULES.md` v1.3 · `BACKUP_LEAD.md` v2.
 Backup log ("Civensa Yedek Kaydı", Drive): no entries, last modified 23 Oct (DOĞRULANDI 25 Oct 10:25).
 
@@ -14,7 +14,7 @@ Tags: DOĞRULANDI (lead checked) · TARİHSEL (past fact) · BEYAN (owner said) 
 ## Open pull requests (DOĞRULANDI 25 Oct 10:25: none open)
 | PR | Task | State | Next action |
 | --- | --- | --- | --- |
-| (not yet opened) | CIV-095 design prototype | dispatched to Codex | Review screenshots when PR opens |
+| #109 | CIV-095 design prototype | owner approved design (D-229); 3 LOW/MEDIUM fixes sent to the Codex task | Re-check screenshots on the new head, merge, then write CIV-096 (apply design to real templates) |
 
 ## Open — owner
 - Public repo (D-220/D-222/D-223), in order, each with owner confirmation:
