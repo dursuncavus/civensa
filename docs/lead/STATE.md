@@ -1,6 +1,6 @@
 # CIVENSA — CURRENT STATE
 
-Updated: 25 Oct 2026, ~22:00 Istanbul (live session, CV Lider 23).
+Updated: 25 Oct 2026, ~22:05 Istanbul (live session, CV Lider 23).
 Rules: AI_WORKING_CONSTITUTION v1.2 (Drive, global) · `HIERARCHY.md` v1.4 · `PROJECT_RULES.md` v1.3 · `BACKUP_LEAD.md` v2.
 Backup log ("Civensa Yedek Kaydı", Drive): no entries, last modified 23 Oct (DOĞRULANDI 25 Oct 19:15).
 
@@ -28,7 +28,7 @@ Tags: DOĞRULANDI (lead checked) · TARİHSEL (past fact) · BEYAN (owner said) 
   5. Full-history gitleaks (workflow_dispatch) — must be clean.
   6. Switch repo to public.
 - Claude Pro ends 3 Nov 2026 (BEYAN 25 Oct 10:22; Billing page shows only "Subscribed via iOS app", no date). iOS subscription is cancelled. Owner renews Pro from claude.ai on the web on 3 Nov; otherwise from 3 Nov the lead is unavailable and DeepSeek runs as backup lead (BACKUP_LEAD.md).
-- UI redesign (D-224/D-225): CIV-095 prototype (D-231), CIV-096 shell + 034 (D-233), CIV-098 Modüller grid and CIV-097 024 data entry (D-235) merged. Owner approved the look and the 024 letter-case changes (D-237). CIV-099 (012) merged (D-244); owner approves its look + 77 case changes. Next-screen order proposed (D-243), final after Ali's answers.
+- UI redesign (D-224/D-225): CIV-095 prototype (D-231), CIV-096 shell + 034 (D-233), CIV-098 Modüller grid and CIV-097 024 data entry (D-235) merged. Owner approved the look and the 024 letter-case changes (D-237). CIV-099 (012) merged (D-244); owner approved its look + 77 case changes (D-245). Next-screen order proposed (D-243), final after Ali's answers.
 0. (closed) Merges are done by the lead in live sessions (D-214).
 1. (closed) Codex "Tam erişim" stays ON — owner decision D-210.
 2. (closed) Plaintext password files (log 79): owner decision D-217 — not tracked, do not remind the owner.
@@ -45,4 +45,4 @@ Tags: DOĞRULANDI (lead checked) · TARİHSEL (past fact) · BEYAN (owner said) 
 
 ## Next IDs
 - Next new task ID: CIV-102.
-- Next decision: D-245.
+- Next decision: D-246.
