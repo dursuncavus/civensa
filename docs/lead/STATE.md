@@ -1,6 +1,6 @@
 # CIVENSA — CURRENT STATE
 
-Updated: 25 Oct 2026, ~10:55 Istanbul (live session, CV Lider 18).
+Updated: 25 Oct 2026, ~11:10 Istanbul (live session, CV Lider 19).
 Rules: AI_WORKING_CONSTITUTION v1.2 (Drive, global) · `HIERARCHY.md` v1.4 · `PROJECT_RULES.md` v1.3 · `BACKUP_LEAD.md` v2.
 Backup log ("Civensa Yedek Kaydı", Drive): no entries, last modified 23 Oct (DOĞRULANDI 25 Oct 10:25).
 
@@ -11,17 +11,17 @@ Backup log ("Civensa Yedek Kaydı", Drive): no entries, last modified 23 Oct (DO
 
 Tags: DOĞRULANDI (lead checked) · TARİHSEL (past fact) · BEYAN (owner said) · BELİRSİZ (unknown).
 
-## Open pull requests (DOĞRULANDI 25 Oct 10:25: none open)
+## Open pull requests (DOĞRULANDI 25 Oct 11:05)
 | PR | Task | State | Next action |
 | --- | --- | --- | --- |
-| #109 | CIV-095 design prototype | owner approved design (D-229); 3 LOW/MEDIUM fixes sent to the Codex task | Re-check screenshots on the new head, merge, then write CIV-096 (apply design to real templates) |
+| #109 | CIV-095 design prototype | owner approved design (D-229); 3 fixes sent to the Codex task; head still 5c06b92 at 11:05 (fixes not pushed), behind 10 | Owner gets Codex to push the fixes; lead re-checks screenshots, updates branch, merges when CI green, then gives the owner the CIV-096 dispatch (package ready, D-230) |
 
 ## Open — owner
 - Public repo (D-220/D-222/D-223), in order, each with owner confirmation:
   1. DONE 25 Oct — age secrets set (BEYAN + screenshot), private key in owner's Passwords app.
   2. DONE 25 Oct (D-228) — default branch is now `feature/authorization-workflow-phase5` (DOĞRULANDI REST). `main` and civensa-pilot untouched (Auto-Deploy off, D-227).
-  3. One encrypted backup run verified — check the next scheduled "Daily verified database backup" run (night check or next live session); no manual dispatch (live database = escalation).
-  4. Delete old plaintext backup artifacts.
+  3. One encrypted backup run verified — 25 Oct 05:07 UTC run came from `main` (plaintext, D-230); first phase5 encrypted run expected 26 Oct, check it (night check 08:41 or next live session); no manual dispatch (live database = escalation).
+  4. Delete old plaintext backup artifacts (includes civensa-db-backup-20261025-0507Z, D-230).
   5. Full-history gitleaks (workflow_dispatch) — must be clean.
   6. Switch repo to public.
 - Claude Pro ends 3 Nov 2026 (BEYAN 25 Oct 10:22; Billing page shows only "Subscribed via iOS app", no date). iOS subscription is cancelled. Owner renews Pro from claude.ai on the web on 3 Nov; otherwise from 3 Nov the lead is unavailable and DeepSeek runs as backup lead (BACKUP_LEAD.md).
@@ -40,5 +40,5 @@ Tags: DOĞRULANDI (lead checked) · TARİHSEL (past fact) · BEYAN (owner said) 
 7. DeepSeek mirror GUNCEL-DURUM.md: refresh in the next live session with the Mac linked.
 
 ## Next IDs
-- Next new task ID: CIV-096.
-- Next decision: D-227.
+- Next new task ID: CIV-097 (CIV-096 written, not dispatched).
+- Next decision: D-231.
