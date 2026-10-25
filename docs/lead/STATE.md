@@ -17,7 +17,7 @@ None. Codex, Gemini, DeepSeek idle until Ali's answers (D-223).
   4. Delete old plaintext backup artifacts.
   5. Full-history gitleaks (workflow_dispatch) — must be clean.
   6. Switch repo to public.
-- UI redesign: screen map merged (`docs/screenshots/ui-map-v1/INDEX.md`, `navigation.md`); owner designs (D-221).
+- UI redesign (D-224): owner reviews the principles in "CV Tasarım Araştırması" (https://claude.ai/artifact/RAhu2JYfbRMsFdarmnBLG5), then opens "CV Tasarım 1" (Opus) with the handover.
 0. (closed) Merges are done by the lead in live sessions (D-214).
 1. (closed) Codex "Tam erişim" stays ON — owner decision D-210.
 2. (closed) Plaintext password files (log 79): owner decision D-217 — not tracked, do not remind the owner.
@@ -33,4 +33,4 @@ None. Codex, Gemini, DeepSeek idle until Ali's answers (D-223).
 
 ## Next IDs
 - Next new task ID: CIV-095.
-- Next decision: D-224.
+- Next decision: D-225.
