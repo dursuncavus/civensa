@@ -1,8 +1,8 @@
 # CIVENSA — CURRENT STATE
 
-Updated: 25 Oct 2026, ~14:20 Istanbul (live session, CV Lider 20).
+Updated: 25 Oct 2026, ~19:40 Istanbul (live session, CV Lider 22).
 Rules: AI_WORKING_CONSTITUTION v1.2 (Drive, global) · `HIERARCHY.md` v1.4 · `PROJECT_RULES.md` v1.3 · `BACKUP_LEAD.md` v2.
-Backup log ("Civensa Yedek Kaydı", Drive): no entries, last modified 23 Oct (DOĞRULANDI 25 Oct 10:25).
+Backup log ("Civensa Yedek Kaydı", Drive): no entries, last modified 23 Oct (DOĞRULANDI 25 Oct 19:15).
 
 ## Claude quota (BEYAN, owner screen 25 Oct ~10:15)
 - Weekly usage 21%; at the current rate it runs out Friday evening (30 Oct).
@@ -13,11 +13,10 @@ Dispatch format (D-232): platform + exact model (Codex: GPT-6.1 Sol) + effort; t
 
 Tags: DOĞRULANDI (lead checked) · TARİHSEL (past fact) · BEYAN (owner said) · BELİRSİZ (unknown).
 
-## Open pull requests (DOĞRULANDI 25 Oct 14:15; #115 CIV-096 merged d91ea70, D-233)
+## Open pull requests (DOĞRULANDI 25 Oct 19:35; #118 CIV-098 merged 9f0bdc5, #119 CIV-097 merged 7ddecbb, D-235)
 | PR | Task | State | Next action |
 | --- | --- | --- | --- |
-| — | CIV-097 design → 024 data entry | package ready (D-233), given to owner 14:20 | Review screenshots + CI, merge |
-| — | CIV-098 Modüller icon grid | package ready (D-234), given to owner 14:25 | Review screenshots + CI, merge |
+| — | CIV-099 design → 012 section editor | package ready (D-236), given to owner 19:40 | Review screenshots + CI, merge |
 
 ## Open — owner
 - Public repo (D-220/D-222/D-223), in order, each with owner confirmation:
@@ -28,7 +27,7 @@ Tags: DOĞRULANDI (lead checked) · TARİHSEL (past fact) · BEYAN (owner said) 
   5. Full-history gitleaks (workflow_dispatch) — must be clean.
   6. Switch repo to public.
 - Claude Pro ends 3 Nov 2026 (BEYAN 25 Oct 10:22; Billing page shows only "Subscribed via iOS app", no date). iOS subscription is cancelled. Owner renews Pro from claude.ai on the web on 3 Nov; otherwise from 3 Nov the lead is unavailable and DeepSeek runs as backup lead (BACKUP_LEAD.md).
-- UI redesign (D-224/D-225): CIV-095 prototype merged (D-231); CIV-096 shell + 034 merged (D-233) — owner approves the look from the PR #115 screenshots; then CIV-097 (024 data entry) goes to Codex.
+- UI redesign (D-224/D-225): CIV-095 prototype (D-231), CIV-096 shell + 034 (D-233), CIV-098 Modüller grid and CIV-097 024 data entry (D-235) merged. Owner approves the look and the 024 letter-case changes from the PR #118/#119 screenshots. CIV-099 (012) next (D-236).
 0. (closed) Merges are done by the lead in live sessions (D-214).
 1. (closed) Codex "Tam erişim" stays ON — owner decision D-210.
 2. (closed) Plaintext password files (log 79): owner decision D-217 — not tracked, do not remind the owner.
@@ -43,5 +42,5 @@ Tags: DOĞRULANDI (lead checked) · TARİHSEL (past fact) · BEYAN (owner said) 
 7. DeepSeek mirror GUNCEL-DURUM.md: refresh in the next live session with the Mac linked.
 
 ## Next IDs
-- Next new task ID: CIV-099.
-- Next decision: D-235.
+- Next new task ID: CIV-100.
+- Next decision: D-237.
