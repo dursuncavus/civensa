@@ -30,7 +30,7 @@ Chromium, DPR 1, viewport yüksekliği 900 px, `tr-TR`, `Europe/Istanbul`, açı
 - `test_012_reopen_shows_only_actor_name`: gerçek onay/yeniden açma HTTP akışı sonrası görünür ad ve kaldırılan kimlik. Bu iki regresyon başlangıç `d671eb8` üzerinde başarısız, düzeltmede başarılıdır.
 - `test_012_sentence_case_preserves_excel_and_export_headers`: dondurulmuş ENTRY_FIELDS/EXPENSE_FIELDS/REVENUE_FIELDS/budget_columns, üç gerçek Excel şablonu, gerçek Word üretimindeki bütçe ve dört kayıt türü başlığı; 31 ekran başlığı, resmî sınıflandırma adları ve değişmeyen ARIA etiketi.
 
-`tests/test_activity_financial.py::test_blank_zero_revenue_and_final_consistency`: ekran beklentisi tam `<th>Net tahsilat</th>` olur; sayı, boş/sıfır, hesap ve API assertion'ları korunur. Mevcut CIV-099 testleri değiştirilmez.
+`tests/test_activity_financial.py::test_blank_zero_revenue_and_final_consistency`: ekran beklentisi tam `<th>Net tahsilat</th>` olur; sayı, boş/sıfır, hesap ve API assertion'ları korunur. `tests/test_activity_financial_ui.py::test_financial_entry_preview_and_completeness_browser`: eski “PP Bütçesi (salt okunur)” metin beklentisi yerine “PP bütçesi (salt okunur)” sütun başlığı tam eşleşme ve görünürlükle doğrulanır. Satır ekleme, içe aktarma önizlemesi, sayı ve tamlık kontrolleri aynı kalır. Mevcut CIV-099 testleri değiştirilmez.
 
 ## Yeniden çalıştırma
 
