@@ -1,0 +1,757 @@
+<!doctype html>
+<html lang="tr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Tasarım sistemi · Civensa</title>
+    <link rel="stylesheet" href="fonts.css" />
+    <link rel="stylesheet" href="tokens.css" />
+    <link rel="stylesheet" href="prototype.css" />
+    <script src="prototype.js" defer></script>
+  </head>
+  <body>
+    <a class="skip" href="#main">İçeriğe geç</a>
+    <div class="app-shell">
+      <aside class="sidebar" id="navigation">
+        <a class="brand" href="screens/034-modules.html"
+          >Civensa<span>Kurumsal raporlama</span></a
+        >
+        <nav aria-label="Ana gezinme">
+          <div class="nav-group">
+            <p>Performans Programı</p>
+            <a
+              href="#destination-dialog"
+              data-open="destination-dialog"
+              class="nav-link"
+              >Genel Bakış</a
+            ><a
+              href="#destination-dialog"
+              data-open="destination-dialog"
+              class="nav-link"
+              >Veri Girişi</a
+            ><a
+              href="#destination-dialog"
+              data-open="destination-dialog"
+              class="nav-link"
+              >PP Kaynak Karşılaştırması</a
+            >
+          </div>
+          <div class="nav-group">
+            <p>Faaliyet Raporu</p>
+            <a
+              href="#destination-dialog"
+              data-open="destination-dialog"
+              class="nav-link"
+              >Faaliyet Raporu · EK-1</a
+            >
+          </div>
+          <div class="nav-group">
+            <p>İç Kontrol</p>
+            <a
+              href="#destination-dialog"
+              data-open="destination-dialog"
+              class="nav-link"
+              >İç Kontrol Eylemlerimiz</a
+            >
+          </div>
+          <div class="nav-group">
+            <p>Yönetim</p>
+            <a
+              href="#destination-dialog"
+              data-open="destination-dialog"
+              class="nav-link"
+              >Modüller</a
+            ><a
+              href="#destination-dialog"
+              data-open="destination-dialog"
+              class="nav-link"
+              >Gönderim Yetkileri</a
+            >
+          </div>
+        </nav>
+        <div class="account-actions">
+          <button class="ghost" data-open="password-dialog">
+            Parolamı Değiştir</button
+          ><button class="ghost" data-open="simulation-dialog">Çıkış</button>
+        </div>
+        <p class="sidebar-note">
+          Örnek Hizmet Müdürlüğü<br />Sentetik çalışma alanı
+        </p>
+      </aside>
+      <div class="workspace">
+        <div class="topbar">
+          <a href="#navigation" class="mobile-nav">Menüye git ↓</a>
+          <p>Civensa · Tasarım sistemi</p>
+          <span class="help">D-224 · CIV-095</span>
+        </div>
+        <main id="main">
+          <nav class="breadcrumb" aria-label="İçerik yolu">
+            <a href="screens/034-modules.html">Modüller</a
+            ><span aria-hidden="true">/</span><span>Tasarım sistemi</span>
+          </nav>
+          <header class="page-header">
+            <div>
+              <h1>Tasarım sistemi</h1>
+              <p>Bileşenler, durumlar ve kullanım örnekleri.</p>
+            </div>
+            <span class="prototype-mark">Statik prototip</span>
+          </header>
+          <section class="card">
+            <h2>Temel kararlar</h2>
+            <p>
+              Açık zemin, okunaklı metin ve tutarlı kontroller. Vurgu rengi
+              eylemi, seçili öğeyi veya mevcut aşamayı belirtir.
+            </p>
+            <p class="help">
+              Fira Sans · 400 / 500 / 600 · 14, 16, 18, 20, 24, 30 px · Satır
+              aralığı 1,5 · 4 px tabanlı boşluklar · 6 px köşe · 40 px kontrol
+            </p>
+            <nav class="actions" aria-label="Örnek ekranlar">
+              <a class="button" href="screens/034-modules.html"
+                >034 · Modüller</a
+              ><a class="button" href="screens/024-department.html"
+                >024 · Veri girişi</a
+              ><a class="button" href="screens/012-section-editor.html"
+                >012 · EK-1</a
+              >
+            </nav>
+          </section>
+          <h2 class="spec-heading">Renk ve tipografi</h2>
+          <section class="card">
+            <div class="swatches">
+              <div
+                class="swatch"
+                style="color: var(--text); background: var(--bg)"
+              >
+                <p>Sayfa zemini</p>
+                <p>#F6F5F2</p>
+              </div>
+              <div
+                class="swatch"
+                style="color: var(--text); background: var(--surface)"
+              >
+                <p>Yüzey</p>
+                <p>#FFFFFF</p>
+              </div>
+              <div
+                class="swatch"
+                style="
+                  color: var(--text-secondary);
+                  background: var(--surface-muted);
+                "
+              >
+                <p>İkincil yüzey</p>
+                <p>#EFEDE8</p>
+              </div>
+              <div
+                class="swatch"
+                style="color: var(--surface); background: var(--accent)"
+              >
+                <p>Birincil eylem</p>
+                <p>#1E6B65</p>
+              </div>
+              <div
+                class="swatch"
+                style="color: var(--accent); background: var(--accent-soft)"
+              >
+                <p>Seçili öğe</p>
+                <p>#E3F0EE</p>
+              </div>
+              <div
+                class="swatch"
+                style="color: var(--success); background: var(--success-bg)"
+              >
+                <p>Başarı</p>
+                <p>#1E7A46</p>
+              </div>
+              <div
+                class="swatch"
+                style="color: var(--warning); background: var(--warning-bg)"
+              >
+                <p>Uyarı</p>
+                <p>#8A5A00</p>
+              </div>
+              <div
+                class="swatch"
+                style="color: var(--danger); background: var(--danger-bg)"
+              >
+                <p>Hata</p>
+                <p>#B42318</p>
+              </div>
+            </div>
+            <div class="spec-sample">
+              <span style="font-size: 30px">Aa</span>
+              <p style="font-size: 24px; font-weight: 600">
+                Sayfa başlığı · 24
+              </p>
+              <h2 style="font-size: 20px">Bölüm · 20</h2>
+              <h3 style="font-size: 18px">Kart · 18</h3>
+              <span>Gövde · 16</span><span class="help">Etiket · 14</span>
+            </div>
+            <p class="help">
+              Metin blokları en çok 72 karakter genişliğindedir. Sayılar sağa
+              hizalanır ve eş genişlikli rakamlarla gösterilir.
+            </p>
+          </section>
+          <h2 class="spec-heading">Düğmeler</h2>
+          <div class="spec-grid">
+            <section class="card">
+              <h2>Birincil</h2>
+              <div class="spec-sample">
+                <button class="primary" data-open="simulation-dialog">
+                  Kaydet</button
+                ><button class="primary is-hover" data-open="simulation-dialog">
+                  Üzerine gelme</button
+                ><button class="primary is-focus" data-open="simulation-dialog">
+                  Klavye odağı</button
+                ><button class="primary" disabled>Devre dışı</button
+                ><button class="primary" aria-busy="true" aria-disabled="true">
+                  Kaydediliyor…
+                </button>
+              </div>
+            </section>
+            <section class="card">
+              <h2>İkincil</h2>
+              <div class="spec-sample">
+                <button class="secondary" data-open="simulation-dialog">
+                  Kaydet</button
+                ><button
+                  class="secondary is-hover"
+                  data-open="simulation-dialog"
+                >
+                  Üzerine gelme</button
+                ><button
+                  class="secondary is-focus"
+                  data-open="simulation-dialog"
+                >
+                  Klavye odağı</button
+                ><button class="secondary" disabled>Devre dışı</button
+                ><button
+                  class="secondary"
+                  aria-busy="true"
+                  aria-disabled="true"
+                >
+                  Kaydediliyor…
+                </button>
+              </div>
+            </section>
+            <section class="card">
+              <h2>Yalın</h2>
+              <div class="spec-sample">
+                <button class="ghost" data-open="simulation-dialog">
+                  Kaydet</button
+                ><button class="ghost is-hover" data-open="simulation-dialog">
+                  Üzerine gelme</button
+                ><button class="ghost is-focus" data-open="simulation-dialog">
+                  Klavye odağı</button
+                ><button class="ghost" disabled>Devre dışı</button
+                ><button class="ghost" aria-busy="true" aria-disabled="true">
+                  Kaydediliyor…
+                </button>
+              </div>
+            </section>
+            <section class="card">
+              <h2>Yıkıcı işlem</h2>
+              <p class="help">
+                İşlem ikincil menüden açılır; onay ayrı bir pencerede alınır.
+              </p>
+              <details class="menu">
+                <summary>Diğer işlemler</summary>
+                <div class="menu-items">
+                  <button class="ghost danger-text" data-open="confirm-dialog">
+                    Göstergeyi Kaldır
+                  </button>
+                </div>
+              </details>
+            </section>
+          </div>
+          <h2 class="spec-heading">Alanlar ve durumları</h2>
+          <div class="spec-grid">
+            <section class="card">
+              <h2>Metin alanı</h2>
+              <div class="field">
+                <label for="text-default">Gösterge adı · Boş</label
+                ><input id="text-default" type="text" value="" />
+              </div>
+              <div class="field">
+                <label for="text-filled">Gösterge adı · Dolu</label
+                ><input id="text-filled" type="text" value="Örnek gösterge" />
+              </div>
+              <div class="field">
+                <label for="text-focus">Gösterge adı · Klavye odağı</label
+                ><input
+                  id="text-focus"
+                  type="text"
+                  value="Örnek gösterge"
+                  class="is-focus"
+                />
+              </div>
+              <div class="field">
+                <label for="text-disabled">Gösterge adı · Devre dışı</label
+                ><input
+                  id="text-disabled"
+                  type="text"
+                  value="Örnek gösterge"
+                  disabled
+                />
+              </div>
+              <div class="field">
+                <label for="text-readonly">Gösterge adı · Salt okunur</label
+                ><input
+                  id="text-readonly"
+                  type="text"
+                  value="Örnek gösterge"
+                  readonly
+                />
+              </div>
+              <div class="field">
+                <label for="text-error">Gösterge adı · Hata</label
+                ><input
+                  id="text-error"
+                  type="text"
+                  value=""
+                  aria-invalid="true"
+                  aria-describedby="text-error-error"
+                />
+                <p class="field-error" id="text-error-error">
+                  <span aria-hidden="true">⚠︎</span> Gösterge adı boş. Değeri
+                  girin.
+                </p>
+              </div>
+            </section>
+            <section class="card">
+              <h2>Çok satırlı alan</h2>
+              <div class="field">
+                <label for="textarea-default">Açıklama · Boş</label
+                ><textarea id="textarea-default" rows="2"></textarea>
+              </div>
+              <div class="field">
+                <label for="textarea-filled">Açıklama · Dolu</label
+                ><textarea id="textarea-filled" rows="2">
+Örnek açıklama.</textarea
+                >
+              </div>
+              <div class="field">
+                <label for="textarea-focus">Açıklama · Klavye odağı</label
+                ><textarea id="textarea-focus" rows="2" class="is-focus">
+Örnek açıklama.</textarea
+                >
+              </div>
+              <div class="field">
+                <label for="textarea-disabled">Açıklama · Devre dışı</label
+                ><textarea id="textarea-disabled" rows="2" disabled>
+Örnek açıklama.</textarea
+                >
+              </div>
+              <div class="field">
+                <label for="textarea-readonly">Açıklama · Salt okunur</label
+                ><textarea id="textarea-readonly" rows="2" readonly>
+Örnek açıklama.</textarea
+                >
+              </div>
+              <div class="field">
+                <label for="textarea-error">Açıklama · Hata</label
+                ><textarea
+                  id="textarea-error"
+                  rows="2"
+                  aria-invalid="true"
+                  aria-describedby="textarea-error-error"
+                ></textarea>
+                <p class="field-error" id="textarea-error-error">
+                  <span aria-hidden="true">⚠︎</span> Açıklama boş. Değeri
+                  girin.
+                </p>
+              </div>
+            </section>
+            <section class="card">
+              <h2>Seçim alanı</h2>
+              <div class="field">
+                <label for="select-default">Durum · Boş</label
+                ><select id="select-default">
+                  <option>Seçin</option>
+                  <option>Hazır</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="select-filled">Durum · Dolu</label
+                ><select id="select-filled">
+                  <option>Taslak</option>
+                  <option>Hazır</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="select-focus">Durum · Klavye odağı</label
+                ><select id="select-focus" class="is-focus">
+                  <option>Taslak</option>
+                  <option>Hazır</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="select-disabled">Durum · Devre dışı</label
+                ><select id="select-disabled" disabled>
+                  <option>Taslak</option>
+                  <option>Hazır</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="select-error">Durum · Hata</label
+                ><select
+                  id="select-error"
+                  aria-invalid="true"
+                  aria-describedby="select-error-error"
+                >
+                  <option>Seçin</option>
+                  <option>Hazır</option>
+                </select>
+                <p class="field-error" id="select-error-error">
+                  <span aria-hidden="true">⚠︎</span> Durum boş. Değeri girin
+                  veya seçin.
+                </p>
+              </div>
+            </section>
+            <section class="card">
+              <h2>Birimli sayı alanı</h2>
+              <div class="field">
+                <label for="number-default">2027 hedef · Boş</label>
+                <div class="control-unit">
+                  <input id="number-default" type="number" value="" /><span
+                    >Adet</span
+                  >
+                </div>
+              </div>
+              <div class="field">
+                <label for="number-filled">2027 hedef · Dolu</label>
+                <div class="control-unit">
+                  <input id="number-filled" type="number" value="120" /><span
+                    >Adet</span
+                  >
+                </div>
+              </div>
+              <div class="field">
+                <label for="number-focus">2027 hedef · Klavye odağı</label>
+                <div class="control-unit">
+                  <input
+                    id="number-focus"
+                    type="number"
+                    value="120"
+                    class="is-focus"
+                  /><span>Adet</span>
+                </div>
+              </div>
+              <div class="field">
+                <label for="number-disabled">2027 hedef · Devre dışı</label>
+                <div class="control-unit">
+                  <input
+                    id="number-disabled"
+                    type="number"
+                    value="120"
+                    disabled
+                  /><span>Adet</span>
+                </div>
+              </div>
+              <div class="field">
+                <label for="number-readonly">2027 hedef · Salt okunur</label>
+                <div class="control-unit">
+                  <input
+                    id="number-readonly"
+                    type="number"
+                    value="120"
+                    readonly
+                  /><span>Adet</span>
+                </div>
+              </div>
+              <div class="field">
+                <label for="number-error">2027 hedef · Hata</label>
+                <div class="control-unit">
+                  <input
+                    id="number-error"
+                    type="number"
+                    value=""
+                    aria-invalid="true"
+                    aria-describedby="number-error-error"
+                  /><span>Adet</span>
+                </div>
+                <p class="field-error" id="number-error-error">
+                  <span aria-hidden="true">⚠︎</span> 2027 hedef boş. Değeri
+                  girin.
+                </p>
+              </div>
+            </section>
+            <section class="card">
+              <h2>Yardım metni ve zorunlu alan</h2>
+              <div class="field">
+                <label for="evidence">Kanıt açıklaması (zorunlu)</label
+                ><input
+                  id="evidence"
+                  required
+                  aria-describedby="evidence-help"
+                />
+                <p class="help" id="evidence-help">
+                  Bilginin hangi kayda dayandığını belirtin.
+                </p>
+              </div>
+              <div class="error-summary" role="alert">
+                <strong
+                  ><span aria-hidden="true">⚠︎</span> 1 alanı kontrol
+                  edin</strong
+                >
+                <p><a href="#text-error">Gösterge adı boş. Değeri girin.</a></p>
+              </div>
+            </section>
+            <section class="card">
+              <h2>Onay kutusu ve radyo</h2>
+              <fieldset>
+                <legend>Onay kutusu</legend>
+                <label class="choice" for="checkbox8922"
+                  ><input type="checkbox" id="checkbox8922" />Kanıtları kontrol
+                  ettim · Seçilmedi</label
+                ><label class="choice" for="checkbox9048"
+                  ><input type="checkbox" id="checkbox9048" checked />Kanıtları
+                  kontrol ettim · Seçildi</label
+                ><label class="choice" for="checkbox9179"
+                  ><input
+                    type="checkbox"
+                    id="checkbox9179"
+                    class="is-focus"
+                  />Kanıtları kontrol ettim · Klavye odağı</label
+                ><label class="choice" for="checkbox9324"
+                  ><input type="checkbox" id="checkbox9324" disabled />Kanıtları
+                  kontrol ettim · Devre dışı</label
+                ><label class="choice" for="checkbox9459"
+                  ><input
+                    type="checkbox"
+                    id="checkbox9459"
+                    checked
+                    disabled
+                  />Kanıtları kontrol ettim · Seçili, devre dışı</label
+                >
+              </fieldset>
+              <fieldset>
+                <legend>Radyo</legend>
+                <label class="choice" for="radio9653"
+                  ><input type="radio" id="radio9653" />Birim raporu ·
+                  Seçilmedi</label
+                ><label class="choice" for="radio9759"
+                  ><input type="radio" id="radio9759" checked />Birim raporu ·
+                  Seçildi</label
+                ><label class="choice" for="radio9870"
+                  ><input type="radio" id="radio9870" class="is-focus" />Birim
+                  raporu · Klavye odağı</label
+                ><label class="choice" for="radio9995"
+                  ><input type="radio" id="radio9995" disabled />Birim raporu ·
+                  Devre dışı</label
+                ><label class="choice" for="radio10110"
+                  ><input type="radio" id="radio10110" checked disabled />Birim
+                  raporu · Seçili, devre dışı</label
+                >
+              </fieldset>
+            </section>
+          </div>
+          <h2 class="spec-heading">Durum ve gezinme</h2>
+          <section class="card">
+            <h2>Durum rozetleri</h2>
+            <div class="spec-sample">
+              <span class="badge neutral"
+                ><span aria-hidden="true">○</span> Boş</span
+              ><span class="badge warning"
+                ><span aria-hidden="true">◐</span> Taslak</span
+              ><span class="badge success"
+                ><span aria-hidden="true">✓</span> Hazır</span
+              ><span class="badge accent"
+                ><span aria-hidden="true">↗</span> Gönderildi</span
+              ><span class="badge danger"
+                ><span aria-hidden="true">!</span> İade edildi</span
+              ><span class="badge success"
+                ><span aria-hidden="true">✓</span> Onaylı</span
+              >
+            </div>
+            <p class="help">Her durum metin ve simgeyle belirtilir.</p>
+            <h3>Adım göstergesi · Veri girişi</h3>
+            <ol class="stepper" aria-label="Rapor aşamaları">
+              <li class="current" aria-current="step">
+                <span class="step-number">1</span> Veri Girişi
+              </li>
+              <li class="">
+                <span class="step-number">2</span> Strateji İncelemesi
+              </li>
+              <li class=""><span class="step-number">3</span> Onay</li>
+            </ol>
+            <h3>Adım göstergesi · İnceleme</h3>
+            <ol class="stepper" aria-label="Rapor aşamaları">
+              <li class=""><span class="step-number">1</span> Veri Girişi</li>
+              <li class="current" aria-current="step">
+                <span class="step-number">2</span> Strateji İncelemesi
+              </li>
+              <li class=""><span class="step-number">3</span> Onay</li>
+            </ol>
+            <h3>Adım göstergesi · Onay</h3>
+            <ol class="stepper" aria-label="Rapor aşamaları">
+              <li class=""><span class="step-number">1</span> Veri Girişi</li>
+              <li class="">
+                <span class="step-number">2</span> Strateji İncelemesi
+              </li>
+              <li class="current" aria-current="step">
+                <span class="step-number">3</span> Onay
+              </li>
+            </ol>
+            <h3>Sekmeler</h3>
+            <nav class="tabs" aria-label="Örnek görünümler">
+              <a href="#indicators">Performans Göstergeleri</a
+              ><a href="#activities">Faaliyet Maliyetleri</a>
+            </nav>
+            <div id="indicators" class="indicator-panel">
+              <p>Performans göstergeleri görünümü.</p>
+            </div>
+            <div id="activities" class="activity-panel">
+              <p>Faaliyet maliyetleri görünümü.</p>
+            </div>
+          </section>
+          <h2 class="spec-heading">Tablolar ve bildirimler</h2>
+          <div class="spec-grid">
+            <section class="card spec-wide">
+              <h2>Veri tablosu · 40 px satır</h2>
+              <table>
+                <caption>
+                  Örnek Hizmet Müdürlüğü · 2027
+                </caption>
+                <thead>
+                  <tr>
+                    <th>Gösterge</th>
+                    <th class="numeric">Hedef (Adet)</th>
+                    <th class="numeric">Gerçekleşme (Adet)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>Tamamlanan hizmet sayısı</td>
+                    <td class="numeric">120</td>
+                    <td class="numeric">—</td>
+                  </tr>
+                </tbody>
+                <tfoot>
+                  <tr>
+                    <th>Toplam</th>
+                    <td class="numeric">120</td>
+                    <td class="numeric">—</td>
+                  </tr>
+                </tfoot>
+              </table>
+              <p class="help">— henüz girilmemiş değerdir; sıfır değildir.</p>
+              <h3>Malî tablo · 32 px satır</h3>
+              <table class="financial">
+                <caption>
+                  Örnek faaliyet maliyetleri
+                </caption>
+                <thead>
+                  <tr>
+                    <th>Faaliyet</th>
+                    <th class="numeric">2027 bütçe (TL)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>Hizmet noktalarının iyileştirilmesi</td>
+                    <td class="numeric">12.500,23</td>
+                  </tr>
+                  <tr>
+                    <td>Personel ve SGK Giderleri Toplamı</td>
+                    <td class="numeric">2.000,00</td>
+                  </tr>
+                </tbody>
+                <tfoot>
+                  <tr>
+                    <th>Genel Bütçe Toplamı</th>
+                    <td class="numeric">14.500,23</td>
+                  </tr>
+                </tfoot>
+              </table>
+            </section>
+            <section class="card">
+              <h2>Boş durum</h2>
+              <div class="empty">
+                <h3>Henüz kayıt yok</h3>
+                <p>Veri girişine başlayarak ilk göstergeyi ekleyin.</p>
+                <a class="button" href="screens/024-department.html"
+                  >Veri Girişi</a
+                >
+              </div>
+            </section>
+            <section class="card">
+              <h2>İşlem bildirimi</h2>
+              <div class="toast" role="status">
+                <span><span aria-hidden="true">✓</span> Bölüm kaydedildi.</span>
+              </div>
+              <p class="help">
+                Bildirim kendiliğinden kaybolmaz; sessiz, sabit bir geri
+                bildirim alanıdır.
+              </p>
+              <h3>Onay penceresi</h3>
+              <p>İptal, klavye odağı ve Escape ile kapatma desteklenir.</p>
+              <button data-open="confirm-dialog">Onay penceresini aç</button>
+            </section>
+          </div>
+          <dialog id="confirm-dialog" aria-labelledby="confirm-title">
+            <h2 id="confirm-title">Göstergeyi Kaldır</h2>
+            <p>
+              “Tamamlanan hizmet sayısı” kaydını bu taslak paketten kaldırmayı
+              onaylıyor musunuz?
+            </p>
+            <p>
+              Bu işlem geri alınamaz. Bağlı kayıtlar ve geçmiş kontrol edilir.
+            </p>
+            <p class="help">Statik prototip: kaldırma işlemi uygulanmaz.</p>
+            <form method="dialog" class="actions">
+              <button autofocus>Vazgeç</button
+              ><button class="danger-button">Kaldırmayı Onayla</button>
+            </form>
+          </dialog>
+          <footer class="prototype-footer">
+            Civensa · Yalnız görsel inceleme için
+          </footer>
+        </main>
+      </div>
+    </div>
+    <dialog id="destination-dialog" aria-labelledby="destination-title">
+      <h2 id="destination-title">Bağlantı hedefi</h2>
+      <p>Bu ekran prototip kapsamı dışındadır.</p>
+      <p class="help">Mevcut uygulamadaki hedef:</p>
+      <code id="destination-target">Ekran haritasında belirtilen bağlantı</code>
+      <form method="dialog"><button autofocus>Kapat</button></form>
+    </dialog>
+    <dialog id="simulation-dialog" aria-labelledby="simulation-title">
+      <h2 id="simulation-title">Statik prototip</h2>
+      <p>
+        Bu işlem görsel inceleme için temsil edilir. Veri kaydedilmez,
+        gönderilmez veya silinmez.
+      </p>
+      <form method="dialog"><button autofocus>Kapat</button></form>
+    </dialog>
+    <dialog id="password-dialog" aria-labelledby="password-title">
+      <h2 id="password-title">Parolamı Değiştir</h2>
+      <p class="help">Statik form örneği; gerçek parola girmeyin.</p>
+      <div class="field">
+        <label for="old-password">Mevcut parola</label
+        ><input id="old-password" type="password" autocomplete="off" />
+      </div>
+      <div class="field">
+        <label for="new-password">Yeni parola</label
+        ><input id="new-password" type="password" autocomplete="off" />
+      </div>
+      <div class="field">
+        <label for="repeat-password">Yeni parola (tekrar)</label
+        ><input id="repeat-password" type="password" autocomplete="off" />
+      </div>
+      <form method="dialog" class="actions">
+        <button autofocus>Vazgeç</button><button>Parolayı değiştir</button>
+      </form>
+    </dialog>
+    <dialog id="notification-dialog" aria-labelledby="notification-title">
+      <h2 id="notification-title">Bildirimler</h2>
+      <div class="empty">
+        <p>Yeni bildirim yok.</p>
+        <p class="help">Sentetik bildirim paneli örneği.</p>
+      </div>
+      <form method="dialog"><button autofocus>Kapat</button></form>
+    </dialog>
+  </body>
+</html>

@@ -1,0 +1,641 @@
+{
+  "34": {
+    "source": "034-modules-department.png",
+    "elements": [
+      {
+        "id": "E001",
+        "label": "Faaliyet Raporu · EK-1",
+        "target": "/activity-sections",
+        "location": "Sol menü / Faaliyet Raporu · EK-1"
+      },
+      {
+        "id": "E002",
+        "label": "Modüller",
+        "target": "/modules",
+        "location": "Sol menü / Modüller"
+      },
+      {
+        "id": "E003",
+        "label": "Genel Bakış",
+        "target": "/dashboard",
+        "location": "Sol menü / Genel Bakış"
+      },
+      {
+        "id": "E004",
+        "label": "İç Kontrol Eylemlerimiz",
+        "target": "/internal-control/our-actions",
+        "location": "Sol menü / İç Kontrol Eylemlerimiz"
+      },
+      {
+        "id": "E005",
+        "label": "Veri Girişi",
+        "target": "/department/1",
+        "location": "Sol menü / Veri Girişi"
+      },
+      {
+        "id": "E006",
+        "label": "Gönderim Yetkileri",
+        "target": "/submit-authorizations",
+        "location": "Sol menü / Gönderim Yetkileri"
+      },
+      {
+        "id": "E007",
+        "label": "Parolamı Değiştir",
+        "target": "#passwordModal",
+        "location": "Sol menü / hesap işlemleri"
+      },
+      {
+        "id": "E008",
+        "label": "Çıkış",
+        "target": "POST /logout",
+        "location": "Sol menü / çıkış formu"
+      },
+      {
+        "id": "E009",
+        "label": "Çıkış",
+        "target": "POST /logout",
+        "location": "Sol menü / hesap işlemleri"
+      },
+      {
+        "id": "E010",
+        "label": "Bildirimler",
+        "target": "GET /api/notifications → #notificationPanel",
+        "location": "Üst çubuk / bildirimler"
+      },
+      {
+        "id": "E011",
+        "label": "Performans Programı’na gir",
+        "target": "/dashboard",
+        "location": "Performans Programı kartı"
+      },
+      {
+        "id": "E012",
+        "label": "Gösterge gerçekleşmelerine gir",
+        "target": "/activity-reports",
+        "location": "Faaliyet Raporu kartı"
+      },
+      {
+        "id": "E013",
+        "label": "Kaynak kayıt inceleme pilotu",
+        "target": "/activity-report",
+        "location": "Faaliyet Raporu kartı"
+      },
+      {
+        "id": "E014",
+        "label": "İç Kontrol Eylemlerimiz",
+        "target": "/internal-control",
+        "location": "İç Kontrol kartı"
+      }
+    ]
+  },
+  "24": {
+    "source": "024-department-department.png",
+    "elements": [
+      {
+        "id": "E001",
+        "label": "Faaliyet Raporu · EK-1",
+        "target": "/activity-sections",
+        "location": "Sol menü / Faaliyet Raporu · EK-1"
+      },
+      {
+        "id": "E002",
+        "label": "Modüller",
+        "target": "/modules",
+        "location": "Sol menü / Modüller"
+      },
+      {
+        "id": "E003",
+        "label": "Genel Bakış",
+        "target": "/dashboard?period_id=1",
+        "location": "Sol menü / Genel Bakış"
+      },
+      {
+        "id": "E004",
+        "label": "PP Kaynak Karşılaştırması",
+        "target": "/source-comparison?period_id=1",
+        "location": "Sol menü / PP Kaynak Karşılaştırması"
+      },
+      {
+        "id": "E005",
+        "label": "İç Kontrol Eylemlerimiz",
+        "target": "/internal-control/our-actions",
+        "location": "Sol menü / İç Kontrol Eylemlerimiz"
+      },
+      {
+        "id": "E006",
+        "label": "Veri Girişi",
+        "target": "/department/1?period_id=1",
+        "location": "Sol menü / Veri Girişi"
+      },
+      {
+        "id": "E007",
+        "label": "Gönderim Yetkileri",
+        "target": "/submit-authorizations?period_id=1",
+        "location": "Sol menü / Gönderim Yetkileri"
+      },
+      {
+        "id": "E008",
+        "label": "Parolamı Değiştir",
+        "target": "#passwordModal",
+        "location": "Sol menü / hesap işlemleri"
+      },
+      {
+        "id": "E009",
+        "label": "Çıkış",
+        "target": "POST /logout",
+        "location": "Sol menü / çıkış formu"
+      },
+      {
+        "id": "E010",
+        "label": "Çıkış",
+        "target": "POST /logout",
+        "location": "Sol menü / hesap işlemleri"
+      },
+      {
+        "id": "E011",
+        "label": "Bildirimler",
+        "target": "GET /api/notifications → #notificationPanel",
+        "location": "Üst çubuk / bildirimler"
+      },
+      {
+        "id": "E012",
+        "label": "Performans Kartları ve Ekonomik Tablolar",
+        "target": "/program/1?period_id=1",
+        "location": "Rapor üst araçları"
+      },
+      {
+        "id": "E013",
+        "label": "Performans Göstergeleri",
+        "target": "#indicators",
+        "location": "Veri girişi görünüm sekmeleri"
+      },
+      {
+        "id": "E014",
+        "label": "Faaliyet Maliyetleri",
+        "target": "#activities",
+        "location": "Veri girişi görünüm sekmeleri"
+      },
+      {
+        "id": "E015",
+        "label": "Göstergeye ilişkin açıklama boş.",
+        "target": "Aynı gösterge kartındaki sorunlu alan",
+        "location": "Gösterge kartı / hata özeti: ilgili alana bağlantı"
+      },
+      {
+        "id": "E016",
+        "label": "GÖSTERGE ADI",
+        "target": "POST /api/indicators/1/save",
+        "location": "Gösterge kartı / kimlik alanları"
+      },
+      {
+        "id": "E017",
+        "label": "ÖLÇÜ BİRİMİ",
+        "target": "POST /api/indicators/1/save",
+        "location": "Gösterge kartı / kimlik alanları"
+      },
+      {
+        "id": "E018",
+        "label": "2025 GERÇEKLEŞME",
+        "target": "POST /api/indicators/1/save",
+        "location": "Gösterge kartı / yıllık değerler"
+      },
+      {
+        "id": "E019",
+        "label": "2026 PLANLANAN",
+        "target": "POST /api/indicators/1/save",
+        "location": "Gösterge kartı / yıllık değerler"
+      },
+      {
+        "id": "E020",
+        "label": "2026 YIL SONU GERÇEKLEŞME TAHMİNİ",
+        "target": "POST /api/indicators/1/save",
+        "location": "Gösterge kartı / yıllık değerler"
+      },
+      {
+        "id": "E021",
+        "label": "2027 HEDEF",
+        "target": "POST /api/indicators/1/save",
+        "location": "Gösterge kartı / yıllık değerler"
+      },
+      {
+        "id": "E022",
+        "label": "2028 TAHMİN",
+        "target": "POST /api/indicators/1/save",
+        "location": "Gösterge kartı / yıllık değerler"
+      },
+      {
+        "id": "E023",
+        "label": "2029 TAHMİN",
+        "target": "POST /api/indicators/1/save",
+        "location": "Gösterge kartı / yıllık değerler"
+      },
+      {
+        "id": "E024",
+        "label": "GÖSTERGEYE İLİŞKİN AÇIKLAMA",
+        "target": "POST /api/indicators/1/save",
+        "location": "Gösterge kartı / açıklama ve alan hatası"
+      },
+      {
+        "id": "E025",
+        "label": "HESAPLAMA YÖNTEMİ",
+        "target": "POST /api/indicators/1/save",
+        "location": "Gösterge kartı / açıklamalar"
+      },
+      {
+        "id": "E026",
+        "label": "VERİNİN KAYNAĞI",
+        "target": "POST /api/indicators/1/save",
+        "location": "Gösterge kartı / açıklamalar"
+      },
+      {
+        "id": "E027",
+        "label": "Göstergeyi Kaldır",
+        "target": "Aynı sayfadaki ayrıntı bölümü",
+        "location": "Gösterge kartı / Diğer işlemler menüsü"
+      },
+      {
+        "id": "E028",
+        "label": "Kaldırmayı Onayla / Vazgeç",
+        "target": "POST /program/1/indicator/1/remove",
+        "location": "Ayrı kaldırma onay penceresi / form"
+      },
+      {
+        "id": "E029",
+        "label": "Kaldırmayı Onayla",
+        "target": "POST /program/1/indicator/1/remove",
+        "location": "Ayrı kaldırma onay penceresi / onay"
+      },
+      {
+        "id": "E030",
+        "label": "Vazgeç",
+        "target": "Aynı taslak kaldırma kutusu",
+        "location": "Ayrı kaldırma onay penceresi / iptal"
+      },
+      {
+        "id": "E031",
+        "label": "Kaydet ve Kontrol Et",
+        "target": "POST /api/indicators/1/save",
+        "location": "Üst rapor özeti / birincil eylem"
+      },
+      {
+        "id": "E032",
+        "label": "Stratejiye Gönder",
+        "target": "POST /api/departments/1/submit",
+        "location": "Üst rapor özeti / gönderim"
+      }
+    ]
+  },
+  "12": {
+    "source": "012-activity-sections-department.png",
+    "elements": [
+      {
+        "id": "E001",
+        "label": "Faaliyet Raporu · EK-1",
+        "target": "/activity-sections",
+        "location": "Sol menü / Faaliyet Raporu · EK-1"
+      },
+      {
+        "id": "E002",
+        "label": "Modüller",
+        "target": "/modules",
+        "location": "Sol menü / Modüller"
+      },
+      {
+        "id": "E003",
+        "label": "Genel Bakış",
+        "target": "/dashboard",
+        "location": "Sol menü / Genel Bakış"
+      },
+      {
+        "id": "E004",
+        "label": "İç Kontrol Eylemlerimiz",
+        "target": "/internal-control/our-actions",
+        "location": "Sol menü / İç Kontrol Eylemlerimiz"
+      },
+      {
+        "id": "E005",
+        "label": "Veri Girişi",
+        "target": "/department/1",
+        "location": "Sol menü / Veri Girişi"
+      },
+      {
+        "id": "E006",
+        "label": "Gönderim Yetkileri",
+        "target": "/submit-authorizations",
+        "location": "Sol menü / Gönderim Yetkileri"
+      },
+      {
+        "id": "E007",
+        "label": "Parolamı Değiştir",
+        "target": "#passwordModal",
+        "location": "Sol menü / hesap işlemleri"
+      },
+      {
+        "id": "E008",
+        "label": "Çıkış",
+        "target": "POST /logout",
+        "location": "Sol menü / çıkış formu"
+      },
+      {
+        "id": "E009",
+        "label": "Çıkış",
+        "target": "POST /logout",
+        "location": "Sol menü / hesap işlemleri"
+      },
+      {
+        "id": "E010",
+        "label": "Bildirimler",
+        "target": "GET /api/notifications → #notificationPanel",
+        "location": "Üst çubuk / bildirimler"
+      },
+      {
+        "id": "E011",
+        "label": "← Tamamlanma görünümü",
+        "target": "/activity-sections",
+        "location": "Rapor araçları / geri dönüş"
+      },
+      {
+        "id": "E012",
+        "label": "Word olarak indir",
+        "target": "/activity-sections/reports/2/export.docx",
+        "location": "Dışa aktar menüsü"
+      },
+      {
+        "id": "E013",
+        "label": "PDF olarak indir",
+        "target": "/activity-sections/reports/2/export.pdf",
+        "location": "Dışa aktar menüsü"
+      },
+      {
+        "id": "E014",
+        "label": "Dizgi verisi (JSON)",
+        "target": "/activity-sections/reports/2/typeset.json",
+        "location": "Dışa aktar menüsü"
+      },
+      {
+        "id": "E015",
+        "label": "Strateji’ye gönder",
+        "target": "POST /activity-sections/reports/2/workflow/submit",
+        "location": "Üst rapor özeti / gönderim formu"
+      },
+      {
+        "id": "E016",
+        "label": "Strateji’ye gönder",
+        "target": "POST /activity-sections/reports/2/workflow/submit",
+        "location": "Üst rapor özeti / gönderim"
+      },
+      {
+        "id": "E017",
+        "label": "YÖNETİCİ ÖZETİ Boş",
+        "target": "?code=OZET",
+        "location": "Rapor bölümleri / Yönetici özeti"
+      },
+      {
+        "id": "E018",
+        "label": "I- GENEL BİLGİLER Boş",
+        "target": "?code=I",
+        "location": "Rapor bölümleri / I- Genel bilgiler"
+      },
+      {
+        "id": "E019",
+        "label": "A- Misyon ve Vizyon Taslak",
+        "target": "?code=I.A",
+        "location": "Rapor bölümleri / A- Misyon ve Vizyon"
+      },
+      {
+        "id": "E020",
+        "label": "B- Yetki, Görev ve Sorumluluklar Boş",
+        "target": "?code=I.B",
+        "location": "Rapor bölümleri / B- Yetki, Görev ve Sorumluluklar"
+      },
+      {
+        "id": "E021",
+        "label": "C- İdareye İlişkin Bilgiler Boş",
+        "target": "?code=I.C",
+        "location": "Rapor bölümleri / C- İdareye İlişkin Bilgiler"
+      },
+      {
+        "id": "E022",
+        "label": "1- Fiziksel Yapı Taslak",
+        "target": "?code=I.C.1",
+        "location": "Rapor bölümleri / 1- Fiziksel Yapı"
+      },
+      {
+        "id": "E023",
+        "label": "2- Teşkilat Yapısı Boş",
+        "target": "?code=I.C.2",
+        "location": "Rapor bölümleri / 2- Teşkilat Yapısı"
+      },
+      {
+        "id": "E024",
+        "label": "3- Teknoloji ve Bilişim Altyapısı Boş",
+        "target": "?code=I.C.3",
+        "location": "Rapor bölümleri / 3- Teknoloji ve Bilişim Altyapısı"
+      },
+      {
+        "id": "E025",
+        "label": "4- İnsan Kaynakları Boş",
+        "target": "?code=I.C.4",
+        "location": "Rapor bölümleri / 4- İnsan Kaynakları"
+      },
+      {
+        "id": "E026",
+        "label": "5- Sunulan Hizmetler Boş",
+        "target": "?code=I.C.5",
+        "location": "Rapor bölümleri / 5- Sunulan Hizmetler"
+      },
+      {
+        "id": "E027",
+        "label": "6- Yönetim ve İç Kontrol Sistemi Boş",
+        "target": "?code=I.C.6",
+        "location": "Rapor bölümleri / 6- Yönetim ve İç Kontrol Sistemi"
+      },
+      {
+        "id": "E028",
+        "label": "D- Diğer Hususlar Boş",
+        "target": "?code=I.D",
+        "location": "Rapor bölümleri / D- Diğer Hususlar"
+      },
+      {
+        "id": "E029",
+        "label": "II- AMAÇLAR ve HEDEFLER Boş",
+        "target": "?code=II",
+        "location": "Rapor bölümleri / II- Amaçlar ve hedefler"
+      },
+      {
+        "id": "E030",
+        "label": "A- Temel Politika ve Öncelikler Boş",
+        "target": "?code=II.A",
+        "location": "Rapor bölümleri / A- Temel Politika ve Öncelikler"
+      },
+      {
+        "id": "E031",
+        "label": "B- İdarenin Stratejik Planında Yer Alan Amaç ve Hedefler Boş",
+        "target": "?code=II.B",
+        "location": "Rapor bölümleri / B- İdarenin Stratejik Planında Yer Alan Amaç ve Hedefler"
+      },
+      {
+        "id": "E032",
+        "label": "C- Diğer Hususlar Boş",
+        "target": "?code=II.C",
+        "location": "Rapor bölümleri / C- Diğer Hususlar"
+      },
+      {
+        "id": "E033",
+        "label": "III- FAALİYETLERE İLİŞKİN BİLGİ VE DEĞERLENDİRMELER Boş",
+        "target": "?code=III",
+        "location": "Rapor bölümleri / III- Faaliyetlere ilişkin bilgi ve değerlendirmeler"
+      },
+      {
+        "id": "E034",
+        "label": "A- Malî Bilgiler Boş",
+        "target": "?code=III.A",
+        "location": "Rapor bölümleri / A- Malî Bilgiler"
+      },
+      {
+        "id": "E035",
+        "label": "1- Bütçe Uygulama Sonuçları Boş",
+        "target": "?code=III.A.1",
+        "location": "Rapor bölümleri / 1- Bütçe Uygulama Sonuçları"
+      },
+      {
+        "id": "E036",
+        "label": "2- Temel Malî Tablolara İlişkin Açıklamalar Boş",
+        "target": "?code=III.A.2",
+        "location": "Rapor bölümleri / 2- Temel Malî Tablolara İlişkin Açıklamalar"
+      },
+      {
+        "id": "E037",
+        "label": "3- Malî Denetim Sonuçları Boş",
+        "target": "?code=III.A.3",
+        "location": "Rapor bölümleri / 3- Malî Denetim Sonuçları"
+      },
+      {
+        "id": "E038",
+        "label": "4- Diğer Hususlar Boş",
+        "target": "?code=III.A.4",
+        "location": "Rapor bölümleri / 4- Diğer Hususlar"
+      },
+      {
+        "id": "E039",
+        "label": "B- Performans Bilgileri Boş",
+        "target": "?code=III.B",
+        "location": "Rapor bölümleri / B- Performans Bilgileri"
+      },
+      {
+        "id": "E040",
+        "label": "1- Program, Alt Program, Faaliyet Bilgileri Boş",
+        "target": "?code=III.B.1",
+        "location": "Rapor bölümleri / 1- Program, Alt Program, Faaliyet Bilgileri"
+      },
+      {
+        "id": "E041",
+        "label": "2- Performans Sonuçlarının Değerlendirilmesi Boş",
+        "target": "?code=III.B.2",
+        "location": "Rapor bölümleri / 2- Performans Sonuçlarının Değerlendirilmesi"
+      },
+      {
+        "id": "E042",
+        "label": "i. Alt program hedef ve göstergeleriyle ilgili gerçekleşme sonuçları ve değerlendirmeler Hazır",
+        "target": "?code=III.B.2.i",
+        "location": "Rapor bölümleri / i. Alt program hedef ve göstergeleriyle ilgili gerçekleşme sonuçları ve değerlendirmeler"
+      },
+      {
+        "id": "E043",
+        "label": "ii. Performans denetim sonuçları Boş",
+        "target": "?code=III.B.2.ii",
+        "location": "Rapor bölümleri / ii. Performans denetim sonuçları"
+      },
+      {
+        "id": "E044",
+        "label": "3- Stratejik Plan Değerlendirme Tabloları Boş",
+        "target": "?code=III.B.3",
+        "location": "Rapor bölümleri / 3- Stratejik Plan Değerlendirme Tabloları"
+      },
+      {
+        "id": "E045",
+        "label": "4- Performans Bilgi Sisteminin Değerlendirilmesi Boş",
+        "target": "?code=III.B.4",
+        "location": "Rapor bölümleri / 4- Performans Bilgi Sisteminin Değerlendirilmesi"
+      },
+      {
+        "id": "E046",
+        "label": "5- Diğer Hususlar Boş",
+        "target": "?code=III.B.5",
+        "location": "Rapor bölümleri / 5- Diğer Hususlar"
+      },
+      {
+        "id": "E047",
+        "label": "IV- KURUMSAL KABİLİYET VE KAPASİTENİN DEĞERLENDİRİLMESİ Boş",
+        "target": "?code=IV",
+        "location": "Rapor bölümleri / IV- Kurumsal kabiliyet ve kapasitenin değerlendirilmesi"
+      },
+      {
+        "id": "E048",
+        "label": "A- Üstünlükler Boş",
+        "target": "?code=IV.A",
+        "location": "Rapor bölümleri / A- Üstünlükler"
+      },
+      {
+        "id": "E049",
+        "label": "B- Zayıflıklar Boş",
+        "target": "?code=IV.B",
+        "location": "Rapor bölümleri / B- Zayıflıklar"
+      },
+      {
+        "id": "E050",
+        "label": "C- Değerlendirme Boş",
+        "target": "?code=IV.C",
+        "location": "Rapor bölümleri / C- Değerlendirme"
+      },
+      {
+        "id": "E051",
+        "label": "V- ÖNERİ VE TEDBİRLER Boş",
+        "target": "?code=V",
+        "location": "Rapor bölümleri / V- Öneri ve tedbirler"
+      },
+      {
+        "id": "E052",
+        "label": "EKLER Boş",
+        "target": "?code=EKLER",
+        "location": "Rapor bölümleri / Ekler"
+      },
+      {
+        "id": "E053",
+        "label": "Bölümü kaydet",
+        "target": "POST /activity-sections/reports/2/sections/I.A",
+        "location": "Bölüm editörü / kayıt formu"
+      },
+      {
+        "id": "E054",
+        "label": "BÖLÜM İÇERİĞİ",
+        "target": "POST /activity-sections/reports/2/sections/I.A",
+        "location": "Bölüm editörü / metin"
+      },
+      {
+        "id": "E055",
+        "label": "DURUM Boş Taslak Hazır Uygulanamaz",
+        "target": "POST /activity-sections/reports/2/sections/I.A",
+        "location": "Bölüm editörü / durum"
+      },
+      {
+        "id": "E056",
+        "label": "UYGULANAMAZ GEREKÇESİ",
+        "target": "POST /activity-sections/reports/2/sections/I.A",
+        "location": "Bölüm editörü / durum gerekçesi"
+      },
+      {
+        "id": "E057",
+        "label": "Bölümü kaydet",
+        "target": "POST /activity-sections/reports/2/sections/I.A",
+        "location": "Üst rapor özeti / birincil eylem"
+      },
+      {
+        "id": "E058",
+        "label": "25.10.2026 00:35 TSİ · Kullanıcı 2 · Bölüm kaydedildi",
+        "target": "Aynı sayfadaki ayrıntı bölümü",
+        "location": "Bölüm denetim geçmişi / açılır kayıt"
+      }
+    ]
+  }
+}
