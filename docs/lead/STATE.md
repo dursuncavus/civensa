@@ -1,6 +1,6 @@
 # CIVENSA — CURRENT STATE
 
-Updated: 25 Oct 2026, ~22:45 Istanbul (live session, CV Lider 23).
+Updated: 25 Oct 2026, ~23:10 Istanbul (live session, CV Lider 23).
 Rules: AI_WORKING_CONSTITUTION v1.2 (Drive, global) · `HIERARCHY.md` v1.4 · `PROJECT_RULES.md` v1.3 · `BACKUP_LEAD.md` v2.
 Backup log ("Civensa Yedek Kaydı", Drive): no entries, last modified 23 Oct (DOĞRULANDI 25 Oct 19:15).
 
@@ -42,8 +42,8 @@ Tags: DOĞRULANDI (lead checked) · TARİHSEL (past fact) · BEYAN (owner said) 
 5. D-205 transition leftovers: archive Drive state/log/rule documents with "ESKİ ... KULLANMAYIN", add Drive pointer "KAYITLAR GITHUB'DA".
 6. (closed, D-237) Guard runs on lead PRs after the default-branch switch (#120).
 7. DeepSeek mirror GUNCEL-DURUM.md: refresh in the next live session with the Mac linked.
-8. Codex cloud environment for "@codex" fixes: not set up (D-242). Fix rounds: GitHub Copilot Pro trial after public-repo step 7 (D-246).
+8. Codex cloud environment for "@codex" fixes: not set up (D-242). Fix rounds: GitHub Copilot Pro trial may start now, workflow approval ON until step 7 (D-246, D-248). Owner checks github.com/settings/copilot and subscribes.
 
 ## Next IDs
 - Next new task ID: CIV-102.
-- Next decision: D-248.
+- Next decision: D-249.
