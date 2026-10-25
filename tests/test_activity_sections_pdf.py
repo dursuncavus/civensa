@@ -139,6 +139,7 @@ def test_pdf_button_download_in_browser(section_client, sample, tmp_path):
                 route.fulfill(status=response.status_code, headers=headers, body=response.content)
             page.route('http://testserver/**', serve)
             page.goto(f'http://testserver/activity-sections/reports/{doc.id}')
+            page.locator('[data-section-export] > summary').click()
             with page.expect_download() as pending:
                 page.get_by_role('link', name='PDF olarak indir', exact=True).click()
             download = pending.value

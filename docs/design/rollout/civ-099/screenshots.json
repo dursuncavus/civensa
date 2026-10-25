@@ -1,0 +1,50 @@
+[
+  {
+    "file": "012-draft-content-1440.png",
+    "width": 1440,
+    "height": 2718,
+    "bytes": 252276
+  },
+  {
+    "file": "012-export-1440.png",
+    "width": 1440,
+    "height": 2730,
+    "bytes": 258764
+  },
+  {
+    "file": "012-draft-content-390.png",
+    "width": 390,
+    "height": 5085,
+    "bytes": 259761
+  },
+  {
+    "file": "012-export-390.png",
+    "width": 390,
+    "height": 5097,
+    "bytes": 259912
+  },
+  {
+    "file": "012-returned-1440.png",
+    "width": 1440,
+    "height": 2928,
+    "bytes": 283164
+  },
+  {
+    "file": "012-returned-390.png",
+    "width": 390,
+    "height": 5448,
+    "bytes": 291114
+  },
+  {
+    "file": "012-submitted-1440.png",
+    "width": 1440,
+    "height": 2190,
+    "bytes": 216842
+  },
+  {
+    "file": "012-submitted-390.png",
+    "width": 390,
+    "height": 4361,
+    "bytes": 227856
+  }
+]

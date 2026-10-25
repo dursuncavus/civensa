@@ -1,0 +1,270 @@
+[
+  {
+    "before": "ADET",
+    "after": "Adet"
+  },
+  {
+    "before": "ADI",
+    "after": "Adı"
+  },
+  {
+    "before": "ADRES / MAHALLE",
+    "after": "Adres / mahalle"
+  },
+  {
+    "before": "ALAN (M²)",
+    "after": "Alan (m²)"
+  },
+  {
+    "before": "ALINAN ÖNLEMLER",
+    "after": "Alınan Önlemler"
+  },
+  {
+    "before": "ALT GERÇEKLEŞME ORANI %",
+    "after": "Alt gerçekleşme oranı %"
+  },
+  {
+    "before": "ALT PROGRAM NO",
+    "after": "Alt Program No"
+  },
+  {
+    "before": "AÇIKLAMA",
+    "after": "Açıklama"
+  },
+  {
+    "before": "AÇIKLAMALAR",
+    "after": "Açıklamalar"
+  },
+  {
+    "before": "BAŞLANGIÇ ÖDENEĞİ",
+    "after": "Başlangıç Ödeneği"
+  },
+  {
+    "before": "BULGU ÖZETİ",
+    "after": "Bulgu Özeti"
+  },
+  {
+    "before": "BÖLÜM İÇERİĞİ",
+    "after": "Bölüm içeriği"
+  },
+  {
+    "before": "BÜTÇE SATIRI",
+    "after": "Bütçe Satırı"
+  },
+  {
+    "before": "BÜTÇE TAHMİNİ",
+    "after": "Bütçe Tahmini"
+  },
+  {
+    "before": "BİLDİRİLEN YIL SONU ÖDENEĞİ",
+    "after": "Bildirilen Yıl Sonu Ödeneği"
+  },
+  {
+    "before": "BİRİM AÇIKLAMASI",
+    "after": "Birim Açıklaması"
+  },
+  {
+    "before": "BİRİM SAPMA AÇIKLAMASI (SALT OKUNUR)",
+    "after": "Birim Sapma Açıklaması (salt okunur)"
+  },
+  {
+    "before": "CİNSİYET",
+    "after": "Cinsiyet"
+  },
+  {
+    "before": "DAYANAK",
+    "after": "Dayanak"
+  },
+  {
+    "before": "DENETÇİ / KURUM",
+    "after": "Denetçi / Kurum"
+  },
+  {
+    "before": "DENETİM TÜRÜ",
+    "after": "Denetim Türü"
+  },
+  {
+    "before": "DURUM",
+    "after": "Durum"
+  },
+  {
+    "before": "DÖNEM",
+    "after": "Dönem"
+  },
+  {
+    "before": "DÜŞÜLEN ÖDENEK",
+    "after": "Düşülen Ödenek"
+  },
+  {
+    "before": "EKLENEN ÖDENEK",
+    "after": "Eklenen Ödenek"
+  },
+  {
+    "before": "EKONOMİK KOD",
+    "after": "Ekonomik Kod"
+  },
+  {
+    "before": "ERTESİ YILA DEVREDEN ÖDENEK",
+    "after": "Ertesi Yıla Devreden Ödenek"
+  },
+  {
+    "before": "FAALİYET / SONUÇ AÇIKLAMASI",
+    "after": "Faaliyet / Sonuç Açıklaması"
+  },
+  {
+    "before": "GERÇEKLEŞME %",
+    "after": "Gerçekleşme %"
+  },
+  {
+    "before": "HARCAMA (GERÇEKLEŞME)",
+    "after": "Harcama (Gerçekleşme)"
+  },
+  {
+    "before": "HESAPLANAN YIL SONU / NET TAHSİLAT",
+    "after": "Hesaplanan Yıl Sonu / Net Tahsilat"
+  },
+  {
+    "before": "KAYDET",
+    "after": "Kaydet"
+  },
+  {
+    "before": "KULLANIM AMACI",
+    "after": "Kullanım amacı"
+  },
+  {
+    "before": "KURULUŞ ADI",
+    "after": "Kuruluş Adı"
+  },
+  {
+    "before": "KİŞİ SAYISI",
+    "after": "Kişi sayısı"
+  },
+  {
+    "before": "MÜDÜRLÜK",
+    "after": "Müdürlük"
+  },
+  {
+    "before": "MÜDÜRLÜK NO",
+    "after": "Müdürlük No"
+  },
+  {
+    "before": "MÜLKİYET",
+    "after": "Mülkiyet"
+  },
+  {
+    "before": "NET TAHSİLAT",
+    "after": "Net Tahsilat"
+  },
+  {
+    "before": "PDF VEYA XLSX",
+    "after": "PDF veya XLSX"
+  },
+  {
+    "before": "PDF VEYA XLSX (EN FAZLA 10 MB)",
+    "after": "PDF veya XLSX (en fazla 10 MB)"
+  },
+  {
+    "before": "PP BÜTÇESİ",
+    "after": "PP Bütçesi"
+  },
+  {
+    "before": "PP BÜTÇESİ (SALT OKUNUR)",
+    "after": "PP Bütçesi (salt okunur)"
+  },
+  {
+    "before": "PROGRAM NO",
+    "after": "Program No"
+  },
+  {
+    "before": "RAPOR SAYISI",
+    "after": "Rapor Sayısı"
+  },
+  {
+    "before": "RAPOR TARİHİ",
+    "after": "Rapor Tarihi"
+  },
+  {
+    "before": "RED VE İADELER",
+    "after": "Red ve İadeler"
+  },
+  {
+    "before": "SAPMA AÇIKLAMASI",
+    "after": "Sapma Açıklaması"
+  },
+  {
+    "before": "TABLO ADI",
+    "after": "Tablo Adı"
+  },
+  {
+    "before": "TABLO TARİHİ",
+    "after": "Tablo Tarihi"
+  },
+  {
+    "before": "TABLO TARİHİ",
+    "after": "Tablo tarihi"
+  },
+  {
+    "before": "TAHSİLAT (GERÇEKLEŞME)",
+    "after": "Tahsilat (Gerçekleşme)"
+  },
+  {
+    "before": "TUTAR",
+    "after": "Tutar"
+  },
+  {
+    "before": "TÜRÜ",
+    "after": "Türü"
+  },
+  {
+    "before": "UYGULANAMAZ GEREKÇESİ",
+    "after": "Uygulanamaz gerekçesi"
+  },
+  {
+    "before": "VARLIK / YÜKÜMLÜLÜK",
+    "after": "Varlık / yükümlülük"
+  },
+  {
+    "before": "XLSX TABLOSU",
+    "after": "XLSX tablosu"
+  },
+  {
+    "before": "YARDIMIN TÜRÜ",
+    "after": "Yardımın Türü"
+  },
+  {
+    "before": "YIL SONU TUTARI",
+    "after": "Yıl Sonu Tutarı"
+  },
+  {
+    "before": "YIL SONU ÖDENEĞİ",
+    "after": "Yıl Sonu Ödeneği"
+  },
+  {
+    "before": "ÖNCEKİ YIL TUTARI",
+    "after": "Önceki Yıl Tutarı"
+  },
+  {
+    "before": "ÖZET RAKAM ETİKETİ",
+    "after": "Özet rakam etiketi"
+  },
+  {
+    "before": "ÖZET RAKAM TUTARI",
+    "after": "Özet rakam tutarı"
+  },
+  {
+    "before": "ÖĞRENİM DÜZEYİ",
+    "after": "Öğrenim düzeyi"
+  },
+  {
+    "before": "ÜST GERÇEKLEŞME ORANI %",
+    "after": "Üst gerçekleşme oranı %"
+  },
+  {
+    "before": "İPTAL EDİLEN ÖDENEK",
+    "after": "İptal Edilen Ödenek"
+  },
+  {
+    "before": "İSTİHDAM TÜRÜ",
+    "after": "İstihdam türü"
+  }
+]

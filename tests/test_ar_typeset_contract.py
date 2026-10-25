@@ -393,6 +393,7 @@ def test_download_button_in_browser(section_client, sample, tmp_path):
         context.route('http://testserver/**',serve)
         page=context.new_page()
         page.goto(f'http://testserver/activity-sections/reports/{doc.id}')
+        page.locator('[data-section-export] > summary').click()
         with page.expect_download() as captured:
             page.get_by_role('link',name='Dizgi verisi (JSON)',exact=True).click()
         download=captured.value
