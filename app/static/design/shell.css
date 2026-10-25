@@ -94,13 +94,20 @@ body :is(a, button, summary, input, textarea, select, [tabindex]):focus-visible 
 .mobile-nav { display: none; color: var(--accent); text-underline-offset: 4px; }
 .mobile-nav:hover { color: var(--accent-hover); }
 /* Only screen 033/034 adopts the content components in this rollout. */
-.module-card { padding: var(--space-6); background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); min-width: 0; margin-bottom: var(--space-6); }
-.module { display: grid; grid-template-columns: 48px minmax(0, 1fr); gap: var(--space-6); padding: var(--space-8); }
-.module-number { color: var(--text-secondary); font-size: var(--text-section); border-top: 2px solid var(--border); padding-top: var(--space-2); }
-.module h2 { margin: 0 0 var(--space-2); font-size: var(--text-section); font-weight: 600; line-height: 1.5; }
-.module p { margin: 0 0 var(--space-4); max-width: 72ch; overflow-wrap: anywhere; }
-.module .help { font-size: var(--text-sm); color: var(--text-secondary); font-weight: 400; }
-.module .actions { margin-top: var(--space-6); display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); }
+/* Query the content width, independent of the sidebar and page padding. */
+.module-list { container-type: inline-size; }
+.module-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-6); }
+.module-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); min-width: 0; }
+.module { display: grid; grid-template-rows: auto auto auto auto 1fr; row-gap: var(--space-4); padding: var(--space-8); }
+.module-icon { grid-row: 1; width: 28px; height: 28px; color: var(--accent); }
+.module h2 { grid-row: 2; margin: 0; font-size: var(--text-section); font-weight: 600; line-height: 1.5; }
+.module p { grid-row: 3; margin: 0; max-width: 72ch; overflow-wrap: anywhere; }
+.module .help { grid-row: 4; font-size: var(--text-sm); color: var(--text-secondary); font-weight: 400; }
+.module .actions { grid-row: 5; align-self: end; padding-top: var(--space-2); display: flex; flex-direction: column; align-items: stretch; gap: var(--space-2); }
+@container (min-width: 960px) {
+  .module-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .module { grid-row: span 5; grid-template-rows: subgrid; }
+}
 @media (max-width: 1100px) {
   .workspace > main, .topbar { padding-inline: var(--space-6); }
   .page-header { flex-wrap: wrap; }
@@ -117,9 +124,7 @@ body :is(a, button, summary, input, textarea, select, [tabindex]):focus-visible 
   .page-header { flex-wrap: wrap; gap: var(--space-2); margin-bottom: var(--space-6); }
   .period-badge { flex-shrink: 1; }
   .module-card { padding: var(--space-4); }
-  .module { grid-template-columns: minmax(0, 1fr); gap: var(--space-3); }
-  .module-number { width: 48px; }
-  .module .actions { margin-top: var(--space-4); }
+  .module { row-gap: var(--space-3); }
   .module .shell-button { width: 100%; }
   #passwordModal .modal-card { padding: var(--space-6); }
 }

@@ -1,0 +1,1447 @@
+{
+  "browser": "151.0.7922.173",
+  "captures": 8,
+  "failures": 0,
+  "screens": [
+    {
+      "filename": "033-modules-strategy.png",
+      "width": 1440,
+      "elements": 20,
+      "missing": [],
+      "layout": {
+        "viewport": 1440,
+        "document": 1440,
+        "overflow": [],
+        "clipped": [],
+        "overlaps": [],
+        "shell_issues": []
+      },
+      "measured": {
+        "contentWidth": 1096,
+        "cards": [
+          {
+            "x": 296,
+            "y": 207,
+            "width": 349.328125,
+            "height": 455,
+            "bottom": 662
+          },
+          {
+            "x": 669.328125,
+            "y": 207,
+            "width": 349.328125,
+            "height": 455,
+            "bottom": 662
+          },
+          {
+            "x": 1042.65625,
+            "y": 207,
+            "width": 349.34375,
+            "height": 455,
+            "bottom": 662
+          }
+        ],
+        "titles": [
+          {
+            "x": 329,
+            "y": 284,
+            "width": 283.328125,
+            "height": 30,
+            "bottom": 314
+          },
+          {
+            "x": 702.328125,
+            "y": 284,
+            "width": 283.328125,
+            "height": 30,
+            "bottom": 314
+          },
+          {
+            "x": 1075.65625,
+            "y": 284,
+            "width": 283.34375,
+            "height": 30,
+            "bottom": 314
+          }
+        ],
+        "descriptions": [
+          {
+            "x": 329,
+            "y": 330,
+            "width": 283.328125,
+            "height": 96,
+            "bottom": 426
+          },
+          {
+            "x": 702.328125,
+            "y": 330,
+            "width": 283.328125,
+            "height": 96,
+            "bottom": 426
+          },
+          {
+            "x": 1075.65625,
+            "y": 330,
+            "width": 283.34375,
+            "height": 96,
+            "bottom": 426
+          }
+        ],
+        "help": [
+          {
+            "x": 329,
+            "y": 442,
+            "width": 283.328125,
+            "height": 63,
+            "bottom": 505
+          },
+          {
+            "x": 702.328125,
+            "y": 442,
+            "width": 283.328125,
+            "height": 63,
+            "bottom": 505
+          }
+        ],
+        "buttons": [
+          [
+            {
+              "x": 329,
+              "y": 589,
+              "width": 283.328125,
+              "height": 40,
+              "bottom": 629
+            }
+          ],
+          [
+            {
+              "x": 702.328125,
+              "y": 541,
+              "width": 283.328125,
+              "height": 40,
+              "bottom": 581
+            },
+            {
+              "x": 702.328125,
+              "y": 589,
+              "width": 283.328125,
+              "height": 40,
+              "bottom": 629
+            }
+          ],
+          [
+            {
+              "x": 1075.65625,
+              "y": 589,
+              "width": 283.34375,
+              "height": 40,
+              "bottom": 629
+            }
+          ]
+        ],
+        "icons": [
+          {
+            "x": 329,
+            "y": 240,
+            "width": 28,
+            "height": 28,
+            "bottom": 268,
+            "color": "rgb(30, 107, 101)",
+            "surface": "rgb(255, 255, 255)",
+            "stroke": "1.5px",
+            "hidden": "true",
+            "focusable": "false",
+            "contrast": 6.275777483612689
+          },
+          {
+            "x": 702.328125,
+            "y": 240,
+            "width": 28,
+            "height": 28,
+            "bottom": 268,
+            "color": "rgb(30, 107, 101)",
+            "surface": "rgb(255, 255, 255)",
+            "stroke": "1.5px",
+            "hidden": "true",
+            "focusable": "false",
+            "contrast": 6.275777483612689
+          },
+          {
+            "x": 1075.65625,
+            "y": 240,
+            "width": 28,
+            "height": 28,
+            "bottom": 268,
+            "color": "rgb(30, 107, 101)",
+            "surface": "rgb(255, 255, 255)",
+            "stroke": "1.5px",
+            "hidden": "true",
+            "focusable": "false",
+            "contrast": 6.275777483612689
+          }
+        ],
+        "numbers": 0
+      }
+    },
+    {
+      "filename": "034-modules-department.png",
+      "width": 1440,
+      "elements": 14,
+      "missing": [],
+      "layout": {
+        "viewport": 1440,
+        "document": 1440,
+        "overflow": [],
+        "clipped": [],
+        "overlaps": [],
+        "shell_issues": []
+      },
+      "measured": {
+        "contentWidth": 1096,
+        "cards": [
+          {
+            "x": 296,
+            "y": 207,
+            "width": 349.328125,
+            "height": 455,
+            "bottom": 662
+          },
+          {
+            "x": 669.328125,
+            "y": 207,
+            "width": 349.328125,
+            "height": 455,
+            "bottom": 662
+          },
+          {
+            "x": 1042.65625,
+            "y": 207,
+            "width": 349.34375,
+            "height": 455,
+            "bottom": 662
+          }
+        ],
+        "titles": [
+          {
+            "x": 329,
+            "y": 284,
+            "width": 283.328125,
+            "height": 30,
+            "bottom": 314
+          },
+          {
+            "x": 702.328125,
+            "y": 284,
+            "width": 283.328125,
+            "height": 30,
+            "bottom": 314
+          },
+          {
+            "x": 1075.65625,
+            "y": 284,
+            "width": 283.34375,
+            "height": 30,
+            "bottom": 314
+          }
+        ],
+        "descriptions": [
+          {
+            "x": 329,
+            "y": 330,
+            "width": 283.328125,
+            "height": 96,
+            "bottom": 426
+          },
+          {
+            "x": 702.328125,
+            "y": 330,
+            "width": 283.328125,
+            "height": 96,
+            "bottom": 426
+          },
+          {
+            "x": 1075.65625,
+            "y": 330,
+            "width": 283.34375,
+            "height": 96,
+            "bottom": 426
+          }
+        ],
+        "help": [
+          {
+            "x": 329,
+            "y": 442,
+            "width": 283.328125,
+            "height": 63,
+            "bottom": 505
+          },
+          {
+            "x": 702.328125,
+            "y": 442,
+            "width": 283.328125,
+            "height": 63,
+            "bottom": 505
+          }
+        ],
+        "buttons": [
+          [
+            {
+              "x": 329,
+              "y": 589,
+              "width": 283.328125,
+              "height": 40,
+              "bottom": 629
+            }
+          ],
+          [
+            {
+              "x": 702.328125,
+              "y": 541,
+              "width": 283.328125,
+              "height": 40,
+              "bottom": 581
+            },
+            {
+              "x": 702.328125,
+              "y": 589,
+              "width": 283.328125,
+              "height": 40,
+              "bottom": 629
+            }
+          ],
+          [
+            {
+              "x": 1075.65625,
+              "y": 589,
+              "width": 283.34375,
+              "height": 40,
+              "bottom": 629
+            }
+          ]
+        ],
+        "icons": [
+          {
+            "x": 329,
+            "y": 240,
+            "width": 28,
+            "height": 28,
+            "bottom": 268,
+            "color": "rgb(30, 107, 101)",
+            "surface": "rgb(255, 255, 255)",
+            "stroke": "1.5px",
+            "hidden": "true",
+            "focusable": "false",
+            "contrast": 6.275777483612689
+          },
+          {
+            "x": 702.328125,
+            "y": 240,
+            "width": 28,
+            "height": 28,
+            "bottom": 268,
+            "color": "rgb(30, 107, 101)",
+            "surface": "rgb(255, 255, 255)",
+            "stroke": "1.5px",
+            "hidden": "true",
+            "focusable": "false",
+            "contrast": 6.275777483612689
+          },
+          {
+            "x": 1075.65625,
+            "y": 240,
+            "width": 28,
+            "height": 28,
+            "bottom": 268,
+            "color": "rgb(30, 107, 101)",
+            "surface": "rgb(255, 255, 255)",
+            "stroke": "1.5px",
+            "hidden": "true",
+            "focusable": "false",
+            "contrast": 6.275777483612689
+          }
+        ],
+        "numbers": 0
+      }
+    },
+    {
+      "filename": "033-modules-strategy.png",
+      "width": 390,
+      "elements": 20,
+      "missing": [],
+      "layout": {
+        "viewport": 390,
+        "document": 390,
+        "overflow": [],
+        "clipped": [],
+        "overlaps": [],
+        "shell_issues": []
+      },
+      "measured": {
+        "contentWidth": 358,
+        "cards": [
+          {
+            "x": 16,
+            "y": 231,
+            "width": 358,
+            "height": 290,
+            "bottom": 521
+          },
+          {
+            "x": 16,
+            "y": 545,
+            "width": 358,
+            "height": 383,
+            "bottom": 928
+          },
+          {
+            "x": 16,
+            "y": 952,
+            "width": 358,
+            "height": 248,
+            "bottom": 1200
+          }
+        ],
+        "titles": [
+          {
+            "x": 33,
+            "y": 288,
+            "width": 324,
+            "height": 30,
+            "bottom": 318
+          },
+          {
+            "x": 33,
+            "y": 602,
+            "width": 324,
+            "height": 30,
+            "bottom": 632
+          },
+          {
+            "x": 33,
+            "y": 1009,
+            "width": 324,
+            "height": 30,
+            "bottom": 1039
+          }
+        ],
+        "descriptions": [
+          {
+            "x": 33,
+            "y": 330,
+            "width": 324,
+            "height": 48,
+            "bottom": 378
+          },
+          {
+            "x": 33,
+            "y": 644,
+            "width": 324,
+            "height": 72,
+            "bottom": 716
+          },
+          {
+            "x": 33,
+            "y": 1051,
+            "width": 324,
+            "height": 48,
+            "bottom": 1099
+          }
+        ],
+        "help": [
+          {
+            "x": 33,
+            "y": 390,
+            "width": 324,
+            "height": 42,
+            "bottom": 432
+          },
+          {
+            "x": 33,
+            "y": 728,
+            "width": 324,
+            "height": 63,
+            "bottom": 791
+          }
+        ],
+        "buttons": [
+          [
+            {
+              "x": 33,
+              "y": 464,
+              "width": 324,
+              "height": 40,
+              "bottom": 504
+            }
+          ],
+          [
+            {
+              "x": 33,
+              "y": 823,
+              "width": 324,
+              "height": 40,
+              "bottom": 863
+            },
+            {
+              "x": 33,
+              "y": 871,
+              "width": 324,
+              "height": 40,
+              "bottom": 911
+            }
+          ],
+          [
+            {
+              "x": 33,
+              "y": 1143,
+              "width": 324,
+              "height": 40,
+              "bottom": 1183
+            }
+          ]
+        ],
+        "icons": [
+          {
+            "x": 33,
+            "y": 248,
+            "width": 28,
+            "height": 28,
+            "bottom": 276,
+            "color": "rgb(30, 107, 101)",
+            "surface": "rgb(255, 255, 255)",
+            "stroke": "1.5px",
+            "hidden": "true",
+            "focusable": "false",
+            "contrast": 6.275777483612689
+          },
+          {
+            "x": 33,
+            "y": 562,
+            "width": 28,
+            "height": 28,
+            "bottom": 590,
+            "color": "rgb(30, 107, 101)",
+            "surface": "rgb(255, 255, 255)",
+            "stroke": "1.5px",
+            "hidden": "true",
+            "focusable": "false",
+            "contrast": 6.275777483612689
+          },
+          {
+            "x": 33,
+            "y": 969,
+            "width": 28,
+            "height": 28,
+            "bottom": 997,
+            "color": "rgb(30, 107, 101)",
+            "surface": "rgb(255, 255, 255)",
+            "stroke": "1.5px",
+            "hidden": "true",
+            "focusable": "false",
+            "contrast": 6.275777483612689
+          }
+        ],
+        "numbers": 0
+      }
+    },
+    {
+      "filename": "034-modules-department.png",
+      "width": 390,
+      "elements": 14,
+      "missing": [],
+      "layout": {
+        "viewport": 390,
+        "document": 390,
+        "overflow": [],
+        "clipped": [],
+        "overlaps": [],
+        "shell_issues": []
+      },
+      "measured": {
+        "contentWidth": 358,
+        "cards": [
+          {
+            "x": 16,
+            "y": 231,
+            "width": 358,
+            "height": 290,
+            "bottom": 521
+          },
+          {
+            "x": 16,
+            "y": 545,
+            "width": 358,
+            "height": 383,
+            "bottom": 928
+          },
+          {
+            "x": 16,
+            "y": 952,
+            "width": 358,
+            "height": 248,
+            "bottom": 1200
+          }
+        ],
+        "titles": [
+          {
+            "x": 33,
+            "y": 288,
+            "width": 324,
+            "height": 30,
+            "bottom": 318
+          },
+          {
+            "x": 33,
+            "y": 602,
+            "width": 324,
+            "height": 30,
+            "bottom": 632
+          },
+          {
+            "x": 33,
+            "y": 1009,
+            "width": 324,
+            "height": 30,
+            "bottom": 1039
+          }
+        ],
+        "descriptions": [
+          {
+            "x": 33,
+            "y": 330,
+            "width": 324,
+            "height": 48,
+            "bottom": 378
+          },
+          {
+            "x": 33,
+            "y": 644,
+            "width": 324,
+            "height": 72,
+            "bottom": 716
+          },
+          {
+            "x": 33,
+            "y": 1051,
+            "width": 324,
+            "height": 48,
+            "bottom": 1099
+          }
+        ],
+        "help": [
+          {
+            "x": 33,
+            "y": 390,
+            "width": 324,
+            "height": 42,
+            "bottom": 432
+          },
+          {
+            "x": 33,
+            "y": 728,
+            "width": 324,
+            "height": 63,
+            "bottom": 791
+          }
+        ],
+        "buttons": [
+          [
+            {
+              "x": 33,
+              "y": 464,
+              "width": 324,
+              "height": 40,
+              "bottom": 504
+            }
+          ],
+          [
+            {
+              "x": 33,
+              "y": 823,
+              "width": 324,
+              "height": 40,
+              "bottom": 863
+            },
+            {
+              "x": 33,
+              "y": 871,
+              "width": 324,
+              "height": 40,
+              "bottom": 911
+            }
+          ],
+          [
+            {
+              "x": 33,
+              "y": 1143,
+              "width": 324,
+              "height": 40,
+              "bottom": 1183
+            }
+          ]
+        ],
+        "icons": [
+          {
+            "x": 33,
+            "y": 248,
+            "width": 28,
+            "height": 28,
+            "bottom": 276,
+            "color": "rgb(30, 107, 101)",
+            "surface": "rgb(255, 255, 255)",
+            "stroke": "1.5px",
+            "hidden": "true",
+            "focusable": "false",
+            "contrast": 6.275777483612689
+          },
+          {
+            "x": 33,
+            "y": 562,
+            "width": 28,
+            "height": 28,
+            "bottom": 590,
+            "color": "rgb(30, 107, 101)",
+            "surface": "rgb(255, 255, 255)",
+            "stroke": "1.5px",
+            "hidden": "true",
+            "focusable": "false",
+            "contrast": 6.275777483612689
+          },
+          {
+            "x": 33,
+            "y": 969,
+            "width": 28,
+            "height": 28,
+            "bottom": 997,
+            "color": "rgb(30, 107, 101)",
+            "surface": "rgb(255, 255, 255)",
+            "stroke": "1.5px",
+            "hidden": "true",
+            "focusable": "false",
+            "contrast": 6.275777483612689
+          }
+        ],
+        "numbers": 0
+      }
+    },
+    {
+      "filename": "033-modules-strategy.png",
+      "width": 1303,
+      "elements": 20,
+      "missing": [],
+      "layout": {
+        "viewport": 1303,
+        "document": 1303,
+        "overflow": [],
+        "clipped": [],
+        "overlaps": [],
+        "shell_issues": []
+      },
+      "measured": {
+        "contentWidth": 959,
+        "cards": [
+          {
+            "x": 296,
+            "y": 207,
+            "width": 959,
+            "height": 293,
+            "bottom": 500
+          },
+          {
+            "x": 296,
+            "y": 524,
+            "width": 959,
+            "height": 386,
+            "bottom": 910
+          },
+          {
+            "x": 296,
+            "y": 934,
+            "width": 959,
+            "height": 272,
+            "bottom": 1206
+          }
+        ],
+        "titles": [
+          {
+            "x": 329,
+            "y": 284,
+            "width": 893,
+            "height": 30,
+            "bottom": 314
+          },
+          {
+            "x": 329,
+            "y": 601,
+            "width": 893,
+            "height": 30,
+            "bottom": 631
+          },
+          {
+            "x": 329,
+            "y": 1011,
+            "width": 893,
+            "height": 30,
+            "bottom": 1041
+          }
+        ],
+        "descriptions": [
+          {
+            "x": 329,
+            "y": 330,
+            "width": 642.8125,
+            "height": 24,
+            "bottom": 354
+          },
+          {
+            "x": 329,
+            "y": 647,
+            "width": 642.8125,
+            "height": 48,
+            "bottom": 695
+          },
+          {
+            "x": 329,
+            "y": 1057,
+            "width": 642.8125,
+            "height": 24,
+            "bottom": 1081
+          }
+        ],
+        "help": [
+          {
+            "x": 329,
+            "y": 370,
+            "width": 562.453125,
+            "height": 21,
+            "bottom": 391
+          },
+          {
+            "x": 329,
+            "y": 711,
+            "width": 562.453125,
+            "height": 42,
+            "bottom": 753
+          }
+        ],
+        "buttons": [
+          [
+            {
+              "x": 329,
+              "y": 427,
+              "width": 893,
+              "height": 40,
+              "bottom": 467
+            }
+          ],
+          [
+            {
+              "x": 329,
+              "y": 789,
+              "width": 893,
+              "height": 40,
+              "bottom": 829
+            },
+            {
+              "x": 329,
+              "y": 837,
+              "width": 893,
+              "height": 40,
+              "bottom": 877
+            }
+          ],
+          [
+            {
+              "x": 329,
+              "y": 1133,
+              "width": 893,
+              "height": 40,
+              "bottom": 1173
+            }
+          ]
+        ],
+        "icons": [
+          {
+            "x": 329,
+            "y": 240,
+            "width": 28,
+            "height": 28,
+            "bottom": 268,
+            "color": "rgb(30, 107, 101)",
+            "surface": "rgb(255, 255, 255)",
+            "stroke": "1.5px",
+            "hidden": "true",
+            "focusable": "false",
+            "contrast": 6.275777483612689
+          },
+          {
+            "x": 329,
+            "y": 557,
+            "width": 28,
+            "height": 28,
+            "bottom": 585,
+            "color": "rgb(30, 107, 101)",
+            "surface": "rgb(255, 255, 255)",
+            "stroke": "1.5px",
+            "hidden": "true",
+            "focusable": "false",
+            "contrast": 6.275777483612689
+          },
+          {
+            "x": 329,
+            "y": 967,
+            "width": 28,
+            "height": 28,
+            "bottom": 995,
+            "color": "rgb(30, 107, 101)",
+            "surface": "rgb(255, 255, 255)",
+            "stroke": "1.5px",
+            "hidden": "true",
+            "focusable": "false",
+            "contrast": 6.275777483612689
+          }
+        ],
+        "numbers": 0
+      }
+    },
+    {
+      "filename": "034-modules-department.png",
+      "width": 1303,
+      "elements": 14,
+      "missing": [],
+      "layout": {
+        "viewport": 1303,
+        "document": 1303,
+        "overflow": [],
+        "clipped": [],
+        "overlaps": [],
+        "shell_issues": []
+      },
+      "measured": {
+        "contentWidth": 959,
+        "cards": [
+          {
+            "x": 296,
+            "y": 207,
+            "width": 959,
+            "height": 293,
+            "bottom": 500
+          },
+          {
+            "x": 296,
+            "y": 524,
+            "width": 959,
+            "height": 386,
+            "bottom": 910
+          },
+          {
+            "x": 296,
+            "y": 934,
+            "width": 959,
+            "height": 272,
+            "bottom": 1206
+          }
+        ],
+        "titles": [
+          {
+            "x": 329,
+            "y": 284,
+            "width": 893,
+            "height": 30,
+            "bottom": 314
+          },
+          {
+            "x": 329,
+            "y": 601,
+            "width": 893,
+            "height": 30,
+            "bottom": 631
+          },
+          {
+            "x": 329,
+            "y": 1011,
+            "width": 893,
+            "height": 30,
+            "bottom": 1041
+          }
+        ],
+        "descriptions": [
+          {
+            "x": 329,
+            "y": 330,
+            "width": 642.8125,
+            "height": 24,
+            "bottom": 354
+          },
+          {
+            "x": 329,
+            "y": 647,
+            "width": 642.8125,
+            "height": 48,
+            "bottom": 695
+          },
+          {
+            "x": 329,
+            "y": 1057,
+            "width": 642.8125,
+            "height": 24,
+            "bottom": 1081
+          }
+        ],
+        "help": [
+          {
+            "x": 329,
+            "y": 370,
+            "width": 562.453125,
+            "height": 21,
+            "bottom": 391
+          },
+          {
+            "x": 329,
+            "y": 711,
+            "width": 562.453125,
+            "height": 42,
+            "bottom": 753
+          }
+        ],
+        "buttons": [
+          [
+            {
+              "x": 329,
+              "y": 427,
+              "width": 893,
+              "height": 40,
+              "bottom": 467
+            }
+          ],
+          [
+            {
+              "x": 329,
+              "y": 789,
+              "width": 893,
+              "height": 40,
+              "bottom": 829
+            },
+            {
+              "x": 329,
+              "y": 837,
+              "width": 893,
+              "height": 40,
+              "bottom": 877
+            }
+          ],
+          [
+            {
+              "x": 329,
+              "y": 1133,
+              "width": 893,
+              "height": 40,
+              "bottom": 1173
+            }
+          ]
+        ],
+        "icons": [
+          {
+            "x": 329,
+            "y": 240,
+            "width": 28,
+            "height": 28,
+            "bottom": 268,
+            "color": "rgb(30, 107, 101)",
+            "surface": "rgb(255, 255, 255)",
+            "stroke": "1.5px",
+            "hidden": "true",
+            "focusable": "false",
+            "contrast": 6.275777483612689
+          },
+          {
+            "x": 329,
+            "y": 557,
+            "width": 28,
+            "height": 28,
+            "bottom": 585,
+            "color": "rgb(30, 107, 101)",
+            "surface": "rgb(255, 255, 255)",
+            "stroke": "1.5px",
+            "hidden": "true",
+            "focusable": "false",
+            "contrast": 6.275777483612689
+          },
+          {
+            "x": 329,
+            "y": 967,
+            "width": 28,
+            "height": 28,
+            "bottom": 995,
+            "color": "rgb(30, 107, 101)",
+            "surface": "rgb(255, 255, 255)",
+            "stroke": "1.5px",
+            "hidden": "true",
+            "focusable": "false",
+            "contrast": 6.275777483612689
+          }
+        ],
+        "numbers": 0
+      }
+    },
+    {
+      "filename": "033-modules-strategy.png",
+      "width": 1304,
+      "elements": 20,
+      "missing": [],
+      "layout": {
+        "viewport": 1304,
+        "document": 1304,
+        "overflow": [],
+        "clipped": [],
+        "overlaps": [],
+        "shell_issues": []
+      },
+      "measured": {
+        "contentWidth": 960,
+        "cards": [
+          {
+            "x": 296,
+            "y": 207,
+            "width": 304,
+            "height": 455,
+            "bottom": 662
+          },
+          {
+            "x": 624,
+            "y": 207,
+            "width": 304,
+            "height": 455,
+            "bottom": 662
+          },
+          {
+            "x": 952,
+            "y": 207,
+            "width": 304,
+            "height": 455,
+            "bottom": 662
+          }
+        ],
+        "titles": [
+          {
+            "x": 329,
+            "y": 284,
+            "width": 238,
+            "height": 30,
+            "bottom": 314
+          },
+          {
+            "x": 657,
+            "y": 284,
+            "width": 238,
+            "height": 30,
+            "bottom": 314
+          },
+          {
+            "x": 985,
+            "y": 284,
+            "width": 238,
+            "height": 30,
+            "bottom": 314
+          }
+        ],
+        "descriptions": [
+          {
+            "x": 329,
+            "y": 330,
+            "width": 238,
+            "height": 96,
+            "bottom": 426
+          },
+          {
+            "x": 657,
+            "y": 330,
+            "width": 238,
+            "height": 96,
+            "bottom": 426
+          },
+          {
+            "x": 985,
+            "y": 330,
+            "width": 238,
+            "height": 96,
+            "bottom": 426
+          }
+        ],
+        "help": [
+          {
+            "x": 329,
+            "y": 442,
+            "width": 238,
+            "height": 63,
+            "bottom": 505
+          },
+          {
+            "x": 657,
+            "y": 442,
+            "width": 238,
+            "height": 63,
+            "bottom": 505
+          }
+        ],
+        "buttons": [
+          [
+            {
+              "x": 329,
+              "y": 589,
+              "width": 238,
+              "height": 40,
+              "bottom": 629
+            }
+          ],
+          [
+            {
+              "x": 657,
+              "y": 541,
+              "width": 238,
+              "height": 40,
+              "bottom": 581
+            },
+            {
+              "x": 657,
+              "y": 589,
+              "width": 238,
+              "height": 40,
+              "bottom": 629
+            }
+          ],
+          [
+            {
+              "x": 985,
+              "y": 589,
+              "width": 238,
+              "height": 40,
+              "bottom": 629
+            }
+          ]
+        ],
+        "icons": [
+          {
+            "x": 329,
+            "y": 240,
+            "width": 28,
+            "height": 28,
+            "bottom": 268,
+            "color": "rgb(30, 107, 101)",
+            "surface": "rgb(255, 255, 255)",
+            "stroke": "1.5px",
+            "hidden": "true",
+            "focusable": "false",
+            "contrast": 6.275777483612689
+          },
+          {
+            "x": 657,
+            "y": 240,
+            "width": 28,
+            "height": 28,
+            "bottom": 268,
+            "color": "rgb(30, 107, 101)",
+            "surface": "rgb(255, 255, 255)",
+            "stroke": "1.5px",
+            "hidden": "true",
+            "focusable": "false",
+            "contrast": 6.275777483612689
+          },
+          {
+            "x": 985,
+            "y": 240,
+            "width": 28,
+            "height": 28,
+            "bottom": 268,
+            "color": "rgb(30, 107, 101)",
+            "surface": "rgb(255, 255, 255)",
+            "stroke": "1.5px",
+            "hidden": "true",
+            "focusable": "false",
+            "contrast": 6.275777483612689
+          }
+        ],
+        "numbers": 0
+      }
+    },
+    {
+      "filename": "034-modules-department.png",
+      "width": 1304,
+      "elements": 14,
+      "missing": [],
+      "layout": {
+        "viewport": 1304,
+        "document": 1304,
+        "overflow": [],
+        "clipped": [],
+        "overlaps": [],
+        "shell_issues": []
+      },
+      "measured": {
+        "contentWidth": 960,
+        "cards": [
+          {
+            "x": 296,
+            "y": 207,
+            "width": 304,
+            "height": 455,
+            "bottom": 662
+          },
+          {
+            "x": 624,
+            "y": 207,
+            "width": 304,
+            "height": 455,
+            "bottom": 662
+          },
+          {
+            "x": 952,
+            "y": 207,
+            "width": 304,
+            "height": 455,
+            "bottom": 662
+          }
+        ],
+        "titles": [
+          {
+            "x": 329,
+            "y": 284,
+            "width": 238,
+            "height": 30,
+            "bottom": 314
+          },
+          {
+            "x": 657,
+            "y": 284,
+            "width": 238,
+            "height": 30,
+            "bottom": 314
+          },
+          {
+            "x": 985,
+            "y": 284,
+            "width": 238,
+            "height": 30,
+            "bottom": 314
+          }
+        ],
+        "descriptions": [
+          {
+            "x": 329,
+            "y": 330,
+            "width": 238,
+            "height": 96,
+            "bottom": 426
+          },
+          {
+            "x": 657,
+            "y": 330,
+            "width": 238,
+            "height": 96,
+            "bottom": 426
+          },
+          {
+            "x": 985,
+            "y": 330,
+            "width": 238,
+            "height": 96,
+            "bottom": 426
+          }
+        ],
+        "help": [
+          {
+            "x": 329,
+            "y": 442,
+            "width": 238,
+            "height": 63,
+            "bottom": 505
+          },
+          {
+            "x": 657,
+            "y": 442,
+            "width": 238,
+            "height": 63,
+            "bottom": 505
+          }
+        ],
+        "buttons": [
+          [
+            {
+              "x": 329,
+              "y": 589,
+              "width": 238,
+              "height": 40,
+              "bottom": 629
+            }
+          ],
+          [
+            {
+              "x": 657,
+              "y": 541,
+              "width": 238,
+              "height": 40,
+              "bottom": 581
+            },
+            {
+              "x": 657,
+              "y": 589,
+              "width": 238,
+              "height": 40,
+              "bottom": 629
+            }
+          ],
+          [
+            {
+              "x": 985,
+              "y": 589,
+              "width": 238,
+              "height": 40,
+              "bottom": 629
+            }
+          ]
+        ],
+        "icons": [
+          {
+            "x": 329,
+            "y": 240,
+            "width": 28,
+            "height": 28,
+            "bottom": 268,
+            "color": "rgb(30, 107, 101)",
+            "surface": "rgb(255, 255, 255)",
+            "stroke": "1.5px",
+            "hidden": "true",
+            "focusable": "false",
+            "contrast": 6.275777483612689
+          },
+          {
+            "x": 657,
+            "y": 240,
+            "width": 28,
+            "height": 28,
+            "bottom": 268,
+            "color": "rgb(30, 107, 101)",
+            "surface": "rgb(255, 255, 255)",
+            "stroke": "1.5px",
+            "hidden": "true",
+            "focusable": "false",
+            "contrast": 6.275777483612689
+          },
+          {
+            "x": 985,
+            "y": 240,
+            "width": 28,
+            "height": 28,
+            "bottom": 268,
+            "color": "rgb(30, 107, 101)",
+            "surface": "rgb(255, 255, 255)",
+            "stroke": "1.5px",
+            "hidden": "true",
+            "focusable": "false",
+            "contrast": 6.275777483612689
+          }
+        ],
+        "numbers": 0
+      }
+    }
+  ]
+}
