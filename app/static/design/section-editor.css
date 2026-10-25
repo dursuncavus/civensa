@@ -47,8 +47,8 @@
 .section-editor-page .ar-preview p:last-child { margin-bottom: 0; }
 .section-editor-page .ar-preview :is(table,.ar-table) { min-width: 0; table-layout: fixed; }
 .section-editor-page .ar-tree { position: static; max-height: none; overflow: visible; }
-.section-editor-page .section-links { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 0 var(--space-6); }
-.section-editor-page .ar-tree a { display: flex; align-items: start; justify-content: space-between; gap: var(--space-3); padding: var(--space-3); border-bottom: 1px solid var(--border); border-left: 4px solid transparent; border-radius: var(--radius); color: var(--text); text-decoration: none; font-size: var(--text-sm); line-height: 1.5; overflow-wrap: anywhere; }
+.section-editor-page .section-links { columns: 2; column-gap: var(--space-6); }
+.section-editor-page .ar-tree a { break-inside: avoid; display: flex; align-items: start; justify-content: space-between; gap: var(--space-3); padding: var(--space-3); border-bottom: 1px solid var(--border); border-left: 4px solid transparent; border-radius: var(--radius); color: var(--text); text-decoration: none; font-size: var(--text-sm); line-height: 1.5; overflow-wrap: anywhere; }
 .section-editor-page .ar-tree a:hover { background: var(--surface-muted); }
 .section-editor-page .ar-tree .ar-selected { border-left-color: var(--accent); background: var(--accent-soft); font-weight: 500; }
 .section-editor-page .ar-tree small { flex-shrink: 0; max-width: 40%; padding: var(--space-1) var(--space-2); border-radius: var(--radius); background: var(--surface-muted); }
@@ -75,7 +75,7 @@
 }
 @media (max-width: 700px) {
   .section-editor-page :is(section,.ar-tree) { padding: var(--space-4); }
-  .section-editor-page .section-links { grid-template-columns: minmax(0,1fr); }
+  .section-editor-page .section-links { display: grid; grid-template-columns: minmax(0,1fr); columns: auto; gap: 0 var(--space-6); }
   .section-editor-page .ar-tree a { flex-wrap: wrap; }
   .section-editor-page .ar-tree small { max-width: 100%; }
 }

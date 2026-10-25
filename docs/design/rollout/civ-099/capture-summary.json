@@ -1032,7 +1032,6 @@
       "same_dimensions": true,
       "changed_pixels": 0,
       "paint_attempts": [
-        41,
         0
       ]
     },
@@ -1169,7 +1168,7 @@
       "same_dimensions": true,
       "changed_pixels": 0,
       "paint_attempts": [
-        41,
+        13,
         0
       ]
     },
@@ -1305,7 +1304,6 @@
       "same_dimensions": true,
       "changed_pixels": 0,
       "paint_attempts": [
-        21,
         0
       ]
     },
@@ -1326,7 +1324,6 @@
       "changed_pixels": 0,
       "paint_attempts": [
         43,
-        20,
         0
       ]
     },
@@ -2113,11 +2110,11 @@
       "shell_issues": [],
       "matching_removed_rules": 0,
       "same_dimensions": true,
-      "changed_pixels": 29,
+      "changed_pixels": 74,
       "paint_attempts": [
-        39,
-        29,
-        29
+        77,
+        74,
+        74
       ],
       "max_channel_delta": 2,
       "nodes": 218,
@@ -2445,7 +2442,7 @@
       "same_dimensions": true,
       "changed_pixels": 0,
       "paint_attempts": [
-        10,
+        14,
         0
       ]
     },
@@ -2501,11 +2498,17 @@
       "shell_issues": [],
       "matching_removed_rules": 0,
       "same_dimensions": true,
-      "changed_pixels": 0,
+      "changed_pixels": 12,
       "paint_attempts": [
-        41,
-        0
-      ]
+        53,
+        12,
+        12
+      ],
+      "max_channel_delta": 1,
+      "nodes": 593,
+      "style_changes": 0,
+      "geometry_changes": 0,
+      "raster_rounding_only": true
     },
     {
       "filename": "042-review-strategy.png",
@@ -2578,11 +2581,11 @@
       "shell_issues": [],
       "matching_removed_rules": 0,
       "same_dimensions": true,
-      "changed_pixels": 6,
+      "changed_pixels": 4,
       "paint_attempts": [
-        10,
-        7,
-        6
+        4,
+        4,
+        4
       ],
       "max_channel_delta": 1,
       "nodes": 354,
@@ -2625,7 +2628,7 @@
       "same_dimensions": true,
       "changed_pixels": 9,
       "paint_attempts": [
-        13,
+        24,
         9,
         9
       ],
@@ -2994,6 +2997,7 @@
       "same_dimensions": true,
       "changed_pixels": 0,
       "paint_attempts": [
+        3,
         0
       ]
     },
@@ -3073,7 +3077,6 @@
       "changed_pixels": 0,
       "paint_attempts": [
         1,
-        1,
         0
       ]
     },
@@ -3091,17 +3094,12 @@
       "shell_issues": [],
       "matching_removed_rules": 0,
       "same_dimensions": true,
-      "changed_pixels": 9,
+      "changed_pixels": 0,
       "paint_attempts": [
-        24,
-        35,
-        9
-      ],
-      "max_channel_delta": 1,
-      "nodes": 251,
-      "style_changes": 0,
-      "geometry_changes": 0,
-      "raster_rounding_only": true
+        15,
+        26,
+        0
+      ]
     },
     {
       "filename": "078-users-strategy.png",
@@ -3117,11 +3115,11 @@
       "shell_issues": [],
       "matching_removed_rules": 0,
       "same_dimensions": true,
-      "changed_pixels": 35,
+      "changed_pixels": 9,
       "paint_attempts": [
-        13,
+        24,
         9,
-        35
+        9
       ],
       "max_channel_delta": 1,
       "nodes": 251,
@@ -3162,17 +3160,11 @@
       "shell_issues": [],
       "matching_removed_rules": 0,
       "same_dimensions": true,
-      "changed_pixels": 21,
+      "changed_pixels": 0,
       "paint_attempts": [
         42,
-        21,
-        21
-      ],
-      "max_channel_delta": 2,
-      "nodes": 97,
-      "style_changes": 0,
-      "geometry_changes": 0,
-      "raster_rounding_only": true
+        0
+      ]
     },
     {
       "filename": "081-modules-strategy.png",
@@ -3456,17 +3448,11 @@
       "shell_issues": [],
       "matching_removed_rules": 0,
       "same_dimensions": true,
-      "changed_pixels": 24,
+      "changed_pixels": 0,
       "paint_attempts": [
-        25,
-        24,
-        24
-      ],
-      "max_channel_delta": 1,
-      "nodes": 167,
-      "style_changes": 0,
-      "geometry_changes": 0,
-      "raster_rounding_only": true
+        1,
+        0
+      ]
     },
     {
       "filename": "096-review-strategy.png",

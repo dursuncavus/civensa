@@ -55,6 +55,14 @@ Başlangıç aracı CIV-096'nın daha eski tasarım karşılaştırmasını da �
 
 Görünüm lead incelemesi ve owner onayına sunulur; merge veya deploy yapılmaz.
 
-Ölçüm sonucu: **194 çekim / 9.838 özgün öğe-hedef / 0 eksik / 0 taşma-kırpılma-örtüşme**. 012 dışındaki 152 karşılaştırmanın 145'inde ham piksel farkı sıfırdır; yedisinde toplam 133 pikselde en çok 2/255 kanal yuvarlaması bulunur. Bu yedi karşılaştırmada bütün hesaplanmış stiller ve geometriler birebir aynıdır; ham farklar raporda korunur. 012: **124 durum kontrolü / 26 AA çifti / 0 hata**. Sekiz PNG'nin en büyüğü **291.114 bayt**.
+Ölçüm sonucu: **194 çekim / 9.838 özgün öğe-hedef / 0 eksik / 0 taşma-kırpılma-örtüşme**. 012 dışındaki 152 karşılaştırmanın 147 tanesinde ham piksel farkı sıfırdır; 5 karşılaştırmada toplam 108 pikselde en çok 2/255 kanal yuvarlaması bulunur. Bu karşılaştırmalarda bütün hesaplanmış stiller ve geometriler birebir aynıdır; ham farklar raporda korunur. 012: **124 durum kontrolü / 26 AA çifti / 0 hata**. Sekiz PNG'nin en büyüğü **295.194 bayt**.
 
 Odaklı PostgreSQL kontrolleri: yeni sözleşme/klavye testleri **22 geçti**; mevcut bölüm editörü ve gerçek gönderim/iade tarayıcı testleri ilk odaklı geçişte **3 geçti**. Tam takımın ve iki indirme testinin nihai sonucu PR açıklamasında verilir.
+
+## CIV-099 düzeltme 1 · Bölüm sırası
+
+Masaüstündeki satır öncelikli iki sütunlu grid, `columns: 2` ve bağlantılarda `break-inside: avoid` ile değiştirildi. Okuma ve Tab sırası önce sol sütunda yukarıdan aşağıya, sonra sağ sütundadır; DOM sırası değişmez. 700 px ve altında önceki tek sütunlu grid korunur. Şablon, uygulama scriptleri, testler, prototip ve Türkçe ürün metinleri değişmedi. Güncel hedef dal `d898610` üzerindeki lead kayıtlarıyla dal yenilendi.
+
+[Okuma/Tab kanıtı](reading-order-summary.json): başlangıç `de89a0e` düzeni 1440 px kontrolünde görsel/DOM sırası uyuşmazlığı verdi. Düzeltmeden sonra 124 durum/bölüm/rol/genişlik kontrolünde görsel sıra DOM sırasıyla eşit; 22 ayrı durum/rol/genişlikte gerçek Tab tuşuyla bütün bağlantılar aynı sırada geçildi. Bölünmüş bağlantı ve sıra hatası 0. Diziler SHA-256 anahtarlarıyla tekilleştirilir; özgün diziler `orders` içinde, her kontrolün DOM/görsel/Tab anahtarları kendi kaydındadır.
+
+Dört 1440 PNG yenilendi. Dört 390 PNG başlangıçtaki dosyalarla byte olarak aynıdır; karşılaştırma hash'leri kanıtta yer alır. Kontrast raporu da byte olarak değişmedi: 26 AA çifti / 0 başarısız. Mevcut sözleşme/klavye testleri yeniden çalıştırıldı: 22 geçti. Tam test takımı ve güncel PR başının CI sonucu PR açıklamasında verilir.
