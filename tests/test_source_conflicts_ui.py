@@ -77,6 +77,7 @@ def test_activity_decision_keeps_sibling_drafts(browser, db, sample, live_client
         expect(box).to_contain_text('Kaynak: 140,00 · Hesaplanan: 133,50')
         box.scroll_into_view_if_needed()
         capture(page, 'civ-011-activity-disagreement.png')
+        box.locator('summary').click()
         box.locator('.source-total-reason').fill('Finansman dağılımı kontrol edilerek doğrulandı.')
         # Simulate an unsaved sibling cost draft as well as the indicator draft.
         row.get_by_role('button', name='Düzenle', exact=True).click()

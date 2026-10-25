@@ -9,6 +9,7 @@ from sqlalchemy import select
 
 from app.models import Submission
 from test_sidebar_ui import browser
+from test_live_pilot_hardening import live_client
 
 pytestmark = pytest.mark.postgres
 CONTRACT = Path(__file__).parent / 'fixtures' / 'department_024_contract.json'
@@ -138,3 +139,92 @@ def test_024_new_activity_preserves_cost_keys(browser, client, width):
             for funding in ['inside', 'outside']]
         page.locator('.cancel-new').click()
         expect(page.locator('tr[data-new="1"]')).to_have_count(0)
+
+
+@pytest.mark.parametrize('width', [1440, 390])
+def test_024_source_disclosure_contract_height_and_confirm(browser, db, sample, live_client, width):
+    from test_source_conflicts import source_total
+    from test_source_conflicts_ui import route_application
+    from test_live_pilot_hardening import login
+
+    total = source_total(db, sample)
+    client = live_client()
+    login(client, sample['user'].email)
+    with browser.new_context(viewport={'width': width, 'height': 900}) as context:
+        route_application(context, client)
+        page = context.new_page()
+        writes, errors = [], []
+        page.on('request', lambda request: writes.append((request.method, request.url, request.post_data_json))
+            if request.method != 'GET' else None)
+        page.on('pageerror', lambda error: errors.append(str(error)))
+        page.goto('http://testserver/department/1?period_id=1')
+        page.locator('[data-tab=activities]').click()
+        page.evaluate('document.fonts.ready')
+        row = page.locator('tr[data-activity="1"]')
+        box = row.locator('.source-disagreement')
+        panel = box.locator('details')
+        trigger = panel.locator('summary')
+        expect(trigger).to_have_text('Kaynak toplamı farklı · 2027 Bütçe')
+        assert not panel.evaluate('el => el.open')
+        expect(box.locator('.source-total-reason')).to_be_hidden()
+        expect(box.locator('.confirm-source-total')).to_be_hidden()
+        # All original data and controls remain in the original cost cell.
+        assert box.evaluate('el => [el.className, el.dataset.year, el.dataset.kind, el.dataset.source, el.parentElement.dataset.costKey]') == [
+            'source-disagreement issue-list', '2027', 'budget', '140.00', '2027:budget']
+        controls = Controls(client.get('/department/1?period_id=1').text).controls
+        field = ['input', [['class', 'source-total-reason'], ['data-field', 'cost_2027_budget_reason'],
+            ['minlength', '10'], ['placeholder', 'En az 10 karakter']]]
+        button = ['button', [['class', 'button small confirm-source-total'], ['type', 'button']]]
+        # Reconcile the mismatch draft against the frozen, unchanged field/target contract.
+        frozen = json.loads(CONTRACT.read_text())
+        original = frozen['contracts'][frozen['cases']['staff/draft-clean']]
+        additions = [['summary', []], field, button]
+        assert Controls('<main>' + box.evaluate('el => el.outerHTML') + '</main>').controls == additions
+        assert box.locator('b').count() == 1 and box.locator('p').count() == 2
+        outside = next(i for i, control in enumerate(original) if control[0] == 'input'
+            and ['data-year', '2027'] in control[1] and ['data-kind', 'budget'] in control[1]
+            and ['data-funding', 'outside'] in control[1])
+        assert controls == original[:outside + 1] + additions + original[outside + 1:]
+        closed_height = row.bounding_box()['height']
+        box.evaluate('el => el.hidden = true')
+        clean_height = row.bounding_box()['height']
+        box.evaluate('el => el.hidden = false')
+        if width == 1440:
+            assert closed_height <= clean_height + 16
+        trigger.focus()
+        page.keyboard.press('Enter')
+        expect(box.locator('.source-total-reason')).to_be_visible()
+        assert row.bounding_box()['height'] > closed_height
+        expect(box).to_contain_text('Kaynak: 140,00 · Hesaplanan: 133,50')
+        expect(box).to_contain_text('Kaynak toplamı korunur. Bütçe içi ve dışını kontrol edin veya gerekçeyle karar verin.')
+        reason = box.locator('.source-total-reason')
+        reason.fill('123456789')
+        box.locator('.confirm-source-total').click()
+        expect(reason).to_be_focused()
+        expect(page.locator('#toast')).to_contain_text('Karar gerekçesi en az 10 karakter olmalı.')
+        assert writes == []
+        page.keyboard.press('Escape')
+        assert not panel.evaluate('el => el.open')
+        expect(trigger).to_be_focused()
+        page.keyboard.press('Space')
+        expect(reason).to_be_visible()
+        # The unchanged input handler still updates computed totals and box.hidden.
+        row.locator('.edit-activity').click()
+        inside = row.locator('.activity-cost[data-year="2027"][data-funding="inside"]')
+        inside.fill('106,50')
+        expect(box).to_be_hidden()
+        inside.fill('100,00')
+        expect(box).to_be_visible()
+        expect(box.locator('.computed-total')).to_have_text('133,50')
+        reason.fill('Finansman dağılımı kontrol edilerek doğrulandı.')
+        box.locator('.confirm-source-total').click()
+        expect(box).to_have_count(0)
+        assert writes == [('PUT', 'http://testserver/api/activities/1?period_id=1', {
+            'cost_2027_budget_use_computed': True,
+            'cost_2027_budget_reason': 'Finansman dağılımı kontrol edilerek doğrulandı.',
+            'cost_2027_budget_inside': '100,00', 'cost_2027_budget_outside': '33,50'})]
+        expect(page.locator('[data-activity-total="2027:budget"]')).to_have_text('133,50')
+        db.refresh(total)
+        assert str(total.amount) == '133.50' and str(total.source_amount) == '140.00'
+        assert not errors
+        assert page.evaluate('document.documentElement.scrollWidth === innerWidth')
