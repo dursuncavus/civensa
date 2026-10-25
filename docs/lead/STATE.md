@@ -24,7 +24,7 @@ Tags: DOĞRULANDI (lead checked) · TARİHSEL (past fact) · BEYAN (owner said) 
   4. Delete old plaintext backup artifacts.
   5. Full-history gitleaks (workflow_dispatch) — must be clean.
   6. Switch repo to public.
-- Claude Pro end date: owner reads Settings → Billing and tells the lead (needed to plan around the cancelled iOS subscription).
+- Claude Pro ends 3 Nov 2026 (BEYAN 25 Oct 10:22; Billing page shows only "Subscribed via iOS app", no date). iOS subscription is cancelled. Owner renews Pro from claude.ai on the web on 3 Nov; otherwise from 3 Nov the lead is unavailable and DeepSeek runs as backup lead (BACKUP_LEAD.md).
 - UI redesign (D-224/D-225): principles approved 25 Oct; CIV-095 (Codex) builds the prototype; owner approves from screenshots.
 0. (closed) Merges are done by the lead in live sessions (D-214).
 1. (closed) Codex "Tam erişim" stays ON — owner decision D-210.
