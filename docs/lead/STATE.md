@@ -6,7 +6,9 @@ Backup log ("Civensa Yedek Kaydı", Drive + DeepSeek workspace YEDEK-KAYIT.md): 
 
 Tags: DOĞRULANDI (lead checked) · TARİHSEL (past fact) · BEYAN (owner said) · BELİRSİZ (unknown).
 
-## Open pull requests (DOĞRULANDI 25 Oct 02:55)
+## Open pull requests (DOĞRULANDI 25 Oct 10:20)
+| PR | Task | State | Next action |
+| --- | --- | --- | --- |
 | (Codex) | CIV-095 design prototype | dispatched | Review screenshots when PR opens |
 
 ## Open — owner
