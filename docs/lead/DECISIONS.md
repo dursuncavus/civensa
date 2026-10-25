@@ -159,3 +159,7 @@ Repo step 3 not verifiable yet: the first phase5 encrypted backup is due 26 Oct 
 
 ## D-236 (25 Oct 2026 ~19:40, lead) — next screen: Activity Report section editor 012 (CIV-099)
 Both Codex slots are free after D-235. The CIV-095 prototype covers three screens (034, 024, 012); 034 and 024 are done, so 012 (activity_sections_editor.html, /activity-sections/reports/{id}) is next, including the D-229 audit-history rule (plain Turkish summary, raw data under "Teknik ayrıntı"). Package docs/lead/tasks/CIV-099.md. Codex, GPT-6.1 Sol, effort High (same size as CIV-097). Screens beyond the prototype need a design decision first (lead proposes the order after Ali's answers, Mon 26 Oct).
+
+## D-237 (25 Oct 2026 ~19:42, owner approved) — CIV-097/CIV-098 look approved
+BEYAN (owner, 19:42): approves the look of #118 (Modüller grid) and #119 (024 data entry) and the 024 letter-case changes listed in D-235. UI redesign for 033/034 and 024 is closed; the D-235 LOW items stay recorded for a later 024 polish task.
+DOĞRULANDI: the lead records guard ran on lead PR #120 (default-branch switch D-228 works); queue item 6 closed.
