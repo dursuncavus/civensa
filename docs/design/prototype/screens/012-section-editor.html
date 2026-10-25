@@ -1,0 +1,1567 @@
+<!doctype html>
+<html lang="tr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>2027 Faaliyet Raporu · Civensa prototip</title>
+    <link rel="stylesheet" href="../fonts.css" />
+    <link rel="stylesheet" href="../tokens.css" />
+    <link rel="stylesheet" href="../prototype.css" />
+    <script src="../prototype.js" defer></script>
+  </head>
+  <body>
+    <a class="skip" href="#main">İçeriğe geç</a>
+    <div class="app-shell">
+      <aside class="sidebar" id="navigation">
+        <a class="brand" href="034-modules.html"
+          >Civensa<span>Kurumsal raporlama</span></a
+        >
+        <nav aria-label="Ana gezinme">
+          <div class="nav-group">
+            <p>Performans Programı</p>
+            <a
+              id="e003"
+              data-source-id="E003"
+              data-original-target="/dashboard"
+              class="nav-link"
+              href="#destination-dialog"
+              data-open="destination-dialog"
+              >Genel Bakış</a
+            ><a
+              id="e005"
+              data-source-id="E005"
+              data-original-target="/department/1"
+              class="nav-link"
+              href="024-department.html"
+              >Veri Girişi</a
+            >
+          </div>
+          <div class="nav-group">
+            <p>Faaliyet Raporu</p>
+            <a
+              id="e001"
+              data-source-id="E001"
+              data-original-target="/activity-sections"
+              class="nav-link selected"
+              aria-current="page"
+              href="#destination-dialog"
+              data-open="destination-dialog"
+              >Faaliyet Raporu · EK-1</a
+            >
+          </div>
+          <div class="nav-group">
+            <p>İç Kontrol</p>
+            <a
+              id="e004"
+              data-source-id="E004"
+              data-original-target="/internal-control/our-actions"
+              class="nav-link"
+              href="#destination-dialog"
+              data-open="destination-dialog"
+              >İç Kontrol Eylemlerimiz</a
+            >
+          </div>
+          <div class="nav-group">
+            <p>Yönetim</p>
+            <a
+              id="e002"
+              data-source-id="E002"
+              data-original-target="/modules"
+              class="nav-link"
+              href="034-modules.html"
+              >Modüller</a
+            ><a
+              id="e006"
+              data-source-id="E006"
+              data-original-target="/submit-authorizations"
+              class="nav-link"
+              href="#destination-dialog"
+              data-open="destination-dialog"
+              >Gönderim Yetkileri</a
+            >
+          </div>
+        </nav>
+        <div class="account-actions">
+          <button
+            type="button"
+            id="e007"
+            data-source-id="E007"
+            data-original-target="#passwordModal"
+            class="ghost"
+            data-open="password-dialog"
+          >
+            Parolamı Değiştir
+          </button>
+          <form
+            id="e008"
+            data-source-id="E008"
+            data-original-target="POST /logout"
+            class=""
+            action="#simulation-dialog"
+            method="get"
+          >
+            <button
+              type="button"
+              id="e009"
+              data-source-id="E009"
+              data-original-target="POST /logout"
+              class="ghost"
+              data-open="simulation-dialog"
+            >
+              Çıkış
+            </button>
+          </form>
+        </div>
+        <p class="sidebar-note">
+          Örnek Hizmet Müdürlüğü<br />Sentetik çalışma alanı
+        </p>
+      </aside>
+      <div class="workspace">
+        <div class="topbar">
+          <a href="#navigation" class="mobile-nav"
+            >Menüye git
+            <svg
+              class="icon icon-down"
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.5"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+              focusable="false"
+            >
+              <path d="m9 5 7 7-7 7" /></svg
+          ></a>
+          <p>Örnek Hizmet Müdürlüğü</p>
+          <div class="userbox">
+            <button
+              type="button"
+              id="e010"
+              data-source-id="E010"
+              data-original-target="GET /api/notifications → #notificationPanel"
+              class="ghost"
+              data-open="notification-dialog"
+            >
+              Bildirimler</button
+            ><span>Müdürlük<br /><strong>Birim Müdürü (sentetik)</strong></span>
+          </div>
+        </div>
+        <main id="main">
+          <nav class="breadcrumb" aria-label="İçerik yolu">
+            <a href="034-modules.html">Modüller</a
+            ><span aria-hidden="true">/</span><span>EK-1 bölüm editörü</span>
+          </nav>
+          <header class="page-header">
+            <div>
+              <h1>2027 Faaliyet Raporu</h1>
+              <p>Örnek Hizmet Müdürlüğü · EK-1 · İçerik hazırlığı</p>
+            </div>
+            <span class="prototype-mark">Statik prototip · 012</span>
+          </header>
+          <section class="card report-summary">
+            <div>
+              <div class="actions">
+                <h2>Birim raporu</h2>
+                <span class="badge warning"
+                  ><svg
+                    class="icon"
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.5"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                    focusable="false"
+                  >
+                    <path d="m15 4 5 5M4 20l4-1L20 7a3 3 0 0 0-4-4L4 15z" />
+                  </svg>
+                  Taslak</span
+                >
+              </div>
+              <h3>Kalan işler</h3>
+              <ul>
+                <li><a href="#section-list">33 boş bölümü doldurun.</a></li>
+                <li>
+                  <a href="#e054">Misyon ve Vizyon</a> ile
+                  <a href="#e022">Fiziksel Yapı</a> taslaklarını tamamlayın.
+                </li>
+              </ul>
+              <p class="help">
+                Tüm bölümleri tamamladıktan sonra inceleme için gönderin.
+                Gönderilen sürüm inceleme sırasında değiştirilemez.
+              </p>
+            </div>
+            <div class="summary-actions">
+              <button
+                type="button"
+                id="e057"
+                data-source-id="E057"
+                data-original-target="POST /activity-sections/reports/2/sections/I.A"
+                class="primary"
+                data-open="simulation-dialog"
+              >
+                Bölümü kaydet
+              </button>
+              <form
+                id="e015"
+                data-source-id="E015"
+                data-original-target="POST /activity-sections/reports/2/workflow/submit"
+                class=""
+                action="#simulation-dialog"
+                method="get"
+              >
+                <button
+                  type="button"
+                  id="e016"
+                  data-source-id="E016"
+                  data-original-target="POST /activity-sections/reports/2/workflow/submit"
+                  class="secondary"
+                  data-open="simulation-dialog"
+                >
+                  Strateji’ye gönder
+                </button>
+              </form>
+            </div>
+          </section>
+          <ol class="stepper" aria-label="Rapor aşamaları">
+            <li class="current" aria-current="step">
+              <span class="step-number">1</span> Veri Girişi
+            </li>
+            <li class="">
+              <span class="step-number">2</span> Strateji İncelemesi
+            </li>
+            <li class=""><span class="step-number">3</span> Onay</li>
+          </ol>
+          <div class="section-toolbar">
+            <a
+              id="e011"
+              data-source-id="E011"
+              data-original-target="/activity-sections"
+              class="button ghost"
+              href="#destination-dialog"
+              data-open="destination-dialog"
+              ><svg
+                class="icon"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+                focusable="false"
+              >
+                <path d="m10 5-7 7 7 7M3 12h18" />
+              </svg>
+              Tamamlanma görünümü</a
+            >
+            <details class="menu">
+              <summary>
+                <svg
+                  class="icon disclosure-icon"
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.5"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                  focusable="false"
+                >
+                  <path d="m9 5 7 7-7 7" /></svg
+                >Dışa aktar
+              </summary>
+              <div class="menu-items">
+                <a
+                  id="e012"
+                  data-source-id="E012"
+                  data-original-target="/activity-sections/reports/2/export.docx"
+                  class="ghost"
+                  href="#destination-dialog"
+                  data-open="destination-dialog"
+                  >Word olarak indir</a
+                ><a
+                  id="e013"
+                  data-source-id="E013"
+                  data-original-target="/activity-sections/reports/2/export.pdf"
+                  class="ghost"
+                  href="#destination-dialog"
+                  data-open="destination-dialog"
+                  >PDF olarak indir</a
+                ><a
+                  id="e014"
+                  data-source-id="E014"
+                  data-original-target="/activity-sections/reports/2/typeset.json"
+                  class="ghost"
+                  href="#destination-dialog"
+                  data-open="destination-dialog"
+                  >Dizgi verisi (JSON)</a
+                >
+              </div>
+            </details>
+          </div>
+          <div class="editor-layout">
+            <form
+              id="e053"
+              data-source-id="E053"
+              data-original-target="POST /activity-sections/reports/2/sections/I.A"
+              class="card editor-form"
+              action="#simulation-dialog"
+              method="get"
+            >
+              <div class="card-heading">
+                <div>
+                  <p class="help">I.A · Bölüm sahibi: Müdürlük</p>
+                  <h2>A- Misyon ve Vizyon</h2>
+                </div>
+                <span class="badge warning"
+                  ><svg
+                    class="icon"
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.5"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                    focusable="false"
+                  >
+                    <path d="m15 4 5 5M4 20l4-1L20 7a3 3 0 0 0-4-4L4 15z" />
+                  </svg>
+                  Taslak</span
+                >
+              </div>
+              <p class="help">
+                Son düzenleyen: Birim Müdürü (sentetik) · 25.10.2026 00:35 TSİ
+              </p>
+              <div class="field">
+                <label for="e054">Bölüm içeriği</label
+                ><textarea
+                  id="e054"
+                  data-source-id="E054"
+                  data-original-target="POST /activity-sections/reports/2/sections/I.A"
+                  aria-describedby="e054-help"
+                  rows="3"
+                >
+Hizmetleri erişilebilir, ölçülebilir ve şeffaf biçimde sunmak.</textarea
+                >
+                <p id="e054-help" class="help">
+                  Paragrafları boş satırla ayırın. Madde için “- ” kullanın.
+                </p>
+              </div>
+              <section class="table-editor" aria-labelledby="table-title">
+                <div class="card-heading">
+                  <h3 id="table-title">Tablo düzenleyici</h3>
+                  <span class="help">Görsel taslak</span>
+                </div>
+                <p class="help">
+                  Tabloyu hücrelere yazarak düzenleyin. Satır veya sütun eklemek
+                  için aşağıdaki düğmeleri kullanın.
+                </p>
+                <table>
+                  <caption class="sr-only">
+                    Boş tablo taslağı, 2 sütun ve 1 veri satırı
+                  </caption>
+                  <thead>
+                    <tr>
+                      <th>
+                        <label for="col-one" class="sr-only"
+                          >Birinci sütun başlığı</label
+                        ><input id="col-one" value="Başlık" />
+                      </th>
+                      <th>
+                        <label for="col-two" class="sr-only"
+                          >İkinci sütun başlığı</label
+                        ><input id="col-two" value="Değer" />
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>
+                        <label for="cell-one" class="sr-only"
+                          >Birinci satır, birinci hücre</label
+                        ><input id="cell-one" />
+                      </td>
+                      <td>
+                        <label for="cell-two" class="sr-only"
+                          >Birinci satır, ikinci hücre</label
+                        ><input id="cell-two" />
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+                <div class="actions">
+                  <button type="button" data-open="simulation-dialog">
+                    <svg
+                      class="icon"
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="1.5"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      aria-hidden="true"
+                      focusable="false"
+                    >
+                      <path d="M12 5v14M5 12h14" />
+                    </svg>
+                    Satır ekle</button
+                  ><button type="button" data-open="simulation-dialog">
+                    <svg
+                      class="icon"
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="1.5"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      aria-hidden="true"
+                      focusable="false"
+                    >
+                      <path d="M12 5v14M5 12h14" />
+                    </svg>
+                    Sütun ekle
+                  </button>
+                </div>
+                <p class="help">
+                  Bu boş taslak kaydedilmiş içeriğin parçası değildir. Ekleme
+                  düğmeleri bu prototipte yalnız görünümü temsil eder.
+                </p>
+              </section>
+              <div class="grid two">
+                <div class="field">
+                  <label for="e055">Durum</label
+                  ><select
+                    id="e055"
+                    data-source-id="E055"
+                    data-original-target="POST /activity-sections/reports/2/sections/I.A"
+                  >
+                    <option>Boş</option>
+                    <option selected>Taslak</option>
+                    <option>Hazır</option>
+                    <option>Uygulanamaz</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="e056">Uygulanamaz gerekçesi</label
+                  ><textarea
+                    id="e056"
+                    data-source-id="E056"
+                    data-original-target="POST /activity-sections/reports/2/sections/I.A"
+                    rows="3"
+                  ></textarea>
+                </div>
+              </div>
+            </form>
+            <aside class="card preview">
+              <p class="help">Kaydedilmiş içerik</p>
+              <h3>İçerik önizlemesi</h3>
+              <p>
+                Hizmetleri erişilebilir, ölçülebilir ve şeffaf biçimde sunmak.
+              </p>
+              <p class="help">Statik önizleme örneği.</p>
+            </aside>
+          </div>
+          <section class="card" id="section-list">
+            <div class="card-heading">
+              <h2>Rapor bölümleri</h2>
+              <span class="help">36 bölüm · 33 boş · 2 taslak · 1 hazır</span>
+            </div>
+            <details class="section-index" open>
+              <summary>
+                <svg
+                  class="icon disclosure-icon"
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.5"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                  focusable="false"
+                >
+                  <path d="m9 5 7 7-7 7" /></svg
+                >Bölüm listesi
+              </summary>
+              <nav class="section-grid" aria-label="EK-1 bölümleri">
+                <a
+                  id="e017"
+                  data-source-id="E017"
+                  data-original-target="?code=OZET"
+                  class="section-link"
+                  href="#destination-dialog"
+                  data-open="destination-dialog"
+                  ><span>Yönetici özeti</span
+                  ><span class="badge neutral"
+                    ><svg
+                      class="icon"
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="1.5"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      aria-hidden="true"
+                      focusable="false"
+                    >
+                      <circle cx="12" cy="12" r="9" />
+                    </svg>
+                    Boş</span
+                  ></a
+                ><a
+                  id="e018"
+                  data-source-id="E018"
+                  data-original-target="?code=I"
+                  class="section-link"
+                  href="#destination-dialog"
+                  data-open="destination-dialog"
+                  ><span>I- Genel bilgiler</span
+                  ><span class="badge neutral"
+                    ><svg
+                      class="icon"
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="1.5"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      aria-hidden="true"
+                      focusable="false"
+                    >
+                      <circle cx="12" cy="12" r="9" />
+                    </svg>
+                    Boş</span
+                  ></a
+                ><a
+                  id="e019"
+                  data-source-id="E019"
+                  data-original-target="?code=I.A"
+                  class="section-link selected"
+                  aria-current="page"
+                  href="#destination-dialog"
+                  data-open="destination-dialog"
+                  ><span>A- Misyon ve Vizyon</span
+                  ><span class="badge warning"
+                    ><svg
+                      class="icon"
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="1.5"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      aria-hidden="true"
+                      focusable="false"
+                    >
+                      <path d="m15 4 5 5M4 20l4-1L20 7a3 3 0 0 0-4-4L4 15z" />
+                    </svg>
+                    Taslak</span
+                  ></a
+                ><a
+                  id="e020"
+                  data-source-id="E020"
+                  data-original-target="?code=I.B"
+                  class="section-link"
+                  href="#destination-dialog"
+                  data-open="destination-dialog"
+                  ><span>B- Yetki, Görev ve Sorumluluklar</span
+                  ><span class="badge neutral"
+                    ><svg
+                      class="icon"
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="1.5"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      aria-hidden="true"
+                      focusable="false"
+                    >
+                      <circle cx="12" cy="12" r="9" />
+                    </svg>
+                    Boş</span
+                  ></a
+                ><a
+                  id="e021"
+                  data-source-id="E021"
+                  data-original-target="?code=I.C"
+                  class="section-link"
+                  href="#destination-dialog"
+                  data-open="destination-dialog"
+                  ><span>C- İdareye İlişkin Bilgiler</span
+                  ><span class="badge neutral"
+                    ><svg
+                      class="icon"
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="1.5"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      aria-hidden="true"
+                      focusable="false"
+                    >
+                      <circle cx="12" cy="12" r="9" />
+                    </svg>
+                    Boş</span
+                  ></a
+                ><a
+                  id="e022"
+                  data-source-id="E022"
+                  data-original-target="?code=I.C.1"
+                  class="section-link"
+                  href="#destination-dialog"
+                  data-open="destination-dialog"
+                  ><span>1- Fiziksel Yapı</span
+                  ><span class="badge warning"
+                    ><svg
+                      class="icon"
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="1.5"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      aria-hidden="true"
+                      focusable="false"
+                    >
+                      <path d="m15 4 5 5M4 20l4-1L20 7a3 3 0 0 0-4-4L4 15z" />
+                    </svg>
+                    Taslak</span
+                  ></a
+                ><a
+                  id="e023"
+                  data-source-id="E023"
+                  data-original-target="?code=I.C.2"
+                  class="section-link"
+                  href="#destination-dialog"
+                  data-open="destination-dialog"
+                  ><span>2- Teşkilat Yapısı</span
+                  ><span class="badge neutral"
+                    ><svg
+                      class="icon"
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="1.5"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      aria-hidden="true"
+                      focusable="false"
+                    >
+                      <circle cx="12" cy="12" r="9" />
+                    </svg>
+                    Boş</span
+                  ></a
+                ><a
+                  id="e024"
+                  data-source-id="E024"
+                  data-original-target="?code=I.C.3"
+                  class="section-link"
+                  href="#destination-dialog"
+                  data-open="destination-dialog"
+                  ><span>3- Teknoloji ve Bilişim Altyapısı</span
+                  ><span class="badge neutral"
+                    ><svg
+                      class="icon"
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="1.5"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      aria-hidden="true"
+                      focusable="false"
+                    >
+                      <circle cx="12" cy="12" r="9" />
+                    </svg>
+                    Boş</span
+                  ></a
+                ><a
+                  id="e025"
+                  data-source-id="E025"
+                  data-original-target="?code=I.C.4"
+                  class="section-link"
+                  href="#destination-dialog"
+                  data-open="destination-dialog"
+                  ><span>4- İnsan Kaynakları</span
+                  ><span class="badge neutral"
+                    ><svg
+                      class="icon"
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="1.5"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      aria-hidden="true"
+                      focusable="false"
+                    >
+                      <circle cx="12" cy="12" r="9" />
+                    </svg>
+                    Boş</span
+                  ></a
+                ><a
+                  id="e026"
+                  data-source-id="E026"
+                  data-original-target="?code=I.C.5"
+                  class="section-link"
+                  href="#destination-dialog"
+                  data-open="destination-dialog"
+                  ><span>5- Sunulan Hizmetler</span
+                  ><span class="badge neutral"
+                    ><svg
+                      class="icon"
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="1.5"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      aria-hidden="true"
+                      focusable="false"
+                    >
+                      <circle cx="12" cy="12" r="9" />
+                    </svg>
+                    Boş</span
+                  ></a
+                ><a
+                  id="e027"
+                  data-source-id="E027"
+                  data-original-target="?code=I.C.6"
+                  class="section-link"
+                  href="#destination-dialog"
+                  data-open="destination-dialog"
+                  ><span>6- Yönetim ve İç Kontrol Sistemi</span
+                  ><span class="badge neutral"
+                    ><svg
+                      class="icon"
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="1.5"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      aria-hidden="true"
+                      focusable="false"
+                    >
+                      <circle cx="12" cy="12" r="9" />
+                    </svg>
+                    Boş</span
+                  ></a
+                ><a
+                  id="e028"
+                  data-source-id="E028"
+                  data-original-target="?code=I.D"
+                  class="section-link"
+                  href="#destination-dialog"
+                  data-open="destination-dialog"
+                  ><span>D- Diğer Hususlar</span
+                  ><span class="badge neutral"
+                    ><svg
+                      class="icon"
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="1.5"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      aria-hidden="true"
+                      focusable="false"
+                    >
+                      <circle cx="12" cy="12" r="9" />
+                    </svg>
+                    Boş</span
+                  ></a
+                ><a
+                  id="e029"
+                  data-source-id="E029"
+                  data-original-target="?code=II"
+                  class="section-link"
+                  href="#destination-dialog"
+                  data-open="destination-dialog"
+                  ><span>II- Amaçlar ve hedefler</span
+                  ><span class="badge neutral"
+                    ><svg
+                      class="icon"
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="1.5"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      aria-hidden="true"
+                      focusable="false"
+                    >
+                      <circle cx="12" cy="12" r="9" />
+                    </svg>
+                    Boş</span
+                  ></a
+                ><a
+                  id="e030"
+                  data-source-id="E030"
+                  data-original-target="?code=II.A"
+                  class="section-link"
+                  href="#destination-dialog"
+                  data-open="destination-dialog"
+                  ><span>A- Temel Politika ve Öncelikler</span
+                  ><span class="badge neutral"
+                    ><svg
+                      class="icon"
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="1.5"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      aria-hidden="true"
+                      focusable="false"
+                    >
+                      <circle cx="12" cy="12" r="9" />
+                    </svg>
+                    Boş</span
+                  ></a
+                ><a
+                  id="e031"
+                  data-source-id="E031"
+                  data-original-target="?code=II.B"
+                  class="section-link"
+                  href="#destination-dialog"
+                  data-open="destination-dialog"
+                  ><span
+                    >B- İdarenin Stratejik Planında Yer Alan Amaç ve
+                    Hedefler</span
+                  ><span class="badge neutral"
+                    ><svg
+                      class="icon"
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="1.5"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      aria-hidden="true"
+                      focusable="false"
+                    >
+                      <circle cx="12" cy="12" r="9" />
+                    </svg>
+                    Boş</span
+                  ></a
+                ><a
+                  id="e032"
+                  data-source-id="E032"
+                  data-original-target="?code=II.C"
+                  class="section-link"
+                  href="#destination-dialog"
+                  data-open="destination-dialog"
+                  ><span>C- Diğer Hususlar</span
+                  ><span class="badge neutral"
+                    ><svg
+                      class="icon"
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="1.5"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      aria-hidden="true"
+                      focusable="false"
+                    >
+                      <circle cx="12" cy="12" r="9" />
+                    </svg>
+                    Boş</span
+                  ></a
+                ><a
+                  id="e033"
+                  data-source-id="E033"
+                  data-original-target="?code=III"
+                  class="section-link"
+                  href="#destination-dialog"
+                  data-open="destination-dialog"
+                  ><span
+                    >III- Faaliyetlere ilişkin bilgi ve değerlendirmeler</span
+                  ><span class="badge neutral"
+                    ><svg
+                      class="icon"
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="1.5"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      aria-hidden="true"
+                      focusable="false"
+                    >
+                      <circle cx="12" cy="12" r="9" />
+                    </svg>
+                    Boş</span
+                  ></a
+                ><a
+                  id="e034"
+                  data-source-id="E034"
+                  data-original-target="?code=III.A"
+                  class="section-link"
+                  href="#destination-dialog"
+                  data-open="destination-dialog"
+                  ><span>A- Malî Bilgiler</span
+                  ><span class="badge neutral"
+                    ><svg
+                      class="icon"
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="1.5"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      aria-hidden="true"
+                      focusable="false"
+                    >
+                      <circle cx="12" cy="12" r="9" />
+                    </svg>
+                    Boş</span
+                  ></a
+                ><a
+                  id="e035"
+                  data-source-id="E035"
+                  data-original-target="?code=III.A.1"
+                  class="section-link"
+                  href="#destination-dialog"
+                  data-open="destination-dialog"
+                  ><span>1- Bütçe Uygulama Sonuçları</span
+                  ><span class="badge neutral"
+                    ><svg
+                      class="icon"
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="1.5"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      aria-hidden="true"
+                      focusable="false"
+                    >
+                      <circle cx="12" cy="12" r="9" />
+                    </svg>
+                    Boş</span
+                  ></a
+                ><a
+                  id="e036"
+                  data-source-id="E036"
+                  data-original-target="?code=III.A.2"
+                  class="section-link"
+                  href="#destination-dialog"
+                  data-open="destination-dialog"
+                  ><span>2- Temel Malî Tablolara İlişkin Açıklamalar</span
+                  ><span class="badge neutral"
+                    ><svg
+                      class="icon"
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="1.5"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      aria-hidden="true"
+                      focusable="false"
+                    >
+                      <circle cx="12" cy="12" r="9" />
+                    </svg>
+                    Boş</span
+                  ></a
+                ><a
+                  id="e037"
+                  data-source-id="E037"
+                  data-original-target="?code=III.A.3"
+                  class="section-link"
+                  href="#destination-dialog"
+                  data-open="destination-dialog"
+                  ><span>3- Malî Denetim Sonuçları</span
+                  ><span class="badge neutral"
+                    ><svg
+                      class="icon"
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="1.5"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      aria-hidden="true"
+                      focusable="false"
+                    >
+                      <circle cx="12" cy="12" r="9" />
+                    </svg>
+                    Boş</span
+                  ></a
+                ><a
+                  id="e038"
+                  data-source-id="E038"
+                  data-original-target="?code=III.A.4"
+                  class="section-link"
+                  href="#destination-dialog"
+                  data-open="destination-dialog"
+                  ><span>4- Diğer Hususlar</span
+                  ><span class="badge neutral"
+                    ><svg
+                      class="icon"
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="1.5"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      aria-hidden="true"
+                      focusable="false"
+                    >
+                      <circle cx="12" cy="12" r="9" />
+                    </svg>
+                    Boş</span
+                  ></a
+                ><a
+                  id="e039"
+                  data-source-id="E039"
+                  data-original-target="?code=III.B"
+                  class="section-link"
+                  href="#destination-dialog"
+                  data-open="destination-dialog"
+                  ><span>B- Performans Bilgileri</span
+                  ><span class="badge neutral"
+                    ><svg
+                      class="icon"
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="1.5"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      aria-hidden="true"
+                      focusable="false"
+                    >
+                      <circle cx="12" cy="12" r="9" />
+                    </svg>
+                    Boş</span
+                  ></a
+                ><a
+                  id="e040"
+                  data-source-id="E040"
+                  data-original-target="?code=III.B.1"
+                  class="section-link"
+                  href="#destination-dialog"
+                  data-open="destination-dialog"
+                  ><span>1- Program, Alt Program, Faaliyet Bilgileri</span
+                  ><span class="badge neutral"
+                    ><svg
+                      class="icon"
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="1.5"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      aria-hidden="true"
+                      focusable="false"
+                    >
+                      <circle cx="12" cy="12" r="9" />
+                    </svg>
+                    Boş</span
+                  ></a
+                ><a
+                  id="e041"
+                  data-source-id="E041"
+                  data-original-target="?code=III.B.2"
+                  class="section-link"
+                  href="#destination-dialog"
+                  data-open="destination-dialog"
+                  ><span>2- Performans Sonuçlarının Değerlendirilmesi</span
+                  ><span class="badge neutral"
+                    ><svg
+                      class="icon"
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="1.5"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      aria-hidden="true"
+                      focusable="false"
+                    >
+                      <circle cx="12" cy="12" r="9" />
+                    </svg>
+                    Boş</span
+                  ></a
+                ><a
+                  id="e042"
+                  data-source-id="E042"
+                  data-original-target="?code=III.B.2.i"
+                  class="section-link"
+                  href="#destination-dialog"
+                  data-open="destination-dialog"
+                  ><span
+                    >i. Alt program hedef ve göstergeleriyle ilgili gerçekleşme
+                    sonuçları ve değerlendirmeler</span
+                  ><span class="badge success"
+                    ><svg
+                      class="icon"
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="1.5"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      aria-hidden="true"
+                      focusable="false"
+                    >
+                      <circle cx="12" cy="12" r="9" />
+                      <path d="m8 12 3 3 5-6" />
+                    </svg>
+                    Hazır</span
+                  ></a
+                ><a
+                  id="e043"
+                  data-source-id="E043"
+                  data-original-target="?code=III.B.2.ii"
+                  class="section-link"
+                  href="#destination-dialog"
+                  data-open="destination-dialog"
+                  ><span>ii. Performans denetim sonuçları</span
+                  ><span class="badge neutral"
+                    ><svg
+                      class="icon"
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="1.5"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      aria-hidden="true"
+                      focusable="false"
+                    >
+                      <circle cx="12" cy="12" r="9" />
+                    </svg>
+                    Boş</span
+                  ></a
+                ><a
+                  id="e044"
+                  data-source-id="E044"
+                  data-original-target="?code=III.B.3"
+                  class="section-link"
+                  href="#destination-dialog"
+                  data-open="destination-dialog"
+                  ><span>3- Stratejik Plan Değerlendirme Tabloları</span
+                  ><span class="badge neutral"
+                    ><svg
+                      class="icon"
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="1.5"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      aria-hidden="true"
+                      focusable="false"
+                    >
+                      <circle cx="12" cy="12" r="9" />
+                    </svg>
+                    Boş</span
+                  ></a
+                ><a
+                  id="e045"
+                  data-source-id="E045"
+                  data-original-target="?code=III.B.4"
+                  class="section-link"
+                  href="#destination-dialog"
+                  data-open="destination-dialog"
+                  ><span>4- Performans Bilgi Sisteminin Değerlendirilmesi</span
+                  ><span class="badge neutral"
+                    ><svg
+                      class="icon"
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="1.5"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      aria-hidden="true"
+                      focusable="false"
+                    >
+                      <circle cx="12" cy="12" r="9" />
+                    </svg>
+                    Boş</span
+                  ></a
+                ><a
+                  id="e046"
+                  data-source-id="E046"
+                  data-original-target="?code=III.B.5"
+                  class="section-link"
+                  href="#destination-dialog"
+                  data-open="destination-dialog"
+                  ><span>5- Diğer Hususlar</span
+                  ><span class="badge neutral"
+                    ><svg
+                      class="icon"
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="1.5"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      aria-hidden="true"
+                      focusable="false"
+                    >
+                      <circle cx="12" cy="12" r="9" />
+                    </svg>
+                    Boş</span
+                  ></a
+                ><a
+                  id="e047"
+                  data-source-id="E047"
+                  data-original-target="?code=IV"
+                  class="section-link"
+                  href="#destination-dialog"
+                  data-open="destination-dialog"
+                  ><span
+                    >IV- Kurumsal kabiliyet ve kapasitenin
+                    değerlendirilmesi</span
+                  ><span class="badge neutral"
+                    ><svg
+                      class="icon"
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="1.5"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      aria-hidden="true"
+                      focusable="false"
+                    >
+                      <circle cx="12" cy="12" r="9" />
+                    </svg>
+                    Boş</span
+                  ></a
+                ><a
+                  id="e048"
+                  data-source-id="E048"
+                  data-original-target="?code=IV.A"
+                  class="section-link"
+                  href="#destination-dialog"
+                  data-open="destination-dialog"
+                  ><span>A- Üstünlükler</span
+                  ><span class="badge neutral"
+                    ><svg
+                      class="icon"
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="1.5"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      aria-hidden="true"
+                      focusable="false"
+                    >
+                      <circle cx="12" cy="12" r="9" />
+                    </svg>
+                    Boş</span
+                  ></a
+                ><a
+                  id="e049"
+                  data-source-id="E049"
+                  data-original-target="?code=IV.B"
+                  class="section-link"
+                  href="#destination-dialog"
+                  data-open="destination-dialog"
+                  ><span>B- Zayıflıklar</span
+                  ><span class="badge neutral"
+                    ><svg
+                      class="icon"
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="1.5"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      aria-hidden="true"
+                      focusable="false"
+                    >
+                      <circle cx="12" cy="12" r="9" />
+                    </svg>
+                    Boş</span
+                  ></a
+                ><a
+                  id="e050"
+                  data-source-id="E050"
+                  data-original-target="?code=IV.C"
+                  class="section-link"
+                  href="#destination-dialog"
+                  data-open="destination-dialog"
+                  ><span>C- Değerlendirme</span
+                  ><span class="badge neutral"
+                    ><svg
+                      class="icon"
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="1.5"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      aria-hidden="true"
+                      focusable="false"
+                    >
+                      <circle cx="12" cy="12" r="9" />
+                    </svg>
+                    Boş</span
+                  ></a
+                ><a
+                  id="e051"
+                  data-source-id="E051"
+                  data-original-target="?code=V"
+                  class="section-link"
+                  href="#destination-dialog"
+                  data-open="destination-dialog"
+                  ><span>V- Öneri ve tedbirler</span
+                  ><span class="badge neutral"
+                    ><svg
+                      class="icon"
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="1.5"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      aria-hidden="true"
+                      focusable="false"
+                    >
+                      <circle cx="12" cy="12" r="9" />
+                    </svg>
+                    Boş</span
+                  ></a
+                ><a
+                  id="e052"
+                  data-source-id="E052"
+                  data-original-target="?code=EKLER"
+                  class="section-link"
+                  href="#destination-dialog"
+                  data-open="destination-dialog"
+                  ><span>Ekler</span
+                  ><span class="badge neutral"
+                    ><svg
+                      class="icon"
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="1.5"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      aria-hidden="true"
+                      focusable="false"
+                    >
+                      <circle cx="12" cy="12" r="9" />
+                    </svg>
+                    Boş</span
+                  ></a
+                >
+              </nav>
+            </details>
+          </section>
+          <section class="card">
+            <h2>Bölüm denetim geçmişi</h2>
+            <details
+              id="e058"
+              data-source-id="E058"
+              data-original-target="Aynı sayfadaki ayrıntı bölümü"
+              open
+            >
+              <summary>
+                <svg
+                  class="icon disclosure-icon"
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.5"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                  focusable="false"
+                >
+                  <path d="m9 5 7 7-7 7" />
+                </svg>
+                25.10.2026 00:35 TSİ · Kullanıcı 2 · Bölüm kaydedildi
+              </summary>
+              <p>Durum: Boş → Taslak</p>
+              <p>İçerik: 1 paragraf eklendi</p>
+              <details class="technical-details">
+                <summary>
+                  <svg
+                    class="icon disclosure-icon"
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.5"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                    focusable="false"
+                  >
+                    <path d="m9 5 7 7-7 7" /></svg
+                  >Teknik ayrıntı
+                </summary>
+                <p>Önceki kayıt</p>
+                <pre>
+{&quot;blocks&quot;:[],&quot;copied_from_approval_id&quot;:null,&quot;copied_from_id&quot;:null,&quot;copied_needs_review&quot;:false,&quot;edited_at&quot;:null,&quot;edited_by&quot;:null,&quot;reason&quot;:&quot;&quot;,&quot;status&quot;:&quot;empty&quot;}</pre
+                >
+                <p>Yeni kayıt</p>
+                <pre>
+{&quot;blocks&quot;:[{&quot;text&quot;:&quot;Hizmetleri erişilebilir, ölçülebilir ve şeffaf biçimde sunmak.&quot;,&quot;type&quot;:&quot;paragraph&quot;}],&quot;copied_from_approval_id&quot;:null,&quot;copied_from_id&quot;:null,&quot;copied_needs_review&quot;:false,&quot;edited_at&quot;:&quot;2026-10-24T21:35:34.416466+00:00&quot;,&quot;edited_by&quot;:2,&quot;reason&quot;:&quot;&quot;,&quot;status&quot;:&quot;draft&quot;}</pre
+                >
+              </details>
+            </details>
+          </section>
+          <footer class="prototype-footer">
+            <span>CIV-095 · Görsel inceleme</span>
+            <nav aria-label="Prototip sayfaları">
+              <a href="../components.html">Tasarım sistemi</a
+              ><a href="034-modules.html">034 Modüller</a
+              ><a href="024-department.html">024 Veri girişi</a
+              ><a href="012-section-editor.html">012 EK-1</a>
+            </nav>
+          </footer>
+        </main>
+      </div>
+    </div>
+    <dialog id="destination-dialog" aria-labelledby="destination-title">
+      <h2 id="destination-title">Bağlantı hedefi</h2>
+      <p>Bu ekran prototip kapsamı dışındadır.</p>
+      <p class="help">Mevcut uygulamadaki hedef:</p>
+      <code id="destination-target">Ekran haritasında belirtilen bağlantı</code>
+      <form method="dialog"><button autofocus>Kapat</button></form>
+    </dialog>
+    <dialog id="simulation-dialog" aria-labelledby="simulation-title">
+      <h2 id="simulation-title">Statik prototip</h2>
+      <p>
+        Bu işlem görsel inceleme için temsil edilir. Veri kaydedilmez,
+        gönderilmez veya silinmez.
+      </p>
+      <form method="dialog"><button autofocus>Kapat</button></form>
+    </dialog>
+    <dialog id="password-dialog" aria-labelledby="password-title">
+      <h2 id="password-title">Parolamı Değiştir</h2>
+      <p class="help">Statik form örneği; gerçek parola girmeyin.</p>
+      <div class="field">
+        <label for="old-password">Mevcut parola</label
+        ><input id="old-password" type="password" autocomplete="off" />
+      </div>
+      <div class="field">
+        <label for="new-password">Yeni parola</label
+        ><input id="new-password" type="password" autocomplete="off" />
+      </div>
+      <div class="field">
+        <label for="repeat-password">Yeni parola (tekrar)</label
+        ><input id="repeat-password" type="password" autocomplete="off" />
+      </div>
+      <form method="dialog" class="actions">
+        <button autofocus>Vazgeç</button><button>Parolayı değiştir</button>
+      </form>
+    </dialog>
+    <dialog id="notification-dialog" aria-labelledby="notification-title">
+      <h2 id="notification-title">Bildirimler</h2>
+      <div class="empty">
+        <p>Yeni bildirim yok.</p>
+        <p class="help">Sentetik bildirim paneli örneği.</p>
+      </div>
+      <form method="dialog"><button autofocus>Kapat</button></form>
+    </dialog>
+  </body>
+</html>
