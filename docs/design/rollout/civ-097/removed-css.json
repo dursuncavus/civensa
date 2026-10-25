@@ -1,0 +1,297 @@
+[
+  {
+    "selector": ".tabs",
+    "scope": "all",
+    "declarations": "display:flex;gap:8px;margin-bottom:14px"
+  },
+  {
+    "selector": ".tab",
+    "scope": "all",
+    "declarations": "border:1px solid var(--line);background:#fff;padding:9px 12px;border-radius:9px;cursor:pointer;font-weight:700"
+  },
+  {
+    "selector": ".tab.active",
+    "scope": "all",
+    "declarations": "background:var(--nav);color:white;border-color:var(--nav)"
+  },
+  {
+    "selector": ".tabpane",
+    "scope": "all",
+    "declarations": "display:none"
+  },
+  {
+    "selector": ".tabpane.active",
+    "scope": "all",
+    "declarations": "display:block"
+  },
+  {
+    "selector": ".record-list",
+    "scope": "all",
+    "declarations": "display:grid;gap:14px"
+  },
+  {
+    "selector": ".record.has-issue",
+    "scope": "all",
+    "declarations": "border-color:#e7b3b3;background:#fffafa"
+  },
+  {
+    "selector": ".record-head",
+    "scope": "all",
+    "declarations": "display:flex;justify-content:space-between;gap:12px;align-items:start"
+  },
+  {
+    "selector": ".record-head h3",
+    "scope": "all",
+    "declarations": "margin:4px 0 0;font-size:15px"
+  },
+  {
+    "selector": ".year-grid",
+    "scope": "all",
+    "declarations": "display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:12px 0"
+  },
+  {
+    "selector": ".submit-bar",
+    "scope": "all",
+    "declarations": "margin-top:18px;background:#172334;color:white;border-radius:12px;padding:15px;display:flex;justify-content:space-between;align-items:center;gap:16px"
+  },
+  {
+    "selector": ".submit-bar span",
+    "scope": "all",
+    "declarations": "display:block;color:#b8c2ce;font-size:11px;margin-top:3px"
+  },
+  {
+    "selector": ".cost-table",
+    "scope": "all",
+    "declarations": "min-width:980px"
+  },
+  {
+    "selector": ".cost-table input",
+    "scope": "all",
+    "declarations": "min-width:120px"
+  },
+  {
+    "selector": ".cost-table .activity-name",
+    "scope": "all",
+    "declarations": "min-width:260px"
+  },
+  {
+    "selector": ".year-grid",
+    "scope": "@media(max-width:900px)",
+    "declarations": "grid-template-columns:repeat(2,1fr)"
+  },
+  {
+    "selector": ".year-grid",
+    "scope": "@media(max-width:620px)",
+    "declarations": "grid-template-columns:1fr 1fr"
+  },
+  {
+    "selector": ".submit-bar",
+    "scope": "@media(max-width:620px)",
+    "declarations": "align-items:flex-start;flex-direction:column"
+  },
+  {
+    "selector": ".record-head",
+    "scope": "@media(max-width:620px)",
+    "declarations": "flex-direction:column"
+  },
+  {
+    "selector": ".cost-table .activity-subprogram",
+    "scope": "all",
+    "declarations": "min-width:280px;max-width:360px"
+  },
+  {
+    "selector": ".cost-table select:disabled",
+    "scope": "all",
+    "declarations": "opacity:1;color:#4f5968"
+  },
+  {
+    "selector": ".workflow-strip",
+    "scope": "all",
+    "declarations": "display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:0 0 14px"
+  },
+  {
+    "selector": ".workflow-strip span",
+    "scope": "all",
+    "declarations": "padding:9px 11px;border:1px solid var(--line);border-radius:9px;background:#fff;color:var(--muted);font-size:11px;font-weight:750"
+  },
+  {
+    "selector": ".workflow-strip span.active",
+    "scope": "all",
+    "declarations": "border-color:#e2b56c;background:#fff8e8;color:#7b5515"
+  },
+  {
+    "selector": ".workflow-strip span.done",
+    "scope": "all",
+    "declarations": "border-color:#add8c2;background:#f3fbf7;color:var(--ok)"
+  },
+  {
+    "selector": ".year-grid.dynamic",
+    "scope": "all",
+    "declarations": "grid-template-columns:repeat(var(--year-cols),minmax(145px,1fr));overflow-x:auto;padding-bottom:4px"
+  },
+  {
+    "selector": ".year-grid.dynamic label span",
+    "scope": "all",
+    "declarations": "min-height:28px;display:flex;align-items:flex-end"
+  },
+  {
+    "selector": ".record.validated",
+    "scope": "all",
+    "declarations": "border-color:#b9ddc9;background:#fbfefc"
+  },
+  {
+    "selector": ".issue-jump",
+    "scope": "all",
+    "declarations": "border:0;background:transparent;color:#963535;padding:2px 0;text-align:left;cursor:pointer;font-size:12px"
+  },
+  {
+    "selector": ".issue-jump:hover",
+    "scope": "all",
+    "declarations": "text-decoration:underline"
+  },
+  {
+    "selector": ".field-fixed",
+    "scope": "all",
+    "declarations": "border-color:var(--ok)!important;background:#effaf4!important"
+  },
+  {
+    "selector": ".activity-scroll",
+    "scope": "all",
+    "declarations": "max-width:100%"
+  },
+  {
+    "selector": ".cost-table",
+    "scope": "all",
+    "declarations": "min-width:1500px"
+  },
+  {
+    "selector": ".cost-table .program-col",
+    "scope": "all",
+    "declarations": "min-width:300px"
+  },
+  {
+    "selector": ".cost-table .activity-col",
+    "scope": "all",
+    "declarations": "min-width:320px"
+  },
+  {
+    "selector": ".cost-table .activity-explanation",
+    "scope": "all",
+    "declarations": "min-width:280px;margin-top:6px;min-height:54px"
+  },
+  {
+    "selector": ".cost-table th:not(.program-col):not(.activity-col)",
+    "scope": "all",
+    "declarations": "min-width:150px"
+  },
+  {
+    "selector": ".new-activity-row",
+    "scope": "all",
+    "declarations": "background:#fff8ef"
+  },
+  {
+    "selector": ".editing-row",
+    "scope": "all",
+    "declarations": "background:#fffaf3"
+  },
+  {
+    "selector": ".editing-row input",
+    "scope": "all",
+    "declarations": "border-color:#e9b789;background:#fff"
+  },
+  {
+    "selector": ".editing-row textarea",
+    "scope": "all",
+    "declarations": "border-color:#e9b789;background:#fff"
+  },
+  {
+    "selector": ".editing-row select",
+    "scope": "all",
+    "declarations": "border-color:#e9b789;background:#fff"
+  },
+  {
+    "selector": ".summary-row td",
+    "scope": "all",
+    "declarations": "background:#fafbfd"
+  },
+  {
+    "selector": ".summary-row input",
+    "scope": "all",
+    "declarations": "font-weight:650"
+  },
+  {
+    "selector": ".grand-total td",
+    "scope": "all",
+    "declarations": "background:#f0f6f5;border-top:2px solid #b9d3d0"
+  },
+  {
+    "selector": ".grand-total b",
+    "scope": "all",
+    "declarations": "color:#163f3b"
+  },
+  {
+    "selector": ".personnel-row td",
+    "scope": "all",
+    "declarations": "background:#fff"
+  },
+  {
+    "selector": ".workflow-strip",
+    "scope": "@media(max-width:900px)",
+    "declarations": "grid-template-columns:1fr"
+  },
+  {
+    "selector": ".year-grid.dynamic",
+    "scope": "@media(max-width:900px)",
+    "declarations": "grid-template-columns:repeat(var(--year-cols),145px)"
+  },
+  {
+    "selector": ".workflow-history",
+    "scope": "all",
+    "declarations": "margin:18px 0"
+  },
+  {
+    "selector": ".timeline",
+    "scope": "all",
+    "declarations": "display:grid;gap:10px"
+  },
+  {
+    "selector": ".timeline-item",
+    "scope": "all",
+    "declarations": "border-left:4px solid #94a3b8;background:#f8fafc;border-radius:8px;padding:11px 14px"
+  },
+  {
+    "selector": ".timeline-item.submitted",
+    "scope": "all",
+    "declarations": "border-color:#2563eb"
+  },
+  {
+    "selector": ".timeline-item.approve",
+    "scope": "all",
+    "declarations": "border-color:#16a34a"
+  },
+  {
+    "selector": ".timeline-item.return",
+    "scope": "all",
+    "declarations": "border-color:#dc2626"
+  },
+  {
+    "selector": ".timeline-item>div",
+    "scope": "all",
+    "declarations": "display:flex;justify-content:space-between;gap:14px"
+  },
+  {
+    "selector": ".timeline-item span",
+    "scope": "all",
+    "declarations": "font-size:12px;color:#64748b"
+  },
+  {
+    "selector": ".timeline-item p",
+    "scope": "all",
+    "declarations": "margin:8px 0 0"
+  },
+  {
+    "selector": ".timeline-item>div",
+    "scope": "@media(max-width:760px)",
+    "declarations": "display:grid"
+  }
+]
