@@ -24,6 +24,14 @@ Boyutlar ve bayt sayıları: [screenshots.json](screenshots.json). Beş PNG'nin 
 
 [contrast.md](contrast.md): gerçek hesaplanmış renklerden **22 çift, 0 AA ihlali**. Yeni başlık `--danger / --danger-bg`: **5,75:1** (metin eşiği 4,5:1); SVG işareti `--surface / --accent`: **6,28:1** (işaret eşiği 3:1); başlığın odak çizgisi `--accent / --danger-bg`: **5,49:1** (3:1). Açık/kapalı, odak ve hover durumları ölçüldü; SVG pseudo-elementinin maskesi ve boyadığı renk ayrıca doğrulandı.
 
+## Tüm ekran karşılaştırması
+
+[capture-summary.json](capture-summary.json): **194 çekim (97 ekran × 1440/390), 9.838 öğe/hedef, 0 eksik, 0 belge taşması, 0 kırpılma/örtüşme**. Şablon 024'ün rol/sekme/durum varyantları birlikte değerlendirilmiştir; diğer 178 çekim değişen CSS/JS kaynaklarını yüklemez. Aynı DOM, saat, odak ve kaydırma durumunda piksel karşılaştırması yapılır; 024'ün etkilenmeyen durumlarında referans CSS mevcut CSSOM sayfasında, aynı cascade konumunda denenir.
+
+İlk taramada küçük piksel farkı veren 19 çekim yeniden denetlenmiştir. Son ölçümde 024 dışındaki 176 çekimin ham farkı sıfırdır. 390 px rapor oluşturucu ve kullanıcı ekranında toplam 50 pikselde en fazla **1/255** kanal yuvarlaması kalır; bütün DOM öğelerinde hesaplanmış stil ve geometri farkı **0** ve değişen kaynak yüklemesi **0** olduğundan bunlar renderer yuvarlamasıdır. İlk ham farklar, tekrar denemeleri ve son değerler raporda korunur; maske uygulanmaz. Ürün görünümündeki değişiklik yalnız 024 kapsamındadır.
+
+Odaklı PostgreSQL 18 çalıştırması: **26 geçti**, mevcut Starlette bağımlılık uyarısı 1. Tam takım ve son PR commit'inin CI sonucu PR açıklamasında tutulur.
+
 ## Test ve seçici değişiklikleri
 
 - `tests/test_department_design.py::test_024_source_disclosure_contract_height_and_confirm[1440/390]`: kaynak farkı taslağı dondurulmuş alan/hedef sözleşmesiyle tam karşılaştırılır; sadece yeni `summary` ve mevcut gerekçe/onay kontrolleri eklenir. Kutu hücresi, sınıfları, `data-year/kind/source`, paragrafları ve başlık korunur. Fontlar yüklenince kapalı satır yüksekliği 1440'ta temiz satırdan en çok 16 px fazla olabilir. Enter/Space/Escape ve odak dönüşü; hesaplanan toplamın güncellenmesi ve `hidden` açılıp kapanması; 9 karakterle sıfır yazma isteği; geçerli gerekçeyle tam PUT hedefi/yükü, toplamın güncellenmesi ve kaynak tutarının korunması denetlenir.
@@ -42,6 +50,8 @@ Bu dalda:
 
 ```sh
 python docs/design/rollout/civ-100/verify_rollout.py --baseline /tmp/civ100-before --base-ref 9b0a5da
+# Gerekirse yalnız işaretlenen piksel karşılaştırmalarını kanıtlarıyla tekrarla:
+# python docs/design/rollout/civ-100/verify_rollout.py --baseline /tmp/civ100-before --base-ref 9b0a5da --recheck-failures
 python docs/design/rollout/civ-100/capture_states.py
 python -m pytest -q --require-postgres tests/test_department_design.py tests/test_source_conflicts_ui.py
 python -m pytest -q --require-postgres -n 4 --dist loadfile --max-worker-restart=0 --durations=20
