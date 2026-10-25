@@ -16,7 +16,7 @@ Tags: DOĞRULANDI (lead checked) · TARİHSEL (past fact) · BEYAN (owner said) 
 ## Open pull requests (DOĞRULANDI 25 Oct 19:35; #118 CIV-098 merged 9f0bdc5, #119 CIV-097 merged 7ddecbb, D-235)
 | PR | Task | State | Next action |
 | --- | --- | --- | --- |
-| #122 | CIV-099 design → 012 section editor | reviewed de89a0e; list-order fix requested from Codex (D-238) | Check fix commit, CI, behind 0, merge; owner approves look + 77 case changes |
+| #122 | CIV-099 design → 012 section editor | reviewed de89a0e; list-order fix via owner into the CIV-099 Codex task (D-238, D-239) | Check fix commit, CI, behind 0, merge; owner approves look + 77 case changes |
 
 ## Open — owner
 - Public repo (D-220/D-222/D-223), in order, each with owner confirmation:
@@ -43,4 +43,4 @@ Tags: DOĞRULANDI (lead checked) · TARİHSEL (past fact) · BEYAN (owner said) 
 
 ## Next IDs
 - Next new task ID: CIV-100.
-- Next decision: D-239.
+- Next decision: D-240.
