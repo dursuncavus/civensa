@@ -14,6 +14,15 @@
     sync();
     new MutationObserver(sync).observe(button, {attributes: true, attributeFilter: ['class']});
   });
+  // Native disclosure keyboard activation; Escape follows the prototype menu pattern.
+  page.addEventListener('keydown', event => {
+    if (event.key !== 'Escape') return;
+    const panel = event.target.closest('.source-disclosure[open]');
+    if (!panel) return;
+    event.preventDefault();
+    panel.open = false;
+    panel.querySelector('summary').focus();
+  });
   // Reuse the existing unsaved-navigation dialog, with this screen's styles.
   const draftConfirm = document.querySelector('.draft-confirm');
   if (draftConfirm) page.append(draftConfirm);

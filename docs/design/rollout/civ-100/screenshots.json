@@ -1,0 +1,32 @@
+[
+  {
+    "file": "024-costs-closed-1440.png",
+    "width": 1440,
+    "height": 956,
+    "bytes": 108656
+  },
+  {
+    "file": "024-costs-open-1440.png",
+    "width": 1440,
+    "height": 1204,
+    "bytes": 130727
+  },
+  {
+    "file": "024-checkbox-checked.png",
+    "width": 280,
+    "height": 42,
+    "bytes": 5219
+  },
+  {
+    "file": "024-costs-closed-390.png",
+    "width": 390,
+    "height": 2020,
+    "bytes": 92913
+  },
+  {
+    "file": "024-costs-open-390.png",
+    "width": 390,
+    "height": 2268,
+    "bytes": 111771
+  }
+]
