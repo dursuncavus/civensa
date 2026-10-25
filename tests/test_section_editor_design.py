@@ -24,6 +24,8 @@ class Controls(HTMLParser):
     def __init__(self, html):
         super().__init__()
         self.controls = []
+        self.bindings = []
+        self.form_target = None
         self.in_main = False
         self.export = False
         self.feed(html)
@@ -31,15 +33,20 @@ class Controls(HTMLParser):
     def handle_starttag(self, tag, attrs):
         attrs = dict(attrs)
         if tag == 'main': self.in_main = True
+        if tag == 'form': self.form_target = [attrs.get('action',''),attrs.get('method','get')]
         if tag == 'details' and 'data-section-export' in attrs: self.export = True
         if not self.in_main or tag not in {'a','button','form','input','select','textarea','summary','option'}:
             return
         if tag == 'summary' and self.export: return  # Only newly added presentation control.
-        self.controls.append([tag, sorted([k,v] for k,v in attrs.items()
-            if k not in {'value','class','style','tabindex'} )])
+        control = [tag, sorted([k,v] for k,v in attrs.items()
+            if k not in {'value','class','style','tabindex'} )]
+        self.controls.append(control)
+        if tag in {'input','select','textarea','option','button'}:
+            self.bindings.append(control + [self.form_target])
 
     def handle_endtag(self, tag):
         if tag == 'main': self.in_main = False
+        if tag == 'form': self.form_target = None
         if tag == 'details': self.export = False
 
 
@@ -85,9 +92,21 @@ def test_012_preserves_all_fields_and_action_targets(section_client, db, sample,
         response = client.get(f'/activity-sections/reports/{doc.id}?code={code}')
         assert response.status_code == 200
         key = f'{actor}/{state}/{code}'
-        actual = Controls(response.text).controls
+        parsed = Controls(response.text)
+        actual = parsed.controls
         expected = frozen['contracts'][frozen['cases'][key]]
         assert Counter(json.dumps(c, sort_keys=True) for c in actual) == Counter(json.dumps(c, sort_keys=True) for c in expected), key
+        # In the frozen output all field/button controls belong to the preceding
+        # form record. Also verify actual nesting, so moving an unchanged field
+        # into another action (or outside its form) cannot pass a multiset check.
+        target, bindings = None, []
+        for tag, attrs in expected:
+            if tag == 'form':
+                form = dict(attrs)
+                target = [form.get('action',''),form.get('method','get')]
+            elif tag in {'input','select','textarea','option','button'}:
+                bindings.append([tag,attrs,target])
+        assert parsed.bindings == bindings, key
 
 
 @pytest.mark.parametrize('width', [1440,390])
