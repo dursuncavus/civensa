@@ -172,3 +172,7 @@ LOW (record only): the audit history shows "Kullanıcı {id}" instead of a name 
 
 ## D-239 (25 Oct 2026 ~21:20, lead) — correction to D-238: the fix goes through the owner (D-208)
 DOĞRULANDI: the "@codex" comment on #122 only triggered a Codex code review (it confirmed the same list-order finding at section-editor.css:50, P2); no fix commit. D-208 already says fix follow-ups go through the owner into the task's own Codex conversation — the lead posted on the PR instead. Correct approach: the owner pastes the D-238 fix text into the "CIV-099" Codex conversation; the lead does not use "@codex" comments for fixes.
+
+## D-240 (25 Oct 2026 ~21:35, lead) — CIV-100 dispatched in parallel; next tasks in a new conversation
+BEYAN (owner, 21:27): open a new conversation for the next task after CIV-099; keep every participant busy where possible.
+Decision: the second Codex slot gets CIV-100 now (024 polish, D-235 LOW items: compact source-mismatch box, SVG checkbox tick) — different files from the CIV-099 fix, safe in parallel. Codex, GPT-6.1 Sol, effort Medium. Gemini and DeepSeek get no work now: no open research or review gate exists, and invented tasks would waste quota (constitution rules 16, 30). They are used after Ali's answers (Mon 26 Oct) where a decision needs research or independent review. The 012 LOW items (D-238) wait until #122 is merged (same template).
