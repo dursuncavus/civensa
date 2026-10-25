@@ -27,7 +27,7 @@ Tags: DOĞRULANDI (lead checked) · TARİHSEL (past fact) · BEYAN (owner said) 
   5. Full-history gitleaks (workflow_dispatch) — must be clean.
   6. Switch repo to public.
 - Claude Pro ends 3 Nov 2026 (BEYAN 25 Oct 10:22; Billing page shows only "Subscribed via iOS app", no date). iOS subscription is cancelled. Owner renews Pro from claude.ai on the web on 3 Nov; otherwise from 3 Nov the lead is unavailable and DeepSeek runs as backup lead (BACKUP_LEAD.md).
-- UI redesign (D-224/D-225): CIV-095 prototype (D-231), CIV-096 shell + 034 (D-233), CIV-098 Modüller grid and CIV-097 024 data entry (D-235) merged. Owner approves the look and the 024 letter-case changes from the PR #118/#119 screenshots. CIV-099 (012) next (D-236).
+- UI redesign (D-224/D-225): CIV-095 prototype (D-231), CIV-096 shell + 034 (D-233), CIV-098 Modüller grid and CIV-097 024 data entry (D-235) merged. Owner approved the look and the 024 letter-case changes (D-237). CIV-099 (012) next (D-236).
 0. (closed) Merges are done by the lead in live sessions (D-214).
 1. (closed) Codex "Tam erişim" stays ON — owner decision D-210.
 2. (closed) Plaintext password files (log 79): owner decision D-217 — not tracked, do not remind the owner.
@@ -38,9 +38,9 @@ Tags: DOĞRULANDI (lead checked) · TARİHSEL (past fact) · BEYAN (owner said) 
 3. D-177 plan conversion, CIV-085, live first load — owner sets the time, live session only.
 4. Measure scheduled run cost; reduce or stop if costly.
 5. D-205 transition leftovers: archive Drive state/log/rule documents with "ESKİ ... KULLANMAYIN", add Drive pointer "KAYITLAR GITHUB'DA".
-6. Guard: default branch switched (D-228); confirm a "Lead records guard" run appears on the next lead PR.
+6. (closed, D-237) Guard runs on lead PRs after the default-branch switch (#120).
 7. DeepSeek mirror GUNCEL-DURUM.md: refresh in the next live session with the Mac linked.
 
 ## Next IDs
 - Next new task ID: CIV-100.
-- Next decision: D-237.
+- Next decision: D-238.
