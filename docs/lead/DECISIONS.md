@@ -192,3 +192,6 @@ Screens 033/034, 024, 012 are on the design system. Proposal for screens without
 
 ## D-244 (25 Oct 2026 ~22:00, lead, live session CV Lider 23) — #122 (CIV-099) merged
 DOĞRULANDI (lead review of fix commit c8b654f): only section-editor.css changed in code (`.section-links` grid → `columns: 2` with `break-inside: avoid` on links; ≤700 px keeps the one-column grid) plus civ-099 evidence: four 1440 PNGs refreshed, 390 PNGs byte-identical, new reading-order-summary.json (124 checks visual order = DOM order, 22 real Tab walks, 0 split links). 1440 screenshot checked by the lead: the list now reads down the left column (Yönetici özeti … III-A Malî Bilgiler), then the right column. Lead updated the branch (behind 1, lead records only) → head 67fa62a; CI green (tests, secrets, backup-security), behind 0 → merged (squash, 67f292c). Owner approves the look and the 77 letter-case changes listed in the PR. CIV-101 (D-241) can be dispatched now.
+
+## D-245 (25 Oct 2026 ~22:05, owner approved) — CIV-099 (012) look approved
+BEYAN (owner, 22:05, "012 onay"): approves the look of #122 (012 section editor) and the 77 letter-case changes listed in the PR. UI redesign for 012 is closed; the D-238 LOW items go through CIV-101 (D-241).
