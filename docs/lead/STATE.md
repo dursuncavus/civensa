@@ -19,7 +19,7 @@ Tags: DOĞRULANDI (lead checked) · TARİHSEL (past fact) · BEYAN (owner said) 
 ## Open — owner
 - Public repo (D-220/D-222/D-223), in order, each with owner confirmation:
   1. DONE 25 Oct — age secrets set (BEYAN + screenshot), private key in owner's Passwords app.
-  2. Owner tells the lead which branch the Render service deploys from (Render → service → Settings → Branch). Then: default branch → phase5 (PROPOSED D-223, replaces phase5 → main merge) so scheduled backups encrypt and the guard runs.
+  2. DONE 25 Oct — Render answer (D-227): live service civensa-pilot deploys `main`, Auto-Deploy OFF. NEXT: owner confirms switching the repo default branch to phase5 (D-223 proposal); the lead then switches it via REST.
   3. One encrypted backup run verified.
   4. Delete old plaintext backup artifacts.
   5. Full-history gitleaks (workflow_dispatch) — must be clean.
