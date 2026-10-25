@@ -1,15 +1,20 @@
 # CIVENSA — CURRENT STATE
 
-Updated: 25 Oct 2026, ~02:55 Istanbul (live session).
+Updated: 25 Oct 2026, ~10:25 Istanbul (live session, CV Lider 18).
 Rules: AI_WORKING_CONSTITUTION v1.2 (Drive, global) · `HIERARCHY.md` v1.4 · `PROJECT_RULES.md` v1.3 · `BACKUP_LEAD.md` v2.
-Backup log ("Civensa Yedek Kaydı", Drive + DeepSeek workspace YEDEK-KAYIT.md): empty (DOĞRULANDI 25 Oct 02:00).
+Backup log ("Civensa Yedek Kaydı", Drive): no entries, last modified 23 Oct (DOĞRULANDI 25 Oct 10:25).
+
+## Claude quota (BEYAN, owner screen 25 Oct ~10:15)
+- Weekly usage 21%; at the current rate it runs out Friday evening (30 Oct).
+- October extra-usage charge: $40.30 of $45 limit.
+- Rule until reset (D-226): no long live sessions — finish the task, write a short record, close. Reviews, Ali answers (Mon 26 Oct) and packages come first; no design iterations on Claude.
 
 Tags: DOĞRULANDI (lead checked) · TARİHSEL (past fact) · BEYAN (owner said) · BELİRSİZ (unknown).
 
-## Open pull requests (DOĞRULANDI 25 Oct 10:20)
+## Open pull requests (DOĞRULANDI 25 Oct 10:25: none open)
 | PR | Task | State | Next action |
 | --- | --- | --- | --- |
-| (Codex) | CIV-095 design prototype | dispatched | Review screenshots when PR opens |
+| (not yet opened) | CIV-095 design prototype | dispatched to Codex | Review screenshots when PR opens |
 
 ## Open — owner
 - Public repo (D-220/D-222/D-223), in order, each with owner confirmation:
@@ -19,6 +24,7 @@ Tags: DOĞRULANDI (lead checked) · TARİHSEL (past fact) · BEYAN (owner said) 
   4. Delete old plaintext backup artifacts.
   5. Full-history gitleaks (workflow_dispatch) — must be clean.
   6. Switch repo to public.
+- Claude Pro end date: owner reads Settings → Billing and tells the lead (needed to plan around the cancelled iOS subscription).
 - UI redesign (D-224/D-225): principles approved 25 Oct; CIV-095 (Codex) builds the prototype; owner approves from screenshots.
 0. (closed) Merges are done by the lead in live sessions (D-214).
 1. (closed) Codex "Tam erişim" stays ON — owner decision D-210.
@@ -35,4 +41,4 @@ Tags: DOĞRULANDI (lead checked) · TARİHSEL (past fact) · BEYAN (owner said) 
 
 ## Next IDs
 - Next new task ID: CIV-096.
-- Next decision: D-226.
+- Next decision: D-227.
