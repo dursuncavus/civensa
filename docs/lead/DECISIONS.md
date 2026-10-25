@@ -135,3 +135,9 @@ STATE.md "Next decision" was stale (said D-227 after D-229 existed) — correcte
 ## D-231 (25 Oct 2026 ~11:45, lead, live session CV Lider 19) — #109 merged; CIV-096 dispatched
 DOĞRULANDI: PR #109 fix commit 1c339b1 checked — 012 audit history shows a plain Turkish summary ("Durum: Boş → Taslak", "İçerik: 1 paragraf eklendi") with raw data in a collapsed "Teknik ayrıntı"; no emoji/text-glyph icons left (inline SVG, currentColor); textarea focus = accent outline only. Only docs/design/prototype/** changed. Lead updated the branch (head ab9f7ec), CI green, behind 0 → merged (03d2ccc). CIV-095 done.
 CIV-096 (docs/lead/tasks/CIV-096.md) given to the owner for a new Codex task (Codex idle, BEYAN 11:32).
+
+## D-232 (25 Oct 2026 ~11:45, lead, live session CV Lider 19) — lead mistake: dispatch format and handover
+BEYAN (owner, 11:38): no handover note was given for the next session; the CIV-096 dispatch named the model vaguely ("the model you used for CIV-095"); the task title was outside the paste block.
+What failed: HIERARCHY dispatch rule (PLATFORM → PROJECT → TITLE → TEXT, model and reasoning level) was applied loosely. Why: the lead did not verify the current Codex model name and skipped the handover because the session closed early.
+Correct approach (applies from now, every dispatch and every session end): (1) each dispatch states platform, the exact verified model name and the effort level; (2) the title is the first line INSIDE the paste block; (3) every live session ends with a paste-ready handover note for the next session (title + text in one block, model and effort for the lead session).
+DOĞRULANDI (OpenAI ChatGPT & Codex changelog, read 25 Oct): GPT-6.1 Sol is the default Codex model; GPT-5.5 retired from Codex on 14 Oct 2026. Codex dispatches use GPT-6.1 Sol; effort per task (CIV-096: High).

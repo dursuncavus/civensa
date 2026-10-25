@@ -9,6 +9,8 @@ Backup log ("Civensa Yedek Kaydı", Drive): no entries, last modified 23 Oct (DO
 - October extra-usage charge: $40.30 of $45 limit.
 - Rule until reset (D-226): no long live sessions — finish the task, write a short record, close. Reviews, Ali answers (Mon 26 Oct) and packages come first; no design iterations on Claude.
 
+Dispatch format (D-232): platform + exact model (Codex: GPT-6.1 Sol) + effort; title is the first line inside the paste block; every session ends with a handover block.
+
 Tags: DOĞRULANDI (lead checked) · TARİHSEL (past fact) · BEYAN (owner said) · BELİRSİZ (unknown).
 
 ## Open pull requests (DOĞRULANDI 25 Oct 11:05)
@@ -41,4 +43,4 @@ Tags: DOĞRULANDI (lead checked) · TARİHSEL (past fact) · BEYAN (owner said) 
 
 ## Next IDs
 - Next new task ID: CIV-097.
-- Next decision: D-232.
+- Next decision: D-233.
