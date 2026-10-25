@@ -195,3 +195,19 @@ DOĞRULANDI (lead review of fix commit c8b654f): only section-editor.css changed
 
 ## D-245 (25 Oct 2026 ~22:05, owner approved) — CIV-099 (012) look approved
 BEYAN (owner, 22:05, "012 onay"): approves the look of #122 (012 section editor) and the 77 letter-case changes listed in the PR. UI redesign for 012 is closed; the D-238 LOW items go through CIV-101 (D-241).
+
+## D-246 (25 Oct 2026 ~22:45, owner + lead) — Claude↔Codex link: no OpenAI API; GitHub Copilot cloud agent researched, trial sequenced
+BEYAN (owner, 22:16–22:28): Claude and the coding agent must talk directly; no new payment to OpenAI (openai/codex-action needs an OpenAI API key → rejected); proposed GitHub Copilot instead; asked for thorough research first.
+Eliminated (lead): Codex CLI from the owner's Mac — the lead's device shell is a Linux VM inside the Claude app, not the Mac terminal; Codex sign-in would not persist across sessions (DOĞRULANDI get_device_info / tool description).
+Source-backed (docs.github.com / github.blog, read 25 Oct):
+- Cloud agent is in all paid Copilot plans. Pro $10/month = 1,500 AI credits (1,000 base + 500 flex; 1 credit = $0.01), metered by tokens at model rates (GPT-6.1 Sol $2 in / $0.10 cached / $10 out per 1M — same as OpenAI API); resets on the 1st, no carry-over; extra usage only with a budget.
+- "@copilot" in a PR comment makes Copilot push commits to that PR's branch; it reacts only to users with write access (lead comments are posted as dursuncavus, DOĞRULANDI). Model: picker only in the web UI, otherwise Auto. Max 59 min per session. Reads AGENTS.md.
+- Workflows do not run on Copilot pushes until a write user clicks "Approve and run workflows"; a repo admin setting can skip this, and GitHub warns it can expose Actions secrets. REST approve reportedly returns 403 (community, unverified).
+- Environment: .github/workflows/copilot-setup-steps.yml on the default branch, job copilot-setup-steps, `services` allowed (PostgreSQL), setup steps outside the firewall.
+Model analysis (BELİRSİZ, not measured): one fix round ≈ $1–3 → Pro covers roughly 5–10 fix rounds a month.
+Decision: Copilot Pro trial is the chosen route for fix rounds (Codex app keeps the main tasks, Pro quota). Order: (1) public-repo steps 3–6; (2) D-247 secrets move; (3) owner buys Copilot Pro, additional-usage budget $0, "Require approval for workflow runs" off; (4) lead writes copilot-setup-steps.yml + Copilot notes, "@codex review", owner approves the merge (workflow change); (5) first fix round as the test. If Auto picks a Claude model, review goes to Codex (rule 18). Replaces D-208 for fix rounds once the trial passes; D-242 stands.
+
+## D-247 (25 Oct 2026 ~22:45, lead, security finding, owner approval needed) — repository secrets reachable from any branch
+DOĞRULANDI (workflow files): NEON_BACKUP_DATABASE_URL (live database, db-backup.yml) and BACKUP_AGE_IDENTITY (backup decryption key, preprint-backup-rehearsal.yml, release-rehearsal.yml) are repository-level secrets with no environment. A workflow file changed on any branch of this repository and triggered by pull_request can read them. Today Codex branches already run workflows without approval, so the exposure exists before Copilot. Likelihood low (agents follow AGENTS.md, prompts are ours), impact high (live data, backup key). BELİRSİZ: whether the Neon backup role is read-only.
+Source-backed: environment secrets and deployment-branch rules need GitHub Pro for private repositories and are free for public ones (docs.github.com, managing environments).
+Proposal: right after the repo becomes public (step 6), move both secrets into an environment "production" restricted to feature/authorization-workflow-phase5, and reference it only from the backup/rehearsal jobs. Owner enters the values (lead never sees them); lead changes the workflows, "@codex review", owner approves. Added to the public-repo plan as step 7.

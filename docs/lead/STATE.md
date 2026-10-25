@@ -1,6 +1,6 @@
 # CIVENSA — CURRENT STATE
 
-Updated: 25 Oct 2026, ~22:05 Istanbul (live session, CV Lider 23).
+Updated: 25 Oct 2026, ~22:45 Istanbul (live session, CV Lider 23).
 Rules: AI_WORKING_CONSTITUTION v1.2 (Drive, global) · `HIERARCHY.md` v1.4 · `PROJECT_RULES.md` v1.3 · `BACKUP_LEAD.md` v2.
 Backup log ("Civensa Yedek Kaydı", Drive): no entries, last modified 23 Oct (DOĞRULANDI 25 Oct 19:15).
 
@@ -27,6 +27,7 @@ Tags: DOĞRULANDI (lead checked) · TARİHSEL (past fact) · BEYAN (owner said) 
   4. Delete old plaintext backup artifacts (includes civensa-db-backup-20261025-0507Z, D-230) — only after step 3 is verified (D-233).
   5. Full-history gitleaks (workflow_dispatch) — must be clean.
   6. Switch repo to public.
+  7. (proposed, D-247) Move NEON_BACKUP_DATABASE_URL and BACKUP_AGE_IDENTITY into a "production" environment limited to phase5; then the Copilot trial (D-246).
 - Claude Pro ends 3 Nov 2026 (BEYAN 25 Oct 10:22; Billing page shows only "Subscribed via iOS app", no date). iOS subscription is cancelled. Owner renews Pro from claude.ai on the web on 3 Nov; otherwise from 3 Nov the lead is unavailable and DeepSeek runs as backup lead (BACKUP_LEAD.md).
 - UI redesign (D-224/D-225): CIV-095 prototype (D-231), CIV-096 shell + 034 (D-233), CIV-098 Modüller grid and CIV-097 024 data entry (D-235) merged. Owner approved the look and the 024 letter-case changes (D-237). CIV-099 (012) merged (D-244); owner approved its look + 77 case changes (D-245). Next-screen order proposed (D-243), final after Ali's answers.
 0. (closed) Merges are done by the lead in live sessions (D-214).
@@ -41,8 +42,8 @@ Tags: DOĞRULANDI (lead checked) · TARİHSEL (past fact) · BEYAN (owner said) 
 5. D-205 transition leftovers: archive Drive state/log/rule documents with "ESKİ ... KULLANMAYIN", add Drive pointer "KAYITLAR GITHUB'DA".
 6. (closed, D-237) Guard runs on lead PRs after the default-branch switch (#120).
 7. DeepSeek mirror GUNCEL-DURUM.md: refresh in the next live session with the Mac linked.
-8. Codex cloud environment for "@codex" fixes: not set up (D-242); re-open only on the D-242 triggers.
+8. Codex cloud environment for "@codex" fixes: not set up (D-242). Fix rounds: GitHub Copilot Pro trial after public-repo step 7 (D-246).
 
 ## Next IDs
 - Next new task ID: CIV-102.
-- Next decision: D-246.
+- Next decision: D-248.
