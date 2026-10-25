@@ -4,6 +4,46 @@
 {% block content %}
 {% macro icon(path, disclosure=false) -%}<svg class="icon{% if disclosure %} disclosure-icon{% endif %}" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="{{ path }}" /></svg>{%- endmacro %}
 {% set section_titles = {'ÜST YÖNETİCİ SUNUŞU':'Üst yönetici sunuşu','YÖNETİCİ ÖZETİ':'Yönetici özeti','I- GENEL BİLGİLER':'I- Genel bilgiler','II- AMAÇLAR ve HEDEFLER':'II- Amaçlar ve hedefler','III- FAALİYETLERE İLİŞKİN BİLGİ VE DEĞERLENDİRMELER':'III- Faaliyetlere ilişkin bilgi ve değerlendirmeler','IV- KURUMSAL KABİLİYET VE KAPASİTENİN DEĞERLENDİRİLMESİ':'IV- Kurumsal kabiliyet ve kapasitenin değerlendirilmesi','V- ÖNERİ VE TEDBİRLER':'V- Öneri ve tedbirler','EKLER':'Ekler'} %}
+{# Only complete, generated table headers are mapped; shared export labels and form attributes stay verbatim. #}
+{% set table_headers = {
+  "Başlangıç Ödeneği": "Başlangıç ödeneği",
+  "Eklenen Ödenek": "Eklenen ödenek",
+  "Düşülen Ödenek": "Düşülen ödenek",
+  "Bildirilen Yıl Sonu Ödeneği": "Bildirilen yıl sonu ödeneği",
+  "Harcama (Gerçekleşme)": "Harcama (gerçekleşme)",
+  "İptal Edilen Ödenek": "İptal edilen ödenek",
+  "Ertesi Yıla Devreden Ödenek": "Ertesi yıla devreden ödenek",
+  "Bütçe Tahmini": "Bütçe tahmini",
+  "Tahsilat (Gerçekleşme)": "Tahsilat (gerçekleşme)",
+  "Yıl Sonu Tutarı": "Yıl sonu tutarı",
+  "Önceki Yıl Tutarı": "Önceki yıl tutarı",
+  "Kuruluş Adı": "Kuruluş adı",
+  "Yardımın Türü": "Yardımın türü",
+  "Faaliyet / Sonuç Açıklaması": "Faaliyet / sonuç açıklaması",
+  "Denetim Türü": "Denetim türü",
+  "Denetçi / Kurum": "Denetçi / kurum",
+  "Rapor Tarihi": "Rapor tarihi",
+  "Rapor Sayısı": "Rapor sayısı",
+  "Bulgu Özeti": "Bulgu özeti",
+  "Alınan Önlemler": "Alınan önlemler",
+  "Bütçe Satırı": "Bütçe satırı",
+  "Sapma Açıklaması": "Sapma açıklaması",
+  "Alt Program No": "Alt program No",
+  "Ekonomik Kod": "Ekonomik kod",
+  "Hesaplanan Yıl Sonu / Net Tahsilat": "Hesaplanan yıl sonu / net tahsilat",
+  "PP Bütçesi (salt okunur)": "PP bütçesi (salt okunur)",
+  "Birim Sapma Açıklaması (salt okunur)": "Birim sapma açıklaması (salt okunur)",
+  "Net Tahsilat": "Net tahsilat",
+  "Yıl Sonu Ödeneği": "Yıl sonu ödeneği",
+  "PP Bütçesi": "PP bütçesi",
+  "Birim Açıklaması": "Birim açıklaması"
+} %}
+{# Safe fragments below contain only the fixed mapping, never record content. #}
+{% macro display_table_headers(content) -%}
+{% set display = namespace(html=content) %}
+{% for before,after in table_headers.items() %}{% set display.html = display.html|replace(('<th>'~before~'</th>')|safe, ('<th>'~after~'</th>')|safe) %}{% endfor %}
+{{ display.html }}
+{%- endmacro %}
 <div class="section-editor-page report-{{ report.workflow.status if report.workflow else 'idare' }}">
 <link rel="stylesheet" href="/static/activity_sections.css">
 <link rel="stylesheet" href="/static/design/section-editor.css">
@@ -23,7 +63,7 @@
 {% for release in report.releases %}
 <p><strong>{% if not loop.last %}Sürüm {{ release.version }} · {% endif %}{{ release.label }}</strong> · {{ release.created_at|ar_time }}</p>
 <p>{% for format,label in [('docx','Word'),('pdf','PDF'),('json','JSON')] %}<a class="button" href="/activity-sections/reports/{{ report.id }}/export.{{ format }}?version={{ release.version }}">Sürüm {{ release.version }} {{ label }} indir</a> {% endfor %} <a class="button" href="/activity-sections/reports/{{ report.id }}/typeset.json?version={{ release.version }}">Dizgi verisi (JSON)</a></p>
-{% if release.reopen %}<p>Gerekçeyle açıldı · {{ release.reopen.actor_name }} (Kullanıcı {{ release.reopen.actor_id }}) · {{ release.reopen.created_at|ar_time }}</p><p class="ar-paragraph">{{ release.reopen.reason }}</p>{% endif %}
+{% if release.reopen %}<p>Gerekçeyle açıldı · {{ release.reopen.actor_name }} · {{ release.reopen.created_at|ar_time }}</p><p class="ar-paragraph">{{ release.reopen.reason }}</p>{% endif %}
 {% else %}<p>Henüz onaylı sürüm oluşturulmadı.</p>{% endfor %}
 {% if reopen_error %}<p class="ar-error" role="alert">{{ reopen_error }}</p>{% endif %}
 {% if reopen_allowed %}<form method="post" action="/activity-sections/reports/{{ report.id }}/reopen">
@@ -55,13 +95,13 @@
 <p><span class="ar-status">{{ statuses[section.status] }}</span> {{ section.reason }}</p>
 <div class="ar-preview">{% for b in section.blocks %}{% if b.type=='paragraph' %}<p class="ar-paragraph">{{ b.text }}</p>{% elif b.type=='bullets' %}<ul>{% for text in b['items'] %}<li>{{ text }}</li>{% endfor %}</ul>{% elif b.type=='table' %}<table class="ar-table">{% for row in b.rows %}<tr>{% for cell in row %}<td>{{ cell }}</td>{% endfor %}</tr>{% endfor %}</table>{% endif %}{% endfor %}</div>
 {% endif %}{% endif %}</section>
-{% if section.code.startswith('III.A') %}{% include 'activity_financial.html' %}{% endif %}
+{% if section.code.startswith('III.A') %}{% set financial_markup %}{% include 'activity_financial.html' %}{% endset %}{{ display_table_headers(financial_markup) }}{% endif %}
 {% for kind,t in tables.items() %}<section class="panel ar-panel"><h2>{{ t.title }}</h2><p>Boş alan “bilinmiyor” anlamındadır; sıfır için 0 girin. Sayılar Türkçe biçimde gösterilir.</p>
 {% if editable and report.department_id %}
 <form method="post" action="/activity-sections/reports/{{ report.id }}/resources/{{ kind }}" data-ar-resource-form>
 <input type="hidden" name="csrf_token" value="{{ request.session.get('csrf_token') }}"><input type="hidden" name="expected_revision" value="{{ report.revision }}">
 <p class="muted">Kaydedilecek satırları seçin. Satırı kaldırmak için seçimini kaldırın. Aynı sayfadaki tabloları sırayla kaydedin.</p>
-<div class="ar-scroll"><table class="ar-table"><thead><tr><th>Kaydet</th>{% for key,label in t.columns %}<th>{{ label }}</th>{% endfor %}</tr></thead><tbody>
+<div class="ar-scroll"><table class="ar-table"><thead><tr><th>Kaydet</th>{% for key,label in t.columns %}<th>{{ table_headers.get(label,label) }}</th>{% endfor %}</tr></thead><tbody>
 {% set row_count=resource_count if resource_kind==kind else [t.rows|length+3,2000]|min %}
 {% for i in range(row_count) %}{% set row=t.rows[i] if i<t.rows|length else {} %}{% set active=(resource_attempt.get('include_'~i)=='on') if resource_kind==kind else i<t.rows|length %}<tr><td><input type="hidden" name="stable_key_{{ i }}" value="{{ resource_attempt.get('stable_key_'~i,'') if resource_kind==kind else (resource_key_map[kind][i] if kind in resource_key_map and i<resource_key_map[kind]|length else '') }}"><input type="checkbox" name="include_{{ i }}" {% if active %}checked{% endif %} aria-label="{{ i+1 }}. satırı kaydet"></td>
 {% for key,label in t.columns %}{% set value=resource_attempt.get(key~'_'~i,'') if resource_kind==kind else row.get(key) %}<td>
@@ -70,13 +110,13 @@
 </td>{% endfor %}</tr>{% endfor %}</tbody></table></div><button type="button" class="button" data-ar-add-row>Satır ekle</button><button class="button primary">Tabloyu kaydet</button></form>
 {% else %}
 {% if not report.department_id %}<p>İdare verileri müdürlük tablolarından otomatik hesaplanır. Eksik değerler toplamın yanında belirtilir.</p>{% endif %}
-<div class="ar-scroll"><table class="ar-table"><thead><tr><th>Müdürlük</th>{% for key,label in t.columns %}<th>{{ label }}</th>{% endfor %}</tr></thead><tbody>{% for row in t.rows %}<tr><td>{{ row.department }}</td>{% for key,label in t.columns %}<td>{{ row[key]|ar_number if key in ['count','area'] else row[key] }}</td>{% endfor %}</tr>{% else %}<tr><td colspan="8">Henüz kaynak satırı yok.</td></tr>{% endfor %}</tbody></table></div>
+<div class="ar-scroll"><table class="ar-table"><thead><tr><th>Müdürlük</th>{% for key,label in t.columns %}<th>{{ table_headers.get(label,label) }}</th>{% endfor %}</tr></thead><tbody>{% for row in t.rows %}<tr><td>{{ row.department }}</td>{% for key,label in t.columns %}<td>{{ row[key]|ar_number if key in ['count','area'] else row[key] }}</td>{% endfor %}</tr>{% else %}<tr><td colspan="8">Henüz kaynak satırı yok.</td></tr>{% endfor %}</tbody></table></div>
 {% endif %}
 {% for key,total in t.totals.items() %}<p><strong>{{ 'Alan (m²)' if key=='area' else 'Adet / kişi' }} toplamı: {{ total.value|ar_number }}</strong> · {{ total.missing }} boş değer</p>{% endfor %}
 {% if not report.department_id and t.groups %}<h3>Tür ve mülkiyete göre toplamlar</h3>{% for group in t.groups %}<p>{{ group.category }} {{ group.ownership }}: <strong>{{ group.count|ar_number }}</strong> · {{ group.missing }} boş değer</p>{% endfor %}{% endif %}
 </section>{% endfor %}
 <nav class="panel ar-tree" aria-label="EK-1 bölümleri"><h2>Rapor bölümleri</h2><div class="section-links">{% for s in report.sections %}<a href="?code={{ s.code }}" class="{% if s.code==section.code %}ar-selected{% endif %}" style="padding-left:{{ 12+s.depth*12 }}px"><span>{{ section_titles.get(s.title,s.title) }}</span><small class="ar-{{ s.status }}">{{ statuses[s.status] }}</small></a>{% endfor %}</div></nav>
-<section class="panel ar-panel"><h3>Bölüm denetim geçmişi</h3>{% for event in events %}<div data-section-audit><p>{{ event.created_at|ar_time }} · Kullanıcı {{ event.actor_id }} · {{ {'resource_save':'Kaynak tablosu kaydedildi','financial_save':'Malî bilgi kaydedildi','financial_import':'Malî tablo içe aktarıldı'}.get(event.action,'Bölüm kaydedildi') }}</p><div data-section-change><p>Kayıt ayrıntılarını Teknik ayrıntı bölümünde inceleyebilirsiniz.</p></div><details><summary>{{ icon("m9 18 6-6-6-6", true) }} Teknik ayrıntı</summary><p>Önceki kayıt</p><pre>{{ event.before_json }}</pre><p>Yeni kayıt</p><pre>{{ event.after_json }}</pre></details></div>{% else %}<p>Henüz değişiklik kaydı yok.</p>{% endfor %}</section>
+<section class="panel ar-panel"><h3>Bölüm denetim geçmişi</h3>{% for event in events %}<div data-section-audit><p>{{ event.created_at|ar_time }} · {{ event_actor_names.get(event.actor_id, 'Kullanıcı '~event.actor_id) }} · {{ {'resource_save':'Kaynak tablosu kaydedildi','financial_save':'Malî bilgi kaydedildi','financial_import':'Malî tablo içe aktarıldı'}.get(event.action,'Bölüm kaydedildi') }}</p><div data-section-change><p>Kayıt ayrıntılarını Teknik ayrıntı bölümünde inceleyebilirsiniz.</p></div><details><summary>{{ icon("m9 18 6-6-6-6", true) }} Teknik ayrıntı</summary><p>Önceki kayıt</p><pre>{{ event.before_json }}</pre><p>Yeni kayıt</p><pre>{{ event.after_json }}</pre></details></div>{% else %}<p>Henüz değişiklik kaydı yok.</p>{% endfor %}</section>
 {% if user.role=='strategy' and not report.frozen and not report.department_id %}<section class="panel ar-panel"><h3>İdare içerik onayı</h3><p>Tüm bölümleri ve birimlerin bağımsız onaylarını tamamlayın. Konsolidasyon yalnız son onaylı birim sürümlerini kullanır. İçerik ve birim sürüm manifesti değiştirilemez kopya olarak saklanır.</p><form method="post" action="/activity-sections/reports/{{ report.id }}/freeze"><input type="hidden" name="csrf_token" value="{{ request.session.get('csrf_token') }}"><input type="hidden" name="expected_revision" value="{{ report.revision }}"><button class="button">İçeriği onayla ve dondur</button></form></section>{% endif %}
 {% if report.frozen %}<p class="muted">Onaylı kopya doğrulama kodu: {{ report.sha256 }}</p>{% endif %}
 </div></div>

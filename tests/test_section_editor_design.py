@@ -156,3 +156,104 @@ def test_012_export_audit_focus_and_safe_summary(browser, section_client, db, sa
         assert style == ['rgb(30, 107, 101)','2px','none','rgb(84, 91, 100)']
         assert page.evaluate('document.documentElement.scrollWidth === innerWidth')
         assert not errors
+
+
+def test_012_audit_names_batch_lookup_and_missing_user_fallback(section_client, db, sample):
+    from types import SimpleNamespace
+    from sqlalchemy import event
+    client, docs, _, _ = section_client
+    doc = docs['birim:'+str(sample['department'].id)]
+    configure(db, sample, doc, 'draft-content', 'director')
+    sample['user'].full_name = 'Sentetik <Deniz> Yılmaz'
+    db.add(ARContentEvent(document_id=doc.id, section_code='I.A', action='section_save',
+        before_json='{}', after_json='{}', actor_id=sample['strategy'].id))
+    db.commit()
+    login(client, sample['user'].email)
+    queries = []
+    def record(conn, cursor, statement, parameters, context, executemany):
+        if re.search(r'users\.id IN\s*\(', statement): queries.append(statement)
+    event.listen(db.bind, 'before_cursor_execute', record)
+    try:
+        response = client.get(f'/activity-sections/reports/{doc.id}?code=I.A')
+    finally:
+        event.remove(db.bind, 'before_cursor_execute', record)
+    assert response.status_code == 200
+    assert len(queries) == 1
+    assert response.context['event_actor_names'] == {
+        sample['user'].id: sample['user'].full_name,
+        sample['strategy'].id: sample['strategy'].full_name}
+    assert 'Sentetik &lt;Deniz&gt; Yılmaz' in response.text
+    assert f'· Kullanıcı {sample["user"].id} ·' not in response.text
+    # A dangling historical actor cannot be inserted with the current FK. Render
+    # the same route context with a historical event whose user is unavailable.
+    missing = SimpleNamespace(actor_id=999999, created_at=datetime(2026,10,25,tzinfo=UTC),
+        action='section_save', before_json='{}', after_json='{}')
+    html = response.template.render({**response.context, 'events':[missing]})
+    assert '· Kullanıcı 999999 ·' in html
+
+
+def test_012_reopen_shows_only_actor_name(section_client, sample):
+    from test_activity_sections import ready_and_freeze
+    from test_ar_release_chain import reopen
+    client, docs, _, _ = section_client
+    token = login(client, sample['strategy'].email)
+    doc = docs['idare']
+    ready_and_freeze(client, token, doc)
+    assert reopen(client, token, doc).status_code == 200
+    response = client.get(f'/activity-sections/reports/{doc.id}?code=I.A')
+    assert response.status_code == 200
+    assert f'Gerekçeyle açıldı · {sample["strategy"].full_name} ·' in response.text
+    assert f'(Kullanıcı {sample["strategy"].id})' not in response.text
+
+
+def test_012_sentence_case_preserves_excel_and_export_headers(section_client, db, sample):
+    from io import BytesIO
+    from docx import Document
+    from openpyxl import load_workbook
+    from app import activity_financial_service as finance
+    from app.ar_export import build_activity_report_docx, TEMPLATE_PATH
+    client, docs, _, _ = section_client
+    doc = docs['idare']
+    login(client, sample['strategy'].email)
+    frozen = json.loads((CONTRACT.parent/'civ101_financial_headers.json').read_text())
+    actual = dict(expense=finance.EXPENSE_FIELDS, revenue=finance.REVENUE_FIELDS,
+        entries=finance.ENTRY_FIELDS,
+        budget={k:finance.budget_columns(k) for k in frozen['budget']})
+    assert json.loads(json.dumps(actual)) == frozen
+    # Actual XLSX download headers, independently frozen from the base branch.
+    for kind, columns in frozen['budget'].items():
+        response = client.get(f'/api/activity-sections/reports/{doc.id}/financial/template/{kind}')
+        assert response.status_code == 200
+        sheet = load_workbook(BytesIO(response.content)).active
+        assert list(next(sheet.values)) == [label for _,label in columns]
+    payload = sections.report_data(db, sample['strategy'], doc.id)
+    for kind, columns in frozen['entries'].items():
+        payload['financial']['entries'][kind] = [{key:None if key in {'amount','previous'} else 'Sentetik' for key,_ in columns}]
+    word = Document(BytesIO(build_activity_report_docx(payload, TEMPLATE_PATH)))
+    headers = [[cell.text for cell in table.rows[0].cells] for table in word.tables]
+    assert ['Müdürlük','Sınıflandırma',*[label for _,label in frozen['expense'][:6]]] in headers
+    assert ['Müdürlük','Sınıflandırma',*[label for _,label in frozen['revenue']],
+        'Net Tahsilat','Gerçekleşme %'] in headers
+    for kind in ('assets','audit','aid','explanations'):
+        assert [label for _,label in frozen['entries'][kind]] in headers
+    expected = json.loads((CONTRACT.parents[2]/'docs/design/rollout/civ-101/header-changes.json').read_text())
+    seen = set()
+    for code in ('I.C.1','I.C.3','I.C.4','III.A','III.A.1','III.A.2','III.A.3','III.A.4'):
+        response = client.get(f'/activity-sections/reports/{doc.id}?code={code}')
+        assert response.status_code == 200
+        labels = re.findall(r'<th>(.*?)</th>', response.text)
+        assert not set(labels) & expected.keys()
+        seen.update(labels)
+        # Classification names and accessible form labels remain verbatim.
+        if code == 'III.A.1':
+            assert '06 · Sermaye Giderleri' in response.text
+            assert '01 · Vergi Gelirleri' in response.text
+            assert '09 · Red ve İadeler' in response.text
+            assert 'aria-label="Başlangıç Ödeneği 1"' in response.text
+        if code == 'III.A.3':
+            assert '<th>Alınan önlemler</th>' in response.text
+    own = docs['birim:'+str(sample['department'].id)]
+    response = client.get(f'/activity-sections/reports/{own.id}?code=III.A.1')
+    assert response.status_code == 200
+    seen.update(re.findall(r'<th>(.*?)</th>', response.text))
+    assert set(expected.values()) <= seen

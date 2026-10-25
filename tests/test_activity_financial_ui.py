@@ -36,7 +36,7 @@ def test_financial_entry_preview_and_completeness_browser(section_client,sample,
         page.goto(f'http://testserver/activity-sections/reports/{doc.id}?code=III.A.1')
         form=page.locator('form[action$="/financial/budget/expenditure"]')
         expect(form.locator('[name=initial_0]')).to_have_value('12.500,23')
-        expect(form).to_contain_text('PP Bütçesi (salt okunur)')
+        expect(form.get_by_role('columnheader',name='PP bütçesi (salt okunur)',exact=True)).to_be_visible()
         form.get_by_role('button',name='Satır ekle',exact=True).click()
         assert form.locator('[name=initial_4]').count()==1
         page.get_by_role('heading',name='Bütçe Uygulama Sonuçları',exact=True).evaluate('(el)=>{el.scrollIntoView();window.scrollBy(0,-20)}')

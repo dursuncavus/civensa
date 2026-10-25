@@ -1,0 +1,244 @@
+{
+  "expense": [
+    [
+      "initial",
+      "Başlangıç Ödeneği"
+    ],
+    [
+      "added",
+      "Eklenen Ödenek"
+    ],
+    [
+      "deducted",
+      "Düşülen Ödenek"
+    ],
+    [
+      "entered_final",
+      "Bildirilen Yıl Sonu Ödeneği"
+    ],
+    [
+      "actual",
+      "Harcama (Gerçekleşme)"
+    ],
+    [
+      "cancelled",
+      "İptal Edilen Ödenek"
+    ],
+    [
+      "carried",
+      "Ertesi Yıla Devreden Ödenek"
+    ]
+  ],
+  "revenue": [
+    [
+      "estimate",
+      "Bütçe Tahmini"
+    ],
+    [
+      "actual",
+      "Tahsilat (Gerçekleşme)"
+    ],
+    [
+      "refunds",
+      "Red ve İadeler"
+    ]
+  ],
+  "entries": {
+    "assets": [
+      [
+        "label",
+        "Varlık / yükümlülük"
+      ],
+      [
+        "amount",
+        "Yıl Sonu Tutarı"
+      ],
+      [
+        "previous",
+        "Önceki Yıl Tutarı"
+      ],
+      [
+        "explanation",
+        "Açıklama"
+      ]
+    ],
+    "aid": [
+      [
+        "name",
+        "Kuruluş Adı"
+      ],
+      [
+        "aid_type",
+        "Yardımın Türü"
+      ],
+      [
+        "amount",
+        "Tutar"
+      ],
+      [
+        "basis",
+        "Dayanak"
+      ],
+      [
+        "explanation",
+        "Faaliyet / Sonuç Açıklaması"
+      ]
+    ],
+    "audit": [
+      [
+        "audit_type",
+        "Denetim Türü"
+      ],
+      [
+        "auditor",
+        "Denetçi / Kurum"
+      ],
+      [
+        "period",
+        "Dönem"
+      ],
+      [
+        "report_date",
+        "Rapor Tarihi"
+      ],
+      [
+        "report_number",
+        "Rapor Sayısı"
+      ],
+      [
+        "findings",
+        "Bulgu Özeti"
+      ],
+      [
+        "measures",
+        "Alınan Önlemler"
+      ],
+      [
+        "status",
+        "Durum"
+      ]
+    ],
+    "explanations": [
+      [
+        "row_key",
+        "Bütçe Satırı"
+      ],
+      [
+        "explanation",
+        "Sapma Açıklaması"
+      ]
+    ]
+  },
+  "budget": {
+    "expenditure": [
+      [
+        "department_id",
+        "Müdürlük No"
+      ],
+      [
+        "economic_code",
+        "Ekonomik Kod"
+      ],
+      [
+        "initial",
+        "Başlangıç Ödeneği"
+      ],
+      [
+        "added",
+        "Eklenen Ödenek"
+      ],
+      [
+        "deducted",
+        "Düşülen Ödenek"
+      ],
+      [
+        "entered_final",
+        "Bildirilen Yıl Sonu Ödeneği"
+      ],
+      [
+        "actual",
+        "Harcama (Gerçekleşme)"
+      ],
+      [
+        "cancelled",
+        "İptal Edilen Ödenek"
+      ],
+      [
+        "carried",
+        "Ertesi Yıla Devreden Ödenek"
+      ],
+      [
+        "explanation",
+        "Sapma Açıklaması"
+      ]
+    ],
+    "programme": [
+      [
+        "department_id",
+        "Müdürlük No"
+      ],
+      [
+        "program_id",
+        "Program No"
+      ],
+      [
+        "subprogram_id",
+        "Alt Program No"
+      ],
+      [
+        "initial",
+        "Başlangıç Ödeneği"
+      ],
+      [
+        "added",
+        "Eklenen Ödenek"
+      ],
+      [
+        "deducted",
+        "Düşülen Ödenek"
+      ],
+      [
+        "entered_final",
+        "Bildirilen Yıl Sonu Ödeneği"
+      ],
+      [
+        "actual",
+        "Harcama (Gerçekleşme)"
+      ],
+      [
+        "cancelled",
+        "İptal Edilen Ödenek"
+      ],
+      [
+        "carried",
+        "Ertesi Yıla Devreden Ödenek"
+      ],
+      [
+        "explanation",
+        "Sapma Açıklaması"
+      ]
+    ],
+    "revenue": [
+      [
+        "economic_code",
+        "Ekonomik Kod"
+      ],
+      [
+        "estimate",
+        "Bütçe Tahmini"
+      ],
+      [
+        "actual",
+        "Tahsilat (Gerçekleşme)"
+      ],
+      [
+        "refunds",
+        "Red ve İadeler"
+      ],
+      [
+        "explanation",
+        "Sapma Açıklaması"
+      ]
+    ]
+  }
+}
