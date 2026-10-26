@@ -1,6 +1,6 @@
 """CIV-105: frozen department contracts and unchanged strategy rendering.
 
-Fixtures are exact bytes from phase5 264c04b, including both shared partials.
+Fixtures are from phase5 264c04b; CIV-110 updates only the expired submit control.
 All route and browser examples use disposable PostgreSQL and synthetic records.
 """
 from collections import Counter
@@ -34,7 +34,7 @@ HASHES = {
     'monitoring_ours': 'd5640aca53de09429283077e72bdef36619278e873addd71634b6be560a30e90',
     'monitoring': '082e61029ab7bd3a48ad5e08a0f65644d89961ece64a10008963f5a1b2a3b90d',
     'monitoring_detail': '391a6253824fd36bab2a70608a6ba2526c5f39a734596e52bbcc156dce81794b',
-    'monitoring_shared': '1f8118931a2aa0cc48da1b933d2f4d8982817fc7b7bc1169e00ce7c75e0dde23',
+    'monitoring_shared': '7f855dc94b101377db64a6860dfa713606d3b117b3bc8e2514832ba73142dc82',
     'monitoring_notes': '7122a66ff3c0dde77dc0b17c154203eaeb431a05f80aaaa7837d34768702fd07',
 }
 
@@ -203,10 +203,8 @@ def test_monitoring_frozen_forms_fields_values_options_and_readonly(ic_client, o
     posts = [dict(attrs)['action'] for tag, attrs in controls
              if tag == 'form' and dict(attrs).get('method') == 'post']
     assert any(url.endswith('/entry') for url in posts) == (status in {'draft', 'returned'})
-    # The starting macro still offers submission after the deadline; preserve
-    # that control while keeping entry and note editing disabled.
     assert any(url.endswith('/transition') for url in posts) == (
-        status in {'draft', 'returned', 'expired'} and sender != 'staff')
+        status in {'draft', 'returned'} and sender != 'staff')
     assert any(url.endswith('/notes') for url in posts) == (status not in {'closed', 'expired', 'empty'})
     if status in {'closed', 'empty'}: assert not posts
     assert ('Bu dönemde sorumlu eyleminiz bulunmuyor.' in html) == (status == 'empty')
@@ -229,6 +227,7 @@ def scenario_context(response, scenario):
         explanation='Sentetik eğitim hazırlığı sürüyor.', reason='', evidence='Sentetik EBYS 2027/105')
     detail['status'] = scenario if scenario in {'draft', 'returned', 'submitted', 'approved'} else 'draft'
     detail['editable'] = scenario in {'draft', 'returned', 'open-error'}
+    detail['submission_open'] = scenario != 'expired'
     if scenario == 'closed': period.closed_at = datetime(2026, 10, 26, 9)
     if scenario == 'expired': period.deadline = date(2000, 1, 1)
     context.update(monitoring_period=period, details=[detail],
@@ -249,6 +248,39 @@ def scenario_context(response, scenario):
             {'detail': 'Sentetik gerçekleşme oranı geçersiz. Alanı düzeltip yeniden kaydedin.',
              'errors': [{'field': 'percentage', 'message': 'Gerçekleşme oranı için 0–100 girin.'}]})
     return context
+
+
+@pytest.mark.parametrize('status', ['draft', 'returned'])
+@pytest.mark.parametrize('day_offset', [-1, 0, 1])
+def test_submission_deadline_real_routes(ic_client, db, sample, open_period, monkeypatch, status, day_offset):
+    batch = db.scalar(select(ICMonitoringBatch).where(
+        ICMonitoringBatch.period_id == open_period.id,
+        ICMonitoringBatch.department_id == sample['department'].id))
+    if status == 'returned':
+        for row in monitoring.rows(db, batch):
+            monitoring.save_entry(db, sample['user'], batch.id, row['target'].id,
+                monitoring.state(db, batch.id)[1], dict(status='completed', percentage='100',
+                explanation='Sentetik tamamlanma.', reason='', evidence='Sentetik EBYS'))
+        monitoring.transition(db, sample['user'], batch.id, 'submit', monitoring.state(db, batch.id)[1])
+        monitoring.transition(db, sample['strategy'], batch.id, 'return',
+                              monitoring.state(db, batch.id)[1], 'Sentetik düzeltme isteği.')
+        db.commit()
+    deadline = open_period.deadline
+    monkeypatch.setattr(monitoring, 'today', lambda db: deadline + timedelta(days=day_offset))
+    message = f'Gönderim süresi doldu (son giriş: {deadline:%d.%m.%Y}). Süre uzatımı için Strateji birimiyle görüşün.'
+    for path in ['/internal-control/our-actions', f'/internal-control/monitoring/batches/{batch.id}']:
+        response = ic_client.get(path)
+        assert response.status_code == 200
+        assert ('value="submit"' in response.text) == (day_offset <= 0)
+        assert (message in response.text) == (day_offset > 0)
+        assert ('/entry"' in response.text) == (day_offset <= 0)
+    if day_offset > 0:
+        csrf_token = response.context['request'].session['csrf_token']
+        response = ic_client.post(f'/internal-control/monitoring/batches/{batch.id}/transition',
+            data={'action': 'submit', 'expected_revision': monitoring.state(db, batch.id)[1],
+                  'csrf_token': csrf_token})
+        assert response.status_code == 409
+        assert 'İzleme gönderim süresi doldu' in response.text
 
 
 @pytest.mark.parametrize('closed', [False, True])
@@ -355,3 +387,32 @@ def test_browser_layout_contrast_and_form_navigation(browser, ic_client, db, sam
                     'csrf_token': [context['request'].session['csrf_token']],
                     'id': [action_id], 'content': ['Sentetik işbirliği katkısı.']})
         assert not errors
+
+
+@pytest.mark.parametrize('width', [1440, 390])
+def test_expired_department_browser(browser, ic_client, db, sample, action_plan, monkeypatch, width):
+    import os
+    from playwright.sync_api import expect
+
+    monkeypatch.setattr(monitoring, 'today', lambda db: date(2026, 10, 24))
+    monitoring.open_period(db, sample['strategy'], action_plan.id, 2027, 1, date(2026, 10, 25))
+    db.commit()
+    monkeypatch.setattr(monitoring, 'today', lambda db: date(2026, 10, 26))
+    with browser.new_context(viewport={'width': width, 'height': 900}) as browser_context:
+        def serve(route):
+            result = ic_client.get(route.request.url)
+            headers = dict(result.headers)
+            headers.pop('set-cookie', None)
+            route.fulfill(status=result.status_code, headers=headers, body=result.content)
+        browser_context.route('http://testserver/**', serve)
+        page = browser_context.new_page()
+        page.goto('http://testserver/internal-control/our-actions')
+        expect(page.get_by_role('button', name='İncelemeye gönder')).to_have_count(0)
+        expect(page.get_by_text('Gönderim süresi doldu (son giriş: 25.10.2026). Süre uzatımı için Strateji birimiyle görüşün.', exact=True)).to_be_visible()
+        assert page.evaluate('document.documentElement.scrollWidth === innerWidth')
+        assert page.locator('form[action$="/entry"]').count() == 0
+        screenshots = os.getenv('CIVENSA_CIV110_SCREENSHOTS')
+        if screenshots:
+            folder = Path(screenshots)
+            folder.mkdir(parents=True, exist_ok=True)
+            page.screenshot(path=str(folder / f'department-expired-{width}.png'), full_page=True)
