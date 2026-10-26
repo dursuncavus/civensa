@@ -1059,3 +1059,103 @@ select {
   height: var(--control-height);
   line-height: 20px;
 }
+
+/* CIV-108 · Yalnız 022 statik görev listesi; diğer ekranları etkilemez. */
+.department-home-prototype .home-state-switcher {
+  max-width: 48ch;
+  margin-bottom: var(--space-6);
+}
+.department-home-prototype .home-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+  min-width: 0;
+}
+.department-home-prototype .home-summary .card {
+  margin: 0;
+  padding: var(--space-3) var(--space-4);
+}
+.department-home-prototype .home-summary span {
+  display: block;
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+.department-home-prototype .home-summary b {
+  display: block;
+  margin-top: var(--space-1);
+  font-size: var(--text-title);
+  font-weight: var(--font-semibold);
+  line-height: 1.2;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+.department-home-prototype .home-summary .home-has-issues {
+  color: var(--warning);
+}
+.department-home-prototype .home-tasks h2 {
+  font-size: var(--text-section);
+  margin-bottom: var(--space-2);
+}
+.department-home-prototype .home-task-list {
+  counter-reset: home-step;
+  list-style: none;
+  padding: 0;
+  margin: var(--space-6) 0 0;
+}
+.department-home-prototype .home-task-list li {
+  counter-increment: home-step;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) minmax(0, auto);
+  gap: var(--space-3);
+  align-items: start;
+  padding-block: var(--space-4);
+  border-top: 1px solid var(--border);
+}
+.department-home-prototype .home-task-list li::before {
+  content: counter(home-step) ".";
+  font-weight: var(--font-medium);
+  font-variant-numeric: tabular-nums;
+}
+.department-home-prototype .home-task-list a {
+  font-weight: var(--font-medium);
+}
+.department-home-prototype .home-task-list .badge {
+  max-width: 36ch;
+  justify-self: end;
+}
+@media (min-width: 1280px) {
+  .department-home-prototype .home-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 18rem;
+    gap: var(--space-6);
+    align-items: start;
+  }
+  .department-home-prototype .home-tasks {
+    grid-column: 1;
+    grid-row: 1;
+  }
+  .department-home-prototype .home-summary {
+    grid-column: 2;
+    grid-row: 1;
+    grid-template-columns: minmax(0, 1fr);
+    position: sticky;
+    top: var(--space-6);
+  }
+}
+@media (max-width: 760px) {
+  .department-home-prototype .home-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 700px) {
+  .department-home-prototype .home-task-list li {
+    grid-template-columns: auto minmax(0, 1fr);
+    row-gap: var(--space-2);
+  }
+  .department-home-prototype .home-task-list .badge {
+    grid-column: 2;
+    justify-self: start;
+    max-width: 100%;
+  }
+}
