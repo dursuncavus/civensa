@@ -307,3 +307,6 @@ Copilot round 1 (D-246 step 5): "@copilot" posted 09:45Z, commits e787bf2 + 673f
 Decision: Copilot replaces the owner relay (D-208) for small fix rounds on open PRs; the lead posts "@copilot", reviews the diff, then updates the branch to run CI. Large or unclear fixes still go back to Codex. Re-check after credits are known.
 CIV-104 (D-243 step 3, 022/021 Genel Bakış) dispatched: docs/lead/tasks/CIV-104.md. Codex, "Bulut → civensa", GPT-6.1 Sol, effort Medium.
 Quota (BEYAN, owner screenshot 12:48): Claude weekly 39% on Monday, forecast to run out Friday morning; October extra usage $40.30 of $45. Scheduled task "Civensa gece kontrol" reduced to one run a day (05:41) to save quota. Owner lowered the virtual card limit (BEYAN 12:47; closes the D-260 item).
+
+## D-266 (26 Oct 2026 ~14:05 Istanbul, lead) — Copilot round 1 cost: 5 credits
+DOĞRULANDI (owner screenshot, github.com/settings/copilot 14:03): Copilot Pro active; included usage 5 / 1,500 AI credits (≈ $0.05), resets 1 Nov; additional usage not enabled, $0 budget. One small fix round (D-265) cost 5 credits — far below the D-246 estimate of $1–3. Copilot stays the route for small fix rounds; at this rate the monthly allowance is not a constraint.
