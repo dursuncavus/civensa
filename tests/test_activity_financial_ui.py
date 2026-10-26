@@ -48,8 +48,12 @@ def test_financial_entry_preview_and_completeness_browser(section_client,sample,
         assert page.get_by_role('button',name='Farkları onayla ve içe aktarmayı uygula').count()==0
         page.screenshot(path=str(folder/'financial-import-preview.png'))
         page.goto('http://testserver/activity-sections?section=III.A.1')
-        expect(page.locator('.ar-table')).to_contain_text('Sapma açıklaması gerekli')
-        expect(page.locator('.ar-table')).to_contain_text('fark 500')
+        # Completion rows now belong to one table per report; keep both exact
+        # financial checks scoped to the idare report that owns these entries.
+        completion=page.locator(f'.report-group[aria-labelledby="report-{doc.id}"] .ar-table')
+        expect(completion).to_have_count(1)
+        expect(completion).to_contain_text('Sapma açıklaması gerekli')
+        expect(completion).to_contain_text('fark 500')
         page.get_by_role('heading',name='Tamamlanma görünümü').evaluate('(el)=>{el.scrollIntoView();window.scrollBy(0,-20)}')
         page.screenshot(path=str(folder/'financial-completeness.png'))
         assert not errors,errors

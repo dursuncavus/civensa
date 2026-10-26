@@ -1,0 +1,63 @@
+/* CIV-103 · 009/010 only; colors come from the shared D-224 tokens. */
+.section-index-page { min-width: 0; color: var(--text); }
+.section-index-page :is(p,h2,h3) { margin: 0 0 var(--space-3); overflow-wrap: anywhere; }
+.section-index-page :is(h2,h3) { font-weight: var(--font-semibold); }
+.section-index-page h2 { font-size: var(--text-section); }
+.section-index-page h3 { font-size: var(--text-card); }
+.section-index-page :is(label,th) { text-transform: none; letter-spacing: normal; }
+.section-index-page .muted { color: var(--text-secondary); font-size: var(--text-sm); }
+.section-index-page a { color: var(--accent); text-underline-offset: 3px; }
+.section-index-page a:hover { color: var(--accent-hover); }
+.section-index-page :is(a,button,input,select,summary):focus-visible {
+  outline: var(--focus); outline-offset: var(--focus-offset); box-shadow: none;
+}
+.section-index-page :is(input,select):focus { outline: var(--focus); outline-offset: var(--focus-offset); border-color: var(--text-secondary); box-shadow: none; }
+.section-index-page .index-panel { min-width: 0; margin-bottom: var(--space-6); padding: var(--space-6); background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: none; }
+.section-index-page .index-filters { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,2fr) minmax(0,1fr) auto; align-items: end; gap: var(--space-4); margin-bottom: var(--space-6); }
+.section-index-page label { display: grid; min-width: 0; gap: var(--space-2); color: var(--text); font-size: var(--text-sm); font-weight: var(--font-medium); }
+.section-index-page label:has(input[type=checkbox]) { display: flex; align-items: center; align-self: center; }
+.section-index-page input[type=checkbox] { flex-shrink: 0; width: 20px; height: 20px; accent-color: var(--accent); }
+.section-index-page select { width: 100%; min-width: 0; min-height: var(--control-height); padding: var(--space-2) var(--space-3); border: 1px solid var(--text-secondary); border-radius: var(--radius); background: var(--surface); color: var(--text); font: var(--font-regular) var(--text-base) / var(--line-height) var(--font-family); box-shadow: none; }
+.section-index-page :is(.button,summary) { display: inline-flex; align-items: center; gap: var(--space-2); min-height: var(--control-height); max-width: 100%; padding: var(--space-2) var(--space-4); border: 1px solid var(--text-secondary); border-radius: var(--radius); background: var(--surface); color: var(--text); font: var(--font-medium) var(--text-sm) / var(--line-height) var(--font-family); text-decoration: none; cursor: pointer; }
+.section-index-page :is(.button,summary):hover { background: var(--surface-muted); color: var(--text); }
+.section-index-page .button.primary { background: var(--accent); border-color: var(--accent); color: var(--surface); }
+.section-index-page .button.primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
+.section-index-page :is(.report-group,.export-report) { min-width: 0; padding: var(--space-4) 0; border-top: 1px solid var(--border); }
+.section-index-page .report-heading { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-3); margin-bottom: var(--space-4); }
+.section-index-page .report-heading :is(p,h3) { margin: 0; }
+.section-index-page .report-badges { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.section-index-page :is(.ar-status,.workflow-badge,.approved-badge) { display: inline-flex; padding: var(--space-1) var(--space-2); border-radius: var(--radius); background: var(--surface-muted); color: var(--text-secondary); font-size: var(--text-sm); font-weight: var(--font-medium); }
+.section-index-page :is(.ar-draft,.workflow-draft,.workflow-returned) { background: var(--warning-bg); color: var(--warning); }
+.section-index-page :is(.ar-ready,.workflow-approved,.approved-badge) { background: var(--success-bg); color: var(--success); }
+.section-index-page .workflow-submitted { background: var(--accent-soft); color: var(--accent); }
+.section-index-page .index-table { min-width: 0; width: 100%; table-layout: fixed; border-collapse: collapse; font-size: var(--text-sm); }
+.section-index-page :is(th,td) { color: var(--text); font-size: var(--text-sm); padding: var(--space-3); border-bottom: 1px solid var(--border); vertical-align: top; text-align: left; overflow-wrap: anywhere; }
+.section-index-page th { background: var(--surface-muted); color: var(--text-secondary); font-weight: var(--font-medium); }
+.section-index-page th:first-child { width: 36%; }
+.section-index-page th:nth-child(2) { width: 16%; }
+.section-index-page th:nth-child(3) { width: 16%; }
+.section-index-page .ar-warning { margin-top: var(--space-3); padding: var(--space-4); border: 1px solid var(--warning); border-left-width: 3px; border-radius: var(--radius); background: var(--warning-bg); color: var(--warning); }
+.section-index-page .empty-state { padding: var(--space-6); border: 1px dashed var(--border); border-radius: var(--radius); background: var(--surface); color: var(--text-secondary); text-align: center; }
+.section-index-page .ar-paragraph { white-space: pre-wrap; }
+.section-index-page .export-report { display: grid; gap: var(--space-3); }
+.section-index-page .export-report :is(h3,p) { margin: 0; }
+.section-index-page summary { list-style-position: inside; }
+.section-index-page summary::before { content: '›'; font-size: var(--text-card); }
+.section-index-page summary::marker { content: ''; }
+.section-index-page summary::-webkit-details-marker { display: none; }
+.section-index-page details[open] > summary::before { transform: rotate(90deg); }
+.section-index-page .export-items { display: flex; flex-wrap: wrap; gap: var(--space-2); padding-top: var(--space-3); }
+@media (max-width: 1000px) {
+  .section-index-page .index-filters { grid-template-columns: minmax(0,1fr) minmax(0,1fr); }
+}
+@media (max-width: 700px) {
+  .section-index-page .index-panel { padding: var(--space-4); }
+  .section-index-page .index-filters { grid-template-columns: minmax(0,1fr); }
+  .section-index-page .index-table, .section-index-page :is(tbody,tr,td) { display: block; width: auto; }
+  /* Keep native table semantics and DOM reading order; visually hide column headings. */
+  .section-index-page thead { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .section-index-page tr { margin-bottom: var(--space-4); padding: var(--space-3); border: 1px solid var(--border); border-radius: var(--radius); }
+  .section-index-page td { padding: var(--space-2) 0; border: 0; }
+  .section-index-page td::before { content: attr(data-label); display: block; margin-bottom: var(--space-1); color: var(--text-secondary); font-weight: var(--font-medium); }
+  .section-index-page .export-items { display: grid; grid-template-columns: minmax(0,1fr); }
+}

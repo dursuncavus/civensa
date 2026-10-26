@@ -86,3 +86,6 @@
 .section-editor-page [aria-label="Birim raporu iş akışı"] > p:has(> strong) { padding: var(--space-4); border: 1px solid var(--warning); border-radius: var(--radius); background: var(--warning-bg); color: var(--warning); }
 
 .section-editor-page [aria-label="Birim raporu iş akışı"] > h3 { margin-top: var(--space-6); }
+
+/* Keep the resource selection header on one line in its narrow column. */
+.section-editor-page [data-ar-resource-form] th:first-child { white-space: nowrap; overflow-wrap: normal; word-break: normal; }
