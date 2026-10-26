@@ -401,3 +401,10 @@ DOĞRULANDI: #161 CIV-111 (042 İnceleme kuyruğu) CI all success on 6ca745f, be
 Shard "test (18, 1)" hung again on two PRs (> 18 min, shard 0 ≈ 9 min) → cancelled; reruns passed in ~13 min. Third hang → CI task (find the hanging test).
 CIV-112 (022 task list) dispatched to Codex ("Bulut → civensa", GPT-6.1 Sol, Medium).
 Owner look approval open: CIV-109 (#154), CIV-111 (#161), CIV-113 (#163) with their text-change lists.
+
+## D-284 (26 Oct 2026 ~23:45 Istanbul, lead, live session CV Lider 32) — CIV-112 scope exception; CIV-114 and CIV-115 dispatched
+DOĞRULANDI: PR #165 (CIV-112, Codex, 0daf9b6) test (18, 0) failed on tests/test_pp_display.py::test_department_dashboard_status (asserts "<b>Taslak</b>" from the removed department "Gönderim durumu" card). Codex asked for a scope exception. Decision: approved, one assertion only — replace it with the step-3 status "Gönderilmedi" for the draft submission; nothing else in that file; listed in the PR. Package gap: CONSTRAINTS named only test_dashboard_design.py while TESTS allowed replacing assertions about the removed cards (lead error: did not search other test files for those assertions). Prevention: when a package removes UI, grep all tests for its strings and list those files.
+BEYAN (owner 23:34): both Codex slots, DeepSeek and Gemini idle; owner leaves within 30 min.
+023 checked: same template as 024 (department.html), strategy role only makes fields readonly/disabled → no separate restyle; CIV-114 = read-only look for strategy, submitted, approved and closed states (Codex, Medium).
+CIV-115 = pytest-timeout (dev dependency) 300 s per test + job timeout 30 min + list of likely hanging shard-1 tests, ahead of the third hang (D-283) (Codex, Medium).
+DeepSeek and Gemini: no task — #165 code part is small (lead reviews), no research or CRITICAL gate open (constitution 16, 30).
