@@ -81,3 +81,13 @@
 .dashboard-page .import-dept span { color: var(--text-secondary); }
 .dashboard-page .ok-text { color: var(--success); font-size: var(--text-sm); }
 .dashboard-page .issue-list { background: var(--warning-bg); color: var(--warning); border-color: var(--warning); font-size: var(--text-sm); }
+@media (min-width: 1280px) {
+  .dashboard-page .dashboard-layout { display: grid; grid-template-columns: minmax(0,1fr) 18rem; gap: var(--space-6); align-items: start; }
+  .dashboard-page .dashboard-main { grid-column: 1; grid-row: 1; min-width: 0; }
+  .dashboard-page .dashboard-summary { position: sticky; top: var(--space-6); grid-column: 2; grid-row: 1; min-width: 0; }
+  .dashboard-page .dashboard-summary > .cards { grid-template-columns: minmax(0,1fr); gap: var(--space-3); }
+  .dashboard-page .dashboard-panel .cards .card { padding: calc(var(--space-1) / 2) var(--space-1); }
+  .dashboard-page .dashboard-panel .cards .card span { line-height: 1.2; }
+  .dashboard-page .dashboard-main > .dashboard-panel:first-child,
+  .dashboard-page .dashboard-main > p + .dashboard-panel { margin-top: 0; }
+}

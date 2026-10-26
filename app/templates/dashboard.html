@@ -5,232 +5,242 @@
 {% block content %}
   <link rel="stylesheet" href="/static/design/dashboard.css">
   <div class="dashboard-page">
-    {% if user.role=='strategy' %}
-      <p>
-        <a class="button" href="/report-builder/manifest?period_id={{ period.id }}">PP Tamamlanma Listesi</a>
-      </p>
-    {% endif %}
-    {% if user.role=='department' %}
-      <div class="cards">
-        <div class="card">
-          <span>Gösterge</span>
-          <b>{{ indicators|length }}</b>
-        </div>
-        <div class="card">
-          <span>Civensa kontrolü</span>
-          <b class="dashboard-issues {{ 'bad' if issues else 'ok' }}">{{ issues }}</b>
-        </div>
-        <div class="card">
-          <span>Gönderim</span>
-          <b>{{ submission.status|status_label }}</b>
-        </div>
-      </div>
-      <section class="dashboard-panel">
-        <div class="section-head">
-          <h2>Çalışmaya devam et</h2>
-          <a class="button primary" href="/department/{{ department.id }}?period_id={{ period.id }}">Veri girişini aç</a>
-        </div>
-        <p class="muted">Gönderimden önce Civensa tüm göstergelerdeki zorunlu alanları ve temel tutarlılık kontrollerini çalıştırır.</p>
-      </section>
-    {% else %}
-      <div class="cards strategy-cards">
-        <div class="card">
-          <span>Dönem</span>
-          <b>{{ period.year }}</b>
-        </div>
-        <div class="card">
-          <span>Müdürlük</span>
-          <b>{{ departments|length }}</b>
-        </div>
-        <div class="card">
-          <span>Şablon</span>
-          <b class="{{ 'ok' if period.template_status=='verified' else 'bad' }}">{{ 'Doğrulandı' if period.template_status=='verified' else 'Bekliyor' }}</b>
-        </div>
-        <a class="card action-card" href="/activity-mapping?period_id={{ period.id }}">
-          <span>Faaliyet eşleştirme</span>
-          <b class="{{ 'bad' if unresolved_count else 'ok' }}">{{ unresolved_count }}</b>
-          <small>{{ 'Kontrol gerekli' if unresolved_count else 'Kuyruk temiz' }}</small>
-        </a>
-      </div>
-      <section class="dashboard-panel">
-        <div class="section-head">
-          <div>
-            <h2>Dönemler</h2>
-            <p class="muted">Yeni dönem, etkin müdürlüklerin önceki veri yapısını taslak olarak kopyalar. Bakanlık şablonu doğrulanmadan aktif edilemez.</p>
+    <div class="dashboard-layout">
+      <aside class="dashboard-summary" aria-label="Özet">
+        {% if user.role=='department' %}
+          <div class="cards">
+            <div class="card">
+              <span>Gösterge</span>
+              <b>{{ indicators|length }}</b>
+            </div>
+            <div class="card">
+              <span>Civensa kontrolü</span>
+              <b class="dashboard-issues {{ 'bad' if issues else 'ok' }}">{{ issues }}</b>
+            </div>
+            <div class="card">
+              <span>Gönderim</span>
+              <b>{{ submission.status|status_label }}</b>
+            </div>
           </div>
-          <button class="button primary" id="newPeriodBtn">Yeni dönem</button>
-        </div>
-        <div class="period-grid">
-          {% for p in periods %}
-            <div class="period-item {{ 'current' if p.id==period.id else '' }}">
+        {% else %}
+          <div class="cards strategy-cards">
+            <div class="card">
+              <span>Dönem</span>
+              <b>{{ period.year }}</b>
+            </div>
+            <div class="card">
+              <span>Müdürlük</span>
+              <b>{{ departments|length }}</b>
+            </div>
+            <div class="card">
+              <span>Şablon</span>
+              <b class="{{ 'ok' if period.template_status=='verified' else 'bad' }}">{{ 'Doğrulandı' if period.template_status=='verified' else 'Bekliyor' }}</b>
+            </div>
+            <a class="card action-card" href="/activity-mapping?period_id={{ period.id }}">
+              <span>Faaliyet eşleştirme</span>
+              <b class="{{ 'bad' if unresolved_count else 'ok' }}">{{ unresolved_count }}</b>
+              <small>{{ 'Kontrol gerekli' if unresolved_count else 'Kuyruk temiz' }}</small>
+            </a>
+          </div>
+        {% endif %}
+      </aside>
+      <div class="dashboard-main">
+        {% if user.role=='strategy' %}
+          <p>
+            <a class="button" href="/report-builder/manifest?period_id={{ period.id }}">PP Tamamlanma Listesi</a>
+          </p>
+        {% endif %}
+        {% if user.role=='department' %}
+          <section class="dashboard-panel">
+            <div class="section-head">
+              <h2>Çalışmaya devam et</h2>
+              <a class="button primary" href="/department/{{ department.id }}?period_id={{ period.id }}">Veri girişini aç</a>
+            </div>
+            <p class="muted">Gönderimden önce Civensa tüm göstergelerdeki zorunlu alanları ve temel tutarlılık kontrollerini çalıştırır.</p>
+          </section>
+        {% else %}
+          <section class="dashboard-panel">
+            <div class="section-head">
               <div>
-                <b>{{ p.year }}</b>
-                {% if p.id==period.id %}
-                  <span class="current-period">Görüntülenen dönem</span>
-                {% endif %}
-                <span>{{ p.status|status_label }} · şablon: {{ p.template_status|status_label }}</span>
+                <h2>Dönemler</h2>
+                <p class="muted">Yeni dönem, etkin müdürlüklerin önceki veri yapısını taslak olarak kopyalar. Bakanlık şablonu doğrulanmadan aktif edilemez.</p>
+              </div>
+              <button class="button primary" id="newPeriodBtn">Yeni dönem</button>
+            </div>
+            <div class="period-grid">
+              {% for p in periods %}
+                <div class="period-item {{ 'current' if p.id==period.id else '' }}">
+                  <div>
+                    <b>{{ p.year }}</b>
+                    {% if p.id==period.id %}
+                      <span class="current-period">Görüntülenen dönem</span>
+                    {% endif %}
+                    <span>{{ p.status|status_label }} · şablon: {{ p.template_status|status_label }}</span>
+                  </div>
+                  <div class="rowbuttons">
+                    <form method="post" action="/period/select/{{ p.id }}">
+                      <input type="hidden" name="csrf_token" value="{{ request.session.get('csrf_token') }}">
+                      <button class="button small">Görüntüle</button>
+                    </form>
+                    {% if p.template_status!='verified' %}
+                      <button class="button small verify-period" data-id="{{ p.id }}">Şablonu doğrula</button>
+                    {% endif %}
+                    {% if p.status!='active' %}
+                      <button class="button small primary activate-period" data-id="{{ p.id }}" {{ 'disabled' if p.template_status!='verified' else '' }}>Aktif et</button>
+                    {% endif %}
+                  </div>
+                </div>
+              {% endfor %}
+            </div>
+            <div id="newPeriodForm" class="inline-form" hidden>
+              <label>Yeni dönem yılı
+                <input id="newPeriodYear" inputmode="numeric" value="{{ period.year+1 }}">
+              </label>
+              <label>Başlangıç yapısı
+                <select id="basePeriod">
+                  <option value="{{ period.id }}">{{ period.year }} yapısını kopyala</option>
+                </select>
+              </label>
+              <button class="button primary" id="createPeriod">Oluştur</button>
+              <button class="button" id="cancelPeriod">İptal</button>
+            </div>
+          </section>
+          <section class="dashboard-panel">
+            <div class="section-head">
+              <div>
+                <h2>Bakanlık şablon kontrolü</h2>
+                <p class="muted">DOCX/XLSX yükleyin; Civensa beklenen alanları tarayıp eksik/farklı alanları raporlasın.</p>
+              </div>
+              <label class="button">Şablon yükle
+                <input id="templateUpload" data-period="{{ period.id }}" type="file" accept=".docx,.xlsx,.xlsm" hidden>
+              </label>
+            </div>
+            <div id="templateResult"></div>
+            {% if snapshots %}
+              <div class="snapshot-list">
+                {% for s in snapshots %}
+                  <button class="snapshot-item" data-snapshot="{{ s.id }}">
+                    <b>{{ s.filename }}</b>
+                    <span>{{ s.created_at|turkey_time }}</span>
+                  </button>
+                {% endfor %}
+              </div>
+            {% else %}
+              <p class="muted empty-state">Bu dönem için henüz yüklenmiş şablon yok.</p>
+            {% endif %}
+          </section>
+          <section class="dashboard-panel">
+            <div class="section-head">
+              <div>
+                <h2>Word veri içe aktarma · önizleme</h2>
+                <p class="muted">Geçiş döneminde Strateji Geliştirme tarafından kullanılan performans Word dosyasını güvenli biçimde ayrıştırır. Önizleme veritabanındaki kayıtları değiştirmez.</p>
+              </div>
+              <label class="button">Word verisini tara
+                <input id="dataImportUpload" data-period="{{ period.id }}" type="file" accept=".docx" hidden>
+              </label>
+            </div>
+            <div id="importResult"></div>
+            {% if imports %}
+              <div class="snapshot-list">
+                {% for b in imports %}
+                  <a href="/report-builder/import/{{ b.id }}?period_id={{ period.id }}">Genel Bölüm Önizlemesi · {{ b.filename }}</a>
+                  <button class="snapshot-item import-item" data-import="{{ b.id }}">
+                    <b>{{ b.filename }}</b>
+                    <span>{{ b.created_at|turkey_time }} · {{ b.status|status_label }}</span>
+                  </button>
+                {% endfor %}
+              </div>
+            {% else %}
+              <p class="muted empty-state">Bu dönem için veri içe aktarma önizlemesi oluşturulmadı.</p>
+            {% endif %}
+          </section>
+          <section class="dashboard-panel">
+            <div class="section-head">
+              <div>
+                <h2>Müdürlük ilerleme panosu</h2>
+                <p class="muted">{{ progress_summary.approved }} tamamlandı · {{ progress_summary.submitted }} incelemede · {{ progress_summary.in_progress + progress_summary.ready }} devam ediyor · {{ progress_summary.needs_attention + progress_summary.returned }} uyarı · {{ progress_summary.not_started }} başlamadı</p>
               </div>
               <div class="rowbuttons">
-                <form method="post" action="/period/select/{{ p.id }}">
-                  <input type="hidden" name="csrf_token" value="{{ request.session.get('csrf_token') }}">
-                  <button class="button small">Görüntüle</button>
-                </form>
-                {% if p.template_status!='verified' %}
-                  <button class="button small verify-period" data-id="{{ p.id }}">Şablonu doğrula</button>
-                {% endif %}
-                {% if p.status!='active' %}
-                  <button class="button small primary activate-period" data-id="{{ p.id }}" {{ 'disabled' if p.template_status!='verified' else '' }}>Aktif et</button>
-                {% endif %}
+                <a class="button" href="/review?period_id={{ period.id }}">İnceleme kuyruğu</a>
+                <a class="button" href="/api/progress?period_id={{ period.id }}">JSON</a>
               </div>
             </div>
-          {% endfor %}
+            <div class="cards">
+              <div class="card">
+                <span>Tamamlandı</span>
+                <b class="ok">{{ progress_summary.approved }}</b>
+              </div>
+              <div class="card">
+                <span>Devam ediyor</span>
+                <b>{{ progress_summary.in_progress + progress_summary.ready }}</b>
+              </div>
+              <div class="card">
+                <span>Uyarı</span>
+                <b class="{{ 'bad' if progress_summary.needs_attention + progress_summary.returned else 'ok' }}">{{ progress_summary.needs_attention + progress_summary.returned }}</b>
+              </div>
+              <div class="card">
+                <span>Başlamadı</span>
+                <b>{{ progress_summary.not_started }}</b>
+              </div>
+              <div class="card">
+                <span>Kullanıcı hesabı eksik</span>
+                <b class="{{ 'bad' if progress_summary.missing_accounts else 'ok' }}">{{ progress_summary.missing_accounts }}</b>
+              </div>
+            </div>
+            <div class="table-wrap" role="region" aria-label="Müdürlük ilerlemesi" tabindex="0">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Müdürlük</th>
+                    <th>Hesap</th>
+                    <th>Durum</th>
+                    <th>İlerleme</th>
+                    <th>Uyarı</th>
+                    <th>Son işlem</th>
+                    <th>
+                      <span class="dashboard-sr-only">İşlem</span>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for row in progress_rows %}
+                    <tr>
+                      <td>
+                        <b>{{ row.department_name }}</b>
+                        <div class="smallnote">{{ row.indicator_count }} gösterge · {{ row.activity_count }} faaliyet</div>
+                      </td>
+                      <td>
+                        {% if not row.is_active %}
+                          <span class="muted">Pasif müdürlük</span>
+                        {% elif row.has_department_user %}
+                          <span class="ok">Hazır</span>
+                        {% else %}
+                          <a class="bad" href="/users?period_id={{ period.id }}">Hesap yok</a>
+                        {% endif %}
+                      </td>
+                      <td>
+                        <span class="status {{ row.state }}">{{ row.label }}</span>
+                      </td>
+                      <td>
+                        <progress max="100" value="{{ row.progress_percent }}"></progress> <b>%{{ row.progress_percent }}</b>
+                      </td>
+                      <td>
+                        <span class="{{ 'bad' if row.warning_count else 'ok' }}">{{ row.warning_count }}</span>
+                      </td>
+                      <td>{{ row.last_activity_at|turkey_time if row.last_activity_at else '—' }}</td>
+                      <td>
+                        <a class="button small" href="/department/{{ row.department_id }}?period_id={{ period.id }}">Aç</a>
+                      </td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </section>
         </div>
-        <div id="newPeriodForm" class="inline-form" hidden>
-          <label>Yeni dönem yılı
-            <input id="newPeriodYear" inputmode="numeric" value="{{ period.year+1 }}">
-          </label>
-          <label>Başlangıç yapısı
-            <select id="basePeriod">
-              <option value="{{ period.id }}">{{ period.year }} yapısını kopyala</option>
-            </select>
-          </label>
-          <button class="button primary" id="createPeriod">Oluştur</button>
-          <button class="button" id="cancelPeriod">İptal</button>
-        </div>
-      </section>
-      <section class="dashboard-panel">
-        <div class="section-head">
-          <div>
-            <h2>Bakanlık şablon kontrolü</h2>
-            <p class="muted">DOCX/XLSX yükleyin; Civensa beklenen alanları tarayıp eksik/farklı alanları raporlasın.</p>
-          </div>
-          <label class="button">Şablon yükle
-            <input id="templateUpload" data-period="{{ period.id }}" type="file" accept=".docx,.xlsx,.xlsm" hidden>
-          </label>
-        </div>
-        <div id="templateResult"></div>
-        {% if snapshots %}
-          <div class="snapshot-list">
-            {% for s in snapshots %}
-              <button class="snapshot-item" data-snapshot="{{ s.id }}">
-                <b>{{ s.filename }}</b>
-                <span>{{ s.created_at|turkey_time }}</span>
-              </button>
-            {% endfor %}
-          </div>
-        {% else %}
-          <p class="muted empty-state">Bu dönem için henüz yüklenmiş şablon yok.</p>
         {% endif %}
-      </section>
-      <section class="dashboard-panel">
-        <div class="section-head">
-          <div>
-            <h2>Word veri içe aktarma · önizleme</h2>
-            <p class="muted">Geçiş döneminde Strateji Geliştirme tarafından kullanılan performans Word dosyasını güvenli biçimde ayrıştırır. Önizleme veritabanındaki kayıtları değiştirmez.</p>
-          </div>
-          <label class="button">Word verisini tara
-            <input id="dataImportUpload" data-period="{{ period.id }}" type="file" accept=".docx" hidden>
-          </label>
-        </div>
-        <div id="importResult"></div>
-        {% if imports %}
-          <div class="snapshot-list">
-            {% for b in imports %}
-              <a href="/report-builder/import/{{ b.id }}?period_id={{ period.id }}">Genel Bölüm Önizlemesi · {{ b.filename }}</a>
-              <button class="snapshot-item import-item" data-import="{{ b.id }}">
-                <b>{{ b.filename }}</b>
-                <span>{{ b.created_at|turkey_time }} · {{ b.status|status_label }}</span>
-              </button>
-            {% endfor %}
-          </div>
-        {% else %}
-          <p class="muted empty-state">Bu dönem için veri içe aktarma önizlemesi oluşturulmadı.</p>
-        {% endif %}
-      </section>
-      <section class="dashboard-panel">
-        <div class="section-head">
-          <div>
-            <h2>Müdürlük ilerleme panosu</h2>
-            <p class="muted">{{ progress_summary.approved }} tamamlandı · {{ progress_summary.submitted }} incelemede · {{ progress_summary.in_progress + progress_summary.ready }} devam ediyor · {{ progress_summary.needs_attention + progress_summary.returned }} uyarı · {{ progress_summary.not_started }} başlamadı</p>
-          </div>
-          <div class="rowbuttons">
-            <a class="button" href="/review?period_id={{ period.id }}">İnceleme kuyruğu</a>
-            <a class="button" href="/api/progress?period_id={{ period.id }}">JSON</a>
-          </div>
-        </div>
-        <div class="cards">
-          <div class="card">
-            <span>Tamamlandı</span>
-            <b class="ok">{{ progress_summary.approved }}</b>
-          </div>
-          <div class="card">
-            <span>Devam ediyor</span>
-            <b>{{ progress_summary.in_progress + progress_summary.ready }}</b>
-          </div>
-          <div class="card">
-            <span>Uyarı</span>
-            <b class="{{ 'bad' if progress_summary.needs_attention + progress_summary.returned else 'ok' }}">{{ progress_summary.needs_attention + progress_summary.returned }}</b>
-          </div>
-          <div class="card">
-            <span>Başlamadı</span>
-            <b>{{ progress_summary.not_started }}</b>
-          </div>
-          <div class="card">
-            <span>Kullanıcı hesabı eksik</span>
-            <b class="{{ 'bad' if progress_summary.missing_accounts else 'ok' }}">{{ progress_summary.missing_accounts }}</b>
-          </div>
-        </div>
-        <div class="table-wrap" role="region" aria-label="Müdürlük ilerlemesi" tabindex="0">
-          <table>
-            <thead>
-              <tr>
-                <th>Müdürlük</th>
-                <th>Hesap</th>
-                <th>Durum</th>
-                <th>İlerleme</th>
-                <th>Uyarı</th>
-                <th>Son işlem</th>
-                <th>
-                  <span class="dashboard-sr-only">İşlem</span>
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for row in progress_rows %}
-                <tr>
-                  <td>
-                    <b>{{ row.department_name }}</b>
-                    <div class="smallnote">{{ row.indicator_count }} gösterge · {{ row.activity_count }} faaliyet</div>
-                  </td>
-                  <td>
-                    {% if not row.is_active %}
-                      <span class="muted">Pasif müdürlük</span>
-                    {% elif row.has_department_user %}
-                      <span class="ok">Hazır</span>
-                    {% else %}
-                      <a class="bad" href="/users?period_id={{ period.id }}">Hesap yok</a>
-                    {% endif %}
-                  </td>
-                  <td>
-                    <span class="status {{ row.state }}">{{ row.label }}</span>
-                  </td>
-                  <td>
-                    <progress max="100" value="{{ row.progress_percent }}"></progress> <b>%{{ row.progress_percent }}</b>
-                  </td>
-                  <td>
-                    <span class="{{ 'bad' if row.warning_count else 'ok' }}">{{ row.warning_count }}</span>
-                  </td>
-                  <td>{{ row.last_activity_at|turkey_time if row.last_activity_at else '—' }}</td>
-                  <td>
-                    <a class="button small" href="/department/{{ row.department_id }}?period_id={{ period.id }}">Aç</a>
-                  </td>
-                </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        </div>
-      </section>
-    {% endif %}
+      </div>
+    </div>
   </div>
 {% endblock %}
 
