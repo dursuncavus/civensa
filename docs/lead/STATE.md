@@ -8,11 +8,11 @@ Tags: DOĞRULANDI (lead checked) · TARİHSEL (past fact) · BEYAN (owner said) 
 ## Next session — start here (D-253)
 Owner opens a new chat with one line: `CV Lider 28 · Claude Opus 5.5 · civensa-lead`. The lead reads this section first and works from it.
 1. CIV-104 (Genel Bakış, D-265) dispatched: review its PR; small fixes go through "@copilot" (D-265), then update-branch to run CI.
-2. Copilot credits for round 1: BELİRSİZ until the owner's https://github.com/settings/copilot usage screen is read; record it.
+2. Copilot round 1 cost 5 of 1,500 monthly credits (D-266); no action.
 3. Ali Abi answers: e-mail sent 26 Oct 07:37Z; read the reply (Gmail "Civensa – cevabınızı beklediğimiz sorular"); record decisions; data/logic packages before UI (D-243).
 4. Next UI task per D-243 after CIV-104: 030/029 İç Kontrol Eylemlerimiz.
 5. Owner: approve the look + text changes of CIV-101 (#129), CIV-102 (#132), CIV-103 (#140).
-6. Next IDs: task CIV-105, decision D-266.
+6. Next IDs: task CIV-105, decision D-267.
 
 ## Claude quota (BEYAN, owner screen 26 Oct 12:48)
 - Weekly 39% on Monday; forecast runs out Friday morning, resets Saturday. October extra usage $40.30 of $45.
