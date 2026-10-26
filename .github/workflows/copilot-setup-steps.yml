@@ -1,0 +1,53 @@
+# Environment for the GitHub Copilot cloud agent (D-246/D-248).
+# Copilot runs these steps before it starts working on a pull request.
+# Only steps, permissions, runs-on, services, snapshot and timeout-minutes are
+# honoured by Copilot. No secrets are used: the database is a disposable
+# test-only PostgreSQL service, the same one CI uses.
+name: Copilot setup steps
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - .github/workflows/copilot-setup-steps.yml
+
+permissions:
+  contents: read
+
+jobs:
+  # Copilot only picks up a job with exactly this name.
+  copilot-setup-steps:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_DB: civensa_test
+          POSTGRES_USER: civensa_test
+          POSTGRES_PASSWORD: disposable_test_only
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U civensa_test -d civensa_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: |
+            requirements-dev.txt
+            requirements.txt
+      - run: python -m pip install -r requirements-dev.txt
+      - run: python -m playwright install --with-deps chromium
+      # Disposable test database only (AGENTS.md: never the live database).
+      - name: Point tests at the disposable PostgreSQL service
+        run: echo "CIVENSA_TEST_POSTGRES_URL=postgresql+psycopg://civensa_test:disposable_test_only@localhost:5432/civensa_test" >> "$GITHUB_ENV"
+      - name: Check the test database is reachable
+        run: python -c "import os, psycopg; psycopg.connect(os.environ['CIVENSA_TEST_POSTGRES_URL'].replace('postgresql+psycopg://', 'postgresql://')).close(); print('test database ok')"
