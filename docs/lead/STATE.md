@@ -1,25 +1,19 @@
 # CIVENSA — CURRENT STATE
 
-Updated: 26 Oct 2026, ~10:50 Istanbul (live session CV Lider 25, D-257).
+Updated: 26 Oct 2026, ~11:30 Istanbul (live session CV Lider 26, D-261).
 Rules: AI_WORKING_CONSTITUTION v1.2 (Drive, global) · `HIERARCHY.md` v1.4 · `PROJECT_RULES.md` v1.3 · `BACKUP_LEAD.md` v2.
 Backup log ("Civensa Yedek Kaydı", Drive): no entries, last modified 23 Oct (DOĞRULANDI 26 Oct 05:45).
 Tags: DOĞRULANDI (lead checked) · TARİHSEL (past fact) · BEYAN (owner said) · BELİRSİZ (unknown).
 
 ## Next session — start here (D-253)
-Owner opens a new chat with one line: `CV Lider 26 · Claude Opus 5.5 · civensa-lead`. The lead reads this section first and works from it.
-0. Owner request 26 Oct 10:53 (BEYAN): switch to the free system now = make the repo public (D-220 steps 3–7). Actions works again since 07:50Z (D-260). Plan for the new session, each step confirmed by the owner:
-   a. Step 3: ask owner to approve ONE manual db-backup dispatch (live database read = escalation) instead of waiting for 27 Oct 05:10Z; verify the run uploads only .age artifacts. If the proxy refuses workflow_dispatch, give the owner the direct Actions link to press "Run workflow".
-   b. Step 4: list old plaintext backup artifacts; owner approves deletion.
-   c. Step 5: full-history gitleaks (workflow_dispatch) must be clean.
-   d. Step 6: owner switches the repo to public (owner confirms; Settings → General → Danger Zone, verify the path first).
-   e. Step 7: "production" environment for the two secrets (D-247).
-   f. Then Copilot (D-246/D-248) and lower the virtual card limit.
-1. Ali Abi answers: read Gmail "CIVENSA-CEVAPLAR v1" (not arrived 26 Oct 10:45); record decisions; write Codex packages the same day (data/logic before UI, D-243).
-2. Public repo step 3 → 6 as soon as Actions runs again (lasting fix for Actions cost, D-257).
-3. Copilot postponed until the repo is public (D-257).
-4. Next UI task per D-243: 010/009 EK-1 section index; bundle related screens and the D-251 LOW items (D-252).
-5. Owner: approve CIV-102 look + listed text changes (#132, merged 873d361).
-6. Next IDs: task CIV-103, decision D-261.
+Owner opens a new chat with one line: `CV Lider 27 · Claude Opus 5.5 · civensa-lead`. The lead reads this section first and works from it.
+1. Repo is PUBLIC since 26 Oct 11:09 and D-247 is done (D-261). Actions on standard runners is free.
+2. Copilot (D-246/D-248): owner buys Copilot Pro (additional-usage budget $0); "Require approval for workflow runs" may now be switched off; lead writes copilot-setup-steps.yml + "@codex review", owner approves the merge; first fix round = test.
+3. Owner: lower the virtual card limit raised on 26 Oct (D-260) — Actions no longer needs the budget.
+4. Ali Abi answers: read Gmail "CIVENSA-CEVAPLAR v1" (not arrived 26 Oct 11:00); record decisions; write Codex packages the same day (data/logic before UI, D-243).
+5. Next UI task per D-243: 010/009 EK-1 section index; bundle related screens and the D-251 LOW items (D-252).
+6. Owner: approve CIV-102 look + listed text changes (#132, merged 873d361).
+7. Next IDs: task CIV-103, decision D-262.
 
 ## Claude quota (BEYAN, owner screen 25 Oct ~10:15)
 - Weekly usage 21% on 25 Oct morning; at that rate it runs out Friday evening (30 Oct). October extra-usage charge: $40.30 of $45 limit.
@@ -29,21 +23,14 @@ Owner opens a new chat with one line: `CV Lider 26 · Claude Opus 5.5 · civensa
 Dispatch format (D-232, D-249): platform + environment ("Bulut → civensa") + exact model (Codex: GPT-6.1 Sol) + effort; title is the first line inside the paste block. Session end: one-line handover (D-253) after this file is rewritten.
 Evidence rule (D-252): one-screen changes → targeted tests + changed-state screenshots + contrast; all-screen capture only when shared files change, committed as a short count summary.
 
-## Open pull requests (DOĞRULANDI 26 Oct ~10:50)
+## Open pull requests (DOĞRULANDI 26 Oct ~11:30)
 | PR | Task | State | Next action |
 | --- | --- | --- | --- |
 | — | — | — | — |
-Merged 25–26 Oct: #134 lead records D-255–D-260; #126 CIV-100 → b8e063f; #129 CIV-101 → b1fcaad; #132 CIV-102 → 873d361 (D-257).
+Merged 25–26 Oct: #136 production environment → d02b7cc (D-261); #135 lead records; #134 lead records D-255–D-260; #126 CIV-100 → b8e063f; #129 CIV-101 → b1fcaad; #132 CIV-102 → 873d361 (D-257).
 
 ## Open — owner
-- Public repo (D-220/D-222/D-223), in order, each with owner confirmation:
-  1. DONE 25 Oct — age secrets set, private key in owner's Passwords app.
-  2. DONE 25 Oct (D-228) — default branch is `feature/authorization-workflow-phase5`. `main` and civensa-pilot untouched (Auto-Deploy off, D-227).
-  3. One encrypted backup run verified — the 26 Oct 05:10Z scheduled run failed to start (D-256); waits for the Actions budget (D-257); no manual dispatch (live database = escalation).
-  4. Delete old plaintext backup artifacts (includes civensa-db-backup-20261025-0507Z, D-230) — only after step 3 (D-233), owner approval.
-  5. Full-history gitleaks (workflow_dispatch) — must be clean.
-  6. Switch repo to public.
-  7. (D-247) Move NEON_BACKUP_DATABASE_URL and BACKUP_AGE_IDENTITY into a "production" environment limited to phase5; owner enters values; owner approval. After this the Copilot workflow-approval requirement may be switched off.
+- Public repo: DONE 26 Oct (D-261) — steps 1–7 complete; daily backups encrypted, secrets only in environment "production" (phase5).
 - Look approvals: CIV-101 (#129) look + 31 header changes (D-251); CIV-102 when its PR is ready.
 - UI redesign (D-224/D-225): 033/034, 024, 012 on the design system; CIV-100/101 polish; CIV-102 login/password next.
 - (closed) Merges by the lead in live sessions (D-214); Codex "Tam erişim" ON (D-210); plaintext password files not tracked (D-217).
