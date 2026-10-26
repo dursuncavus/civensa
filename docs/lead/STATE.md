@@ -7,7 +7,13 @@ Tags: DOĞRULANDI (lead checked) · TARİHSEL (past fact) · BEYAN (owner said) 
 
 ## Next session — start here (D-253)
 Owner opens a new chat with one line: `CV Lider 26 · Claude Opus 5.5 · civensa-lead`. The lead reads this section first and works from it.
-0. (D-260) Actions works again since 26 Oct 07:50Z (payment fixed). Check the 27 Oct 05:10Z scheduled backup ran and uploaded only .age artifacts (public-repo step 3); last good backup before that: 25 Oct 05:07Z.
+0. Owner request 26 Oct 10:53 (BEYAN): switch to the free system now = make the repo public (D-220 steps 3–7). Actions works again since 07:50Z (D-260). Plan for the new session, each step confirmed by the owner:
+   a. Step 3: ask owner to approve ONE manual db-backup dispatch (live database read = escalation) instead of waiting for 27 Oct 05:10Z; verify the run uploads only .age artifacts. If the proxy refuses workflow_dispatch, give the owner the direct Actions link to press "Run workflow".
+   b. Step 4: list old plaintext backup artifacts; owner approves deletion.
+   c. Step 5: full-history gitleaks (workflow_dispatch) must be clean.
+   d. Step 6: owner switches the repo to public (owner confirms; Settings → General → Danger Zone, verify the path first).
+   e. Step 7: "production" environment for the two secrets (D-247).
+   f. Then Copilot (D-246/D-248) and lower the virtual card limit.
 1. Ali Abi answers: read Gmail "CIVENSA-CEVAPLAR v1" (not arrived 26 Oct 10:45); record decisions; write Codex packages the same day (data/logic before UI, D-243).
 2. Public repo step 3 → 6 as soon as Actions runs again (lasting fix for Actions cost, D-257).
 3. Copilot postponed until the repo is public (D-257).
