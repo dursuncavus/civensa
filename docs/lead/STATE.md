@@ -1,33 +1,35 @@
 # CIVENSA — CURRENT STATE
 
-Updated: 26 Oct 2026, ~17:15 Istanbul (live session CV Lider 30, D-275).
+Updated: 26 Oct 2026, ~18:55 Istanbul (live session CV Lider 31, D-281).
 Rules: AI_WORKING_CONSTITUTION v1.2 (Drive, global) · `HIERARCHY.md` v1.4 · `PROJECT_RULES.md` v1.4 (D-271: PRIOR ART field mandatory in every package) · `BACKUP_LEAD.md` v2.
 Backup log ("Civensa Yedek Kaydı", Drive): no entries, last modified 23 Oct (DOĞRULANDI 26 Oct 05:45).
 Tags: DOĞRULANDI (lead checked) · TARİHSEL (past fact) · BEYAN (owner said) · BELİRSİZ (unknown).
 
 ## Next session — start here (D-253)
-Owner opens a new chat with one line: `CV Lider 31 · Claude Opus 5.5 · civensa-lead`. The lead reads this section first and works from it.
-1. CIV-105 PR #150: Copilot fix round requested (comment 6417883652, D-274). When done: check the four fixes, update-branch, CI green, merge; show the owner the screenshots (docs/design/rollout/civ-105/).
-2. CIV-108 (Codex, 022 task-list prototype, D-275): review the PR (only docs/design/prototype + rollout/civ-108), show the five states to the owner; after approval write the implementation task (CIV-109) with PRIOR ART = CIV-107.
-3. Large Codex PRs: first-pass review by DeepSeek (D-274) — give the owner the review package + .diff link, verify findings yourself.
-4. Owner look approval for CIV-104 (#145) still open; CIV-106 merged (1ed8620) — owner saw the screenshots 17:05.
-5. Ali Abi answers: none at 16:00; read the reply when it comes; data/logic packages before UI (D-243).
-6. Next IDs: task CIV-109, decision D-276.
+Owner opens a new chat with one line: `CV Lider 32 · Claude Opus 5.5 · civensa-lead`. The lead reads this section first and works from it.
+1. CIV-110 (Codex, dispatched D-280): review the PR (allowed files, fixtures changed only in the expired case, heading line untouched), CI, "@codex review" not needed (Codex wrote it) → DeepSeek first pass if large (D-274), merge only when every check is success.
+2. CIV-111 (Codex, 042 İnceleme kuyruğu, dispatched D-281): same review steps as item 1; owner approves the look and text changes from screenshots.
+3. CIV-109 PR #154 (Copilot): check the fix round (comment 6420220469); update-branch, run CI, "@codex review" (Copilot model Auto), merge only when every check is success; show the owner the screenshots.
+4. After CIV-109 merges: write CIV-112 = 022 task list on the real screen per prototype docs/design/prototype/screens/022-department-home.html, department summary column removed, "Veri girişi · N gösterge" (D-277). PRIOR ART: CIV-107/CIV-108.
+5. Owner look approval for CIV-104 (#145) still open (probably superseded by D-270..D-277 — ask once).
+6. Ali Abi answers: none at 18:50; read the reply when it comes; data/logic packages before UI (D-243).
+7. Next after CIV-111 in D-243 order: 041 Tamamlanma listesi, then 023. Next IDs: task CIV-113, decision D-282.
 
 ## Claude quota (BEYAN, owner screen 26 Oct 12:48)
-- Weekly 44% at 16:16 Monday (39% at 12:48); at this pace it lasts until the Saturday reset, tight. Offload large reviews to DeepSeek (D-274). October extra usage $40.30 of $45.
+- Weekly 47% at 18:14 Monday (session 24%); lasts until the Saturday reset at this pace. Offload large reviews to DeepSeek (D-274).
 - Rule until reset (D-226): short live sessions — reviews, Ali answers and packages first; fix rounds through Copilot (D-265). Night check once a day (05:41).
 - Claude Pro ends 3 Nov 2026 (BEYAN). Owner renews Pro from claude.ai on the web on 3 Nov; otherwise from 3 Nov DeepSeek runs as backup lead (BACKUP_LEAD.md).
 
 Dispatch format (D-232, D-249): platform + environment ("Bulut → civensa") + exact model (Codex: GPT-6.1 Sol) + effort; title is the first line inside the paste block. Session end: one-line handover (D-253) after this file is rewritten.
 Evidence rule (D-252): one-screen changes → targeted tests + changed-state screenshots + contrast; all-screen capture only when shared files change, committed as a short count summary.
 
-## Open pull requests (DOĞRULANDI 26 Oct ~17:15)
+## Open pull requests (DOĞRULANDI 26 Oct ~18:35)
 | PR | Task | State | Next action |
 | --- | --- | --- | --- |
-| #150 | CIV-105 | Copilot fix round (D-274) | verify fixes, CI, merge |
-| — | CIV-108 | dispatched (Codex), PR not open | lead reviews |
-Merged 26 Oct: #148 CIV-106 → 1ed8620 (D-273); #145 CIV-104 → e0df9ce (D-268); #140 CIV-103 → 6efbe25 (D-265); #138 copilot-setup-steps → cbed4d8 (D-264); #136 production environment → d02b7cc; #132 CIV-102 → 873d361.
+| #154 | CIV-109 | Copilot fix round (D-280) | review, CI, merge |
+| — | CIV-110 | dispatched to Codex 26 Oct ~18:55 | PR expected |
+| — | CIV-111 | dispatched to Codex 26 Oct ~19:05 | PR expected |
+Merged 26 Oct: #156 CIV-108 prototype → 633ac07 (D-277); #150 CIV-105 → 7cb58d9 (D-278; all jobs green, D-280); #148 CIV-106 → 1ed8620 (D-273); #145 CIV-104 → e0df9ce (D-268); #140 CIV-103 → 6efbe25 (D-265); #138 copilot-setup-steps → cbed4d8 (D-264); #136 production environment → d02b7cc; #132 CIV-102 → 873d361.
 
 ## Open — owner
 - Look approval CIV-104 (#145): 11 text changes + screenshots (D-268).
@@ -42,4 +44,4 @@ Merged 26 Oct: #148 CIV-106 → 1ed8620 (D-273); #145 CIV-104 → e0df9ce (D-268
 5. D-205 transition leftovers: archive old Drive state/log/rule documents ("ESKİ ... KULLANMAYIN"), add Drive pointer "KAYITLAR GITHUB'DA".
 6. DeepSeek mirror GUNCEL-DURUM.md: not reachable in scheduled runs; the lead refreshes it in the next live session with the Mac linked.
 7. Codex cloud fixes from PR comments: not set up (D-242); fix rounds move to Copilot (D-246/D-248).
-8. LOW backlog: shell top-right period label repeats the title on Genel Bakış (D-273); expired IC period shows "İncelemeye gönder" — check server rejects it (D-274); 012 date input display format (BELİRSİZ, D-251); 024 summary widens the 2027 column (D-250); 021 progress table at 390 has no scroll hint (D-268) — watch only.
+8. LOW backlog: shell top-right period label repeats the title on Genel Bakış (D-273);  012 date input display format (BELİRSİZ, D-251); 024 summary widens the 2027 column (D-250); 021 progress table at 390 has no scroll hint (D-268) — watch only.

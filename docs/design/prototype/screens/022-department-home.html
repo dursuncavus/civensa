@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang="tr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Müdürlük ana sayfası · Civensa prototip</title>
+    <link rel="stylesheet" href="../fonts.css" />
+    <link rel="stylesheet" href="../tokens.css" />
+    <link rel="stylesheet" href="../prototype.css" />
+    <script src="../prototype.js" defer></script>
+  </head>
+  <body class="department-home-prototype">
+    <a class="skip" href="#main">İçeriğe geç</a>
+    <div class="app-shell">
+      <aside class="sidebar" id="navigation">
+        <a class="brand" href="034-modules.html"
+          >Civensa<span>Kurumsal raporlama</span></a
+        >
+        <nav aria-label="Ana gezinme">
+          <div class="nav-group">
+            <p>Performans programı</p>
+            <a
+              id="e003"
+              data-source-id="E003"
+              data-original-target="/dashboard"
+              class="nav-link selected"
+              aria-current="page"
+              href="022-department-home.html"
+              >Genel bakış</a
+            ><a
+              id="e005"
+              data-source-id="E005"
+              data-original-target="/department/1"
+              class="nav-link"
+              href="024-department.html"
+              >Veri girişi</a
+            >
+          </div>
+          <div class="nav-group">
+            <p>Faaliyet raporu</p>
+            <a
+              id="e001"
+              data-source-id="E001"
+              data-original-target="/activity-sections"
+              class="nav-link"
+              href="#destination-dialog"
+              data-open="destination-dialog"
+              >Faaliyet raporu · EK-1</a
+            >
+          </div>
+          <div class="nav-group">
+            <p>İç kontrol</p>
+            <a
+              id="e004"
+              data-source-id="E004"
+              data-original-target="/internal-control/our-actions"
+              class="nav-link"
+              href="#destination-dialog"
+              data-open="destination-dialog"
+              >İç kontrol eylemlerimiz</a
+            >
+          </div>
+          <div class="nav-group">
+            <p>Yönetim</p>
+            <a
+              id="e002"
+              data-source-id="E002"
+              data-original-target="/modules"
+              class="nav-link"
+              href="034-modules.html"
+              >Modüller</a
+            ><a
+              id="e006"
+              data-source-id="E006"
+              data-original-target="/submit-authorizations"
+              class="nav-link"
+              href="#destination-dialog"
+              data-open="destination-dialog"
+              >Gönderim yetkileri</a
+            >
+          </div>
+        </nav>
+        <div class="account-actions">
+          <button
+            type="button"
+            id="e007"
+            data-source-id="E007"
+            data-original-target="#passwordModal"
+            class="ghost"
+            data-open="password-dialog"
+          >
+            Parolamı değiştir
+          </button>
+          <form
+            id="e008"
+            data-source-id="E008"
+            data-original-target="POST /logout"
+            class=""
+            action="#simulation-dialog"
+            method="get"
+          >
+            <button
+              type="button"
+              id="e009"
+              data-source-id="E009"
+              data-original-target="POST /logout"
+              class="ghost"
+              data-open="simulation-dialog"
+            >
+              Çıkış
+            </button>
+          </form>
+        </div>
+        <p class="sidebar-note">
+          Örnek Hizmet Müdürlüğü<br />Sentetik çalışma alanı
+        </p>
+      </aside>
+      <div class="workspace">
+        <div class="topbar">
+          <a href="#navigation" class="mobile-nav"
+            >Menüye git
+            <svg
+              class="icon icon-down"
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.5"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+              focusable="false"
+            >
+              <path d="m9 5 7 7-7 7" /></svg
+          ></a>
+          <p>Örnek Hizmet Müdürlüğü</p>
+          <div class="userbox">
+            <button
+              type="button"
+              id="e010"
+              data-source-id="E010"
+              data-original-target="GET /api/notifications → #notificationPanel"
+              class="ghost"
+              data-open="notification-dialog"
+            >
+              Bildirimler</button
+            ><span>Müdürlük<br /><strong>Birim Müdürü (sentetik)</strong></span>
+          </div>
+        </div>
+        <main id="main">
+          <nav class="breadcrumb" aria-label="İçerik yolu">
+            <a href="034-modules.html">Modüller</a><span aria-hidden="true">/</span><span>Genel bakış</span>
+          </nav>
+          <header class="page-header">
+            <div><h1>2026 Performans programı</h1><p>Örnek Hizmet Müdürlüğü çalışma alanı</p></div>
+            <span class="prototype-mark">Statik prototip · 022</span>
+          </header>
+          <div class="field home-state-switcher">
+            <label for="home-state">Prototip durumu</label>
+            <select id="home-state">
+              <option value="a">a · Yeni dönem, veri girilmedi</option>
+              <option value="b">b · Veri girişi sürüyor, 3 sorun</option>
+              <option value="c">c · Veri girişi tamamlandı, gönderilmedi</option>
+              <option value="d">d · Gönderildi</option>
+              <option value="e">e · İade edildi, 3 sorun</option>
+            </select>
+          </div>
+          <div class="home-layout">
+            <aside class="home-summary" aria-label="Özet">
+              <div class="card"><span>Gösterge</span><b>12</b></div>
+              <div class="card"><span>Civensa kontrolü</span><b id="home-issue-count">0</b></div>
+              <div class="card"><span>Gönderim</span><b id="home-submission">Taslak</b></div>
+            </aside>
+            <section class="card home-tasks" aria-labelledby="home-tasks-title">
+              <h2 id="home-tasks-title">Bu dönem yapılacaklar</h2>
+              <p class="help" id="home-tasks-help">Gönderimden önce Civensa tüm göstergelerdeki zorunlu alanları ve temel tutarlılık kontrollerini çalıştırır.</p>
+              <ol class="home-task-list" role="list" aria-describedby="home-tasks-help" aria-live="polite" aria-atomic="true">
+                <li><a href="/department/1?period_id=1" data-open="destination-dialog" data-original-target="/department/1?period_id=1" aria-describedby="home-entry-status">Veri girişi</a><span class="badge neutral" id="home-entry-status">Başlanmadı</span></li>
+                <li><a href="/department/1?period_id=1" data-open="destination-dialog" data-original-target="/department/1?period_id=1" aria-describedby="home-check-status">Civensa kontrolü</a><span class="badge neutral" id="home-check-status">Bekliyor</span></li>
+                <li><a href="/department/1?period_id=1" data-open="destination-dialog" data-original-target="/department/1?period_id=1" aria-describedby="home-send-status">Gönderim</a><span class="badge neutral" id="home-send-status">Gönderilmedi</span></li>
+              </ol>
+            </section>
+          </div>
+          <footer class="prototype-footer">
+            <span>CIV-108 · Görsel inceleme</span>
+            <nav aria-label="Prototip sayfaları"><a href="../components.html">Tasarım sistemi</a><a href="024-department.html">024 Veri girişi</a></nav>
+          </footer>
+        </main>
+      </div>
+    </div>
+    <dialog id="destination-dialog" aria-labelledby="destination-title">
+      <h2 id="destination-title">Bağlantı hedefi</h2>
+      <p>Bu ekran prototip kapsamı dışındadır.</p>
+      <p class="help">Mevcut uygulamadaki hedef:</p>
+      <code id="destination-target">Ekran haritasında belirtilen bağlantı</code>
+      <form method="dialog"><button autofocus>Kapat</button></form>
+    </dialog>
+    <dialog id="simulation-dialog" aria-labelledby="simulation-title">
+      <h2 id="simulation-title">Statik prototip</h2>
+      <p>
+        Bu işlem görsel inceleme için temsil edilir. Veri kaydedilmez,
+        gönderilmez veya silinmez.
+      </p>
+      <form method="dialog"><button autofocus>Kapat</button></form>
+    </dialog>
+    <dialog id="password-dialog" aria-labelledby="password-title">
+      <h2 id="password-title">Parolamı değiştir</h2>
+      <p class="help">Statik form örneği; gerçek parola girmeyin.</p>
+      <div class="field">
+        <label for="old-password">Mevcut parola</label
+        ><input id="old-password" type="password" autocomplete="off" />
+      </div>
+      <div class="field">
+        <label for="new-password">Yeni parola</label
+        ><input id="new-password" type="password" autocomplete="off" />
+      </div>
+      <div class="field">
+        <label for="repeat-password">Yeni parola (tekrar)</label
+        ><input id="repeat-password" type="password" autocomplete="off" />
+      </div>
+      <form method="dialog" class="actions">
+        <button autofocus>Vazgeç</button><button>Parolayı değiştir</button>
+      </form>
+    </dialog>
+    <dialog id="notification-dialog" aria-labelledby="notification-title">
+      <h2 id="notification-title">Bildirimler</h2>
+      <div class="empty">
+        <p>Yeni bildirim yok.</p>
+        <p class="help">Sentetik bildirim paneli örneği.</p>
+      </div>
+      <form method="dialog"><button autofocus>Kapat</button></form>
+    </dialog>
+  </body>
+</html>

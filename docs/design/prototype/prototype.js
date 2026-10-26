@@ -49,3 +49,43 @@ document.addEventListener("keydown", (event) => {
     });
   }
 });
+
+// CIV-108 · Sentetik durumlar yalnız 022 prototipinde kullanılır.
+const homeState = document.querySelector(".department-home-prototype #home-state");
+if (homeState) {
+  const states = {
+    a: { entry: "Başlanmadı", issues: 0, submission: "draft", started: false },
+    b: { entry: "Devam ediyor", issues: 3, submission: "draft", started: true },
+    c: { entry: "Tamamlandı", issues: 0, submission: "draft", started: true },
+    d: { entry: "Tamamlandı", issues: 0, submission: "submitted", started: true },
+    e: { entry: "Devam ediyor", issues: 3, submission: "returned", started: true },
+  };
+  const submissionLabels = {
+    draft: "Gönderilmedi",
+    submitted: "Gönderildi",
+    returned: "İade edildi — düzeltip yeniden gönderin",
+    approved: "Onaylandı",
+  };
+  const setTag = (id, text, tone) => {
+    const tag = document.getElementById(id);
+    tag.textContent = text;
+    tag.className = `badge ${tone}`;
+  };
+  const showHomeState = () => {
+    const state = states[homeState.value];
+    setTag("home-entry-status", state.entry, state.entry === "Tamamlandı" ? "success" : "neutral");
+    setTag("home-check-status", state.issues > 0
+      ? `Düzeltme gerekli · ${state.issues} gösterge`
+      : state.started ? "Sorun yok" : "Bekliyor",
+    state.issues > 0 ? "warning" : state.started ? "success" : "neutral");
+    setTag("home-send-status", submissionLabels[state.submission],
+      state.submission === "returned" ? "warning" : state.submission === "approved" ? "success" : "neutral");
+    const count = document.getElementById("home-issue-count");
+    count.textContent = state.issues;
+    count.classList.toggle("home-has-issues", state.issues > 0);
+    document.getElementById("home-submission").textContent =
+      state.submission === "draft" ? "Taslak" : state.submission === "submitted" ? "İncelemede" : state.submission === "returned" ? "İade edildi" : submissionLabels[state.submission];
+  };
+  homeState.addEventListener("change", showHomeState);
+  showHomeState();
+}

@@ -46,6 +46,7 @@ def our_screen(request, db, user, period_id=None):
 def batch_context(db, user, batch_id):
     user, period, batch, status, revision = m.get_batch(db, user, batch_id)
     return dict(batch=batch, rows=m.rows(db, batch), status=status, revision=revision,
+        submission_open=m.today(db) <= period.deadline,
         editable=not period.closed_at and m.today(db) <= period.deadline and status in ('draft', 'returned') and (
             user.role == 'department' and batch.department_id == user.department_id or user.role == 'strategy' and batch.body_name is not None),
         events=db.scalars(select(Event).where(Event.batch_id == batch.id).order_by(Event.revision)).all())

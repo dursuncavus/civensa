@@ -358,3 +358,33 @@ CIV-105 PR #150 (Codex, de0752a): scope = allowed files only, CI green, behind 0
 
 ## D-275 (26 Oct 2026 ~17:15, lead) — CIV-108 prototype of the 022 task list dispatched
 Codex slot idle after CIV-105. Per D-272 item 1 and D-243 (new pattern → prototype first): package docs/lead/tasks/CIV-108.md — static prototype only (docs/design/prototype), five states, 1440/390. PRIOR ART: CIV-107 / GOV.UK task list. Codex, "Bulut → civensa", GPT-6.1 Sol, effort Medium. First review by the lead (prototype, small); owner approves the look before the implementation task.
+
+## D-276 (26 Oct 2026 ~17:20, owner + lead) — CIV-109: Genel Bakış card labels, "İnceleme bekleyen" count, clickable cards → Copilot
+BEYAN (owner 17:05–17:13): card labels do not say what is counted; cards should open the matching list; owner approved the proposed labels and click targets ("Tamam", 17:13).
+DOĞRULANDI (app/main.py department_progress_overview, dashboard.html): progress cards count departments; `submitted` (İnceleme bekliyor) is counted but has no card → added. Labels: Onaylanan / İnceleme bekleyen / Veri girişi süren / Düzeltme gereken / Veri girişine başlamayan / Kullanıcısı tanımlanmamış müdürlük; Dönemdeki müdürlük; Bakanlık şablonu; Eşleştirme bekleyen faaliyet ("Bekleyen yok"); Gösterge sayısı; Hatası olan gösterge; Gönderim durumu. Progress cards filter the department table (JS, anchor fallback); others link to /users, sections, data entry.
+Package docs/lead/tasks/CIV-109.md; issue #153 assigned to the Copilot cloud agent (assignee copilot-swe-agent[bot], base phase5). Does not touch CIV-108 files.
+
+## D-277 (26 Oct 2026 ~17:55, owner + lead) — CIV-108 prototype approved; department summary column goes away
+DOĞRULANDI: PR #156 (Codex, b968a44) — only docs/design/prototype/** and docs/design/rollout/civ-108/ changed; five states at 1440/390; task list with text status tags. Lead review: with the task list, two of the three 022 summary cards repeat the steps (Civensa kontrolü = step 2, Gönderim = step 3).
+BEYAN (owner 17:53, "Tamam"): look approved; on the department home remove the right summary column and show the indicator count in step 1 ("Veri girişi · N gösterge"). Strategy summary column unchanged. Prototype merged 633ac07.
+Implementation task (CIV-111) is written after CIV-109 (#154, same template) is merged.
+
+## D-278 (26 Oct 2026 ~18:00, lead) — lead mistake: CIV-105 merged before every CI job finished
+What failed: PR #150 was merged (7cb58d9) while job "test (18, 1)" on head 721f2c2 was still in_progress; the wait loop timed out and the merge condition only checked for the word "failure".
+Why: merge guard tested for absence of failure instead of presence of success on every job.
+Correct approach / prevention: merge only when every check run on the exact head is completed with conclusion success or skipped; a timed-out wait stops without merging. Same rule for lead-record PRs (guard success).
+State: "test (18, 0)" success; "test (18, 1)" still in_progress at 18:35 (started 14:51Z, possibly stuck) → next session verifies; if it fails, revert 7cb58d9 and send the fix round. Changes after the last green round were test-only (Copilot acd1372) plus the artifact restore.
+Also DOĞRULANDI (D-274 backlog item): transition() rejects an IC submit after the deadline (409, clear message) → only the UI button is wrong → CIV-110.
+
+## D-279 (26 Oct 2026 ~18:05, lead) — CIV-110 package: hide "İncelemeye gönder" after the IC entry deadline
+Package docs/lead/tasks/CIV-110.md (shared macro monitoring_shared.html; heading markup untouched for CIV-105; strategy fixtures updated only for the expired case). Codex, "Bulut → civensa", GPT-6.1 Sol, effort Medium. Dispatch only after D-278 test result is green.
+
+## D-280 (26 Oct 2026 ~18:55 Istanbul, lead, live session CV Lider 31) — D-278 closed green; CIV-110 dispatched; CIV-109 fix round
+DOĞRULANDI: run 40343597275 attempt 1 job "test (18, 1)" was cancelled after 45 min (stuck); attempt 2 on 721f2c2 completed success (15:37Z–15:48Z). Both shards green → CIV-105 merge 7cb58d9 stands, no revert.
+CIV-110 dispatched to Codex ("Bulut → civensa", GPT-6.1 Sol, Medium), package docs/lead/tasks/CIV-110.md.
+CIV-109 PR #154 (Copilot, d2c6c7c): Copilot session ended with failure before its last step; CI not run. Lead review: labels, hrefs, data-state filter and file scope match the package. Fix round sent (comment 6420220469): aria-pressed is invalid on a link → role="button" + aria-pressed set by JS only, Space/Enter; CSS selector by #mudurluk-ilerleme instead of panel order; test loosened (card height 108 → 160) → ≤ 120 px; finish full suite, title, Turkish description, ready for review.
+Ali Abi: no reply at 18:50 (DOĞRULANDI Gmail).
+
+## D-281 (26 Oct 2026 ~19:05 Istanbul, owner + lead) — second Codex slot: CIV-111 (042 İnceleme kuyruğu); 022 task list renumbered CIV-112
+BEYAN (owner 18:55): Codex runs one task while other slots are idle. Decision: dispatch the next D-243 screen in parallel with CIV-110 — 042 İnceleme kuyruğu (/review) restyle, package docs/lead/tasks/CIV-111.md. No shared files with CIV-109 (dashboard) or CIV-110 (IC macro). PRIOR ART: restyle with existing components, CIV-107 findings. Codex, "Bulut → civensa", GPT-6.1 Sol, effort Medium.
+The 022 task-list implementation (D-277), previously called CIV-111 in STATE, becomes CIV-112 (still written after CIV-109 merges).
