@@ -1,0 +1,35 @@
+<style>
+.ic-wrap {overflow-wrap:anywhere}.ic-grid {display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:16px}.ic-wrap input,.ic-wrap select,.ic-wrap textarea {max-width:100%;box-sizing:border-box;width:100%}.ic-wrap textarea {min-height:80px}.ic-wrap label {display:block;margin:10px 0}.ic-scroll {overflow-x:auto}.ic-scroll table {min-width:700px}.ic-actions {display:flex;gap:10px;flex-wrap:wrap}.ic-wrap article {margin-block:16px}.ic-wrap .field-error {display:block;color:#a32626}.ic-wrap summary {cursor:pointer}
+.app:has(.ic-wrap) header {height:auto;min-height:78px;flex-wrap:wrap;gap:12px;padding-block:14px}
+.app:has(.ic-wrap) header>div {min-width:0;max-width:100%;overflow-wrap:anywhere}
+.ic-wrap .field-error {text-transform:none;letter-spacing:normal;font-size:13px}
+@media(max-width:620px) {.app:has(.ic-wrap){grid-template-columns:64px minmax(0,1fr)}.app:has(.ic-wrap) .sidebar-account .logout{white-space:normal;padding:6px 2px;font-size:9px}.app:has(.ic-wrap) main{padding-inline:12px}.app:has(.ic-wrap) header h1{font-size:20px}.app:has(.ic-wrap) .header-actions{flex-direction:row;flex-wrap:wrap}.ic-wrap .card{padding:12px}.ic-wrap .ic-grid{grid-template-columns:minmax(0,1fr)}}
+</style>
+{% macro token(request) %}<input type="hidden" name="csrf_token" value="{{ request.session.get('csrf_token') }}">{% endmacro %}
+{% macro entries(detail, monitoring_period, user, request, statuses, states) %}
+<section class="card"><h2>{{ detail.batch.label }} · {{ states[detail.status] }}</h2><p>Revizyon {{ detail.revision|trnum }} · Son giriş: {{ monitoring_period.deadline.strftime('%d.%m.%Y') }}</p>
+{% if monitoring_period.closed_at %}<p>Dönem kapalı. Kayıtlar salt okunur.</p>{% elif detail.status in ['submitted','approved'] %}<p>Kayıtlar salt okunur. Düzeltme için Strateji biriminden gerekçeli iade veya yeniden açma isteyin.</p>{% endif %}
+{% if not monitoring_period.closed_at and not detail.editable and detail.status in ['draft','returned'] %}<p>Bu ekran salt okunur. Giriş için sorumlu birimin hesabını ve son giriş tarihini Strateji birimiyle kontrol edin.</p>{% endif %}
+{% for row in detail.rows %}{% set a = row.action %}{% set e = row.entry %}
+<article class="card"><h3>{{ a.action_code_raw }} · {{ a.text }}</h3><p>Tamamlanma: {{ a.due_raw or 'Belirtilmedi' }}</p>
+{% if detail.editable %}
+{% filter pp_form(request) %}<form method="post" action="/internal-control/monitoring/batches/{{ detail.batch.id }}/entry">{{ token(request) }}
+<input type="hidden" name="id" value="{{ row.target.id }}"><input type="hidden" name="expected_revision" value="{{ detail.revision }}">
+<div class="ic-grid"><label>Durum<select name="status"><option value="">Durum seçin</option>{% for key,label in statuses.items() %}<option value="{{ key }}" {{ 'selected' if e and e.status == key else '' }}>{{ label }}</option>{% endfor %}</select></label>
+<label>Gerçekleşme oranı % (0–100)<input name="percentage" inputmode="numeric" value="{{ e.percentage if e and e.percentage is not none else '' }}"><small>Başlanmadı veya Eylem uygun görülmemiştir durumunda boş bırakılabilir. Kısmen tamamlandı için 1–99 zorunludur. Boş değer sıfır değildir.</small></label></div>
+<label>Açıklama (uygun görülmeyen eylemde zorunlu)<textarea name="explanation" maxlength="10000">{{ e.explanation if e else '' }}</textarea></label>
+<label>Tamamlanmama nedeni<textarea name="reason" maxlength="10000">{{ e.reason if e else '' }}</textarea><small>Süresi geçen tamamlanmamış eylemlerde ve Gecikmede durumunda zorunludur.</small></label>
+<label>Kanıt referansı<input name="evidence" maxlength="10000" value="{{ e.evidence if e else '' }}"><small>EBYS evrak sayısı/tarihi veya bağlantı yazın.</small></label>
+<button class="button primary">Eylemi kaydet</button></form>{% endfilter %}
+{% elif e %}<dl><dt>Durum</dt><dd>{{ statuses[e.status] }}</dd><dt>Gerçekleşme oranı</dt><dd>{{ '%' ~ (e.percentage|trnum) if e.percentage is not none else 'Belirtilmedi' }}</dd><dt>Açıklama</dt><dd>{{ e.explanation }}</dd><dt>Tamamlanmama nedeni</dt><dd>{{ e.reason }}</dd><dt>Kanıt</dt><dd>{{ e.evidence }}</dd></dl>{% else %}<p>İzleme girişi eksik.</p>{% endif %}
+</article>{% endfor %}
+{% if not monitoring_period.closed_at %}
+{% if (user.role=='department' and user.department_id==detail.batch.department_id) or (user.role=='strategy' and detail.batch.body_name) %}
+{% if detail.status in ['draft','returned'] and (user.position=='director' or user.can_submit) %}
+{% filter pp_form(request) %}<form method="post" action="/internal-control/monitoring/batches/{{ detail.batch.id }}/transition">{{ token(request) }}<input type="hidden" name="expected_revision" value="{{ detail.revision }}"><button class="button primary" name="action" value="submit">İncelemeye gönder</button></form>{% endfilter %}
+{% endif %}{% endif %}
+{% if user.role=='strategy' and user.position=='director' and detail.status in ['submitted','approved'] %}
+{% filter pp_form(request) %}<form method="post" action="/internal-control/monitoring/batches/{{ detail.batch.id }}/transition">{{ token(request) }}<input type="hidden" name="expected_revision" value="{{ detail.revision }}"><label>İşlem gerekçesi<textarea name="reason"></textarea></label><div class="ic-actions">{% if detail.status=='submitted' %}<button class="button primary" name="action" value="approve">Onayla</button><button class="button" name="action" value="return">Gerekçeli iade et</button>{% else %}<button class="button" name="action" value="reopen">Gerekçeli yeniden aç</button>{% endif %}</div></form>{% endfilter %}
+{% endif %}{% endif %}
+</section>
+{% endmacro %}

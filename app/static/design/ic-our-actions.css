@@ -1,0 +1,63 @@
+/* CIV-105: department views only. Importing the shared macros, rather than
+   including their style block, leaves the design-system shell in control. */
+.ic-our-actions-page { min-width: 0; color: var(--text); overflow-wrap: anywhere; }
+.ic-our-actions-page * { box-sizing: border-box; text-transform: none; letter-spacing: normal; }
+.ic-our-actions-page :is(label,span,th,td) { text-transform: none; letter-spacing: normal; }
+.ic-our-actions-page :is(h2,h3,p,dl) { margin: 0 0 var(--space-3); }
+.ic-our-actions-page h2 { font-size: var(--text-section); font-weight: var(--font-semibold); }
+.ic-our-actions-page h3 { font-size: var(--text-card); font-weight: var(--font-medium); }
+.ic-our-actions-page :is(.card,.info-panel,.empty-state) {
+  min-width: 0; margin: 0 0 var(--space-6); padding: var(--space-6);
+  border: 1px solid var(--border); border-radius: var(--radius);
+  background: var(--surface); box-shadow: none;
+}
+.ic-our-actions-page .action-section { margin-top: var(--space-8); padding: 0; border: 0; border-radius: 0; background: transparent; box-shadow: none; }
+.ic-our-actions-page .action-card { margin-block: var(--space-4); }
+.ic-our-actions-page .action-code { color: var(--accent); font-size: var(--text-sm); font-weight: var(--font-medium); }
+.ic-our-actions-page :is(.info-panel,.batch-content > .card > p:nth-of-type(2)) {
+  padding: var(--space-4); background: var(--accent-soft); color: var(--text);
+  border: 1px solid var(--border); border-radius: var(--radius);
+}
+.ic-our-actions-page .empty-state { color: var(--text-secondary); border-style: dashed; }
+.ic-our-actions-page .notes-content > .card > p:only-of-type { color: var(--text-secondary); }
+.ic-our-actions-page dl { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 3fr); gap: var(--space-2) var(--space-4); }
+.ic-our-actions-page dt { color: var(--text-secondary); font-size: var(--text-sm); }
+.ic-our-actions-page dd { margin: 0; min-width: 0; }
+.ic-our-actions-page a { color: var(--accent); text-underline-offset: 3px; }
+.ic-our-actions-page a:hover { color: var(--accent-hover); }
+.ic-our-actions-page .history-link { margin-bottom: var(--space-8); }
+.ic-our-actions-page .batch-heading { display: flex; align-items: center; flex-wrap: wrap; gap: var(--space-2); }
+.ic-our-actions-page .status { display: inline-block; padding: var(--space-1) var(--space-2); border-radius: var(--radius); font-size: var(--text-sm); font-weight: var(--font-medium); background: var(--surface-muted); color: var(--text-secondary); }
+.ic-our-actions-page .status.submitted { color: var(--accent); background: var(--accent-soft); }
+.ic-our-actions-page .status.returned { color: var(--warning); background: var(--warning-bg); }
+.ic-our-actions-page .status.approved { color: var(--success); background: var(--success-bg); }
+.ic-our-actions-page label { display: block; margin: var(--space-4) 0; color: var(--text); font-size: var(--text-sm); font-weight: var(--font-medium); }
+.ic-our-actions-page :is(input,select,textarea) { display: block; width: 100%; max-width: 100%; min-width: 0; min-height: var(--control-height); margin-top: var(--space-2); padding: var(--space-2) var(--space-3); border: 1px solid var(--text-secondary); border-radius: var(--radius); background: var(--surface); color: var(--text); font: var(--font-regular) var(--text-base) / var(--line-height) var(--font-family); box-shadow: none; }
+.ic-our-actions-page input[type="hidden"] { display: none; }
+.ic-our-actions-page textarea { min-height: 100px; resize: vertical; }
+.ic-our-actions-page small { display: block; margin-top: var(--space-2); color: var(--text-secondary); font-size: var(--text-sm); font-weight: var(--font-regular); }
+.ic-our-actions-page .field-error { display: block; margin-top: var(--space-2); color: var(--danger); font-size: var(--text-sm); }
+.ic-our-actions-page [aria-invalid="true"] { border-color: var(--danger); }
+.ic-our-actions-page .ic-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: var(--space-4); }
+.ic-our-actions-page .ic-grid label { margin-top: 0; }
+.ic-our-actions-page .period-toolbar { display: flex; align-items: center; gap: var(--space-4); }
+.ic-our-actions-page .period-toolbar label { display: flex; align-items: center; gap: var(--space-4); margin: 0; flex: 1; min-width: 0; }
+.ic-our-actions-page .period-toolbar select { width: auto; flex: 1; margin: 0; }
+.ic-our-actions-page .button { min-height: var(--control-height); max-width: 100%; padding: var(--space-2) var(--space-4); border: 1px solid var(--text-secondary); border-radius: var(--radius); background: var(--surface); color: var(--text); font: var(--font-medium) var(--text-sm) / var(--line-height) var(--font-family); }
+.ic-our-actions-page .button:hover { background: var(--surface-muted); color: var(--text); }
+.ic-our-actions-page .button.primary { border-color: var(--accent); background: var(--accent); color: var(--surface); }
+.ic-our-actions-page .button.primary:hover { border-color: var(--accent-hover); background: var(--accent-hover); }
+.ic-our-actions-page :is(a,button,input,select,textarea,[tabindex]):focus { outline: var(--focus); outline-offset: var(--focus-offset); box-shadow: none; }
+.ic-our-actions-page .cooperating-section article + article,
+.ic-our-actions-page .notes-content article + article { margin-top: var(--space-6); padding-top: var(--space-6); border-top: 1px solid var(--border); }
+.ic-our-actions-page .ic-scroll { max-width: 100%; overflow-x: auto; }
+.ic-our-actions-page .ic-scroll table { min-width: 700px; }
+.ic-our-actions-page .ic-actions { display: flex; flex-wrap: wrap; gap: var(--space-3); }
+@media (max-width: 700px) {
+  .ic-our-actions-page :is(.card,.empty-state) { padding: var(--space-4); }
+  .ic-our-actions-page :is(dl,.ic-grid) { grid-template-columns: minmax(0,1fr); }
+  .ic-our-actions-page dd { margin-bottom: var(--space-2); }
+  .ic-our-actions-page :is(.period-toolbar,.period-toolbar label) { flex-direction: column; align-items: stretch; }
+  .ic-our-actions-page .period-toolbar label { width: 100%; }
+}
+.ic-our-actions-page .return-note { padding: var(--space-4); margin-bottom: var(--space-4); border: 1px solid var(--danger); border-radius: var(--radius); background: var(--danger-bg); color: var(--danger); }
