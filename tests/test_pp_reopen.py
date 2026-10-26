@@ -405,6 +405,7 @@ def test_browser_reopen_visibility_and_turkish_error(db, sample, approved, http,
             errors = []
             page.on('pageerror', lambda error: errors.append(str(error)))
             page.goto(base + f'/review?period_id={approved.period_id}')
+            page.get_by_text('Düzeltme için aç', exact=True).click()
             control = page.get_by_role('button', name='Onaylı paketi düzeltme için aç', exact=True)
             expect(control).to_be_visible()
             reason = page.get_by_label('Düzeltme gerekçesi', exact=True)
@@ -414,6 +415,7 @@ def test_browser_reopen_visibility_and_turkish_error(db, sample, approved, http,
             expect(page.locator('[data-reopen-form] .return-note')).to_contain_text('Gerekçe zorunlu')
             expect(reason).to_have_value('   ')
             page.goto(base + f'/review?period_id={approved.period_id}')
+            page.get_by_text('Düzeltme için aç', exact=True).click()
             reason.fill(REASON)
             if os.getenv('CIVENSA_UI_SCREENSHOTS'):
                 folder = Path(os.environ['CIVENSA_UI_SCREENSHOTS']); folder.mkdir(parents=True, exist_ok=True)
