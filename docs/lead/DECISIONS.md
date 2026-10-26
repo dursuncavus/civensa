@@ -270,3 +270,8 @@ DOĞRULANDI (owner screenshot, Budgets and alerts): Actions budget is $80.00 (no
 What failed: the lead treated the 18 Oct 75%-of-$15 e-mail as the current budget without checking the live settings. Correct approach: read the current billing page before naming a billing cause. Prevention: billing causes are BELİRSİZ until the owner's current settings screen confirms them.
 Cause of the startup failures: BELİRSİZ again. Next check: Billing Overview and Payment history (a failed payment can stop Actions runs; unverified). Copilot stays postponed until Actions runs again.
 Cost note (DOĞRULANDI): $50.69 Actions spend in October, almost all from "Performance program validation"; making the repo public removes this.
+
+## D-259 (26 Oct 2026 ~10:45 Istanbul, lead) — Actions outage cause: GitHub payment authorization failed
+DOĞRULANDI (owner screenshot, github.com/settings/billing): banner "Your payment authorization has failed — please contact your bank", with "Update payment method" and "Retry authorization". October metered usage $62.69 gross, $12.00 included discount (≈ $50.69 net, matches the Actions budget screen). Plan: GitHub Free, Copilot Free. This explains why every workflow since 25 Oct 21:43Z fails at startup with no jobs.
+Owner action (payment → owner only): make sure the card is open for online and international (USD) payments in the bank app, then press "Retry authorization". If it fails again, the owner calls the bank. The lead never handles card data.
+After it succeeds: the lead checks that a workflow starts; next scheduled backup 05:10Z; Copilot still waits for the public repo (D-257 reasoning on Actions cost stands).

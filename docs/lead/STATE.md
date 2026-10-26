@@ -7,13 +7,13 @@ Tags: DOĞRULANDI (lead checked) · TARİHSEL (past fact) · BEYAN (owner said) 
 
 ## Next session — start here (D-253)
 Owner opens a new chat with one line: `CV Lider 26 · Claude Opus 5.5 · civensa-lead`. The lead reads this section first and works from it.
-0. URGENT (D-258): no CI and no daily backup since 25 Oct 21:43Z (last good backup 25 Oct 05:07Z). Cause BELİRSİZ — NOT the budget ($50.69 of $80 used). Check Billing Overview / Payment history with the owner first.
+0. URGENT (D-259): no CI and no daily backup since 25 Oct 21:43Z (last good backup 25 Oct 05:07Z). Cause: GitHub payment authorization failed. Owner fixes card with bank + "Retry authorization" at https://github.com/settings/billing ; then lead verifies a workflow starts.
 1. Ali Abi answers: read Gmail "CIVENSA-CEVAPLAR v1" (not arrived 26 Oct 10:45); record decisions; write Codex packages the same day (data/logic before UI, D-243).
 2. Public repo step 3 → 6 as soon as Actions runs again (lasting fix for Actions cost, D-257).
 3. Copilot postponed until the repo is public (D-257).
 4. Next UI task per D-243: 010/009 EK-1 section index; bundle related screens and the D-251 LOW items (D-252).
 5. Owner: approve CIV-102 look + listed text changes (#132, merged 873d361).
-6. Next IDs: task CIV-103, decision D-259.
+6. Next IDs: task CIV-103, decision D-260.
 
 ## Claude quota (BEYAN, owner screen 25 Oct ~10:15)
 - Weekly usage 21% on 25 Oct morning; at that rate it runs out Friday evening (30 Oct). October extra-usage charge: $40.30 of $45 limit.
