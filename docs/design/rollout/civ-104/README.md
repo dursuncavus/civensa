@@ -11,7 +11,7 @@ Civensa kontrolü sıfır olduğunda normal metin, pozitif olduğunda uyarı ren
 Chromium 151; 1440×900 ve 390×900, DPR 1, `tr-TR`, `Europe/Istanbul`.
 Tüm kayıtlar sentetik; geçici yerel PostgreSQL 18 ve gerçek şablon/statik dosyalar kullanıldı.
 Dönemler, yükleme listeleri ve yedi ilerleme durumu yalnız testin render bağlamında çeşitlendirildi.
-Görüntüler tek viewport kesitleridir; başka ekranların toplu çekimi yapılmadı.
+Görüntüler tek viewport kesitleridir (390 px üst görünümü, kartlar ve dönemleri birlikte göstermek için 390×2200 viewport’un yalnız ilgili üst bölümüdür); başka ekranların toplu çekimi yapılmadı.
 Her PNG 1.500.000 bayttan küçüktür; çekim aracı ve JSON commit edilmedi.
 
 | Görünüm | 1440 px | 390 px |
@@ -20,7 +20,7 @@ Her PNG 1.500.000 bayttan küçüktür; çekim aracı ve JSON commit edilmedi.
 | 021 kartlar ve dönemler | [PNG](021-top-1440.png) | [PNG](021-top-390.png) |
 | 021 yeni dönem açık | [PNG](021-new-period-1440.png) | [PNG](021-new-period-390.png) |
 | 021 boş yükleme alanları | [PNG](021-empty-uploads-1440.png) | [PNG](021-empty-uploads-390.png) |
-| 021 ilerleme tablosu | [PNG](021-progress-1440.png) | [PNG](021-progress-390.png) |
+| 021 ilerleme tablosu | [PNG](021-progress-1440.png) | [Başlangıç](021-progress-390.png) · [Yatay kaydırılmış](021-progress-scroll-390.png) |
 
 ## Sözleşme ve testler
 
