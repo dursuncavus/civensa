@@ -141,7 +141,7 @@ def test_strategy_six_step_import_retirement_and_first_login(db, sample, account
             assert page.locator('input[name="email"]').count(), page.locator('body').inner_text()
             page.locator('input[name="email"]').fill(issued[0]['E-posta'])
             page.locator('input[name="password"]').fill(issued[0]['Geçici Parola'])
-            page.get_by_role('button', name='Giriş Yap', exact=True).click()
+            page.get_by_role('button', name='Giriş yap', exact=True).click()
             expect(page).to_have_url(base + '/change-password')
             expect(page.get_by_text('Devam etmek için kendi parolanızı belirleyin.', exact=True)).to_be_visible()
             screenshot('personal-first-login.png')
