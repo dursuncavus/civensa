@@ -86,8 +86,7 @@
   .dashboard-page .dashboard-main { grid-column: 1; grid-row: 1; min-width: 0; }
   .dashboard-page .dashboard-summary { position: sticky; top: var(--space-6); grid-column: 2; grid-row: 1; min-width: 0; }
   .dashboard-page .dashboard-summary > .cards { grid-template-columns: minmax(0,1fr); gap: var(--space-3); }
-  .dashboard-page .dashboard-panel .cards .card { padding: calc(var(--space-1) / 2) var(--space-1); }
-  .dashboard-page .dashboard-panel .cards .card span { line-height: 1.2; }
+  .dashboard-page .dashboard-main > .dashboard-panel:last-child .cards { grid-template-columns: repeat(3,minmax(0,1fr)); }
   .dashboard-page .dashboard-main > .dashboard-panel:first-child,
   .dashboard-page .dashboard-main > p + .dashboard-panel { margin-top: 0; }
 }

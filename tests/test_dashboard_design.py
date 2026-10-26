@@ -145,7 +145,15 @@ def test_021_022_browser_layout_contrast_and_period_actions(browser, dashboard_c
         root = page.locator('.dashboard-page')
         assert page.evaluate('document.documentElement.scrollWidth === innerWidth'), page.evaluate("[...document.querySelectorAll('*')].filter(el => el.getBoundingClientRect().right > innerWidth).map(el => [el.tagName, el.className, el.getBoundingClientRect().width])")
         assert root.locator('label, th, .card span').evaluate_all("els => els.every(el => getComputedStyle(el).textTransform === 'none')")
+        assert len(set(root.locator('.card').evaluate_all("els => els.map(el => getComputedStyle(el).padding)"))) == 1
         top_cards = root.locator('.dashboard-summary > .cards > *')
+
+        def row_sizes(cards):
+            rows = {}
+            for card in cards.all():
+                rows.setdefault(round(card.bounding_box()['y']), []).append(card)
+            return sorted(map(len, rows.values()))
+
         if width >= 1280:
             for card in top_cards.all():
                 limit = 108 if role == 'strategy' and card.evaluate("el => el.matches('.action-card')") else 88
@@ -155,9 +163,9 @@ def test_021_022_browser_layout_contrast_and_period_actions(browser, dashboard_c
                                   "label: getComputedStyle(el.querySelector('span')).lineHeight, "
                                   "value: getComputedStyle(el.querySelector('b')).lineHeight})"))
             if role == 'strategy':
-                if width == 1440:
-                    assert all(card.bounding_box()['height'] <= 88
-                               for card in root.locator('.dashboard-panel .cards > *').all())
+                progress_cards = root.locator('.dashboard-main > .dashboard-panel:last-child .cards > *')
+                assert row_sizes(progress_cards) == [2, 3]
+                assert all(card.bounding_box()['height'] <= 108 for card in progress_cards.all())
             if width == 1440:
                 summary, main = root.locator('.dashboard-summary'), root.locator('.dashboard-main')
                 assert summary.bounding_box()['x'] >= main.bounding_box()['x'] + main.bounding_box()['width']
@@ -169,12 +177,6 @@ def test_021_022_browser_layout_contrast_and_period_actions(browser, dashboard_c
                 title_bottom = page.locator('.page-header').bounding_box()['y'] + page.locator('.page-header').bounding_box()['height']
                 assert first_panel.bounding_box()['y'] - title_bottom <= 120
         else:
-            def row_sizes(cards):
-                rows = {}
-                for card in cards.all():
-                    rows.setdefault(round(card.bounding_box()['y']), []).append(card)
-                return sorted(map(len, rows.values()))
-
             assert row_sizes(top_cards) == ([2, 2] if role == 'strategy' else [1, 2])
             if role == 'strategy':
                 assert row_sizes(root.locator('.dashboard-panel .cards > *')) == [1, 2, 2]
