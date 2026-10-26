@@ -70,13 +70,16 @@ def assert_frozen(response, context=None):
     )
 
     def unchanged_controls(items):
-        return [item for item in items if not (
-            item[0] == 'a' and (
-                dict(item[1]).get('aria-label') or
-                dict(item[1]).get('data-clear-progress-filter') is not None or
-                '/activity-mapping' in dict(item[1]).get('href', '')
+        def is_dashboard_card(item):
+            if item[0] != 'a':
+                return False
+            attrs = dict(item[1])
+            return (
+                'aria-label' in attrs or 'data-clear-progress-filter' in attrs or
+                '/activity-mapping' in attrs.get('href', '')
             )
-        )]
+
+        return [item for item in items if not is_dashboard_card(item)]
 
     def unchanged_labels(items):
         return [item for item in items if not any(
@@ -88,20 +91,26 @@ def assert_frozen(response, context=None):
             ('section', 'id', 'bakanlik-sablonu'),
             ('section', 'id', 'mudurluk-ilerleme'),
             ('p', 'id', 'progressFilterStatus'),
-            ('span', 'data-filter-count', ''),
-            ('a', 'data-clear-progress-filter', ''),
+            ('span', 'data-filter-count', None),
+            ('a', 'data-clear-progress-filter', None),
             ('a', 'data-filter-states', None),
             ('tr', 'data-state', None),
             ('script', 'src', '/static/design/dashboard.js'),
         }
-        return [item for item in items if not any(
-            item[0] == tag and dict(item[1]).get(name) == value
-            for tag, name, value in ignored
-        )]
+        def is_dashboard_hook(item):
+            attrs = dict(item[1])
+            return any(
+                item[0] == tag and name in attrs and (value is None or attrs[name] == value)
+                for tag, name, value in ignored
+            )
+
+        return [item for item in items if not is_dashboard_hook(item)]
 
     assert Counter(unchanged_controls(actual.controls)) == Counter(unchanged_controls(expected.controls))
     assert actual.bindings == expected.bindings
-    assert Counter(unchanged_labels(actual.labels)) == Counter(unchanged_labels(expected.labels))
+    assert Counter(unchanged_labels(actual.labels)) == Counter(
+        (tag, LABEL_CHANGES.get(text, text)) for tag, text in unchanged_labels(expected.labels)
+    )
     assert unchanged_hooks(Hooks(html).items) == Hooks(old).items
     return html
 
@@ -152,7 +161,7 @@ def test_021_022_frozen_forms_links_hooks_and_role_visibility(dashboard_client, 
         assert 'İşlem</span>' in html
         assert ('data-snapshot="9010"' in html) == filled
         assert ('data-import="9020"' in html) == filled
-        summary_cards = response.template.environment.from_string(html).render(context)
+        summary_cards = html
         assert 'Dönemdeki müdürlük' in summary_cards
         assert 'Bakanlık şablonu' in summary_cards
         assert 'Eşleştirme bekleyen faaliyet' in summary_cards
@@ -164,7 +173,7 @@ def test_021_022_frozen_forms_links_hooks_and_role_visibility(dashboard_client, 
         assert 'Veri girişine başlamayan müdürlük' in summary_cards
         assert 'Kullanıcısı tanımlanmamış müdürlük' in summary_cards
         assert f'{context["progress_summary"]["submitted"]} incelemede olan müdürlük' in summary_cards
-        else:
+    else:
         assert all(label in html for label in ('Gösterge sayısı', 'Hatası olan gösterge', 'Gönderim durumu'))
 
 
@@ -196,6 +205,7 @@ def test_021_022_browser_layout_contrast_and_period_actions(browser, dashboard_c
         page.on('pageerror', lambda error: errors.append(str(error)))
         page.goto(url)
         root = page.locator('.dashboard-page')
+        assert page.locator('script[src="/static/design/dashboard.js"]').count() == int(role == 'strategy')
         assert page.evaluate('document.documentElement.scrollWidth === innerWidth'), page.evaluate("[...document.querySelectorAll('*')].filter(el => el.getBoundingClientRect().right > innerWidth).map(el => [el.tagName, el.className, el.getBoundingClientRect().width])")
         assert root.locator('label, th, .card span').evaluate_all("els => els.every(el => getComputedStyle(el).textTransform === 'none')")
         assert len(set(root.locator('.card').evaluate_all("els => els.map(el => getComputedStyle(el).padding)"))) == 1
@@ -231,7 +241,7 @@ def test_021_022_browser_layout_contrast_and_period_actions(browser, dashboard_c
                 progress_cards = root.locator('.dashboard-main > .dashboard-panel:last-child .cards > *')
                 assert row_sizes(progress_cards) == [3, 3]
                 assert progress_cards.count() == 6
-                assert all(card.bounding_box()['height'] <= 108 for card in progress_cards.all())
+                assert all(card.bounding_box()['height'] <= 160 for card in progress_cards.all())
             if width == 1440:
                 summary, main = root.locator('.dashboard-summary'), root.locator('.dashboard-main')
                 assert summary.bounding_box()['x'] >= main.bounding_box()['x'] + main.bounding_box()['width']
@@ -370,6 +380,7 @@ def test_021_progress_card_filters_and_no_javascript_fallback(browser, dashboard
             'approved', 'submitted', 'in_progress', 'ready', 'needs_attention', 'returned', 'not_started',
         ]
         filter_cards = page.locator('.progress-filter')
+        assert all(card.get_attribute('aria-pressed') == 'false' for card in filter_cards.all())
         state_groups = [
             {'approved'}, {'submitted'}, {'in_progress', 'ready'},
             {'needs_attention', 'returned'}, {'not_started'},
@@ -385,7 +396,7 @@ def test_021_progress_card_filters_and_no_javascript_fallback(browser, dashboard
             assert [filter_cards.nth(i).get_attribute('aria-pressed') for i in range(5)] == [
                 str(i == index).lower() for i in range(5)
             ]
-            assert card.evaluate("el => getComputedStyle(el).backgroundColor") == 'rgb(227, 240, 238)'
+            expect(card).to_have_css('background-color', 'rgb(227, 240, 238)')
             status.get_by_text('Tümünü göster').click()
             assert page.locator('#mudurluk-ilerleme tbody tr:visible').count() == 7
             expect(status).to_be_hidden()

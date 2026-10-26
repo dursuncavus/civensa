@@ -23,7 +23,6 @@
       const active = selected !== null &&
         card.dataset.filterStates.split(',').some(state => selected.has(state));
       card.setAttribute('aria-pressed', String(active));
-      card.classList.toggle('is-selected', active);
     }
 
     count.textContent = String(visible);
@@ -40,6 +39,5 @@
   clear.addEventListener('click', event => {
     event.preventDefault();
     setFilter(null);
-    cards.find(card => card.getAttribute('aria-pressed') === 'true')?.focus();
   });
 })();
