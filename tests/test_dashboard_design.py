@@ -61,10 +61,48 @@ def assert_frozen(response, context=None):
     html = response.template.render(context)
     old = response.template.environment.from_string(FROZEN.read_text()).render(context)
     actual, expected = DashboardContract(html), DashboardContract(old)
-    assert Counter(actual.controls) == Counter(expected.controls)
+    new_card_labels = (
+        'Dönemdeki müdürlük', 'Bakanlık şablonu', 'Eşleştirme bekleyen faaliyet',
+        'Gösterge sayısı', 'Hatası olan gösterge', 'Gönderim durumu',
+        'Onaylanan müdürlük', 'İnceleme bekleyen müdürlük', 'Veri girişi süren müdürlük',
+        'Düzeltme gereken müdürlük', 'Veri girişine başlamayan müdürlük',
+        'Kullanıcısı tanımlanmamış müdürlük',
+    )
+
+    def unchanged_controls(items):
+        return [item for item in items if not (
+            item[0] == 'a' and (
+                dict(item[1]).get('aria-label') or
+                dict(item[1]).get('data-clear-progress-filter') is not None or
+                '/activity-mapping' in dict(item[1]).get('href', '')
+            )
+        )]
+
+    def unchanged_labels(items):
+        return [item for item in items if not any(
+            item[1].startswith(label) for label in (*new_card_labels, 'Faaliyet eşleştirme', 'Tümünü göster')
+        )]
+
+    def unchanged_hooks(items):
+        ignored = {
+            ('section', 'id', 'bakanlik-sablonu'),
+            ('section', 'id', 'mudurluk-ilerleme'),
+            ('p', 'id', 'progressFilterStatus'),
+            ('span', 'data-filter-count', ''),
+            ('a', 'data-clear-progress-filter', ''),
+            ('a', 'data-filter-states', None),
+            ('tr', 'data-state', None),
+            ('script', 'src', '/static/design/dashboard.js'),
+        }
+        return [item for item in items if not any(
+            item[0] == tag and dict(item[1]).get(name) == value
+            for tag, name, value in ignored
+        )]
+
+    assert Counter(unchanged_controls(actual.controls)) == Counter(unchanged_controls(expected.controls))
     assert actual.bindings == expected.bindings
-    assert Counter(actual.labels) == Counter((tag, LABEL_CHANGES.get(text, text)) for tag, text in expected.labels)
-    assert Hooks(html).items == Hooks(old).items
+    assert Counter(unchanged_labels(actual.labels)) == Counter(unchanged_labels(expected.labels))
+    assert unchanged_hooks(Hooks(html).items) == Hooks(old).items
     return html
 
 
@@ -114,6 +152,20 @@ def test_021_022_frozen_forms_links_hooks_and_role_visibility(dashboard_client, 
         assert 'İşlem</span>' in html
         assert ('data-snapshot="9010"' in html) == filled
         assert ('data-import="9020"' in html) == filled
+        summary_cards = response.template.environment.from_string(html).render(context)
+        assert 'Dönemdeki müdürlük' in summary_cards
+        assert 'Bakanlık şablonu' in summary_cards
+        assert 'Eşleştirme bekleyen faaliyet' in summary_cards
+        assert ('Bekleyen yok' in summary_cards) == (context['unresolved_count'] == 0)
+        assert 'Onaylanan müdürlük' in summary_cards
+        assert 'İnceleme bekleyen müdürlük' in summary_cards
+        assert 'Veri girişi süren müdürlük' in summary_cards
+        assert 'Düzeltme gereken müdürlük' in summary_cards
+        assert 'Veri girişine başlamayan müdürlük' in summary_cards
+        assert 'Kullanıcısı tanımlanmamış müdürlük' in summary_cards
+        assert f'{context["progress_summary"]["submitted"]} incelemede olan müdürlük' in summary_cards
+        else:
+        assert all(label in html for label in ('Gösterge sayısı', 'Hatası olan gösterge', 'Gönderim durumu'))
 
 
 @pytest.mark.parametrize('width', [1440, 1280, 390])
@@ -148,6 +200,15 @@ def test_021_022_browser_layout_contrast_and_period_actions(browser, dashboard_c
         assert root.locator('label, th, .card span').evaluate_all("els => els.every(el => getComputedStyle(el).textTransform === 'none')")
         assert len(set(root.locator('.card').evaluate_all("els => els.map(el => getComputedStyle(el).padding)"))) == 1
         top_cards = root.locator('.dashboard-summary > .cards > *')
+        if role == 'department':
+            expected_href = f'/department/{response.context["department"].id}?period_id={sample["period"].id}'
+            department_cards = root.locator('.dashboard-summary a.card')
+            assert department_cards.count() == 3
+            for card in department_cards.all():
+                assert card.get_attribute('href') == expected_href
+                assert card.get_attribute('aria-label') == (
+                    f'{card.locator("span").inner_text()} {card.locator("b").inner_text()}'
+                )
 
         def row_sizes(cards):
             rows = {}
@@ -168,7 +229,8 @@ def test_021_022_browser_layout_contrast_and_period_actions(browser, dashboard_c
                                   "value: getComputedStyle(el.querySelector('b')).lineHeight})"))
             if role == 'strategy':
                 progress_cards = root.locator('.dashboard-main > .dashboard-panel:last-child .cards > *')
-                assert row_sizes(progress_cards) == [2, 3]
+                assert row_sizes(progress_cards) == [3, 3]
+                assert progress_cards.count() == 6
                 assert all(card.bounding_box()['height'] <= 108 for card in progress_cards.all())
             if width == 1440:
                 summary, main = root.locator('.dashboard-summary'), root.locator('.dashboard-main')
@@ -181,7 +243,7 @@ def test_021_022_browser_layout_contrast_and_period_actions(browser, dashboard_c
         else:
             assert row_sizes(top_cards) == [1, 2]
             if role == 'strategy':
-                assert row_sizes(root.locator('.dashboard-panel .cards > *')) == [1, 2, 2]
+                assert row_sizes(root.locator('#mudurluk-ilerleme .cards > *')) == [2, 2, 2]
         assert root.locator('.card').evaluate_all('els => els.every(el => el.scrollWidth <= el.clientWidth)')
         pairs_script = TEXT_PAIRS.replace('.section-index-page', '.dashboard-page')
         pairs = set(map(tuple, page.evaluate(pairs_script)))
@@ -236,3 +298,115 @@ def test_021_022_browser_layout_contrast_and_period_actions(browser, dashboard_c
             pairs.update(map(tuple, page.evaluate(pairs_script)))
         assert all(contrast(pair) >= 4.5 for pair in pairs), [(pair, contrast(pair)) for pair in pairs if contrast(pair) < 4.5]
         assert not errors
+
+
+@pytest.mark.parametrize('width', [1440, 390])
+def test_021_progress_card_filters_and_no_javascript_fallback(browser, dashboard_client, sample, width):
+    from playwright.sync_api import expect
+
+    client = dashboard_client
+    login(client, sample['strategy'].email)
+    url = f'http://testserver/dashboard?period_id={sample["period"].id}'
+    response = client.get(url)
+    render_context = synthetic_context(response, False)
+    html = assert_frozen(response, render_context)
+    errors = []
+
+    def serve(route):
+        result = client.get(route.request.url)
+        headers = dict(result.headers)
+        headers.pop('set-cookie', None)
+        route.fulfill(status=result.status_code, headers=headers,
+                      body=html if route.request.url == url else result.content)
+
+    with browser.new_context(viewport={'width': width, 'height': 900}) as context:
+        context.route('http://testserver/**', serve)
+        page = context.new_page()
+        page.on('pageerror', lambda error: errors.append(str(error)))
+        page.goto(url)
+
+        expected_cards = [
+            ('Dönemdeki müdürlük', str(len(render_context['departments'])), '#mudurluk-ilerleme'),
+            ('Bakanlık şablonu', 'Doğrulandı' if render_context['period'].template_status == 'verified' else 'Bekliyor',
+             '#bakanlik-sablonu'),
+            ('Eşleştirme bekleyen faaliyet', str(render_context['unresolved_count']),
+             f'/activity-mapping?period_id={sample["period"].id}'),
+        ]
+        summary_cards = page.locator('.dashboard-summary .strategy-cards a.card')
+        assert summary_cards.count() == len(expected_cards)
+        for card, (label, value, href) in zip(summary_cards.all(), expected_cards):
+            assert card.locator('span').inner_text() == label
+            assert card.locator('b').inner_text() == value
+            assert card.get_attribute('href') == href
+            assert card.get_attribute('aria-label') == f'{label} {value}'
+        mapping_card = summary_cards.nth(2)
+        assert mapping_card.locator('small').inner_text() == (
+            'Kontrol gerekli' if render_context['unresolved_count'] else 'Bekleyen yok'
+        )
+
+        progress_values = [1, 1, 2, 2, 1, 1]
+        progress_labels = [
+            'Onaylanan müdürlük', 'İnceleme bekleyen müdürlük',
+            'Veri girişi süren müdürlük', 'Düzeltme gereken müdürlük',
+            'Veri girişine başlamayan müdürlük', 'Kullanıcısı tanımlanmamış müdürlük',
+        ]
+        progress_cards = page.locator('#mudurluk-ilerleme .cards > a.card')
+        assert progress_cards.count() == 6
+        for card, label, value in zip(progress_cards.all(), progress_labels, progress_values):
+            assert card.locator('span').inner_text() == label
+            assert card.locator('b').inner_text() == str(value)
+            assert card.get_attribute('aria-label') == f'{label} {value}'
+        assert [card.get_attribute('data-filter-states') for card in progress_cards.all()[:5]] == [
+            'approved', 'submitted', 'in_progress,ready', 'needs_attention,returned', 'not_started',
+        ]
+        assert [card.get_attribute('href') for card in progress_cards.all()[:5]] == ['#mudurluk-ilerleme'] * 5
+        assert progress_cards.nth(5).get_attribute('href') == f'/users?period_id={sample["period"].id}'
+        assert page.locator('#mudurluk-ilerleme').count() == 1
+        assert page.locator('#bakanlik-sablonu').count() == 1
+
+        rows = page.locator('#mudurluk-ilerleme tbody tr')
+        assert rows.count() == 7
+        assert rows.evaluate_all('els => els.map(el => el.dataset.state)') == [
+            'approved', 'submitted', 'in_progress', 'ready', 'needs_attention', 'returned', 'not_started',
+        ]
+        filter_cards = page.locator('.progress-filter')
+        state_groups = [
+            {'approved'}, {'submitted'}, {'in_progress', 'ready'},
+            {'needs_attention', 'returned'}, {'not_started'},
+        ]
+        status = page.locator('#progressFilterStatus')
+        for index, states in enumerate(state_groups):
+            card = filter_cards.nth(index)
+            card.click()
+            visible_states = page.locator('#mudurluk-ilerleme tbody tr:visible').evaluate_all(
+                'els => els.map(el => el.dataset.state)')
+            assert visible_states and set(visible_states) == states
+            expect(status).to_have_text(f'{len(visible_states)} müdürlük gösteriliyor · Tümünü göster')
+            assert [filter_cards.nth(i).get_attribute('aria-pressed') for i in range(5)] == [
+                str(i == index).lower() for i in range(5)
+            ]
+            assert card.evaluate("el => getComputedStyle(el).backgroundColor") == 'rgb(227, 240, 238)'
+            status.get_by_text('Tümünü göster').click()
+            assert page.locator('#mudurluk-ilerleme tbody tr:visible').count() == 7
+            expect(status).to_be_hidden()
+            assert all(filter_cards.nth(i).get_attribute('aria-pressed') == 'false' for i in range(5))
+
+        filter_cards.nth(3).focus()
+        page.keyboard.press('Enter')
+        assert set(page.locator('#mudurluk-ilerleme tbody tr:visible').evaluate_all(
+            'els => els.map(el => el.dataset.state)')) == {'needs_attention', 'returned'}
+        page.locator('[data-clear-progress-filter]').click()
+        assert page.locator('#mudurluk-ilerleme tbody tr:visible').count() == 7
+
+        pairs_script = TEXT_PAIRS.replace('.section-index-page', '.dashboard-page')
+        assert all(contrast(pair) >= 4.5 for pair in map(tuple, page.evaluate(pairs_script)))
+        assert not errors
+
+    with browser.new_context(viewport={'width': width, 'height': 900}, java_script_enabled=False) as context:
+        context.route('http://testserver/**', serve)
+        page = context.new_page()
+        page.goto(url)
+        page.locator('.progress-filter').nth(3).click()
+        assert page.url.endswith('#mudurluk-ilerleme')
+        assert page.locator('#mudurluk-ilerleme tbody tr').count() == 7
+        expect(page.locator('#progressFilterStatus')).to_be_hidden()

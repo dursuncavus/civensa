@@ -9,33 +9,33 @@
       <aside class="dashboard-summary" aria-label="Özet">
         {% if user.role=='department' %}
           <div class="cards">
-            <div class="card">
-              <span>Gösterge</span>
+            <a class="card action-card" href="/department/{{ department.id }}?period_id={{ period.id }}" aria-label="Gösterge sayısı {{ indicators|length }}">
+              <span>Gösterge sayısı</span>
               <b>{{ indicators|length }}</b>
-            </div>
-            <div class="card">
-              <span>Civensa kontrolü</span>
+            </a>
+            <a class="card action-card" href="/department/{{ department.id }}?period_id={{ period.id }}" aria-label="Hatası olan gösterge {{ issues }}">
+              <span>Hatası olan gösterge</span>
               <b class="dashboard-issues {{ 'bad' if issues else 'ok' }}">{{ issues }}</b>
-            </div>
-            <div class="card">
-              <span>Gönderim</span>
+            </a>
+            <a class="card action-card" href="/department/{{ department.id }}?period_id={{ period.id }}" aria-label="Gönderim durumu {{ submission.status|status_label }}">
+              <span>Gönderim durumu</span>
               <b>{{ submission.status|status_label }}</b>
-            </div>
+            </a>
           </div>
         {% else %}
           <div class="cards strategy-cards">
-            <div class="card">
-              <span>Müdürlük</span>
+            <a class="card action-card" href="#mudurluk-ilerleme" aria-label="Dönemdeki müdürlük {{ departments|length }}">
+              <span>Dönemdeki müdürlük</span>
               <b>{{ departments|length }}</b>
-            </div>
-            <div class="card">
-              <span>Şablon</span>
+            </a>
+            <a class="card action-card" href="#bakanlik-sablonu" aria-label="Bakanlık şablonu {{ 'Doğrulandı' if period.template_status=='verified' else 'Bekliyor' }}">
+              <span>Bakanlık şablonu</span>
               <b class="{{ 'ok' if period.template_status=='verified' else 'bad' }}">{{ 'Doğrulandı' if period.template_status=='verified' else 'Bekliyor' }}</b>
-            </div>
-            <a class="card action-card" href="/activity-mapping?period_id={{ period.id }}">
-              <span>Faaliyet eşleştirme</span>
+            </a>
+            <a class="card action-card" href="/activity-mapping?period_id={{ period.id }}" aria-label="Eşleştirme bekleyen faaliyet {{ unresolved_count }}">
+              <span>Eşleştirme bekleyen faaliyet</span>
               <b class="{{ 'bad' if unresolved_count else 'ok' }}">{{ unresolved_count }}</b>
-              <small>{{ 'Kontrol gerekli' if unresolved_count else 'Kuyruk temiz' }}</small>
+              <small>{{ 'Kontrol gerekli' if unresolved_count else 'Bekleyen yok' }}</small>
             </a>
           </div>
         {% endif %}
@@ -101,7 +101,7 @@
               <button class="button" id="cancelPeriod">İptal</button>
             </div>
           </section>
-          <section class="dashboard-panel">
+          <section class="dashboard-panel" id="bakanlik-sablonu">
             <div class="section-head">
               <div>
                 <h2>Bakanlık şablon kontrolü</h2>
@@ -150,11 +150,11 @@
               <p class="muted empty-state">Bu dönem için veri içe aktarma önizlemesi oluşturulmadı.</p>
             {% endif %}
           </section>
-          <section class="dashboard-panel">
+          <section class="dashboard-panel" id="mudurluk-ilerleme">
             <div class="section-head">
               <div>
                 <h2>Müdürlük ilerleme panosu</h2>
-                <p class="muted">{{ progress_summary.approved }} tamamlandı · {{ progress_summary.submitted }} incelemede · {{ progress_summary.in_progress + progress_summary.ready }} devam ediyor · {{ progress_summary.needs_attention + progress_summary.returned }} uyarı · {{ progress_summary.not_started }} başlamadı</p>
+                <p class="muted">{{ progress_summary.approved }} onaylanan müdürlük · {{ progress_summary.submitted }} incelemede olan müdürlük · {{ progress_summary.in_progress + progress_summary.ready }} veri girişi süren müdürlük · {{ progress_summary.needs_attention + progress_summary.returned }} düzeltme gereken müdürlük · {{ progress_summary.not_started }} veri girişine başlamayan müdürlük · {{ progress_summary.missing_accounts }} kullanıcısı tanımlanmamış müdürlük</p>
               </div>
               <div class="rowbuttons">
                 <a class="button" href="/review?period_id={{ period.id }}">İnceleme kuyruğu</a>
@@ -162,27 +162,32 @@
               </div>
             </div>
             <div class="cards">
-              <div class="card">
-                <span>Tamamlandı</span>
+              <a class="card action-card progress-filter" href="#mudurluk-ilerleme" data-filter-states="approved" aria-pressed="false" aria-label="Onaylanan müdürlük {{ progress_summary.approved }}">
+                <span>Onaylanan müdürlük</span>
                 <b class="ok">{{ progress_summary.approved }}</b>
-              </div>
-              <div class="card">
-                <span>Devam ediyor</span>
+              </a>
+              <a class="card action-card progress-filter" href="#mudurluk-ilerleme" data-filter-states="submitted" aria-pressed="false" aria-label="İnceleme bekleyen müdürlük {{ progress_summary.submitted }}">
+                <span>İnceleme bekleyen müdürlük</span>
+                <b>{{ progress_summary.submitted }}</b>
+              </a>
+              <a class="card action-card progress-filter" href="#mudurluk-ilerleme" data-filter-states="in_progress,ready" aria-pressed="false" aria-label="Veri girişi süren müdürlük {{ progress_summary.in_progress + progress_summary.ready }}">
+                <span>Veri girişi süren müdürlük</span>
                 <b>{{ progress_summary.in_progress + progress_summary.ready }}</b>
-              </div>
-              <div class="card">
-                <span>Uyarı</span>
+              </a>
+              <a class="card action-card progress-filter" href="#mudurluk-ilerleme" data-filter-states="needs_attention,returned" aria-pressed="false" aria-label="Düzeltme gereken müdürlük {{ progress_summary.needs_attention + progress_summary.returned }}">
+                <span>Düzeltme gereken müdürlük</span>
                 <b class="{{ 'bad' if progress_summary.needs_attention + progress_summary.returned else 'ok' }}">{{ progress_summary.needs_attention + progress_summary.returned }}</b>
-              </div>
-              <div class="card">
-                <span>Başlamadı</span>
+              </a>
+              <a class="card action-card progress-filter" href="#mudurluk-ilerleme" data-filter-states="not_started" aria-pressed="false" aria-label="Veri girişine başlamayan müdürlük {{ progress_summary.not_started }}">
+                <span>Veri girişine başlamayan müdürlük</span>
                 <b>{{ progress_summary.not_started }}</b>
-              </div>
-              <div class="card">
-                <span>Kullanıcı hesabı eksik</span>
+              </a>
+              <a class="card action-card" href="/users?period_id={{ period.id }}" aria-label="Kullanıcısı tanımlanmamış müdürlük {{ progress_summary.missing_accounts }}">
+                <span>Kullanıcısı tanımlanmamış müdürlük</span>
                 <b class="{{ 'bad' if progress_summary.missing_accounts else 'ok' }}">{{ progress_summary.missing_accounts }}</b>
-              </div>
+              </a>
             </div>
+            <p class="muted progress-filter-status" id="progressFilterStatus" hidden aria-live="polite"><span data-filter-count></span> müdürlük gösteriliyor · <a href="#mudurluk-ilerleme" data-clear-progress-filter>Tümünü göster</a></p>
             <div class="table-wrap" role="region" aria-label="Müdürlük ilerlemesi" tabindex="0">
               <table>
                 <thead>
@@ -200,7 +205,7 @@
                 </thead>
                 <tbody>
                   {% for row in progress_rows %}
-                    <tr>
+                    <tr data-state="{{ row.state }}">
                       <td>
                         <b>{{ row.department_name }}</b>
                         <div class="smallnote">{{ row.indicator_count }} gösterge · {{ row.activity_count }} faaliyet</div>
@@ -243,5 +248,6 @@
 {% block scripts %}
   {% if user.role=='strategy' %}
     <script src="/report-builder/sections.js"></script>
+    <script src="/static/design/dashboard.js"></script>
   {% endif %}
 {% endblock %}
