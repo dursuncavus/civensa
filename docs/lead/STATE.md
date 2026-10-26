@@ -1,6 +1,6 @@
 # CIVENSA — CURRENT STATE
 
-Updated: 26 Oct 2026, ~17:15 Istanbul (live session CV Lider 30, D-275).
+Updated: 26 Oct 2026, ~17:20 Istanbul (live session CV Lider 30, D-276).
 Rules: AI_WORKING_CONSTITUTION v1.2 (Drive, global) · `HIERARCHY.md` v1.4 · `PROJECT_RULES.md` v1.4 (D-271: PRIOR ART field mandatory in every package) · `BACKUP_LEAD.md` v2.
 Backup log ("Civensa Yedek Kaydı", Drive): no entries, last modified 23 Oct (DOĞRULANDI 26 Oct 05:45).
 Tags: DOĞRULANDI (lead checked) · TARİHSEL (past fact) · BEYAN (owner said) · BELİRSİZ (unknown).
@@ -9,10 +9,11 @@ Tags: DOĞRULANDI (lead checked) · TARİHSEL (past fact) · BEYAN (owner said) 
 Owner opens a new chat with one line: `CV Lider 31 · Claude Opus 5.5 · civensa-lead`. The lead reads this section first and works from it.
 1. CIV-105 PR #150: Copilot fix round requested (comment 6417883652, D-274). When done: check the four fixes, update-branch, CI green, merge; show the owner the screenshots (docs/design/rollout/civ-105/).
 2. CIV-108 (Codex, 022 task-list prototype, D-275): review the PR (only docs/design/prototype + rollout/civ-108), show the five states to the owner; after approval write the implementation task (CIV-109) with PRIOR ART = CIV-107.
-3. Large Codex PRs: first-pass review by DeepSeek (D-274) — give the owner the review package + .diff link, verify findings yourself.
-4. Owner look approval for CIV-104 (#145) still open; CIV-106 merged (1ed8620) — owner saw the screenshots 17:05.
-5. Ali Abi answers: none at 16:00; read the reply when it comes; data/logic packages before UI (D-243).
-6. Next IDs: task CIV-109, decision D-276.
+3. CIV-109 (Copilot, issue #153, D-276): review the PR (labels exact, filter test, only allowed files), update-branch, "@codex review", merge when CI green; show the owner the screenshots.
+4. Large Codex PRs: first-pass review by DeepSeek (D-274) — give the owner the review package + .diff link, verify findings yourself.
+5. Owner look approval for CIV-104 (#145) still open; CIV-106 merged (1ed8620) — owner saw the screenshots 17:05.
+6. Ali Abi answers: none at 16:00; read the reply when it comes; data/logic packages before UI (D-243).
+7. Next IDs: task CIV-110, decision D-277.
 
 ## Claude quota (BEYAN, owner screen 26 Oct 12:48)
 - Weekly 44% at 16:16 Monday (39% at 12:48); at this pace it lasts until the Saturday reset, tight. Offload large reviews to DeepSeek (D-274). October extra usage $40.30 of $45.
@@ -27,6 +28,7 @@ Evidence rule (D-252): one-screen changes → targeted tests + changed-state scr
 | --- | --- | --- | --- |
 | #150 | CIV-105 | Copilot fix round (D-274) | verify fixes, CI, merge |
 | — | CIV-108 | dispatched (Codex), PR not open | lead reviews |
+| — | CIV-109 | issue #153 assigned to Copilot | lead reviews |
 Merged 26 Oct: #148 CIV-106 → 1ed8620 (D-273); #145 CIV-104 → e0df9ce (D-268); #140 CIV-103 → 6efbe25 (D-265); #138 copilot-setup-steps → cbed4d8 (D-264); #136 production environment → d02b7cc; #132 CIV-102 → 873d361.
 
 ## Open — owner

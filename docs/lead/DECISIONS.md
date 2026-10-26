@@ -358,3 +358,8 @@ CIV-105 PR #150 (Codex, de0752a): scope = allowed files only, CI green, behind 0
 
 ## D-275 (26 Oct 2026 ~17:15, lead) — CIV-108 prototype of the 022 task list dispatched
 Codex slot idle after CIV-105. Per D-272 item 1 and D-243 (new pattern → prototype first): package docs/lead/tasks/CIV-108.md — static prototype only (docs/design/prototype), five states, 1440/390. PRIOR ART: CIV-107 / GOV.UK task list. Codex, "Bulut → civensa", GPT-6.1 Sol, effort Medium. First review by the lead (prototype, small); owner approves the look before the implementation task.
+
+## D-276 (26 Oct 2026 ~17:20, owner + lead) — CIV-109: Genel Bakış card labels, "İnceleme bekleyen" count, clickable cards → Copilot
+BEYAN (owner 17:05–17:13): card labels do not say what is counted; cards should open the matching list; owner approved the proposed labels and click targets ("Tamam", 17:13).
+DOĞRULANDI (app/main.py department_progress_overview, dashboard.html): progress cards count departments; `submitted` (İnceleme bekliyor) is counted but has no card → added. Labels: Onaylanan / İnceleme bekleyen / Veri girişi süren / Düzeltme gereken / Veri girişine başlamayan / Kullanıcısı tanımlanmamış müdürlük; Dönemdeki müdürlük; Bakanlık şablonu; Eşleştirme bekleyen faaliyet ("Bekleyen yok"); Gösterge sayısı; Hatası olan gösterge; Gönderim durumu. Progress cards filter the department table (JS, anchor fallback); others link to /users, sections, data entry.
+Package docs/lead/tasks/CIV-109.md; issue #153 assigned to the Copilot cloud agent (assignee copilot-swe-agent[bot], base phase5). Does not touch CIV-108 files.
