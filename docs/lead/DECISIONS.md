@@ -310,3 +310,7 @@ Quota (BEYAN, owner screenshot 12:48): Claude weekly 39% on Monday, forecast to 
 
 ## D-266 (26 Oct 2026 ~14:05 Istanbul, lead) — Copilot round 1 cost: 5 credits
 DOĞRULANDI (owner screenshot, github.com/settings/copilot 14:03): Copilot Pro active; included usage 5 / 1,500 AI credits (≈ $0.05), resets 1 Nov; additional usage not enabled, $0 budget. One small fix round (D-265) cost 5 credits — far below the D-246 estimate of $1–3. Copilot stays the route for small fix rounds; at this rate the monthly allowance is not a constraint.
+
+## D-267 (26 Oct 2026 ~14:10 Istanbul, lead, live session CV Lider 28) — owner approved the looks of CIV-101, CIV-102, CIV-103
+BEYAN (owner 14:10, "görünüm onay"): looks approved for CIV-101 (#129, incl. the 31 header text changes, D-251), CIV-102 (#132, login/password) and CIV-103 (#140, incl. reopen line id removed, "Dışa aktar", "Yıl / Rapor" eyebrow removed). All three are already merged into phase5; no code change follows. Item closed in STATE.md.
+Status check (DOĞRULANDI 14:05): CIV-104 has no PR yet; Ali Abi has not replied (Gmail thread "Civensa – cevabınızı beklediğimiz sorular" has only the sent message). Next UI task (030/029) waits for CIV-104 because both touch shared design-system files.

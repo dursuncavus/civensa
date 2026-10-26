@@ -1,18 +1,18 @@
 # CIVENSA — CURRENT STATE
 
-Updated: 26 Oct 2026, ~14:20 Istanbul (live session CV Lider 27, D-265).
+Updated: 26 Oct 2026, ~14:10 Istanbul (live session CV Lider 28, D-267).
 Rules: AI_WORKING_CONSTITUTION v1.2 (Drive, global) · `HIERARCHY.md` v1.4 · `PROJECT_RULES.md` v1.3 · `BACKUP_LEAD.md` v2.
 Backup log ("Civensa Yedek Kaydı", Drive): no entries, last modified 23 Oct (DOĞRULANDI 26 Oct 05:45).
 Tags: DOĞRULANDI (lead checked) · TARİHSEL (past fact) · BEYAN (owner said) · BELİRSİZ (unknown).
 
 ## Next session — start here (D-253)
-Owner opens a new chat with one line: `CV Lider 28 · Claude Opus 5.5 · civensa-lead`. The lead reads this section first and works from it.
+Owner opens a new chat with one line: `CV Lider 29 · Claude Opus 5.5 · civensa-lead`. The lead reads this section first and works from it.
 1. CIV-104 (Genel Bakış, D-265) dispatched: review its PR; small fixes go through "@copilot" (D-265), then update-branch to run CI.
 2. Copilot round 1 cost 5 of 1,500 monthly credits (D-266); no action.
-3. Ali Abi answers: e-mail sent 26 Oct 07:37Z; read the reply (Gmail "Civensa – cevabınızı beklediğimiz sorular"); record decisions; data/logic packages before UI (D-243).
-4. Next UI task per D-243 after CIV-104: 030/029 İç Kontrol Eylemlerimiz.
-5. Owner: approve the look + text changes of CIV-101 (#129), CIV-102 (#132), CIV-103 (#140).
-6. Next IDs: task CIV-105, decision D-267.
+3. Ali Abi answers: e-mail sent 26 Oct 07:37Z, no reply at 14:05 (D-267); read the reply (Gmail "Civensa – cevabınızı beklediğimiz sorular"); record decisions; data/logic packages before UI (D-243).
+4. Next UI task per D-243 after CIV-104 (not in parallel — shared design-system files): 030/029 İç Kontrol Eylemlerimiz.
+5. Looks of CIV-101/102/103 approved (D-267); closed.
+6. Next IDs: task CIV-105, decision D-268.
 
 ## Claude quota (BEYAN, owner screen 26 Oct 12:48)
 - Weekly 39% on Monday; forecast runs out Friday morning, resets Saturday. October extra usage $40.30 of $45.
@@ -30,7 +30,7 @@ Merged 26 Oct: #140 CIV-103 → 6efbe25 (D-265); #138 copilot-setup-steps → cb
 
 ## Open — owner
 - Public repo: DONE 26 Oct (D-261) — steps 1–7 complete; daily backups encrypted, secrets only in environment "production" (phase5).
-- Look approvals: CIV-101 (#129) look + 31 header changes (D-251); CIV-102 when its PR is ready.
+- Look approvals CIV-101/102/103: DONE 26 Oct (D-267).
 - UI redesign (D-224/D-225): 033/034, 024, 012 on the design system; CIV-100/101 polish; CIV-102 login/password next.
 - (closed) Merges by the lead in live sessions (D-214); Codex "Tam erişim" ON (D-210); plaintext password files not tracked (D-217).
 
