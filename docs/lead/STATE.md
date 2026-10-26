@@ -1,18 +1,18 @@
 # CIVENSA — CURRENT STATE
 
-Updated: 26 Oct 2026, ~22:00 Istanbul (live session CV Lider 31, D-283).
+Updated: 26 Oct 2026, ~23:45 Istanbul (live session CV Lider 32, D-284).
 Rules: AI_WORKING_CONSTITUTION v1.2 (Drive, global) · `HIERARCHY.md` v1.4 · `PROJECT_RULES.md` v1.4 (D-271: PRIOR ART field mandatory in every package) · `BACKUP_LEAD.md` v2.
 Backup log ("Civensa Yedek Kaydı", Drive): no entries, last modified 23 Oct (DOĞRULANDI 26 Oct 05:45).
 Tags: DOĞRULANDI (lead checked) · TARİHSEL (past fact) · BEYAN (owner said) · BELİRSİZ (unknown).
 
 ## Next session — start here (D-253)
-Owner opens a new chat with one line: `CV Lider 32 · Claude Opus 5.5 · civensa-lead`. The lead reads this section first and works from it.
-1. Owner look approval (show screenshots + text-change lists, one message): CIV-109 #154 (docs/design/rollout/civ-109), CIV-111 #161 (civ-111; LOW items in D-282: modal backdrop opaque, "İşlem" header alignment), CIV-113 #163 (civ-113). Also ask once about CIV-104 (#145), probably superseded.
-2. CIV-112 (Codex, 022 task list, dispatched D-283): review against the CIV-108 prototype and the status mapping in the package; strategy HTML must be byte-identical; CI; merge when every check is success and behind 0; DeepSeek first pass if large (D-274).
-3. Second Codex slot is idle: write the next D-243 screen — 023 Müdürlük veri girişi (strategy view of /department/{id}); check overlap with 024 (same template, already on the design system) before writing; if it is only the strategy-role differences, package them. Then backlog LOWs as one Copilot polish task.
-4. Ali Abi answers: none at 22:00; data/logic packages before UI (D-243).
-5. Shard "test (18, 1)" hang: 2 times on 26 Oct (D-278, D-283). If it stalls > 25 min, cancel and update-branch; on a third hang write a CI task.
-6. Next IDs: task CIV-114, decision D-284.
+Owner opens a new chat with one line: `CV Lider 33 · Claude Opus 5.5 · civensa-lead`. The lead reads this section first and works from it.
+1. Review three Codex PRs: CIV-112 #165 (scope exception D-284: one assertion in test_pp_display.py; strategy HTML byte-identical; status mapping), CIV-114 (023 read-only look), CIV-115 (CI timeout; workflow change — reviewed by Claude, different family from Codex). Merge each when every check is success and behind 0.
+2. Owner look approval (screenshots + text-change lists, one message): CIV-109 (#154, docs/design/rollout/civ-109), CIV-111 (#161; LOW in D-282), CIV-113 (#163), then CIV-112 and CIV-114. Ask once about CIV-104 (#145).
+3. After CIV-115 merges: if a test times out, the annotation names it → fix task.
+4. Next D-243 screens: strategy review screens are done (042, 041, 023); write the next queue proposal; LOW backlog as one Copilot polish task.
+5. Ali Abi answers: none at 23:45; data/logic packages before UI (D-243).
+6. Next IDs: task CIV-116, decision D-285.
 
 ## Claude quota (BEYAN, owner screen 26 Oct 12:48)
 - Weekly 47% at 18:14 Monday (session 24%); lasts until the Saturday reset at this pace. Offload large reviews to DeepSeek (D-274).
@@ -25,7 +25,9 @@ Evidence rule (D-252): one-screen changes → targeted tests + changed-state scr
 ## Open pull requests (DOĞRULANDI 26 Oct ~18:35)
 | PR | Task | State | Next action |
 | --- | --- | --- | --- |
-| — | CIV-112 | dispatched to Codex ~22:00 | review, CI, merge |
+| #165 | CIV-112 | Codex fixing one test (D-284) | review, CI, merge |
+| — | CIV-114 | dispatched 23:45 | review, CI, merge |
+| — | CIV-115 | dispatched 23:45 | review, CI, merge |
 Merged 26 Oct: #163 CIV-113 → 88c9dfb; #154 CIV-109 → 34329a7; #161 CIV-111 → 31b00e4 (D-283); #160 CIV-110 → 0b4b333 (D-282); #156 CIV-108 prototype → 633ac07 (D-277); #150 CIV-105 → 7cb58d9 (D-278; all jobs green, D-280); #148 CIV-106 → 1ed8620 (D-273); #145 CIV-104 → e0df9ce (D-268); #140 CIV-103 → 6efbe25 (D-265); #138 copilot-setup-steps → cbed4d8 (D-264); #136 production environment → d02b7cc; #132 CIV-102 → 873d361.
 
 ## Open — owner
