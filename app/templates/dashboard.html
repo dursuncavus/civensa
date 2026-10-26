@@ -162,23 +162,23 @@
               </div>
             </div>
             <div class="cards">
-              <a class="card action-card progress-filter" href="#mudurluk-ilerleme" data-filter-states="approved" aria-pressed="false" aria-label="Onaylanan müdürlük {{ progress_summary.approved }}">
+              <a class="card action-card progress-filter" href="#mudurluk-ilerleme" data-filter-states="approved" aria-label="Onaylanan müdürlük {{ progress_summary.approved }}">
                 <span>Onaylanan müdürlük</span>
                 <b class="ok">{{ progress_summary.approved }}</b>
               </a>
-              <a class="card action-card progress-filter" href="#mudurluk-ilerleme" data-filter-states="submitted" aria-pressed="false" aria-label="İnceleme bekleyen müdürlük {{ progress_summary.submitted }}">
+              <a class="card action-card progress-filter" href="#mudurluk-ilerleme" data-filter-states="submitted" aria-label="İnceleme bekleyen müdürlük {{ progress_summary.submitted }}">
                 <span>İnceleme bekleyen müdürlük</span>
                 <b>{{ progress_summary.submitted }}</b>
               </a>
-              <a class="card action-card progress-filter" href="#mudurluk-ilerleme" data-filter-states="in_progress,ready" aria-pressed="false" aria-label="Veri girişi süren müdürlük {{ progress_summary.in_progress + progress_summary.ready }}">
+              <a class="card action-card progress-filter" href="#mudurluk-ilerleme" data-filter-states="in_progress,ready" aria-label="Veri girişi süren müdürlük {{ progress_summary.in_progress + progress_summary.ready }}">
                 <span>Veri girişi süren müdürlük</span>
                 <b>{{ progress_summary.in_progress + progress_summary.ready }}</b>
               </a>
-              <a class="card action-card progress-filter" href="#mudurluk-ilerleme" data-filter-states="needs_attention,returned" aria-pressed="false" aria-label="Düzeltme gereken müdürlük {{ progress_summary.needs_attention + progress_summary.returned }}">
+              <a class="card action-card progress-filter" href="#mudurluk-ilerleme" data-filter-states="needs_attention,returned" aria-label="Düzeltme gereken müdürlük {{ progress_summary.needs_attention + progress_summary.returned }}">
                 <span>Düzeltme gereken müdürlük</span>
                 <b class="{{ 'bad' if progress_summary.needs_attention + progress_summary.returned else 'ok' }}">{{ progress_summary.needs_attention + progress_summary.returned }}</b>
               </a>
-              <a class="card action-card progress-filter" href="#mudurluk-ilerleme" data-filter-states="not_started" aria-pressed="false" aria-label="Veri girişine başlamayan müdürlük {{ progress_summary.not_started }}">
+              <a class="card action-card progress-filter" href="#mudurluk-ilerleme" data-filter-states="not_started" aria-label="Veri girişine başlamayan müdürlük {{ progress_summary.not_started }}">
                 <span>Veri girişine başlamayan müdürlük</span>
                 <b>{{ progress_summary.not_started }}</b>
               </a>

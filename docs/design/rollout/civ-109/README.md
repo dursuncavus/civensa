@@ -1,6 +1,7 @@
 # CIV-109 · Genel Bakış kartları
 
 Chromium 151 ile 1440×900 ve 390×900 ekranlarda, sentetik verilerle alındı. Her PNG 1.500.000 bayttan küçüktür.
+İlerleme kartlarının ölçülen en yüksek yüksekliği 1280 px genişlikte 100,8 px; test sınırı 120 px'tir.
 
 | Görünüm | 1440 px | 390 px |
 | --- | --- | --- |

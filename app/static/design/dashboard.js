@@ -3,6 +3,11 @@
   if (!section) return;
 
   const cards = [...section.querySelectorAll('.progress-filter[data-filter-states]')];
+  for (const card of cards) {
+    card.setAttribute('role', 'button');
+    card.setAttribute('aria-pressed', 'false');
+  }
+
   const rows = [...section.querySelectorAll('tbody tr[data-state]')];
   const status = section.querySelector('#progressFilterStatus');
   const count = status?.querySelector('[data-filter-count]');
@@ -33,6 +38,12 @@
     card.addEventListener('click', event => {
       event.preventDefault();
       setFilter(card.dataset.filterStates.split(','));
+    });
+    card.addEventListener('keydown', event => {
+      if (event.key === ' ' || event.key === 'Enter') {
+        event.preventDefault();
+        setFilter(card.dataset.filterStates.split(','));
+      }
     });
   }
 

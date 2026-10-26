@@ -238,10 +238,15 @@ def test_021_022_browser_layout_contrast_and_period_actions(browser, dashboard_c
                                   "label: getComputedStyle(el.querySelector('span')).lineHeight, "
                                   "value: getComputedStyle(el.querySelector('b')).lineHeight})"))
             if role == 'strategy':
-                progress_cards = root.locator('.dashboard-main > .dashboard-panel:last-child .cards > *')
+                progress_cards = root.locator('#mudurluk-ilerleme .cards > *')
                 assert row_sizes(progress_cards) == [3, 3]
                 assert progress_cards.count() == 6
-                assert all(card.bounding_box()['height'] <= 160 for card in progress_cards.all())
+                heights = [card.evaluate(
+                    "el => ({label: el.innerText, height: el.getBoundingClientRect().height, "
+                    "lineHeight: getComputedStyle(el.querySelector('span')).lineHeight, "
+                    "labelHeight: el.querySelector('span').getBoundingClientRect().height})"
+                    ) for card in progress_cards.all()]
+                assert all(card['height'] <= 120 for card in heights), heights
             if width == 1440:
                 summary, main = root.locator('.dashboard-summary'), root.locator('.dashboard-main')
                 assert summary.bounding_box()['x'] >= main.bounding_box()['x'] + main.bounding_box()['width']
@@ -380,6 +385,7 @@ def test_021_progress_card_filters_and_no_javascript_fallback(browser, dashboard
             'approved', 'submitted', 'in_progress', 'ready', 'needs_attention', 'returned', 'not_started',
         ]
         filter_cards = page.locator('.progress-filter')
+        assert all(card.get_attribute('role') == 'button' for card in filter_cards.all())
         assert all(card.get_attribute('aria-pressed') == 'false' for card in filter_cards.all())
         state_groups = [
             {'approved'}, {'submitted'}, {'in_progress', 'ready'},
@@ -406,6 +412,13 @@ def test_021_progress_card_filters_and_no_javascript_fallback(browser, dashboard
         page.keyboard.press('Enter')
         assert set(page.locator('#mudurluk-ilerleme tbody tr:visible').evaluate_all(
             'els => els.map(el => el.dataset.state)')) == {'needs_attention', 'returned'}
+        assert filter_cards.nth(3).get_attribute('aria-pressed') == 'true'
+        page.locator('[data-clear-progress-filter]').click()
+        filter_cards.nth(4).focus()
+        page.keyboard.press('Space')
+        assert page.locator('#mudurluk-ilerleme tbody tr:visible').evaluate_all(
+            'els => els.map(el => el.dataset.state)') == ['not_started']
+        assert filter_cards.nth(4).get_attribute('aria-pressed') == 'true'
         page.locator('[data-clear-progress-filter]').click()
         assert page.locator('#mudurluk-ilerleme tbody tr:visible').count() == 7
 
@@ -417,6 +430,10 @@ def test_021_progress_card_filters_and_no_javascript_fallback(browser, dashboard
         context.route('http://testserver/**', serve)
         page = context.new_page()
         page.goto(url)
+        assert all(page.locator('.progress-filter').nth(index).get_attribute('role') is None
+                   for index in range(page.locator('.progress-filter').count()))
+        assert all(page.locator('.progress-filter').nth(index).get_attribute('aria-pressed') is None
+                   for index in range(page.locator('.progress-filter').count()))
         page.locator('.progress-filter').nth(3).click()
         assert page.url.endswith('#mudurluk-ilerleme')
         assert page.locator('#mudurluk-ilerleme tbody tr').count() == 7
