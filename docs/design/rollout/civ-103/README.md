@@ -21,7 +21,7 @@ Uyarı görseli, geçerli yerel yanıt bağlamına eklenen sentetik hata/benzerl
 
 - `tests/fixtures/section_index_009_010.html`: başlangıç şablonunun değiştirilmeden dondurulmuş kopyası. Gerçek route bağlamı aynı ortamda eski ve yeni şablona verilir; tüm form/link/alan/option öznitelikleri ve değerleri, seçili durumlar, alanların gerçek method/action bağı ve sırası, düğme/bağlantı/etiket metinleri karşılaştırılır. Yalnız sunum class/style ve CSRF’nin rastgele değeri envanterden çıkarılır; CSRF alanı ve gerçek oturum değeri ayrıca kontrol edilir.
 - `tests/test_section_index_design.py`: Strateji/müdürlük × tüm/yıl/bölüm/durum/birleşik/boş filtre; iki idare sürümü, onaylı kopya, gerekçeyle açma ve eksik ad fallback’i; bölüm ve sürümlü indirme URL’leri, rol görünürlüğü, iki `role="status"` uyarısı; 1440/390 gruplama, Enter/Space/Tab, filtre yerleşimi, sayfa/kart taşması, metin kontrastı; 012’nin I.C.1/I.C.3/I.C.4 kaynak başlıkları.
-- Mevcut `tests/test_section_editor_design.py` assertion’ları değiştirilmedi. Hedefli testler ve tam PostgreSQL suite sonuçları PR açıklamasında kaydedilir.
+- Mevcut `tests/test_section_editor_design.py` assertion’ları değiştirilmedi. `tests/test_activity_financial_ui.py` içindeki iki tamamlanma metni kontrolü, artık rapor başına tablo olduğu için ilgili idare grubuna daraltıldı; beklenen metinler aynı, tek tablo sayımı eklendi. Hedefli testler ve tam PostgreSQL suite sonuçları PR açıklamasında kaydedilir.
 
 ```sh
 # CIVENSA_TEST_POSTGRES_URL yalnız geçici yerel PostgreSQL 16+ adresidir.
