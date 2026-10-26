@@ -4,7 +4,7 @@
 .section-index-page :is(h2,h3) { font-weight: var(--font-semibold); }
 .section-index-page h2 { font-size: var(--text-section); }
 .section-index-page h3 { font-size: var(--text-card); }
-.section-index-page :is(label,th) { text-transform: uppercase; letter-spacing: normal; }
+.section-index-page :is(label,th) { text-transform: none; letter-spacing: normal; }
 .section-index-page .muted { color: var(--text-secondary); font-size: var(--text-sm); }
 .section-index-page a { color: var(--accent); text-underline-offset: 3px; }
 .section-index-page a:hover { color: var(--accent-hover); }
@@ -25,7 +25,6 @@
 .section-index-page :is(.report-group,.export-report) { min-width: 0; padding: var(--space-4) 0; border-top: 1px solid var(--border); }
 .section-index-page .report-heading { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-3); margin-bottom: var(--space-4); }
 .section-index-page .report-heading :is(p,h3) { margin: 0; }
-.section-index-page .report-heading .muted { text-transform: uppercase; }
 .section-index-page .report-badges { display: flex; flex-wrap: wrap; gap: var(--space-2); }
 .section-index-page :is(.ar-status,.workflow-badge,.approved-badge) { display: inline-flex; padding: var(--space-1) var(--space-2); border-radius: var(--radius); background: var(--surface-muted); color: var(--text-secondary); font-size: var(--text-sm); font-weight: var(--font-medium); }
 .section-index-page :is(.ar-draft,.workflow-draft,.workflow-returned) { background: var(--warning-bg); color: var(--warning); }
@@ -59,6 +58,6 @@
   .section-index-page thead { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
   .section-index-page tr { margin-bottom: var(--space-4); padding: var(--space-3); border: 1px solid var(--border); border-radius: var(--radius); }
   .section-index-page td { padding: var(--space-2) 0; border: 0; }
-  .section-index-page td::before { content: attr(data-label); text-transform: uppercase; display: block; margin-bottom: var(--space-1); color: var(--text-secondary); font-weight: var(--font-medium); }
+  .section-index-page td::before { content: attr(data-label); display: block; margin-bottom: var(--space-1); color: var(--text-secondary); font-weight: var(--font-medium); }
   .section-index-page .export-items { display: grid; grid-template-columns: minmax(0,1fr); }
 }

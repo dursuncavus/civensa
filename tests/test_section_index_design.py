@@ -206,7 +206,16 @@ def test_009_010_grouping_warnings_disclosure_and_mobile(browser, filled_index, 
         assert groups.count() == len(context['reports'])
         for group, expected in zip(groups.all(), context['reports']):
             expect(group.locator('h3')).to_have_text(f'{expected["report"]["year"]} · {expected["report"]["department"]}')
+            expect(group.locator('.report-heading > div > p')).to_have_count(0)
             assert group.locator('tbody tr').count() == len(expected['matches'])
+        assert page.evaluate("""() => {
+          const root = document.querySelector('.section-index-page');
+          const transforms = [...root.querySelectorAll('label, th, .report-heading .muted')]
+            .map(el => getComputedStyle(el).textTransform)
+            .concat([...root.querySelectorAll('td')]
+              .map(el => getComputedStyle(el, '::before').textTransform));
+          return transforms.every(value => value !== 'uppercase');
+        }""")
         summary = page.locator('.section-export > summary').first
         summary.focus(); page.keyboard.press('Enter')
         expect(page.locator('.section-export').first).to_have_attribute('open', '')

@@ -19,7 +19,7 @@
 {% for error in report_errors %}<p class="ar-warning" role="status">{{ error.year }} yılı · Rapor {{ error.document_id }}: {{ error.message }}</p>{% endfor %}
 {% for item in reports %}
 <article class="report-group" aria-labelledby="report-{{ item.report.id }}">
-<header class="report-heading"><div><p class="muted">Yıl / Rapor</p><h3 id="report-{{ item.report.id }}">{{ item.report.year }} · {{ item.report.department }}</h3></div>
+<header class="report-heading"><div><h3 id="report-{{ item.report.id }}">{{ item.report.year }} · {{ item.report.department }}</h3></div>
 <div class="report-badges">{% if item.report.workflow %}<span class="workflow-badge workflow-{{ item.report.workflow.status }}">{{ item.report.workflow.label }}</span>{% endif %}{% if item.report.frozen %}<span class="approved-badge">Onaylı kopya</span>{% endif %}</div></header>
 <table class="ar-table index-table"><thead><tr><th scope="col">Bölüm</th><th scope="col">Durum</th><th scope="col">Sahibi</th><th scope="col">Eksikler</th></tr></thead><tbody>
 {% for s in item.matches %}
