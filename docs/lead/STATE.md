@@ -1,20 +1,18 @@
 # CIVENSA — CURRENT STATE
 
-Updated: 26 Oct 2026, ~18:55 Istanbul (live session CV Lider 31, D-282).
+Updated: 26 Oct 2026, ~22:00 Istanbul (live session CV Lider 31, D-283).
 Rules: AI_WORKING_CONSTITUTION v1.2 (Drive, global) · `HIERARCHY.md` v1.4 · `PROJECT_RULES.md` v1.4 (D-271: PRIOR ART field mandatory in every package) · `BACKUP_LEAD.md` v2.
 Backup log ("Civensa Yedek Kaydı", Drive): no entries, last modified 23 Oct (DOĞRULANDI 26 Oct 05:45).
 Tags: DOĞRULANDI (lead checked) · TARİHSEL (past fact) · BEYAN (owner said) · BELİRSİZ (unknown).
 
 ## Next session — start here (D-253)
 Owner opens a new chat with one line: `CV Lider 32 · Claude Opus 5.5 · civensa-lead`. The lead reads this section first and works from it.
-1. CIV-109 #154 and CIV-111 #161: CI was running at 20:50 (shard "test (18, 1)" slow again). Merge each only when every check on the exact head is success and behind 0; #154 also needs the "@codex review" answer. Then show the owner the screenshots for look approval (CIV-109, CIV-111 incl. text changes).
-2. CIV-113 (041 PP tamamlanma listesi): dispatched to Codex (D-282) → review, CI, merge.
-3. CIV-112 (022 task list): package ready; dispatch to Codex right after #154 merges.
-4. Next in D-243 order: 023 Müdürlük veri girişi (strategy view of /department/{id}) — check overlap with 024 (CIV-0xx, same template) before writing.
-5. Owner look approval for CIV-104 (#145) still open (probably superseded by D-270..D-277 — ask once).
-6. Ali Abi answers: none at 20:50; data/logic packages before UI (D-243).
-7. Shard "test (18, 1)" hung once (D-278) and is slow again: if it stalls > 30 min, cancel and re-run; if it repeats, write a CI task (split shards / find the slow test via --durations).
-8. Next IDs: task CIV-114, decision D-283.
+1. Owner look approval (show screenshots + text-change lists, one message): CIV-109 #154 (docs/design/rollout/civ-109), CIV-111 #161 (civ-111; LOW items in D-282: modal backdrop opaque, "İşlem" header alignment), CIV-113 #163 (civ-113). Also ask once about CIV-104 (#145), probably superseded.
+2. CIV-112 (Codex, 022 task list, dispatched D-283): review against the CIV-108 prototype and the status mapping in the package; strategy HTML must be byte-identical; CI; merge when every check is success and behind 0; DeepSeek first pass if large (D-274).
+3. Second Codex slot is idle: write the next D-243 screen — 023 Müdürlük veri girişi (strategy view of /department/{id}); check overlap with 024 (same template, already on the design system) before writing; if it is only the strategy-role differences, package them. Then backlog LOWs as one Copilot polish task.
+4. Ali Abi answers: none at 22:00; data/logic packages before UI (D-243).
+5. Shard "test (18, 1)" hang: 2 times on 26 Oct (D-278, D-283). If it stalls > 25 min, cancel and update-branch; on a third hang write a CI task.
+6. Next IDs: task CIV-114, decision D-284.
 
 ## Claude quota (BEYAN, owner screen 26 Oct 12:48)
 - Weekly 47% at 18:14 Monday (session 24%); lasts until the Saturday reset at this pace. Offload large reviews to DeepSeek (D-274).
@@ -27,13 +25,11 @@ Evidence rule (D-252): one-screen changes → targeted tests + changed-state scr
 ## Open pull requests (DOĞRULANDI 26 Oct ~18:35)
 | PR | Task | State | Next action |
 | --- | --- | --- | --- |
-| #154 | CIV-109 | ready, CI + @codex review (D-282) | merge when all success |
-| #161 | CIV-111 | CI after lead update-branch | merge when all success |
-| — | CIV-113 | dispatched to Codex ~20:50 | PR expected |
-| — | CIV-112 | package ready | dispatch after #154 |
-Merged 26 Oct: #160 CIV-110 → 0b4b333 (D-282); #156 CIV-108 prototype → 633ac07 (D-277); #150 CIV-105 → 7cb58d9 (D-278; all jobs green, D-280); #148 CIV-106 → 1ed8620 (D-273); #145 CIV-104 → e0df9ce (D-268); #140 CIV-103 → 6efbe25 (D-265); #138 copilot-setup-steps → cbed4d8 (D-264); #136 production environment → d02b7cc; #132 CIV-102 → 873d361.
+| — | CIV-112 | dispatched to Codex ~22:00 | review, CI, merge |
+Merged 26 Oct: #163 CIV-113 → 88c9dfb; #154 CIV-109 → 34329a7; #161 CIV-111 → 31b00e4 (D-283); #160 CIV-110 → 0b4b333 (D-282); #156 CIV-108 prototype → 633ac07 (D-277); #150 CIV-105 → 7cb58d9 (D-278; all jobs green, D-280); #148 CIV-106 → 1ed8620 (D-273); #145 CIV-104 → e0df9ce (D-268); #140 CIV-103 → 6efbe25 (D-265); #138 copilot-setup-steps → cbed4d8 (D-264); #136 production environment → d02b7cc; #132 CIV-102 → 873d361.
 
 ## Open — owner
+- Look approval CIV-109 (#154), CIV-111 (#161), CIV-113 (#163) (D-283).
 - Look approval CIV-104 (#145): 11 text changes + screenshots (D-268).
 - UI redesign (D-224/D-225): continues per D-243 order.
 - (closed) Look approvals CIV-101/102/103 (D-267); public repo (D-261); merges by the lead in live sessions (D-214); Codex "Tam erişim" ON (D-210); plaintext password files not tracked (D-217).
