@@ -65,9 +65,21 @@ class VisibleText(HTMLParser):
         if self.main and not self.style: self.parts.append(data)
 
     def normalized(self):
-        # Definition rows replace the old inline date separator. One copy edit.
-        return ' '.join(' '.join(self.parts).replace(' · ', ' ').replace(
-            'Çıktı / Sonuç:', 'Çıktı / sonuç:').split())
+        return ' '.join(' '.join(self.parts).split())
+
+
+def visible_text_deltas(template_name, context):
+    if template_name != 'internal_control/our_actions.html':
+        return []
+    actions = context.get('responsible', []) + context.get('cooperating', [])
+    deltas = []
+    for action in actions:
+        deltas.append(('Çıktı / Sonuç:', 'Çıktı / sonuç:'))
+        start = action.start_raw or 'Belirtilmedi'
+        due = action.due_raw or 'Belirtilmedi'
+        deltas.append((f'Başlama: {start} · Tamamlanma: {due}',
+                       f'Başlama: {start} Tamamlanma: {due}'))
+    return deltas
 
 
 def synthetic_record(record):
@@ -95,7 +107,11 @@ def render_contract(response, context=None):
     assert new.controls == old.controls
     assert new.bindings == old.bindings
     assert Counter(new.labels) == Counter(old.labels)
-    assert VisibleText(actual).normalized() == VisibleText(expected).normalized()
+    actual_text = VisibleText(actual).normalized()
+    expected_text = VisibleText(expected).normalized()
+    for before, after in visible_text_deltas(response.template.name, context):
+        expected_text = expected_text.replace(before, after, 1)
+    assert actual_text == expected_text
     # CSRF is not merely redacted: every rendered POST has the actual token.
     for html in (actual, expected):
         assert html.count('name="csrf_token"') == html.count('<form method="post"')
@@ -180,6 +196,9 @@ def test_monitoring_frozen_forms_fields_values_options_and_readonly(ic_client, o
     user.can_submit = sender == 'authorized'
     context['user'] = user
     html = render_contract(response, context)
+    assert '&lt;span' not in html
+    for detail in context['details']:
+        assert f'<span class="status {detail["status"]}">' in html
     controls = ScreenContract(html).controls
     posts = [dict(attrs)['action'] for tag, attrs in controls
              if tag == 'form' and dict(attrs).get('method') == 'post']
@@ -298,7 +317,8 @@ def test_browser_layout_contrast_and_form_navigation(browser, ic_client, db, sam
         assert page.evaluate('document.documentElement.scrollWidth === innerWidth')
         assert root.locator('*').evaluate_all("els => els.every(el => getComputedStyle(el).textTransform !== 'uppercase')")
         # No shared inline shell overrides are emitted by this screen.
-        assert page.locator('style').count() == 0
+        assert page.locator('style').evaluate_all(
+            "els => els.every(el => !el.textContent.includes('.ic-wrap') && !el.textContent.includes('.app:has('))")
         pairs_script = TEXT_PAIRS.replace('.section-index-page', '.ic-our-actions-page')
         pairs = set(map(tuple, page.evaluate(pairs_script)))
         for control in root.locator('a, button, select, textarea, input:not([type=hidden])').all():

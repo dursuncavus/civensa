@@ -27,6 +27,7 @@
     {# Add only presentation markup to the macro's escaped heading. #}
     {% set old_heading %}<h2>{{ detail.batch.label }} · {{ states[detail.status] }}</h2>{% endset %}
     {% set new_heading %}<h2 class="batch-heading">{{ detail.batch.label }} · <span class="status {{ detail.status }}">{{ states[detail.status] }}</span></h2>{% endset %}
+    {# This replacement is coupled to the heading markup emitted by entries(). #}
     {{ entries(detail, monitoring_period, user, request, statuses, states)|replace(old_heading, new_heading) }}
     <p class="history-link"><a href="/internal-control/monitoring/batches/{{ detail.batch.id }}">İşlem geçmişini ve katkı notlarını gör</a></p>
   </div>
