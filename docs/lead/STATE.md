@@ -1,18 +1,17 @@
 # CIVENSA — CURRENT STATE
 
-Updated: 26 Oct 2026, ~14:10 Istanbul (live session CV Lider 28, D-267).
+Updated: 26 Oct 2026, ~15:00 Istanbul (live session CV Lider 29, D-268).
 Rules: AI_WORKING_CONSTITUTION v1.2 (Drive, global) · `HIERARCHY.md` v1.4 · `PROJECT_RULES.md` v1.3 · `BACKUP_LEAD.md` v2.
 Backup log ("Civensa Yedek Kaydı", Drive): no entries, last modified 23 Oct (DOĞRULANDI 26 Oct 05:45).
 Tags: DOĞRULANDI (lead checked) · TARİHSEL (past fact) · BEYAN (owner said) · BELİRSİZ (unknown).
 
 ## Next session — start here (D-253)
-Owner opens a new chat with one line: `CV Lider 29 · Claude Opus 5.5 · civensa-lead`. The lead reads this section first and works from it.
-1. CIV-104 (Genel Bakış, D-265) dispatched: review its PR; small fixes go through "@copilot" (D-265), then update-branch to run CI.
-2. Copilot round 1 cost 5 of 1,500 monthly credits (D-266); no action.
-3. Ali Abi answers: e-mail sent 26 Oct 07:37Z, no reply at 14:05 (D-267); read the reply (Gmail "Civensa – cevabınızı beklediğimiz sorular"); record decisions; data/logic packages before UI (D-243).
-4. Next UI task per D-243 after CIV-104 (not in parallel — shared design-system files): 030/029 İç Kontrol Eylemlerimiz.
-5. Looks of CIV-101/102/103 approved (D-267); closed.
-6. Next IDs: task CIV-105, decision D-268.
+Owner opens a new chat with one line: `CV Lider 30 · Claude Opus 5.5 · civensa-lead`. The lead reads this section first and works from it.
+1. CIV-105 (İç Kontrol Eylemlerimiz, D-268) dispatched: review its PR; small fixes through "@copilot" (D-265), then update-branch to run CI.
+2. Owner look approval for CIV-104 (#145, merged e0df9ce): 11 text changes + screenshots in docs/design/rollout/civ-104/. Record the answer.
+3. Ali Abi answers: e-mail sent 26 Oct 07:37Z, no reply at 14:55 (D-268); read the reply (Gmail "Civensa – cevabınızı beklediğimiz sorular"); record decisions; data/logic packages before UI (D-243).
+4. Next UI task per D-243 after CIV-105: strategy review screens (042, 041, 023), one at a time.
+5. Next IDs: task CIV-106, decision D-269.
 
 ## Claude quota (BEYAN, owner screen 26 Oct 12:48)
 - Weekly 39% on Monday; forecast runs out Friday morning, resets Saturday. October extra usage $40.30 of $45.
@@ -22,24 +21,23 @@ Owner opens a new chat with one line: `CV Lider 29 · Claude Opus 5.5 · civensa
 Dispatch format (D-232, D-249): platform + environment ("Bulut → civensa") + exact model (Codex: GPT-6.1 Sol) + effort; title is the first line inside the paste block. Session end: one-line handover (D-253) after this file is rewritten.
 Evidence rule (D-252): one-screen changes → targeted tests + changed-state screenshots + contrast; all-screen capture only when shared files change, committed as a short count summary.
 
-## Open pull requests (DOĞRULANDI 26 Oct ~14:20)
+## Open pull requests (DOĞRULANDI 26 Oct ~15:00)
 | PR | Task | State | Next action |
 | --- | --- | --- | --- |
-| — | CIV-104 | dispatched, PR not open yet | lead reviews |
-Merged 26 Oct: #140 CIV-103 → 6efbe25 (D-265); #138 copilot-setup-steps → cbed4d8 (D-264); #136 production environment → d02b7cc; #132 CIV-102 → 873d361.
+| — | CIV-105 | dispatched, PR not open yet | lead reviews |
+Merged 26 Oct: #145 CIV-104 → e0df9ce (D-268); #140 CIV-103 → 6efbe25 (D-265); #138 copilot-setup-steps → cbed4d8 (D-264); #136 production environment → d02b7cc; #132 CIV-102 → 873d361.
 
 ## Open — owner
-- Public repo: DONE 26 Oct (D-261) — steps 1–7 complete; daily backups encrypted, secrets only in environment "production" (phase5).
-- Look approvals CIV-101/102/103: DONE 26 Oct (D-267).
-- UI redesign (D-224/D-225): 033/034, 024, 012 on the design system; CIV-100/101 polish; CIV-102 login/password next.
-- (closed) Merges by the lead in live sessions (D-214); Codex "Tam erişim" ON (D-210); plaintext password files not tracked (D-217).
+- Look approval CIV-104 (#145): 11 text changes + screenshots (D-268).
+- UI redesign (D-224/D-225): continues per D-243 order.
+- (closed) Look approvals CIV-101/102/103 (D-267); public repo (D-261); merges by the lead in live sessions (D-214); Codex "Tam erişim" ON (D-210); plaintext password files not tracked (D-217).
 
 ## Open queue — lead / scheduled run "Civensa gece kontrol" (05:41 only, D-265)
 1. Scheduled-run merges are refused by the session permission check (D-213, again D-255 on #132) — scheduled runs review and record; live sessions or the owner merge.
-2. Ask-Ali list (13 items) artifact "Ali Abi Soruları" https://claude.ai/artifact/KVuaFCeKzTv9kQGpwRWiz8 ; ChatGPT e-mails it from the owner's Gmail Mon 26 Oct; answers in "CIVENSA-CEVAPLAR v1" format.
+2. Ask-Ali list (13 items) artifact "Ali Abi Soruları" https://claude.ai/artifact/KVuaFCeKzTv9kQGpwRWiz8 ; e-mailed 26 Oct; answers in "CIVENSA-CEVAPLAR v1" format.
 3. D-177 plan conversion, CIV-085, live first load — owner sets the time, live session only.
 4. Measure scheduled run cost; reduce or stop if costly.
 5. D-205 transition leftovers: archive old Drive state/log/rule documents ("ESKİ ... KULLANMAYIN"), add Drive pointer "KAYITLAR GITHUB'DA".
 6. DeepSeek mirror GUNCEL-DURUM.md: not reachable in scheduled runs; the lead refreshes it in the next live session with the Mac linked.
 7. Codex cloud fixes from PR comments: not set up (D-242); fix rounds move to Copilot (D-246/D-248).
-8. LOW backlog for the next 012 task (D-251): "Kaydet" header breaks in the narrow first column; date input display format (BELİRSİZ). 024 (D-250): summary widens the 2027 column — watch only.
+8. LOW backlog: 012 date input display format (BELİRSİZ, D-251); 024 summary widens the 2027 column (D-250); 021 progress table at 390 has no scroll hint (D-268) — watch only.
