@@ -484,6 +484,41 @@ def test_deadline_readonly_and_stale_edits(db, monitoring, monkeypatch):
         m.add_note(db, d['collaborator'], d['period'].id, action_id, 'Geç not')
 
 
+@pytest.mark.parametrize('status', ['draft', 'returned', 'submitted', 'approved', 'closed'])
+@pytest.mark.parametrize('expired', [False, True])
+def test_strategy_forms_unchanged_at_deadline(db, monitoring, client, monkeypatch, status, expired):
+    from app.main import app, require_user
+    from test_ic_our_actions_design import frozen_environment, ScreenContract
+
+    d = monitoring
+    batch = d['body']
+    if status in {'returned', 'submitted', 'approved'}:
+        fill(db, d, batch)
+        m.transition(db, d['strategy'], batch.id, 'submit', m.state(db, batch.id)[1])
+        if status in {'returned', 'approved'}:
+            m.transition(db, d['strategy'], batch.id,
+                         'return' if status == 'returned' else 'approve',
+                         m.state(db, batch.id)[1], 'Sentetik inceleme gerekçesi.')
+        db.commit()
+    if status == 'closed':
+        m.close_period(db, d['strategy'], d['period'].id, 1, 'Sentetik kapatma.')
+        db.commit()
+    deadline = d['period'].deadline
+    monkeypatch.setattr(m, 'today', lambda db: deadline + timedelta(days=1 if expired else 0))
+    app.dependency_overrides[require_user] = lambda: d['strategy']
+    for path in ['/internal-control/monitoring', f'/internal-control/monitoring/batches/{batch.id}']:
+        response = client.get(path)
+        assert response.status_code == 200
+        expected = frozen_environment().get_template(response.template.name).render(response.context)
+        assert response.content == expected.encode()
+        if '/batches/' in path:
+            actions = {dict(attrs)['value'] for tag, attrs in ScreenContract(response.text).controls
+                       if tag == 'button' and dict(attrs).get('name') == 'action'}
+            assert actions == ({'approve', 'return'} if status == 'submitted' else
+                               {'reopen'} if status == 'approved' else
+                               {'submit'} if status in {'draft', 'returned'} and not expired else set())
+
+
 def test_two_simultaneous_opens_accept_one(db, monitoring):
     d = monitoring
     m.close_period(db, d['strategy'], d['period'].id, 1, 'Yeni yarıyıl için kapatıldı.')
