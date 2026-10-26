@@ -363,3 +363,18 @@ Codex slot idle after CIV-105. Per D-272 item 1 and D-243 (new pattern → proto
 BEYAN (owner 17:05–17:13): card labels do not say what is counted; cards should open the matching list; owner approved the proposed labels and click targets ("Tamam", 17:13).
 DOĞRULANDI (app/main.py department_progress_overview, dashboard.html): progress cards count departments; `submitted` (İnceleme bekliyor) is counted but has no card → added. Labels: Onaylanan / İnceleme bekleyen / Veri girişi süren / Düzeltme gereken / Veri girişine başlamayan / Kullanıcısı tanımlanmamış müdürlük; Dönemdeki müdürlük; Bakanlık şablonu; Eşleştirme bekleyen faaliyet ("Bekleyen yok"); Gösterge sayısı; Hatası olan gösterge; Gönderim durumu. Progress cards filter the department table (JS, anchor fallback); others link to /users, sections, data entry.
 Package docs/lead/tasks/CIV-109.md; issue #153 assigned to the Copilot cloud agent (assignee copilot-swe-agent[bot], base phase5). Does not touch CIV-108 files.
+
+## D-277 (26 Oct 2026 ~17:55, owner + lead) — CIV-108 prototype approved; department summary column goes away
+DOĞRULANDI: PR #156 (Codex, b968a44) — only docs/design/prototype/** and docs/design/rollout/civ-108/ changed; five states at 1440/390; task list with text status tags. Lead review: with the task list, two of the three 022 summary cards repeat the steps (Civensa kontrolü = step 2, Gönderim = step 3).
+BEYAN (owner 17:53, "Tamam"): look approved; on the department home remove the right summary column and show the indicator count in step 1 ("Veri girişi · N gösterge"). Strategy summary column unchanged. Prototype merged 633ac07.
+Implementation task (CIV-111) is written after CIV-109 (#154, same template) is merged.
+
+## D-278 (26 Oct 2026 ~18:00, lead) — lead mistake: CIV-105 merged before every CI job finished
+What failed: PR #150 was merged (7cb58d9) while job "test (18, 1)" on head 721f2c2 was still in_progress; the wait loop timed out and the merge condition only checked for the word "failure".
+Why: merge guard tested for absence of failure instead of presence of success on every job.
+Correct approach / prevention: merge only when every check run on the exact head is completed with conclusion success or skipped; a timed-out wait stops without merging. Same rule for lead-record PRs (guard success).
+State: "test (18, 0)" success; "test (18, 1)" still in_progress at 18:35 (started 14:51Z, possibly stuck) → next session verifies; if it fails, revert 7cb58d9 and send the fix round. Changes after the last green round were test-only (Copilot acd1372) plus the artifact restore.
+Also DOĞRULANDI (D-274 backlog item): transition() rejects an IC submit after the deadline (409, clear message) → only the UI button is wrong → CIV-110.
+
+## D-279 (26 Oct 2026 ~18:05, lead) — CIV-110 package: hide "İncelemeye gönder" after the IC entry deadline
+Package docs/lead/tasks/CIV-110.md (shared macro monitoring_shared.html; heading markup untouched for CIV-105; strategy fixtures updated only for the expired case). Codex, "Bulut → civensa", GPT-6.1 Sol, effort Medium. Dispatch only after D-278 test result is green.
