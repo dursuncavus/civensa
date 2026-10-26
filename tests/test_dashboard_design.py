@@ -145,6 +145,30 @@ def test_021_022_browser_layout_contrast_and_period_actions(browser, dashboard_c
         root = page.locator('.dashboard-page')
         assert page.evaluate('document.documentElement.scrollWidth === innerWidth'), page.evaluate("[...document.querySelectorAll('*')].filter(el => el.getBoundingClientRect().right > innerWidth).map(el => [el.tagName, el.className, el.getBoundingClientRect().width])")
         assert root.locator('label, th, .card span').evaluate_all("els => els.every(el => getComputedStyle(el).textTransform === 'none')")
+        top_cards = (root.locator('.strategy-cards > *') if role == 'strategy'
+                     else root.locator('.cards').first.locator(':scope > *'))
+        if width == 1440:
+            for card in top_cards.all():
+                limit = 108 if role == 'strategy' and card.evaluate("el => el.matches('.action-card')") else 88
+                assert card.bounding_box()['height'] <= limit, (
+                    card.inner_text(), card.bounding_box(),
+                    card.evaluate("el => ({className: el.className, padding: getComputedStyle(el).padding, "
+                                  "label: getComputedStyle(el.querySelector('span')).lineHeight, "
+                                  "value: getComputedStyle(el.querySelector('b')).lineHeight})"))
+            if role == 'strategy':
+                assert all(card.bounding_box()['height'] <= 88
+                           for card in root.locator('.dashboard-panel .cards > *').all())
+        else:
+            def row_sizes(cards):
+                rows = {}
+                for card in cards.all():
+                    rows.setdefault(round(card.bounding_box()['y']), []).append(card)
+                return sorted(map(len, rows.values()))
+
+            assert row_sizes(top_cards) == ([2, 2] if role == 'strategy' else [1, 2])
+            if role == 'strategy':
+                assert row_sizes(root.locator('.dashboard-panel .cards > *')) == [1, 2, 2]
+            assert root.locator('.card').evaluate_all('els => els.every(el => el.scrollWidth <= el.clientWidth)')
         pairs_script = TEXT_PAIRS.replace('.section-index-page', '.dashboard-page')
         pairs = set(map(tuple, page.evaluate(pairs_script)))
         for control in root.locator('a, button:not(:disabled), select').all():
@@ -153,8 +177,7 @@ def test_021_022_browser_layout_contrast_and_period_actions(browser, dashboard_c
                 pairs.update(map(tuple, page.evaluate(pairs_script)))
         if role == 'strategy':
             if width == 1440:
-                boxes = root.locator('.strategy-cards > *').all()
-                assert len({round(el.bounding_box()['y']) for el in boxes}) == 1
+                assert len({round(el.bounding_box()['y']) for el in top_cards.all()}) == 1
             expect(page.locator('#newPeriodForm')).to_be_hidden()
             page.locator('#newPeriodBtn').click()
             expect(page.locator('#newPeriodForm')).to_be_visible()
