@@ -384,3 +384,7 @@ DOĞRULANDI: run 40343597275 attempt 1 job "test (18, 1)" was cancelled after 45
 CIV-110 dispatched to Codex ("Bulut → civensa", GPT-6.1 Sol, Medium), package docs/lead/tasks/CIV-110.md.
 CIV-109 PR #154 (Copilot, d2c6c7c): Copilot session ended with failure before its last step; CI not run. Lead review: labels, hrefs, data-state filter and file scope match the package. Fix round sent (comment 6420220469): aria-pressed is invalid on a link → role="button" + aria-pressed set by JS only, Space/Enter; CSS selector by #mudurluk-ilerleme instead of panel order; test loosened (card height 108 → 160) → ≤ 120 px; finish full suite, title, Turkish description, ready for review.
 Ali Abi: no reply at 18:50 (DOĞRULANDI Gmail).
+
+## D-281 (26 Oct 2026 ~19:05 Istanbul, owner + lead) — second Codex slot: CIV-111 (042 İnceleme kuyruğu); 022 task list renumbered CIV-112
+BEYAN (owner 18:55): Codex runs one task while other slots are idle. Decision: dispatch the next D-243 screen in parallel with CIV-110 — 042 İnceleme kuyruğu (/review) restyle, package docs/lead/tasks/CIV-111.md. No shared files with CIV-109 (dashboard) or CIV-110 (IC macro). PRIOR ART: restyle with existing components, CIV-107 findings. Codex, "Bulut → civensa", GPT-6.1 Sol, effort Medium.
+The 022 task-list implementation (D-277), previously called CIV-111 in STATE, becomes CIV-112 (still written after CIV-109 merges).
