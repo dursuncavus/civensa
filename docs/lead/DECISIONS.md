@@ -264,3 +264,9 @@ Decision (payment → owner): recommend raising the October Actions budget from 
 #132 (CIV-102) merged by the lead → 873d361: CI was green on the exact head 02fafab (run 40234825177/40234825282), behind 0, mergeable clean, lead review OK (D-255). Owner still approves the look and the listed text changes.
 Copilot (D-246/D-248) postponed until the repository is public: Copilot's cloud agent runs on GitHub Actions, so on the private repo it would spend the same exhausted budget. Owner does not buy Copilot today.
 Ali Abi answers ("CIVENSA-CEVAPLAR v1"): not in Gmail at 10:45 (DOĞRULANDI).
+
+## D-258 (26 Oct 2026 ~10:42 Istanbul, lead) — D-257 cause was wrong: Actions budget is not used up
+DOĞRULANDI (owner screenshot, Budgets and alerts): Actions budget is $80.00 (not $15), spent $50.69 in October; Codespaces, Packages, Git LFS and AI Credit budgets $0/$0. The budget limit is not reached, so it does not explain the startup failures. D-257's "raise to $25" recommendation is withdrawn (it would have lowered the limit).
+What failed: the lead treated the 18 Oct 75%-of-$15 e-mail as the current budget without checking the live settings. Correct approach: read the current billing page before naming a billing cause. Prevention: billing causes are BELİRSİZ until the owner's current settings screen confirms them.
+Cause of the startup failures: BELİRSİZ again. Next check: Billing Overview and Payment history (a failed payment can stop Actions runs; unverified). Copilot stays postponed until Actions runs again.
+Cost note (DOĞRULANDI): $50.69 Actions spend in October, almost all from "Performance program validation"; making the repo public removes this.
