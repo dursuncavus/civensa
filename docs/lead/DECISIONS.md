@@ -378,3 +378,9 @@ Also DOĞRULANDI (D-274 backlog item): transition() rejects an IC submit after t
 
 ## D-279 (26 Oct 2026 ~18:05, lead) — CIV-110 package: hide "İncelemeye gönder" after the IC entry deadline
 Package docs/lead/tasks/CIV-110.md (shared macro monitoring_shared.html; heading markup untouched for CIV-105; strategy fixtures updated only for the expired case). Codex, "Bulut → civensa", GPT-6.1 Sol, effort Medium. Dispatch only after D-278 test result is green.
+
+## D-280 (26 Oct 2026 ~18:55 Istanbul, lead, live session CV Lider 31) — D-278 closed green; CIV-110 dispatched; CIV-109 fix round
+DOĞRULANDI: run 40343597275 attempt 1 job "test (18, 1)" was cancelled after 45 min (stuck); attempt 2 on 721f2c2 completed success (15:37Z–15:48Z). Both shards green → CIV-105 merge 7cb58d9 stands, no revert.
+CIV-110 dispatched to Codex ("Bulut → civensa", GPT-6.1 Sol, Medium), package docs/lead/tasks/CIV-110.md.
+CIV-109 PR #154 (Copilot, d2c6c7c): Copilot session ended with failure before its last step; CI not run. Lead review: labels, hrefs, data-state filter and file scope match the package. Fix round sent (comment 6420220469): aria-pressed is invalid on a link → role="button" + aria-pressed set by JS only, Space/Enter; CSS selector by #mudurluk-ilerleme instead of panel order; test loosened (card height 108 → 160) → ≤ 120 px; finish full suite, title, Turkish description, ready for review.
+Ali Abi: no reply at 18:50 (DOĞRULANDI Gmail).

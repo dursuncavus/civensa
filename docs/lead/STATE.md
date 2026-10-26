@@ -1,20 +1,18 @@
 # CIVENSA — CURRENT STATE
 
-Updated: 26 Oct 2026, ~18:40 Istanbul (live session CV Lider 30, D-279).
+Updated: 26 Oct 2026, ~18:55 Istanbul (live session CV Lider 31, D-280).
 Rules: AI_WORKING_CONSTITUTION v1.2 (Drive, global) · `HIERARCHY.md` v1.4 · `PROJECT_RULES.md` v1.4 (D-271: PRIOR ART field mandatory in every package) · `BACKUP_LEAD.md` v2.
 Backup log ("Civensa Yedek Kaydı", Drive): no entries, last modified 23 Oct (DOĞRULANDI 26 Oct 05:45).
 Tags: DOĞRULANDI (lead checked) · TARİHSEL (past fact) · BEYAN (owner said) · BELİRSİZ (unknown).
 
 ## Next session — start here (D-253)
-Owner opens a new chat with one line: `CV Lider 31 · Claude Opus 5.5 · civensa-lead`. The lead reads this section first and works from it.
-1. FIRST: CIV-105 was merged early (D-278). Check job "test (18, 1)" on 721f2c2 (run 40343597275). Green → fine. Failed → revert 7cb58d9 on phase5 via a lead PR and send the fix to Copilot. Still running/stuck → re-run that job, decide on its result.
-2. Then dispatch CIV-110 to Codex (package ready, GPT-6.1 Sol, Medium; title "CIV-110 Süre dolunca gönder düğmesi").
-3. CIV-109 PR #154 (Copilot, WIP): review (labels exact, filter test, only allowed files), update-branch, "@codex review", merge only when every check is success; show the owner the screenshots.
-4. After CIV-109 merges: write CIV-111 = 022 task list on the real screen per prototype docs/design/prototype/screens/022-department-home.html, department summary column removed, "Veri girişi · N gösterge" (D-277). PRIOR ART: CIV-107/CIV-108.
-5. Large Codex PRs: first-pass review by DeepSeek (D-274).
-6. Owner look approval for CIV-104 (#145) still open (probably superseded by D-270..D-277 — ask once).
-7. Ali Abi answers: none at 16:00; read the reply when it comes; data/logic packages before UI (D-243).
-8. Next IDs: task CIV-111, decision D-280.
+Owner opens a new chat with one line: `CV Lider 32 · Claude Opus 5.5 · civensa-lead`. The lead reads this section first and works from it.
+1. CIV-110 (Codex, dispatched D-280): review the PR (allowed files, fixtures changed only in the expired case, heading line untouched), CI, "@codex review" not needed (Codex wrote it) → DeepSeek first pass if large (D-274), merge only when every check is success.
+2. CIV-109 PR #154 (Copilot): check the fix round (comment 6420220469); update-branch, run CI, "@codex review" (Copilot model Auto), merge only when every check is success; show the owner the screenshots.
+3. After CIV-109 merges: write CIV-111 = 022 task list on the real screen per prototype docs/design/prototype/screens/022-department-home.html, department summary column removed, "Veri girişi · N gösterge" (D-277). PRIOR ART: CIV-107/CIV-108.
+4. Owner look approval for CIV-104 (#145) still open (probably superseded by D-270..D-277 — ask once).
+5. Ali Abi answers: none at 18:50; read the reply when it comes; data/logic packages before UI (D-243).
+6. Next IDs: task CIV-111, decision D-281.
 
 ## Claude quota (BEYAN, owner screen 26 Oct 12:48)
 - Weekly 47% at 18:14 Monday (session 24%); lasts until the Saturday reset at this pace. Offload large reviews to DeepSeek (D-274).
@@ -27,9 +25,9 @@ Evidence rule (D-252): one-screen changes → targeted tests + changed-state scr
 ## Open pull requests (DOĞRULANDI 26 Oct ~18:35)
 | PR | Task | State | Next action |
 | --- | --- | --- | --- |
-| #154 | CIV-109 | Copilot WIP | review, CI, merge |
-| — | CIV-110 | package ready, not dispatched | after D-278 check |
-Merged 26 Oct: #156 CIV-108 prototype → 633ac07 (D-277); #150 CIV-105 → 7cb58d9 (D-278, one test job pending); #148 CIV-106 → 1ed8620 (D-273); #145 CIV-104 → e0df9ce (D-268); #140 CIV-103 → 6efbe25 (D-265); #138 copilot-setup-steps → cbed4d8 (D-264); #136 production environment → d02b7cc; #132 CIV-102 → 873d361.
+| #154 | CIV-109 | Copilot fix round (D-280) | review, CI, merge |
+| — | CIV-110 | dispatched to Codex 26 Oct ~18:55 | PR expected |
+Merged 26 Oct: #156 CIV-108 prototype → 633ac07 (D-277); #150 CIV-105 → 7cb58d9 (D-278; all jobs green, D-280); #148 CIV-106 → 1ed8620 (D-273); #145 CIV-104 → e0df9ce (D-268); #140 CIV-103 → 6efbe25 (D-265); #138 copilot-setup-steps → cbed4d8 (D-264); #136 production environment → d02b7cc; #132 CIV-102 → 873d361.
 
 ## Open — owner
 - Look approval CIV-104 (#145): 11 text changes + screenshots (D-268).
