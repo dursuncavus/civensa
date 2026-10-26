@@ -1,11 +1,12 @@
-# CIVENSA PROJECT RULES — v1.3
+# CIVENSA PROJECT RULES — v1.4
 
 Status: ACTIVE · Type: Canonical Project Rules · Project: Civensa
 Scope: All Civensa research, analysis, product, UX, architecture, coding, testing, reporting, and multi-AI work
 Single Source of Truth: YES (this file, `docs/lead/PROJECT_RULES.md`)
-Version: 1.3 · Date: 2026-10-24
+Version: 1.4 · Date: 2026-10-26
 Depends on: AI WORKING CONSTITUTION v1.2 (Drive); `docs/lead/HIERARCHY.md` v1.4
 
+Change note (v1.4, D-271): section 24 now enforces the research gate in every task package (mandatory PRIOR ART field). No other rule changed.
 Change note (v1.3, D-205): file moved from Drive into the repository. Sections 17 and 19 point to `docs/lead/` instead of Drive; dependency updated to constitution v1.2 and hierarchy v1.4. No product or engineering rule changed.
 Change note (v1.2): Section 19 replaced. Civensa decision authority moved from ChatGPT/Nexa to Claude at the owner's request on 13 Oct 2026.
 Change note (v1.1): adds explicit Civensa validation terminology, makes the research gate non-optional for significant work, and expands Definition of Done to require end-to-end verification.
@@ -143,6 +144,7 @@ Do not reinterpret a Civensa data-validation problem as authentication or identi
 ## 24. RESEARCH GATE IS NOT OPTIONAL
 For significant Civensa product, architecture, UX, validation, reconciliation, reporting, or workflow decisions, relevant prior-art research must not be skipped.
 Research may be time-boxed and proportional to the decision, but "skip research and build immediately" is not an acceptable default.
+Enforcement (v1.4, D-271): every task package (`docs/lead/tasks/CIV-###.md`) has a PRIOR ART field placed before WORK. It names the research used (task ID / document link and the pattern taken from it) or states in one line why none is needed (e.g. bug fix, restyle of an approved pattern, test-only change). A package with an empty PRIOR ART field is not dispatched. A new screen, a new UI pattern or a new workflow always needs research; the lead sends research to Gemini (idle, already paid) rather than skipping it to save Claude quota.
 
 ## 25. DEFINITION OF DONE
 A Civensa feature is not complete merely because it saves data, validation executes, or the UI displays success/error feedback.
