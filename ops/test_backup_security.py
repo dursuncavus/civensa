@@ -133,5 +133,14 @@ class BackupSecurityTests(unittest.TestCase):
         self.assertEqual(uploads[0]["with"]["path"], "${{ runner.temp }}/gitleaks-full-history-redacted.json")
 
 
+    def test_secret_jobs_run_in_production_environment(self):
+        # D-247: live-database and private-key secrets live only in the
+        # "production" environment, limited to the phase5 branch.
+        for name, job in (("db-backup.yml", "backup"),
+                          ("preprint-backup-rehearsal.yml", "rehearsal"),
+                          ("release-rehearsal.yml", "rehearsal")):
+            self.assertEqual(workflow(name)["jobs"][job].get("environment"), "production", name)
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -11,6 +11,7 @@ jobs:
   rehearsal:
     # Private data and identity are available only on manual trusted runs.
     if: github.event_name == 'workflow_dispatch'
+    environment: production
     runs-on: ubuntu-latest
     timeout-minutes: 30
     services:
