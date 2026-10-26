@@ -326,3 +326,24 @@ CIV-105 (D-243 step 4, 029/030 İç Kontrol Eylemlerimiz, both states of /intern
 Owner (15:02) asked for years newest first on the dashboard period list. DOĞRULANDI: the /dashboard route already orders periods by year descending (app/main.py, `order_by(ReportingPeriod.year.desc())`); the ascending order in the CIV-104 screenshot comes from the synthetic test context only. No change.
 Owner (15:05): the number cards (Dönem, Müdürlük, Şablon … / Gösterge, Civensa kontrolü, Gönderim) take too much space. Decision: compact summary strip — card padding space-3/space-4, value 24px, two cards per row at 390, height ≤ 88 px at 1440 (≤ 108 px with subline). CSS-only, dashboard.css; package docs/lead/tasks/CIV-106.md. This compact strip is the pattern for number cards on every screen moved to the design system later (operations, activity_mapping, users still use old cards).
 Dispatch: first new task sent straight to the Copilot cloud agent by issue assignment (issue #147, assignee Copilot, base phase5) — no owner relay; Codex keeps CIV-105 in parallel (no shared files). The lead reviews Copilot's diff; model used is Auto → "@codex review" if a Claude model wrote it (rule 18).
+
+## D-270 (26 Oct 2026 ~15:35 Istanbul, owner + lead, live session CV Lider 30) — Genel Bakış: number cards in a right summary column
+BEYAN (owner 15:28, 15:35, screenshots of the pre-CIV-106 look): wide screens still look empty; move the cards to the right, stacked, work in the middle; strategy cards also stacked (4 rows).
+Decision: amend CIV-106 in PR #148 by "@copilot" comment (no new task): at ≥ 1280 px `aside.dashboard-summary` (18rem, sticky) on the right, one column of cards for both roles; below 1280 the CIV-106 compact strip stays. Template change limited to a wrapper (same content, links, forms). CIV-107 later showed the top strip is the more common pattern (D-272); the column is kept because it answers the owner's empty-screen complaint and the strip remains below 1280. Owner (16:08) prefers the column; lead agrees.
+DOĞRULANDI (lead review of 5b38fa2): template diff (whitespace ignored) only wraps and moves blocks; screenshots 1440 accepted for 021/022. Fix requested: Copilot shrank progress-panel card padding to 2–4 px to pass the height test → normal padding, 3 columns at ≥ 1280 (comment 6416773693). CI not yet run (Copilot runs need approval; lead runs update-branch).
+
+## D-271 (26 Oct 2026 ~15:45, owner + lead) — lead mistake: screen packages without prior-art research; PRIOR ART field made mandatory
+BEYAN (owner 15:40, 15:42): asked whether competitors' screens were checked; "Amerika'yı yeniden keşfetmeye gerek yok".
+What failed: after the general design research (D-224) the lead wrote screen packages CIV-097..106 from principles and owner feedback only; no comparable product screens were checked (PROJECT_RULES §3, §24; constitution rules 11, 14).
+Why: research was skipped to save Claude quota, although Gemini (research gate, already paid) was idle.
+Correct approach: research before a new screen, pattern or workflow; send it to Gemini.
+Prevention: PROJECT_RULES v1.4 §24 — every package has a PRIOR ART field before WORK (research used, or one line why none is needed); empty field → not dispatched. HIERARCHY §7 package-format line is aligned at the next hierarchy change (needs owner approval); PROJECT_RULES governs meanwhile. BACKUP_LEAD reference updated to PROJECT_RULES v1.4.
+First application: CIV-107 (Gemini Deep Research, docs/lead/tasks/CIV-107.md). CIV-105 and CIV-106 continue (reversible restyles).
+
+## D-272 (26 Oct 2026 ~16:00, lead) — CIV-107 evaluated
+Source: Google Doc "CIV-107 Ekran araştırması" (Gemini, 26 Oct 12:44Z). Quality: medium-weak — 9 products; the three Turkish tools (HDS-V2, KARAD.ARC, Netiket) publish no screenshots (marketing text only); some links are third-party pages (AuditBoard via a blog, Carbon via a template site); one "user complaint" has no source. Acceptance met only formally.
+Usable findings:
+1. Task-list pattern (GOV.UK; also NHS, Ministry of Justice, HMRC design systems — DOĞRULANDI by lead web search, pages exist): steps with a text status answer "what is left". Decision: the department home (022) gets a task list ("Göstergeleri gir → Civensa kontrolü → Gönder" with text statuses from existing data) as the next UI task after CIV-105; its package cites CIV-107.
+2. Summary counters most often sit in a top strip; a right column was not seen. Kept the D-270 column (owner complaint, strip below 1280); revisit when the 022 task list lands.
+3. Submitted/approved records must look locked, not only lose the save button → checked in the CIV-105 review.
+Not adopted now: table + side drawer for action plans (new pattern → prototype first, D-243 rule); traffic-light colour coding (conflicts with D-224).
