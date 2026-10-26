@@ -47,6 +47,8 @@ Yalnız kaldırılan müdürlük kartlarına/paneline bağlı beklentiler deği�
 - Kartların eşit dolgusu, masaüstünde sağ sütun/kart yükseklikleri ve mobilde 2+1 kart dizilimi yalnız stratejide sürer; müdürlükte özet yokluğu ve tek görev listesi doğrulanır.
 - Eski birincil veri giriş düğmesi sayısı ve `.dashboard-issues` için 0/3 renk beklentileri yerine tüm görev durumları ve normal/hover/focus kontrastı doğrulanır.
 
+Kullanıcının onayladığı tek satırlık kapsam istisnası: `tests/test_pp_display.py::test_department_dashboard_status` içindeki `<b>Taslak</b>` kart beklentisi, üçüncü “Gönderim” bağlantısına bağlı `home-send-status` etiketinin draft için “Gönderilmedi” göstermesini doğrulayan beklentiyle değiştirildi. Bu dosyada başka değişiklik yok. İlgili test tek başına PostgreSQL 18 üzerinde geçti (1 test).
+
 Ek testler: a–e ve approved × 1440/390, gerçek rotada ilerleme durumu/sorun sayısı, etiketler, N, hedefler, ol/li, form/düğme yokluğu, yatay taşma, büyük harf dönüşümü, mobil etiket yerleşimi ve JavaScript hataları. Yedi durum için veri girişi eşlemesi ve sıfır sorunlu tamamlanmamış girişte `Bekliyor` ayrıca sınanır. `dashboard_pre_civ112.html` başlangıç dalındaki şablonun değiştirilmemiş kopyasıdır; iki sabit strateji bağlamında UTF-8 HTML baytları karşılaştırılır.
 
 ## Doğrulama sonuçları
