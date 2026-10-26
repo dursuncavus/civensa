@@ -1,18 +1,19 @@
 # CIVENSA — CURRENT STATE
 
-Updated: 26 Oct 2026, ~05:45 Istanbul (scheduled run "Civensa gece kontrol", D-255).
+Updated: 26 Oct 2026, ~08:45 Istanbul (scheduled run "Civensa gece kontrol", D-256).
 Rules: AI_WORKING_CONSTITUTION v1.2 (Drive, global) · `HIERARCHY.md` v1.4 · `PROJECT_RULES.md` v1.3 · `BACKUP_LEAD.md` v2.
 Backup log ("Civensa Yedek Kaydı", Drive): no entries, last modified 23 Oct (DOĞRULANDI 26 Oct 05:45).
 Tags: DOĞRULANDI (lead checked) · TARİHSEL (past fact) · BEYAN (owner said) · BELİRSİZ (unknown).
 
 ## Next session — start here (D-253)
 Owner opens a new chat with one line: `CV Lider 25 · Claude Opus 5.5 · civensa-lead`. The lead reads this section first and works from it.
+0. URGENT (D-256): GitHub Actions does not start any workflow since 25 Oct 21:43Z (startup_failure) — the daily live-database backup (db-backup.yml) did NOT run on 26 Oct 05:10Z (last good backup 25 Oct 05:07Z). Owner checks https://github.com/settings/billing (Actions minutes / spending limit / payment); lead diagnoses first in the live session. Until fixed no PR can get CI, so nothing can be merged under the rules.
 1. PR #132 (CIV-102) is reviewed OK, CI green, behind 0 (D-255); the scheduled run's merge was refused by the permission check. Owner merges https://github.com/dursuncavus/civensa/pull/132 (or the live session does after re-checking behind 0), then approves the look and the listed text changes.
 2. Mon 26 Oct — Ali Abi answers: read Gmail thread "CIVENSA-CEVAPLAR v1"; record decisions; write Codex packages the same day (data/logic fixes come before UI work, D-243). Gemini research/review only if a CRITICAL decision needs it.
 3. Mon 26 Oct — Copilot (D-246/D-248): owner opens https://github.com/settings/copilot ; trial if offered, otherwise Copilot Pro ($10/month). After purchase the lead: verifies and has the owner set the additional-usage budget to $0 (verify the settings path first); writes .github/workflows/copilot-setup-steps.yml (single job copilot-setup-steps: PostgreSQL service, Python deps, Playwright Chromium; must be on the default branch) + "@codex review" + owner-approved merge; updates HIERARCHY.md (Copilot moves from "outside the chain" to a worker for fix rounds, with the gap and acceptance check — owner approval, rule 17). "Require approval for workflow runs" stays ON until public-repo step 7.
 4. Mon 26 Oct — public repo step 3: check the first scheduled phase5 backup run uploads only .age artifacts (night check 08:41 or live session). Then step 4 only with owner approval.
 5. When CIV-102 is merged and Ali's work allows: next UI task per D-243 is 010/009 EK-1 section index; per D-252 bundle related screens and the D-251 LOW items into one task.
-6. Next IDs: task CIV-103, decision D-256.
+6. Next IDs: task CIV-103, decision D-257.
 
 ## Claude quota (BEYAN, owner screen 25 Oct ~10:15)
 - Weekly usage 21% on 25 Oct morning; at that rate it runs out Friday evening (30 Oct). October extra-usage charge: $40.30 of $45 limit.
@@ -32,7 +33,7 @@ Merged this session: #126 CIV-100 → b8e063f (D-250); #129 CIV-101 → b1fcaad 
 - Public repo (D-220/D-222/D-223), in order, each with owner confirmation:
   1. DONE 25 Oct — age secrets set, private key in owner's Passwords app.
   2. DONE 25 Oct (D-228) — default branch is `feature/authorization-workflow-phase5`. `main` and civensa-pilot untouched (Auto-Deploy off, D-227).
-  3. One encrypted backup run verified — first phase5 encrypted run expected 26 Oct; no manual dispatch (live database = escalation).
+  3. One encrypted backup run verified — the 26 Oct 05:10Z scheduled run failed to start (D-256); waits for Actions to work again; no manual dispatch (live database = escalation).
   4. Delete old plaintext backup artifacts (includes civensa-db-backup-20261025-0507Z, D-230) — only after step 3 (D-233), owner approval.
   5. Full-history gitleaks (workflow_dispatch) — must be clean.
   6. Switch repo to public.
