@@ -106,6 +106,7 @@ def test_021_022_frozen_forms_links_hooks_and_role_visibility(dashboard_client, 
     assert ('id="newPeriodBtn"' in html) == (role == 'strategy')
     assert ('Veri girişini aç' in html) == (role == 'department')
     if role == 'strategy':
+        assert '<span>Dönem</span>' not in html
         controls = Contract(html).controls
         activate = [dict(attrs) for tag, attrs in controls if tag == 'button' and dict(attrs).get('data-id') == '9002'][-1]
         assert ('disabled' in activate) == (not verified)
@@ -155,6 +156,9 @@ def test_021_022_browser_layout_contrast_and_period_actions(browser, dashboard_c
             return sorted(map(len, rows.values()))
 
         if width >= 1280:
+            if role == 'strategy':
+                assert top_cards.count() == 3
+            assert len({round(card.bounding_box()['y']) for card in top_cards.all()}) == 3
             for card in top_cards.all():
                 limit = 108 if role == 'strategy' and card.evaluate("el => el.matches('.action-card')") else 88
                 assert card.bounding_box()['height'] <= limit, (
@@ -171,13 +175,11 @@ def test_021_022_browser_layout_contrast_and_period_actions(browser, dashboard_c
                 assert summary.bounding_box()['x'] >= main.bounding_box()['x'] + main.bounding_box()['width']
                 assert abs(summary.bounding_box()['y'] - main.bounding_box()['y']) <= 8
                 assert len({round(card.bounding_box()['x']) for card in top_cards.all()}) == 1
-                assert len({round(card.bounding_box()['y']) for card in top_cards.all()}) == (
-                    4 if role == 'strategy' else 3)
                 first_panel = root.locator('.dashboard-main > .dashboard-panel').first
                 title_bottom = page.locator('.page-header').bounding_box()['y'] + page.locator('.page-header').bounding_box()['height']
                 assert first_panel.bounding_box()['y'] - title_bottom <= 120
         else:
-            assert row_sizes(top_cards) == ([2, 2] if role == 'strategy' else [1, 2])
+            assert row_sizes(top_cards) == [1, 2]
             if role == 'strategy':
                 assert row_sizes(root.locator('.dashboard-panel .cards > *')) == [1, 2, 2]
         assert root.locator('.card').evaluate_all('els => els.every(el => el.scrollWidth <= el.clientWidth)')
@@ -188,8 +190,6 @@ def test_021_022_browser_layout_contrast_and_period_actions(browser, dashboard_c
                 control.hover(); control.focus()
                 pairs.update(map(tuple, page.evaluate(pairs_script)))
         if role == 'strategy':
-            if width == 1440:
-                assert len({round(el.bounding_box()['y']) for el in top_cards.all()}) == 4
             expect(page.locator('#newPeriodForm')).to_be_hidden()
             page.locator('#newPeriodBtn').click()
             expect(page.locator('#newPeriodForm')).to_be_visible()
