@@ -70,7 +70,7 @@ def roles_db(request):
                                 cwd=ROOT, env={**os.environ,
                                     'DATABASE_URL': app_url.render_as_string(hide_password=False),
                                     'MIGRATION_DATABASE_URL': owner_url.render_as_string(hide_password=False)},
-                                capture_output=True, text=True)
+                                capture_output=True, text=True, timeout=180)
         assert result.returncode == 0, 'Owner CLI migration failed (connection details suppressed)'
         yield SimpleNamespace(admin=database, owner=owner, runtime=runtime,
                               owner_url=owner_url, app_url=app_url)
@@ -163,7 +163,7 @@ def test_role_sql_defaults_idempotence_and_read_only_audit(roles_db):
     assert statements[0] == 'SET TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY'
     result = subprocess.run([sys.executable, 'tools/db_privilege_audit.py', '--url-env', 'AUDIT_TEST_URL'],
                             cwd=ROOT, env={**os.environ, 'AUDIT_TEST_URL': db.app_url.render_as_string(hide_password=False)},
-                            capture_output=True, text=True)
+                            capture_output=True, text=True, timeout=180)
     assert result.returncode == 0
     report = json.loads(result.stdout)
     assert report['role'] == 'civensa_app' and report['unsafe_runtime_privileges'] == []
@@ -358,7 +358,7 @@ def test_guard_unavailable_database_fails_closed_without_connection_details(monk
 def test_audit_failure_does_not_print_supplied_url():
     result = subprocess.run([sys.executable, 'tools/db_privilege_audit.py', '--url-env', 'AUDIT_TEST_URL'],
                             cwd=ROOT, env={**os.environ, 'AUDIT_TEST_URL': 'invalid-sensitive-value'},
-                            capture_output=True, text=True)
+                            capture_output=True, text=True, timeout=180)
     assert result.returncode == 1
     assert 'invalid-sensitive-value' not in result.stdout + result.stderr
     assert 'Connection details suppressed' in result.stderr

@@ -16,7 +16,7 @@ def test_populated_v4_migration(tmp_path,backend):
     else:url=f'sqlite:///{tmp_path / "upgrade.db"}'
     env={**os.environ,'DATABASE_URL':url}
     def migrate(rev):
-        result=subprocess.run([sys.executable,'-m','alembic','upgrade',rev],cwd=ROOT,env=env,capture_output=True,text=True)
+        result=subprocess.run([sys.executable,'-m','alembic','upgrade',rev],cwd=ROOT,env=env,capture_output=True,text=True, timeout=180)
         assert result.returncode==0,result.stderr
     migrate('d4f0a1b2c3d4')
     engine=create_engine(url);meta=MetaData();meta.reflect(engine)
@@ -69,7 +69,7 @@ def test_populated_economic_seed_preserves_rows_and_reads_real_upgrade_columns(f
     db.commit()
     result = subprocess.run([sys.executable, '-m', 'alembic', 'upgrade', 'head'], cwd=ROOT,
                             env={**os.environ, 'DATABASE_URL': db.get_bind().url.render_as_string(hide_password=False)},
-                            capture_output=True, text=True)
+                            capture_output=True, text=True, timeout=180)
     assert result.returncode == 0, result.stderr
     after = db.execute(text('SELECT * FROM economic_values ORDER BY id')).mappings().all()
     assert [{k: r[k] for k in before[0]} for r in after] == before
