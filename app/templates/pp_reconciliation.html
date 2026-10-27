@@ -3,7 +3,7 @@
 <section id="pp-reconciliation" aria-labelledby="pp-reconciliation-title">
 <h2 id="pp-reconciliation-title">Maliyet Ara Toplamları ve Kaynak Mutabakatı</h2>
 <p>Güncel faaliyet maliyetleri program → alt program → müdürlük sırasıyla toplanır. Bağlantısı veya tutarı eksik kayıt varsa kısmi toplam gösterilmez ve yayın durur. Kaynak toplamı, bütün alt kayıtların saklanan kaynak tutarlarından oluşur; bulunmaması uyarıdır. Personel ve SGK giderleri kitabın ortak maliyet tablosunda ayrıca gösterilir.</p>
-{% if publication_block_rows %}<p class="warning-panel pp-reconciliation-alert" role="status">{{ publication_block_rows }} satırda yayın engeli var. Ayrıntıyı ilgili satırdaki “Ayrıntı” bağlantısından açın.</p>{% endif %}
+{% if publication_block_rows %}<p class="warning-panel pp-reconciliation-alert">{{ publication_block_rows }} satırda yayın engeli var. Ayrıntıyı ilgili satırdaki “Ayrıntı” bağlantısından açın.</p>{% endif %}
 <div class="table-wrap"><table>
 <thead><tr><th>Program / Alt Program / Müdürlük</th><th>Yıl / Değer Türü</th><th>Hesaplanan (TL)</th><th>Kaynak (TL)</th><th>Fark (TL)</th><th>Durum / Yapılacak İşlem</th></tr></thead>
 <tbody>{% for row in reconciliation %}
