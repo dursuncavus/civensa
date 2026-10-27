@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block page_title %}Gönderim Yetkileri{% endblock %}
+{% block page_subtitle %}{{ department.name }} · Müdür{% endblock %}
+{% block content %}
+<section><h2>PP paketini kim gönderebilir?</h2><p>Müdür olarak kendi müdürlüğünüzün paketini gönderebilirsiniz. Aşağıdaki Personele gönderim yetkisi verebilir veya verdiğiniz yetkiyi kaldırabilirsiniz.</p><p class="muted">Bu yetki yalnızca PP paketini Strateji birimine göndermek içindir. Onay ve iade işlemlerini Strateji Geliştirme Müdürü yapar.</p></section>
+<div class="table-wrap section"><table><thead><tr><th>Personel</th><th>E-posta</th><th>Hesap</th><th>Gönderim yetkisi</th></tr></thead><tbody>
+{% for u in users %}<tr><td><b>{{ u.full_name }}</b></td><td>{{ u.email }}</td><td>{{ 'Etkin' if u.is_active else 'Devre dışı' }}</td><td>{% include "submit_authorization_control.html" %}</td></tr>{% else %}<tr><td colspan="4">Müdürlüğünüzde Personel hesabı yok. Hesap oluşturulması için Strateji birimine başvurun.</td></tr>{% endfor %}
+</tbody></table></div>
+{% endblock %}
