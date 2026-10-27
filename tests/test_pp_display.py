@@ -160,7 +160,7 @@ def test_audit_html_actor_and_system_fallback(client, db, sample):
 def test_department_dashboard_status(client, sample):
     response = client.get(f"/dashboard?period_id={sample['period'].id}")
     assert response.status_code == 200
-    assert "<b>Taslak</b>" in response.text
+    assert 'aria-describedby="home-send-status">Gönderim</a>' in response.text and 'id="home-send-status">Gönderilmedi</span>' in response.text
 
 
 @pytest.mark.postgres

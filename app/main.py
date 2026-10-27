@@ -635,6 +635,10 @@ def dashboard(request: Request, db: Session = Depends(get_db), user: User = Depe
         return templates.TemplateResponse(request, "dashboard.html", {
             "user": user, "period": period, "department": dept, "department_label": period_name(db, period.id, dept), "submission": submission,
             "indicators": indicators, "issues": issues, "notifications": user_notifications(db, user),
+            "department_state": next(
+                row["state"] for row in department_progress_overview(db, period)["rows"]
+                if row["department_id"] == dept.id
+            ),
         })
 
     from .program_service import period_departments
