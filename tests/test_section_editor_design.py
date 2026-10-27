@@ -133,6 +133,13 @@ def test_012_export_audit_focus_and_safe_summary(browser, section_client, db, sa
         page = context.new_page()
         page.on('pageerror', lambda error: errors.append(str(error)))
         page.goto(f'http://testserver/activity-sections/reports/{doc.id}?code=I.A')
+        status_columns = {}
+        for link in page.locator('.ar-tree a').all():
+            box, status = link.bounding_box(), link.locator('small').bounding_box()
+            assert box['width'] <= 44 * 16
+            assert status['x'] + status['width'] <= box['x'] + box['width'] + 1
+            status_columns.setdefault(round(box['x']), []).append(round(status['x']))
+        assert all(max(edges) - min(edges) <= 1 for edges in status_columns.values())
         trigger = page.locator('[data-section-export] > summary')
         trigger.focus(); page.keyboard.press('Enter')
         expect(page.locator('[data-section-export]')).to_have_attribute('open','')

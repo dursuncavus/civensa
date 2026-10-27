@@ -1,0 +1,1587 @@
+{
+  "browser": "151.0.7922.173",
+  "results": [
+    {
+      "scroll": 1440,
+      "viewport": 1440,
+      "summary": [],
+      "records": [],
+      "headings": [
+        {
+          "width": 1046,
+          "height": 27,
+          "x": 321,
+          "right": 1367,
+          "text": "2027 · İdare"
+        },
+        {
+          "width": 1046,
+          "height": 29,
+          "x": 321,
+          "right": 1367,
+          "text": "2027 · Örnek Hizmet Müdürlüğü\nTaslak"
+        },
+        {
+          "width": 1046,
+          "height": 29,
+          "x": 321,
+          "right": 1367,
+          "text": "2027 · Örnek Destek Müdürlüğü\nTaslak"
+        }
+      ],
+      "sections": [],
+      "definitions": [],
+      "screen": "009",
+      "width": 1440,
+      "png": "009-before-1440.png",
+      "bytes": 727679
+    },
+    {
+      "scroll": 390,
+      "viewport": 390,
+      "summary": [],
+      "records": [],
+      "headings": [
+        {
+          "width": 324,
+          "height": 27,
+          "x": 33,
+          "right": 357,
+          "text": "2027 · İdare"
+        },
+        {
+          "width": 324,
+          "height": 29,
+          "x": 33,
+          "right": 357,
+          "text": "2027 · Örnek Hizmet Müdürlüğü\nTaslak"
+        },
+        {
+          "width": 324,
+          "height": 29,
+          "x": 33,
+          "right": 357,
+          "text": "2027 · Örnek Destek Müdürlüğü\nTaslak"
+        }
+      ],
+      "sections": [],
+      "definitions": [],
+      "screen": "009",
+      "width": 390,
+      "png": "009-before-390.png",
+      "bytes": 804197
+    },
+    {
+      "scroll": 1440,
+      "viewport": 1440,
+      "summary": [],
+      "records": [],
+      "headings": [
+        {
+          "width": 1046,
+          "height": 27,
+          "x": 321,
+          "right": 1367,
+          "text": "2027 · İdare"
+        },
+        {
+          "width": 1046,
+          "height": 29,
+          "x": 321,
+          "right": 1367,
+          "text": "2027 · Örnek Hizmet Müdürlüğü\nTaslak"
+        }
+      ],
+      "sections": [],
+      "definitions": [],
+      "screen": "010",
+      "width": 1440,
+      "png": "010-before-1440.png",
+      "bytes": 1455208
+    },
+    {
+      "scroll": 390,
+      "viewport": 390,
+      "summary": [],
+      "records": [],
+      "headings": [
+        {
+          "width": 324,
+          "height": 27,
+          "x": 33,
+          "right": 357,
+          "text": "2027 · İdare"
+        },
+        {
+          "width": 324,
+          "height": 29,
+          "x": 33,
+          "right": 357,
+          "text": "2027 · Örnek Hizmet Müdürlüğü\nTaslak"
+        }
+      ],
+      "sections": [],
+      "definitions": [],
+      "screen": "010",
+      "width": 390,
+      "png": "010-before-390.png",
+      "bytes": 563453
+    },
+    {
+      "scroll": 1440,
+      "viewport": 1440,
+      "summary": [],
+      "records": [],
+      "headings": [],
+      "sections": [
+        {
+          "width": 511,
+          "height": 54,
+          "x": 321,
+          "right": 832,
+          "text": "Üst yönetici sunuşu\nBoş"
+        },
+        {
+          "width": 511,
+          "height": 54,
+          "x": 321,
+          "right": 832,
+          "text": "Yönetici özeti\nBoş"
+        },
+        {
+          "width": 511,
+          "height": 54,
+          "x": 321,
+          "right": 832,
+          "text": "I- Genel bilgiler\nBoş"
+        },
+        {
+          "width": 511,
+          "height": 54,
+          "x": 321,
+          "right": 832,
+          "text": "A- Misyon ve Vizyon\nTaslak"
+        },
+        {
+          "width": 511,
+          "height": 54,
+          "x": 321,
+          "right": 832,
+          "text": "B- Yetki, Görev ve Sorumluluklar\nBoş"
+        },
+        {
+          "width": 511,
+          "height": 54,
+          "x": 321,
+          "right": 832,
+          "text": "C- İdareye İlişkin Bilgiler\nBoş"
+        },
+        {
+          "width": 511,
+          "height": 54,
+          "x": 321,
+          "right": 832,
+          "text": "1- Fiziksel Yapı\nBoş"
+        },
+        {
+          "width": 511,
+          "height": 54,
+          "x": 321,
+          "right": 832,
+          "text": "2- Teşkilat Yapısı\nBoş"
+        },
+        {
+          "width": 511,
+          "height": 54,
+          "x": 321,
+          "right": 832,
+          "text": "3- Teknoloji ve Bilişim Altyapısı\nBoş"
+        },
+        {
+          "width": 511,
+          "height": 54,
+          "x": 321,
+          "right": 832,
+          "text": "4- İnsan Kaynakları\nBoş"
+        },
+        {
+          "width": 511,
+          "height": 54,
+          "x": 321,
+          "right": 832,
+          "text": "5- Sunulan Hizmetler\nBoş"
+        },
+        {
+          "width": 511,
+          "height": 54,
+          "x": 321,
+          "right": 832,
+          "text": "6- Yönetim ve İç Kontrol Sistemi\nBoş"
+        },
+        {
+          "width": 511,
+          "height": 54,
+          "x": 321,
+          "right": 832,
+          "text": "D- Diğer Hususlar\nBoş"
+        },
+        {
+          "width": 511,
+          "height": 54,
+          "x": 321,
+          "right": 832,
+          "text": "II- Amaçlar ve hedefler\nBoş"
+        },
+        {
+          "width": 511,
+          "height": 54,
+          "x": 321,
+          "right": 832,
+          "text": "A- Temel Politika ve Öncelikler\nBoş"
+        },
+        {
+          "width": 511,
+          "height": 54,
+          "x": 321,
+          "right": 832,
+          "text": "B- İdarenin Stratejik Planında Yer Alan Amaç ve Hedefler\nBoş"
+        },
+        {
+          "width": 511,
+          "height": 54,
+          "x": 321,
+          "right": 832,
+          "text": "C- Diğer Hususlar\nBoş"
+        },
+        {
+          "width": 511,
+          "height": 54,
+          "x": 321,
+          "right": 832,
+          "text": "III- Faaliyetlere ilişkin bilgi ve değerlendirmeler\nBoş"
+        },
+        {
+          "width": 511,
+          "height": 54,
+          "x": 321,
+          "right": 832,
+          "text": "A- Malî Bilgiler\nBoş"
+        },
+        {
+          "width": 511,
+          "height": 54,
+          "x": 856,
+          "right": 1367,
+          "text": "1- Bütçe Uygulama Sonuçları\nTaslak"
+        },
+        {
+          "width": 511,
+          "height": 54,
+          "x": 856,
+          "right": 1367,
+          "text": "2- Temel Malî Tablolara İlişkin Açıklamalar\nBoş"
+        },
+        {
+          "width": 511,
+          "height": 54,
+          "x": 856,
+          "right": 1367,
+          "text": "3- Malî Denetim Sonuçları\nBoş"
+        },
+        {
+          "width": 511,
+          "height": 54,
+          "x": 856,
+          "right": 1367,
+          "text": "4- Diğer Hususlar\nBoş"
+        },
+        {
+          "width": 511,
+          "height": 54,
+          "x": 856,
+          "right": 1367,
+          "text": "B- Performans Bilgileri\nBoş"
+        },
+        {
+          "width": 511,
+          "height": 54,
+          "x": 856,
+          "right": 1367,
+          "text": "1- Program, Alt Program, Faaliyet Bilgileri\nBoş"
+        },
+        {
+          "width": 511,
+          "height": 54,
+          "x": 856,
+          "right": 1367,
+          "text": "2- Performans Sonuçlarının Değerlendirilmesi\nBoş"
+        },
+        {
+          "width": 511,
+          "height": 67,
+          "x": 856,
+          "right": 1367,
+          "text": "i. Alt program hedef ve göstergeleriyle ilgili gerçekleşme sonuçları ve değerlendirmeler\nBoş"
+        },
+        {
+          "width": 511,
+          "height": 54,
+          "x": 856,
+          "right": 1367,
+          "text": "ii. Performans denetim sonuçları\nBoş"
+        },
+        {
+          "width": 511,
+          "height": 54,
+          "x": 856,
+          "right": 1367,
+          "text": "3- Stratejik Plan Değerlendirme Tabloları\nBoş"
+        },
+        {
+          "width": 511,
+          "height": 54,
+          "x": 856,
+          "right": 1367,
+          "text": "4- Performans Bilgi Sisteminin Değerlendirilmesi\nBoş"
+        },
+        {
+          "width": 511,
+          "height": 54,
+          "x": 856,
+          "right": 1367,
+          "text": "5- Diğer Hususlar\nBoş"
+        },
+        {
+          "width": 511,
+          "height": 54,
+          "x": 856,
+          "right": 1367,
+          "text": "IV- Kurumsal kabiliyet ve kapasitenin değerlendirilmesi\nBoş"
+        },
+        {
+          "width": 511,
+          "height": 54,
+          "x": 856,
+          "right": 1367,
+          "text": "A- Üstünlükler\nBoş"
+        },
+        {
+          "width": 511,
+          "height": 54,
+          "x": 856,
+          "right": 1367,
+          "text": "B- Zayıflıklar\nBoş"
+        },
+        {
+          "width": 511,
+          "height": 54,
+          "x": 856,
+          "right": 1367,
+          "text": "C- Değerlendirme\nBoş"
+        },
+        {
+          "width": 511,
+          "height": 54,
+          "x": 856,
+          "right": 1367,
+          "text": "V- Öneri ve tedbirler\nBoş"
+        },
+        {
+          "width": 511,
+          "height": 54,
+          "x": 856,
+          "right": 1367,
+          "text": "Ekler\nBoş"
+        }
+      ],
+      "definitions": [],
+      "screen": "011",
+      "width": 1440,
+      "png": "011-before-1440.png",
+      "bytes": 313861
+    },
+    {
+      "scroll": 390,
+      "viewport": 390,
+      "summary": [],
+      "records": [],
+      "headings": [],
+      "sections": [
+        {
+          "width": 324,
+          "height": 54,
+          "x": 33,
+          "right": 357,
+          "text": "Üst yönetici sunuşu\nBoş"
+        },
+        {
+          "width": 324,
+          "height": 54,
+          "x": 33,
+          "right": 357,
+          "text": "Yönetici özeti\nBoş"
+        },
+        {
+          "width": 324,
+          "height": 54,
+          "x": 33,
+          "right": 357,
+          "text": "I- Genel bilgiler\nBoş"
+        },
+        {
+          "width": 324,
+          "height": 54,
+          "x": 33,
+          "right": 357,
+          "text": "A- Misyon ve Vizyon\nTaslak"
+        },
+        {
+          "width": 324,
+          "height": 54,
+          "x": 33,
+          "right": 357,
+          "text": "B- Yetki, Görev ve Sorumluluklar\nBoş"
+        },
+        {
+          "width": 324,
+          "height": 54,
+          "x": 33,
+          "right": 357,
+          "text": "C- İdareye İlişkin Bilgiler\nBoş"
+        },
+        {
+          "width": 324,
+          "height": 54,
+          "x": 33,
+          "right": 357,
+          "text": "1- Fiziksel Yapı\nBoş"
+        },
+        {
+          "width": 324,
+          "height": 54,
+          "x": 33,
+          "right": 357,
+          "text": "2- Teşkilat Yapısı\nBoş"
+        },
+        {
+          "width": 324,
+          "height": 54,
+          "x": 33,
+          "right": 357,
+          "text": "3- Teknoloji ve Bilişim Altyapısı\nBoş"
+        },
+        {
+          "width": 324,
+          "height": 54,
+          "x": 33,
+          "right": 357,
+          "text": "4- İnsan Kaynakları\nBoş"
+        },
+        {
+          "width": 324,
+          "height": 54,
+          "x": 33,
+          "right": 357,
+          "text": "5- Sunulan Hizmetler\nBoş"
+        },
+        {
+          "width": 324,
+          "height": 54,
+          "x": 33,
+          "right": 357,
+          "text": "6- Yönetim ve İç Kontrol Sistemi\nBoş"
+        },
+        {
+          "width": 324,
+          "height": 54,
+          "x": 33,
+          "right": 357,
+          "text": "D- Diğer Hususlar\nBoş"
+        },
+        {
+          "width": 324,
+          "height": 54,
+          "x": 33,
+          "right": 357,
+          "text": "II- Amaçlar ve hedefler\nBoş"
+        },
+        {
+          "width": 324,
+          "height": 54,
+          "x": 33,
+          "right": 357,
+          "text": "A- Temel Politika ve Öncelikler\nBoş"
+        },
+        {
+          "width": 324,
+          "height": 108,
+          "x": 33,
+          "right": 357,
+          "text": "B- İdarenin Stratejik Planında Yer Alan Amaç ve Hedefler\nBoş"
+        },
+        {
+          "width": 324,
+          "height": 54,
+          "x": 33,
+          "right": 357,
+          "text": "C- Diğer Hususlar\nBoş"
+        },
+        {
+          "width": 324,
+          "height": 108,
+          "x": 33,
+          "right": 357,
+          "text": "III- Faaliyetlere ilişkin bilgi ve değerlendirmeler\nBoş"
+        },
+        {
+          "width": 324,
+          "height": 54,
+          "x": 33,
+          "right": 357,
+          "text": "A- Malî Bilgiler\nBoş"
+        },
+        {
+          "width": 324,
+          "height": 54,
+          "x": 33,
+          "right": 357,
+          "text": "1- Bütçe Uygulama Sonuçları\nTaslak"
+        },
+        {
+          "width": 324,
+          "height": 87,
+          "x": 33,
+          "right": 357,
+          "text": "2- Temel Malî Tablolara İlişkin Açıklamalar\nBoş"
+        },
+        {
+          "width": 324,
+          "height": 54,
+          "x": 33,
+          "right": 357,
+          "text": "3- Malî Denetim Sonuçları\nBoş"
+        },
+        {
+          "width": 324,
+          "height": 54,
+          "x": 33,
+          "right": 357,
+          "text": "4- Diğer Hususlar\nBoş"
+        },
+        {
+          "width": 324,
+          "height": 54,
+          "x": 33,
+          "right": 357,
+          "text": "B- Performans Bilgileri\nBoş"
+        },
+        {
+          "width": 324,
+          "height": 87,
+          "x": 33,
+          "right": 357,
+          "text": "1- Program, Alt Program, Faaliyet Bilgileri\nBoş"
+        },
+        {
+          "width": 324,
+          "height": 108,
+          "x": 33,
+          "right": 357,
+          "text": "2- Performans Sonuçlarının Değerlendirilmesi\nBoş"
+        },
+        {
+          "width": 324,
+          "height": 129,
+          "x": 33,
+          "right": 357,
+          "text": "i. Alt program hedef ve göstergeleriyle ilgili gerçekleşme sonuçları ve değerlendirmeler\nBoş"
+        },
+        {
+          "width": 324,
+          "height": 54,
+          "x": 33,
+          "right": 357,
+          "text": "ii. Performans denetim sonuçları\nBoş"
+        },
+        {
+          "width": 324,
+          "height": 87,
+          "x": 33,
+          "right": 357,
+          "text": "3- Stratejik Plan Değerlendirme Tabloları\nBoş"
+        },
+        {
+          "width": 324,
+          "height": 108,
+          "x": 33,
+          "right": 357,
+          "text": "4- Performans Bilgi Sisteminin Değerlendirilmesi\nBoş"
+        },
+        {
+          "width": 324,
+          "height": 54,
+          "x": 33,
+          "right": 357,
+          "text": "5- Diğer Hususlar\nBoş"
+        },
+        {
+          "width": 324,
+          "height": 108,
+          "x": 33,
+          "right": 357,
+          "text": "IV- Kurumsal kabiliyet ve kapasitenin değerlendirilmesi\nBoş"
+        },
+        {
+          "width": 324,
+          "height": 54,
+          "x": 33,
+          "right": 357,
+          "text": "A- Üstünlükler\nBoş"
+        },
+        {
+          "width": 324,
+          "height": 54,
+          "x": 33,
+          "right": 357,
+          "text": "B- Zayıflıklar\nBoş"
+        },
+        {
+          "width": 324,
+          "height": 54,
+          "x": 33,
+          "right": 357,
+          "text": "C- Değerlendirme\nBoş"
+        },
+        {
+          "width": 324,
+          "height": 54,
+          "x": 33,
+          "right": 357,
+          "text": "V- Öneri ve tedbirler\nBoş"
+        },
+        {
+          "width": 324,
+          "height": 54,
+          "x": 33,
+          "right": 357,
+          "text": "Ekler\nBoş"
+        }
+      ],
+      "definitions": [],
+      "screen": "011",
+      "width": 390,
+      "png": "011-before-390.png",
+      "bytes": 306481
+    },
+    {
+      "scroll": 1440,
+      "viewport": 1440,
+      "summary": [],
+      "records": [],
+      "headings": [],
+      "sections": [
+        {
+          "width": 511,
+          "height": 54,
+          "x": 321,
+          "right": 832,
+          "text": "Yönetici özeti\nBoş"
+        },
+        {
+          "width": 511,
+          "height": 54,
+          "x": 321,
+          "right": 832,
+          "text": "I- Genel bilgiler\nBoş"
+        },
+        {
+          "width": 511,
+          "height": 54,
+          "x": 321,
+          "right": 832,
+          "text": "A- Misyon ve Vizyon\nTaslak"
+        },
+        {
+          "width": 511,
+          "height": 54,
+          "x": 321,
+          "right": 832,
+          "text": "B- Yetki, Görev ve Sorumluluklar\nBoş"
+        },
+        {
+          "width": 511,
+          "height": 54,
+          "x": 321,
+          "right": 832,
+          "text": "C- İdareye İlişkin Bilgiler\nBoş"
+        },
+        {
+          "width": 511,
+          "height": 54,
+          "x": 321,
+          "right": 832,
+          "text": "1- Fiziksel Yapı\nTaslak"
+        },
+        {
+          "width": 511,
+          "height": 54,
+          "x": 321,
+          "right": 832,
+          "text": "2- Teşkilat Yapısı\nBoş"
+        },
+        {
+          "width": 511,
+          "height": 54,
+          "x": 321,
+          "right": 832,
+          "text": "3- Teknoloji ve Bilişim Altyapısı\nBoş"
+        },
+        {
+          "width": 511,
+          "height": 54,
+          "x": 321,
+          "right": 832,
+          "text": "4- İnsan Kaynakları\nBoş"
+        },
+        {
+          "width": 511,
+          "height": 54,
+          "x": 321,
+          "right": 832,
+          "text": "5- Sunulan Hizmetler\nBoş"
+        },
+        {
+          "width": 511,
+          "height": 54,
+          "x": 321,
+          "right": 832,
+          "text": "6- Yönetim ve İç Kontrol Sistemi\nBoş"
+        },
+        {
+          "width": 511,
+          "height": 54,
+          "x": 321,
+          "right": 832,
+          "text": "D- Diğer Hususlar\nBoş"
+        },
+        {
+          "width": 511,
+          "height": 54,
+          "x": 321,
+          "right": 832,
+          "text": "II- Amaçlar ve hedefler\nBoş"
+        },
+        {
+          "width": 511,
+          "height": 54,
+          "x": 321,
+          "right": 832,
+          "text": "A- Temel Politika ve Öncelikler\nBoş"
+        },
+        {
+          "width": 511,
+          "height": 54,
+          "x": 321,
+          "right": 832,
+          "text": "B- İdarenin Stratejik Planında Yer Alan Amaç ve Hedefler\nBoş"
+        },
+        {
+          "width": 511,
+          "height": 54,
+          "x": 321,
+          "right": 832,
+          "text": "C- Diğer Hususlar\nBoş"
+        },
+        {
+          "width": 511,
+          "height": 54,
+          "x": 321,
+          "right": 832,
+          "text": "III- Faaliyetlere ilişkin bilgi ve değerlendirmeler\nBoş"
+        },
+        {
+          "width": 511,
+          "height": 54,
+          "x": 321,
+          "right": 832,
+          "text": "A- Malî Bilgiler\nBoş"
+        },
+        {
+          "width": 511,
+          "height": 54,
+          "x": 856,
+          "right": 1367,
+          "text": "1- Bütçe Uygulama Sonuçları\nBoş"
+        },
+        {
+          "width": 511,
+          "height": 54,
+          "x": 856,
+          "right": 1367,
+          "text": "2- Temel Malî Tablolara İlişkin Açıklamalar\nBoş"
+        },
+        {
+          "width": 511,
+          "height": 54,
+          "x": 856,
+          "right": 1367,
+          "text": "3- Malî Denetim Sonuçları\nBoş"
+        },
+        {
+          "width": 511,
+          "height": 54,
+          "x": 856,
+          "right": 1367,
+          "text": "4- Diğer Hususlar\nBoş"
+        },
+        {
+          "width": 511,
+          "height": 54,
+          "x": 856,
+          "right": 1367,
+          "text": "B- Performans Bilgileri\nBoş"
+        },
+        {
+          "width": 511,
+          "height": 54,
+          "x": 856,
+          "right": 1367,
+          "text": "1- Program, Alt Program, Faaliyet Bilgileri\nBoş"
+        },
+        {
+          "width": 511,
+          "height": 54,
+          "x": 856,
+          "right": 1367,
+          "text": "2- Performans Sonuçlarının Değerlendirilmesi\nBoş"
+        },
+        {
+          "width": 511,
+          "height": 67,
+          "x": 856,
+          "right": 1367,
+          "text": "i. Alt program hedef ve göstergeleriyle ilgili gerçekleşme sonuçları ve değerlendirmeler\nHazır"
+        },
+        {
+          "width": 511,
+          "height": 54,
+          "x": 856,
+          "right": 1367,
+          "text": "ii. Performans denetim sonuçları\nBoş"
+        },
+        {
+          "width": 511,
+          "height": 54,
+          "x": 856,
+          "right": 1367,
+          "text": "3- Stratejik Plan Değerlendirme Tabloları\nBoş"
+        },
+        {
+          "width": 511,
+          "height": 54,
+          "x": 856,
+          "right": 1367,
+          "text": "4- Performans Bilgi Sisteminin Değerlendirilmesi\nBoş"
+        },
+        {
+          "width": 511,
+          "height": 54,
+          "x": 856,
+          "right": 1367,
+          "text": "5- Diğer Hususlar\nBoş"
+        },
+        {
+          "width": 511,
+          "height": 54,
+          "x": 856,
+          "right": 1367,
+          "text": "IV- Kurumsal kabiliyet ve kapasitenin değerlendirilmesi\nBoş"
+        },
+        {
+          "width": 511,
+          "height": 54,
+          "x": 856,
+          "right": 1367,
+          "text": "A- Üstünlükler\nBoş"
+        },
+        {
+          "width": 511,
+          "height": 54,
+          "x": 856,
+          "right": 1367,
+          "text": "B- Zayıflıklar\nBoş"
+        },
+        {
+          "width": 511,
+          "height": 54,
+          "x": 856,
+          "right": 1367,
+          "text": "C- Değerlendirme\nBoş"
+        },
+        {
+          "width": 511,
+          "height": 54,
+          "x": 856,
+          "right": 1367,
+          "text": "V- Öneri ve tedbirler\nBoş"
+        },
+        {
+          "width": 511,
+          "height": 54,
+          "x": 856,
+          "right": 1367,
+          "text": "Ekler\nBoş"
+        }
+      ],
+      "definitions": [],
+      "screen": "012",
+      "width": 1440,
+      "png": "012-before-1440.png",
+      "bytes": 266279
+    },
+    {
+      "scroll": 390,
+      "viewport": 390,
+      "summary": [],
+      "records": [],
+      "headings": [],
+      "sections": [
+        {
+          "width": 324,
+          "height": 54,
+          "x": 33,
+          "right": 357,
+          "text": "Yönetici özeti\nBoş"
+        },
+        {
+          "width": 324,
+          "height": 54,
+          "x": 33,
+          "right": 357,
+          "text": "I- Genel bilgiler\nBoş"
+        },
+        {
+          "width": 324,
+          "height": 54,
+          "x": 33,
+          "right": 357,
+          "text": "A- Misyon ve Vizyon\nTaslak"
+        },
+        {
+          "width": 324,
+          "height": 54,
+          "x": 33,
+          "right": 357,
+          "text": "B- Yetki, Görev ve Sorumluluklar\nBoş"
+        },
+        {
+          "width": 324,
+          "height": 54,
+          "x": 33,
+          "right": 357,
+          "text": "C- İdareye İlişkin Bilgiler\nBoş"
+        },
+        {
+          "width": 324,
+          "height": 54,
+          "x": 33,
+          "right": 357,
+          "text": "1- Fiziksel Yapı\nTaslak"
+        },
+        {
+          "width": 324,
+          "height": 54,
+          "x": 33,
+          "right": 357,
+          "text": "2- Teşkilat Yapısı\nBoş"
+        },
+        {
+          "width": 324,
+          "height": 54,
+          "x": 33,
+          "right": 357,
+          "text": "3- Teknoloji ve Bilişim Altyapısı\nBoş"
+        },
+        {
+          "width": 324,
+          "height": 54,
+          "x": 33,
+          "right": 357,
+          "text": "4- İnsan Kaynakları\nBoş"
+        },
+        {
+          "width": 324,
+          "height": 54,
+          "x": 33,
+          "right": 357,
+          "text": "5- Sunulan Hizmetler\nBoş"
+        },
+        {
+          "width": 324,
+          "height": 54,
+          "x": 33,
+          "right": 357,
+          "text": "6- Yönetim ve İç Kontrol Sistemi\nBoş"
+        },
+        {
+          "width": 324,
+          "height": 54,
+          "x": 33,
+          "right": 357,
+          "text": "D- Diğer Hususlar\nBoş"
+        },
+        {
+          "width": 324,
+          "height": 54,
+          "x": 33,
+          "right": 357,
+          "text": "II- Amaçlar ve hedefler\nBoş"
+        },
+        {
+          "width": 324,
+          "height": 54,
+          "x": 33,
+          "right": 357,
+          "text": "A- Temel Politika ve Öncelikler\nBoş"
+        },
+        {
+          "width": 324,
+          "height": 108,
+          "x": 33,
+          "right": 357,
+          "text": "B- İdarenin Stratejik Planında Yer Alan Amaç ve Hedefler\nBoş"
+        },
+        {
+          "width": 324,
+          "height": 54,
+          "x": 33,
+          "right": 357,
+          "text": "C- Diğer Hususlar\nBoş"
+        },
+        {
+          "width": 324,
+          "height": 108,
+          "x": 33,
+          "right": 357,
+          "text": "III- Faaliyetlere ilişkin bilgi ve değerlendirmeler\nBoş"
+        },
+        {
+          "width": 324,
+          "height": 54,
+          "x": 33,
+          "right": 357,
+          "text": "A- Malî Bilgiler\nBoş"
+        },
+        {
+          "width": 324,
+          "height": 54,
+          "x": 33,
+          "right": 357,
+          "text": "1- Bütçe Uygulama Sonuçları\nBoş"
+        },
+        {
+          "width": 324,
+          "height": 87,
+          "x": 33,
+          "right": 357,
+          "text": "2- Temel Malî Tablolara İlişkin Açıklamalar\nBoş"
+        },
+        {
+          "width": 324,
+          "height": 54,
+          "x": 33,
+          "right": 357,
+          "text": "3- Malî Denetim Sonuçları\nBoş"
+        },
+        {
+          "width": 324,
+          "height": 54,
+          "x": 33,
+          "right": 357,
+          "text": "4- Diğer Hususlar\nBoş"
+        },
+        {
+          "width": 324,
+          "height": 54,
+          "x": 33,
+          "right": 357,
+          "text": "B- Performans Bilgileri\nBoş"
+        },
+        {
+          "width": 324,
+          "height": 87,
+          "x": 33,
+          "right": 357,
+          "text": "1- Program, Alt Program, Faaliyet Bilgileri\nBoş"
+        },
+        {
+          "width": 324,
+          "height": 108,
+          "x": 33,
+          "right": 357,
+          "text": "2- Performans Sonuçlarının Değerlendirilmesi\nBoş"
+        },
+        {
+          "width": 324,
+          "height": 129,
+          "x": 33,
+          "right": 357,
+          "text": "i. Alt program hedef ve göstergeleriyle ilgili gerçekleşme sonuçları ve değerlendirmeler\nHazır"
+        },
+        {
+          "width": 324,
+          "height": 54,
+          "x": 33,
+          "right": 357,
+          "text": "ii. Performans denetim sonuçları\nBoş"
+        },
+        {
+          "width": 324,
+          "height": 87,
+          "x": 33,
+          "right": 357,
+          "text": "3- Stratejik Plan Değerlendirme Tabloları\nBoş"
+        },
+        {
+          "width": 324,
+          "height": 108,
+          "x": 33,
+          "right": 357,
+          "text": "4- Performans Bilgi Sisteminin Değerlendirilmesi\nBoş"
+        },
+        {
+          "width": 324,
+          "height": 54,
+          "x": 33,
+          "right": 357,
+          "text": "5- Diğer Hususlar\nBoş"
+        },
+        {
+          "width": 324,
+          "height": 108,
+          "x": 33,
+          "right": 357,
+          "text": "IV- Kurumsal kabiliyet ve kapasitenin değerlendirilmesi\nBoş"
+        },
+        {
+          "width": 324,
+          "height": 54,
+          "x": 33,
+          "right": 357,
+          "text": "A- Üstünlükler\nBoş"
+        },
+        {
+          "width": 324,
+          "height": 54,
+          "x": 33,
+          "right": 357,
+          "text": "B- Zayıflıklar\nBoş"
+        },
+        {
+          "width": 324,
+          "height": 54,
+          "x": 33,
+          "right": 357,
+          "text": "C- Değerlendirme\nBoş"
+        },
+        {
+          "width": 324,
+          "height": 54,
+          "x": 33,
+          "right": 357,
+          "text": "V- Öneri ve tedbirler\nBoş"
+        },
+        {
+          "width": 324,
+          "height": 54,
+          "x": 33,
+          "right": 357,
+          "text": "Ekler\nBoş"
+        }
+      ],
+      "definitions": [],
+      "screen": "012",
+      "width": 390,
+      "png": "012-before-390.png",
+      "bytes": 261137
+    },
+    {
+      "scroll": 1440,
+      "viewport": 1440,
+      "summary": [
+        {
+          "width": 288,
+          "height": 82.796875,
+          "x": 1104,
+          "right": 1392,
+          "text": "Dönemdeki müdürlük\n3"
+        },
+        {
+          "width": 288,
+          "height": 82.796875,
+          "x": 1104,
+          "right": 1392,
+          "text": "Bakanlık şablonu\nDoğrulandı"
+        },
+        {
+          "width": 288,
+          "height": 103.796875,
+          "x": 1104,
+          "right": 1392,
+          "text": "Eşleştirme bekleyen faaliyet\n1\nKontrol gerekli"
+        }
+      ],
+      "records": [],
+      "headings": [],
+      "sections": [],
+      "definitions": [],
+      "screen": "021",
+      "width": 1440,
+      "png": "021-before-1440.png",
+      "bytes": 221272
+    },
+    {
+      "scroll": 390,
+      "viewport": 390,
+      "summary": [
+        {
+          "width": 173,
+          "height": 82.796875,
+          "x": 16,
+          "right": 189,
+          "text": "Dönemdeki müdürlük\n3"
+        },
+        {
+          "width": 173,
+          "height": 82.796875,
+          "x": 201,
+          "right": 374,
+          "text": "Bakanlık şablonu\nDoğrulandı"
+        },
+        {
+          "width": 173,
+          "height": 127.796875,
+          "x": 16,
+          "right": 189,
+          "text": "Eşleştirme bekleyen faaliyet\n1\nKontrol gerekli"
+        }
+      ],
+      "records": [],
+      "headings": [],
+      "sections": [],
+      "definitions": [],
+      "screen": "021",
+      "width": 390,
+      "png": "021-before-390.png",
+      "bytes": 197912
+    },
+    {
+      "scroll": 1440,
+      "viewport": 1440,
+      "summary": [],
+      "records": [],
+      "headings": [],
+      "sections": [],
+      "definitions": [],
+      "screen": "022",
+      "width": 1440,
+      "png": "022-before-1440.png",
+      "bytes": 75891
+    },
+    {
+      "scroll": 390,
+      "viewport": 390,
+      "summary": [],
+      "records": [],
+      "headings": [],
+      "sections": [],
+      "definitions": [],
+      "screen": "022",
+      "width": 390,
+      "png": "022-before-390.png",
+      "bytes": 71645
+    },
+    {
+      "scroll": 1440,
+      "viewport": 1440,
+      "summary": [],
+      "records": [
+        {
+          "width": 1046,
+          "height": 55,
+          "x": 321,
+          "right": 1367,
+          "text": "Yerel Hizmetler Programı / Erişilebilir Hizmetler\nTamamlanan hizmet sayısı\n1 kontrol"
+        }
+      ],
+      "headings": [],
+      "sections": [],
+      "definitions": [],
+      "screen": "024",
+      "width": 1440,
+      "png": "024-before-1440.png",
+      "bytes": 122076
+    },
+    {
+      "scroll": 390,
+      "viewport": 390,
+      "summary": [],
+      "records": [
+        {
+          "width": 324,
+          "height": 100,
+          "x": 33,
+          "right": 357,
+          "text": "Yerel Hizmetler Programı / Erişilebilir Hizmetler\nTamamlanan hizmet sayısı\n1 kontrol"
+        }
+      ],
+      "headings": [],
+      "sections": [],
+      "definitions": [],
+      "screen": "024",
+      "width": 390,
+      "png": "024-before-390.png",
+      "bytes": 124656
+    },
+    {
+      "scroll": 1440,
+      "viewport": 1440,
+      "summary": [],
+      "records": [],
+      "headings": [],
+      "sections": [],
+      "definitions": [],
+      "screen": "029",
+      "width": 1440,
+      "png": "029-before-1440.png",
+      "bytes": 131844
+    },
+    {
+      "scroll": 390,
+      "viewport": 390,
+      "summary": [],
+      "records": [],
+      "headings": [],
+      "sections": [],
+      "definitions": [],
+      "screen": "029",
+      "width": 390,
+      "png": "029-before-390.png",
+      "bytes": 123391
+    },
+    {
+      "scroll": 1440,
+      "viewport": 1440,
+      "summary": [],
+      "records": [],
+      "headings": [],
+      "sections": [],
+      "definitions": [],
+      "screen": "030",
+      "width": 1440,
+      "png": "030-before-1440.png",
+      "bytes": 168819
+    },
+    {
+      "scroll": 390,
+      "viewport": 390,
+      "summary": [],
+      "records": [],
+      "headings": [],
+      "sections": [],
+      "definitions": [],
+      "screen": "030",
+      "width": 390,
+      "png": "030-before-390.png",
+      "bytes": 157528
+    },
+    {
+      "scroll": 1440,
+      "viewport": 1440,
+      "summary": [],
+      "records": [],
+      "headings": [],
+      "sections": [],
+      "definitions": [],
+      "screen": "033",
+      "width": 1440,
+      "png": "033-before-1440.png",
+      "bytes": 110352
+    },
+    {
+      "scroll": 390,
+      "viewport": 390,
+      "summary": [],
+      "records": [],
+      "headings": [],
+      "sections": [],
+      "definitions": [],
+      "screen": "033",
+      "width": 390,
+      "png": "033-before-390.png",
+      "bytes": 110676
+    },
+    {
+      "scroll": 1440,
+      "viewport": 1440,
+      "summary": [],
+      "records": [],
+      "headings": [],
+      "sections": [],
+      "definitions": [],
+      "screen": "034",
+      "width": 1440,
+      "png": "034-before-1440.png",
+      "bytes": 99533
+    },
+    {
+      "scroll": 390,
+      "viewport": 390,
+      "summary": [],
+      "records": [],
+      "headings": [],
+      "sections": [],
+      "definitions": [],
+      "screen": "034",
+      "width": 390,
+      "png": "034-before-390.png",
+      "bytes": 100549
+    },
+    {
+      "scroll": 1440,
+      "viewport": 1440,
+      "summary": [],
+      "records": [],
+      "headings": [],
+      "sections": [],
+      "definitions": [
+        {
+          "width": 1012,
+          "height": 88,
+          "x": 338,
+          "right": 1350,
+          "text": "Tamam\niçerik var.\nBoş\nkayıt var, içerik yok.\nEksik\nkayıt yok."
+        }
+      ],
+      "screen": "041",
+      "width": 1440,
+      "png": "041-before-1440.png",
+      "bytes": 528985
+    },
+    {
+      "scroll": 390,
+      "viewport": 390,
+      "summary": [],
+      "records": [],
+      "headings": [],
+      "sections": [],
+      "definitions": [
+        {
+          "width": 290,
+          "height": 88,
+          "x": 50,
+          "right": 340,
+          "text": "Tamam\niçerik var.\nBoş\nkayıt var, içerik yok.\nEksik\nkayıt yok."
+        }
+      ],
+      "screen": "041",
+      "width": 390,
+      "png": "041-before-390.png",
+      "bytes": 334101
+    },
+    {
+      "scroll": 1440,
+      "viewport": 1440,
+      "summary": [],
+      "records": [],
+      "headings": [],
+      "sections": [],
+      "definitions": [],
+      "screen": "042",
+      "width": 1440,
+      "png": "042-before-1440.png",
+      "bytes": 88209
+    },
+    {
+      "scroll": 390,
+      "viewport": 390,
+      "summary": [],
+      "records": [],
+      "headings": [],
+      "sections": [],
+      "definitions": [],
+      "screen": "042",
+      "width": 390,
+      "png": "042-before-390.png",
+      "bytes": 75942
+    },
+    {
+      "scroll": 1440,
+      "viewport": 1440,
+      "summary": [],
+      "records": [],
+      "headings": [],
+      "sections": [],
+      "definitions": [],
+      "screen": "046",
+      "width": 1440,
+      "png": "046-before-1440.png",
+      "bytes": 83809
+    },
+    {
+      "scroll": 390,
+      "viewport": 390,
+      "summary": [],
+      "records": [],
+      "headings": [],
+      "sections": [],
+      "definitions": [],
+      "screen": "046",
+      "width": 390,
+      "png": "046-before-390.png",
+      "bytes": 78885
+    },
+    {
+      "scroll": 1440,
+      "viewport": 1440,
+      "summary": [],
+      "records": [],
+      "headings": [],
+      "sections": [],
+      "definitions": [
+        {
+          "width": 996,
+          "height": 152,
+          "x": 346,
+          "right": 1342,
+          "text": "Durum\nDevam ediyor\nGerçekleşme oranı\n%50\nAçıklama\nEğitimin ilk oturumu tamamlandı.\nTamamlanmama nedeni\nİkinci oturum gelecek dönemde yapılacak.\nKanıt\nSentetik eğitim tutanağı 2027/1"
+        }
+      ],
+      "screen": "030-approved",
+      "width": 1440,
+      "png": "030-approved-before-1440.png",
+      "bytes": 140309
+    },
+    {
+      "scroll": 390,
+      "viewport": 390,
+      "summary": [],
+      "records": [],
+      "headings": [],
+      "sections": [],
+      "definitions": [
+        {
+          "width": 290,
+          "height": 361,
+          "x": 50,
+          "right": 340,
+          "text": "Durum\nDevam ediyor\nGerçekleşme oranı\n%50\nAçıklama\nEğitimin ilk oturumu tamamlandı.\nTamamlanmama nedeni\nİkinci oturum gelecek dönemde yapılacak.\nKanıt\nSentetik eğitim tutanağı 2027/1"
+        }
+      ],
+      "screen": "030-approved",
+      "width": 390,
+      "png": "030-approved-before-390.png",
+      "bytes": 134021
+    }
+  ]
+}
