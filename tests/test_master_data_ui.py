@@ -51,7 +51,9 @@ def test_master_data_browser_creation_error_preservation_and_period_responsibili
             form = page.locator('form[action="/structure/departments"]')
             form.locator('[name=name]').fill('İşletme ve İştirakler Müdürlüğü')
             form.get_by_role('button', name='Müdürlük oluştur').click()
-            expect(page.get_by_text('İşletme ve İştirakler Müdürlüğü', exact=True).first).to_be_visible()
+            expect(page.get_by_role('region', name='Müdürlükler').get_by_label(
+                'İşletme ve İştirakler Müdürlüğü yeni adı', exact=True
+            )).to_have_value('İşletme ve İştirakler Müdürlüğü')
             form = page.locator('form[action="/structure/departments"]')
             form.locator('[name=name]').fill('Park Ve Bahçeler Müdürlüğü')
             form.get_by_role('button', name='Müdürlük oluştur').click()

@@ -24,14 +24,14 @@
         {% for item in operations %}
           <tr>
             <td>
-              <a href="/budget-reallocations/{{ item.id }}">#{{ item.id }} · İncele</a>
+              <a href="/budget-reallocations/{{ item.id }}">{{ operation_labels[item.id] }}</a>
             </td>
             <td>{{ item.year }}</td>
             <td>{{ references[item.reference_type] }}</td>
             <td>{{ item.reference_date }} / {{ item.reference_number }}</td>
             <td>
               {% if item.reverses_id %}
-                <a href="/budget-reallocations/{{ item.reverses_id }}">#{{ item.reverses_id }} için telafi</a>
+                <a href="/budget-reallocations/{{ item.reverses_id }}">{{ reversal_labels.get(item.id, 'Telafi işlemi') }}</a>
               {% else %}
                 —
               {% endif %}

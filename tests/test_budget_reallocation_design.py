@@ -3,11 +3,15 @@ from hashlib import sha256
 from html.parser import HTMLParser
 import os
 from pathlib import Path
+import re
 from types import SimpleNamespace
 from urllib.parse import urlsplit
+from decimal import Decimal
 
 import pytest
 from playwright.sync_api import expect
+from sqlalchemy import select
+from app.models import BudgetOperation, BudgetOperationLine, Department, DepartmentScope
 
 from tests.test_budget_reallocation import budget
 from tests.test_released_permissions import actors, http
@@ -22,7 +26,13 @@ HASHES = {
 }
 JS_CLASSES = {'leg', 'department', 'direction', 'input-mode', 'leg-amount', 'remove-leg',
               'category-choice', 'activity-choice', 'table-wrap'}
-TITLE_CHANGES = {'Bütçe Aktarma': 'Bütçe aktarma', 'Yeni Bütçe Aktarması': 'Yeni bütçe aktarması'}
+TITLE_CHANGES = {
+    'Bütçe Aktarma': 'Bütçe aktarma',
+    'Yeni Bütçe Aktarması': 'Yeni bütçe aktarması',
+    '#9202 · İncele': 'Fen İşleri → Park ve Bahçeler ve 2 müdürlük daha · 5.000.000,00 TL',
+    '#9201 · İncele': 'Fen İşleri → Park ve Bahçeler · 5.000.000,00 TL',
+    '#9201 için telafi': 'Telafi: Meclis kararı 2026-10-01 / 2026/123',
+}
 
 
 class Contract(HTMLParser):
@@ -76,6 +86,13 @@ def scenario(response, empty=False):
             SimpleNamespace(id=9201, year=2027, reference_type='mayor_instruction',
                 reference_date='2026-10-01', reference_number='2026/123', reverses_id=None),
         ]
+        context['operation_labels'] = {
+            9202: 'Fen İşleri → Park ve Bahçeler ve 2 müdürlük daha · 5.000.000,00 TL',
+            9201: 'Fen İşleri → Park ve Bahçeler · 5.000.000,00 TL',
+        }
+        context['reversal_labels'] = {
+            9202: 'Telafi: Meclis kararı 2026-10-01 / 2026/123',
+        }
     return context
 
 
@@ -99,6 +116,63 @@ def test_frozen_contract(http, budget, screen, empty):
     # Includes every header (also the blank remove header), option, link and label.
     assert new.text == old.text
     assert 'budget-reallocation.css' not in client.get('/dashboard').text
+
+
+def test_list_summaries_use_operation_lines_and_reference_not_ids(db, http, budget, actors):
+    strategy_department = db.get(Department, actors['strategy_director'].department_id)
+    departments = db.scalars(select(Department).where(
+        Department.organization_id == strategy_department.organization_id).order_by(Department.id)).all()
+    departments = departments[:3]
+    names = ['Fen İşleri', 'Park ve Bahçeler', 'Temizlik İşleri']
+    for department, name in zip(departments, names):
+        department.name = name
+        scope = db.scalar(select(DepartmentScope).where(
+            DepartmentScope.period_id == budget['period_id'],
+            DepartmentScope.department_id == department.id))
+        if scope:
+            scope.display_name = name
+        else:
+            db.add(DepartmentScope(period_id=budget['period_id'], department_id=department.id,
+                display_name=name, status='required'))
+    fourth = Department(organization_id=strategy_department.organization_id, name='Ulaşım Müdürlüğü')
+    db.add(fourth)
+    db.flush()
+    participants = [*departments, fourth]
+
+    def operation(reference_number, reverses_id=None):
+        item = BudgetOperation(organization_id=strategy_department.organization_id,
+            period_id=budget['period_id'], actor_id=actors['strategy_director'].id,
+            reverses_id=reverses_id, year=budget['year'], value_kind='budget', phase='before_adoption',
+            reference_type='mayor_instruction', reference_date='2026-10-01',
+            reference_number=reference_number, reason='Sentetik test aktarımı.',
+            request_json='{}', preview_json='{}')
+        db.add(item)
+        db.flush()
+        return item
+
+    def line(operation_id, department_id, before, after, index):
+        db.add(BudgetOperationLine(operation_id=operation_id, department_id=department_id,
+            value_table='economic_values', value_id=index, label='Test değeri', funding_type='inside',
+            before=Decimal(before), after=Decimal(after), before_json='{}', after_json='{}'))
+
+    two_leg = operation('2026/123')
+    line(two_leg.id, departments[0].id, '5000000', '0', 1)
+    line(two_leg.id, departments[1].id, '0', '5000000', 2)
+    four_leg = operation('2026/124', two_leg.id)
+    line(four_leg.id, participants[0].id, '2500000', '0', 3)
+    line(four_leg.id, participants[1].id, '2500000', '0', 4)
+    line(four_leg.id, participants[2].id, '0', '2500000', 5)
+    line(four_leg.id, participants[3].id, '0', '2500000', 6)
+    db.commit()
+
+    client = http('strategy_director')
+    response = client.get('/budget-reallocations')
+    assert response.status_code == 200
+    visible = ' '.join(Contract(response.text).text)
+    assert 'Fen İşleri → Park ve Bahçeler · 5.000.000,00 TL' in visible
+    assert 'Fen İşleri → Temizlik İşleri ve 2 müdürlük daha · 5.000.000,00 TL' in visible
+    assert 'Telafi: Başkanlık talimatı 2026-10-01 / 2026/123' in visible
+    assert not re.search(r'#\d+', visible)
 
 
 @pytest.mark.parametrize('width', [1440, 390])
@@ -146,7 +220,9 @@ def test_browser_evidence_and_contract(browser, http, budget, width, version):
                     assert row.bounding_box()['width'] <= 44 * 16 + 1
 
         def capture(name):
-            folder = os.getenv('CIVENSA_CIV129_SCREENSHOTS')
+            folder = os.getenv('CIVENSA_CIV138_SCREENSHOTS')
+            if not name.startswith('017-rows'):
+                return
             if folder:
                 target = Path(folder)
                 target.mkdir(parents=True, exist_ok=True)
@@ -166,7 +242,16 @@ def test_browser_evidence_and_contract(browser, http, budget, width, version):
                 expect(wrap).to_be_visible()
                 wrap.evaluate('el => el.scrollLeft = 0')
             if not empty:
-                expect(page.get_by_role('link', name='#9201 için telafi')).to_have_attribute('href', '/budget-reallocations/9201')
+                if version == 'after':
+                    listing = page.locator('.budget-reallocation-page')
+                    expect(listing.get_by_role('link', name='Fen İşleri → Park ve Bahçeler · 5.000.000,00 TL')).to_be_visible()
+                    expect(listing.get_by_role('link', name='Fen İşleri → Park ve Bahçeler ve 2 müdürlük daha · 5.000.000,00 TL')).to_be_visible()
+                    expect(listing.get_by_role('link', name='Telafi: Meclis kararı 2026-10-01 / 2026/123')).to_have_attribute(
+                        'href', '/budget-reallocations/9201')
+                    assert '#9201' not in listing.inner_text() and '#9202' not in listing.inner_text()
+                else:
+                    expect(page.get_by_role('link', name='#9201 için telafi')).to_have_attribute(
+                        'href', '/budget-reallocations/9201')
             capture('017-empty' if empty else '017-rows')
         render('/budget-reallocations/new')
         expect(page.locator('#budget-error')).to_be_hidden()

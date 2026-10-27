@@ -23,13 +23,36 @@
         <p class="muted">Yalnız şema, kayıt bütünlüğü ve temel operasyon kontrolleri. Tam PP yayın onayı aşağıdaki kontrol listesindedir.</p>
       </div>
     </div>
-    <ul class="release-checks">
-      {% for item in readiness.release.automatic if not item.id.startswith('publication:') %}
-      <li>{{ item.label }} ·
-        <span class="status {{ 'success' if item.status=='Geçti' else 'warning' }}">{{ item.status }}</span>
-      </li>
-      {% endfor %}
-    </ul>
+    {% set checks = namespace(blocked=[], passed=[]) %}
+    {% for item in readiness.release.automatic if not item.id.startswith('publication:') %}
+      {% if item.status == 'Geçti' %}
+        {% set _ = checks.passed.append(item) %}
+      {% else %}
+        {% set _ = checks.blocked.append(item) %}
+      {% endif %}
+    {% endfor %}
+    <div class="release-check-groups">
+      <div class="release-check-group">
+        <h3><span class="status danger">Engelli · {{ checks.blocked|length }}</span></h3>
+        {% if checks.blocked %}
+        <ul class="release-checks">
+          {% for item in checks.blocked %}
+          <li>{{ item.label }}</li>
+          {% endfor %}
+        </ul>
+        {% endif %}
+      </div>
+      <div class="release-check-group">
+        <h3><span class="status success">Geçti · {{ checks.passed|length }}</span></h3>
+        {% if checks.passed %}
+        <ul class="release-checks">
+          {% for item in checks.passed %}
+          <li>{{ item.label }}</li>
+          {% endfor %}
+        </ul>
+        {% endif %}
+      </div>
+    </div>
     {% if readiness.warnings %}
     <div class="issue-list">
       {% for warning in readiness.warnings %}

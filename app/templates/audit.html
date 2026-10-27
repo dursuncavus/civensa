@@ -13,8 +13,8 @@
           İşlem
           <select name="action">
             <option value="">Tüm işlemler</option>
-            {% for action in actions %}
-              <option value="{{ action }}" {{ 'selected' if action==selected_action else '' }}>{{ action }}</option>
+            {% for code, label in actions %}
+              <option value="{{ code }}" {{ 'selected' if code==selected_action else '' }}>{{ label }}</option>
             {% endfor %}
           </select>
         </label>
@@ -45,9 +45,18 @@
               <tr>
                 <td class="audit-date">{{ row.created_at|turkey_time }}</td>
                 <td>{{ users.get(row.user_id)|actor_label }}</td>
-                <td><b>{{ row.action }}</b></td>
-                <td>{{ row.entity_type }}{% if row.entity_id %} #{{ row.entity_id }}{% endif %}</td>
-                <td class="audit-details">{{ safe_details(row.details) or '-' }}</td>
+                <td><b>{{ presentation[row.id].action }}</b></td>
+                <td>{{ presentation[row.id].entity }}</td>
+                <td class="audit-details">
+                  {% set details = presentation[row.id].details %}
+                  {{ details.summary or '-' }}
+                  {% if details.technical %}
+                    <details>
+                      <summary>Teknik ayrıntı</summary>
+                      <code>{{ details.technical }}</code>
+                    </details>
+                  {% endif %}
+                </td>
               </tr>
             {% else %}
               <tr>
