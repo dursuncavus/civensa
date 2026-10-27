@@ -515,3 +515,6 @@ CIV-142 (issue #221, Copilot): users table row rhythm — badge + action on one 
 Owner question 20:49 "Codex and the other AIs are idle": D-300 kept — no new Codex screen package until the Saturday reset; owner-look fix rounds go to Copilot (cheap Claude review). Known LOW items not dispatched (no user complaint; rule 16).
 Lead error: told the owner to assign Copilot by hand because assigning "Copilot"/"copilot-swe-agent" failed; D-302 already recorded the working login "copilot-swe-agent[bot]". Cause: read only the STATE start section, not the last decision. Prevention: STATE now carries the assignee login under "Merge rule".
 Screenshots live in docs/design/rollout/**, not in the PR body: give the owner a gallery artifact, not PR links.
+
+## D-304 (27 Oct 2026 ~21:10 Istanbul, lead, live session CV Lider 36) — CIV-140 merged
+DOĞRULANDI: #216 CIV-140 — Copilot fix 9b8ff9d touches only tests/test_ar_indicator_display.py (history `details` targeted explicitly); lead empty commit 7b97984, CI green, behind 0 → merged 0e2cf1c. Owner look pending (gallery artifact, version 2).
