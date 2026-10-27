@@ -23,10 +23,6 @@
 
 ## Doğrulama
 
-`verify_rollout.py --phase before` ve `--phase after`, gerçek Alembic geçişleriyle oluşturulan geçici veritabanında çalışır. İşlem sonunda veritabanı kaldırılır. Tarayıcı yalnız loopback GET kullanır; iki yakalama aşamasında tüm model tablolarının özeti değişmemelidir. Onaylı İç Kontrol görünümü gerçek gönderim/onay servisleriyle kurulur. Parola ve oturum bilgileri kaydedilmez.
-
-[Önce ölçümleri](before.json) · [Sonra ölçümleri](after.json). Sonra aşamasında her değişen ekran için 1440'ta satırın ve çocuklarının 44rem sınırında kalması veya R1 yüksekliği ≤44 px, değer konumu, tabular sayılar ve kutusuz görünüm doğrulanır. Dizin ve editörde durumların başlangıç sütunları da karşılaştırılır. 390'ta bütün kapsamda sayfa genişliği viewport'a eşittir. Değişen tasarım ekranlarının görünür metin kontrastı en az 4,5:1 olarak ölçülür; hover/focus durumları mevcut tasarım testlerinde ayrıca kontrol edilir.
-
 ### Test değişiklikleri
 
 Dondurulmuş fixture'lar, sözleşme karşılaştırmaları ve filtre/klavye/CSRF testleri değiştirilmedi.
