@@ -61,6 +61,22 @@ def assert_frozen(response, context=None):
     html = response.template.render(context)
     old = response.template.environment.from_string(FROZEN.read_text()).render(context)
     actual, expected = DashboardContract(html), DashboardContract(old)
+    if context['user'].role == 'department':
+        target = f'/department/{context["department"].id}?period_id={context["period"].id}'
+        # The legacy fixture predates clickable cards; only its entry link is exempt.
+        old_links = [item for item in expected.controls if item[0] == 'a' and dict(item[1]).get('href') == target]
+        assert len(old_links) == 1
+        new_links = [item for item in actual.controls if item[0] == 'a' and dict(item[1]).get('href') == target]
+        assert len(new_links) == 3
+        assert Counter(item for item in actual.controls if item not in new_links) == Counter(
+            item for item in expected.controls if item not in old_links)
+        assert actual.bindings == expected.bindings
+        new_labels = {'Veri girişi · ' + str(len(context['indicators'])) + ' gösterge', 'Civensa kontrolü', 'Gönderim'}
+        old_labels = {'Veri girişini aç'}
+        assert Counter(item for item in actual.labels if item[1] not in new_labels) == Counter(
+            item for item in expected.labels if item[1] not in old_labels)
+        assert [item for item in Hooks(html).items if not dict(item[1]).get('id', '').startswith('home-')] == Hooks(old).items
+        return html
     new_card_labels = (
         'Dönemdeki müdürlük', 'Bakanlık şablonu', 'Eşleştirme bekleyen faaliyet',
         'Gösterge sayısı', 'Hatası olan gösterge', 'Gönderim durumu',
@@ -151,7 +167,7 @@ def test_021_022_frozen_forms_links_hooks_and_role_visibility(dashboard_client, 
         context['issues'] = 3 if filled else 0
     html = assert_frozen(response, context)
     assert ('id="newPeriodBtn"' in html) == (role == 'strategy')
-    assert ('Veri girişini aç' in html) == (role == 'department')
+    assert ('Bu dönem yapılacaklar' in html) == (role == 'department')
     if role == 'strategy':
         assert '<span>Dönem</span>' not in html
         controls = Contract(html).controls
@@ -174,7 +190,8 @@ def test_021_022_frozen_forms_links_hooks_and_role_visibility(dashboard_client, 
         assert 'Kullanıcısı tanımlanmamış müdürlük' in summary_cards
         assert f'{context["progress_summary"]["submitted"]} incelemede olan müdürlük' in summary_cards
     else:
-        assert all(label in html for label in ('Gösterge sayısı', 'Hatası olan gösterge', 'Gönderim durumu'))
+        assert all(label in html for label in ('Veri girişi · 1 gösterge', 'Civensa kontrolü', 'Gönderim'))
+        assert 'dashboard-summary' not in html
 
 
 @pytest.mark.parametrize('width', [1440, 1280, 390])
@@ -208,17 +225,9 @@ def test_021_022_browser_layout_contrast_and_period_actions(browser, dashboard_c
         assert page.locator('script[src="/static/design/dashboard.js"]').count() == int(role == 'strategy')
         assert page.evaluate('document.documentElement.scrollWidth === innerWidth'), page.evaluate("[...document.querySelectorAll('*')].filter(el => el.getBoundingClientRect().right > innerWidth).map(el => [el.tagName, el.className, el.getBoundingClientRect().width])")
         assert root.locator('label, th, .card span').evaluate_all("els => els.every(el => getComputedStyle(el).textTransform === 'none')")
-        assert len(set(root.locator('.card').evaluate_all("els => els.map(el => getComputedStyle(el).padding)"))) == 1
+        if role == 'strategy':
+            assert len(set(root.locator('.card').evaluate_all("els => els.map(el => getComputedStyle(el).padding)"))) == 1
         top_cards = root.locator('.dashboard-summary > .cards > *')
-        if role == 'department':
-            expected_href = f'/department/{response.context["department"].id}?period_id={sample["period"].id}'
-            department_cards = root.locator('.dashboard-summary a.card')
-            assert department_cards.count() == 3
-            for card in department_cards.all():
-                assert card.get_attribute('href') == expected_href
-                assert card.get_attribute('aria-label') == (
-                    f'{card.locator("span").inner_text()} {card.locator("b").inner_text()}'
-                )
 
         def row_sizes(cards):
             rows = {}
@@ -226,7 +235,7 @@ def test_021_022_browser_layout_contrast_and_period_actions(browser, dashboard_c
                 rows.setdefault(round(card.bounding_box()['y']), []).append(card)
             return sorted(map(len, rows.values()))
 
-        if width >= 1280:
+        if width >= 1280 and role == 'strategy':
             if role == 'strategy':
                 assert top_cards.count() == 3
             assert len({round(card.bounding_box()['y']) for card in top_cards.all()}) == 3
@@ -255,7 +264,7 @@ def test_021_022_browser_layout_contrast_and_period_actions(browser, dashboard_c
                 first_panel = root.locator('.dashboard-main > .dashboard-panel').first
                 title_bottom = page.locator('.page-header').bounding_box()['y'] + page.locator('.page-header').bounding_box()['height']
                 assert first_panel.bounding_box()['y'] - title_bottom <= 120
-        else:
+        elif role == 'strategy':
             assert row_sizes(top_cards) == [1, 2]
             if role == 'strategy':
                 assert row_sizes(root.locator('#mudurluk-ilerleme .cards > *')) == [2, 2, 2]
@@ -305,12 +314,8 @@ def test_021_022_browser_layout_contrast_and_period_actions(browser, dashboard_c
             expect(root.locator('[data-import="9020"]')).to_be_visible()
             pairs.update(map(tuple, page.evaluate(pairs_script)))
         else:
-            expect(root.locator('.button.primary')).to_have_count(1)
-            assert root.locator('.dashboard-issues').evaluate('el => getComputedStyle(el).color') == 'rgb(31, 35, 40)'
-            page.route(url, lambda route: route.fulfill(body=response.template.render({**response.context, 'issues': 3}), content_type='text/html'))
-            page.goto(url)
-            assert root.locator('.dashboard-issues').evaluate('el => getComputedStyle(el).color') == 'rgb(138, 90, 0)'
-            pairs.update(map(tuple, page.evaluate(pairs_script)))
+            expect(root.locator('.home-task-list > li')).to_have_count(3)
+            expect(root.locator('.dashboard-summary')).to_have_count(0)
         assert all(contrast(pair) >= 4.5 for pair in pairs), [(pair, contrast(pair)) for pair in pairs if contrast(pair) < 4.5]
         assert not errors
 
@@ -438,3 +443,123 @@ def test_021_progress_card_filters_and_no_javascript_fallback(browser, dashboard
         assert page.url.endswith('#mudurluk-ilerleme')
         assert page.locator('#mudurluk-ilerleme tbody tr').count() == 7
         expect(page.locator('#progressFilterStatus')).to_be_hidden()
+
+
+@pytest.mark.parametrize('filled', [False, True])
+def test_021_html_byte_identical_before_civ112(dashboard_client, sample, filled):
+    login(dashboard_client, sample['strategy'].email)
+    response = dashboard_client.get(f'/dashboard?period_id={sample["period"].id}')
+    context = synthetic_context(response, filled)
+    before = response.template.environment.from_string(
+        (Path(__file__).parent / 'fixtures/dashboard_pre_civ112.html').read_text()).render(context)
+    assert response.template.render(context).encode() == before.encode()
+
+
+HOME_STATES = {
+    'a': ('not_started', 'Başlanmadı', 'Bekliyor', 'Gönderilmedi'),
+    'b': ('needs_attention', 'Devam ediyor', 'Düzeltme gerekli · 3 gösterge', 'Gönderilmedi'),
+    'c': ('ready', 'Tamamlandı', 'Sorun yok', 'Gönderilmedi'),
+    'd': ('submitted', 'Tamamlandı', 'Sorun yok', 'Gönderildi'),
+    'e': ('returned', 'Devam ediyor', 'Düzeltme gerekli · 3 gösterge', 'İade edildi — düzeltip yeniden gönderin'),
+    'approved': ('approved', 'Tamamlandı', 'Sorun yok', 'Onaylandı'),
+}
+
+
+def seed_home_state(db, sample, state):
+    """Real persisted synthetic progress; no replacement route context or state mock."""
+    from sqlalchemy import select
+    from app.models import AuditLog, Indicator, IndicatorValue, Submission
+    indicator = sample['indicator']
+    # Three indicators makes issue count distinct from the number of field errors.
+    for number in (2, 3):
+        row = Indicator(period_id=sample['period'].id, department_id=sample['department'].id,
+            subprogram_id=sample['subprogram'].id, card_id=sample['card'].id,
+            name=f'Sentetik gösterge {number}', unit='Adet')
+        db.add(row); db.flush()
+        db.add(IndicatorValue(indicator_id=row.id, year=sample['period'].year,
+            value_kind='target', value='2'))
+    db.flush()
+    if state in ('b', 'e'):
+        for row in db.scalars(select(Indicator)).all():
+            row.name = ''
+            row.unit = ''
+    if state != 'a':
+        db.add(AuditLog(user_id=sample['user'].id, action='indicator_update',
+            entity_type='indicator', entity_id=indicator.id))
+    db.scalar(select(Submission)).status = {
+        'd': 'submitted', 'e': 'returned', 'approved': 'approved'}.get(state, 'draft')
+    db.commit(); db.expire_all()
+
+
+@pytest.mark.parametrize('state', HOME_STATES)
+@pytest.mark.parametrize('width', [1440, 390])
+def test_022_real_task_list_states(browser, dashboard_client, db, sample, state, width):
+    import os
+    from playwright.sync_api import expect
+    seed_home_state(db, sample, state)
+    login(dashboard_client, sample['user'].email)
+    url = f'http://testserver/dashboard?period_id={sample["period"].id}'
+    response = dashboard_client.get(url)
+    assert response.status_code == 200
+    expected = HOME_STATES[state]
+    assert response.context['department_state'] == expected[0]
+    assert response.context['issues'] == (3 if state in ('b', 'e') else 0)
+    with browser.new_context(viewport={'width': width, 'height': 900}, locale='tr-TR',
+                             timezone_id='Europe/Istanbul', reduced_motion='reduce') as context:
+        def serve(route):
+            assert route.request.method == 'GET'
+            result = dashboard_client.get(route.request.url)
+            headers = dict(result.headers); headers.pop('set-cookie', None)
+            route.fulfill(status=result.status_code, headers=headers, body=result.content)
+        context.route('http://testserver/**', serve)
+        page = context.new_page()
+        errors = []
+        page.on('pageerror', lambda error: errors.append(str(error)))
+        page.goto(url)
+        page.evaluate('document.fonts.ready')
+        root = page.locator('.department-dashboard')
+        tasks = root.locator('ol.home-task-list')
+        expect(tasks.locator(':scope > li')).to_have_count(3)
+        assert tasks.locator('.badge').all_text_contents() == list(expected[1:])
+        assert tasks.locator('a').all_text_contents() == ['Veri girişi · 3 gösterge', 'Civensa kontrolü', 'Gönderim']
+        target = f'/department/{sample["department"].id}?period_id={sample["period"].id}'
+        for link in tasks.locator('a').all():
+            assert link.get_attribute('href') == target
+            assert link.get_attribute('aria-describedby')
+        expect(root.locator('form, button, .dashboard-summary')).to_have_count(0)
+        assert page.evaluate('document.documentElement.scrollWidth === innerWidth')
+        assert root.locator('*').evaluate_all("els => els.every(el => getComputedStyle(el).textTransform !== 'uppercase')")
+        pairs_script = TEXT_PAIRS.replace('.section-index-page', '.department-dashboard')
+        pairs = set(map(tuple, page.evaluate(pairs_script)))
+        for link in tasks.locator('a').all():
+            link.hover(); link.focus()
+            pairs.update(map(tuple, page.evaluate(pairs_script)))
+        assert all(contrast(pair) >= 4.5 for pair in pairs), [(p, contrast(p)) for p in pairs]
+        if width == 390:
+            for item in tasks.locator('li').all():
+                link, badge = item.locator('a').bounding_box(), item.locator('.badge').bounding_box()
+                assert badge['y'] >= link['y'] + link['height']
+        assert not errors
+        # Opt-in capture uses these exact real-route scenarios; no capture script is committed.
+        if os.getenv('CIVENSA_CAPTURE_CIV112') == '1' and state in ('a', 'b', 'd', 'e'):
+            from PIL import Image
+            page.locator('h1').click()
+            target_png = Path('docs/design/rollout/civ-112') / f'022-{state}-{width}.png'
+            page.screenshot(path=str(target_png), full_page=True, animations='disabled', caret='hide')
+            with Image.open(target_png) as png:
+                png.save(target_png, optimize=True)
+            assert target_png.stat().st_size <= 1_500_000
+
+
+@pytest.mark.parametrize('state,entry', [
+    ('not_started', 'Başlanmadı'), ('in_progress', 'Devam ediyor'),
+    ('needs_attention', 'Devam ediyor'), ('returned', 'Devam ediyor'),
+    ('ready', 'Tamamlandı'), ('submitted', 'Tamamlandı'), ('approved', 'Tamamlandı'),
+])
+def test_022_entry_mapping_and_pending_check(dashboard_client, sample, state, entry):
+    login(dashboard_client, sample['user'].email)
+    response = dashboard_client.get(f'/dashboard?period_id={sample["period"].id}')
+    html = response.template.render({**response.context, 'department_state': state, 'issues': 0})
+    assert f'id="home-entry-status">{entry}</span>' in html
+    check = 'Sorun yok' if entry == 'Tamamlandı' else 'Bekliyor'
+    assert f'id="home-check-status">{check}</span>' in html

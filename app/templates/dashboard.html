@@ -2,27 +2,35 @@
 {% block page_title %}{{ period.year }} Performans Programı{% endblock %}
 {% block page_subtitle %}{{ 'Strateji Geliştirme yönetim alanı' if user.role=='strategy' else department_label ~ ' çalışma alanı' }}
 {% endblock %}
-{% block content %}
+{% block content %}{% if user.role=='department' %}
+  <link rel="stylesheet" href="/static/design/dashboard.css">
+  <div class="dashboard-page department-dashboard">
+    <section class="dashboard-panel home-tasks" aria-labelledby="home-tasks-title">
+      <h2 id="home-tasks-title">Bu dönem yapılacaklar</h2>
+      <p class="muted" id="home-tasks-help">Gönderimden önce Civensa tüm göstergelerdeki zorunlu alanları ve temel tutarlılık kontrollerini çalıştırır.</p>
+      {% set entry_complete = department_state in ('ready', 'submitted', 'approved') %}
+      <ol class="home-task-list" role="list" aria-describedby="home-tasks-help">
+        <li>
+          <a href="/department/{{ department.id }}?period_id={{ period.id }}" aria-describedby="home-entry-status">Veri girişi · {{ indicators|length }} gösterge</a>
+          <span class="badge {{ 'success' if entry_complete else 'neutral' }}" id="home-entry-status">{{ 'Tamamlandı' if entry_complete else 'Başlanmadı' if department_state == 'not_started' else 'Devam ediyor' }}</span>
+        </li>
+        <li>
+          <a href="/department/{{ department.id }}?period_id={{ period.id }}" aria-describedby="home-check-status">Civensa kontrolü</a>
+          <span class="badge {{ 'warning' if issues else 'success' if entry_complete else 'neutral' }}" id="home-check-status">{% if issues %}Düzeltme gerekli · {{ issues }} gösterge{% elif entry_complete %}Sorun yok{% else %}Bekliyor{% endif %}</span>
+        </li>
+        <li>
+          <a href="/department/{{ department.id }}?period_id={{ period.id }}" aria-describedby="home-send-status">Gönderim</a>
+          <span class="badge {{ 'warning' if submission.status == 'returned' else 'success' if submission.status == 'approved' else 'neutral' }}" id="home-send-status">{{ {'draft': 'Gönderilmedi', 'submitted': 'Gönderildi', 'returned': 'İade edildi — düzeltip yeniden gönderin', 'approved': 'Onaylandı'}[submission.status] }}</span>
+        </li>
+      </ol>
+    </section>
+  </div>
+{% else %}
   <link rel="stylesheet" href="/static/design/dashboard.css">
   <div class="dashboard-page">
     <div class="dashboard-layout">
       <aside class="dashboard-summary" aria-label="Özet">
-        {% if user.role=='department' %}
-          <div class="cards">
-            <a class="card action-card" href="/department/{{ department.id }}?period_id={{ period.id }}" aria-label="Gösterge sayısı {{ indicators|length }}">
-              <span>Gösterge sayısı</span>
-              <b>{{ indicators|length }}</b>
-            </a>
-            <a class="card action-card" href="/department/{{ department.id }}?period_id={{ period.id }}" aria-label="Hatası olan gösterge {{ issues }}">
-              <span>Hatası olan gösterge</span>
-              <b class="dashboard-issues {{ 'bad' if issues else 'ok' }}">{{ issues }}</b>
-            </a>
-            <a class="card action-card" href="/department/{{ department.id }}?period_id={{ period.id }}" aria-label="Gönderim durumu {{ submission.status|status_label }}">
-              <span>Gönderim durumu</span>
-              <b>{{ submission.status|status_label }}</b>
-            </a>
-          </div>
-        {% else %}
+        {# Preserve 021 whitespace. #}
           <div class="cards strategy-cards">
             <a class="card action-card" href="#mudurluk-ilerleme" aria-label="Dönemdeki müdürlük {{ departments|length }}">
               <span>Dönemdeki müdürlük</span>
@@ -38,7 +46,7 @@
               <small>{{ 'Kontrol gerekli' if unresolved_count else 'Bekleyen yok' }}</small>
             </a>
           </div>
-        {% endif %}
+        {# Preserve 021 whitespace. #}
       </aside>
       <div class="dashboard-main">
         {% if user.role=='strategy' %}
@@ -46,15 +54,7 @@
             <a class="button" href="/report-builder/manifest?period_id={{ period.id }}">PP Tamamlanma Listesi</a>
           </p>
         {% endif %}
-        {% if user.role=='department' %}
-          <section class="dashboard-panel">
-            <div class="section-head">
-              <h2>Çalışmaya devam et</h2>
-              <a class="button primary" href="/department/{{ department.id }}?period_id={{ period.id }}">Veri girişini aç</a>
-            </div>
-            <p class="muted">Gönderimden önce Civensa tüm göstergelerdeki zorunlu alanları ve temel tutarlılık kontrollerini çalıştırır.</p>
-          </section>
-        {% else %}
+        {# Preserve 021 whitespace. #}
           <section class="dashboard-panel">
             <div class="section-head">
               <div>
@@ -239,11 +239,11 @@
             </div>
           </section>
         </div>
-        {% endif %}
+        {# Preserve 021 whitespace. #}
       </div>
     </div>
   </div>
-{% endblock %}
+{% endif %}{% endblock %}
 
 {% block scripts %}
   {% if user.role=='strategy' %}
