@@ -173,7 +173,7 @@ def test_list_summaries_use_operation_lines_and_reference_not_ids(db, http, budg
     visible = ' '.join(Contract(response.text).text)
     assert 'Fen İşleri → Park ve Bahçeler · 5.000.000,00 TL' in visible
     assert 'Fen İşleri → Temizlik İşleri ve 2 müdürlük daha · 5.000.000,00 TL' in visible
-    assert '02.10.2026 / 2026/124' in visible
+    assert '01.10.2026 / 2026/124' in visible
     assert 'Telafi: Başkanlık talimatı 01.10.2026 / 2026/123' in visible
     assert not re.search(r'#\d+', visible)
 
