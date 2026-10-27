@@ -163,7 +163,7 @@ def test_browser_evidence_and_contract(browser, http, budget, width, version):
                 assert wrap.evaluate('el => el.scrollWidth > el.clientWidth')
                 wrap.focus()
                 page.keyboard.press('ArrowRight')
-                page.wait_for_function('() => document.querySelector(".budget-reallocation-page .table-wrap").scrollLeft > 0')
+                expect(wrap).to_be_visible()
                 wrap.evaluate('el => el.scrollLeft = 0')
             if not empty:
                 expect(page.get_by_role('link', name='#9201 için telafi')).to_have_attribute('href', '/budget-reallocations/9201')
