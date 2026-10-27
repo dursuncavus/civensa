@@ -37,6 +37,30 @@
         <p class="secondary">Gerçekleşmeler önceki rapordan otomatik taşınmadı; bu revizyonda kaynaklarıyla yeniden kontrol edin.</p>
       {% endif %}
     </section>
+    {% set summary = namespace(verified=0, needs_review=0, missing=0, no_record=0, explanation=0) %}
+    {% for row in report.indicators %}
+      {% set latest = row.actuals[-1] if row.actuals else none %}
+      {% if latest %}
+        {% if latest.state == 'verified' %}{% set summary.verified = summary.verified + 1 %}
+        {% elif latest.state == 'needs_review' %}{% set summary.needs_review = summary.needs_review + 1 %}
+        {% elif latest.state == 'missing' %}{% set summary.missing = summary.missing + 1 %}
+        {% endif %}
+        {% if latest.needs_deviation_explanation %}{% set summary.explanation = summary.explanation + 1 %}{% endif %}
+      {% else %}
+        {% set summary.no_record = summary.no_record + 1 %}
+      {% endif %}
+    {% endfor %}
+    <p class="indicator-report-summary">
+      <span class="status">{{ report.indicators|length }} gösterge</span>
+      {% set summary_statuses = namespace(first=true) %}
+      {% for count, label, state in [(summary.verified, 'Doğrulanmış', 'verified'), (summary.needs_review, 'İncelenmeli', 'needs_review'), (summary.missing, 'Eksik', 'missing'), (summary.no_record, 'Kayıt yok', 'no-record'), (summary.explanation, 'açıklama bekliyor', 'needs_review')] %}
+        {% if count %}
+          {% if not summary_statuses.first %}<span class="indicator-summary-separator">·</span>{% endif %}
+          <span class="status indicator-state {{ state }}">{{ count }} {{ label }}</span>
+          {% set summary_statuses.first = false %}
+        {% endif %}
+      {% endfor %}
+    </p>
     {% if report.previous_revision_id %}
       <section class="reports-panel">
         <h2>Önceki baza göre farklar</h2>
@@ -116,21 +140,40 @@
       {% set latest = row.actuals[-1] if row.actuals else none %}
       <section class="reports-panel" id="indicator-{{ row.report_indicator_id }}" {% if not report.approved and report.revision == report.current_revision %}data-draft-record{% endif %}>
         <h2>{{ row.definition.name }}</h2>
-        <div data-latest-actual aria-label="Son gerçekleşme">
+        {% set target = row.definition.targets[0] if row.definition.targets|length == 1 else none %}
+        {% set can_draw_bar = latest and latest.state == 'verified' and latest.value is not none and latest.value|float >= 0 and target and target.state == 'verified' and target.value is not none and target.value|float != 0 %}
+        <div class="indicator-summary" data-latest-actual aria-label="Son gerçekleşme">
           {%- if latest %}
-          <div class="actual-summary">
+          <div class="actual-summary indicator-value-summary">
             <h3>Son gerçekleşme</h3>
-            <p>
-              <strong>{{ latest.value|trnum if latest.value is not none else 'Kayıt yok' }}</strong> ·
-              <span class="status {{ 'success' if latest.state == 'verified' else 'danger-light' if latest.state == 'missing' else '' }}">{{ {'verified':'Doğrulanmış','needs_review':'İncelenmeli','missing':'Eksik'}.get(latest.state, latest.state) }}</span>
+            <p class="indicator-actual">
+              <strong>{{ latest.value|trnum if latest.value is not none else 'Kayıt yok' }}</strong>
+              <span class="indicator-unit">{{ row.definition.unit }}</span>
+              <span class="indicator-value-separator">·</span>
+              <span class="status indicator-state {{ latest.state }}">{{ {'verified':'Doğrulanmış','needs_review':'İncelenmeli','missing':'Eksik'}.get(latest.state, latest.state) }}</span>
             </p>
-            <p>Hedef: {% if row.definition.targets %}{% for target in row.definition.targets %}{{ target.value|trnum if target.state == 'verified' and target.value is not none else 'Doğrulanmalı' }}{% endfor %}{% else %}Kayıt yok{% endif %}</p>
+            <p class="indicator-target">Hedef: {% if row.definition.targets %}{% for target in row.definition.targets %}{{ target.value|trnum if target.state == 'verified' and target.value is not none else 'Doğrulanmalı' }}{% endfor %}{% else %}Kayıt yok{% endif %}</p>
+            <p class="indicator-difference">Fark: {{ latest.deviation.delta|trnum if latest.deviation.delta is not none else 'Hesaplanmadı' }}</p>
           </div>
-            <p>{{ latest.explanation or 'Açıklama belirtilmedi' }}</p>
-            <ul>
+          {% if can_draw_bar %}
+            {% set actual_number = latest.value|float %}
+            {% set target_number = target.value|float %}
+            {% set track_max = ([actual_number, target_number]|max) * 1.1 %}
+            {% set actual_width = actual_number / track_max * 100 %}
+            {% set target_position = target_number / track_max * 100 %}
+            <div class="indicator-bullet" aria-hidden="true" style="--actual-width: {{ actual_width }}%; --target-position: {{ target_position }}%;">
+              <span class="indicator-bullet-fill"></span>
+              <span class="indicator-bullet-target"></span>
+            </div>
+          {% endif %}
+          {% if latest.needs_deviation_explanation %}
+            <p class="warning-panel indicator-deviation-warning" role="status" data-deviation-warning>Hedef ile gerçekleşme arasında {{ latest.deviation.delta|trnum }} fark var. Birim raporunu göndermeden önce açıklama girin.</p>
+          {% endif %}
+          <p>{{ latest.explanation or 'Açıklama belirtilmedi' }}</p>
+          <ul class="indicator-evidence-list">
               {% for source in latest.evidence %}
                 <li>
-                  {{ source.title }} · {{ source.locator }} · Kaynak sürümü: {{ source.source_revision }}
+                  <p>{{ source.title }} · {{ source.locator }} · Kaynak sürümü: {{ source.source_revision }}</p>
                   {% for file in source.files|default([]) %}
                     <p>
                       <a href="{{ file.download_url }}">{{ file.filename }} · Dosya sürümü {{ file.version }}</a>
@@ -140,22 +183,27 @@
               {% else %}
                 <li>Kanıt belirtilmedi</li>
               {% endfor %}
-            </ul>
+          </ul>
           {%- else -%}
-          <h3>Son gerçekleşme</h3>
+          <div class="actual-summary indicator-value-summary">
+            <h3>Son gerçekleşme</h3>
+            <p class="indicator-actual"><strong>Kayıt yok</strong><span class="indicator-unit">{{ row.definition.unit }}</span><span class="status indicator-state indicator-state-empty">Kayıt yok</span></p>
+            <p class="indicator-target">Hedef: {% if row.definition.targets %}{% for target in row.definition.targets %}{{ target.value|trnum if target.state == 'verified' and target.value is not none else 'Doğrulanmalı' }}{% endfor %}{% else %}Kayıt yok{% endif %}</p>
+          </div>
           {#- Keep the original empty-state text boundary used by the browser contract. -#}
-          <p>Kayıt yok</p>
           {%- endif -%}
         </div>
-        {% if not latest %}
-          <p>Hedef: {% if row.definition.targets %}{% for target in row.definition.targets %}{{ target.value|trnum if target.state == 'verified' and target.value is not none else 'Doğrulanmalı' }}{% endfor %}{% else %}Kayıt yok{% endif %}</p>
-        {% endif %}
-        <p>{{ row.department }} · {{ row.definition.unit }} · {{ row.definition.code or 'Kod belirtilmedi' }}</p>
-        <p>{{ row.definition.explanation or 'Açıklama belirtilmedi' }}</p>
-        <p>Hesaplama: {{ row.definition.calculation_method or 'Belirtilmedi' }} · Kaynak: {{ row.definition.data_source or 'Belirtilmedi' }}</p>
-        {% if latest and latest.needs_deviation_explanation %}
-          <p class="warning-panel" role="status" data-deviation-warning>Hedef ile gerçekleşme arasında {{ latest.deviation.delta|trnum }} fark var. Birim raporunu göndermeden önce açıklama girin.</p>
-        {% endif %}
+        <details class="indicator-definition">
+          <summary>Gösterge tanımı</summary>
+          <dl>
+            <div><dt>Birim</dt><dd>{{ row.definition.unit }} ·</dd></div>
+            <div><dt>Kod</dt><dd>{{ row.definition.code or 'Kod belirtilmedi' }} ·</dd></div>
+            <div><dt>Müdürlük</dt><dd>{{ row.department }}</dd></div>
+            <div><dt>Hesaplama:</dt><dd>{{ row.definition.calculation_method or 'Belirtilmedi' }} ·</dd></div>
+            <div><dt>Kaynak:</dt><dd>{{ row.definition.data_source or 'Belirtilmedi' }}</dd></div>
+            <div><dt>Açıklama</dt><dd>{{ row.definition.explanation or 'Açıklama belirtilmedi' }}</dd></div>
+          </dl>
+        </details>
         {% if row.actuals %}
           <details>
             <summary>Gerçekleşme geçmişi · {{ row.actuals|length }} revizyon</summary>
@@ -190,6 +238,7 @@
           <p class="error-panel" role="alert" id="form-error-{{ row.report_indicator_id }}">{{ form_error }}</p>
         {% endif %}
         {% if not report.approved and report.revision == report.current_revision %}
+          <h3 class="actual-form-heading">Yeni gerçekleşme gir</h3>
           <form class="actual-form" data-actual-form enctype="multipart/form-data" method="post" action="/activity-reports/indicators/{{ row.report_indicator_id }}/actuals">
             <input type="hidden" name="csrf_token" value="{{ request.session.get('csrf_token') }}">
             <input type="hidden" name="expected_revision" value="{{ draft.get('expected_revision', latest.revision if latest else 0) }}">
