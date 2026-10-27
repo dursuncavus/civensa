@@ -1,4 +1,4 @@
-# CIVENSA AI HIERARCHY — v1.4
+# CIVENSA AI HIERARCHY — v1.5
 
 Status: ACTIVE — canonical for all Civensa work
 Date: 2026-10-24
@@ -6,6 +6,7 @@ Decided by: Dursun Çavuş (owner), designed by Claude
 Global rules: AI_WORKING_CONSTITUTION v1.2 (Google Drive, global rules folder; rules 36–38 apply).
 Overrides for Civensa: AI_ROUTING_MATRIX v1.0 sections 1, 2 and 6 (already marked invalid for Civensa).
 
+Change note (v1.5, D-292, owner "kural onay" 27 Oct 2026): MERGE no longer needs behind 0 when the PR's files do not overlap the newer phase5 commits; full suite runs on every phase5 push; red phase5 → revert the last merge.
 Change note (v1.4, D-205, owner approved 24 Oct 03:24): canonical Civensa records move from Drive into the repository folder `docs/lead/` (this file, PROJECT_RULES, BACKUP_LEAD, STATE, DECISIONS, tasks). Drive keeps the global constitution and the read-only archive. §1 lead duties, §3 step 2/8, §6 and §7 updated; CI guard on `docs/lead/**`.
 Change note (v1.3, D-202): lead may merge reviewed PRs into the Phase 5 branch; "@codex" PR-comment follow-ups; scheduled lead runs (twice a night, early exit). DeepSeek access via local workspace mirror (D-201). Staging/main merges, deploys and live actions stay with the owner.
 Change note (v1.2): DeepSeek first-pass reviewer (D-191) and backup lead (D-194); Codex on ChatGPT Pro; different-model-family review; tool acceptance criteria (§8); CI gates (§9).
@@ -30,7 +31,7 @@ LEVEL 1 — LEAD: Claude (Claude app, model Opus)
 - Makes every Civensa decision not on the escalation list.
 - Writes specs and task packages; reviews pull requests and CI; verifies data; maintains the canonical records in `docs/lead/` (v1.4).
 - RECORDS (v1.4): changes `docs/lead/**` only on a `lead/...` branch through a PR into feature/authorization-workflow-phase5. Markdown-only record updates may be merged by the lead once the guard check is green; a lead PR that changes code or workflows needs review by a different model family first.
-- MERGE (v1.3): may merge a PR into feature/authorization-workflow-phase5 (merge commit, via GitHub REST) only when ALL hold: lead review done with no open HIGH/MEDIUM finding; CI green on the exact head commit; PR not draft; behind phase5 by 0 (else update branch and wait for green); for migration PRs, alembic has exactly one head after merge. Each merge is logged (PR, head SHA, CI run) in DECISIONS.md.
+- MERGE (v1.3): may merge a PR into feature/authorization-workflow-phase5 (merge commit, via GitHub REST) only when ALL hold: lead review done with no open HIGH/MEDIUM finding; CI green on the exact head commit; PR not draft; behind phase5 by 0, OR (v1.5, D-292) behind only by commits that change none of the PR's files and CI green on the PR head; after every code merge the full suite runs on phase5 (push trigger) and a red phase5 run is answered by reverting the last merge first; for migration PRs, alembic has exactly one head after merge. Each merge is logged (PR, head SHA, CI run) in DECISIONS.md.
 - FOLLOW-UPS (v1.3): may send correction messages to Codex as a PR comment starting with "@codex" on that PR. Text in English, scoped to the original package. Never asks Codex to merge, deploy or touch the live database.
 - SCHEDULED RUNS (v1.3): scheduled task "Civensa gece kontrol" runs twice a night. It first checks GitHub only; if nothing changed since the last run it stops. Otherwise it reviews, merges or sends follow-ups under the rules above, and updates `docs/lead/`. It never starts new Codex tasks, never acts on main/staging/live.
 - Tools: GitHub (REST; GraphQL blocked); Google Drive (constitution, archive); link to the owner's Mac; web research; subagents for independent verification on CRITICAL work.
