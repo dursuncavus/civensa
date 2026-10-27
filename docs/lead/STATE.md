@@ -10,10 +10,10 @@ Owner opens a new chat with one line: `CV Lider 37 · Claude Opus 5.5 · civensa
 1. Quota (D-300): Claude week 67% at 16:21 Tue + two review sessions since; reset Saturday 00:00. No new Codex screen packages until reset; owner-look fixes go to Copilot.
 2. Merge rule HIERARCHY v1.5 (D-292). Copilot issues: POST /issues, then POST /issues/{n}/assignees with "copilot-swe-agent[bot]". Copilot pushes wait for approval → lead empty commit via git push (git-data REST is blocked) or PUT update-branch runs CI. Draft PR → POST /pulls/{n}/ccr/ready_for_review first. Restore tests/artifacts/** from phase5 if touched.
 3. Design rules for every review and package: D-292 + D-299.
-4. #216 CIV-140 merged → 0e2cf1c (Copilot test-only fix 9b8ff9d, CI green); its look is in the gallery artifact https://claude.ai/artifact/DLJU4E5RC2zX6cdh3sYDJZ (section "Gösterge özeti (yeni)"; screenshots predate the label fix aea2ca4) — owner look pending. Open, in order: CIV-141 issue #220 (017 widths/dates); CIV-142 issue #221 (users table). For each: review, CI, merge, owner look via gallery.
+4. #216 CIV-140 merged → 0e2cf1c (Copilot test-only fix 9b8ff9d, CI green); its look is in the gallery artifact https://claude.ai/artifact/DLJU4E5RC2zX6cdh3sYDJZ (section "Gösterge özeti (yeni)"; screenshots predate the label fix aea2ca4) — owner look pending. Open, in order: PR #222 CIV-141 (017 widths/dates; lead review OK, CI started 22:05, background merge — check merged); PR #223 CIV-142 (users table; lead asked Copilot 22:05 for wider Kullanıcı column, no mid-word e-mail break, badge/button centre alignment — comment 6451005535; background watcher merges after green — check). Then add the final 017 + users screenshots to the gallery for the owner look. For each: review, CI, merge, owner look via gallery.
 5. Remaining screens after reset: 003 (needs Ali), 025–028, 031 (İç Kontrol).
 6. Ali Abi answers: none yet.
-7. Next IDs: task CIV-143, decision D-305. Codex idle by design (D-300). Long chat → new chat each session.
+7. Next IDs: task CIV-143, decision D-306. Codex idle by design (D-300). Long chat → new chat each session.
 
 ## Claude quota (BEYAN, owner 27 Oct 16:21)
 - Session 11%, week 67%, weekly reset Saturday 00:00 (D-300). Copilot 96 / 1,500 credits, reset 1 Nov.
