@@ -7,7 +7,7 @@ Tags: DOĞRULANDI (lead checked) · TARİHSEL (past fact) · BEYAN (owner said) 
 
 ## Next session — start here (D-253)
 Owner opens a new chat with one line: `CV Lider 33 · Claude Opus 5.5 · civensa-lead`. The lead reads this section first and works from it.
-1. Merge #165 CIV-112 (reviewed OK, D-285; scheduled run could not merge). Then update-branch #168 CIV-114 (reviewed OK) and merge when every check is success. #167 CIV-115: check Codex applied the 40-min job cap (D-285); review the new head, merge when green and behind 0. If Codex did not react, change the one line yourself.
+1. Merge #165 CIV-112 (reviewed OK, D-285; scheduled run could not merge). Then update-branch #168 CIV-114 (reviewed OK) and merge when every check is success. #167 CIV-115: check Codex applied the 40-min job cap (D-285); review the new head, merge when green and behind 0. Codex does not act on PR comments (D-285 addendum): send the one-line change as a Copilot fix round.
 2. Owner look approval (screenshots + text-change lists, one message): CIV-109 (#154, docs/design/rollout/civ-109), CIV-111 (#161; LOW in D-282), CIV-113 (#163), then CIV-112 (#165, docs/design/rollout/civ-112) and CIV-114 (#168, docs/design/rollout/civ-114). Ask once about CIV-104 (#145).
 3. After CIV-115 merges: if a test times out, the annotation names it → fix task.
 4. Next D-243 screens: strategy review screens are done (042, 041, 023); write the next queue proposal; LOW backlog as one Copilot polish task.
@@ -27,7 +27,7 @@ Evidence rule (D-252): one-screen changes → targeted tests + changed-state scr
 | --- | --- | --- | --- |
 | #165 | CIV-112 | reviewed OK, CI green 99edef3, behind 0 (D-285) | merge (live session or owner) |
 | #168 | CIV-114 | reviewed OK, CI green a80c78d (D-285) | after #165: update-branch, CI, merge |
-| #167 | CIV-115 | MEDIUM: job cap 30 → 40 min, "@codex" sent (D-285) | review new head, CI, merge |
+| #167 | CIV-115 | MEDIUM: job cap 30 → 40 min; Codex will not act on the comment (D-285) | Copilot fix round, review, CI, merge |
 Merged 26 Oct: #163 CIV-113 → 88c9dfb; #154 CIV-109 → 34329a7; #161 CIV-111 → 31b00e4 (D-283); #160 CIV-110 → 0b4b333 (D-282); #156 CIV-108 prototype → 633ac07 (D-277); #150 CIV-105 → 7cb58d9 (D-278; all jobs green, D-280); #148 CIV-106 → 1ed8620 (D-273); #145 CIV-104 → e0df9ce (D-268); #140 CIV-103 → 6efbe25 (D-265); #138 copilot-setup-steps → cbed4d8 (D-264); #136 production environment → d02b7cc; #132 CIV-102 → 873d361.
 
 ## Open — owner

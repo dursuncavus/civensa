@@ -419,3 +419,4 @@ Backup log "Civensa Yedek Kaydı": unchanged since 23 Oct (DOĞRULANDI).
 
 ## D-286 (27 Oct 2026 ~05:45 Istanbul, lead, scheduled run) — D-205 Drive archive steps done
 DOĞRULANDI: "Civensa Güncel Durum v0.77" renamed "ESKİ Civensa Güncel Durum v0.77 KULLANMAYIN" and moved to the archive folder; CIVENSA_AI_HIERARCHY_v1.3, CIVENSA_PROJECT_RULES_v1.2 and CIVENSA_BACKUP_LEAD_v1 renamed "ESKİ <name> KULLANMAYIN"; Drive doc "KAYITLAR GITHUB'DA" created in the civensa folder with the D-205 pointer text. Closes STATE queue item 5.
+Addendum (02:46Z): the Codex bot answered the #167 comment (and #169) with "To use Codex here, create an environment for this repo" → "@codex" PR comments are not acted on (DOĞRULANDI; consistent with D-242; the BELİRSİZ item is closed). The 40-min job cap on #167 is therefore done by the next live session (Copilot fix round or a new Codex task), not by Codex from the comment.
