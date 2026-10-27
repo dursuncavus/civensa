@@ -67,21 +67,11 @@ jobs:
         with:
           path: ~/.cache/ms-playwright
           key: ${{ runner.os }}-${{ runner.arch }}-playwright-${{ steps.playwright.outputs.version }}-chromium
-      # OS packages are not part of the browser cache. Always install them, and
-      # let Playwright verify/install the matching Chromium revision on cache hits.
-      # D-294/D-298: this setup hung repeatedly (runs 40481576173, 40498388720,
-      # 40502607724). Split apt packages from the browser download so the
-      # annotation names the stuck part, and retry short attempts instead of
-      # waiting 10 minutes on a stalled connection.
-      - name: Install Playwright OS dependencies
-        shell: bash
-        run: |
-          for attempt in 1 2 3; do
-            if timeout 300 python -m playwright install-deps chromium; then exit 0; fi
-            echo "::warning::Playwright OS dependencies attempt $attempt failed or exceeded 5 minutes"
-          done
-          echo "::error::Playwright OS dependencies failed three times (runner setup, not a test failure)"
-          exit 1
+      # D-294/D-298: apt (playwright install-deps) hung repeatedly on hosted
+      # runners (runs 40481576173, 40498388720, 40502607724; on the first D-298 run the
+      # first apt attempt hit 5 min and retries failed at once). The hosted
+      # image already ships Chrome's libraries, so download Chromium first,
+      # try a headless launch, and run apt only when that launch fails.
       - name: Install Playwright Chromium
         shell: bash
         run: |
@@ -90,6 +80,17 @@ jobs:
             echo "::warning::Playwright Chromium download attempt $attempt failed or exceeded 4 minutes"
           done
           echo "::error::Playwright Chromium download failed three times (runner setup, not a test failure)"
+          exit 1
+      - name: Check Chromium launches, install OS dependencies only if needed
+        shell: bash
+        run: |
+          launch='from playwright.sync_api import sync_playwright
+          with sync_playwright() as p:
+              p.chromium.launch().close()'
+          if timeout 60 python -c "$launch"; then echo "Chromium launches; OS dependencies already present"; exit 0; fi
+          echo "::warning::Chromium did not launch; installing OS dependencies"
+          if timeout 600 python -m playwright install-deps chromium && timeout 60 python -c "$launch"; then exit 0; fi
+          echo "::error::Playwright OS dependencies could not be installed (runner setup, not a test failure)"
           exit 1
       # Keep each module on one worker: role tests mutate cluster-wide roles,
       # and migration tests within a module can share the public schema.
