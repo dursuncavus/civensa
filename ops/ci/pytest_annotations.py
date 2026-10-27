@@ -63,6 +63,10 @@ class FailureReports:
         crash = getattr(report.longrepr, "reprcrash", None)
         message = getattr(crash, "message", None) or report.longreprtext
         excerpt = "\n".join(str(message).splitlines()[:MESSAGE_LINES])[:8000]
+        if "Timeout (>" in str(message) and "from pytest-timeout" in str(message):
+            # The signal method produces a normal failed TestReport. Preserve
+            # its interrupted call stack too; reprcrash alone only says timeout.
+            excerpt = (str(message) + "\n" + report.longreprtext)[:8000]
         detail = f"{report.when}: {excerpt}"
         if nodeid in self.failures:
             # A failing call and teardown belong to the same failing test.
