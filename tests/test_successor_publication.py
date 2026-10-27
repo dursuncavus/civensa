@@ -3,9 +3,8 @@ import json
 import os
 import subprocess
 import sys
-from concurrent.futures import ThreadPoolExecutor
-from threading import Barrier
 import pytest
+from tests.race_helpers import run_race
 from fastapi import HTTPException
 from sqlalchemy import select,func,text,event,update
 from sqlalchemy.orm import Session
@@ -214,14 +213,14 @@ def test_raw_state_update_without_publication_rejected(foundation_db,ready,succe
 
 
 def test_concurrent_publication_one_release_edge_no_orphans(foundation_db,people,ready,successor):
-    db=foundation_db;c=successor;barrier=Barrier(2);version=db.get(ReportCandidateState,c.id).version;before=all_counts(db);db.commit()
-    def attempt():
+    db=foundation_db;c=successor;version=db.get(ReportCandidateState,c.id).version;before=all_counts(db);db.commit()
+    def attempt(barrier):
         with Session(db.bind,expire_on_commit=False) as other:
             actor=other.get(User,people['strategy'].id);barrier.wait()
             try:
                 r=reports.publish(other,actor,c.organization_id,c.id,version,c.sha256);other.commit();return r.id
             except auth.HTTPException as exc:other.rollback();assert exc.status_code==409;return None
-    with ThreadPoolExecutor(max_workers=2) as pool:results=list(pool.map(lambda _:attempt(),range(2)))
+    results=run_race('test_concurrent_publication_one_release_edge_no_orphans', [attempt,attempt])
     assert sum(r is not None for r in results)==1
     db.expire_all();assert db.scalar(select(func.count(ReportRelease.id)))==before[1]+1
     assert db.scalar(select(func.count(ReportReleaseSuccession.id)))==before[2]+1
@@ -235,7 +234,7 @@ def test_populated_migration_preserves_history(foundation_db,people,released,rea
     db=foundation_db;before=sealed(db);state=db.get(RevisionRequestState,ready[2].id);version=state.version;db.commit()
     url=db.bind.url.render_as_string(hide_password=False)
     for _ in range(2):
-        run=subprocess.run([sys.executable,'-m','alembic','upgrade','head'],cwd=ROOT,env={**os.environ,'DATABASE_URL':url},capture_output=True,text=True)
+        run=subprocess.run([sys.executable,'-m','alembic','upgrade','head'],cwd=ROOT,env={**os.environ,'DATABASE_URL':url},capture_output=True,text=True, timeout=180)
         assert run.returncode==0,run.stderr
     db.expire_all();assert_sealed(db,before);assert state.state=='editing' and state.version==version
     assert publish(db,people,successor).minor==1
@@ -413,7 +412,7 @@ def test_successor_minor_uses_existing_predecessor_version(foundation_db,people,
     finally:event.remove(ReportRelease,'before_insert',seed_version)
     # This is a pre-S3B published fixture, not a 1.0 correction/release chain.
     url=db.bind.url.render_as_string(hide_password=False)
-    run=subprocess.run([sys.executable,'-m','alembic','upgrade','head'],cwd=ROOT,env={**os.environ,'DATABASE_URL':url},capture_output=True,text=True)
+    run=subprocess.run([sys.executable,'-m','alembic','upgrade','head'],cwd=ROOT,env={**os.environ,'DATABASE_URL':url},capture_output=True,text=True, timeout=180)
     assert run.returncode==0,run.stderr
     p,rev,q,g=ready.__wrapped__(db,x,predecessor)
     c=assemble(db,x,predecessor,p);db.commit();review(db,x,c);approve(db,x,c)
@@ -579,12 +578,13 @@ def test_held_package_lock_does_not_block_successor_publish(foundation_db,people
     db=foundation_db;c=successor;pid=ready[0].id;version=db.get(ReportCandidateState,c.id).version;db.commit()
     with Session(db.bind) as holder:
         holder.execute(text('SELECT id FROM directorate_packages WHERE id=:id FOR NO KEY UPDATE'),{'id':pid})
-        def attempt():
+        def attempt(barrier):
+            barrier.wait()
             with Session(db.bind,expire_on_commit=False) as other:
                 other.execute(text("SET LOCAL lock_timeout='1500ms'"))
                 r=reports.publish(other,other.get(User,people['strategy'].id),c.organization_id,c.id,version,c.sha256)
                 other.commit();return r.minor
-        with ThreadPoolExecutor(max_workers=1) as pool:assert pool.submit(attempt).result(timeout=10)==1
+        assert run_race('test_held_package_lock_does_not_block_successor_publish', [attempt], result_timeout=10)[0]==1
 
 
 def test_closed_work_does_not_enable_final_return_reassembly(foundation_db,people,successor,ready):

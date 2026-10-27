@@ -1,9 +1,8 @@
 """Phase 3 real migrated PostgreSQL, both resources, no rollout."""
-from concurrent.futures import ThreadPoolExecutor
 from datetime import timedelta
 import json
-from threading import Barrier
 import pytest
+from tests.race_helpers import run_race
 from fastapi import HTTPException
 from sqlalchemy import select, text, event, func
 from sqlalchemy.exc import DBAPIError
@@ -155,8 +154,8 @@ def test_concurrent_only_one_winner(foundation_db,people,package,race):
     db=foundation_db;x=people;p=package
     if race=='approve_return':submit(db,x,p)
     version=p.version;sha=service.revision(db,p).sha256;pid=p.id;director_id=x['director'].id;db.commit()
-    barrier=Barrier(2);engine=db.get_bind()
-    def operation(index):
+    engine=db.get_bind()
+    def operation(index,barrier):
         with Session(engine,expire_on_commit=False) as session:
             actor=session.get(User,director_id);barrier.wait()
             try:
@@ -164,7 +163,7 @@ def test_concurrent_only_one_winner(foundation_db,people,package,race):
                 else:service.transition(session,actor,pid,'director_approve' if index==0 or race=='edit_approve' else 'director_return',version,sha,'İade gerekçesi')
                 session.commit();return 'success'
             except HTTPException as exc:session.rollback();return exc.status_code
-    with ThreadPoolExecutor(max_workers=2) as pool:results=list(pool.map(operation,(0,1)))
+    results=run_race('test_concurrent_only_one_winner', [lambda b:operation(0,b),lambda b:operation(1,b)])
     if race=='approve_return':assert sorted(results,key=str)==[409,'success']
     else:assert results[0]=='success' and results[1] in {403,409}
     db.expire_all()
@@ -192,13 +191,12 @@ def test_binding_fields_director_reason(foundation_db,people,package):
 def test_reopen_vs_decision_single_winner(foundation_db,people,package,race):
     db=foundation_db;x=people;p=package;submit(db,x,p)
     version=p.version;sha=service.revision(db,p).sha256;pid=p.id;uid=x['director'].id;db.commit()
-    barrier=Barrier(2)
-    def run(action):
+    def run(action,barrier):
         with Session(db.get_bind(),expire_on_commit=False) as s:
             actor=s.get(User,uid);barrier.wait()
             try:service.transition(s,actor,pid,action,version,sha,'Kaynak kontrolü');s.commit();return 'ok'
             except HTTPException as exc:s.rollback();return exc.status_code
-    with ThreadPoolExecutor(max_workers=2) as pool:results=list(pool.map(run,('director_reopen',race)))
+    results=run_race('test_reopen_vs_decision_single_winner', [lambda b:run('director_reopen',b),lambda b:run(race,b)])
     assert sorted(results,key=str)==[409,'ok']
     db.expire_all()
     if p.state=='returned':
@@ -253,7 +251,7 @@ def test_phase3_additive_upgrade_preserves_phase2_history(foundation_db,people):
     expected = dict(before, authority_delegations=[dict(row, authority_kind='director_approval') for row in before['authority_delegations']])
     for _ in range(2):
         done=subprocess.run([sys.executable,'-m','alembic','upgrade','head'],cwd=ROOT,
-            env={**os.environ,'DATABASE_URL':db.get_bind().url.render_as_string(hide_password=False)},capture_output=True,text=True)
+            env={**os.environ,'DATABASE_URL':db.get_bind().url.render_as_string(hide_password=False)},capture_output=True,text=True, timeout=180)
         assert done.returncode==0,done.stderr
     for t,rows in expected.items():assert [dict(r) for r in db.execute(text(f'SELECT * FROM {t} ORDER BY id')).mappings()]==rows
     assert db.scalar(select(AuthorityDelegation.authority_kind)) == 'director_approval'
