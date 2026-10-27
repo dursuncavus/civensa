@@ -162,12 +162,17 @@ def test_browser_layout_header_contrast_and_evidence(browser, client, scenario, 
             assert box['width'] <= 44 * 16
             link = row.locator('.revision-heading > a')
             link_box = link.bounding_box()
-            status_box = row.locator('.revision-statuses').bounding_box()
             first_badge = row.locator('.status').first.bounding_box()
-            assert abs(first_badge['x'] - link_box['x']) <= 1
-            assert first_badge['y'] >= link_box['y'] + link_box['height']
-            assert status_box['y'] >= link_box['y'] + link_box['height']
+            reason = row.locator('.revision-reason')
+            if reason.count():
+                reason_box = reason.bounding_box()
+                heading_box = row.locator('.revision-heading').bounding_box()
+                assert reason_box['y'] >= heading_box['y'] + heading_box['height']
             if width == 1440:
+                badge_center = first_badge['y'] + first_badge['height'] / 2
+                badge_gap = first_badge['x'] - (link_box['x'] + link_box['width'])
+                assert link_box['y'] <= badge_center <= link_box['y'] + link_box['height']
+                assert 0 < badge_gap <= 16
                 meta = link.locator('.revision-meta')
                 assert meta.evaluate('el => getComputedStyle(el).display') == 'inline'
                 text_rects = link.evaluate("""el => {

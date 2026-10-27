@@ -14,7 +14,7 @@
 .activity-reports-page .revision-row { padding-block: var(--space-4); border-bottom: 1px solid var(--border); }
 .activity-reports-page .revision-row:first-child { padding-top: 0; }
 .activity-reports-page .revision-row:last-child { padding-bottom: 0; border-bottom: 0; }
-.activity-reports-page .revision-heading { display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-1); }
+.activity-reports-page .revision-heading { display: flex; flex-direction: row; flex-wrap: wrap; align-items: center; gap: var(--space-2); }
 .activity-reports-page .revision-heading > a { min-width: 0; max-width: 100%; font-weight: var(--font-medium); }
 .activity-reports-page .revision-meta { display: inline; }
 .activity-reports-page .revision-statuses { display: inline-flex; flex-wrap: wrap; gap: var(--space-1); max-width: 100%; }
