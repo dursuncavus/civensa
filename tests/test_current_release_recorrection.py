@@ -3,9 +3,8 @@ import json
 import os
 import subprocess
 import sys
-from concurrent.futures import ThreadPoolExecutor
-from threading import Barrier
 import pytest
+from tests.race_helpers import run_race
 from sqlalchemy import select,func,text,event,update,cast
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Session
@@ -211,7 +210,7 @@ def test_populated_one_one_migration_preserves_history(foundation_db,people,read
     db=foundation_db;x=people;history=correction_history(db);before=sealed(db);db.commit()
     url=db.bind.url.render_as_string(hide_password=False)
     for _ in range(2):
-        run=subprocess.run([sys.executable,'-m','alembic','upgrade','head'],cwd=ROOT,env={**os.environ,'DATABASE_URL':url},capture_output=True,text=True)
+        run=subprocess.run([sys.executable,'-m','alembic','upgrade','head'],cwd=ROOT,env={**os.environ,'DATABASE_URL':url},capture_output=True,text=True, timeout=180)
         assert run.returncode==0,run.stderr
     db.expire_all();assert_history(db,history);assert_sealed(db,before)
     q=request(db,x,one_one);accept(db,x,q);g=grant(db,x,q)
@@ -220,15 +219,15 @@ def test_populated_one_one_migration_preserves_history(foundation_db,people,read
 
 def test_two_current_requests_concurrently_share_exact_cycle(foundation_db,people,ready,one_one):
     db=foundation_db;x=people;q=request(db,x,one_one);h=request(db,x,one_one,other=True);accept(db,x,q);accept(db,x,h)
-    before=db.scalar(select(func.count(PackageRevision.id)));db.commit();barrier=Barrier(2)
-    def attempt(rid):
+    before=db.scalar(select(func.count(PackageRevision.id)));db.commit()
+    def attempt(rid,barrier):
         with Session(db.bind,expire_on_commit=False) as other:
             actor=other.get(User,x['strategy'].id);req=other.get(RevisionRequest,rid)
             state=other.get(RevisionRequestState,rid);m=auth.active_membership(other,x['user'].id,req.organization_id,req.department_id)
             now=auth.server_now(other);barrier.wait()
             from datetime import timedelta
             g=corrections.open_grant(other,actor,rid,state.version,corrections.paths(req),[m.id],now-timedelta(minutes=1),now+timedelta(hours=1),'Eşzamanlı izin');other.commit();return g.cycle_id
-    with ThreadPoolExecutor(max_workers=2) as pool:results=list(pool.map(attempt,[q.id,h.id]))
+    results=run_race('test_two_current_requests_concurrently_share_exact_cycle', [lambda b:attempt(q.id,b),lambda b:attempt(h.id,b)])
     assert results[0]==results[1]
     db.expire_all();assert db.scalar(select(func.count(PackageRevision.id)))==before+1
     assert db.scalar(select(func.count(RevisionCorrectionCycle.id)).where(RevisionCorrectionCycle.source_release_id==one_one.id))==1
