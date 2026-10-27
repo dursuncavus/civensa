@@ -135,7 +135,7 @@
                 </td>
                 <td>
                   {% if u.role == 'department' and u.position == 'staff' %}
-                    {% include "submit_authorization_control.html" %}
+                    <div class="submit-authorization-controls">{% include "submit_authorization_control.html" %}</div>
                   {% elif u.role == 'department' %}
                     Müdür yetkisi
                   {% else %}
@@ -143,10 +143,12 @@
                   {% endif %}
                 </td>
                 <td>
-                  <span class="status {{ 'approved' if u.is_active else 'returned' }}">{{ 'Etkin' if u.is_active else 'Devre dışı' }}</span>
-                  <div class="rowbuttons">
-                    <button class="button small toggle-user-active" data-user="{{ u.id }}" data-active="{{ '1' if u.is_active else '0' }}">{{ 'Devre dışı bırak' if u.is_active else 'Etkinleştir' }}</button>
-                    <button class="button small show-password-reset" data-user="{{ u.id }}">Parola sıfırla</button>
+                  <div class="user-status-controls">
+                    <span class="status {{ 'approved' if u.is_active else 'returned' }}">{{ 'Etkin' if u.is_active else 'Devre dışı' }}</span>
+                    <div class="rowbuttons">
+                      <button class="button small toggle-user-active" data-user="{{ u.id }}" data-active="{{ '1' if u.is_active else '0' }}">{{ 'Devre dışı bırak' if u.is_active else 'Etkinleştir' }}</button>
+                      <button class="button small show-password-reset" data-user="{{ u.id }}">Parola sıfırla</button>
+                    </div>
                   </div>
                   <div class="password-reset" data-reset-user="{{ u.id }}" hidden>
                     <input type="password" placeholder="Yeni geçici parola">

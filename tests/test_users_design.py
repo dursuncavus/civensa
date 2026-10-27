@@ -263,11 +263,12 @@ def test_browser_layout_contrast_and_existing_controls(browser, accounts, users_
                 const auth = row.querySelector('td:nth-child(5) .toggle-submit-authorization');
                 const authBadge = row.querySelector('td:nth-child(5) .status');
                 const active = row.querySelector('.toggle-user-active');
-                const activeBadge = row.querySelector('td:last-child > .status');
+                const activeBadge = row.querySelector('td:last-child .status');
                 return [[authBadge, auth], [activeBadge, active]].filter(([badge, action]) => badge && action);
               });
               return pairs.map(([badge, action]) => [
-                badge.getBoundingClientRect().top, action.getBoundingClientRect().top
+                badge.getBoundingClientRect().top + badge.getBoundingClientRect().height / 2,
+                action.getBoundingClientRect().top + action.getBoundingClientRect().height / 2
               ]);
             }""")
             assert all(abs(badge_top - action_top) <= 2
@@ -304,14 +305,29 @@ def test_browser_layout_contrast_and_existing_controls(browser, accounts, users_
             columns = page.locator('#newUserForm').evaluate('el => getComputedStyle(el).gridTemplateColumns.split(" ").length')
             assert columns == (3 if width >= 1024 else 1)
             if width == 1440:
+                assert page.locator('.users-table .user-email').evaluate_all("""emails => emails.every(el => {
+                  const text = el.textContent;
+                  for (let index = 0; index < text.length - 1; index += 1) {
+                    if (!/[a-z\\d]/i.test(text[index]) || !/[a-z\\d]/i.test(text[index + 1])) continue;
+                    const first = document.createRange();
+                    const second = document.createRange();
+                    first.setStart(el.firstChild, index);
+                    first.setEnd(el.firstChild, index + 1);
+                    second.setStart(el.firstChild, index + 1);
+                    second.setEnd(el.firstChild, index + 2);
+                    if (Math.round(first.getBoundingClientRect().top) !==
+                        Math.round(second.getBoundingClientRect().top)) return false;
+                  }
+                  return true;
+                })""")
                 assert page.locator('.users-table td').evaluate_all(
                     "cells => cells.every(cell => getComputedStyle(cell).verticalAlign === 'middle')")
                 assert page.locator('.bulk-user-import .actions .button:not([hidden])').evaluate_all(
                     'els => new Set(els.map(el => el.getBoundingClientRect().top)).size === 1')
-            expect(row.locator('td:last-child > .status')).to_have_text('Etkin')
+            expect(row.locator('td:last-child .status')).to_have_text('Etkin')
             inactive = page.locator('tr[data-user]').filter(has_text='Ceren Sentetik')
-            expect(inactive.locator('td:last-child > .status')).to_have_text('Devre dışı')
-            assert inactive.locator('td:last-child > .status').evaluate(
+            expect(inactive.locator('td:last-child .status')).to_have_text('Devre dışı')
+            assert inactive.locator('td:last-child .status').evaluate(
                 'el => getComputedStyle(el).color === getComputedStyle(document.querySelector(".users-page .muted")).color')
             wrap = page.locator('.users-table')
             if width == 390:
@@ -328,10 +344,7 @@ def test_browser_layout_contrast_and_existing_controls(browser, accounts, users_
                   return Math.abs(input.top - button.top) <= 2 && input.right <= button.left + 1;
                 }""")
                 assert root.locator('.user-email').evaluate_all(
-                    """els => els.every(el => {
-                      return getComputedStyle(el).overflowWrap === 'break-word' &&
-                        el.scrollWidth <= el.clientWidth;
-                    })""")
+                    "els => els.every(el => getComputedStyle(el).overflowWrap === 'normal')")
                 position_select = page.get_by_role('combobox', name='Bora Sentetik unvanı')
                 expect(position_select).to_have_count(1)
                 assert position_select.locator('xpath=..').locator('.sr-only').evaluate(

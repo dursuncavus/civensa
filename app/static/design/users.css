@@ -42,16 +42,16 @@
 .users-page .table-wrap { width: 100%; max-width: 100%; overflow-x: auto; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); }
 .users-page .users-table { margin-top: var(--space-4); }
 .users-page table { width: 100%; min-width: 0; margin: 0; border-collapse: collapse; table-layout: fixed; }
-.users-page :is(th, td) { padding: var(--space-3) var(--space-1); border-bottom: 1px solid var(--border); font-size: var(--text-sm); text-align: left; vertical-align: middle; }
+.users-page :is(th, td) { padding: var(--space-3); border-bottom: 1px solid var(--border); font-size: var(--text-sm); text-align: left; vertical-align: middle; }
 .users-page th { color: var(--text-secondary); background: var(--surface-muted); font-weight: var(--font-medium); }
 .users-page .users-table th:nth-child(1) { width: 4%; }
-.users-page .users-table th:nth-child(2) { width: 14%; }
-.users-page .users-table th:nth-child(3) { width: 14%; }
-.users-page .users-table th:nth-child(4) { width: 25%; }
+.users-page .users-table th:nth-child(2) { width: 22%; }
+.users-page .users-table th:nth-child(3) { width: 11%; }
+.users-page .users-table th:nth-child(4) { width: 19%; }
 .users-page .users-table th:nth-child(5) { width: 16%; }
-.users-page .users-table th:nth-child(6) { width: 27%; }
+.users-page .users-table th:nth-child(6) { width: 28%; }
 .users-page .user-identity :is(.user-email, .user-role) { display: block; }
-.users-page .user-email { overflow-wrap: break-word; }
+.users-page .user-email { overflow-wrap: normal; }
 .users-page .user-position-controls { display: flex; align-items: center; flex-wrap: nowrap; gap: var(--space-2); }
 .users-page .user-position-controls label { position: relative; flex: 1 1 7rem; }
 .users-page .user-position-controls .button { flex: 0 0 auto; white-space: nowrap; }
@@ -62,8 +62,9 @@
 .users-page :is(.status.returned, .status.draft) { color: var(--text-secondary); background: var(--surface-muted); }
 .users-page .users-table td:nth-child(5) { white-space: nowrap; }
 .users-page .users-table td:last-child { white-space: nowrap; }
-.users-page .users-table :is(.status, .toggle-submit-authorization, .rowbuttons) { vertical-align: top; }
-.users-page .users-table .rowbuttons { display: inline-flex; align-items: flex-start; flex-flow: row nowrap; gap: var(--space-1); margin: 0; }
+.users-page .submit-authorization-controls,
+.users-page .user-status-controls { display: inline-flex; align-items: center; flex-flow: row nowrap; gap: var(--space-1); }
+.users-page .users-table .rowbuttons { display: inline-flex; align-items: center; flex-flow: row nowrap; gap: var(--space-1); margin: 0; }
 .users-page .users-table .button.small { flex: 0 0 auto; white-space: nowrap; }
 .users-page .users-table .show-password-reset { border-color: transparent; background: transparent; color: var(--accent); font-size: var(--text-xs); }
 .users-page .users-table .show-password-reset:hover { background: var(--surface-muted); color: var(--accent-hover); }
@@ -83,4 +84,5 @@
 }
 @media (max-width: 1279px) {
   .users-page table { min-width: 1000px; }
+  .users-page .user-email { overflow-wrap: anywhere; }
 }
