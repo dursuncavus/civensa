@@ -1,7 +1,7 @@
 # CIVENSA — CURRENT STATE
 
 Updated: 27 Oct 2026, ~09:45 Istanbul (live session CV Lider 33, D-287).
-Rules: AI_WORKING_CONSTITUTION v1.2 (Drive, global) · `HIERARCHY.md` v1.4 · `PROJECT_RULES.md` v1.4 (D-271: PRIOR ART field mandatory in every package) · `BACKUP_LEAD.md` v2.
+Rules: AI_WORKING_CONSTITUTION v1.2 (Drive, global) · `HIERARCHY.md` v1.5 · `PROJECT_RULES.md` v1.4 (D-271: PRIOR ART field mandatory in every package) · `BACKUP_LEAD.md` v2.
 Backup log ("Civensa Yedek Kaydı", Drive): no entries, last modified 23 Oct (DOĞRULANDI 27 Oct 05:45).
 Tags: DOĞRULANDI (lead checked) · TARİHSEL (past fact) · BEYAN (owner said) · BELİRSİZ (unknown).
 
@@ -16,7 +16,8 @@ Owner opens a new chat with one line: `CV Lider 34 · Claude Opus 5.5 · civensa
 7. CIV-118 (Rapor hazırlığı implementation, D-289) dispatched: review when the PR opens; large → DeepSeek first pass allowed (D-274, no web search).
 8. CIV-119 (046 Gönderim yetkileri, D-290) dispatched: review when the PR opens.
 9. eMudhra hotfix (D-291): #178 merge when green; owner merges #177 to main + Render deploy, then confirm the deploy succeeded.
-10. Next IDs: task CIV-120, decision D-292.
+10. Merge rule v1.5 (D-292). Open: #173, #167, #178, #184, #181, #183 (draft), #185, #175 — merge as each is reviewed + green.
+11. Next IDs: task CIV-124, decision D-293.
 
 ## Claude quota (BEYAN, owner screen 26 Oct 12:48)
 - Weekly 47% at 18:14 Monday (session 24%); lasts until the Saturday reset at this pace. Offload large reviews to DeepSeek (D-274).
@@ -39,7 +40,7 @@ Merged 27 Oct: #165 CIV-112 → 2ce4f59 (owner).
 Merged 26 Oct: #163 CIV-113 → 88c9dfb; #154 CIV-109 → 34329a7; #161 CIV-111 → 31b00e4 (D-283); #160 CIV-110 → 0b4b333 (D-282); #156 CIV-108 prototype → 633ac07 (D-277); #150 CIV-105 → 7cb58d9 (D-278; all jobs green, D-280); #148 CIV-106 → 1ed8620 (D-273); #145 CIV-104 → e0df9ce (D-268); #140 CIV-103 → 6efbe25 (D-265); #138 copilot-setup-steps → cbed4d8 (D-264); #136 production environment → d02b7cc; #132 CIV-102 → 873d361.
 
 ## Open — owner
-- Look approval CIV-109 (#154), CIV-111 (#161), CIV-113 (#163), CIV-112 (#165), CIV-114 (#168) (D-283, D-287).
+- Look approvals done for CIV-109/111/112/113/114/118/119/120/121 (D-295). Pending: CIV-122/123 after-screenshots, CIV-124.
 - Look approval CIV-104 (#145): 11 text changes + screenshots (D-268).
 - UI redesign (D-224/D-225): continues per D-243 order.
 - (closed) Look approvals CIV-101/102/103 (D-267); public repo (D-261); merges by the lead in live sessions (D-214); Codex "Tam erişim" ON (D-210); plaintext password files not tracked (D-217).

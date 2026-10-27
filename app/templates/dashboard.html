@@ -154,35 +154,34 @@
             <div class="section-head">
               <div>
                 <h2>Müdürlük ilerleme panosu</h2>
-                <p class="muted">{{ progress_summary.approved }} onaylanan müdürlük · {{ progress_summary.submitted }} incelemede olan müdürlük · {{ progress_summary.in_progress + progress_summary.ready }} veri girişi süren müdürlük · {{ progress_summary.needs_attention + progress_summary.returned }} düzeltme gereken müdürlük · {{ progress_summary.not_started }} veri girişine başlamayan müdürlük · {{ progress_summary.missing_accounts }} kullanıcısı tanımlanmamış müdürlük</p>
               </div>
               <div class="rowbuttons">
                 <a class="button" href="/review?period_id={{ period.id }}">İnceleme kuyruğu</a>
                 <a class="button" href="/api/progress?period_id={{ period.id }}">JSON</a>
               </div>
             </div>
-            <div class="cards">
-              <a class="card action-card progress-filter" href="#mudurluk-ilerleme" data-filter-states="approved" aria-label="Onaylanan müdürlük {{ progress_summary.approved }}">
+            <div class="progress-list">
+              <a class="progress-row progress-filter" href="#mudurluk-ilerleme" data-filter-states="approved" aria-label="Onaylanan müdürlük {{ progress_summary.approved }}">
                 <span>Onaylanan müdürlük</span>
                 <b class="ok">{{ progress_summary.approved }}</b>
               </a>
-              <a class="card action-card progress-filter" href="#mudurluk-ilerleme" data-filter-states="submitted" aria-label="İnceleme bekleyen müdürlük {{ progress_summary.submitted }}">
+              <a class="progress-row progress-filter" href="#mudurluk-ilerleme" data-filter-states="submitted" aria-label="İnceleme bekleyen müdürlük {{ progress_summary.submitted }}">
                 <span>İnceleme bekleyen müdürlük</span>
                 <b>{{ progress_summary.submitted }}</b>
               </a>
-              <a class="card action-card progress-filter" href="#mudurluk-ilerleme" data-filter-states="in_progress,ready" aria-label="Veri girişi süren müdürlük {{ progress_summary.in_progress + progress_summary.ready }}">
+              <a class="progress-row progress-filter" href="#mudurluk-ilerleme" data-filter-states="in_progress,ready" aria-label="Veri girişi süren müdürlük {{ progress_summary.in_progress + progress_summary.ready }}">
                 <span>Veri girişi süren müdürlük</span>
                 <b>{{ progress_summary.in_progress + progress_summary.ready }}</b>
               </a>
-              <a class="card action-card progress-filter" href="#mudurluk-ilerleme" data-filter-states="needs_attention,returned" aria-label="Düzeltme gereken müdürlük {{ progress_summary.needs_attention + progress_summary.returned }}">
+              <a class="progress-row progress-filter" href="#mudurluk-ilerleme" data-filter-states="needs_attention,returned" aria-label="Düzeltme gereken müdürlük {{ progress_summary.needs_attention + progress_summary.returned }}">
                 <span>Düzeltme gereken müdürlük</span>
                 <b class="{{ 'bad' if progress_summary.needs_attention + progress_summary.returned else 'ok' }}">{{ progress_summary.needs_attention + progress_summary.returned }}</b>
               </a>
-              <a class="card action-card progress-filter" href="#mudurluk-ilerleme" data-filter-states="not_started" aria-label="Veri girişine başlamayan müdürlük {{ progress_summary.not_started }}">
+              <a class="progress-row progress-filter" href="#mudurluk-ilerleme" data-filter-states="not_started" aria-label="Veri girişine başlamayan müdürlük {{ progress_summary.not_started }}">
                 <span>Veri girişine başlamayan müdürlük</span>
                 <b>{{ progress_summary.not_started }}</b>
               </a>
-              <a class="card action-card" href="/users?period_id={{ period.id }}" aria-label="Kullanıcısı tanımlanmamış müdürlük {{ progress_summary.missing_accounts }}">
+              <a class="progress-row" href="/users?period_id={{ period.id }}" aria-label="Kullanıcısı tanımlanmamış müdürlük {{ progress_summary.missing_accounts }}">
                 <span>Kullanıcısı tanımlanmamış müdürlük</span>
                 <b class="{{ 'bad' if progress_summary.missing_accounts else 'ok' }}">{{ progress_summary.missing_accounts }}</b>
               </a>
