@@ -51,6 +51,8 @@ Her PNG 1,5 MB sınırının altındadır. Görüntüler sayfanın başlangıcı
 - Chromium: iki rol, 1440 ve 390 px; beş durum filtresi, Tümü, Tab/Space/Enter, aria-pressed, JS kapalı tüm satırlar, SHA-256 details, boş durum, yatay taşma ve normal/hover/focus/etkin durumlarda görünür metin kontrastı ≥ 4,5:1 doğrulandı.
 - `node --check app/static/design/source-comparison.js` ve `git diff --check` başarılı.
 - Son şablon biçimlendirmesinden sonra yeni tasarım paketi: **22 geçti**.
-- Tam PostgreSQL paketi ve son head CI sonuçları PR açıklamasında kaydedilir.
+- Yerel tam PostgreSQL 17 paketi: `python -m pytest -q --require-postgres -n 4 --dist loadfile` — **3102 geçti**, 4 mevcut Starlette uyarısı. Koleksiyon rebase öncesi tabanda başladı.
+- Güncel tabana rebase sonrasında, yeni CIV-114 testleri dahil odaklı paket: **76 geçti**. Güncel head koleksiyonu: **3122 test**.
+- CI ilk denemesinde bir grup **1561 geçti**; diğer grupta kapsam dışı `test_delegation_expires_after_initial_check[performance_program]` testinin bir saniyelik süresi yetki oluşturulmadan doldu (1560 geçti). Testin iki senaryosu yerelde yeniden geçti. Assertion veya uygulama kodu değiştirilmedi. Son head CI sonucu PR açıklamasında kaydedilir.
 
 Canlı veri kullanılmadı. Firefox, WebKit ve gerçek ekran okuyucu ile doğrulama yapılmadı. Sunucu davranışı, erişim izinleri ve veri hesaplamaları için değişiklik varsayılmadı; mevcut sözleşme korundu.
