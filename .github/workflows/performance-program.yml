@@ -5,6 +5,12 @@ on:
     paths-ignore:
       - 'docs/**'
       - '**/*.md'
+  # D-292: full suite after every merge into phase5 (merge rule v1.5).
+  push:
+    branches: [feature/authorization-workflow-phase5]
+    paths-ignore:
+      - 'docs/**'
+      - '**/*.md'
   workflow_dispatch:
 permissions:
   contents: read
@@ -13,7 +19,7 @@ concurrency:
   cancel-in-progress: true
 jobs:
   test:
-    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.draft == false
+    if: github.event_name == 'workflow_dispatch' || github.event_name == 'push' || github.event.pull_request.draft == false
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     strategy:

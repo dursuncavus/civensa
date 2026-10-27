@@ -1,7 +1,7 @@
 # CIVENSA — CURRENT STATE
 
 Updated: 27 Oct 2026, ~09:45 Istanbul (live session CV Lider 33, D-287).
-Rules: AI_WORKING_CONSTITUTION v1.2 (Drive, global) · `HIERARCHY.md` v1.4 · `PROJECT_RULES.md` v1.4 (D-271: PRIOR ART field mandatory in every package) · `BACKUP_LEAD.md` v2.
+Rules: AI_WORKING_CONSTITUTION v1.2 (Drive, global) · `HIERARCHY.md` v1.5 · `PROJECT_RULES.md` v1.4 (D-271: PRIOR ART field mandatory in every package) · `BACKUP_LEAD.md` v2.
 Backup log ("Civensa Yedek Kaydı", Drive): no entries, last modified 23 Oct (DOĞRULANDI 27 Oct 05:45).
 Tags: DOĞRULANDI (lead checked) · TARİHSEL (past fact) · BEYAN (owner said) · BELİRSİZ (unknown).
 
@@ -16,7 +16,8 @@ Owner opens a new chat with one line: `CV Lider 34 · Claude Opus 5.5 · civensa
 7. CIV-118 (Rapor hazırlığı implementation, D-289) dispatched: review when the PR opens; large → DeepSeek first pass allowed (D-274, no web search).
 8. CIV-119 (046 Gönderim yetkileri, D-290) dispatched: review when the PR opens.
 9. eMudhra hotfix (D-291): #178 merge when green; owner merges #177 to main + Render deploy, then confirm the deploy succeeded.
-10. Next IDs: task CIV-120, decision D-292.
+10. Merge rule v1.5 (D-292). Open: #173, #167, #178, #184, #181, #183 (draft), #185, #175 — merge as each is reviewed + green.
+11. Next IDs: task CIV-124, decision D-293.
 
 ## Claude quota (BEYAN, owner screen 26 Oct 12:48)
 - Weekly 47% at 18:14 Monday (session 24%); lasts until the Saturday reset at this pace. Offload large reviews to DeepSeek (D-274).
