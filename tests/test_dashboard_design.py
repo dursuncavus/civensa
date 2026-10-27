@@ -213,7 +213,7 @@ def test_021_022_frozen_forms_links_hooks_and_role_visibility(dashboard_client, 
         assert 'dashboard-summary' not in html
 
 
-@pytest.mark.parametrize('width', [1440, 1280, 390])
+@pytest.mark.parametrize('width', [1440, 1280, 1200, 390])
 @pytest.mark.parametrize('role', ['strategy', 'department'])
 def test_021_022_browser_layout_contrast_and_period_actions(browser, dashboard_client, sample, width, role):
     client = dashboard_client
@@ -245,7 +245,7 @@ def test_021_022_browser_layout_contrast_and_period_actions(browser, dashboard_c
         assert page.evaluate('document.documentElement.scrollWidth === innerWidth'), page.evaluate("[...document.querySelectorAll('*')].filter(el => el.getBoundingClientRect().right > innerWidth).map(el => [el.tagName, el.className, el.getBoundingClientRect().width])")
         assert root.locator('label, th, .card span').evaluate_all("els => els.every(el => getComputedStyle(el).textTransform === 'none')")
         if role == 'strategy':
-            assert len(set(root.locator('.card').evaluate_all("els => els.map(el => getComputedStyle(el).padding)"))) == 1
+            assert root.locator('.dashboard-summary .card').evaluate_all("els => els.every(el => getComputedStyle(el).borderRadius === '0px' && getComputedStyle(el).borderLeftWidth === '0px')")
         top_cards = root.locator('.dashboard-summary > .cards > *')
 
         def row_sizes(cards):
@@ -259,8 +259,7 @@ def test_021_022_browser_layout_contrast_and_period_actions(browser, dashboard_c
                 assert top_cards.count() == 3
             assert len({round(card.bounding_box()['y']) for card in top_cards.all()}) == 3
             for card in top_cards.all():
-                limit = 108 if role == 'strategy' and card.evaluate("el => el.matches('.action-card')") else 88
-                assert card.bounding_box()['height'] <= limit, (
+                assert card.bounding_box()['height'] <= 44, (
                     card.inner_text(), card.bounding_box(),
                     card.evaluate("el => ({className: el.className, padding: getComputedStyle(el).padding, "
                                   "label: getComputedStyle(el.querySelector('span')).lineHeight, "
@@ -299,8 +298,18 @@ def test_021_022_browser_layout_contrast_and_period_actions(browser, dashboard_c
                 title_bottom = page.locator('.page-header').bounding_box()['y'] + page.locator('.page-header').bounding_box()['height']
                 assert first_panel.bounding_box()['y'] - title_bottom <= 120
         elif role == 'strategy':
-            assert row_sizes(top_cards) == [1, 2]
-            assert row_sizes(root.locator('#mudurluk-ilerleme .progress-list > .progress-row')) == [1] * 6
+            assert row_sizes(top_cards) == ([1, 2] if width == 1200 else [1, 1, 1])
+            progress_rows = root.locator('#mudurluk-ilerleme .progress-list > .progress-row')
+            if width == 1200:
+                assert row_sizes(progress_rows) == [2, 2, 2]
+            else:
+                assert row_sizes(progress_rows) == [1] * 6
+        for row in top_cards.all():
+            label, value = row.locator('span').bounding_box(), row.locator('b').bounding_box()
+            assert row.bounding_box()['height'] <= 44
+            assert 0 <= value['x'] - label['x'] - label['width'] <= 13
+            assert value['y'] < label['y'] + label['height']
+            assert row.locator('b').evaluate("el => getComputedStyle(el).fontVariantNumeric.includes('tabular-nums')")
         assert root.locator('.card').evaluate_all('els => els.every(el => el.scrollWidth <= el.clientWidth)')
         pairs_script = TEXT_PAIRS.replace('.section-index-page', '.dashboard-page')
         pairs = set(map(tuple, page.evaluate(pairs_script)))

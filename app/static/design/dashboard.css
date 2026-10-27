@@ -187,3 +187,39 @@
 .department-dashboard .badge.neutral { color: var(--text-secondary); background: var(--surface-muted); }
 .department-dashboard .badge.warning { color: var(--warning); background: var(--warning-bg); }
 .department-dashboard .badge.success { color: var(--success); background: var(--success-bg); }
+
+/* CIV-123 · summary only; the progress panel and department task list keep
+   their own layouts. Two columns require a wide summary container. */
+.dashboard-page .dashboard-summary { container-type: inline-size; }
+.dashboard-page .dashboard-summary > .cards {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0 var(--space-6);
+  max-width: 44rem;
+}
+.dashboard-page .dashboard-summary .card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) max-content;
+  column-gap: var(--space-3);
+  align-items: center;
+  min-height: var(--control-height);
+  padding: 0;
+  border: 0;
+  border-bottom: 1px solid var(--border);
+  border-radius: 0;
+  background: transparent;
+}
+.dashboard-page .dashboard-summary .card :is(span, b, small) { line-height: 20px; }
+.dashboard-page .dashboard-summary .card span { grid-column: 1; grid-row: 1; }
+.dashboard-page .dashboard-summary .card b {
+  grid-column: 2;
+  margin: 0;
+  font-size: var(--text-sm);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+.dashboard-page .dashboard-summary .card:has(small) b { grid-row: 1 / span 2; }
+.dashboard-page .dashboard-summary .card small { grid-column: 1; grid-row: 2; }
+.dashboard-page .dashboard-summary .card:hover { background: var(--accent-soft); }
+@container (min-width: 48rem) {
+  .dashboard-page .dashboard-summary > .cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
