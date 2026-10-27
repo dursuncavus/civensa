@@ -66,12 +66,12 @@
 {% endif %}
 {% endfor %}
 {% set sections = [
-('cards', 'Performans Kartları', ('Başlanmadı' if not cards else (progress.cards|string ~ ' kart eksik' if progress.cards else cards|length|string ~ ' kart'))),
-('assignments', 'Gösterge ve faaliyetlerin kartlara atanması', ('Başlanmadı' if not snapshot.indicators and not snapshot.activities else (progress.unassigned|string ~ ' kayıt kartsız' if progress.unassigned else 'Tamamlandı'))),
-('catalogue', 'Sorumlu harcama birimleri kataloğu bağlantısı', ('Başlanmadı' if not snapshot.activities else (progress.unlinked|string ~ ' faaliyet bağlanacak' if progress.unlinked else 'Tamamlandı'))),
-('sources', 'Kaynak değerlerini doğrulama', (progress.source|string ~ ' kayıt doğrulanacak' if progress.source else ('Kaynak değerleri doğrulandı' if snapshot.indicators or snapshot.activities or snapshot.department_costs else 'Başlanmadı'))),
-('finance', 'Faaliyet finansmanı', ('Başlanmadı' if not snapshot.activities else (progress.finance|string ~ ' faaliyet kontrol edilecek' if progress.finance else 'Tutarlar doğrulandı'))),
-('economics', 'Ekonomik tablo', ('Başlanmadı' if not snapshot.economics else (progress.economic|string ~ ' hücre doğrulanacak' if progress.economic else 'Kaynak hücreleri doğrulandı')))
+('cards', 'Performans Kartları', ('Başlanmadı' if not cards else (progress.cards|string ~ ' kart eksik' if progress.cards else cards|length|string ~ ' kart')), ('warning' if cards and progress.cards else 'neutral')),
+('assignments', 'Gösterge ve faaliyetlerin kartlara atanması', ('Başlanmadı' if not snapshot.indicators and not snapshot.activities else (progress.unassigned|string ~ ' kayıt kartsız' if progress.unassigned else 'Tamamlandı')), ('neutral' if not snapshot.indicators and not snapshot.activities else ('warning' if progress.unassigned else 'success'))),
+('catalogue', 'Sorumlu harcama birimleri kataloğu bağlantısı', ('Başlanmadı' if not snapshot.activities else (progress.unlinked|string ~ ' faaliyet bağlanacak' if progress.unlinked else 'Tamamlandı')), ('neutral' if not snapshot.activities else ('warning' if progress.unlinked else 'success'))),
+('sources', 'Kaynak değerlerini doğrulama', (progress.source|string ~ ' kayıt doğrulanacak' if progress.source else ('Kaynak değerleri doğrulandı' if snapshot.indicators or snapshot.activities or snapshot.department_costs else 'Başlanmadı')), ('warning' if progress.source else ('success' if snapshot.indicators or snapshot.activities or snapshot.department_costs else 'neutral'))),
+('finance', 'Faaliyet finansmanı', ('Başlanmadı' if not snapshot.activities else (progress.finance|string ~ ' faaliyet kontrol edilecek' if progress.finance else 'Tutarlar doğrulandı')), ('neutral' if not snapshot.activities else ('warning' if progress.finance else 'success'))),
+('economics', 'Ekonomik tablo', ('Başlanmadı' if not snapshot.economics else (progress.economic|string ~ ' hücre doğrulanacak' if progress.economic else 'Kaynak hücreleri doğrulandı')), ('neutral' if not snapshot.economics else ('warning' if progress.economic else 'success')))
 ] %}
 <section class="rp-panel rp-overview" aria-labelledby="rp-overview-title">
 <h2 id="rp-overview-title">
@@ -83,12 +83,12 @@ Salt okunur · Bu ekranda kayıt yapılamaz.
 </p>
 {% endif %}
 <ul class="rp-task-list">
-{% for id, title, status in sections %}
+{% for id, title, status, tone in sections %}
 <li>
 <a href="#rp-{{ id }}">
 {{ title }}
 </a>
-<span class="rp-status">
+<span class="rp-status {{ tone }}">
 {{ status }}
 </span>
 </li>
@@ -742,7 +742,7 @@ Tutarı kaydet
 Bu sayfada
 </h2>
 <ul>
-{% for id, title, status in sections %}
+{% for id, title, status, tone in sections %}
 <li>
 <a href="#rp-{{ id }}">
 {{ title }}

@@ -191,7 +191,7 @@ def test_frozen_forms_links_values_disabled_removal(live_client, sample, role, e
         assert after == before and len(after) == 1
 
 
-@pytest.mark.parametrize('scenario', ['empty', 'unassigned', 'unverified', 'complete', 'submitted'])
+@pytest.mark.parametrize('scenario', ['empty', 'unassigned', 'unverified', 'incomplete_card', 'complete', 'submitted'])
 def test_overview_statuses_and_exact_error_count(client, db, sample, scenario):
     if scenario == 'submitted':
         db.scalar(select(Submission)).status = 'submitted'
@@ -203,10 +203,12 @@ def test_overview_statuses_and_exact_error_count(client, db, sample, scenario):
         context.update(cards=[], errors=['Performans göstergesi yok.', 'Performans kartları hazırlanmalı.'])
         snap.update(indicators=[], activities=[], department_costs=[], economics=[])
         expected = ['Başlanmadı'] * 6
+        expected_tones = ['neutral'] * 6
     elif scenario == 'unassigned':
         snap['indicators'][0]['card_id'] = None
         snap['activities'][0].update(card_id=None, official_ids=[])
         expected = ['1 kart', '2 kayıt kartsız', '1 faaliyet bağlanacak', 'Kaynak değerleri doğrulandı', 'Tutarlar doğrulandı', 'Kaynak hücreleri doğrulandı']
+        expected_tones = ['neutral', 'warning', 'warning', 'success', 'success', 'success']
     elif scenario == 'unverified':
         snap['indicators'][0]['values'][0]['state'] = 'needs_review'
         snap['department_costs'][0]['state'] = 'needs_review'
@@ -214,11 +216,20 @@ def test_overview_statuses_and_exact_error_count(client, db, sample, scenario):
         snap['economics'][0]['state'] = 'needs_review'
         snap['activities'][0]['costs'] = []
         expected = ['1 kart', 'Tamamlandı', 'Tamamlandı', '2 kayıt doğrulanacak', '1 faaliyet kontrol edilecek', '1 hücre doğrulanacak']
+        expected_tones = ['neutral', 'success', 'success', 'warning', 'warning', 'warning']
+    elif scenario == 'incomplete_card':
+        context['cards'][0].rationale = ''
+        expected = ['1 kart eksik', 'Tamamlandı', 'Tamamlandı', 'Kaynak değerleri doğrulandı', 'Tutarlar doğrulandı', 'Kaynak hücreleri doğrulandı']
+        expected_tones = ['warning', 'success', 'success', 'success', 'success', 'success']
     else:
         expected = ['1 kart', 'Tamamlandı', 'Tamamlandı', 'Kaynak değerleri doğrulandı', 'Tutarlar doğrulandı', 'Kaynak hücreleri doğrulandı']
+        expected_tones = ['neutral', 'success', 'success', 'success', 'success', 'success']
     root = Document(response.template.render(context)).root
-    statuses = [normalized(n.text()) for n in root.walk('span') if n.attrs.get('class') == 'rp-status'][:6]
+    overview = next(n for n in root.walk('ul') if n.attrs.get('class') == 'rp-task-list')
+    badges = [n for n in overview.walk('span') if 'rp-status' in n.attrs.get('class', '').split()]
+    statuses = [normalized(n.text()) for n in badges]
     assert statuses == expected
+    assert [n.attrs['class'].split()[-1] for n in badges] == expected_tones
     summary = next(n for n in root.walk('section') if n.attrs.get('class') == 'rp-panel rp-overview')
     errors = [n for n in summary.walk('details') if 'rp-errors' in n.attrs.get('class', '')]
     if context['errors']:
@@ -279,7 +290,21 @@ def test_browser_layout_anchors_contrast_and_evidence(browser, client, db, sampl
                 control.hover()
                 control.focus()
                 pairs.update(map(tuple, page.evaluate(script)))
+        pairs.update(map(tuple, root.locator('.rp-overview .rp-status').evaluate_all(
+            'els => els.map(el => { const style = getComputedStyle(el); return [style.color, style.backgroundColor]; })')))
         assert all(contrast(pair) >= 4.5 for pair in pairs), [(p, contrast(p)) for p in pairs if contrast(p) < 4.5]
+        reconciliation = root.locator('#pp-reconciliation')
+        if reconciliation.count():
+            headers = reconciliation.locator('thead th')
+            numeric_cells = reconciliation.locator('tbody td:nth-child(3), tbody td:nth-child(4), tbody td:nth-child(5)')
+            for cell in [*headers.all(), *numeric_cells.all()]:
+                assert cell.evaluate('el => getComputedStyle(el).whiteSpace') == 'nowrap'
+            for header in headers.all():
+                assert header.evaluate('el => getComputedStyle(el).overflowWrap') == 'normal'
+                assert header.evaluate('el => getComputedStyle(el).wordBreak') == 'normal'
+            if width == 1440:
+                assert reconciliation.locator('.table-wrap').evaluate('el => el.scrollWidth > el.clientWidth')
+                assert page.evaluate('document.documentElement.scrollWidth === innerWidth')
         if width == 390:
             expect(root.locator('.rp-scroll-hint')).to_be_visible()
             table = root.locator('#economicGridForm .table-wrap')
