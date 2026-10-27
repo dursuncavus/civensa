@@ -312,10 +312,12 @@ def test_browser_layout_anchors_contrast_and_evidence(browser, client, db, sampl
                 assert header.evaluate('el => getComputedStyle(el).wordBreak') == 'normal'
             if width == 1440:
                 assert reconciliation.bounding_box()['width'] == root.locator('.rp-overview').bounding_box()['width']
-                assert reconciliation.locator('.table-wrap').evaluate('el => el.scrollWidth > el.clientWidth')
+                assert reconciliation.locator('.table-wrap').evaluate('el => el.scrollWidth <= el.clientWidth')
                 assert page.evaluate('document.documentElement.scrollWidth === innerWidth')
         if width == 390:
             expect(root.locator('.rp-scroll-hint')).to_be_visible()
+            reconciliation_table = root.locator('#pp-reconciliation .table-wrap')
+            assert reconciliation_table.evaluate('el => el.scrollWidth > el.clientWidth')
             table = root.locator('#economicGridForm .table-wrap')
             assert table.evaluate('el => el.scrollWidth > el.clientWidth')
             table.evaluate('el => el.scrollLeft = el.scrollWidth')
