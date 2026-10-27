@@ -23,14 +23,16 @@
         <p class="muted">Yalnız şema, kayıt bütünlüğü ve temel operasyon kontrolleri. Tam PP yayın onayı aşağıdaki kontrol listesindedir.</p>
       </div>
     </div>
-    <ul class="release-checks">{% for item in readiness.release.automatic if not item.id.startswith('publication:') %}
+    <ul class="release-checks">
+      {% for item in readiness.release.automatic if not item.id.startswith('publication:') %}
       <li>{{ item.label }} ·
         <span class="status {{ 'success' if item.status=='Geçti' else 'warning' }}">{{ item.status }}</span>
       </li>
       {% endfor %}
     </ul>
     {% if readiness.warnings %}
-    <div class="issue-list">{% for warning in readiness.warnings %}
+    <div class="issue-list">
+      {% for warning in readiness.warnings %}
       <div>{{ warning }}</div>
       {% endfor %}
     </div>
@@ -42,9 +44,11 @@
     </h2>
     <p>Tüm otomatik kontroller geçmeli ve tüm manuel maddeler kanıtla teyit edilmelidir. Onaylar {{ period.year }} döneminin mevcut içeriğine bağlıdır; içerik veya kontrol sonucu değişirse yeniden teyit gerekir.</p>
     <p class="info-panel">
-      <b>PP-19 canlı rol gözlemi: {{ readiness.release.live_role_verification.status }}</b> · Sistem canlı rol kontrolü yapmaz. Yetkili kişinin manuel kanıtı aşağıda ayrıca gösterilir.</p>
+      <b>PP-19 canlı rol gözlemi: {{ readiness.release.live_role_verification.status }}</b> · Sistem canlı rol kontrolü yapmaz. Yetkili kişinin manuel kanıtı aşağıda ayrıca gösterilir.
+    </p>
     <h3>Otomatik yayın kapıları</h3>
-    <div class="pp-release-items">{% for item in readiness.release.automatic %}
+    <div class="pp-release-items">
+      {% for item in readiness.release.automatic %}
       <article class="pp-release-item" data-check-id="{{ item.id }}">
         <h4>{{ item.label }} ·
           <span class="status {{ 'success' if item.status=='Geçti' else 'warning' }}">{{ item.status }}</span>
@@ -62,7 +66,8 @@
       {% endfor %}
     </div>
     <h3>D1–D8 ve manuel yayın onayları</h3>
-    <div class="pp-release-items">{% for item in readiness.release.manual %}
+    <div class="pp-release-items">
+      {% for item in readiness.release.manual %}
       <article class="pp-release-item" data-check-id="{{ item.id }}">
         <h4>{{ item.id }} · {{ item.label }} ·
           <span class="status {{ 'success' if item.status=='Geçti' else 'warning' }}">{{ item.status }}</span>
@@ -73,7 +78,8 @@
         {% endif %}
         {% if item.evidence %}
         <p>Kaydeden:
-          <b>{{ item.evidence.actor_name }}</b> · {{ item.evidence.created_at|turkey_time }} · {{ 'Teyit' if item.evidence.decision=='confirmed' else 'Teyit geri çekildi' }}</p>
+          <b>{{ item.evidence.actor_name }}</b> · {{ item.evidence.created_at|turkey_time }} · {{ 'Teyit' if item.evidence.decision=='confirmed' else 'Teyit geri çekildi' }}
+        </p>
         <p>Gerekçe: {{ item.evidence.reason }}</p>
         <p>Kanıt: {{ item.evidence.evidence }}</p>
         {% else %}
@@ -97,7 +103,8 @@
       <input type="hidden" name="csrf_token" value="{{ request.session.get('csrf_token', '') }}">
       <input type="hidden" name="context_sha256" value="{{ readiness.release.context_sha256 }}">
       <label>Kontrol maddesi
-        <select name="item_id" required>{% for item in readiness.release.manual %}
+        <select name="item_id" required>
+          {% for item in readiness.release.manual %}
           <option value="{{ item.id }}" {{ 'selected' if entered.get('item_id')==item.id else '' }}>{{ item.id }} · {{ item.label }}</option>
           {% endfor %}
         </select>
@@ -234,7 +241,8 @@
       </div>
     </div>
     {% if operations.submissions %}
-    <div class="cards">{% for status,total in operations.submissions.items() %}
+    <div class="cards">
+      {% for status,total in operations.submissions.items() %}
       <div class="card">
         <span>{{ status|status_label }}</span>
         <b>{{ total }}</b>
