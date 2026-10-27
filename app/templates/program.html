@@ -66,7 +66,7 @@
 {% endif %}
 {% endfor %}
 {% set sections = [
-('cards', 'Performans kartları', ('Başlanmadı' if not cards else (progress.cards|string ~ ' kart eksik' if progress.cards else cards|length|string ~ ' kart'))),
+('cards', 'Performans Kartları', ('Başlanmadı' if not cards else (progress.cards|string ~ ' kart eksik' if progress.cards else cards|length|string ~ ' kart'))),
 ('assignments', 'Gösterge ve faaliyetlerin kartlara atanması', ('Başlanmadı' if not snapshot.indicators and not snapshot.activities else (progress.unassigned|string ~ ' kayıt kartsız' if progress.unassigned else 'Tamamlandı'))),
 ('catalogue', 'Sorumlu harcama birimleri kataloğu bağlantısı', ('Başlanmadı' if not snapshot.activities else (progress.unlinked|string ~ ' faaliyet bağlanacak' if progress.unlinked else 'Tamamlandı'))),
 ('sources', 'Kaynak değerlerini doğrulama', (progress.source|string ~ ' kayıt doğrulanacak' if progress.source else ('Kaynak değerleri doğrulandı' if snapshot.indicators or snapshot.activities or snapshot.department_costs else 'Başlanmadı'))),
@@ -135,10 +135,10 @@ Gösterge ve faaliyet girişi
 <div class="rp-layout">
 <div class="rp-sections">
 {% include 'pp_reconciliation.html' %}
-{% set labels={'source_title':'Bütçe yılı / kart başlığı','administration':'İdare / birim adı','responsible':'Sorumlu idare','rationale':'Gerekçe ve açıklamalar','goal':'Alt programın hedefi','explanation':'Göstergeye ilişkin ortak açıklama','calculation_method':'Ortak hesaplama yöntemi','data_source':'Verinin kaynağı','footnote':'Dipnot','source_page':'Kaynak sayfa','service_area':'Hizmet alanı','strategic_link':'Stratejik plan / PH bağlantısı'} %}
+{% set labels={'source_title':'Bütçe yılı / kart başlığı','administration':'İdare / birim adı','responsible':'Sorumlu İdare','rationale':'Gerekçe ve Açıklamalar','goal':'Alt Programın Hedefi','explanation':'Göstergeye ilişkin ortak açıklama','calculation_method':'Ortak hesaplama yöntemi','data_source':'Verinin Kaynağı','footnote':'Dipnot','source_page':'Kaynak sayfa','service_area':'Hizmet alanı','strategic_link':'Stratejik plan / PH bağlantısı'} %}
 <section class="rp-panel" id="rp-cards" aria-labelledby="rp-cards-title">
 <h2 id="rp-cards-title">
-1. Performans kartları
+1. Performans Kartları
 </h2>
 {% for card in cards + ([none] if editable else []) %}
 <details class="record"
@@ -174,7 +174,7 @@ Kitaptaki sıra
 <input name="position" type="number" value="{{ card.position if card else cards|length + 1 }}">
 </label>
 <label>
-Program / alt program
+Program / Alt Program
 <select name="subprogram_id" required>
 {% for sp in subprograms %}
 <option value="{{ sp.id }}" {{ 'selected' if card and card.subprogram_id==sp.id else '' }}>
@@ -503,7 +503,7 @@ Kaynakla doğrulanmış tutar (TL)
 <input name="amount" value="{{ value.amount|trmoney if value.amount is not none else '' }}" required>
 </label>
 <label>
-Program grubu
+Program Grubu
 <select name="program_group">
 {% for key,label in groups.items() %}
 {% if key!='unallocated' %}
@@ -528,7 +528,7 @@ Tutarı doğrula
 <form class="rp-toolbar" method="get" action="/program/{{ department.id }}">
 <input type="hidden" name="period_id" value="{{ period.id }}">
 <label>
-Program grubu
+Program Grubu
 <select name="group">
 {% for key,label in groups.items() %}
 <option value="{{ key }}" {{ 'selected' if key==selected_group else '' }}>
@@ -579,7 +579,7 @@ Tablonun devamını görmek için yatay kaydırın.
 <thead>
 <tr>
 <th>
-Ekonomik ad
+Ekonomik Ad
 </th>
 {% for year,kind in columns %}
 <th>
@@ -621,10 +621,10 @@ Tabloyu kaydet
 Yıl / tür
 </th>
 <th>
-Ekonomik ad
+Ekonomik Ad
 </th>
 <th>
-Program grubu
+Program Grubu
 </th>
 <th>
 Kaynak
@@ -693,7 +693,7 @@ Tahmin
 </select>
 </label>
 <label>
-Ekonomik ad
+Ekonomik Ad
 <select name="category">
 {% for key,label in categories.items() %}
 <option value="{{ key }}">
@@ -703,7 +703,7 @@ Ekonomik ad
 </select>
 </label>
 <label>
-Program grubu
+Program Grubu
 <select name="program_group">
 {% for key,label in groups.items() %}
 <option value="{{ key }}">

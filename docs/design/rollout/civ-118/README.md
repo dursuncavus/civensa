@@ -8,10 +8,10 @@ Tümü gerçek şablon ve uygulama varlıklarıyla, yalnız sentetik PostgreSQL 
 
 | Durum | 1440 px | 390 px |
 | --- | --- | --- |
-| Devam ediyor · müdürlük | [1440 PNG · 1.048.201 bayt](in-progress-1440.png) | [390 PNG · 655.189 bayt](in-progress-390.png) |
-| Tamamlandı · müdürlük | [1440 PNG · 921.693 bayt](complete-1440.png) | [390 PNG · 620.115 bayt](complete-390.png) |
-| Gönderildi · salt okunur | [1440 PNG · 816.268 bayt](read-only-1440.png) | [390 PNG · 524.828 bayt](read-only-390.png) |
-| Strateji · program grubu uyarısı | [1440 PNG · 1.042.814 bayt](strategy-1440.png) | [390 PNG · 649.155 bayt](strategy-390.png) |
+| Devam ediyor · müdürlük | [1440 PNG · 1.048.087 bayt](in-progress-1440.png) | [390 PNG · 655.019 bayt](in-progress-390.png) |
+| Tamamlandı · müdürlük | [1440 PNG · 921.581 bayt](complete-1440.png) | [390 PNG · 619.948 bayt](complete-390.png) |
+| Gönderildi · salt okunur | [1440 PNG · 816.196 bayt](read-only-1440.png) | [390 PNG · 524.733 bayt](read-only-390.png) |
+| Strateji · program grubu uyarısı | [1440 PNG · 1.042.575 bayt](strategy-1440.png) | [390 PNG · 649.038 bayt](strategy-390.png) |
 
 ## Sözleşme ve durum hesabı
 
@@ -32,3 +32,5 @@ Beş özet senaryosu: kayıt yok, kartsız kayıtlar, doğrulanmamış değerler
 Tekrar çalıştırma: geçici PostgreSQL 16+ için `CIVENSA_TEST_POSTGRES_URL` tanımlayın. `python -m pytest -q --require-postgres tests/test_report_preparation_design.py`; tüm takım için `python -m pytest -q --require-postgres -n 4 --dist loadfile --max-worker-restart=0`. PNG üretmek için odaklı komuta `CIVENSA_CIV118_SCREENSHOTS=docs/design/rollout/civ-118` eklenir. Gerekirse kurulu Chromium yolu `CIVENSA_CHROMIUM_PATH` ile seçilir. Yeni çalışma zamanı bağımlılığı yoktur; yakalama betiği veya JSON eklenmedi.
 
 Canlı veritabanı, dağıtım ve gerçek belediye kayıtları kullanılmadı. Ortak mutabakat / kaldırma şablonları ve sunucu mesajları kapsam gereği aynen durur. Başlangıç seçenekleri ve mali başlıklar (`Bütçe İçi`, `Bütçe Dışı`, `Haziran Sonu Harcama`, `Yıl Sonu Gerçekleşme Tahmini`, `Personel ve SGK Giderleri`), sunucu/JS metin sözleşmesi nedeniyle korunur. `Program Grubu Dağılımı` bağlantısı `test_programme_split.py` tarafından birebir eşlendiği için korunur. Görünür metin değişikliklerinin tam eski → yeni tablosu PR açıklamasındadır. Mevcut test dosyası değiştirilmedi.
+
+Metin istisnaları: `Performans Kartları` sunucu mesajıyla; `Program / Alt Program` app.js ve `test_live_pilot_hardening.py` / `test_pp_display.py` ile; `Sorumlu İdare`, `Gerekçe ve Açıklamalar`, `Alt Programın Hedefi`, `Verinin Kaynağı` görev dışı `test_word_import.py` ile; `Ekonomik Ad` görev dışı `test_institution_summary.py` / `test_word_import_economic_layouts.py` ile; `Program Grubu` görev dışı `test_first_load_dryrun.py` / `test_first_load_checklist.py` ile eşleştiği için korundu. İlk bölüm başlığı “1. Performans Kartları”dır.
