@@ -26,6 +26,7 @@ TEXT_CHANGES = {
     'Kurum Yapısı': 'Kurum yapısı',
     'Döneme Ait Yapı': 'Döneme ait yapı',
     'Alt Program Oluştur': 'Alt program oluştur',
+    'Müdürlük / Kayıt Adı düzenle Durum': 'Müdürlük Durum',
 }
 
 
@@ -40,6 +41,11 @@ class StructureContract(Contract):
         super().__init__(html)
 
     def handle_starttag(self, tag, attrs):
+        if tag == 'button':
+            attrs = dict(attrs)
+            if attrs.get('role') == 'switch':
+                attrs = [(name, value) for name, value in attrs.items()
+                    if name not in {'role', 'aria-checked', 'aria-label'}]
         super().handle_starttag(tag, attrs)
         if not self.main:
             return
@@ -92,14 +98,27 @@ def assert_frozen(response, context=None):
     assert current.controls == starting.controls
     assert current.bindings == starting.bindings
     assert current.hidden_inputs == starting.hidden_inputs
-    assert current.labels == starting.labels
+    expected_labels = [
+        (kind, {'Pasifleştir': 'Etkin', 'Etkinleştir': 'Pasif'}.get(label, label)
+            if kind == 'button' else label)
+        for kind, label in starting.labels
+    ]
+    assert current.labels == expected_labels
     assert current.textareas == starting.textareas
     assert current.disclosures == starting.disclosures
     assert current.hooks == starting.hooks
-    # Only the three headings change; the wizard's instructional sentence stays verbatim.
+    # Keep the frozen form content except for the approved table and status wording.
     expected = VisibleText(old).normalized()
     for a, b in TEXT_CHANGES.items():
         expected = expected.replace(a, b, 1)
+    for d in context['departments']:
+        state = 'Etkin' if d.is_active else 'Pasif'
+        toggle = 'Pasifleştir' if d.is_active else 'Etkinleştir'
+        name, organization = ' '.join(d.name.split()), ' '.join(d.organization.name.split())
+        before = f'{name} #{d.id} · {organization} {name} yeni adı Adı kaydet {state} {toggle}'
+        after = f'{name} yeni adı Adı kaydet #{d.id} · {organization} {state}'
+        assert expected.count(before) == 1
+        expected = expected.replace(before, after, 1)
     assert VisibleText(actual).normalized() == expected
     assert actual.count('name="csrf_token"') == actual.count('<form method="post"')
     return actual
@@ -194,6 +213,17 @@ def test_frozen_failed_save_attempts_selections_and_open_details(structure_clien
         assert sum('open' in dict(attrs) for attrs in StructureContract(html).disclosures) == 1
 
 
+def test_department_table_has_two_columns_and_empty_state(structure_client):
+    response = structure_client.get('/structure')
+    context = dict(response.context)
+    context['departments'] = []
+    html = assert_frozen(response, context)
+    assert '<th>Müdürlük</th>' in html
+    assert '<th>Durum</th>' in html
+    assert '<th>Adı düzenle</th>' not in html
+    assert 'colspan="2">Henüz müdürlük yok.' in html
+
+
 def capture(page, name, width):
     folder = os.getenv('CIVENSA_CIV131_SCREENSHOTS')
     if folder:
@@ -207,6 +237,7 @@ def capture(page, name, width):
 def assert_layout_and_contrast(page, root, width):
     assert page.evaluate('document.documentElement.scrollWidth === innerWidth')
     assert root.locator('*').evaluate_all("els => els.every(el => getComputedStyle(el).textTransform !== 'uppercase')")
+    assert root.locator('.structure-departments thead th').count() == 2
     pairs = set(map(tuple, page.evaluate(TEXT_PAIRS.replace('.section-index-page', '.structure-page'))))
     for control in root.locator('button, input:not([type=hidden]), select, textarea, summary, [tabindex]').all():
         if control.is_visible():
@@ -228,8 +259,16 @@ def assert_layout_and_contrast(page, root, width):
         field, button = row.locator('input[name=name]'), row.get_by_role('button', name='Adı kaydet', exact=True)
         field_box, button_box = field.bounding_box(), button.bounding_box()
         assert abs(field_box['y'] + field_box['height'] - button_box['y'] - button_box['height']) <= 1
-        badge, toggle = row.locator('.status').bounding_box(), row.locator('td').last.locator('button').bounding_box()
-        assert toggle['y'] >= badge['y'] + badge['height']
+        assert row.locator('td').count() == 2
+        assert row.locator('td').first.locator('b').count() == 0
+        switch = row.get_by_role('switch')
+        assert switch.count() == 1
+        checked = switch.get_attribute('aria-checked')
+        assert checked in {'true', 'false'}
+        expect(switch).to_have_text('Etkin' if checked == 'true' else 'Pasif')
+        assert switch.get_attribute('aria-label') == f'{field.input_value()} durumu'
+        state_class = 'is-active' if checked == 'true' else 'is-inactive'
+        assert switch.evaluate('(el, name) => el.classList.contains(name)', state_class)
     if width == 390:
         wrap = root.locator('.table-wrap').last
         assert wrap.evaluate('el => el.scrollWidth > el.clientWidth')
@@ -306,11 +345,15 @@ def test_browser_layout_real_save_error_preservation_and_evidence(browser, struc
         rename = row.locator('form').first
         rename.locator('[name=name]').fill('Yeni Sentetik Müdürlük')
         rename.get_by_role('button', name='Adı kaydet', exact=True).click()
-        expect(row.locator('td').first).to_contain_text('Yeni Sentetik Müdürlük')
-        row.get_by_role('button', name='Pasifleştir', exact=True).click()
-        expect(row.locator('.status')).to_have_text('Pasif')
-        row.get_by_role('button', name='Etkinleştir', exact=True).click()
-        expect(row.locator('.status')).to_have_text('Etkin')
+        expect(row.locator('td').first.locator('input[name=name]')).to_have_value('Yeni Sentetik Müdürlük')
+        toggle = row.get_by_role('switch')
+        expect(toggle).to_have_attribute('aria-label', 'Yeni Sentetik Müdürlük durumu')
+        toggle.click()
+        expect(toggle).to_have_text('Pasif')
+        expect(toggle).to_have_attribute('aria-checked', 'false')
+        toggle.click()
+        expect(toggle).to_have_text('Etkin')
+        expect(toggle).to_have_attribute('aria-checked', 'true')
         select = root.locator('form[method=get]')
         select.locator('select[name=period_id]').select_option(label='2028')
         select.get_by_role('button', name='Göster', exact=True).click()
