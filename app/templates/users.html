@@ -4,20 +4,7 @@
 {% block content %}
   <link rel="stylesheet" href="/static/design/users.css">
   <div class="users-page">
-    <div class="cards strategy-cards users-summary">
-      <div class="card">
-        <span>Müdürlük</span>
-        <b>{{ departments|length }}</b>
-      </div>
-      <div class="card">
-        <span>Etkin müdürlük hesabı</span>
-        <b class="ok">{{ department_account_count }}</b>
-      </div>
-      <div class="card">
-        <span>Hesap bekliyor</span>
-        <b class="{{ 'bad' if missing_departments else 'ok' }}">{{ missing_departments|length }}</b>
-      </div>
-    </div>
+    <p class="muted users-summary">{{ departments|length }} müdürlük · {{ department_account_count }} etkin müdürlük hesabı · {% if missing_departments %}<span class="status warning">{{ missing_departments|length }} hesap bekliyor</span>{% else %}{{ missing_departments|length }} hesap bekliyor{% endif %}</p>
     <section class="users-panel">
       <h2>Kişisel müdürlük hesaplarını toplu oluştur</h2>
       <p class="muted">Her kişi için ayrı satır kullanın. Aynı müdürlüğe bir Müdür ve birden çok Personel ekleyebilirsiniz. Parolalar otomatik üretilir; ilk girişte değiştirilir.</p>
@@ -99,9 +86,7 @@
           <thead>
             <tr>
               <th>Seç</th>
-              <th>Ad Soyad</th>
-              <th>E-posta</th>
-              <th>Rol</th>
+              <th>Kullanıcı</th>
               <th>Müdürlük</th>
               <th>Unvan</th>
               <th>PP gönderim yetkisi</th>
@@ -116,11 +101,11 @@
                     <input type="checkbox" class="retire-user" value="{{ u.id }}" aria-label="{{ u.full_name }} hesabını seç">
                   {% endif %}
                 </td>
-                <td>
+                <td class="user-identity">
                   <b>{{ u.full_name }}</b>
+                  <span class="user-email muted">{{ u.email }}</span>
+                  <span class="user-role muted">{{ 'Strateji Geliştirme' if u.role=='strategy' else 'Müdürlük' }}</span>
                 </td>
-                <td>{{ u.email }}</td>
-                <td>{{ 'Strateji Geliştirme' if u.role=='strategy' else 'Müdürlük' }}</td>
                 <td>
                   {% if u.department_id %}
                     {% for d in departments %}
@@ -136,14 +121,16 @@
                   {% if u.id == user.id %}
                     {{ 'Müdür' if u.position == 'director' else 'Personel' }} — Kendi unvanınızı değiştiremezsiniz.
                   {% else %}
-                    <label>
-                      <span class="muted">Unvan</span>
-                      <select class="user-position" aria-label="{{ u.full_name }} unvanı">
-                        <option value="staff" {{ 'selected' if u.position == 'staff' }}>Personel</option>
-                        <option value="director" {{ 'selected' if u.position == 'director' }}>Müdür</option>
-                      </select>
-                    </label>
-                    <button type="button" class="button small save-user-position" data-user="{{ u.id }}">Unvanı kaydet</button>
+                    <div class="user-position-controls">
+                      <label>
+                        <span class="sr-only">Unvan</span>
+                        <select class="user-position" aria-label="{{ u.full_name }} unvanı">
+                          <option value="staff" {{ 'selected' if u.position == 'staff' }}>Personel</option>
+                          <option value="director" {{ 'selected' if u.position == 'director' }}>Müdür</option>
+                        </select>
+                      </label>
+                      <button type="button" class="button small save-user-position" data-user="{{ u.id }}">Unvanı kaydet</button>
+                    </div>
                   {% endif %}
                 </td>
                 <td>
