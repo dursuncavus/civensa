@@ -1,0 +1,32 @@
+/* CIV-119: page-local info panel, table and status components. */
+.submit-authorizations-page { min-width: 0; color: var(--text); overflow-wrap: anywhere; }
+.submit-authorizations-page * { box-sizing: border-box; text-transform: none; letter-spacing: normal; }
+.submit-authorizations-page .info-panel { padding: var(--space-6); margin-bottom: var(--space-4); border: 1px solid var(--border); border-radius: var(--radius); background: var(--accent-soft); }
+.submit-authorizations-page h2 { margin: 0 0 var(--space-3); color: var(--text); font-size: var(--text-section); font-weight: var(--font-semibold); }
+.submit-authorizations-page p { margin: 0 0 var(--space-3); }
+.submit-authorizations-page .empty-state p { color: var(--text); }
+.submit-authorizations-page .info-panel p:last-child { margin-bottom: 0; }
+.submit-authorizations-page :is(.muted, .person-email, .scroll-hint) { color: var(--text-secondary); font-size: var(--text-sm); }
+.submit-authorizations-page .authorization-summary { font-weight: var(--font-medium); }
+.submit-authorizations-page .scroll-hint { display: none; }
+.submit-authorizations-page .table-wrap { width: 100%; max-width: 100%; overflow-x: auto; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); }
+.submit-authorizations-page table { width: 100%; min-width: 700px; margin: 0; border-collapse: collapse; table-layout: fixed; }
+.submit-authorizations-page :is(th, td) { padding: var(--space-4); border-bottom: 1px solid var(--border); text-align: left; vertical-align: top; font-size: var(--text-base); }
+.submit-authorizations-page th { background: var(--surface-muted); color: var(--text-secondary); font-size: var(--text-sm); font-weight: var(--font-medium); }
+.submit-authorizations-page th:first-child { width: 40%; }
+.submit-authorizations-page th:nth-child(2) { width: 22%; }
+.submit-authorizations-page tbody tr:last-child td { border-bottom: 0; }
+.submit-authorizations-page .person-name { display: block; font-weight: var(--font-medium); }
+.submit-authorizations-page .person-email { display: block; margin-top: var(--space-1); }
+.submit-authorizations-page :is(.status, .account-state) { display: inline-block; padding: var(--space-1) var(--space-2); border-radius: var(--radius); font-size: var(--text-sm); font-weight: var(--font-medium); white-space: nowrap; }
+.submit-authorizations-page :is(.status.approved, .account-state.active) { color: var(--success); background: var(--success-bg); }
+.submit-authorizations-page :is(.status.draft, .account-state.inactive) { color: var(--text-secondary); background: var(--surface-muted); }
+.submit-authorizations-page .button.small { display: inline-flex; align-items: center; justify-content: center; min-height: var(--row-height); margin: var(--space-2) 0 0; padding: var(--space-1) var(--space-3); border: 1px solid var(--text-secondary); border-radius: var(--radius); background: var(--surface); color: var(--text); font: var(--font-medium) var(--text-sm) / var(--line-height) var(--font-family); }
+.submit-authorizations-page .button.small:hover { background: var(--surface-muted); color: var(--text); }
+.submit-authorizations-page :is(button, [tabindex]):focus { outline: var(--focus); outline-offset: var(--focus-offset); box-shadow: none; }
+@media (max-width: 1100px) {
+  .submit-authorizations-page .scroll-hint { display: block; }
+}
+@media (max-width: 700px) {
+  .submit-authorizations-page .info-panel { padding: var(--space-4); }
+}
