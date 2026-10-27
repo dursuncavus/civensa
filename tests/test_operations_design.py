@@ -42,6 +42,73 @@ class Hooks(HTMLParser):
             self.items.append((tag, tuple(attrs)))  # compare CSRF and context values without redaction
 
 
+class TechnicalGroups(HTMLParser):
+    def __init__(self, html):
+        super().__init__()
+        self.groups = []
+        self.current = None
+        self.depth = 0
+        self.capture = None
+        self.parts = []
+        self.feed(html)
+
+    def handle_starttag(self, tag, attrs):
+        attrs = dict(attrs)
+        classes = attrs.get('class', '').split()
+        if tag == 'div' and 'release-check-group' in classes:
+            self.current = {'heading': '', 'items': [], 'has_list': False, 'tone': None}
+            self.groups.append(self.current)
+            self.depth = 1
+            return
+        if self.current is None:
+            return
+        if tag == 'div':
+            self.depth += 1
+        if tag == 'ul' and 'release-checks' in classes:
+            self.current['has_list'] = True
+        if tag == 'span' and 'status' in classes:
+            self.current['tone'] = classes
+        if tag == 'h3':
+            self.capture = 'h3'
+            self.parts = []
+        elif tag == 'li':
+            self.capture = 'li'
+            self.parts = []
+
+    def handle_data(self, data):
+        if self.capture:
+            self.parts.append(data)
+
+    def handle_endtag(self, tag):
+        if self.capture and tag == self.capture:
+            text = ' '.join(''.join(self.parts).split())
+            if self.capture == 'h3':
+                self.current['heading'] = text
+            else:
+                self.current['items'].append(text)
+            self.capture = None
+        if self.current is not None and tag == 'div':
+            self.depth -= 1
+            if self.depth == 0:
+                self.current = None
+
+
+def assert_technical_groups(html, context):
+    checks = [item for item in context['readiness']['release']['automatic']
+              if not item['id'].startswith('publication:')]
+    groups = TechnicalGroups(html).groups
+    assert len(groups) == 2
+    for group, status in zip(groups, ('Engelli', 'Geçti')):
+        expected = [item['label'] for item in checks
+                    if (item['status'] == 'Geçti') == (status == 'Geçti')]
+        assert group['heading'] == f'{status} · {len(expected)}'
+        assert ('danger' if status == 'Engelli' else 'success') in group['tone']
+        assert group['items'] == expected
+        assert group['has_list'] is bool(expected)
+    assert Counter(item for group in groups for item in group['items']) == Counter(
+        item['label'] for item in checks)
+
+
 @pytest.fixture
 def operations_response(readiness, client, db, sample):
     readiness()
@@ -110,6 +177,16 @@ def assert_frozen(response, context):
     # This existing link moves from technical readiness into the page actions.
     for text in ('Kanıtları JSON olarak aç',):
         new_text, old_text = new_text.replace(text, '', 1), old_text.replace(text, '', 1)
+    checks = [item for item in context['readiness']['release']['automatic']
+              if not item['id'].startswith('publication:')]
+    assert_technical_groups(actual, context)
+    for item in checks:
+        old_text = old_text.replace(f"{item['label']} · {item['status']}", '', 1)
+        new_text = new_text.replace(item['label'], '', 1)
+    new_text = new_text.replace(
+        f"Engelli · {sum(item['status'] != 'Geçti' for item in checks)}", '', 1)
+    new_text = new_text.replace(
+        f"Geçti · {sum(item['status'] == 'Geçti' for item in checks)}", '', 1)
     assert ' '.join(new_text.split()) == ' '.join(old_text.split())
     assert '<details open' not in actual and '<details class="pp-release-history" open' not in actual
     return actual, old
@@ -130,6 +207,29 @@ def test_frozen_error_attempt_values_selection_and_history(operations_response):
     actual, _ = assert_frozen(operations_response, context)
     assert '  Girilen &lt;gerekçe&gt;  </textarea>' in actual
     assert 'Korunacak kanıt &amp; onay</textarea>' in actual
+
+
+@pytest.mark.parametrize('status', ['Engelli', 'Geçti'])
+def test_technical_readiness_empty_group_keeps_heading_only(operations_response, status):
+    context = scenario(operations_response)
+    for item in context['readiness']['release']['automatic']:
+        if not item['id'].startswith('publication:'):
+            item['status'] = status
+    actual = operations_response.template.render(context)
+    assert_technical_groups(actual, context)
+    groups = TechnicalGroups(actual).groups
+    empty_group = groups[1 if status == 'Engelli' else 0]
+    assert empty_group['items'] == []
+    assert not empty_group['has_list']
+
+
+def test_technical_readiness_mixed_statuses_keep_source_order(operations_response):
+    context = scenario(operations_response)
+    checks = [item for item in context['readiness']['release']['automatic']
+              if not item['id'].startswith('publication:')]
+    for index, item in enumerate(checks):
+        item['status'] = 'Engelli' if index % 2 else 'Geçti'
+    assert_technical_groups(operations_response.template.render(context), context)
 
 
 @pytest.mark.parametrize('width', [1440, 390])
@@ -168,8 +268,16 @@ def test_browser_panels_disclosures_contrast_and_evidence_flows(browser, operati
         def layout():
             assert page.evaluate('document.documentElement.scrollWidth === innerWidth')
             assert root.locator('*').evaluate_all("els => els.every(el => getComputedStyle(el).textTransform !== 'uppercase')")
-            assert root.locator('.release-checks,.pp-release-items,.pp-release-form,.table-wrap').evaluate_all(
+            assert root.locator('.release-check-groups,.release-checks,.pp-release-items,.pp-release-form,.table-wrap').evaluate_all(
                 'els => els.every(el => el.getBoundingClientRect().width <= 704)')
+            groups = root.locator('.release-check-group').evaluate_all(
+                'els => els.map(el => { const r = el.getBoundingClientRect(); return {left: r.left, top: r.top}; })')
+            assert len(groups) == 2
+            if width >= 1024:
+                assert groups[0]['top'] == groups[1]['top']
+                assert groups[0]['left'] < groups[1]['left']
+            else:
+                assert groups[0]['top'] < groups[1]['top']
         def colors():
             pairs.update(map(tuple, page.evaluate(TEXT_PAIRS.replace('.section-index-page', '.operations-page'))))
         layout(); colors()

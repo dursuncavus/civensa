@@ -36,6 +36,7 @@ from .models import (
     ActivityCostValue, DepartmentCostValue, Submission, AuditLog, Program,
     SubProgram, TemplateSnapshot, ImportBatch, SubmissionEvent, Notification, NotificationRecipient,
 )
+from .audit_display import action_label, audit_lookups, details_display, entity_text
 from .security import verify_password, hash_password, temporary_password
 from .personal_accounts import ACCOUNT_CSV_HEADERS, validate_account_csv, prepare_user_creation
 from . import login_throttling
@@ -2250,13 +2251,25 @@ def audit_page(request: Request, db: Session = Depends(get_db), user: User = Dep
         page = 1
     per_page = 100
     rows = db.scalars(query.offset((page - 1) * per_page).limit(per_page + 1)).all()
-    user_ids = {row.user_id for row in rows if row.user_id}
-    users = {item.id: item for item in db.scalars(select(User).where(User.id.in_(user_ids))).all()} if user_ids else {}
-    actions = db.scalars(select(AuditLog.action).distinct().order_by(AuditLog.action)).all()
+    page_rows = rows[:per_page]
+    safe_details = {row.id: safe_audit_details(row.details) for row in page_rows}
+    users, entity_names, detail_names = audit_lookups(db, page_rows, safe_details)
+    presentation = {
+        row.id: {
+            "action": action_label(row.action),
+            "entity": entity_text(row, entity_names),
+            "details": details_display(safe_details[row.id], row.action, row.entity_type, detail_names),
+        }
+        for row in page_rows
+    }
+    actions = [
+        (code, action_label(code))
+        for code in db.scalars(select(AuditLog.action).distinct().order_by(AuditLog.action)).all()
+    ]
     return templates.TemplateResponse(request, "audit.html", {
-        "user": user, "period": session_period(request, db), "rows": rows[:per_page], "users": users, "actions": actions,
+        "user": user, "period": session_period(request, db), "rows": page_rows, "users": users, "actions": actions,
         "selected_action": action, "user_text": user_text, "page": page,
-        "has_next": len(rows) > per_page, "safe_details": safe_audit_details,
+        "has_next": len(rows) > per_page, "presentation": presentation,
     })
 
 

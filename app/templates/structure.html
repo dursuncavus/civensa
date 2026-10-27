@@ -62,20 +62,13 @@
         <table class="structure-departments">
           <thead>
             <tr>
-              <th>Müdürlük / Kayıt</th>
-              <th>Adı düzenle</th>
+              <th>Müdürlük</th>
               <th>Durum</th>
             </tr>
           </thead>
           <tbody>
             {% for d in departments %}
               <tr>
-                <td>
-                  <b>{{ d.name }}</b>
-                  <div class="smallnote">
-                    #{{ d.id }} · {{ d.organization.name }}
-                  </div>
-                </td>
                 <td>
                   {% set action='/structure/departments/' ~ d.id ~ '/rename' %}
                   <form method="post" action="{{ action }}" class="structure-row">
@@ -89,22 +82,22 @@
                     <input id="dept-{{ d.id }}" name="name" required maxlength="200" value="{{ value(action,'name',d.name) }}">
                     <button class="button small">Adı kaydet</button>
                   </form>
+                  <div class="smallnote">#{{ d.id }} · {{ d.organization.name }}</div>
                 </td>
                 <td>
-                  <span class="status {{ 'approved' if d.is_active else 'draft' }}">{{ 'Etkin' if d.is_active else 'Pasif' }}</span>
                   <form method="post" action="/structure/departments/{{ d.id }}/active">
                     {{ csrf() }}
                     {% if period %}
                       {{ period_field() }}
                     {% endif %}
                     <input type="hidden" name="active" value="{{ '0' if d.is_active else '1' }}">
-                    <button class="button small">{{ 'Pasifleştir' if d.is_active else 'Etkinleştir' }}</button>
+                    <button class="button small status-control {{ 'is-active' if d.is_active else 'is-inactive' }}" role="switch" aria-checked="{{ 'true' if d.is_active else 'false' }}" aria-label="{{ d.name }} durumu">{{ 'Etkin' if d.is_active else 'Pasif' }}</button>
                   </form>
                 </td>
               </tr>
             {% else %}
               <tr>
-                <td colspan="3">Henüz müdürlük yok. Yukarıdaki formdan ilk müdürlüğü oluşturun.</td>
+                <td colspan="2">Henüz müdürlük yok. Yukarıdaki formdan ilk müdürlüğü oluşturun.</td>
               </tr>
             {% endfor %}
           </tbody>
