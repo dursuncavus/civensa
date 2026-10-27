@@ -8,7 +8,7 @@ Tanım ve en son kanıtlar kompakt gösterilir; tanım ve geçmiş ayrıntılar�
 
 - Rapor özeti, sıfır olmayan sayımlar için: `{{ sayı }} gösterge`, `{{ sayı }} Doğrulanmış`, `{{ sayı }} İncelenmeli`, `{{ sayı }} Eksik`, `{{ sayı }} Kayıt yok`, `{{ sayı }} açıklama bekliyor`. Sayım çiftleri `·` ile ayrılır.
 - Gösterge özeti: `Fark: {{ sayısal fark veya Hesaplanmadı }}` ve gerçekleşme değeri yanında birim.
-- Tanım açıklaması: `Gösterge tanımı`; `Birim`, `Kod`, `Müdürlük`, `Açıklama` etiketleri. Mevcut `Hesaplama:` ve `Kaynak:` etiketleri korunur.
+- Tanım açıklaması: `Gösterge tanımı`; `Birim`, `Kod`, `Müdürlük`, `Hesaplama`, `Kaynak`, `Açıklama` etiketleri. Henüz gerçekleşme girilmediyse `Kayıt yok` tek kez gösterilir.
 - Form başlığı: `Yeni gerçekleşme gir`.
 
 Diğer mevcut görünen metinler, durum ifadeleri, hedef farkı uyarısı, kanıt bilgileri, form alanları ve geçmiş korunmuştur.

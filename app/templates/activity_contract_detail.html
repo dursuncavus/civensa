@@ -187,7 +187,7 @@
           {%- else -%}
           <div class="actual-summary indicator-value-summary">
             <h3>Son gerçekleşme</h3>
-            <p class="indicator-actual"><strong>Kayıt yok</strong><span class="indicator-unit">{{ row.definition.unit }}</span><span class="status indicator-state indicator-state-empty">Kayıt yok</span></p>
+            <p class="indicator-actual"><span class="status indicator-state indicator-state-empty">Kayıt yok</span></p>
             <p class="indicator-target">Hedef: {% if row.definition.targets %}{% for target in row.definition.targets %}{{ target.value|trnum if target.state == 'verified' and target.value is not none else 'Doğrulanmalı' }}{% endfor %}{% else %}Kayıt yok{% endif %}</p>
           </div>
           {#- Keep the original empty-state text boundary used by the browser contract. -#}
@@ -196,11 +196,11 @@
         <details class="indicator-definition">
           <summary>Gösterge tanımı</summary>
           <dl>
-            <div><dt>Birim</dt><dd>{{ row.definition.unit }} ·</dd></div>
-            <div><dt>Kod</dt><dd>{{ row.definition.code or 'Kod belirtilmedi' }} ·</dd></div>
+            <div><dt>Birim</dt><dd>{{ row.definition.unit }}</dd></div>
+            <div><dt>Kod</dt><dd>{{ row.definition.code or 'Kod belirtilmedi' }}</dd></div>
             <div><dt>Müdürlük</dt><dd>{{ row.department }}</dd></div>
-            <div><dt>Hesaplama:</dt><dd>{{ row.definition.calculation_method or 'Belirtilmedi' }} ·</dd></div>
-            <div><dt>Kaynak:</dt><dd>{{ row.definition.data_source or 'Belirtilmedi' }}</dd></div>
+            <div><dt>Hesaplama</dt><dd>{{ row.definition.calculation_method or 'Belirtilmedi' }}</dd></div>
+            <div><dt>Kaynak</dt><dd>{{ row.definition.data_source or 'Belirtilmedi' }}</dd></div>
             <div><dt>Açıklama</dt><dd>{{ row.definition.explanation or 'Açıklama belirtilmedi' }}</dd></div>
           </dl>
         </details>

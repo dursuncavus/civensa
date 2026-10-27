@@ -105,9 +105,8 @@ def render_pair(ctx):
             r'<p class="indicator-report-summary">(.*?)</p>',
             r'<span class="indicator-unit">(.*?)</span>',
             r'<p class="indicator-difference">(.*?)</p>',
-            r'<span class="status indicator-state indicator-state-empty">(.*?)</span>',
             r'<summary>Gösterge tanımı</summary>',
-            r'<dt>(Birim|Kod|Müdürlük|Açıklama)</dt>',
+            r'<dt>(Birim|Kod|Müdürlük|Hesaplama|Kaynak|Açıklama)</dt>',
             r'<h3 class="actual-form-heading">(.*?)</h3>',
         )
         for pattern in patterns:
@@ -116,6 +115,8 @@ def render_pair(ctx):
     expected = visible_words(before)
     expected.subtract({'Raporu': 1, 'Performans': 1, 'Programı': 1})
     expected.update({'raporu': 1, 'performans': 1, 'programı': 1})
+    indicator_count = len(ctx['report']['indicators'])
+    expected.subtract({'Hesaplama:': indicator_count, 'Kaynak:': indicator_count, '·': 3 * indicator_count})
     expected.update(added_words(after))
     assert visible_words(after) == +expected
     return before, after
@@ -211,6 +212,22 @@ def test_frozen_empty_sources_missing_values_and_invalid_add_button():
         actual.update(value=None if i == 0 else 0, state=state, evidence=[])
         ctx['report']['indicators'][i]['definition']['targets'][0]['state'] = 'needs_review'
     render_pair(ctx)
+
+
+def test_definition_labels_and_empty_actual_summary_are_consistent():
+    ctx = context('department-draft')
+    for row in ctx['report']['indicators']:
+        row['actuals'] = []
+    _, html = render_pair(ctx)
+    labels = re.findall(r'<dt>(.*?)</dt>', html)
+    assert labels == ['Birim', 'Kod', 'Müdürlük', 'Hesaplama', 'Kaynak', 'Açıklama'] * 2
+    for row in re.findall(r'<dd>(.*?)</dd>', html):
+        assert not row.rstrip().endswith('·')
+    for actual in re.findall(r'<p class="indicator-actual">(.*?)</p>', html):
+        assert 'Kayıt yok' in actual
+        assert '<strong>' not in actual
+        assert 'indicator-unit' not in actual
+        assert re.sub(r'<[^>]+>', '', actual).strip() == 'Kayıt yok'
 
 
 def test_summary_counts_latest_data_states_and_pending_explanations():
