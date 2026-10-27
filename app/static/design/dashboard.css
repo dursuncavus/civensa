@@ -96,3 +96,52 @@
 @media (max-width: 1279px) {
   #mudurluk-ilerleme .cards { grid-template-columns: repeat(2,minmax(0,1fr)); }
 }
+
+/* CIV-112 · approved 022 task list; department scope only. */
+.department-dashboard .home-tasks h2 {
+  font-size: var(--text-section);
+  margin-bottom: var(--space-2);
+}
+.department-dashboard .home-task-list {
+  counter-reset: home-step;
+  list-style: none;
+  padding: 0;
+  margin: var(--space-6) 0 0;
+}
+.department-dashboard .home-task-list li {
+  counter-increment: home-step;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) minmax(0, auto);
+  gap: var(--space-3);
+  align-items: start;
+  padding-block: var(--space-4);
+  border-top: 1px solid var(--border);
+}
+.department-dashboard .home-task-list li::before {
+  content: counter(home-step) ".";
+  font-weight: var(--font-medium);
+  font-variant-numeric: tabular-nums;
+}
+.department-dashboard .home-task-list a {
+  font-weight: var(--font-medium);
+}
+.department-dashboard .home-task-list .badge {
+  max-width: 36ch;
+  justify-self: end;
+}
+@media (max-width: 700px) {
+  .department-dashboard .home-task-list li {
+    grid-template-columns: auto minmax(0, 1fr);
+    row-gap: var(--space-2);
+  }
+  .department-dashboard .home-task-list .badge {
+    grid-column: 2;
+    justify-self: start;
+    max-width: 100%;
+  }
+}
+
+.department-dashboard .badge { display: inline-flex; align-items: center; gap: var(--space-1); padding: var(--space-1) var(--space-2); font-size: var(--text-sm); line-height: var(--line-height); font-weight: var(--font-medium); border-radius: var(--radius); overflow-wrap: anywhere; }
+.department-dashboard .badge.neutral { color: var(--text-secondary); background: var(--surface-muted); }
+.department-dashboard .badge.warning { color: var(--warning); background: var(--warning-bg); }
+.department-dashboard .badge.success { color: var(--success); background: var(--success-bg); }
