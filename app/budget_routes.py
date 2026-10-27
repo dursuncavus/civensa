@@ -100,9 +100,9 @@ def register(app):
             reversed_operation = operations_by_id.get(item.reverses_id)
             if reversed_operation:
                 reference = ctx['references'].get(reversed_operation.reference_type, 'Dayanak')
+                reference_date = datetime.fromisoformat(reversed_operation.reference_date).strftime('%d.%m.%Y')
                 reversal_labels[item.id] = (
-                    f'Telafi: {reference} {reversed_operation.reference_date} / '
-                    f'{reversed_operation.reference_number}'
+                    f'Telafi: {reference} {reference_date} / {reversed_operation.reference_number}'
                 )
         ctx.update(operations=operations, operation_labels=operation_labels, reversal_labels=reversal_labels)
         return templates.TemplateResponse(request, 'budget_index.html', ctx)
