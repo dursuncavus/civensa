@@ -125,3 +125,12 @@
 .data-entry-page .tabpane { display: none; }
 .data-entry-page .tabpane.active { display: block; }
 .data-entry-page :is(input, textarea)::placeholder { color: var(--text-secondary); opacity: 1; }
+/* CIV-114 · reading/copying values, scoped away from the editable 024 draft. */
+.data-entry-page.is-readonly :is(input[readonly], textarea[readonly], select:disabled, input[type=checkbox]:disabled) {
+  border: 0; box-shadow: none; background: var(--surface-muted); color: var(--text);
+  opacity: 1; cursor: default;
+}
+.data-entry-page.is-readonly textarea[readonly] { resize: none; }
+.data-entry-page.is-readonly :is(input[readonly], textarea[readonly]):focus-visible {
+  outline: var(--focus); outline-style: dashed; outline-offset: var(--focus-offset); box-shadow: none;
+}
