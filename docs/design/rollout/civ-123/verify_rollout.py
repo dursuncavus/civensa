@@ -42,7 +42,7 @@ CASES = [
     ('034', '/modules', 'department', '.module-list'),
     ('041', '/report-builder/manifest', 'strategy', '.pp-manifest-page'),
     ('042', '/review', 'strategy', '.review-page'),
-    ('046', '/submit-authorizations', 'department', 'main'),
+    ('046', '/submit-authorizations', 'department', '.submit-authorizations-page'),
 ]
 
 METRICS = r"""root => {
@@ -115,8 +115,8 @@ def capture(browser, base, data, phase, case, report):
                 assert metrics['scroll'] == width, (number, width, metrics)
                 if width == 1440:
                     assert_rows(page, number)
-                # 029/046 keep their legacy appearance; no new palette is applied.
-                if number not in ('029', '046', '029-approved'):
+                # 029 keeps its legacy appearance; no new palette is applied.
+                if number not in ('029', '029-approved'):
                     pairs = page.evaluate(TEXT_PAIRS.replace('.section-index-page', root_selector))
                     ratios = [contrast(pair) for pair in pairs]
                     assert min(ratios) >= 4.5, (number, min(ratios))
@@ -137,6 +137,7 @@ def capture(browser, base, data, phase, case, report):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--phase', choices=('before', 'after'), required=True)
+    parser.add_argument('--screen', action='append', help='Recapture selected screens after a base-branch update.')
     args = parser.parse_args()
     report = []
     with disposable_database(local_test_url()) as engine:
@@ -151,6 +152,8 @@ def main():
             with pw.chromium.launch(headless=True, executable_path=os.getenv('CIVENSA_CHROMIUM_PATH')) as browser:
                 digest = guide.ui_state_digest(engine)
                 for case in CASES:
+                    if args.screen and case[0] not in args.screen:
+                        continue
                     capture(browser, base, data, args.phase, case, report)
                 assert digest == guide.ui_state_digest(engine)
                 # Real submitted/approved read-only definition lists, same fixture in both phases.
@@ -165,11 +168,16 @@ def main():
                                               monitoring.state(db, data['ic_batch'])[1])
                         db.commit()
                 digest = guide.ui_state_digest(engine)
-                capture(browser, base, data, args.phase,
-                        ('030-approved', '/internal-control/our-actions', 'department', '.ic-our-actions-page'), report)
+                if not args.screen or '030' in args.screen:
+                    capture(browser, base, data, args.phase,
+                            ('030-approved', '/internal-control/our-actions', 'department', '.ic-our-actions-page'), report)
                 assert digest == guide.ui_state_digest(engine)
                 version = browser.version
-    (OUT / f'{args.phase}.json').write_text(json.dumps(dict(browser=version, results=report), ensure_ascii=False, indent=2) + '\n')
+    target = OUT / f'{args.phase}.json'
+    if args.screen and target.exists():
+        replaced = {row['screen'] for row in report}
+        report = [row for row in json.loads(target.read_text())['results'] if row['screen'] not in replaced] + report
+    target.write_text(json.dumps(dict(browser=version, results=report), ensure_ascii=False, indent=2) + '\n')
     print(f'{args.phase}: {len(report)} screenshots; layout, read-only capture and PNG size verified.')
 
 

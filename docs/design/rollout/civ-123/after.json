@@ -1546,32 +1546,6 @@
       "records": [],
       "headings": [],
       "sections": [],
-      "definitions": [],
-      "screen": "046",
-      "width": 1440,
-      "png": "046-after-1440.png",
-      "bytes": 83809
-    },
-    {
-      "scroll": 390,
-      "viewport": 390,
-      "summary": [],
-      "records": [],
-      "headings": [],
-      "sections": [],
-      "definitions": [],
-      "screen": "046",
-      "width": 390,
-      "png": "046-after-390.png",
-      "bytes": 78885
-    },
-    {
-      "scroll": 1440,
-      "viewport": 1440,
-      "summary": [],
-      "records": [],
-      "headings": [],
-      "sections": [],
       "definitions": [
         {
           "width": 704,
@@ -1608,6 +1582,34 @@
       "width": 390,
       "png": "030-approved-after-390.png",
       "bytes": 134021
+    },
+    {
+      "scroll": 1440,
+      "viewport": 1440,
+      "summary": [],
+      "records": [],
+      "headings": [],
+      "sections": [],
+      "definitions": [],
+      "minimum_text_contrast": 4.709,
+      "screen": "046",
+      "width": 1440,
+      "png": "046-after-1440.png",
+      "bytes": 92836
+    },
+    {
+      "scroll": 390,
+      "viewport": 390,
+      "summary": [],
+      "records": [],
+      "headings": [],
+      "sections": [],
+      "definitions": [],
+      "minimum_text_contrast": 4.709,
+      "screen": "046",
+      "width": 390,
+      "png": "046-after-390.png",
+      "bytes": 88853
     }
   ]
 }

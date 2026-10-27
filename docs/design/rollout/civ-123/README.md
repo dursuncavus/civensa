@@ -19,7 +19,7 @@
 | 034 · Modüller, müdürlük | none | Değişiklik gerekmiyor: 033 ile aynı içerik yapısı; R1/R2 örneği yok. | [Önce](034-before-1440.png) · [Sonra](034-after-1440.png) | [Önce](034-before-390.png) · [Sonra](034-after-390.png) |
 | 041 · PP tamamlanma listesi | none | Değişiklik gerekmiyor: bölüm/durum/adet tablodadır. Açıklama listesindeki değerler `max-content` etiket sütununun hemen ardından gelir; özet sayıları aynı cümlenin içinde. | [Önce](041-before-1440.png) · [Sonra](041-after-1440.png) | [Önce](041-before-390.png) · [Sonra](041-after-390.png) |
 | 042 · İnceleme kuyruğu | none | Değişiklik gerekmiyor: müdürlük, durum/revizyon ve işlemler tablo sütunlarıdır; R2 tablo sütunlarına uygulanmaz. | [Önce](042-before-1440.png) · [Sonra](042-after-1440.png) | [Önce](042-before-390.png) · [Sonra](042-after-390.png) |
-| 046 · Gönderim Yetkileri | none | Değişiklik gerekmiyor: hesap ve gönderim yetkisi durumları tablodadır; açıklama panelinde sayı kutusu/uzak durum yok. `submit-authorizations.css` eklenmedi. | [Önce](046-before-1440.png) · [Sonra](046-after-1440.png) | [Önce](046-before-390.png) · [Sonra](046-after-390.png) |
+| 046 · Gönderim Yetkileri | none | Değişiklik gerekmiyor: CIV-119 (#179) rebase sonrası yeniden denetlendi. Hesap ve gönderim yetkisi durumları tablodadır; personel/yetkili/yetkisiz sayıları tek özet cümlesinde. Sayı kutusu/uzak panel durumu yok. Sayfa CSS'i değiştirilmedi. | [Önce](046-before-1440.png) · [Sonra](046-after-1440.png) | [Önce](046-before-390.png) · [Sonra](046-after-390.png) |
 
 ## Doğrulama
 
@@ -37,10 +37,10 @@ Dondurulmuş fixture'lar, sözleşme karşılaştırmaları ve filtre/klavye/CSR
 - `test_section_editor_design.py`: bölüm bağlantısı/durum sınırı ve sütun hizası eklendi.
 - `test_ic_our_actions_design.py`: dönemli/dönemsiz ve salt okunur senaryolarda tanım listesi/değer sınırı eklendi.
 
-Değişiklik öncesi odaklı paket: **184 passed**. İlk değişiklik sonrası odaklı paket: **184 passed**. Son 1200 px senaryosunu da içeren tam paket sonucu PR açıklamasında yer alır.
+Değişiklik öncesi odaklı paket: **184 passed**. İlk değişiklik sonrası odaklı paket: **184 passed**. Son 1200 px senaryosu: **8 passed**. İlk tam koşu, hedef dala CIV-119 birleştiğinde rebase için durduruldu (**1179 passed**, tamamlanmış tam paket olarak sayılmaz). Güncel kodun tam paket sonucu PR açıklamasında yer alır.
 
 ### Kapsam ve doğrulanamayanlar
 
-Uygulama değişikliği yalnız `dashboard.css`, `data-entry.css`, `section-index.css`, `section-editor.css`, `ic-our-actions.css` içindedir. Şablon/bağlantı/form/alan/aria/data/metin değişikliği yok. 036/037, 021 ilerleme panosu ve 022 görev listesi düzenlenmedi. Çekim başlangıcında #175, #183 (CIV-121), #184 açıktı; görüntüler bu nedenle hedef dalda henüz birleşmemiş önceki işlerin eski görünümünü de içerir. Bu alanlardaki görsel farklar bu PR'a ait değildir.
+Uygulama değişikliği yalnız `dashboard.css`, `data-entry.css`, `section-index.css`, `section-editor.css`, `ic-our-actions.css` içindedir. Şablon/bağlantı/form/alan/aria/data/metin değişikliği yok. 036/037, 021 ilerleme panosu ve 022 görev listesi düzenlenmedi. Çekim başlangıcında #175, #183 (CIV-121), #184 açıktı; görüntüler bu nedenle hedef dalda henüz birleşmemiş önceki işlerin eski görünümünü de içerir. Bu alanlardaki görsel farklar bu PR'a ait değildir. Çalışma sırasında birleşen CIV-119 (#179) üzerine rebase yapıldı; 046 önce/sonra görüntüleri yeni tasarım ekranından tekrar alındı.
 
-Canlı ortam/veri, Firefox/WebKit ve işletim sistemi ekran okuyucusu kullanılmadı. 029/046 değişmeyen eski ekranların renkleri yeniden tasarlanmadı; kontrast ölçümü değişen tasarım ekranlarına uygulanır. Çok uzun özel kurum/etiket verileri için mevcut sentetik uzun metin testleri çalıştırılır; gerçek kurum verisi kullanılmaz.
+Canlı ortam/veri, Firefox/WebKit ve işletim sistemi ekran okuyucusu kullanılmadı. 029 değişmeyen eski ekranın renkleri yeniden tasarlanmadı; kontrast ölçümü tasarım sistemindeki ekranlara uygulanır (046 dahil). Çok uzun özel kurum/etiket verileri için mevcut sentetik uzun metin testleri çalıştırılır; gerçek kurum verisi kullanılmaz.
