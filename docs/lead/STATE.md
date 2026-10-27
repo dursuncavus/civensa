@@ -13,7 +13,8 @@ Owner opens a new chat with one line: `CV Lider 34 · Claude Opus 5.5 · civensa
 4. Owner look approval (screenshots + text-change lists, one message): CIV-109 (#154), CIV-111 (#161), CIV-113 (#163), CIV-112 (#165, docs/design/rollout/civ-112), CIV-114 (#168, docs/design/rollout/civ-114); CIV-104 (#145) once.
 5. Ali Abi answers: none yet; data/logic packages before UI (D-243).
 6. CIV-117 (bounded test waits, D-288) dispatched to the second Codex slot: lead reviews the PR (test-only, small).
-7. Next IDs: task CIV-118, decision D-289.
+7. CIV-118 (Rapor hazırlığı implementation, D-289) dispatched: review when the PR opens; large → DeepSeek first pass allowed (D-274, no web search).
+8. Next IDs: task CIV-119, decision D-290.
 
 ## Claude quota (BEYAN, owner screen 26 Oct 12:48)
 - Weekly 47% at 18:14 Monday (session 24%); lasts until the Saturday reset at this pace. Offload large reviews to DeepSeek (D-274).
@@ -28,8 +29,9 @@ Evidence rule (D-252): one-screen changes → targeted tests + changed-state scr
 | --- | --- | --- | --- |
 | #168 | CIV-114 | reviewed OK; owner updated branch 4163ad0, CI running | merge when green, behind 0 |
 | #167 | CIV-115 | job cap 40 pushed by the lead (D-287), head 1119915; "@codex review" running | read review, CI, merge |
-| (new) | CIV-116 | dispatched D-287 (prototype) | review when the PR opens |
-| (new) | CIV-117 | dispatched D-288 (test waits) | review when the PR opens |
+| #172 | CIV-116 | merged a6c6173, owner approved (D-289) | — |
+| #173 | CIV-117 | reviewed OK (D-289), CI running | merge when green, behind 0 |
+| (new) | CIV-118 | dispatched D-289 | review when the PR opens |
 Merged 27 Oct: #165 CIV-112 → 2ce4f59 (owner).
 Merged 26 Oct: #163 CIV-113 → 88c9dfb; #154 CIV-109 → 34329a7; #161 CIV-111 → 31b00e4 (D-283); #160 CIV-110 → 0b4b333 (D-282); #156 CIV-108 prototype → 633ac07 (D-277); #150 CIV-105 → 7cb58d9 (D-278; all jobs green, D-280); #148 CIV-106 → 1ed8620 (D-273); #145 CIV-104 → e0df9ce (D-268); #140 CIV-103 → 6efbe25 (D-265); #138 copilot-setup-steps → cbed4d8 (D-264); #136 production environment → d02b7cc; #132 CIV-102 → 873d361.
 
