@@ -1159,3 +1159,56 @@ select {
     max-width: 100%;
   }
 }
+
+/* CIV-116 · Yalnız 037 statik rapor hazırlığı. */
+.report-preparation-prototype .rp-switcher { max-width: 48ch; }
+.report-preparation-prototype .rp-content { min-width: 0; }
+.report-preparation-prototype .rp-contents { display: none; }
+.report-preparation-prototype .rp-tasks { padding-left: var(--space-6); }
+.report-preparation-prototype .rp-tasks li { padding-block: var(--space-3); border-bottom: 1px solid var(--border); }
+.report-preparation-prototype .rp-tasks a { display: inline-block; max-width: 65%; vertical-align: top; }
+.report-preparation-prototype .rp-tasks .badge { margin-left: var(--space-2); max-width: 100%; }
+.report-preparation-prototype .rp-record { border-top: 1px solid var(--border); padding-block: var(--space-2); }
+.report-preparation-prototype .rp-record summary { color: var(--text); }
+.report-preparation-prototype .rp-record-status { margin-left: var(--space-2); }
+.report-preparation-prototype h2 { margin-bottom: var(--space-3); }
+.report-preparation-prototype h3 { margin-block: var(--space-4) var(--space-3); }
+.report-preparation-prototype section { scroll-margin-top: var(--space-6); }
+.report-preparation-prototype form + form { border-top: 1px solid var(--border); margin-top: var(--space-4); padding-top: var(--space-4); }
+.report-preparation-prototype .rp-save { margin-block: var(--space-2) var(--space-4); }
+.report-preparation-prototype #rp-issues { background: var(--warning-bg); color: var(--warning); padding: var(--space-4); border-left: 4px solid var(--warning); }
+.report-preparation-prototype #rp-issues summary,
+.report-preparation-prototype #rp-issues a { color: var(--warning); }
+.report-preparation-prototype #rp-strategy { padding: var(--space-4); border-radius: var(--radius); }
+.report-preparation-prototype #rp-strategy a { color: var(--warning); }
+.report-preparation-prototype .rp-toolbar { display: flex; flex-wrap: wrap; gap: var(--space-3); align-items: end; margin-block: var(--space-4); }
+.report-preparation-prototype .rp-toolbar .field { flex: 1; min-width: 12ch; margin: 0; }
+.report-preparation-prototype .rp-table { overflow-x: auto; margin-block: var(--space-4); }
+.report-preparation-prototype .rp-table table { min-width: 780px; }
+.report-preparation-prototype .rp-table td .field { margin: 0; }
+.report-preparation-prototype .rp-table td label { font-size: 0; }
+.report-preparation-prototype .rp-table input { font-size: var(--text-sm); text-align: right; font-variant-numeric: tabular-nums; padding-inline: var(--space-1); }
+.report-preparation-prototype .rp-table .numeric { white-space: nowrap; }
+.report-preparation-prototype .rp-scroll-hint { display: none; }
+.report-preparation-prototype.is-readonly .rp-content input,
+.report-preparation-prototype.is-readonly .rp-content textarea,
+.report-preparation-prototype.is-readonly .rp-content select {
+  border: 0; box-shadow: none; background: var(--surface-muted); color: var(--text); cursor: default; appearance: none;
+}
+.report-preparation-prototype .rp-content select[multiple] option:checked { color: var(--surface); background: var(--accent); }
+.report-preparation-prototype.is-readonly .rp-content option { color: var(--text); }
+.report-preparation-prototype.is-readonly .rp-content select[multiple] option:checked { color: var(--text); background: var(--surface-muted); }
+.report-preparation-prototype [hidden] { display: none !important; }
+@media (min-width: 1280px) {
+  .report-preparation-prototype .rp-layout { display: grid; grid-template-columns: minmax(0, 1fr) 15rem; gap: var(--space-6); align-items: start; }
+  .report-preparation-prototype .rp-contents { display: block; position: sticky; top: var(--space-6); }
+  .report-preparation-prototype .rp-contents ul { list-style: none; padding: 0; }
+  .report-preparation-prototype .rp-contents li { margin-bottom: var(--space-3); }
+  .report-preparation-prototype .rp-contents a { font-size: var(--text-sm); }
+}
+@media (max-width: 700px) {
+  .report-preparation-prototype .rp-tasks a { max-width: 100%; display: block; }
+  .report-preparation-prototype .rp-tasks .badge { margin: var(--space-2) 0 0; }
+  .report-preparation-prototype .rp-scroll-hint { display: block; }
+  .report-preparation-prototype .rp-toolbar { display: grid; }
+}
