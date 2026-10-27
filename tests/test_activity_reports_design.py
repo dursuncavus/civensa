@@ -16,6 +16,19 @@ from test_sidebar_ui import browser
 FROZEN = Path(__file__).parent / 'fixtures/activity_contract_index_start.html'
 
 
+class HiddenInputs(HTMLParser):
+    """Compare actual CSRF values as well as the shared contract's redacted view."""
+    def __init__(self, html):
+        super().__init__()
+        self.inputs = []
+        self.feed(html)
+
+    def handle_starttag(self, tag, attrs):
+        values = dict(attrs)
+        if tag == 'input' and values.get('type') == 'hidden':
+            self.inputs.append(values)
+
+
 class RevisionRows(HTMLParser):
     def __init__(self, html):
         super().__init__()
@@ -75,6 +88,7 @@ def assert_contract(ctx):
     before, after = Contract(old), Contract(new)
     assert after.controls == before.controls
     assert after.bindings == before.bindings
+    assert HiddenInputs(new).inputs == HiddenInputs(old).inputs
     # Line-per-element formatting adds whitespace between nested select options.
     def labels(contract):
         return [(tag, ''.join(value.split()) if tag == 'label' else value)
