@@ -15,7 +15,8 @@ Owner opens a new chat with one line: `CV Lider 34 · Claude Opus 5.5 · civensa
 6. CIV-117 (bounded test waits, D-288) dispatched to the second Codex slot: lead reviews the PR (test-only, small).
 7. CIV-118 (Rapor hazırlığı implementation, D-289) dispatched: review when the PR opens; large → DeepSeek first pass allowed (D-274, no web search).
 8. CIV-119 (046 Gönderim yetkileri, D-290) dispatched: review when the PR opens.
-9. Next IDs: task CIV-120, decision D-291.
+9. eMudhra hotfix (D-291): #178 merge when green; owner merges #177 to main + Render deploy, then confirm the deploy succeeded.
+10. Next IDs: task CIV-120, decision D-292.
 
 ## Claude quota (BEYAN, owner screen 26 Oct 12:48)
 - Weekly 47% at 18:14 Monday (session 24%); lasts until the Saturday reset at this pace. Offload large reviews to DeepSeek (D-274).
