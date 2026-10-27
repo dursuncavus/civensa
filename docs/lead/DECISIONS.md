@@ -518,3 +518,7 @@ Screenshots live in docs/design/rollout/**, not in the PR body: give the owner a
 
 ## D-304 (27 Oct 2026 ~21:10 Istanbul, lead, live session CV Lider 36) — CIV-140 merged
 DOĞRULANDI: #216 CIV-140 — Copilot fix 9b8ff9d touches only tests/test_ar_indicator_display.py (history `details` targeted explicitly); lead empty commit 7b97984, CI green, behind 0 → merged 0e2cf1c. Owner look pending (gallery artifact, version 2).
+
+## D-305 (27 Oct 2026 ~22:05 Istanbul, lead, live session CV Lider 36) — CIV-141/142 reviews
+DOĞRULANDI: #222 CIV-141 — only allowed files; reference_date is String(10) ISO (validated by date.fromisoformat in budget_service) so template slicing to gg.aa.yyyy is safe; fixture telafi label now "Başkanlık talimatı"; 1440 screenshot checked (İşlem widest, year one line). Marked ready, lead empty commit → merge after green (background).
+#223 CIV-142 — CSS-only; actions now on one line, but Kullanıcı column 14% breaks e-mails mid-word, cell padding 4px, badges top-aligned vs centred buttons → fix requested (comment 6451005535); background watcher merges after green. Owner looks pending for both.
