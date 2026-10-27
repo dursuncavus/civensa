@@ -132,8 +132,6 @@ Gösterge ve faaliyet girişi
 </a>
 </p>
 </section>
-<div class="rp-layout">
-<div class="rp-sections">
 {% include 'pp_reconciliation.html' %}
 {% set labels={'source_title':'Bütçe yılı / kart başlığı','administration':'İdare / birim adı','responsible':'Sorumlu İdare','rationale':'Gerekçe ve Açıklamalar','goal':'Alt Programın Hedefi','explanation':'Göstergeye ilişkin ortak açıklama','calculation_method':'Ortak hesaplama yöntemi','data_source':'Verinin Kaynağı','footnote':'Dipnot','source_page':'Kaynak sayfa','service_area':'Hizmet alanı','strategic_link':'Stratejik plan / PH bağlantısı'} %}
 <section class="rp-panel" id="rp-cards" aria-labelledby="rp-cards-title">
@@ -735,24 +733,6 @@ Tutarı kaydet
 {% endfilter %}
 {% endif %}
 </section>
-</div>
-<aside class="rp-contents">
-<nav aria-label="Bu sayfada">
-<h2>
-Bu sayfada
-</h2>
-<ul>
-{% for id, title, status, tone in sections %}
-<li>
-<a href="#rp-{{ id }}">
-{{ title }}
-</a>
-</li>
-{% endfor %}
-</ul>
-</nav>
-</aside>
-</div>
 {% include 'pp_form_fallback.html' %}
 </div>
 {% endblock %}
