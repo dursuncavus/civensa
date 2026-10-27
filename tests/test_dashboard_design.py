@@ -188,7 +188,26 @@ def test_021_022_frozen_forms_links_hooks_and_role_visibility(dashboard_client, 
         assert 'Düzeltme gereken müdürlük' in summary_cards
         assert 'Veri girişine başlamayan müdürlük' in summary_cards
         assert 'Kullanıcısı tanımlanmamış müdürlük' in summary_cards
-        assert f'{context["progress_summary"]["submitted"]} incelemede olan müdürlük' in summary_cards
+        summary = context['progress_summary']
+        expected_progress_rows = [
+            f'Onaylanan müdürlük {summary["approved"]}',
+            f'İnceleme bekleyen müdürlük {summary["submitted"]}',
+            f'Veri girişi süren müdürlük {summary["in_progress"] + summary["ready"]}',
+            f'Düzeltme gereken müdürlük {summary["needs_attention"] + summary["returned"]}',
+            f'Veri girişine başlamayan müdürlük {summary["not_started"]}',
+            f'Kullanıcısı tanımlanmamış müdürlük {summary["missing_accounts"]}',
+        ]
+        progress_rows = [
+            text for tag, text in DashboardContract(html).labels
+            if tag == 'a' and text.startswith(tuple(
+                label for label in (
+                    'Onaylanan müdürlük', 'İnceleme bekleyen müdürlük', 'Veri girişi süren müdürlük',
+                    'Düzeltme gereken müdürlük', 'Veri girişine başlamayan müdürlük',
+                    'Kullanıcısı tanımlanmamış müdürlük',
+                )
+            ))
+        ]
+        assert progress_rows == expected_progress_rows
     else:
         assert all(label in html for label in ('Veri girişi · 1 gösterge', 'Civensa kontrolü', 'Gönderim'))
         assert 'dashboard-summary' not in html
@@ -247,15 +266,20 @@ def test_021_022_browser_layout_contrast_and_period_actions(browser, dashboard_c
                                   "label: getComputedStyle(el.querySelector('span')).lineHeight, "
                                   "value: getComputedStyle(el.querySelector('b')).lineHeight})"))
             if role == 'strategy':
-                progress_cards = root.locator('#mudurluk-ilerleme .cards > *')
-                assert row_sizes(progress_cards) == [3, 3]
-                assert progress_cards.count() == 6
-                heights = [card.evaluate(
-                    "el => ({label: el.innerText, height: el.getBoundingClientRect().height, "
-                    "lineHeight: getComputedStyle(el.querySelector('span')).lineHeight, "
-                    "labelHeight: el.querySelector('span').getBoundingClientRect().height})"
-                    ) for card in progress_cards.all()]
-                assert all(card['height'] <= 120 for card in heights), heights
+                progress_rows = root.locator('#mudurluk-ilerleme .progress-list > .progress-row')
+                assert row_sizes(progress_rows) == [2, 2, 2]
+                assert progress_rows.count() == 6
+                if width == 1440:
+                    measurements = [row.evaluate(
+                        "el => { const number = el.querySelector('b'); const style = getComputedStyle(el); "
+                        "return {height: el.getBoundingClientRect().height, "
+                        "textAlign: getComputedStyle(number).textAlign, "
+                        "numberRight: number.getBoundingClientRect().right, "
+                        "contentRight: el.getBoundingClientRect().right - parseFloat(style.paddingRight)}; }"
+                    ) for row in progress_rows.all()]
+                    assert all(row['height'] <= 44 for row in measurements), measurements
+                    assert all(row['textAlign'] == 'right' for row in measurements), measurements
+                    assert all(abs(row['numberRight'] - row['contentRight']) <= 1 for row in measurements), measurements
             if width == 1440:
                 summary, main = root.locator('.dashboard-summary'), root.locator('.dashboard-main')
                 assert summary.bounding_box()['x'] >= main.bounding_box()['x'] + main.bounding_box()['width']
@@ -266,8 +290,7 @@ def test_021_022_browser_layout_contrast_and_period_actions(browser, dashboard_c
                 assert first_panel.bounding_box()['y'] - title_bottom <= 120
         elif role == 'strategy':
             assert row_sizes(top_cards) == [1, 2]
-            if role == 'strategy':
-                assert row_sizes(root.locator('#mudurluk-ilerleme .cards > *')) == [2, 2, 2]
+            assert row_sizes(root.locator('#mudurluk-ilerleme .progress-list > .progress-row')) == [1] * 6
         assert root.locator('.card').evaluate_all('els => els.every(el => el.scrollWidth <= el.clientWidth)')
         pairs_script = TEXT_PAIRS.replace('.section-index-page', '.dashboard-page')
         pairs = set(map(tuple, page.evaluate(pairs_script)))
@@ -322,6 +345,7 @@ def test_021_022_browser_layout_contrast_and_period_actions(browser, dashboard_c
 
 @pytest.mark.parametrize('width', [1440, 390])
 def test_021_progress_card_filters_and_no_javascript_fallback(browser, dashboard_client, sample, width):
+    import os
     from playwright.sync_api import expect
 
     client = dashboard_client
@@ -344,6 +368,20 @@ def test_021_progress_card_filters_and_no_javascript_fallback(browser, dashboard
         page = context.new_page()
         page.on('pageerror', lambda error: errors.append(str(error)))
         page.goto(url)
+
+        def capture(name):
+            from PIL import Image
+            target = Path(__file__).parents[1] / 'docs/design/rollout/civ-121' / f'{name}-{width}.png'
+            target.parent.mkdir(parents=True, exist_ok=True)
+            page.locator('#mudurluk-ilerleme').screenshot(
+                path=str(target), animations='disabled', caret='hide')
+            with Image.open(target) as png:
+                png.save(target, optimize=True)
+            assert target.stat().st_size <= 1_500_000
+
+        capture_enabled = os.getenv('CIVENSA_CAPTURE_CIV121') == '1'
+        if capture_enabled:
+            capture('021-progress-list-unfiltered')
 
         expected_cards = [
             ('Dönemdeki müdürlük', str(len(render_context['departments'])), '#mudurluk-ilerleme'),
@@ -370,17 +408,17 @@ def test_021_progress_card_filters_and_no_javascript_fallback(browser, dashboard
             'Veri girişi süren müdürlük', 'Düzeltme gereken müdürlük',
             'Veri girişine başlamayan müdürlük', 'Kullanıcısı tanımlanmamış müdürlük',
         ]
-        progress_cards = page.locator('#mudurluk-ilerleme .cards > a.card')
-        assert progress_cards.count() == 6
-        for card, label, value in zip(progress_cards.all(), progress_labels, progress_values):
-            assert card.locator('span').inner_text() == label
-            assert card.locator('b').inner_text() == str(value)
-            assert card.get_attribute('aria-label') == f'{label} {value}'
-        assert [card.get_attribute('data-filter-states') for card in progress_cards.all()[:5]] == [
+        progress_rows = page.locator('#mudurluk-ilerleme .progress-list > a.progress-row')
+        assert progress_rows.count() == 6
+        for row, label, value in zip(progress_rows.all(), progress_labels, progress_values):
+            assert row.locator('span').inner_text() == label
+            assert row.locator('b').inner_text() == str(value)
+            assert row.get_attribute('aria-label') == f'{label} {value}'
+        assert [row.get_attribute('data-filter-states') for row in progress_rows.all()[:5]] == [
             'approved', 'submitted', 'in_progress,ready', 'needs_attention,returned', 'not_started',
         ]
-        assert [card.get_attribute('href') for card in progress_cards.all()[:5]] == ['#mudurluk-ilerleme'] * 5
-        assert progress_cards.nth(5).get_attribute('href') == f'/users?period_id={sample["period"].id}'
+        assert [row.get_attribute('href') for row in progress_rows.all()[:5]] == ['#mudurluk-ilerleme'] * 5
+        assert progress_rows.nth(5).get_attribute('href') == f'/users?period_id={sample["period"].id}'
         assert page.locator('#mudurluk-ilerleme').count() == 1
         assert page.locator('#bakanlik-sablonu').count() == 1
 
@@ -418,6 +456,8 @@ def test_021_progress_card_filters_and_no_javascript_fallback(browser, dashboard
         assert set(page.locator('#mudurluk-ilerleme tbody tr:visible').evaluate_all(
             'els => els.map(el => el.dataset.state)')) == {'needs_attention', 'returned'}
         assert filter_cards.nth(3).get_attribute('aria-pressed') == 'true'
+        if capture_enabled:
+            capture('021-progress-list-filtered')
         page.locator('[data-clear-progress-filter]').click()
         filter_cards.nth(4).focus()
         page.keyboard.press('Space')
@@ -446,13 +486,20 @@ def test_021_progress_card_filters_and_no_javascript_fallback(browser, dashboard
 
 
 @pytest.mark.parametrize('filled', [False, True])
-def test_021_html_byte_identical_before_civ112(dashboard_client, sample, filled):
+def test_021_html_byte_identical_outside_progress_section_before_civ112(dashboard_client, sample, filled):
     login(dashboard_client, sample['strategy'].email)
     response = dashboard_client.get(f'/dashboard?period_id={sample["period"].id}')
     context = synthetic_context(response, filled)
     before = response.template.environment.from_string(
         (Path(__file__).parent / 'fixtures/dashboard_pre_civ112.html').read_text()).render(context)
-    assert response.template.render(context).encode() == before.encode()
+    current = response.template.render(context)
+
+    def without_progress_section(html):
+        start = html.index('<section class="dashboard-panel" id="mudurluk-ilerleme">')
+        end = html.index('</section>', start) + len('</section>')
+        return html[:start] + html[end:]
+
+    assert without_progress_section(current).encode() == without_progress_section(before).encode()
 
 
 HOME_STATES = {
