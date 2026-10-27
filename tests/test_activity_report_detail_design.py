@@ -244,7 +244,7 @@ def test_browser_layout_contrast_and_evidence(browser, client, tmp_path, scenari
         def layout():
             assert page.evaluate('document.documentElement.scrollWidth === innerWidth')
             assert root.locator('*').evaluate_all("els => els.every(el => getComputedStyle(el).textTransform !== 'uppercase')")
-            for selector in ('form', '.actual-summary', '[data-latest-actual]', '[role=alert]'):
+            for selector in ('form', '.actual-summary', '.report-meta', 'details', '[data-latest-actual]', '[role=alert]'):
                 for item in root.locator(selector).all():
                     if item.is_visible(): assert item.bounding_box()['width'] <= 44 * 16
         layout()

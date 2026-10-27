@@ -9,7 +9,7 @@
 .activity-report-detail-page :is(.error-panel, .draft-error) { border-color: var(--danger); color: var(--danger); background: var(--danger-bg); }
 .activity-report-detail-page [role=alert] { max-width: 44rem; }
 .activity-report-detail-page .info-panel p { margin-bottom: var(--space-3); }
-.activity-report-detail-page :is(form, [data-latest-actual], .actual-summary, .secondary, .draft-status) { max-width: 44rem; }
+.activity-report-detail-page :is(form, [data-latest-actual], .actual-summary, .report-meta, details, .secondary, .draft-status) { max-width: 44rem; }
 .activity-report-detail-page .actual-summary { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2) var(--space-3); }
 .activity-report-detail-page .actual-summary :is(h3, p) { margin: 0; }
 .activity-report-detail-page [data-latest-actual] { margin-bottom: var(--space-4); }
