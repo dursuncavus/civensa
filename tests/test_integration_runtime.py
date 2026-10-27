@@ -17,7 +17,7 @@ ROOT = Path(__file__).resolve().parents[1]
 def test_provider_url_uses_installed_driver_in_source_and_bundle(tmp_path, scheme):
     bundle_dir = tmp_path / "bundle"
     subprocess.run([sys.executable, str(ROOT / "tools/build_bundle.py"), str(bundle_dir)],
-                   cwd=tmp_path, check=True)
+                   cwd=tmp_path, check=True, timeout=180)
     manifest = json.loads((bundle_dir / "bundle-manifest.json").read_text())
     raw = base64.b64decode("".join((bundle_dir / part).read_text() for part in manifest["parts"]),
                           validate=True)
@@ -35,6 +35,6 @@ def test_provider_url_uses_installed_driver_in_source_and_bundle(tmp_path, schem
              "assert os.environ['DATABASE_URL'].startswith('postgresql+psycopg://'); "
              "assert os.environ['MIGRATION_DATABASE_URL'].startswith('postgresql+psycopg://'); "
              "assert engine.url.username == 'example'"],
-            cwd=runtime, env=env, text=True, capture_output=True,
+            cwd=runtime, env=env, text=True, capture_output=True, timeout=180,
         )
         assert result.returncode == 0, result.stderr
