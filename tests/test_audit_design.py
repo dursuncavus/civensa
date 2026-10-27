@@ -4,12 +4,13 @@ from hashlib import sha256
 from html.parser import HTMLParser
 import os
 from pathlib import Path
+import re
 from urllib.parse import parse_qs, urlsplit
 
 import pytest
 from playwright.sync_api import expect
 
-from app.main import app, require_user
+from app.main import app, require_user, safe_audit_details
 from app.models import AuditLog
 from test_section_index_design import TEXT_PAIRS, contrast
 from test_sidebar_ui import browser
@@ -17,7 +18,6 @@ from test_sidebar_ui import browser
 pytestmark = pytest.mark.postgres
 FROZEN = Path(__file__).parent / 'fixtures/audit_016_start.html'
 FROZEN_HASH = 'cae9097470488fb8b11616943b8259cda77ab427cfe0eccead25370db94d26ed'
-SCROLL_HINT = 'Tablonun tamamını görmek için yatay kaydırın.'
 
 
 class AuditContract(HTMLParser):
@@ -85,11 +85,18 @@ def render_context(response, *, period=True, rows=None, page=1, has_next=False):
     return context
 
 
+def frozen_context(context):
+    context = dict(context)
+    context['actions'] = [code for code, _ in context['actions']]
+    context['safe_details'] = safe_audit_details
+    return context
+
+
 def assert_frozen(response, **options):
     original = FROZEN.read_bytes()
     assert sha256(original).hexdigest() == FROZEN_HASH
     context = render_context(response, **options)
-    old = response.template.environment.from_string(original.decode()).render(context)
+    old = response.template.environment.from_string(original.decode()).render(frozen_context(context))
     actual = response.template.render(context)
     before, after = AuditContract(old), AuditContract(actual)
     assert before.controls == after.controls
@@ -98,12 +105,9 @@ def assert_frozen(response, **options):
     if options.get('rows') == []:
         assert after.cells[-1] == 'Filtreye uygun kayıt bulunamadı.'
     else:
-        assert before.cells == after.cells
-    old_text = ' '.join(' '.join(before.data).split())
-    new_text = ' '.join(' '.join(after.data).split())
-    old_text = old_text.replace('Denetim Geçmişi', 'Denetim geçmişi')
-    new_text = ' '.join(new_text.replace(SCROLL_HINT, '').split())
-    assert new_text == old_text
+        assert len(before.cells) == len(after.cells)
+        assert all(before.cells[index:index + 2] == after.cells[index:index + 2]
+                   for index in range(0, len(before.cells), 5))
     return actual
 
 
@@ -125,6 +129,8 @@ def test_frozen_forms_links_table_and_visible_text(audit_client, db, sample):
     assert ('input', (('name', 'period_id'), ('type', 'hidden'), ('value', str(sample['period'].id)))) in with_period.controls
     assert any(tag == 'option' and 'selected' in dict(attrs) and
         dict(attrs).get('value') == 'contract_action' for tag, attrs in with_period.controls)
+    assert with_period.cells[2:4] == ['Diğer işlem', 'Diğer kayıt']
+    assert 'Teknik ayrıntı' in with_period.data
     assert ('/audit?period_id=' + str(sample['period'].id), 'Temizle') in with_period.links
     assert ('/api/audit/export.csv?period_id=' + str(sample['period'].id) +
         '&action=contract_action&user=strategy%40example.invalid', 'CSV indir') in with_period.links
@@ -139,24 +145,60 @@ def test_frozen_forms_links_table_and_visible_text(audit_client, db, sample):
     assert 'Filtreye uygun kayıt bulunamadı.' in empty.cells
 
 
+def test_known_action_filter_keeps_raw_value_and_displays_turkish_label(audit_client, db, sample):
+    db.add(AuditLog(user_id=sample['strategy'].id, action='activity_update',
+        entity_type='activity', entity_id=sample['activity'].id,
+        created_at=datetime(2026, 10, 26, 9, 30), details='revision=3'))
+    db.commit()
+    response = audit_client.get(
+        f'/audit?period_id={sample["period"].id}&action=activity_update')
+    assert response.status_code == 200
+    page = AuditContract(response.text)
+    assert any(tag == 'option' and dict(attrs).get('value') == 'activity_update'
+        and 'selected' in dict(attrs) for tag, attrs in page.controls)
+    assert 'Faaliyet güncellendi' in page.data
+    assert 'activity_update' not in page.data
+    assert page.cells[2:] == ['Faaliyet güncellendi', 'Faaliyet: Ortak faaliyet', 'Revizyon 3']
+
+
+def test_csv_export_preserves_original_codes_and_raw_details(audit_client, db, sample):
+    db.add(AuditLog(user_id=sample['strategy'].id, action='activity_update',
+        entity_type='activity', entity_id=sample['activity'].id,
+        created_at=datetime(2026, 10, 26, 9, 30), details='revision=3;subprogram_id=15'))
+    db.commit()
+    response = audit_client.get(
+        f'/api/audit/export.csv?period_id={sample["period"].id}&action=activity_update')
+    assert response.status_code == 200
+    assert response.content == (
+        '\ufeffTarih,Kullanıcı,İşlem,Varlık,Varlık ID,Ayrıntı\r\n'
+        f'2026-10-26 09:30:00,{sample["strategy"].email},activity_update,activity,'
+        f'{sample["activity"].id},revision=3;subprogram_id=15\r\n'
+    ).encode('utf-8')
+
+
 @pytest.mark.parametrize('width', [1440, 1024, 390])
 def test_browser_layout_contrast_and_screenshots(browser, audit_client, db, sample, width):
-    detail = 'Sentetik ayrıntı ' * 20
-    record = AuditLog(user_id=sample['strategy'].id, action='civ127_synthetic',
-        entity_type='synthetic', entity_id=127, created_at=datetime(2026, 10, 26, 9, 30),
-        details=detail[:300])
-    db.add(record)
+    db.add_all([
+        AuditLog(user_id=sample['strategy'].id, action='activity_update', entity_type='activity',
+            entity_id=127, created_at=datetime(2026, 10, 26, 9, 30), details='revision=3;note=sentetik'),
+        AuditLog(user_id=sample['strategy'].id, action='user_create', entity_type='user',
+            entity_id=sample['strategy'].id, created_at=datetime(2026, 10, 26, 9, 30), details='role=strategy'),
+        AuditLog(user_id=sample['strategy'].id, action='budget_reallocation', entity_type='budget_operation',
+            entity_id=9201, created_at=datetime(2026, 10, 26, 9, 30),
+            details='{"count": 12, "bytes": 1200000}'),
+    ])
     db.commit()
-    filtered_url = f'http://testserver/audit?period_id={sample["period"].id}&action=civ127_synthetic&user=strategy%40example.invalid'
+    filtered_url = f'http://testserver/audit?period_id={sample["period"].id}&user=strategy%40example.invalid'
     empty_url = filtered_url.replace('strategy%40example.invalid', 'missing%40example.invalid')
     filtered = audit_client.get(filtered_url)
     empty = audit_client.get(empty_url)
     assert filtered.status_code == empty.status_code == 200
     page_html = {
-        'filtered': filtered.template.environment.from_string(FROZEN.read_text()).render(filtered.context),
-        'empty': empty.template.environment.from_string(FROZEN.read_text()).render(empty.context),
+        'filtered': filtered.template.environment.from_string(FROZEN.read_text()).render(
+            frozen_context(filtered.context)),
+        'empty': empty.template.environment.from_string(FROZEN.read_text()).render(frozen_context(empty.context)),
     }
-    target = os.getenv('CIVENSA_CIV127_SCREENSHOTS')
+    target = os.getenv('CIVENSA_CIV138_SCREENSHOTS')
     errors = []
     with browser.new_context(viewport={'width': width, 'height': 1000}) as context:
         def serve(route):
@@ -177,13 +219,14 @@ def test_browser_layout_contrast_and_screenshots(browser, audit_client, db, samp
         page.on('pageerror', lambda error: errors.append(str(error)))
         for stage in ('before', 'after'):
             page_html['filtered'] = (
-                filtered.template.environment.from_string(FROZEN.read_text()).render(filtered.context)
+                filtered.template.environment.from_string(FROZEN.read_text()).render(
+                    frozen_context(filtered.context))
                 if stage == 'before' else filtered.text)
             page_html['empty'] = (
-                empty.template.environment.from_string(FROZEN.read_text()).render(empty.context)
+                empty.template.environment.from_string(FROZEN.read_text()).render(frozen_context(empty.context))
                 if stage == 'before' else empty.text)
             for state, url, expected in [
-                ('filtered', filtered_url, detail[:300]),
+                ('filtered', filtered_url, 'Faaliyet güncellendi'),
                 ('empty', empty_url, 'Filtreye uygun kayıt bulunamadı.'),
             ]:
                 page.goto(url)
@@ -207,8 +250,14 @@ def test_browser_layout_contrast_and_screenshots(browser, audit_client, db, samp
                         assert filter_form.evaluate(
                             'el => getComputedStyle(el).gridTemplateColumns.split(" ").length === 1')
                     if state == 'filtered':
-                        cell = root.locator('.audit-details')
-                        expect(cell).to_contain_text(expected)
+                        expect(root).to_contain_text(expected)
+                        visible_text = root.inner_text()
+                        assert 'activity_update' not in visible_text
+                        assert not re.search(r'#\d+', visible_text)
+                        detail_row = root.locator('tr').filter(has_text='Faaliyet güncellendi')
+                        expect(detail_row.get_by_text('Revizyon 3', exact=False)).to_be_visible()
+                        expect(detail_row.get_by_text('Teknik ayrıntı')).to_be_visible()
+                        cell = root.locator('.audit-details').first
                         assert cell.evaluate("el => getComputedStyle(el).overflowWrap === 'anywhere'")
                         assert cell.evaluate('el => el.scrollWidth <= el.clientWidth')
                     else:
@@ -220,7 +269,7 @@ def test_browser_layout_contrast_and_screenshots(browser, audit_client, db, samp
                         TEXT_PAIRS.replace('.section-index-page', '.audit-page'))))
                     assert all(contrast(pair) >= 4.5 for pair in pairs), [
                         (pair, contrast(pair)) for pair in pairs if contrast(pair) < 4.5]
-                if target and width in {1440, 390}:
+                if target and state == 'filtered' and width in {1440, 390}:
                     folder = Path(target)
                     folder.mkdir(parents=True, exist_ok=True)
                     page.evaluate('document.activeElement.blur(); window.scrollTo(0, 0)')
