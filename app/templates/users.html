@@ -4,20 +4,7 @@
 {% block content %}
   <link rel="stylesheet" href="/static/design/users.css">
   <div class="users-page">
-    <div class="cards strategy-cards users-summary">
-      <div class="card">
-        <span>Müdürlük</span>
-        <b>{{ departments|length }}</b>
-      </div>
-      <div class="card">
-        <span>Etkin müdürlük hesabı</span>
-        <b class="ok">{{ department_account_count }}</b>
-      </div>
-      <div class="card">
-        <span>Hesap bekliyor</span>
-        <b class="{{ 'bad' if missing_departments else 'ok' }}">{{ missing_departments|length }}</b>
-      </div>
-    </div>
+    <p class="muted users-summary">{{ departments|length }} müdürlük · {{ department_account_count }} etkin müdürlük hesabı · {% if missing_departments %}<span class="status warning">{{ missing_departments|length }} hesap bekliyor</span>{% else %}{{ missing_departments|length }} hesap bekliyor{% endif %}</p>
     <section class="users-panel">
       <h2>Kişisel müdürlük hesaplarını toplu oluştur</h2>
       <p class="muted">Her kişi için ayrı satır kullanın. Aynı müdürlüğe bir Müdür ve birden çok Personel ekleyebilirsiniz. Parolalar otomatik üretilir; ilk girişte değiştirilir.</p>

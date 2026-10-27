@@ -1,6 +1,6 @@
 # CIV-130 · Kullanıcılar tasarım sistemine
 
-`/users` (047, strateji) sayfası mevcut panel, alan, tablo, rozet ve düğme desenlerine taşındı. Sayfaya özel `users.css`, yalnız `tokens.css` değişkenlerini kullanır. Üç sayı kartı 44rem sınırında etiket/sayı satırlarıdır. Eksik müdürlükler adın yanında oluşturma düğmesi bulunan düz listedir. Form 1024px ve üzerinde üç, mobilde tek sütundur. Parola teslim uyarısı uyarı panelidir; iki hesap politikası paragrafı tabloyla aynı bilgi panelindedir. Böylece mevcut `accountChangePolicy + .table-wrap` sözleşmesi de korunur. Etkin hesap yeşil, devre dışı hesap nötr metin rozetidir; işlemler rozetin altındadır.
+`/users` (047, strateji) sayfası mevcut panel, alan, tablo, rozet ve düğme desenlerine taşındı. Sayfaya özel `users.css`, yalnız `tokens.css` değişkenlerini kullanır. Müdürlük, etkin hesap ve bekleyen hesap sayıları sayfa başlığının altında tek ikincil metin satırıdır; bekleyen sayı sıfırdan büyükse uyarı metin rozeti, sıfırsa düz metindir. Eksik müdürlükler adın yanında oluşturma düğmesi bulunan düz listedir. Form 1024px ve üzerinde üç, mobilde tek sütundur. Parola teslim uyarısı uyarı panelidir; iki hesap politikası paragrafı tabloyla aynı bilgi panelindedir. Böylece mevcut `accountChangePolicy + .table-wrap` sözleşmesi de korunur. Etkin hesap yeşil, devre dışı hesap nötr metin rozetidir; işlemler rozetin altındadır.
 
 ## Görüntüler
 
@@ -19,6 +19,7 @@
 - Yeni kullanıcı formu alanı: `Ad Soyad` → `Ad soyad`.
 - Yeni kullanıcı formu alanı: `Geçici Parola` → `Geçici parola`.
 - Tablo başlıkları: `Ad Soyad`, `E-posta`, `Rol` → `Kullanıcı`; ilgili hücrelerde ad, e-posta ve rol üç satırda gösterilir.
+- Özet: üç ayrı sayı kartı → `4 müdürlük · 2 etkin müdürlük hesabı · 2 hesap bekliyor` biçiminde tek ikincil metin satırı; bekleyen hesap varsa metin uyarı rozeti.
 
 CSV başlıkları aynen korunur. Tablo, 1280px ve üzerinde panel genişliğine sığar; daha dar ekranlarda iç yatay kaydırma korunur.
 

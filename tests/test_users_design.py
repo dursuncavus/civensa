@@ -4,6 +4,7 @@ from hashlib import sha256
 from html.parser import HTMLParser
 import os
 from pathlib import Path
+import re
 from urllib.parse import urlsplit
 
 import pytest
@@ -53,20 +54,28 @@ class Contract(HTMLParser):
         self.controls, self.hooks, self.headers, self.options = [], [], [], []
         self.words = Counter()
         self.capture = None
+        self.summary_depth = 0
+        self.summary_parts = []
+        self.summary = ''
         self.feed(html)
 
     def handle_starttag(self, tag, attrs):
         attrs = dict(attrs)
+        classes = set(attrs.get('class', '').split())
         if tag == 'main':
             self.main = True
         if not self.main:
             return
+        if self.summary_depth:
+            self.summary_depth += 1
+        elif 'users-summary' in classes or {'cards', 'strategy-cards'} <= classes:
+            self.summary_depth = 1
         if tag in {'input', 'select', 'option', 'textarea', 'button', 'a', 'form'}:
             values = {k: v for k, v in attrs.items() if k not in {'class', 'style'}}
             if values.get('name') == 'csrf_token':
                 values['value'] = '<csrf>'
             self.controls.append((tag, tuple(sorted(values.items()))))
-        classes = tuple(sorted(set(attrs.get('class', '').split()) & JS_CLASSES))
+        classes = tuple(sorted(classes & JS_CLASSES))
         data = tuple(sorted((k, v) for k, v in attrs.items() if k.startswith('data-')))
         if attrs.get('id') or classes or data:
             self.hooks.append((tag, attrs.get('id'), classes, data, 'hidden' in attrs))
@@ -80,6 +89,9 @@ class Contract(HTMLParser):
             self.capture[2] += data
         if self.capture and self.capture[0] == 'th':
             return
+        if self.summary_depth:
+            self.summary_parts.append(data)
+            return
         # Header copy is deliberately NOT sentence-cased.
         text = ' '.join(data.split())
         text = TEXT_CHANGES.get(text, text)
@@ -92,8 +104,22 @@ class Contract(HTMLParser):
             value = (attrs, ' '.join(text.split()))
             (self.headers if kind == 'th' else self.options).append(value)
             self.capture = None
+        if self.summary_depth:
+            self.summary_depth -= 1
+            if not self.summary_depth:
+                self.summary = ' '.join(' '.join(self.summary_parts).split())
         if tag == 'main':
             self.main = False
+
+
+def normalized_summary(summary):
+    match = re.fullmatch(
+        r'Müdürlük (\d+) Etkin müdürlük hesabı (\d+) Hesap bekliyor (\d+)', summary)
+    if not match:
+        return summary
+    departments, accounts, missing = match.groups()
+    return (f'{departments} müdürlük · {accounts} etkin müdürlük hesabı · '
+            f'{missing} hesap bekliyor')
 
 
 def normalized_headers(headers):
@@ -148,6 +174,7 @@ def test_frozen_controls_hooks_copy_options_and_headers(accounts, users_data, db
     assert Counter(actual.hooks) == Counter(expected.hooks)
     assert actual.options == expected.options
     assert actual.headers == normalized_headers(expected.headers)
+    assert actual.summary == normalized_summary(expected.summary)
     assert actual.words == expected.words
     assert JS_IDS <= {item[1] for item in actual.hooks}
     assert JS_CLASSES - ({'create-department-user'} if not missing else set()) <= {
@@ -171,6 +198,7 @@ def test_browser_layout_contrast_and_existing_controls(browser, accounts, users_
             department.is_active = False
         db.commit()
     client = accounts[0]()
+    summary_context = client.get('/users').context
     errors, writes = [], []
     with browser.new_context(viewport={'width': width, 'height': 1000},
                              locale='tr-TR', timezone_id='Europe/Istanbul') as context:
@@ -212,9 +240,17 @@ def test_browser_layout_contrast_and_existing_controls(browser, accounts, users_
             assert page.evaluate('document.documentElement.scrollWidth === innerWidth')
             expect(page.locator('.users-table th')).to_have_count(6)
             assert root.locator('*').evaluate_all("els => els.every(el => getComputedStyle(el).textTransform !== 'uppercase')")
-            assert root.locator('.users-summary').evaluate('el => el.getBoundingClientRect().width <= 704')
-            for item in root.locator('.users-summary .card').all():
-                assert item.evaluate('el => Math.abs(el.firstElementChild.getBoundingClientRect().y - el.lastElementChild.getBoundingClientRect().y) < 3')
+            summary = root.locator('.users-summary')
+            assert summary.evaluate('el => el.getBoundingClientRect().width <= 704')
+            expect(summary).to_have_text(
+                f'{len(summary_context["departments"])} müdürlük · '
+                f'{summary_context["department_account_count"]} etkin müdürlük hesabı · '
+                f'{len(summary_context["missing_departments"])} hesap bekliyor')
+            expect(summary.locator('.status.warning')).to_have_count(
+                1 if summary_context['missing_departments'] else 0)
+            if summary_context['missing_departments']:
+                expect(summary.locator('.status.warning')).to_have_text(
+                    f'{len(summary_context["missing_departments"])} hesap bekliyor')
             if missing:
                 assert root.locator('.missing-departments').evaluate('el => el.getBoundingClientRect().width <= 704')
             columns = page.locator('#newUserForm').evaluate('el => getComputedStyle(el).gridTemplateColumns.split(" ").length')
