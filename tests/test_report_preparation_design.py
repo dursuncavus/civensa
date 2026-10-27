@@ -182,7 +182,7 @@ def test_frozen_forms_links_values_disabled_removal(live_client, sample, role, e
     old = response.template.environment.from_string(source.decode()).render(context)
     new = response.template.render(context)
     assert form_contract(new) == form_contract(old)
-    added = Counter({f'#rp-{key}': 2 for key in SECTION_IDS})
+    added = Counter({f'#rp-{key}': 1 for key in SECTION_IDS})
     assert links(new) == links(old) + added
     assert removal_contract(new) == removal_contract(old)
     for id in ['economicGridForm', 'economicGridErrors']:
@@ -276,10 +276,8 @@ def test_browser_layout_anchors_contrast_and_evidence(browser, client, db, sampl
                 assert task_box['y'] <= status_box['y']
                 assert status_box['x'] + status_box['width'] <= task_box['x'] + task_box['width']
                 assert status_box['y'] + status_box['height'] <= task_box['y'] + task_box['height']
-        contents = root.locator('.rp-contents')
-        assert contents.is_visible() == (width >= 1280)
-        if width >= 1280:
-            assert contents.evaluate('el => getComputedStyle(el).position') == 'sticky'
+        assert not root.get_by_role('heading', name='Bu sayfada', exact=True).count()
+        assert root.locator('a[href^="#rp-"]').count() == 6
         for key in SECTION_IDS:
             root.locator(f'.rp-overview a[href="#rp-{key}"]').click()
             expect(page).to_have_url(f'http://testserver/program/1?period_id=1#rp-{key}')
@@ -313,10 +311,13 @@ def test_browser_layout_anchors_contrast_and_evidence(browser, client, db, sampl
                 assert header.evaluate('el => getComputedStyle(el).overflowWrap') == 'normal'
                 assert header.evaluate('el => getComputedStyle(el).wordBreak') == 'normal'
             if width == 1440:
-                assert reconciliation.locator('.table-wrap').evaluate('el => el.scrollWidth > el.clientWidth')
+                assert reconciliation.bounding_box()['width'] == root.locator('.rp-overview').bounding_box()['width']
+                assert reconciliation.locator('.table-wrap').evaluate('el => el.scrollWidth <= el.clientWidth')
                 assert page.evaluate('document.documentElement.scrollWidth === innerWidth')
         if width == 390:
             expect(root.locator('.rp-scroll-hint')).to_be_visible()
+            reconciliation_table = root.locator('#pp-reconciliation .table-wrap')
+            assert reconciliation_table.evaluate('el => el.scrollWidth > el.clientWidth')
             table = root.locator('#economicGridForm .table-wrap')
             assert table.evaluate('el => el.scrollWidth > el.clientWidth')
             table.evaluate('el => el.scrollLeft = el.scrollWidth')
@@ -337,9 +338,6 @@ def test_browser_layout_anchors_contrast_and_evidence(browser, client, db, sampl
             target = Path(folder) / f'{state}-{width}.png'
             page.screenshot(path=str(target), full_page=True)
             assert target.stat().st_size <= 1_500_000
-        for boundary in [1279, 1280]:
-            page.set_viewport_size({'width': boundary, 'height': 900})
-            assert contents.is_visible() == (boundary == 1280)
         assert not errors
 
 
