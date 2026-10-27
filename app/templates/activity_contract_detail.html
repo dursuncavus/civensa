@@ -141,7 +141,7 @@
       <section class="reports-panel" id="indicator-{{ row.report_indicator_id }}" {% if not report.approved and report.revision == report.current_revision %}data-draft-record{% endif %}>
         <h2>{{ row.definition.name }}</h2>
         {% set target = row.definition.targets[0] if row.definition.targets|length == 1 else none %}
-        {% set can_draw_bar = latest and latest.state == 'verified' and latest.value is not none and latest.value|float >= 0 and target and target.state == 'verified' and target.value is not none and target.value|float != 0 %}
+        {% set can_draw_bar = latest and latest.state == 'verified' and latest.value is number and latest.value|float >= 0 and target and target.state == 'verified' and target.value is not none and target.value|float != 0 %}
         <div class="indicator-summary" data-latest-actual aria-label="Son gerçekleşme">
           {%- if latest %}
           <div class="actual-summary indicator-value-summary">
