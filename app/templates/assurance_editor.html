@@ -1,34 +1,96 @@
 {% extends 'base.html' %}
-{% block page_title %}{{ item.code }} · Güvence Beyanı{% endblock %}
+{% block page_title %}{{ item.code }} · Güvence beyanı{% endblock %}
 {% block page_subtitle %}{{ report.year }} · {{ report.department }}{% endblock %}
 {% block content %}
 <link rel="stylesheet" href="/static/activity_sections.css">
-<p><a href="/activity-sections/reports/{{ report.id }}?code=EKLER">← EKLER ve tamamlanma durumu</a></p>
-{% if form_error %}<p class="ar-error" role="alert">{{ form_error }} Girdiğiniz alanlar aşağıda korunmuştur.</p>{% endif %}
+<link rel="stylesheet" href="/static/design/assurance-editor.css">
+<div class="assurance-editor-page">
+<p class="assurance-back">
+<a href="/activity-sections/reports/{{ report.id }}?code=EKLER">EKLER ve tamamlanma durumu</a>
+</p>
+{% if form_error %}
+<p class="ar-error" role="alert">{{ form_error }} Girdiğiniz alanlar aşağıda korunmuştur.</p>
+{% endif %}
 <section class="panel ar-panel">
 <h2>{{ statement.title if not statement.error else item.code }}</h2>
-<p>Beyan metni kilitlidir. İmza alanı boş bırakılır; ıslak veya elektronik imza rapor dışında tamamlanır.</p>
+<p class="assurance-info">Beyan metni kilitlidir. İmza alanı boş bırakılır; ıslak veya elektronik imza rapor dışında tamamlanır.</p>
 {% if editable %}
 <form method="post" action="/activity-sections/reports/{{ report.id }}/assurances/{{ item.code }}">
 <input type="hidden" name="csrf_token" value="{{ request.session.get('csrf_token') }}">
 <input type="hidden" name="expected_revision" value="{{ report.revision }}">
-<label>Yer<input name="place" maxlength="300" value="{{ variables.place }}"></label>
-<label>Tarih<input type="date" name="date" value="{{ variables.date }}"></label>
+<div class="assurance-location">
+<label>Yer
+<input name="place" maxlength="300" value="{{ variables.place }}">
+</label>
+<label>Tarih
+<input type="date" name="date" value="{{ variables.date }}">
+</label>
+</div>
 <h3>{{ 'Harcama yetkilisi' if item.code=='EK-2' else 'Üst yönetici / Belediye Başkanı' if item.code=='EK-1' else 'Mali Hizmetler Müdürü' }} görev dönemleri</h3>
 <p>Rapor yılındaki tüm görev dönemlerini girin. Kişi kodu aynı kişiye ait dönemlerde aynı olmalıdır; örneğin kurum içi sicil kodunu kullanın. Son görev dönemindeki kişi beyanın Ad-Soyad ve Ünvan alanlarına alınır. Boş satırlar kaydedilmez. Yeni satırlar kaydettikten sonra açılır.</p>
-{% if item.code!='EK-3' %}<p>Yıl içinde birden fazla kişi görev yaptıysa önceki yönetici ibaresi otomatik eklenir.</p>{% endif %}
-<div class="ar-scroll"><table class="ar-table"><thead><tr><th>Kişi kodu</th><th>Ad-Soyad</th><th>Ünvan</th><th>Başlangıç</th><th>Bitiş</th></tr></thead><tbody>
-{% for i in range([variables.signatories|length+2,100]|min) %}{% set person=variables.signatories[i] if i<variables.signatories|length else {} %}<tr>
-{% for field,label in [('person_ref','Kişi kodu'),('name','Ad-Soyad'),('title','Ünvan'),('start_date','Başlangıç'),('end_date','Bitiş')] %}<td><input name="{{ field }}_{{ i }}" aria-label="{{ label }} {{ i+1 }}" type="{{ 'date' if field in ['start_date','end_date'] else 'text' }}" value="{{ person.get(field,'') }}" {% if field in ['start_date','end_date'] %}min="{{ report.year }}-01-01" max="{{ report.year }}-12-31"{% else %}maxlength="300"{% endif %}></td>{% endfor %}
-</tr>{% endfor %}</tbody></table></div>
-{% if item.code!='EK-3' %}<h3>Çekinceler</h3><p>Her çekinceyi gerekçesiyle yazın. Çekinceniz yoksa bu alanları boş bırakın.</p>
+{% if item.code!='EK-3' %}
+<p>Yıl içinde birden fazla kişi görev yaptıysa önceki yönetici ibaresi otomatik eklenir.</p>
+{% endif %}
+<p class="assurance-scroll-hint" id="assurance-scroll-hint">Tüm görev dönemi alanlarını görmek için tabloyu yatay kaydırın.</p>
+<div class="ar-scroll" role="region" aria-label="Görev dönemleri" aria-describedby="assurance-scroll-hint" tabindex="0">
+<table class="ar-table">
+<thead>
+<tr>
+<th>Kişi kodu</th>
+<th>Ad-Soyad</th>
+<th>Ünvan</th>
+<th>Başlangıç</th>
+<th>Bitiş</th>
+</tr>
+</thead>
+<tbody>
+{% for i in range([variables.signatories|length+2,100]|min) %}{% set person=variables.signatories[i] if i<variables.signatories|length else {} %}
+<tr>
+{% for field,label in [('person_ref','Kişi kodu'),('name','Ad-Soyad'),('title','Ünvan'),('start_date','Başlangıç'),('end_date','Bitiş')] %}
+<td>
+<input name="{{ field }}_{{ i }}" aria-label="{{ label }} {{ i+1 }}" type="{{ 'date' if field in ['start_date','end_date'] else 'text' }}" value="{{ person.get(field,'') }}" {% if field in ['start_date','end_date'] %}min="{{ report.year }}-01-01" max="{{ report.year }}-12-31"{% else %}maxlength="300"{% endif %}>
+</td>
+{% endfor %}
+</tr>
+{% endfor %}
+</tbody>
+</table>
+</div>
+{% if item.code!='EK-3' %}
+<h3>Çekinceler</h3>
+<p>Her çekinceyi gerekçesiyle yazın. Çekinceniz yoksa bu alanları boş bırakın.</p>
 {% for i in range([variables.reservations|length+2,100]|min) %}{% set reservation=variables.reservations[i] if i<variables.reservations|length else {} %}
-<label>Çekince {{ i+1 }}<textarea name="reservation_text_{{ i }}" maxlength="10000">{{ reservation.get('text','') }}</textarea></label>
-<label>Gerekçe {{ i+1 }}<textarea name="reservation_justification_{{ i }}" maxlength="10000">{{ reservation.get('justification','') }}</textarea></label>
-{% endfor %}{% endif %}
-<button class="button primary">Beyan alanlarını kaydet</button></form>
-{% else %}<p>Bu beyan salt okunurdur.</p>{% endif %}
+<div class="assurance-reservation">
+<label>Çekince {{ i+1 }}
+<textarea name="reservation_text_{{ i }}" maxlength="10000">{{ reservation.get('text','') }}</textarea>
+</label>
+<label>Gerekçe {{ i+1 }}
+<textarea name="reservation_justification_{{ i }}" maxlength="10000">{{ reservation.get('justification','') }}</textarea>
+</label>
+</div>
+{% endfor %}
+{% endif %}
+<button class="button primary">Beyan alanlarını kaydet</button>
+</form>
+{% else %}
+<p class="assurance-readonly">Bu beyan salt okunurdur.</p>
+{% endif %}
 </section>
-<section class="panel ar-panel"><h2>Kaydedilmiş beyan</h2>{% include 'assurance_statement.html' %}</section>
-{% if variables.signatories %}<section class="panel ar-panel"><h3>Kayıtlı görev dönemleri</h3><ul>{% for person in item.variables.signatories %}<li>{{ person.name }} · {{ person.title }} · {{ person.start_date }} – {{ person.end_date }}</li>{% endfor %}</ul></section>{% endif %}
+<section class="panel ar-panel">
+<h2>Kaydedilmiş beyan</h2>
+<div class="assurance-document">
+{% include 'assurance_statement.html' %}
+</div>
+</section>
+{% if variables.signatories %}
+<section class="panel ar-panel">
+<h3>Kayıtlı görev dönemleri</h3>
+<ul>
+{% for person in item.variables.signatories %}
+<li>{{ person.name }} · {{ person.title }} · {{ person.start_date }} – {{ person.end_date }}</li>
+{% endfor %}
+</ul>
+</section>
+{% endif %}
+</div>
 {% endblock %}
