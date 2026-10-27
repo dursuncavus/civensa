@@ -52,6 +52,15 @@
 .report-preparation-page #pp-reconciliation tbody td:nth-child(3),
 .report-preparation-page #pp-reconciliation tbody td:nth-child(4),
 .report-preparation-page #pp-reconciliation tbody td:nth-child(5) { white-space: nowrap; }
+.report-preparation-page #pp-reconciliation .pp-reconciliation-status { display: inline-block; padding: var(--space-1) var(--space-2); border-radius: var(--radius); font-size: var(--text-sm); font-weight: var(--font-medium); }
+.report-preparation-page #pp-reconciliation .pp-status-danger { color: var(--danger); background: var(--danger-bg); }
+.report-preparation-page #pp-reconciliation .pp-status-warning { color: var(--warning); background: var(--warning-bg); }
+.report-preparation-page #pp-reconciliation .pp-status-success { color: var(--success); background: var(--success-bg); }
+.report-preparation-page #pp-reconciliation .pp-reconciliation-count { margin: var(--space-2) 0; color: var(--text-secondary); font-size: var(--text-sm); }
+.report-preparation-page #pp-reconciliation .pp-reconciliation-details summary { color: var(--accent); cursor: pointer; }
+.report-preparation-page #pp-reconciliation .pp-reconciliation-details[open] > summary { margin-bottom: var(--space-2); }
+.report-preparation-page #pp-reconciliation .pp-reconciliation-details p { margin: 0 0 var(--space-2); }
+.report-preparation-page #pp-reconciliation .pp-reconciliation-alert { padding: var(--space-4); border: 1px solid var(--warning); border-radius: var(--radius); margin-bottom: var(--space-4); color: var(--warning); background: var(--warning-bg); }
 .report-preparation-page .rp-scroll-hint { display: none; }
 @media (min-width: 1280px) {
   .report-preparation-page #pp-reconciliation table { min-width: 960px; }

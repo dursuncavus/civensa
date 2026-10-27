@@ -1,10 +1,49 @@
 {% extends 'base.html' %}
-{% block page_title %}Bütçe Aktarma{% endblock %}
+{% block page_title %}Bütçe aktarma{% endblock %}
 {% block page_subtitle %}Onaylı PP bütçesinde dayanaklı, izlenebilir müdürlük aktarmaları{% endblock %}
 {% block content %}
-<section class="card"><div class="section-head"><h2>Aktarma işlemleri</h2><a class="button primary" href="/budget-reallocations/new">Yeni aktarma</a></div>
-<p>Onay durumu korunur. Her değişiklik ve geri alma ayrı bir işlem olarak kaydedilir.</p>
-<table><thead><tr><th>İşlem</th><th>Yıl</th><th>Dayanak</th><th>Tarih / sayı</th><th>Geri alma</th></tr></thead><tbody>
-{% for item in operations %}<tr><td><a href="/budget-reallocations/{{ item.id }}">#{{ item.id }} · İncele</a></td><td>{{ item.year }}</td><td>{{ references[item.reference_type] }}</td><td>{{ item.reference_date }} / {{ item.reference_number }}</td><td>{% if item.reverses_id %}<a href="/budget-reallocations/{{ item.reverses_id }}">#{{ item.reverses_id }} için telafi</a>{% else %}—{% endif %}</td></tr>{% else %}<tr><td colspan="5">Henüz aktarma yok. Yeni aktarma ile önizleme hazırlayın.</td></tr>{% endfor %}
-</tbody></table></section>
+<link rel="stylesheet" href="/static/design/budget-reallocation.css">
+<div class="budget-reallocation-page">
+  <div class="section-head">
+    <h2>Aktarma işlemleri</h2>
+    <a class="button primary" href="/budget-reallocations/new">Yeni aktarma</a>
+  </div>
+  <p class="info-panel">Onay durumu korunur. Her değişiklik ve geri alma ayrı bir işlem olarak kaydedilir.</p>
+  <div class="table-wrap" role="region" aria-label="Aktarma işlemleri" tabindex="0">
+    <table>
+      <thead>
+        <tr>
+          <th>İşlem</th>
+          <th>Yıl</th>
+          <th>Dayanak</th>
+          <th>Tarih / sayı</th>
+          <th>Geri alma</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in operations %}
+          <tr>
+            <td>
+              <a href="/budget-reallocations/{{ item.id }}">#{{ item.id }} · İncele</a>
+            </td>
+            <td>{{ item.year }}</td>
+            <td>{{ references[item.reference_type] }}</td>
+            <td>{{ item.reference_date }} / {{ item.reference_number }}</td>
+            <td>
+              {% if item.reverses_id %}
+                <a href="/budget-reallocations/{{ item.reverses_id }}">#{{ item.reverses_id }} için telafi</a>
+              {% else %}
+                —
+              {% endif %}
+            </td>
+          </tr>
+        {% else %}
+          <tr>
+            <td class="muted" colspan="5">Henüz aktarma yok. Yeni aktarma ile önizleme hazırlayın.</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
 {% endblock %}

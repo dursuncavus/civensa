@@ -1,13 +1,17 @@
 {% if reconciliation %}
+{% set publication_block_rows = reconciliation | selectattr('errors') | list | length %}
 <section id="pp-reconciliation" aria-labelledby="pp-reconciliation-title">
 <h2 id="pp-reconciliation-title">Maliyet Ara Toplamları ve Kaynak Mutabakatı</h2>
 <p>Güncel faaliyet maliyetleri program → alt program → müdürlük sırasıyla toplanır. Bağlantısı veya tutarı eksik kayıt varsa kısmi toplam gösterilmez ve yayın durur. Kaynak toplamı, bütün alt kayıtların saklanan kaynak tutarlarından oluşur; bulunmaması uyarıdır. Personel ve SGK giderleri kitabın ortak maliyet tablosunda ayrıca gösterilir.</p>
+{% if publication_block_rows %}<p class="warning-panel pp-reconciliation-alert">{{ publication_block_rows }} satırda yayın engeli var. Ayrıntıyı ilgili satırdaki “Ayrıntı” bağlantısından açın.</p>{% endif %}
 <div class="table-wrap"><table>
 <thead><tr><th>Program / Alt Program / Müdürlük</th><th>Yıl / Değer Türü</th><th>Hesaplanan (TL)</th><th>Kaynak (TL)</th><th>Fark (TL)</th><th>Durum / Yapılacak İşlem</th></tr></thead>
 <tbody>{% for row in reconciliation %}
 <tr data-subtotal-level="{{ row.level }}"><th scope="row">{{ row.label }}<div class="muted">{{ row.path }}</div></th><td>{{ row.year }} {{ row.value_kind|value_kind_label }}</td>
 <td>{{ row.amount|trmoney if row.complete else 'Eksik ara toplam' }}</td><td>{{ row.source_amount|trmoney if row.source_amount is not none else 'kaynak toplamı yok' }}</td><td>{{ row.difference|trmoney }}</td>
-<td><strong>{{ row.status }}</strong>{% for message in row.errors %}<p class="field-error">{{ message }}</p>{% endfor %}{% for message in row.warnings %}<p class="muted">{{ message }}</p>{% endfor %}</td></tr>
+<td><strong class="pp-reconciliation-status{% if row.status == 'Yayın engeli' %} pp-status-danger{% elif row.status == 'Uyarı' %} pp-status-warning{% else %} pp-status-success{% endif %}">{{ row.status }}</strong>
+{% if row.errors or row.warnings %}<p class="pp-reconciliation-count">{% if row.errors %}{{ row.errors|length }} hata{% endif %}{% if row.errors and row.warnings %} · {% endif %}{% if row.warnings %}{{ row.warnings|length }} uyarı{% endif %}</p>
+<details class="pp-reconciliation-details"><summary>Ayrıntı</summary>{% for message in row.errors %}<p class="field-error">{{ message }}</p>{% endfor %}{% for message in row.warnings %}<p class="muted">{{ message }}</p>{% endfor %}</details>{% endif %}</td></tr>
 {% endfor %}</tbody></table></div>
 </section>
 {% endif %}
