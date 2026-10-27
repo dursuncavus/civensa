@@ -50,6 +50,7 @@ Her PNG 1,5 MB sınırının altındadır. Görüntüler sayfanın başlangıcı
 - Odaklı paket: `python -m pytest -q --require-postgres tests/test_source_comparison_design.py tests/test_source_comparison.py tests/test_source_comparison_ui.py tests/test_design_shell.py` — 56 geçti.
 - Chromium: iki rol, 1440 ve 390 px; beş durum filtresi, Tümü, Tab/Space/Enter, aria-pressed, JS kapalı tüm satırlar, SHA-256 details, boş durum, yatay taşma ve normal/hover/focus/etkin durumlarda görünür metin kontrastı ≥ 4,5:1 doğrulandı.
 - `node --check app/static/design/source-comparison.js` ve `git diff --check` başarılı.
-- Tam test paketi ve PR CI sonucu tamamlandığında burada kaydedilir.
+- Son şablon biçimlendirmesinden sonra yeni tasarım paketi: **22 geçti**.
+- Tam PostgreSQL paketi ve son head CI sonuçları PR açıklamasında kaydedilir.
 
 Canlı veri kullanılmadı. Firefox, WebKit ve gerçek ekran okuyucu ile doğrulama yapılmadı. Sunucu davranışı, erişim izinleri ve veri hesaplamaları için değişiklik varsayılmadı; mevcut sözleşme korundu.
