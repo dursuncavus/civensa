@@ -4,7 +4,7 @@
 {% block page_subtitle %}{{ period.year }} Performans Programı · {{ 'Strateji inceleme görünümü' if user.role=='strategy' else 'Müdürlük veri giriş alanı' }}{% endblock %}
 {% block content %}
 <link rel="stylesheet" href="/static/design/data-entry.css">
-<div class="data-entry-page">
+{% set is_readonly = user.role!='department' or period.status=='closed' or submission.status in ['submitted','approved'] %}<div class="data-entry-page{{ ' is-readonly' if is_readonly else '' }}">
 <datalist id="unitOptions">{% for unit in ['Adet','Yüzde (%)','Oran (%)','Türk Lirası (₺)','Gün','Kişi','m2','Ton','Lt','Saat','Dakika'] %}<option value="{{ unit }}">{% endfor %}</datalist>
 <p class="page-actions"><a class="button" href="/program/{{ department.id }}?period_id={{ period.id }}">Performans Kartları ve Ekonomik Tablolar</a></p>
 {% if submission.return_note %}<div class="return-note"><b>Strateji iade notu</b><p>{{ submission.return_note }}</p></div>{% endif %}
