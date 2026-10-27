@@ -10,7 +10,7 @@
   </div>
   <p class="info-panel">Onay durumu korunur. Her değişiklik ve geri alma ayrı bir işlem olarak kaydedilir.</p>
   <div class="table-wrap" role="region" aria-label="Aktarma işlemleri" tabindex="0">
-    <table>
+    <table class="budget-operation-list">
       <thead>
         <tr>
           <th>İşlem</th>
@@ -28,7 +28,7 @@
             </td>
             <td>{{ item.year }}</td>
             <td>{{ references[item.reference_type] }}</td>
-            <td>{{ item.reference_date }} / {{ item.reference_number }}</td>
+            <td>{{ item.reference_date[8:10] }}.{{ item.reference_date[5:7] }}.{{ item.reference_date[:4] }} / {{ item.reference_number }}</td>
             <td>
               {% if item.reverses_id %}
                 <a href="/budget-reallocations/{{ item.reverses_id }}">{{ reversal_labels.get(item.id, 'Telafi işlemi') }}</a>

@@ -31,7 +31,9 @@ TITLE_CHANGES = {
     'Yeni Bütçe Aktarması': 'Yeni bütçe aktarması',
     '#9202 · İncele': 'Fen İşleri → Park ve Bahçeler ve 2 müdürlük daha · 5.000.000,00 TL',
     '#9201 · İncele': 'Fen İşleri → Park ve Bahçeler · 5.000.000,00 TL',
-    '#9201 için telafi': 'Telafi: Meclis kararı 2026-10-01 / 2026/123',
+    '#9201 için telafi': 'Telafi: Başkanlık talimatı 01.10.2026 / 2026/123',
+    '2026-10-01 / 2026/123': '01.10.2026 / 2026/123',
+    '2026-10-02 / 2026/124': '02.10.2026 / 2026/124',
 }
 
 
@@ -91,7 +93,7 @@ def scenario(response, empty=False):
             9201: 'Fen İşleri → Park ve Bahçeler · 5.000.000,00 TL',
         }
         context['reversal_labels'] = {
-            9202: 'Telafi: Meclis kararı 2026-10-01 / 2026/123',
+            9202: 'Telafi: Başkanlık talimatı 01.10.2026 / 2026/123',
         }
     return context
 
@@ -171,7 +173,8 @@ def test_list_summaries_use_operation_lines_and_reference_not_ids(db, http, budg
     visible = ' '.join(Contract(response.text).text)
     assert 'Fen İşleri → Park ve Bahçeler · 5.000.000,00 TL' in visible
     assert 'Fen İşleri → Temizlik İşleri ve 2 müdürlük daha · 5.000.000,00 TL' in visible
-    assert 'Telafi: Başkanlık talimatı 2026-10-01 / 2026/123' in visible
+    assert '02.10.2026 / 2026/124' in visible
+    assert 'Telafi: Başkanlık talimatı 01.10.2026 / 2026/123' in visible
     assert not re.search(r'#\d+', visible)
 
 
@@ -211,6 +214,13 @@ def test_browser_evidence_and_contract(browser, http, budget, width, version):
             if version == 'before':
                 return
             assert page.evaluate('document.documentElement.scrollWidth === innerWidth')
+            if (width == 1440 and page.url.endswith('/budget-reallocations')
+                    and page.locator('.budget-operation-list tbody tr').count() == 2):
+                headers = page.locator('.budget-operation-list th').evaluate_all(
+                    'els => els.map(el => el.getBoundingClientRect().width)')
+                assert headers[0] > max(headers[1:])
+                expect(page.locator('.budget-operation-list tbody tr:not(:last-child) td:nth-child(2)')).to_have_css(
+                    'white-space', 'nowrap')
             root = page.locator('.budget-reallocation-page')
             assert root.locator('*').evaluate_all("els => els.every(el => getComputedStyle(el).textTransform !== 'uppercase')")
             pairs.update(map(tuple, page.evaluate(TEXT_PAIRS.replace('.section-index-page', '.budget-reallocation-page').replace("el.matches('select')", "el.matches('select,input,textarea')"))))
@@ -246,7 +256,7 @@ def test_browser_evidence_and_contract(browser, http, budget, width, version):
                     listing = page.locator('.budget-reallocation-page')
                     expect(listing.get_by_role('link', name='Fen İşleri → Park ve Bahçeler · 5.000.000,00 TL')).to_be_visible()
                     expect(listing.get_by_role('link', name='Fen İşleri → Park ve Bahçeler ve 2 müdürlük daha · 5.000.000,00 TL')).to_be_visible()
-                    expect(listing.get_by_role('link', name='Telafi: Meclis kararı 2026-10-01 / 2026/123')).to_have_attribute(
+                    expect(listing.get_by_role('link', name='Telafi: Başkanlık talimatı 01.10.2026 / 2026/123')).to_have_attribute(
                         'href', '/budget-reallocations/9201')
                     assert '#9201' not in listing.inner_text() and '#9202' not in listing.inner_text()
                 else:
