@@ -69,7 +69,17 @@ jobs:
           key: ${{ runner.os }}-${{ runner.arch }}-playwright-${{ steps.playwright.outputs.version }}-chromium
       # OS packages are not part of the browser cache. Always install them, and
       # let Playwright verify/install the matching Chromium revision on cache hits.
-      - run: python -m playwright install --with-deps chromium
+      # D-294: this step hung past the 40-min job cap (run 40481576173, shard 0,
+      # 45 min in apt/browser download). Bound each attempt and retry once.
+      - name: Install Playwright Chromium with OS dependencies
+        shell: bash
+        run: |
+          for attempt in 1 2; do
+            if timeout 600 python -m playwright install --with-deps chromium; then exit 0; fi
+            echo "::warning::Playwright install attempt $attempt failed or exceeded 10 minutes"
+          done
+          echo "::error::Playwright install failed twice (runner setup, not a test failure)"
+          exit 1
       # Keep each module on one worker: role tests mutate cluster-wide roles,
       # and migration tests within a module can share the public schema.
       - run: >-
