@@ -95,6 +95,7 @@
   display: grid;
   grid-template-columns: minmax(0,1fr);
   column-gap: var(--space-6);
+  max-width: 44rem;
   margin: var(--space-4) 0;
 }
 #mudurluk-ilerleme .progress-row {

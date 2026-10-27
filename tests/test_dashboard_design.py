@@ -270,6 +270,14 @@ def test_021_022_browser_layout_contrast_and_period_actions(browser, dashboard_c
                 assert row_sizes(progress_rows) == [2, 2, 2]
                 assert progress_rows.count() == 6
                 if width == 1440:
+                    progress_list = root.locator('#mudurluk-ilerleme .progress-list')
+                    list_measurement = progress_list.evaluate(
+                        "el => ({width: el.getBoundingClientRect().width, "
+                        "right: el.getBoundingClientRect().right, "
+                        "maxWidth: parseFloat(getComputedStyle(el).maxWidth), "
+                        "rem: parseFloat(getComputedStyle(document.documentElement).fontSize)})"
+                    )
+                    assert list_measurement['width'] <= 44 * list_measurement['rem'], list_measurement
                     measurements = [row.evaluate(
                         "el => { const number = el.querySelector('b'); const style = getComputedStyle(el); "
                         "return {height: el.getBoundingClientRect().height, "
@@ -280,6 +288,8 @@ def test_021_022_browser_layout_contrast_and_period_actions(browser, dashboard_c
                     assert all(row['height'] <= 44 for row in measurements), measurements
                     assert all(row['textAlign'] == 'right' for row in measurements), measurements
                     assert all(abs(row['numberRight'] - row['contentRight']) <= 1 for row in measurements), measurements
+                    assert all(row['numberRight'] <= list_measurement['right'] for row in measurements), (
+                        list_measurement, measurements)
             if width == 1440:
                 summary, main = root.locator('.dashboard-summary'), root.locator('.dashboard-main')
                 assert summary.bounding_box()['x'] >= main.bounding_box()['x'] + main.bounding_box()['width']
