@@ -40,7 +40,7 @@ Merged 27 Oct: #165 CIV-112 → 2ce4f59 (owner).
 Merged 26 Oct: #163 CIV-113 → 88c9dfb; #154 CIV-109 → 34329a7; #161 CIV-111 → 31b00e4 (D-283); #160 CIV-110 → 0b4b333 (D-282); #156 CIV-108 prototype → 633ac07 (D-277); #150 CIV-105 → 7cb58d9 (D-278; all jobs green, D-280); #148 CIV-106 → 1ed8620 (D-273); #145 CIV-104 → e0df9ce (D-268); #140 CIV-103 → 6efbe25 (D-265); #138 copilot-setup-steps → cbed4d8 (D-264); #136 production environment → d02b7cc; #132 CIV-102 → 873d361.
 
 ## Open — owner
-- Look approval CIV-109 (#154), CIV-111 (#161), CIV-113 (#163), CIV-112 (#165), CIV-114 (#168) (D-283, D-287).
+- Look approvals done for CIV-109/111/112/113/114/118/119/120/121 (D-295). Pending: CIV-122/123 after-screenshots, CIV-124.
 - Look approval CIV-104 (#145): 11 text changes + screenshots (D-268).
 - UI redesign (D-224/D-225): continues per D-243 order.
 - (closed) Look approvals CIV-101/102/103 (D-267); public repo (D-261); merges by the lead in live sessions (D-214); Codex "Tam erişim" ON (D-210); plaintext password files not tracked (D-217).
