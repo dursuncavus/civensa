@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block page_title %}Sistem Durumu{% endblock %}
+{% block page_subtitle %}Civensa {{ operations.version }} · {{ period.year }} döneminin operasyon özeti{% endblock %}
+{% block content %}<div class="operations-content"><div class="section-head"><div><h2>Operasyonel görünürlük</h2><p class="muted">Canlı sağlık, kayıt bütünlüğü ve sürüm hazırlığı.</p></div><a class="button" href="/api/operations/backup.json">Mantıksal Yedek İndir</a></div>
+<section class="release-gate {{ 'release-ready' if readiness.status=='ready' else 'release-blocked' }}" id="technical-readiness">
+  <div class="section-head"><div><h2>Teknik hazırlık · {{ 'Geçti' if readiness.status=='ready' else 'Engelli' }}</h2><p class="muted">Yalnız şema, kayıt bütünlüğü ve temel operasyon kontrolleri. Tam PP yayın onayı aşağıdaki kontrol listesindedir.</p></div><a class="button" href="/api/release/readiness?period_id={{ period.id }}">Kanıtları JSON olarak aç</a></div>
+  <div class="release-checks">{% for item in readiness.release.automatic if not item.id.startswith('publication:') %}<span class="{{ 'ok' if item.status=='Geçti' else 'bad' }}">{{ item.label }} · {{ item.status }}</span>{% endfor %}</div>
+  {% if readiness.warnings %}<div class="issue-list">{% for warning in readiness.warnings %}<div>{{ warning }}</div>{% endfor %}</div>{% endif %}
+</section>
+<section class="release-gate {{ 'release-ready' if readiness.release.status=='Hazır' else 'release-blocked' }}" id="pp-release-checklist">
+  <h2>PP yayın kontrol listesi · {{ readiness.release.status }}</h2>
+  <p>Tüm otomatik kontroller geçmeli ve tüm manuel maddeler kanıtla teyit edilmelidir. Onaylar {{ period.year }} döneminin mevcut içeriğine bağlıdır; içerik veya kontrol sonucu değişirse yeniden teyit gerekir.</p>
+  <p><b>PP-19 canlı rol gözlemi: {{ readiness.release.live_role_verification.status }}</b> · Sistem canlı rol kontrolü yapmaz. Yetkili kişinin manuel kanıtı aşağıda ayrıca gösterilir.</p>
+  <h3>Otomatik yayın kapıları</h3>
+  <div class="pp-release-items">{% for item in readiness.release.automatic %}<article class="pp-release-item" data-check-id="{{ item.id }}">
+    <h4>{{ item.label }} · <span class="{{ 'ok' if item.status=='Geçti' else 'bad' }}">{{ item.status }}</span></h4>
+    <p>Sorumlu: {{ item.owner }}</p>
+    {% if item.next_step %}<p class="bad">{{ item.next_step }}</p>{% endif %}
+    <details><summary>Kontrol ve kanıt</summary><p>Kontrol kaynağı: {{ item.source }}</p><pre>{{ item.evidence|tojson(indent=2) }}</pre></details>
+  </article>{% endfor %}</div>
+  <h3>D1–D8 ve manuel yayın onayları</h3>
+  <div class="pp-release-items">{% for item in readiness.release.manual %}<article class="pp-release-item" data-check-id="{{ item.id }}">
+    <h4>{{ item.id }} · {{ item.label }} · <span class="{{ 'ok' if item.status=='Geçti' else 'bad' }}">{{ item.status }}</span></h4>
+    <p>Sorumlu / gerekli onay: {{ item.owner }}</p>
+    {% if item.next_step %}<p>{{ item.next_step }}</p>{% endif %}
+    {% if item.evidence %}<p>Kaydeden: <b>{{ item.evidence.actor_name }}</b> · {{ item.evidence.created_at|turkey_time }} · {{ 'Teyit' if item.evidence.decision=='confirmed' else 'Teyit geri çekildi' }}</p><p>Gerekçe: {{ item.evidence.reason }}</p><p>Kanıt: {{ item.evidence.evidence }}</p>{% else %}<p>Kanıt ve kişi onayı henüz kaydedilmedi.</p>{% endif %}
+    <details><summary>Kontrol kaynağı</summary><p>{{ item.source }}</p><p>Test kaynağının varlığı kullanıcı kabulü veya canlı doğrulama kanıtı değildir.</p></details>
+  </article>{% endfor %}</div>
+  <h3>Manuel teyit kaydet</h3>
+  <p>Adınız ve kayıt zamanı sistem tarafından eklenir. Önceki kayıt değiştirilemez veya silinemez; düzeltme ve geri çekme yeni kayıt oluşturur. Kanıta sorumlu kişinin onayını, belge/sürüm bağlantısını ve kabul kapsamını yazın.</p>
+  {% if confirmation_error %}<div class="errorbox" role="alert">{{ confirmation_error }}</div>{% endif %}
+  {% set entered = attempted|default({}) %}
+  <form class="pp-release-form" method="post" action="/release/confirmations?period_id={{ period.id }}">
+    <input type="hidden" name="csrf_token" value="{{ request.session.get('csrf_token', '') }}">
+    <input type="hidden" name="context_sha256" value="{{ readiness.release.context_sha256 }}">
+    <label>Kontrol maddesi<select name="item_id" required>{% for item in readiness.release.manual %}<option value="{{ item.id }}" {{ 'selected' if entered.get('item_id')==item.id else '' }}>{{ item.id }} · {{ item.label }}</option>{% endfor %}</select></label>
+    <label>Karar<select name="decision"><option value="confirmed">Kanıtla teyit et</option><option value="revoked" {{ 'selected' if entered.get('decision')=='revoked' else '' }}>Teyidi geri çek</option></select></label>
+    <label>Gerekçe<textarea name="reason" maxlength="8000" required>{{ entered.get('reason', '') }}</textarea></label>
+    <label>Kanıt ve sorumlu kişi onayı<textarea name="evidence" maxlength="8000" required>{{ entered.get('evidence', '') }}</textarea></label>
+    <button class="button primary">Yeni teyit kaydı ekle</button>
+  </form>
+  <details class="pp-release-history"><summary>Değiştirilemez teyit geçmişi ({{ readiness.release.history|length }})</summary>
+    {% for event in readiness.release.history|reverse %}<article class="pp-release-item"><h4>#{{ event.id }} · {{ event.item_id }} · {{ 'Teyit' if event.decision=='confirmed' else 'Teyit geri çekildi' }}</h4><p>{{ event.actor_name }} · {{ event.created_at|turkey_time }}</p><p>{{ event.reason }}</p><p>Kanıt: {{ event.evidence }}</p><p>{{ 'Mevcut içerik' if event.context_sha256==readiness.release.context_sha256 else 'Önceki içerik; güncel teyit sayılmaz' }}</p><code>{{ event.context_sha256 }}</code></article>{% else %}<p>Henüz teyit kaydı yok.</p>{% endfor %}
+  </details>
+</section>
+<div class="cards strategy-cards">
+  <div class="card"><span>Uygulama</span><b class="ok">{{ operations.status|status_label }}</b><small>{{ operations.environment }}</small></div>
+  <div class="card"><span>Veritabanı</span><b class="ok">{{ operations.database.status|status_label }}</b><small>{{ operations.database.backend }} · {{ operations.database.latency_ms }} ms</small></div>
+  <div class="card"><span>Eşleştirme kuyruğu</span><b class="{{ 'bad' if operations.records.unresolved_activities else 'ok' }}">{{ operations.records.unresolved_activities }}</b><small>{{ 'Kontrol gerekli' if operations.records.unresolved_activities else 'Kuyruk temiz' }}</small></div>
+  <div class="card"><span>Dönem</span><b>{{ period.year }}</b><small>{{ period.status|status_label }}</small></div>
+</div>
+<section>
+  <div class="section-head"><div><h2>Kayıt Özeti</h2><p class="muted">Aktif olarak görüntülenen dönemin veritabanı sayıları.</p></div><div class="rowbuttons"><a class="button" href="/activity-mapping?period_id={{ period.id }}">Eşleştirme kuyruğunu aç</a><a class="button" href="/api/operations/status?period_id={{ period.id }}">JSON Görünümü</a></div></div>
+  <div class="table-wrap"><table><thead><tr><th>Kaynak</th><th>Kayıt</th></tr></thead><tbody>
+    <tr><td>Müdürlükler</td><td><b>{{ operations.records.departments }}</b></td></tr>
+    <tr><td>Müdürlük kullanıcı hesapları</td><td><b>{{ operations.records.department_accounts }}</b></td></tr>
+    <tr><td>Kullanıcı hesabı olmayan müdürlükler</td><td><b class="{{ 'bad' if operations.records.missing_department_accounts else 'ok' }}">{{ operations.records.missing_department_accounts }}</b></td></tr>
+    <tr><td>Performans göstergeleri</td><td><b>{{ operations.records.indicators }}</b></td></tr>
+    <tr><td>Faaliyetler</td><td><b>{{ operations.records.activities }}</b></td></tr>
+    <tr><td>Eşleştirme bekleyen faaliyetler</td><td><b class="{{ 'bad' if operations.records.unresolved_activities else 'ok' }}">{{ operations.records.unresolved_activities }}</b></td></tr>
+    <tr><td>Metin benzerliği önerisi bulunanlar</td><td><b>{{ operations.records.mapping_suggestions }}</b></td></tr>
+    <tr><td>Güçlü öneriler (en az %50)</td><td><b class="ok">{{ operations.records.strong_mapping_suggestions }}</b></td></tr>
+  </tbody></table></div>
+</section>
+<section>
+  <div class="section-head"><div><h2>Gönderim Durumları</h2><p class="muted">Müdürlük paketlerinin dönem içindeki güncel dağılımı.</p></div></div>
+  {% if operations.submissions %}
+  <div class="cards">{% for status,total in operations.submissions.items() %}<div class="card"><span>{{ status|status_label }}</span><b>{{ total }}</b></div>{% endfor %}</div>
+  {% else %}<p class="muted">Henüz gönderim kaydı yok.</p>{% endif %}
+</section>
+<section>
+  <div class="section-head"><div><h2>Denetim İzi</h2><p class="muted">Son kayıtlı işlem zamanı.</p></div></div>
+  <p><b>{{ operations.latest_audit_at|turkey_time if operations.latest_audit_at else 'Henüz denetim olayı yok' }}</b></p>
+</section>
+</div>{% endblock %}
