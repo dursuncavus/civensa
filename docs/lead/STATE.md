@@ -1,19 +1,19 @@
 # CIVENSA — CURRENT STATE
 
-Updated: 27 Oct 2026, ~17:00 Istanbul (live session CV Lider 35, D-301..D-302).
+Updated: 27 Oct 2026, ~21:00 Istanbul (live session CV Lider 36, D-303).
 Rules: AI_WORKING_CONSTITUTION v1.2 (Drive, global) · `HIERARCHY.md` v1.5 · `PROJECT_RULES.md` v1.4 (D-271: PRIOR ART field mandatory in every package) · `BACKUP_LEAD.md` v2.
 Backup log ("Civensa Yedek Kaydı", Drive): no entries, last modified 23 Oct (DOĞRULANDI 27 Oct 05:45).
 Tags: DOĞRULANDI (lead checked) · TARİHSEL (past fact) · BEYAN (owner said) · BELİRSİZ (unknown).
 
 ## Next session — start here (D-253)
-Owner opens a new chat with one line: `CV Lider 36 · Claude Opus 5.5 · civensa-lead`. The lead reads this section first and works from it.
-1. Quota (D-300): Claude week 67% at 16:21 Tue, reset Saturday 00:00. No new screen packages until reset; review/merge only, short sessions. DeepSeek first pass for large PRs (CIV-135).
-2. Merge rule HIERARCHY v1.5 (D-292). Copilot pushes wait for approval → lead empty commit or update-branch runs CI. Copilot sometimes rewrites tests/artifacts/** → restore from phase5. CI setup is now fast (D-298); a "runner setup" error → rerun failed jobs.
-3. Design rules for every review and package: D-292 (label next to value, no far-edge status) + D-299 (no split of what fits one column, no duplicate text, one-line summaries, group by status, status = text + colour).
-4. Open, in order (all Copilot; for each: review, restore tests/artifacts if touched, mark ready + lead empty commit for CI, merge, owner look): #199 CIV-128 (role=status fix asked); #205 CIV-134; #207 CIV-136; #209 CIV-137; #214 CIV-139 badges next to version; #216 CIV-140 graphical indicator summary (+ Codex 714313c 44rem fold-in; check no %, no success colour); #217 issue → PR CIV-138 readable audit + 017 list. Owner looks pending: CIV-127, 129, 133, 135 (merged) — owner already reacted on 016/017/004/007 → covered by CIV-138/139/140.
+Owner opens a new chat with one line: `CV Lider 37 · Claude Opus 5.5 · civensa-lead`. The lead reads this section AND the last decision in DECISIONS.md first.
+1. Quota (D-300): Claude week 67% at 16:21 Tue + two review sessions since; reset Saturday 00:00. No new Codex screen packages until reset; owner-look fixes go to Copilot.
+2. Merge rule HIERARCHY v1.5 (D-292). Copilot issues: POST /issues, then POST /issues/{n}/assignees with "copilot-swe-agent[bot]". Copilot pushes wait for approval → lead empty commit via git push (git-data REST is blocked) or PUT update-branch runs CI. Draft PR → POST /pulls/{n}/ccr/ready_for_review first. Restore tests/artifacts/** from phase5 if touched.
+3. Design rules for every review and package: D-292 + D-299.
+4. #216 CIV-140 merged → 0e2cf1c (Copilot test-only fix 9b8ff9d, CI green); its look is in the gallery artifact https://claude.ai/artifact/DLJU4E5RC2zX6cdh3sYDJZ (section "Gösterge özeti (yeni)"; screenshots predate the label fix aea2ca4) — owner look pending. Open, in order: PR #222 CIV-141 (017 widths/dates; lead review OK, CI started 22:05, background merge — check merged); PR #223 CIV-142 (users table; lead asked Copilot 22:05 for wider Kullanıcı column, no mid-word e-mail break, badge/button centre alignment — comment 6451005535; background watcher merges after green — check). Then add the final 017 + users screenshots to the gallery for the owner look. For each: review, CI, merge, owner look via gallery.
 5. Remaining screens after reset: 003 (needs Ali), 025–028, 031 (İç Kontrol).
 6. Ali Abi answers: none yet.
-7. Next IDs: task CIV-141, decision D-303. Codex idle (no new screen package until reset). Long chat → new chat each session.
+7. Next IDs: task CIV-143, decision D-306. Codex idle by design (D-300). Long chat → new chat each session.
 
 ## Claude quota (BEYAN, owner 27 Oct 16:21)
 - Session 11%, week 67%, weekly reset Saturday 00:00 (D-300). Copilot 96 / 1,500 credits, reset 1 Nov.
@@ -22,20 +22,17 @@ Owner opens a new chat with one line: `CV Lider 36 · Claude Opus 5.5 · civensa
 Dispatch format (D-232, D-249): platform + environment ("Bulut → civensa") + exact model (Codex: GPT-6.1 Sol) + effort; title is the first line inside the paste block. Session end: one-line handover (D-253) after this file is rewritten.
 Evidence rule (D-252): one-screen changes → targeted tests + changed-state screenshots + contrast; all-screen capture only when shared files change, committed as a short count summary.
 
-## Open pull requests (DOĞRULANDI 27 Oct ~17:00)
+## Open pull requests (DOĞRULANDI 27 Oct ~21:00)
 | PR | Task | State | Next action |
 | --- | --- | --- | --- |
-| #199 | CIV-128 reconciliation short status | ready, shard 0 red; Copilot fixing | review → CI → merge |
-| #205 | CIV-134 users table | Copilot draft | review, owner look |
-| #207 | CIV-136 structure status switch | Copilot draft | review, owner look |
-| #209 | CIV-137 operations checks grouped | Copilot draft | review, owner look |
-| #214 | CIV-139 badges next to version | Copilot draft | review, owner look |
-| #216 | CIV-140 graphical indicator summary | Copilot draft | review, owner look |
-| (issue #217) | CIV-138 readable audit + 017 list | Copilot starting | review, owner look |
+| (issue #220) | CIV-141 017 widths + dates | Copilot assigned | review → CI → merge → owner look |
+| (issue #221) | CIV-142 users table rhythm | Copilot assigned | review → CI → merge → owner look |
+Merged 27 Oct evening (D-303): #199 CIV-128 → 0200f60 · #205 CIV-134 → 5106ad5 · #209 CIV-137 → c6a8fab · #218 CIV-138 → 2b1e7df · #207 CIV-136 → 1f74a2d · #214 CIV-139 → 6ba0e55 · #216 CIV-140 → 0e2cf1c.
 Merged 27 Oct: #211 CIV-135 → 43f4de6 · #192 CIV-127 → 97f2225 · #201 CIV-133 → 5b683c4 · #195 CIV-129 → fd930c9 · #203 CIV-131 → 2d1de5f · #202 CIV-132 → f441bdf · #196 CIV-130 → db5aa88 · #194 CIV-126 → c810bd3 · #188 CIV-124 → bb03104 · CI fix D-298 (cc34fce) · #185 CIV-123 → 758a02b · #165 CIV-112 (owner) · #168 CIV-114 · #179 CIV-119 · #173 CIV-117 · #178 certifi phase5 · #184 CIV-122 · #167 CIV-115 · #181 CIV-120 · #175 CIV-118 · #186 rule v1.5 + push CI · #183 CIV-121 · #189 CIV-125 · #172 CIV-116 prototype · main: #177 certifi → ce0cb4d, live on civensa-pilot (D-293).
 Merged 26 Oct: #163 CIV-113 → 88c9dfb; #154 CIV-109 → 34329a7; #161 CIV-111 → 31b00e4 (D-283); #160 CIV-110 → 0b4b333 (D-282); #156 CIV-108 prototype → 633ac07 (D-277); #150 CIV-105 → 7cb58d9 (D-278; all jobs green, D-280); #148 CIV-106 → 1ed8620 (D-273); #145 CIV-104 → e0df9ce (D-268); #140 CIV-103 → 6efbe25 (D-265); #138 copilot-setup-steps → cbed4d8 (D-264); #136 production environment → d02b7cc; #132 CIV-102 → 873d361.
 
 ## Open — owner
+- Look approvals D-303: CIV-127/128/129/131/132/133/135/136/137/138/139 approved; 017 → CIV-141, 047 users → CIV-142; CIV-140 pending.
 - Look approvals done for CIV-109/111/112/113/114/118/119/120/121 (D-295), CIV-122/123 (D-297). CIV-124 (D-300). Pending: CIV-127, CIV-129, CIV-133, CIV-135 (merged), CIV-134/136/137 (open).
 - Look approval CIV-104 (#145): 11 text changes + screenshots (D-268).
 - UI redesign (D-224/D-225): continues per D-243 order.

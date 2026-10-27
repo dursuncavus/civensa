@@ -72,15 +72,16 @@ def test_latest_actual_and_newest_first_history(browser, client, db, sample, wid
             expect(latest.get_by_text(text, exact=False)).to_be_visible()
         box = latest.bounding_box()
         assert box['y'] >= 0 and box['y'] + box['height'] <= page.viewport_size['height']
-        assert card.locator('details').get_attribute('open') is None
+        history_details = card.locator('details:not(.indicator-definition)')
+        assert history_details.get_attribute('open') is None
         screenshot(page, 'latest-actual', width)
         card.get_by_text('Gerçekleşme geçmişi', exact=False).click()
-        history = card.locator('details article')
+        history = history_details.locator('article')
         assert history.locator('h3').all_text_contents() == ['Gerçekleşme revizyon 2', 'Gerçekleşme revizyon 1']
         expect(history.nth(1)).to_contain_text('0')
         expect(history.nth(1)).to_contain_text('Doğrulanmış')
         empty_card = page.locator(f'#indicator-{report["indicators"][1]["report_indicator_id"]}')
-        expect(empty_card.locator('[data-latest-actual]')).to_have_text('Son gerçekleşmeKayıt yok')
+        expect(empty_card.locator('[data-latest-actual]')).to_have_text('Son gerçekleşme Kayıt yok Hedef: 1')
         assert '0' not in empty_card.locator('[data-latest-actual]').inner_text()
         assert page.evaluate('document.documentElement.scrollWidth <= innerWidth')
         assert counts(db) == before

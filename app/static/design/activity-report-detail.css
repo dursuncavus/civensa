@@ -9,7 +9,7 @@
 .activity-report-detail-page :is(.error-panel, .draft-error) { border-color: var(--danger); color: var(--danger); background: var(--danger-bg); }
 .activity-report-detail-page [role=alert] { max-width: 44rem; }
 .activity-report-detail-page .info-panel p { margin-bottom: var(--space-3); }
-.activity-report-detail-page :is(form, [data-latest-actual], .actual-summary, .secondary, .draft-status) { max-width: 44rem; }
+.activity-report-detail-page :is(form, [data-latest-actual], .actual-summary, .secondary, .draft-status, .report-meta, details) { max-width: 44rem; }
 .activity-report-detail-page .actual-summary { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2) var(--space-3); }
 .activity-report-detail-page .actual-summary :is(h3, p) { margin: 0; }
 .activity-report-detail-page [data-latest-actual] { margin-bottom: var(--space-4); }
@@ -48,6 +48,67 @@
 .activity-report-detail-page .draft-status { margin-block: var(--space-3); color: var(--success); font-size: var(--text-sm); font-weight: var(--font-medium); }
 .activity-report-detail-page .draft-status.unsaved { color: var(--warning); }
 .activity-report-detail-page .has-draft { outline: 2px solid var(--warning); outline-offset: var(--focus-offset); }
+.activity-report-detail-page .indicator-report-summary {
+  display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2);
+  max-width: 44rem; margin: 0 0 var(--space-6);
+}
+.activity-report-detail-page .indicator-report-summary .status,
+.activity-report-detail-page .indicator-state {
+  display: inline-flex; align-items: center; min-height: 28px; padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--border); border-radius: 999px; background: var(--surface-muted);
+  color: var(--text); font-size: var(--text-sm); font-weight: var(--font-medium);
+}
+.activity-report-detail-page :is(.indicator-state.verified) { border-color: var(--accent); background: var(--accent-soft); color: var(--accent); }
+.activity-report-detail-page :is(.indicator-state.needs_review) { border-color: var(--warning); background: var(--warning-bg); color: var(--warning); }
+.activity-report-detail-page :is(.indicator-state.missing, .indicator-state.no-record, .indicator-state-empty) {
+  color: var(--text-secondary);
+}
+.activity-report-detail-page .indicator-summary-separator { color: var(--text-secondary); }
+.activity-report-detail-page .indicator-summary,
+.activity-report-detail-page .indicator-definition { max-width: 44rem; }
+.activity-report-detail-page .indicator-value-summary { justify-content: flex-start; }
+.activity-report-detail-page .indicator-actual {
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--space-2);
+  color: var(--text-secondary);
+}
+.activity-report-detail-page .indicator-actual strong {
+  color: var(--text); font-size: var(--text-display); font-weight: var(--font-semibold);
+  font-variant-numeric: tabular-nums;
+}
+.activity-report-detail-page .indicator-target,
+.activity-report-detail-page .indicator-difference {
+  color: var(--text-secondary); font-size: var(--text-sm); font-variant-numeric: tabular-nums;
+}
+.activity-report-detail-page .indicator-bullet {
+  position: relative; width: 100%; max-width: 44rem; height: 12px;
+  margin: 0 0 var(--space-4); border-radius: var(--radius); background: var(--surface-muted);
+}
+.activity-report-detail-page .indicator-bullet-fill {
+  position: absolute; inset: 0 auto 0 0; width: var(--actual-width);
+  border-radius: inherit; background: var(--accent);
+}
+.activity-report-detail-page .indicator-bullet-target {
+  position: absolute; top: -4px; bottom: -4px; left: var(--target-position);
+  width: 2px; background: var(--text-secondary); transform: translateX(-1px);
+}
+.activity-report-detail-page .indicator-deviation-warning {
+  width: fit-content; max-width: 100%; margin-bottom: var(--space-3); padding: var(--space-2) var(--space-3);
+  font-size: var(--text-sm);
+}
+.activity-report-detail-page .indicator-evidence-list { margin-block: var(--space-3) 0; }
+.activity-report-detail-page .indicator-evidence-list li > p { margin: 0 0 var(--space-2); }
+.activity-report-detail-page .indicator-definition dl { display: grid; gap: var(--space-2); margin: 0 0 var(--space-4); }
+.activity-report-detail-page .indicator-definition dl > div {
+  display: grid; grid-template-columns: minmax(7rem, 0.35fr) minmax(0, 1fr);
+  gap: var(--space-3); padding-top: var(--space-2); border-top: 1px solid var(--border);
+}
+.activity-report-detail-page .indicator-definition dt { color: var(--text-secondary); font-size: var(--text-sm); font-weight: var(--font-medium); }
+.activity-report-detail-page .indicator-definition dd { margin: 0; overflow-wrap: anywhere; }
+.activity-report-detail-page .actual-form-heading { max-width: 44rem; margin: var(--space-4) 0 var(--space-3); }
+.activity-report-detail-page :is(label, dt) { text-transform: none; letter-spacing: normal; }
+@media (max-width: 480px) {
+  .activity-report-detail-page .indicator-definition dl > div { grid-template-columns: minmax(0, 1fr); gap: var(--space-1); }
+}
 /* app.js appends AJAX errors to the record; retain that hook and show them above its form. */
 .activity-report-detail-page [data-draft-record] { display: flex; flex-direction: column; }
 .activity-report-detail-page .actual-form { order: 1; width: 100%; }
