@@ -38,13 +38,14 @@ class Behavior(HTMLParser):
         self.main = False
         self.form = None
         self.in_template = False
-        self.controls, self.hooks, self.inert, self.text = [], [], [], []
+        self.controls, self.hooks, self.allowed_hooks, self.inert, self.text = [], [], [], [], []
         self.stack = []
         self.feed(html)
 
     def handle_starttag(self, tag, attrs):
         if tag == 'main': self.main = True
         if not self.main: return
+        original_attrs = dict(attrs)
         attrs = {k: v for k, v in attrs if k not in ('class', 'style')}
         item = (tag, tuple(sorted(attrs.items())))
         if tag == 'template': self.in_template = True
@@ -52,7 +53,10 @@ class Behavior(HTMLParser):
         if tag in ('form', 'input', 'select', 'textarea', 'option', 'button', 'a'):
             self.controls.append((item, self.form))
         if any(k == 'id' or k.startswith(('data-', 'aria-')) for k in attrs):
-            self.hooks.append(item)
+            if tag == 'div' and 'indicator-bullet' in original_attrs.get('class', '').split() and attrs == {'aria-hidden': 'true'}:
+                self.allowed_hooks.append(item)
+            else:
+                self.hooks.append(item)
         if self.in_template: self.inert.append(('start', item))
         if tag in ('textarea', 'option', 'button', 'a', 'label'):
             self.stack.append((tag, []))
@@ -86,17 +90,34 @@ def render_pair(ctx):
     old, new = Behavior(before), Behavior(after)
     assert new.controls == old.controls
     assert new.hooks == old.hooks
+    assert new.allowed_hooks == [('div', (('aria-hidden', 'true'),))] * after.count('class="indicator-bullet"')
     assert new.inert == old.inert
     assert new.text == old.text
-    # Moving the target into the compact actual summary changes reading order only.
     def visible_words(html):
         main = html.split('<main ', 1)[1].split('</main>', 1)[0]
         main = re.sub(r'<style>.*?</style>', '', main, flags=re.S)
         main = re.sub(r'<[^>]+>', ' ', main)
         return Counter(main.split())
+    def added_words(html):
+        main = html.split('<main ', 1)[1].split('</main>', 1)[0]
+        permitted = []
+        patterns = (
+            r'<p class="indicator-report-summary">(.*?)</p>',
+            r'<span class="indicator-unit">(.*?)</span>',
+            r'<p class="indicator-difference">(.*?)</p>',
+            r'<summary>Gösterge tanımı</summary>',
+            r'<dt>(Birim|Kod|Müdürlük|Hesaplama|Kaynak|Açıklama)</dt>',
+            r'<h3 class="actual-form-heading">(.*?)</h3>',
+        )
+        for pattern in patterns:
+            permitted.extend(re.findall(pattern, main, flags=re.S))
+        return Counter(word for text in permitted for word in re.sub(r'<[^>]+>', ' ', text).split())
     expected = visible_words(before)
     expected.subtract({'Raporu': 1, 'Performans': 1, 'Programı': 1})
     expected.update({'raporu': 1, 'performans': 1, 'programı': 1})
+    indicator_count = len(ctx['report']['indicators'])
+    expected.subtract({'Hesaplama:': indicator_count, 'Kaynak:': indicator_count, '·': 3 * indicator_count})
+    expected.update(added_words(after))
     assert visible_words(after) == +expected
     return before, after
 
@@ -193,6 +214,63 @@ def test_frozen_empty_sources_missing_values_and_invalid_add_button():
     render_pair(ctx)
 
 
+def test_definition_labels_and_empty_actual_summary_are_consistent():
+    ctx = context('department-draft')
+    for row in ctx['report']['indicators']:
+        row['actuals'] = []
+    _, html = render_pair(ctx)
+    labels = re.findall(r'<dt>(.*?)</dt>', html)
+    assert labels == ['Birim', 'Kod', 'Müdürlük', 'Hesaplama', 'Kaynak', 'Açıklama'] * 2
+    for row in re.findall(r'<dd>(.*?)</dd>', html):
+        assert not row.rstrip().endswith('·')
+    for actual in re.findall(r'<p class="indicator-actual">(.*?)</p>', html):
+        assert 'Kayıt yok' in actual
+        assert '<strong>' not in actual
+        assert 'indicator-unit' not in actual
+        assert re.sub(r'<[^>]+>', '', actual).strip() == 'Kayıt yok'
+
+
+def test_summary_counts_latest_data_states_and_pending_explanations():
+    ctx = context('department-draft')
+    indicators = ctx['report']['indicators']
+    indicators[0]['actuals'][-1].update(state='verified', needs_deviation_explanation=False)
+    indicators[1]['actuals'][-1].update(state='needs_review', needs_deviation_explanation=True)
+    indicators.append(deepcopy(indicators[0]))
+    indicators[2]['report_indicator_id'] = 103
+    indicators[2]['actuals'][-1].update(state='missing', value=None, needs_deviation_explanation=False)
+    indicators.append(deepcopy(indicators[0]))
+    indicators[3]['report_indicator_id'] = 104
+    indicators[3]['actuals'] = []
+    _, html = render_pair(ctx)
+    summary = re.search(r'<p class="indicator-report-summary">(.*?)</p>', html, re.S).group(1)
+    summary = ' '.join(re.sub(r'<[^>]+>', ' ', summary).split())
+    assert summary == '4 gösterge 1 Doğrulanmış · 1 İncelenmeli · 1 Eksik · 1 Kayıt yok · 1 açıklama bekliyor'
+    _, approved = render_pair(context('approved'))
+    approved_summary = re.search(r'<p class="indicator-report-summary">(.*?)</p>', approved, re.S).group(1)
+    assert '2 Doğrulanmış' in re.sub(r'<[^>]+>', ' ', approved_summary)
+
+
+@pytest.mark.parametrize(('state', 'value', 'target_state', 'target', 'expected'), [
+    ('verified', 80, 'verified', 100, True),
+    ('verified', 0, 'verified', 100, True),
+    ('needs_review', 80, 'verified', 100, False),
+    ('verified', 80, 'needs_review', 100, False),
+    ('verified', 80, 'verified', 0, False),
+    ('missing', None, 'verified', 100, False),
+    ('verified', 80, None, None, False),
+])
+def test_bullet_bar_requires_verified_nonzero_target_and_numeric_actual(state, value, target_state, target, expected):
+    ctx = context('department-draft')
+    row = ctx['report']['indicators'][0]
+    ctx['report']['indicators'] = [row]
+    row['actuals'][-1].update(state=state, value=value)
+    row['definition']['targets'] = [] if target_state is None else [dict(value=target, state=target_state)]
+    _, html = render_pair(ctx)
+    assert ('class="indicator-bullet"' in html) is expected
+    block = html.split('id="indicator-101"', 1)[1].split('</section>', 1)[0]
+    assert '%' not in re.sub(r'<[^>]+>', ' ', block)
+
+
 @pytest.mark.postgres
 def test_real_get_uses_frozen_contract_for_both_roles(client, db, sample):
     report = new_report(client, publish(client, db, sample), sample)
@@ -207,7 +285,8 @@ def test_real_get_uses_frozen_contract_for_both_roles(client, db, sample):
 @pytest.mark.parametrize('scenario', SCENARIOS)
 @pytest.mark.parametrize('width', [1440, 390])
 def test_browser_layout_contrast_and_evidence(browser, client, tmp_path, scenario, width):
-    before, after = render_pair(context(scenario))
+    ctx = context(scenario)
+    before, after = render_pair(ctx)
     with browser.new_context(viewport={'width': width, 'height': 1000}, locale='tr-TR') as bc:
         html = before
         def serve(route):
@@ -244,11 +323,31 @@ def test_browser_layout_contrast_and_evidence(browser, client, tmp_path, scenari
         def layout():
             assert page.evaluate('document.documentElement.scrollWidth === innerWidth')
             assert root.locator('*').evaluate_all("els => els.every(el => getComputedStyle(el).textTransform !== 'uppercase')")
-            for selector in ('form', '.actual-summary', '[data-latest-actual]', '[role=alert]'):
+            for selector in ('form', '.actual-summary', '.indicator-summary', '.indicator-report-summary',
+                             '.indicator-definition', '.indicator-bullet', '[data-latest-actual]', '[role=alert]',
+                             '.report-meta', 'details'):
                 for item in root.locator(selector).all():
                     if item.is_visible(): assert item.bounding_box()['width'] <= 44 * 16
         layout()
         assert root.locator('details[open]').count() == 0
+        summary_text = root.locator('.indicator-report-summary').inner_text()
+        assert f'{len(ctx["report"]["indicators"])} gösterge' in summary_text
+        for row, item in zip(ctx['report']['indicators'], root.locator('.indicator-summary').all()):
+            latest = row['actuals'][-1] if row['actuals'] else None
+            targets = row['definition']['targets']
+            target = targets[0] if len(targets) == 1 else None
+            expected_bar = bool(latest and latest['state'] == 'verified' and latest['value'] is not None
+                and float(latest['value']) >= 0 and target and target['state'] == 'verified'
+                and target['value'] is not None and float(target['value']) != 0)
+            bar = item.locator('.indicator-bullet')
+            assert bar.count() == int(expected_bar)
+            assert '%' not in item.inner_text()
+            if expected_bar:
+                track_box = bar.bounding_box()
+                marker_box = bar.locator('.indicator-bullet-target').bounding_box()
+                ratio = float(target['value']) / (max(float(latest['value']), float(target['value'])) * 1.1)
+                marker_center = marker_box['x'] + marker_box['width'] / 2
+                assert abs(marker_center - (track_box['x'] + ratio * track_box['width'])) <= 2
         pairs_script = TEXT_PAIRS.replace('.section-index-page', '.activity-report-detail-page')
         pairs = set(map(tuple, page.evaluate(pairs_script)))
         for selector in ('a', '.button', '.primary', 'input', 'select', 'textarea', 'summary'):
