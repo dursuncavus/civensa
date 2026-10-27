@@ -4,12 +4,12 @@
 
 ## Görüntüler
 
-27 Ekim 2026; yerel Chromium 151.0.7922.173, tr-TR, Europe/Istanbul, açık tema, 1×; geçici yerel PostgreSQL 18 ve yalnız sentetik kişiler/müdürlükler. Başlangıç görüntüleri dondurulmuş başlangıç şablonunun aynı gerçek rota bağlamıyla render edilmesidir. Her görüntü tam sayfadır; eksik müdürlükler, yeni kullanıcı formu ve Ada Sentetik satırının parola sıfırlama alanı açıktır. Parola alanları boştur. Mobil ek görüntüler tablonun sağ tarafını gösterir. Her PNG 1.500.000 baytın altındadır.
+27 Ekim 2026; yerel Chromium 151.0.7922.34, tr-TR, Europe/Istanbul, açık tema, 1×; geçici yerel PostgreSQL 18 ve yalnız sentetik kişiler/müdürlükler. Başlangıç görüntüleri dondurulmuş başlangıç şablonunun aynı gerçek rota bağlamıyla render edilmesidir. Her görüntü tam sayfadır; eksik müdürlükler, yeni kullanıcı formu ve Ada Sentetik satırının parola sıfırlama alanı açıktır. Parola alanları boştur. Mobil ek görüntüler tablonun sağ tarafını gösterir. Her PNG 1.500.000 baytın altındadır.
 
-| Genişlik | Önce | Sonra |
+| Görünüm | CIV-130 öncesi | CIV-134 sonrası |
 | --- | --- | --- |
-| 1440px | [Tam sayfa](users-before-1440.png) | [Tam sayfa](users-after-1440.png) |
-| 390px | [Tam sayfa](users-before-390.png) | [Tam sayfa](users-after-390.png) |
+| 1440px, altı sütun ve iç kaydırma yok | [Tam sayfa](users-before-1440.png) | [Tam sayfa](users-after-1440.png) |
+| 390px, iç tablo kaydırma | [Tam sayfa](users-before-390.png) | [Tam sayfa](users-after-390.png) |
 | 390px, durum/işlem sütunları | [Tam sayfa](users-before-status-390.png) | [Tam sayfa](users-after-status-390.png) |
 
 ## Görünür metin değişiklikleri
@@ -18,8 +18,9 @@
 - Ekleme düğmesi: `Kullanıcı Ekle` → `Kullanıcı ekle`.
 - Yeni kullanıcı formu alanı: `Ad Soyad` → `Ad soyad`.
 - Yeni kullanıcı formu alanı: `Geçici Parola` → `Geçici parola`.
+- Tablo başlıkları: `Ad Soyad`, `E-posta`, `Rol` → `Kullanıcı`; ilgili hücrelerde ad, e-posta ve rol üç satırda gösterilir.
 
-Tablo başlıkları ve CSV başlıkları aynen korunur. Mevcut testte yalnız ekleme düğmesinin metni bire bir güncellendi; hiçbir assertion gevşetilmedi.
+CSV başlıkları aynen korunur. Tablo, 1280px ve üzerinde panel genişliğine sığar; daha dar ekranlarda iç yatay kaydırma korunur.
 
 ## Doğrulama
 

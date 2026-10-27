@@ -78,10 +78,11 @@ class Contract(HTMLParser):
             return
         if self.capture is not None:
             self.capture[2] += data
+        if self.capture and self.capture[0] == 'th':
+            return
         # Header copy is deliberately NOT sentence-cased.
         text = ' '.join(data.split())
-        if not (self.capture and self.capture[0] == 'th'):
-            text = TEXT_CHANGES.get(text, text)
+        text = TEXT_CHANGES.get(text, text)
         text = text.replace('Kullanıcılar ve Yetkiler', 'Kullanıcılar ve yetkiler')
         self.words.update(text.split())
 
@@ -95,6 +96,16 @@ class Contract(HTMLParser):
             self.main = False
 
 
+def normalized_headers(headers):
+    combined = {'Ad Soyad', 'E-posta', 'Rol'}
+    result = [header for header in headers if header[1] not in combined]
+    index = next((i for i, header in enumerate(headers) if header[1] in combined), None)
+    if index is not None:
+        result.insert(sum(header[1] not in combined for header in headers[:index]),
+                      ((), 'Kullanıcı'))
+    return result
+
+
 @pytest.fixture
 def users_data(db, sample, accounts):
     sample['strategy'].full_name = 'Derya Sentetik'
@@ -104,10 +115,10 @@ def users_data(db, sample, accounts):
                                'Uzun adlı sentetik Kültür ve Sosyal İşler Müdürlüğü']]
     db.add_all(missing)
     db.add_all([
-        User(email='bora@example.invalid', full_name='Bora Sentetik',
+        User(email='test.layout@example.invalid', full_name='Bora Sentetik',
              role='department', position='staff', can_submit=False,
              department_id=sample['strategy'].department_id, password_hash='unused'),
-        User(email='ceren@example.invalid', full_name='Ceren Sentetik devre dışı hesap',
+        User(email='test.longer.layout@example.invalid', full_name='Ceren Sentetik devre dışı hesap',
              role='department', position='staff', is_active=False, can_submit=False,
              department_id=sample['department'].id, password_hash='unused'),
         User(email='deniz@example.invalid', full_name='Deniz Sentetik',
@@ -136,7 +147,7 @@ def test_frozen_controls_hooks_copy_options_and_headers(accounts, users_data, db
     assert Counter(actual.controls) == Counter(expected.controls)
     assert Counter(actual.hooks) == Counter(expected.hooks)
     assert actual.options == expected.options
-    assert actual.headers == expected.headers
+    assert actual.headers == normalized_headers(expected.headers)
     assert actual.words == expected.words
     assert JS_IDS <= {item[1] for item in actual.hooks}
     assert JS_CLASSES - ({'create-department-user'} if not missing else set()) <= {
@@ -199,6 +210,7 @@ def test_browser_layout_contrast_and_existing_controls(browser, accounts, users_
         if phase == 'after':
             root = page.locator('.users-page')
             assert page.evaluate('document.documentElement.scrollWidth === innerWidth')
+            expect(page.locator('.users-table th')).to_have_count(6)
             assert root.locator('*').evaluate_all("els => els.every(el => getComputedStyle(el).textTransform !== 'uppercase')")
             assert root.locator('.users-summary').evaluate('el => el.getBoundingClientRect().width <= 704')
             for item in root.locator('.users-summary .card').all():
@@ -221,6 +233,25 @@ def test_browser_layout_contrast_and_existing_controls(browser, accounts, users_
                 wrap.focus()
                 page.keyboard.press('ArrowRight')
                 assert wrap.evaluate('el => el.scrollLeft > 0')
+            else:
+                assert wrap.evaluate('el => el.scrollWidth === el.clientWidth')
+                assert root.locator('.user-email').evaluate_all(
+                    """els => els.every(el => {
+                      const range = document.createRange();
+                      range.selectNodeContents(el);
+                      return getComputedStyle(el).overflowWrap === 'break-word' &&
+                        new Set([...range.getClientRects()].map(rect => Math.round(rect.top))).size === 1;
+                    })""")
+                position_select = page.get_by_role('combobox', name='Bora Sentetik unvanı')
+                expect(position_select).to_have_count(1)
+                assert position_select.locator('xpath=..').locator('.sr-only').evaluate(
+                    "el => getComputedStyle(el).clip === 'rect(0px, 0px, 0px, 0px)'")
+                position_controls = position_select.locator('xpath=../..')
+                assert position_controls.evaluate("""el => {
+                  const select = el.querySelector('select').getBoundingClientRect();
+                  const button = el.querySelector('button').getBoundingClientRect();
+                  return select.top < button.bottom && button.top < select.bottom;
+                }""")
             script = TEXT_PAIRS.replace('.section-index-page', '.users-page')
             pairs = set(map(tuple, page.evaluate(script)))
             selectors = ['#newUserBtn', '#previewBulkUsers', '#userName', '#userRole',

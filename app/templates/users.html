@@ -99,9 +99,7 @@
           <thead>
             <tr>
               <th>Seç</th>
-              <th>Ad Soyad</th>
-              <th>E-posta</th>
-              <th>Rol</th>
+              <th>Kullanıcı</th>
               <th>Müdürlük</th>
               <th>Unvan</th>
               <th>PP gönderim yetkisi</th>
@@ -116,11 +114,11 @@
                     <input type="checkbox" class="retire-user" value="{{ u.id }}" aria-label="{{ u.full_name }} hesabını seç">
                   {% endif %}
                 </td>
-                <td>
+                <td class="user-identity">
                   <b>{{ u.full_name }}</b>
+                  <span class="user-email muted">{{ u.email }}</span>
+                  <span class="user-role muted">{{ 'Strateji Geliştirme' if u.role=='strategy' else 'Müdürlük' }}</span>
                 </td>
-                <td>{{ u.email }}</td>
-                <td>{{ 'Strateji Geliştirme' if u.role=='strategy' else 'Müdürlük' }}</td>
                 <td>
                   {% if u.department_id %}
                     {% for d in departments %}
@@ -136,14 +134,16 @@
                   {% if u.id == user.id %}
                     {{ 'Müdür' if u.position == 'director' else 'Personel' }} — Kendi unvanınızı değiştiremezsiniz.
                   {% else %}
-                    <label>
-                      <span class="muted">Unvan</span>
-                      <select class="user-position" aria-label="{{ u.full_name }} unvanı">
-                        <option value="staff" {{ 'selected' if u.position == 'staff' }}>Personel</option>
-                        <option value="director" {{ 'selected' if u.position == 'director' }}>Müdür</option>
-                      </select>
-                    </label>
-                    <button type="button" class="button small save-user-position" data-user="{{ u.id }}">Unvanı kaydet</button>
+                    <div class="user-position-controls">
+                      <label>
+                        <span class="sr-only">Unvan</span>
+                        <select class="user-position" aria-label="{{ u.full_name }} unvanı">
+                          <option value="staff" {{ 'selected' if u.position == 'staff' }}>Personel</option>
+                          <option value="director" {{ 'selected' if u.position == 'director' }}>Müdür</option>
+                        </select>
+                      </label>
+                      <button type="button" class="button small save-user-position" data-user="{{ u.id }}">Unvanı kaydet</button>
+                    </div>
                   {% endif %}
                 </td>
                 <td>
