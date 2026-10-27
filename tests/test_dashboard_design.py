@@ -539,6 +539,13 @@ def test_022_real_task_list_states(browser, dashboard_client, db, sample, state,
             for item in tasks.locator('li').all():
                 link, badge = item.locator('a').bounding_box(), item.locator('.badge').bounding_box()
                 assert badge['y'] >= link['y'] + link['height']
+        else:
+            # CIV-122: the status stays near its step instead of the far edge of a wide panel.
+            box = tasks.bounding_box()
+            assert box['width'] <= 44 * 16 + 1, box
+            for item in tasks.locator('li').all():
+                badge = item.locator('.badge').bounding_box()
+                assert badge['x'] + badge['width'] <= box['x'] + box['width'] + 1
         assert not errors
         # Opt-in capture uses these exact real-route scenarios; no capture script is committed.
         if os.getenv('CIVENSA_CAPTURE_CIV112') == '1' and state in ('a', 'b', 'd', 'e'):
