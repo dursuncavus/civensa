@@ -13,12 +13,12 @@
     {% endfor %}
     <section class="reports-panel">
       {% if report.revision_reason %}
-        <p>
+        <p class="report-meta">
           <strong>Revizyon gerekçesi:</strong> {{ report.revision_reason }}
         </p>
       {% endif %}
       {% if report.approval %}
-        <p>Onaylayan: {{ report.approval.name }} · {{ report.approval.created_at|turkey_time }}</p>
+        <p class="report-meta">Onaylayan: {{ report.approval.name }} · {{ report.approval.created_at|turkey_time }}</p>
       {% endif %}
       <p>Hedef ve tanım bu raporun seçilmiş yayın sürümünden okunur. Gerçekleşme, kanıt ve açıklama her kayıtta yeni revizyon oluşturur.</p>
       {% if report.newer_publication_available %}
