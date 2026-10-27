@@ -76,7 +76,7 @@ def test_account_change_policy_visible_by_table_and_in_new_user_form(policy_brow
         expect(page.locator('#accountChangePolicy')).to_be_visible()
         expect(page.locator('#accountChangePolicy + .table-wrap table')).to_be_visible()
         expect(page.locator('#newUserForm')).to_be_hidden()
-        page.get_by_role('button', name='Kullanıcı Ekle', exact=True).click()
+        page.get_by_role('button', name='Kullanıcı ekle', exact=True).click()
         expect(page.locator('#newUserForm').get_by_text(policy, exact=True)).to_be_visible()
 
 
