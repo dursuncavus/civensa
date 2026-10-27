@@ -4,7 +4,7 @@ from hashlib import sha256
 from html.parser import HTMLParser
 import os
 from pathlib import Path
-from urllib.parse import urlsplit
+from urllib.parse import parse_qs, urlsplit
 
 import pytest
 from playwright.sync_api import expect
@@ -139,7 +139,7 @@ def test_frozen_forms_links_table_and_visible_text(audit_client, db, sample):
     assert 'Filtreye uygun kayıt bulunamadı.' in empty.cells
 
 
-@pytest.mark.parametrize('width', [1440, 390])
+@pytest.mark.parametrize('width', [1440, 1024, 390])
 def test_browser_layout_contrast_and_screenshots(browser, audit_client, db, sample, width):
     detail = 'Sentetik ayrıntı ' * 20
     record = AuditLog(user_id=sample['strategy'].id, action='civ127_synthetic',
@@ -162,7 +162,8 @@ def test_browser_layout_contrast_and_screenshots(browser, audit_client, db, samp
         def serve(route):
             request = route.request
             if urlsplit(request.url).path == '/audit':
-                state = 'empty' if 'missing%40example.invalid' in request.url else 'filtered'
+                user_filter = parse_qs(urlsplit(request.url).query).get('user', [''])[0]
+                state = 'empty' if user_filter == 'missing@example.invalid' else 'filtered'
                 route.fulfill(status=200, content_type='text/html; charset=utf-8',
                               body=page_html[state])
                 return
@@ -191,6 +192,20 @@ def test_browser_layout_contrast_and_screenshots(browser, audit_client, db, samp
                     assert page.evaluate('document.documentElement.scrollWidth === innerWidth')
                     assert page.locator('main *').evaluate_all(
                         "els => els.every(el => getComputedStyle(el).textTransform !== 'uppercase')")
+                    filter_form = root.locator('.audit-filters')
+                    if width >= 1024:
+                        assert filter_form.evaluate(
+                            'el => getComputedStyle(el).gridTemplateColumns.split(" ").length === 5')
+                        layout = filter_form.evaluate("""el => [...el.children].map(child => ({
+                            tag: child.tagName, type: child.type || '', top: child.getBoundingClientRect().top,
+                            height: child.getBoundingClientRect().height, row: getComputedStyle(child).gridRow
+                        }))""")
+                        rows = filter_form.locator('label select, label input, button, a').evaluate_all(
+                            'els => els.map(el => el.getBoundingClientRect().y)')
+                        assert max(rows) - min(rows) <= 2, layout
+                    elif width == 390:
+                        assert filter_form.evaluate(
+                            'el => getComputedStyle(el).gridTemplateColumns.split(" ").length === 1')
                     if state == 'filtered':
                         cell = root.locator('.audit-details')
                         expect(cell).to_contain_text(expected)
@@ -205,7 +220,7 @@ def test_browser_layout_contrast_and_screenshots(browser, audit_client, db, samp
                         TEXT_PAIRS.replace('.section-index-page', '.audit-page'))))
                     assert all(contrast(pair) >= 4.5 for pair in pairs), [
                         (pair, contrast(pair)) for pair in pairs if contrast(pair) < 4.5]
-                if target:
+                if target and width in {1440, 390}:
                     folder = Path(target)
                     folder.mkdir(parents=True, exist_ok=True)
                     page.evaluate('document.activeElement.blur(); window.scrollTo(0, 0)')
