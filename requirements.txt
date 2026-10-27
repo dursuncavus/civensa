@@ -5,6 +5,8 @@ jinja2==3.1.6
 python-multipart==0.0.32
 itsdangerous==2.2.0
 httpx==0.28.1
+# eMudhra advisory (Oct 2026): CA bundle without the compromised intermediates.
+certifi>=2026.10.19
 pytest==9.1.1
 psycopg[binary]==3.3.5
 python-docx==1.2.0
