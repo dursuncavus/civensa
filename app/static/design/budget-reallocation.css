@@ -1,0 +1,52 @@
+/* CIV-129 · 017/018: page-local panels, fields and scrolling data tables. */
+.budget-reallocation-page { min-width: 0; color: var(--text); overflow-wrap: anywhere; }
+.budget-reallocation-page * { box-sizing: border-box; text-transform: none; letter-spacing: normal; }
+.budget-reallocation-page :is(h2,h3,p) { margin: 0 0 var(--space-4); }
+.budget-reallocation-page h2 { font-size: var(--text-section); font-weight: var(--font-semibold); }
+.budget-reallocation-page h3 { font-size: var(--text-card); font-weight: var(--font-medium); }
+.budget-reallocation-page p { max-width: 44rem; }
+.budget-reallocation-page .muted { color: var(--text-secondary); font-size: var(--text-sm); }
+.budget-reallocation-page :is(.budget-panel,.info-panel,.error-panel) { min-width: 0; margin: 0 0 var(--space-6); padding: var(--space-6); border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); box-shadow: none; }
+.budget-reallocation-page .info-panel { max-width: 44rem; color: var(--accent); background: var(--accent-soft); }
+.budget-reallocation-page .error-panel { max-width: 44rem; border-color: var(--danger); color: var(--danger); background: var(--danger-bg); }
+.budget-reallocation-page .section-head { flex-wrap: wrap; margin-bottom: var(--space-4); gap: var(--space-4); }
+.budget-reallocation-page .section-head h2 { margin: 0; }
+.budget-reallocation-page .form-grid { display: grid; grid-template-columns: minmax(0,1fr); gap: var(--space-4); max-width: 44rem; margin-bottom: var(--space-6); }
+.budget-reallocation-page label { min-width: 0; max-width: 44rem; display: grid; gap: var(--space-2); color: var(--text); font-size: var(--text-sm); font-weight: var(--font-medium); }
+.budget-reallocation-page :is(input,select,textarea) { min-width: 0; width: 100%; min-height: var(--control-height); padding: var(--space-2) var(--space-3); border: 1px solid var(--text-secondary); border-radius: var(--radius); background: var(--surface); color: var(--text); font: var(--font-regular) var(--text-base) / var(--line-height) var(--font-family); }
+.budget-reallocation-page :is(input,textarea)::placeholder { color: var(--text-secondary); opacity: 1; }
+.budget-reallocation-page :is(input[readonly],select:disabled) { background: var(--surface-muted); color: var(--text-secondary); opacity: 1; }
+.budget-reallocation-page :is(.checkbox-row,#eligible-choices label) { display: flex; align-items: center; gap: var(--space-2); margin: var(--space-4) 0; }
+.budget-reallocation-page input[type="checkbox"] { flex: 0 0 auto; width: var(--space-4); height: var(--space-4); min-height: 0; margin: 0; accent-color: var(--accent); }
+.budget-reallocation-page .table-wrap { width: 100%; max-width: 100%; overflow-x: auto; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); }
+.budget-reallocation-page table { width: 100%; min-width: 760px; margin: 0; border-collapse: collapse; table-layout: fixed; }
+.budget-reallocation-page :is(th,td) { padding: var(--space-4); border-bottom: 1px solid var(--border); color: var(--text); text-align: left; vertical-align: top; font-size: var(--text-sm); }
+.budget-reallocation-page th { background: var(--surface-muted); color: var(--text-secondary); font-weight: var(--font-medium); }
+.budget-reallocation-page tbody tr:last-child td { border-bottom: 0; }
+.budget-reallocation-page table:has(#legs) { min-width: 900px; }
+.budget-reallocation-page table:has(#legs) th:first-child { width: 30%; }
+.budget-reallocation-page table:has(#legs) th:nth-child(2) { width: 14%; }
+.budget-reallocation-page table:has(#legs) th:nth-child(3) { width: 18%; }
+.budget-reallocation-page table:has(#legs) th:nth-child(4) { width: 23%; }
+.budget-reallocation-page table:has(#legs) th:nth-child(5) { width: 15%; }
+.budget-reallocation-page .actions { display: flex; flex-wrap: wrap; gap: var(--space-2); margin: var(--space-4) 0; }
+.budget-reallocation-page .button { display: inline-flex; align-items: center; justify-content: center; min-height: var(--control-height); max-width: 100%; padding: var(--space-2) var(--space-4); border: 1px solid var(--text-secondary); border-radius: var(--radius); background: var(--surface); color: var(--text); font: var(--font-medium) var(--text-sm) / var(--line-height) var(--font-family); text-decoration: none; white-space: normal; }
+.budget-reallocation-page .button:hover { background: var(--surface-muted); color: var(--text); }
+.budget-reallocation-page .button.primary { background: var(--accent); border-color: var(--accent); color: var(--surface); }
+.budget-reallocation-page .button.primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
+.budget-reallocation-page .button:disabled { background: var(--surface-muted); border-color: var(--text-secondary); color: var(--text-secondary); opacity: 1; }
+.budget-reallocation-page a:not(.button) { color: var(--accent); }
+.budget-reallocation-page a:not(.button):hover { color: var(--accent-hover); }
+.budget-reallocation-page :is(a,button,input,select,textarea,summary,[tabindex]):focus { outline: var(--focus); outline-offset: var(--focus-offset); box-shadow: none; }
+.budget-reallocation-page #eligible-choices details { max-width: 44rem; padding: var(--space-4); margin-bottom: var(--space-4); border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface-muted); }
+.budget-reallocation-page summary { color: var(--accent); cursor: pointer; font-weight: var(--font-medium); }
+.budget-reallocation-page #eligible-choices h3 { margin-top: var(--space-4); }
+.budget-reallocation-page #preview-result { margin: var(--space-6) 0; }
+.budget-reallocation-page #preview-result > div:not(.table-wrap) { max-width: 44rem; margin-bottom: var(--space-4); padding: var(--space-4); border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface-muted); }
+.budget-reallocation-page #preview-result p:last-child { margin-bottom: 0; }
+@media (min-width: 1024px) {
+  .budget-reallocation-page .form-grid { grid-template-columns: repeat(3,minmax(0,1fr)); }
+}
+@media (max-width: 700px) {
+  .budget-reallocation-page :is(.budget-panel,.info-panel,.error-panel) { padding: var(--space-4); }
+}
