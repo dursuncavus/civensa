@@ -107,6 +107,8 @@
   list-style: none;
   padding: 0;
   margin: var(--space-6) 0 0;
+  /* CIV-122: keep each status close to its step on wide screens (owner, 27 Oct). */
+  max-width: 44rem;
 }
 .department-dashboard .home-task-list li {
   counter-increment: home-step;
