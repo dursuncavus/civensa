@@ -1,19 +1,20 @@
 # CIVENSA — CURRENT STATE
 
-Updated: 27 Oct 2026, ~14:40 Istanbul (live session CV Lider 33, D-287..D-296).
+Updated: 27 Oct 2026, ~15:15 Istanbul (live session CV Lider 34, D-297).
 Rules: AI_WORKING_CONSTITUTION v1.2 (Drive, global) · `HIERARCHY.md` v1.5 · `PROJECT_RULES.md` v1.4 (D-271: PRIOR ART field mandatory in every package) · `BACKUP_LEAD.md` v2.
 Backup log ("Civensa Yedek Kaydı", Drive): no entries, last modified 23 Oct (DOĞRULANDI 27 Oct 05:45).
 Tags: DOĞRULANDI (lead checked) · TARİHSEL (past fact) · BEYAN (owner said) · BELİRSİZ (unknown).
 
 ## Next session — start here (D-253)
-Owner opens a new chat with one line: `CV Lider 34 · Claude Opus 5.5 · civensa-lead`. The lead reads this section first and works from it.
-1. Merge rule is HIERARCHY v1.5 (D-292): CI green on head + no file overlap with newer phase5 commits; every phase5 push runs the full suite — red → revert the matching merge first.
-2. #185 CIV-123 (label next to value sweep): Copilot resolving the conflict with CIV-121 and re-capturing 021/022 after-screenshots (comment 6440440319). Then CI → merge → show the owner 021-after-1440 and 022-after-1440 (also covers CIV-122, merged without screenshots, D-295).
-3. #188 CIV-124 (remove duplicate "Bu sayfada" list on 036/037): Copilot draft → review (exactly six #rp- anchors, screenshots) → ready → merge → owner look.
-4. CIV-126 (004/005 Faaliyet raporları list) dispatched to Codex (D-296): review when the PR opens; DeepSeek first pass for large PRs (D-274, no web search, Read Only).
-5. Next screens after CIV-126: 003 Faaliyet raporu hazırlık (placeholder, depends on Ali's scope answers), 007/008 revizyon, strategy-only screens (016, 017/018, 025–028, 031, 035, 045, 047). Every package carries the D-292 rule and screenshots for any look change.
-6. Ali Abi answers: none yet; data/logic packages before UI (D-243).
-7. Next IDs: task CIV-127, decision D-297.
+Owner opens a new chat with one line: `CV Lider 35 · Claude Opus 5.5 · civensa-lead`. The lead reads this section first and works from it.
+1. Merge rule is HIERARCHY v1.5 (D-292): CI green on head + no file overlap with newer phase5 commits; every phase5 push runs the full suite — red → revert the matching merge first. Copilot pushes need a lead push/update-branch to run CI; Copilot sometimes rewrites tests/artifacts/** → restore from phase5 before merge.
+2. #188 CIV-124: Copilot fixing the cut reconciliation table (comment 6441353618) → review, CI, merge, send the owner the new 1440 screenshot for look approval.
+3. After #188 merges: dispatch CIV-128 (reconciliation table: short status + "Ayrıntı" disclosure + one summary warning; shared pp_reconciliation.html) — package not written yet.
+4. #192 CIV-127 (Copilot, 016 audit): review when it leaves draft.
+5. Codex: CIV-126 (004/005), CIV-129 (017/018), CIV-130 (047) running; owner presses "PR oluştur"; review each PR (DeepSeek first pass for large ones, D-274).
+6. Remaining screens: 003 (needs Ali), 007/008 (after CIV-126, same area), 025–028, 031, 035, 045.
+7. Ali Abi answers: none yet.
+8. Next IDs: task CIV-131 (CIV-128 reserved), decision D-298.
 
 ## Claude quota (BEYAN, owner screen 26 Oct 12:48)
 - Weekly 47% at 18:14 Monday (session 24%); lasts until the Saturday reset at this pace. Offload large reviews to DeepSeek (D-274).
@@ -23,17 +24,17 @@ Owner opens a new chat with one line: `CV Lider 34 · Claude Opus 5.5 · civensa
 Dispatch format (D-232, D-249): platform + environment ("Bulut → civensa") + exact model (Codex: GPT-6.1 Sol) + effort; title is the first line inside the paste block. Session end: one-line handover (D-253) after this file is rewritten.
 Evidence rule (D-252): one-screen changes → targeted tests + changed-state screenshots + contrast; all-screen capture only when shared files change, committed as a short count summary.
 
-## Open pull requests (DOĞRULANDI 27 Oct ~14:40)
+## Open pull requests (DOĞRULANDI 27 Oct ~15:15)
 | PR | Task | State | Next action |
 | --- | --- | --- | --- |
-| #185 | CIV-123 | conflict with CIV-121; Copilot fixing + re-capturing | CI, merge, owner look |
-| #188 | CIV-124 | Copilot draft | review, ready, merge, owner look |
-| (new) | CIV-126 | dispatched D-296 | review when the PR opens |
-Merged 27 Oct: #165 CIV-112 (owner) · #168 CIV-114 · #179 CIV-119 · #173 CIV-117 · #178 certifi phase5 · #184 CIV-122 · #167 CIV-115 · #181 CIV-120 · #175 CIV-118 · #186 rule v1.5 + push CI · #183 CIV-121 · #189 CIV-125 · #172 CIV-116 prototype · main: #177 certifi → ce0cb4d, live on civensa-pilot (D-293).
+| #188 | CIV-124 | Copilot fixing table width | review, CI, merge, owner look |
+| #192 | CIV-127 | Copilot draft | review |
+| (new) | CIV-126, CIV-129, CIV-130 | Codex running | review when PRs open |
+Merged 27 Oct: #185 CIV-123 → 758a02b · #165 CIV-112 (owner) · #168 CIV-114 · #179 CIV-119 · #173 CIV-117 · #178 certifi phase5 · #184 CIV-122 · #167 CIV-115 · #181 CIV-120 · #175 CIV-118 · #186 rule v1.5 + push CI · #183 CIV-121 · #189 CIV-125 · #172 CIV-116 prototype · main: #177 certifi → ce0cb4d, live on civensa-pilot (D-293).
 Merged 26 Oct: #163 CIV-113 → 88c9dfb; #154 CIV-109 → 34329a7; #161 CIV-111 → 31b00e4 (D-283); #160 CIV-110 → 0b4b333 (D-282); #156 CIV-108 prototype → 633ac07 (D-277); #150 CIV-105 → 7cb58d9 (D-278; all jobs green, D-280); #148 CIV-106 → 1ed8620 (D-273); #145 CIV-104 → e0df9ce (D-268); #140 CIV-103 → 6efbe25 (D-265); #138 copilot-setup-steps → cbed4d8 (D-264); #136 production environment → d02b7cc; #132 CIV-102 → 873d361.
 
 ## Open — owner
-- Look approvals done for CIV-109/111/112/113/114/118/119/120/121 (D-295). Pending: CIV-122/123 after-screenshots, CIV-124.
+- Look approvals done for CIV-109/111/112/113/114/118/119/120/121 (D-295), CIV-122/123 (D-297). Pending: CIV-124 after the table fix.
 - Look approval CIV-104 (#145): 11 text changes + screenshots (D-268).
 - UI redesign (D-224/D-225): continues per D-243 order.
 - (closed) Look approvals CIV-101/102/103 (D-267); public repo (D-261); merges by the lead in live sessions (D-214); Codex "Tam erişim" ON (D-210); plaintext password files not tracked (D-217).
