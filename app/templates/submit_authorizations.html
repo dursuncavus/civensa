@@ -1,9 +1,49 @@
 {% extends "base.html" %}
-{% block page_title %}Gönderim Yetkileri{% endblock %}
+{% block page_title %}Gönderim yetkileri{% endblock %}
 {% block page_subtitle %}{{ department.name }} · Müdür{% endblock %}
 {% block content %}
-<section><h2>PP paketini kim gönderebilir?</h2><p>Müdür olarak kendi müdürlüğünüzün paketini gönderebilirsiniz. Aşağıdaki Personele gönderim yetkisi verebilir veya verdiğiniz yetkiyi kaldırabilirsiniz.</p><p class="muted">Bu yetki yalnızca PP paketini Strateji birimine göndermek içindir. Onay ve iade işlemlerini Strateji Geliştirme Müdürü yapar.</p></section>
-<div class="table-wrap section"><table><thead><tr><th>Personel</th><th>E-posta</th><th>Hesap</th><th>Gönderim yetkisi</th></tr></thead><tbody>
-{% for u in users %}<tr><td><b>{{ u.full_name }}</b></td><td>{{ u.email }}</td><td>{{ 'Etkin' if u.is_active else 'Devre dışı' }}</td><td>{% include "submit_authorization_control.html" %}</td></tr>{% else %}<tr><td colspan="4">Müdürlüğünüzde Personel hesabı yok. Hesap oluşturulması için Strateji birimine başvurun.</td></tr>{% endfor %}
-</tbody></table></div>
+<link rel="stylesheet" href="/static/design/submit-authorizations.css">
+<section class="submit-authorizations-page">
+  <div class="info-panel">
+    <h2>PP paketini kim gönderebilir?</h2>
+    <p>Müdür olarak kendi müdürlüğünüzün paketini gönderebilirsiniz. Aşağıdaki personele gönderim yetkisi verebilir veya verdiğiniz yetkiyi kaldırabilirsiniz.</p>
+    <p class="muted">Bu yetki yalnızca PP paketini Strateji birimine göndermek içindir. Onay ve iade işlemlerini Strateji Geliştirme Müdürü yapar.</p>
+  </div>
+  {% set authorized = users|selectattr('can_submit')|list|length %}
+  <p class="authorization-summary">{{ users|length }} personel · {{ authorized }} yetkili · {{ users|length - authorized }} yetkisiz</p>
+  {% if users %}
+  <p class="scroll-hint" id="authorization-scroll-hint">Tablonun devamını görmek için yatay kaydırın.</p>
+  <div class="table-wrap" role="region" aria-label="Personel gönderim yetkileri" aria-describedby="authorization-scroll-hint" tabindex="0">
+    <table>
+      <thead>
+        <tr>
+          <th scope="col">Personel / E-posta</th>
+          <th scope="col">Hesap</th>
+          <th scope="col">Gönderim yetkisi</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for u in users %}
+        <tr>
+          <td>
+            <b class="person-name">{{ u.full_name }}</b>
+            <span class="person-email">{{ u.email }}</span>
+          </td>
+          <td>
+            <span class="account-state {{ 'active' if u.is_active else 'inactive' }}">{{ 'Etkin' if u.is_active else 'Devre dışı' }}</span>
+          </td>
+          <td class="authorization-controls">
+            {% include "submit_authorization_control.html" %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="info-panel empty-state">
+    <p>Müdürlüğünüzde Personel hesabı yok. Hesap oluşturulması için Strateji birimine başvurun.</p>
+  </div>
+  {% endif %}
+</section>
 {% endblock %}
