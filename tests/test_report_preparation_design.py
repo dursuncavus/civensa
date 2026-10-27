@@ -266,6 +266,16 @@ def test_browser_layout_anchors_contrast_and_evidence(browser, client, db, sampl
         page.evaluate('document.fonts.ready')
         root = page.locator('.report-preparation-page')
         assert page.evaluate('document.documentElement.scrollWidth === innerWidth')
+        if width == 1440:
+            task_list = root.locator('.rp-task-list')
+            task_box = task_list.bounding_box()
+            assert task_box['width'] <= 44 * 16
+            for status in task_list.locator('.rp-status').all():
+                status_box = status.bounding_box()
+                assert task_box['x'] <= status_box['x']
+                assert task_box['y'] <= status_box['y']
+                assert status_box['x'] + status_box['width'] <= task_box['x'] + task_box['width']
+                assert status_box['y'] + status_box['height'] <= task_box['y'] + task_box['height']
         contents = root.locator('.rp-contents')
         assert contents.is_visible() == (width >= 1280)
         if width >= 1280:

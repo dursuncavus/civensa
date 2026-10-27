@@ -8,8 +8,8 @@ Tümü gerçek şablon ve uygulama varlıklarıyla, yalnız sentetik PostgreSQL 
 
 | Durum | 1440 px | 390 px |
 | --- | --- | --- |
-| Devam ediyor · müdürlük | [1440 PNG · 726.417 bayt](in-progress-1440.png) | [390 PNG · 516.924 bayt](in-progress-390.png) |
-| Tamamlandı · müdürlük | [1440 PNG · 679.509 bayt](complete-1440.png) | [390 PNG · 490.364 bayt](complete-390.png) |
+| Devam ediyor · müdürlük | [1440 PNG · 726.438 bayt](in-progress-1440.png) | [390 PNG · 516.924 bayt](in-progress-390.png) |
+| Tamamlandı · müdürlük | [1440 PNG · 679.539 bayt](complete-1440.png) | [390 PNG · 490.364 bayt](complete-390.png) |
 | Gönderildi · salt okunur | [1440 PNG · 816.196 bayt](read-only-1440.png) | [390 PNG · 524.733 bayt](read-only-390.png) |
 | Strateji · program grubu uyarısı | [1440 PNG · 1.042.575 bayt](strategy-1440.png) | [390 PNG · 649.038 bayt](strategy-390.png) |
 
