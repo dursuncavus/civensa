@@ -204,6 +204,13 @@ def test_009_010_grouping_warnings_disclosure_and_mobile(browser, filled_index, 
         expect(page.locator('[data-ar-similarity]')).to_have_attribute('role', 'status')
         groups = page.locator('.report-group')
         assert groups.count() == len(context['reports'])
+        status_edges = []
+        for heading in page.locator('.report-heading').all():
+            box, badges = heading.bounding_box(), heading.locator('.report-badges').bounding_box()
+            assert box['width'] <= 44 * 16
+            assert badges['x'] + badges['width'] <= box['x'] + box['width'] + 1
+            status_edges.append(round(badges['x']))
+        assert len(set(status_edges)) <= 1
         for group, expected in zip(groups.all(), context['reports']):
             expect(group.locator('h3')).to_have_text(f'{expected["report"]["year"]} · {expected["report"]["department"]}')
             expect(group.locator('.report-heading > div > p')).to_have_count(0)

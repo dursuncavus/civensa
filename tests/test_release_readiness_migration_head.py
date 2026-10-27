@@ -1,6 +1,7 @@
 """Release readiness must compare the database with the real Alembic script head."""
 import ast, os, shutil, subprocess, sys
 from pathlib import Path
+from lxml.html import fromstring
 
 import pytest
 from sqlalchemy import create_engine
@@ -129,8 +130,8 @@ def test_operations_gate_shows_ready_at_head(readiness, client):
     readiness()
     response = client.get("/operations")
     assert response.status_code == 200
-    assert "Teknik hazırlık · Geçti" in response.text
-    assert "PP yayın kontrol listesi · Engelli" in response.text
+    assert " ".join(fromstring(response.text).xpath('//*[@id="technical-readiness"]//h2')[0].text_content().split()) == "Teknik hazırlık · Geçti"
+    assert " ".join(fromstring(response.text).xpath('//*[@id="pp-release-checklist"]//h2')[0].text_content().split()) == "PP yayın kontrol listesi · Engelli"
     assert "✕ migration_head" not in response.text
 
 
