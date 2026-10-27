@@ -33,7 +33,7 @@
 .users-page .button.primary { color: var(--surface); background: var(--accent); border-color: var(--accent); }
 .users-page .button.primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
 .users-page .button:disabled { opacity: 1; color: var(--text-secondary); background: var(--surface-muted); border-color: var(--text-secondary); cursor: not-allowed; }
-.users-page .button.small { min-height: var(--row-height); padding: var(--space-1) var(--space-3); }
+.users-page .button.small { min-height: var(--row-height); padding: var(--space-1) var(--space-2); }
 .users-page details { margin-top: var(--space-6); }
 .users-page summary { width: fit-content; max-width: 100%; color: var(--text); font-size: var(--text-base); font-weight: var(--font-medium); cursor: pointer; }
 .users-page .missing-departments { display: grid; gap: var(--space-3); max-width: 44rem; margin: var(--space-4) 0 0; padding: 0; list-style: none; }
@@ -42,29 +42,35 @@
 .users-page .table-wrap { width: 100%; max-width: 100%; overflow-x: auto; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); }
 .users-page .users-table { margin-top: var(--space-4); }
 .users-page table { width: 100%; min-width: 0; margin: 0; border-collapse: collapse; table-layout: fixed; }
-.users-page :is(th, td) { padding: var(--space-3); border-bottom: 1px solid var(--border); font-size: var(--text-sm); text-align: left; vertical-align: top; }
+.users-page :is(th, td) { padding: var(--space-3) var(--space-1); border-bottom: 1px solid var(--border); font-size: var(--text-sm); text-align: left; vertical-align: middle; }
 .users-page th { color: var(--text-secondary); background: var(--surface-muted); font-weight: var(--font-medium); }
-.users-page .users-table th:nth-child(1) { width: 5%; }
-.users-page .users-table th:nth-child(2) { width: 26%; }
-.users-page .users-table th:nth-child(3) { width: 16%; }
-.users-page .users-table th:nth-child(4) { width: 26%; }
-.users-page .users-table th:nth-child(5) { width: 12%; }
-.users-page .users-table th:nth-child(6) { width: 15%; }
+.users-page .users-table th:nth-child(1) { width: 4%; }
+.users-page .users-table th:nth-child(2) { width: 14%; }
+.users-page .users-table th:nth-child(3) { width: 14%; }
+.users-page .users-table th:nth-child(4) { width: 25%; }
+.users-page .users-table th:nth-child(5) { width: 16%; }
+.users-page .users-table th:nth-child(6) { width: 27%; }
 .users-page .user-identity :is(.user-email, .user-role) { display: block; }
 .users-page .user-email { overflow-wrap: break-word; }
-.users-page .user-position-controls { display: flex; align-items: center; flex-wrap: wrap; gap: var(--space-2); }
+.users-page .user-position-controls { display: flex; align-items: center; flex-wrap: nowrap; gap: var(--space-2); }
 .users-page .user-position-controls label { position: relative; flex: 1 1 7rem; }
-.users-page .user-position-controls .button { flex: 0 0 auto; }
+.users-page .user-position-controls .button { flex: 0 0 auto; white-space: nowrap; }
 .users-page tbody tr:last-child td { border-bottom: 0; }
 .users-page .status { display: inline-block; padding: var(--space-1) var(--space-2); border-radius: var(--radius); color: var(--text-secondary); background: var(--surface-muted); font-size: var(--text-sm); font-weight: var(--font-medium); }
 .users-page .status.approved { color: var(--success); background: var(--success-bg); }
 .users-page .status.warning { color: var(--warning); background: var(--warning-bg); }
 .users-page :is(.status.returned, .status.draft) { color: var(--text-secondary); background: var(--surface-muted); }
-.users-page .rowbuttons { flex-direction: column; margin-top: var(--space-2); }
-.users-page :is(.save-user-position, .toggle-submit-authorization) { margin-top: var(--space-2); }
-.users-page .password-reset { display: grid; gap: var(--space-2); min-width: 0; margin-top: var(--space-3); }
-.users-page .password-reset input { min-width: 0; }
-.users-page .password-reset button { justify-self: start; }
+.users-page .users-table td:nth-child(5) { white-space: nowrap; }
+.users-page .users-table td:last-child { white-space: nowrap; }
+.users-page .users-table :is(.status, .toggle-submit-authorization, .rowbuttons) { vertical-align: top; }
+.users-page .users-table .rowbuttons { display: inline-flex; align-items: flex-start; flex-flow: row nowrap; gap: var(--space-1); margin: 0; }
+.users-page .users-table .button.small { flex: 0 0 auto; white-space: nowrap; }
+.users-page .users-table .show-password-reset { border-color: transparent; background: transparent; color: var(--accent); font-size: var(--text-xs); }
+.users-page .users-table .show-password-reset:hover { background: var(--surface-muted); color: var(--accent-hover); }
+.users-page :is(.save-user-position, .toggle-submit-authorization) { margin-top: 0; }
+.users-page .password-reset { display: flex; align-items: center; flex-wrap: nowrap; gap: var(--space-2); min-width: 0; margin-top: var(--space-2); }
+.users-page .password-reset input { flex: 1 1 0; width: auto; min-width: 0; }
+.users-page .password-reset button { flex: 0 0 auto; }
 .users-page .users-retire label { width: 100%; max-width: 44rem; }
 .users-page textarea { min-height: var(--space-12); resize: vertical; }
 .users-page #retireUsersResult:not(:empty) { margin-top: var(--space-3); }

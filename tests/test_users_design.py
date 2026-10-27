@@ -231,6 +231,54 @@ def test_browser_layout_contrast_and_existing_controls(browser, accounts, users_
         expect(page.locator('#newUserForm')).to_be_visible()
         expect(page.locator('#userName')).to_be_focused()
         row = page.locator('tr[data-user]').filter(has_text='Ada Sentetik')
+        folder = os.getenv('CIVENSA_CIV130_SCREENSHOTS')
+        if phase == 'after' and width == 1440:
+            assert page.locator('.users-table tbody tr').evaluate_all("""rows => {
+              const unwrapped = rows.filter(row => {
+                const identity = row.querySelector('.user-identity');
+                return [...identity.querySelectorAll('b, .user-email')].every(el => {
+                  const range = document.createRange();
+                  range.selectNodeContents(el);
+                  return new Set([...range.getClientRects()].map(rect => Math.round(rect.top))).size <= 1;
+                });
+              });
+              return new Set(unwrapped.map(row => Math.round(row.getBoundingClientRect().height))).size <= 1;
+            }""")
+            button_layout = page.locator('.users-table .button.small').evaluate_all("""buttons => {
+              const heights = buttons.filter(button => button.getClientRects().length)
+                .map(button => button.getBoundingClientRect().height);
+              const paddings = buttons.map(button => getComputedStyle(button).padding);
+              const lines = buttons.map(button => {
+                const range = document.createRange();
+                range.selectNodeContents(button);
+                return new Set([...range.getClientRects()].map(rect => Math.round(rect.top))).size <= 1;
+              });
+              return {heights, paddings, lines};
+            }""")
+            assert (len(set(button_layout['heights'])) == 1 and
+                    len(set(button_layout['paddings'])) == 1 and
+                    all(button_layout['lines'])), button_layout
+            alignment = page.locator('.users-table tbody tr').evaluate_all("""rows => {
+              const pairs = rows.flatMap(row => {
+                const auth = row.querySelector('td:nth-child(5) .toggle-submit-authorization');
+                const authBadge = row.querySelector('td:nth-child(5) .status');
+                const active = row.querySelector('.toggle-user-active');
+                const activeBadge = row.querySelector('td:last-child > .status');
+                return [[authBadge, auth], [activeBadge, active]].filter(([badge, action]) => badge && action);
+              });
+              return pairs.map(([badge, action]) => [
+                badge.getBoundingClientRect().top, action.getBoundingClientRect().top
+              ]);
+            }""")
+            assert all(abs(badge_top - action_top) <= 2
+                       for badge_top, action_top in alignment), alignment
+        if folder and phase == 'after' and missing and width == 1440:
+            target = Path(folder)
+            target.mkdir(parents=True, exist_ok=True)
+            page.evaluate('document.activeElement.blur()')
+            page.mouse.move(0, 0)
+            page.evaluate('scrollTo(0, 0)')
+            page.screenshot(path=str(target / 'users-after-1440.png'), full_page=True)
         row.locator('.show-password-reset').click()
         expect(row.locator('.password-reset')).to_be_visible()
         expect(row.locator('.password-reset input')).to_be_focused()
@@ -256,6 +304,8 @@ def test_browser_layout_contrast_and_existing_controls(browser, accounts, users_
             columns = page.locator('#newUserForm').evaluate('el => getComputedStyle(el).gridTemplateColumns.split(" ").length')
             assert columns == (3 if width >= 1024 else 1)
             if width == 1440:
+                assert page.locator('.users-table td').evaluate_all(
+                    "cells => cells.every(cell => getComputedStyle(cell).verticalAlign === 'middle')")
                 assert page.locator('.bulk-user-import .actions .button:not([hidden])').evaluate_all(
                     'els => new Set(els.map(el => el.getBoundingClientRect().top)).size === 1')
             expect(row.locator('td:last-child > .status')).to_have_text('Etkin')
@@ -270,13 +320,17 @@ def test_browser_layout_contrast_and_existing_controls(browser, accounts, users_
                 page.keyboard.press('ArrowRight')
                 assert wrap.evaluate('el => el.scrollLeft > 0')
             else:
-                assert wrap.evaluate('el => el.scrollWidth === el.clientWidth')
+                wrap_dimensions = wrap.evaluate('el => [el.clientWidth, el.scrollWidth]')
+                assert wrap_dimensions[0] == wrap_dimensions[1], wrap_dimensions
+                assert row.locator('.password-reset').evaluate("""el => {
+                  const input = el.querySelector('input').getBoundingClientRect();
+                  const button = el.querySelector('button').getBoundingClientRect();
+                  return Math.abs(input.top - button.top) <= 2 && input.right <= button.left + 1;
+                }""")
                 assert root.locator('.user-email').evaluate_all(
                     """els => els.every(el => {
-                      const range = document.createRange();
-                      range.selectNodeContents(el);
                       return getComputedStyle(el).overflowWrap === 'break-word' &&
-                        new Set([...range.getClientRects()].map(rect => Math.round(rect.top))).size === 1;
+                        el.scrollWidth <= el.clientWidth;
                     })""")
                 position_select = page.get_by_role('combobox', name='Bora Sentetik unvanı')
                 expect(position_select).to_have_count(1)
@@ -286,7 +340,7 @@ def test_browser_layout_contrast_and_existing_controls(browser, accounts, users_
                 assert position_controls.evaluate("""el => {
                   const select = el.querySelector('select').getBoundingClientRect();
                   const button = el.querySelector('button').getBoundingClientRect();
-                  return select.top < button.bottom && button.top < select.bottom;
+                  return Math.abs(select.top - button.top) <= 2 && select.right <= button.left + 1;
                 }""")
             script = TEXT_PAIRS.replace('.section-index-page', '.users-page')
             pairs = set(map(tuple, page.evaluate(script)))
@@ -303,7 +357,6 @@ def test_browser_layout_contrast_and_existing_controls(browser, accounts, users_
             for control in root.locator('input[placeholder], textarea[placeholder]').all():
                 pairs.add(tuple(control.evaluate('el => [getComputedStyle(el, "::placeholder").color, getComputedStyle(el).backgroundColor]')))
             assert all(contrast(p) >= 4.5 for p in pairs), [(p, contrast(p)) for p in pairs if contrast(p) < 4.5]
-        folder = os.getenv('CIVENSA_CIV130_SCREENSHOTS')
         if folder and missing:
             target = Path(folder)
             target.mkdir(parents=True, exist_ok=True)
@@ -311,7 +364,8 @@ def test_browser_layout_contrast_and_existing_controls(browser, accounts, users_
             page.mouse.move(0, 0)
             page.locator('.table-wrap.section').evaluate('el => el.scrollLeft = 0')
             page.evaluate('scrollTo(0, 0)')
-            page.screenshot(path=str(target / f'users-{phase}-{width}.png'), full_page=True)
+            screenshot_name = 'users-after-1440-password-open.png' if phase == 'after' and width == 1440 else f'users-{phase}-{width}.png'
+            page.screenshot(path=str(target / screenshot_name), full_page=True)
             if width == 390:
                 page.locator('.table-wrap.section').evaluate('el => el.scrollLeft = el.scrollWidth')
                 page.screenshot(path=str(target / f'users-{phase}-status-390.png'), full_page=True)
