@@ -89,6 +89,10 @@ def test_024_confirm_focus_and_tab_order(browser, client, db, sample, width):
         page = context.new_page()
         page.on('pageerror', lambda error: errors.append(str(error)))
         page.goto('http://testserver/department/1?period_id=1')
+        for head in page.locator('.record-head').all():
+            box, badge = head.bounding_box(), head.locator('.badge').bounding_box()
+            assert box['width'] <= 44 * 16
+            assert badge['x'] + badge['width'] <= box['x'] + box['width'] + 1
         trigger = page.locator('.draft-removal summary').first
         trigger.focus()
         page.keyboard.press('Enter')

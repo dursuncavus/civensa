@@ -21,6 +21,7 @@
 .ic-our-actions-page .empty-state { color: var(--text-secondary); border-style: dashed; }
 .ic-our-actions-page .notes-content > .card > p:only-of-type { color: var(--text-secondary); }
 .ic-our-actions-page dl { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 3fr); gap: var(--space-2) var(--space-4); }
+.ic-our-actions-page dl { max-width: 44rem; }
 .ic-our-actions-page dt { color: var(--text-secondary); font-size: var(--text-sm); }
 .ic-our-actions-page dd { margin: 0; min-width: 0; }
 .ic-our-actions-page a { color: var(--accent); text-underline-offset: 3px; }

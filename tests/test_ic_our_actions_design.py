@@ -346,6 +346,12 @@ def test_browser_layout_contrast_and_form_navigation(browser, ic_client, db, sam
         page.on('pageerror', lambda error: errors.append(str(error)))
         page.goto(url)
         root = page.locator('.ic-our-actions-page')
+        for definitions in root.locator('dl').all():
+            box = definitions.bounding_box()
+            assert box['width'] <= 44 * 16
+            for value in definitions.locator('dd').all():
+                v = value.bounding_box()
+                assert v['x'] + v['width'] <= box['x'] + box['width'] + 1
         assert page.evaluate('document.documentElement.scrollWidth === innerWidth')
         assert root.locator('*').evaluate_all("els => els.every(el => getComputedStyle(el).textTransform !== 'uppercase')")
         # No shared inline shell overrides are emitted by this screen.

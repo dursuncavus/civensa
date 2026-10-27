@@ -32,6 +32,9 @@
 .data-entry-page .record-list { display: grid; gap: var(--space-6); }
 .data-entry-page :is(.record, .workflow-history) { min-width: 0; padding: var(--space-6); background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: none; }
 .data-entry-page .record-head { display: flex; justify-content: space-between; align-items: start; gap: var(--space-4); margin-bottom: var(--space-4); }
+.data-entry-page .record-head,
+.data-entry-page .workflow-history > .section-head { max-width: 44rem; }
+.data-entry-page .record-head > .badge { min-width: 6rem; }
 .data-entry-page .record-head h3 { margin-top: var(--space-1); font-size: var(--text-card); font-weight: 600; }
 .data-entry-page .badge { flex-shrink: 0; padding: var(--space-1) var(--space-2); border-radius: var(--radius); font-size: var(--text-sm); font-weight: 500; background: var(--surface-muted); color: var(--text-secondary); }
 .data-entry-page .badge.ok { color: var(--success) !important; background: var(--success-bg); }
