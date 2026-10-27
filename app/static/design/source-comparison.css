@@ -36,6 +36,14 @@
 .source-comparison-page code { color: var(--text); background: var(--surface-muted); overflow-wrap: anywhere; }
 .source-comparison-page :is(a, button, summary, [tabindex]):focus { outline: var(--focus); outline-offset: var(--focus-offset); box-shadow: none; }
 .source-comparison-page #pp-reconciliation { margin-top: var(--space-6); }
+.source-comparison-page #pp-reconciliation .pp-reconciliation-status { display: inline-block; padding: var(--space-1) var(--space-2); border-radius: var(--radius); font-size: var(--text-sm); font-weight: var(--font-medium); }
+.source-comparison-page #pp-reconciliation .pp-status-danger { color: var(--danger); background: var(--danger-bg); }
+.source-comparison-page #pp-reconciliation .pp-status-warning { color: var(--warning); background: var(--warning-bg); }
+.source-comparison-page #pp-reconciliation .pp-status-success { color: var(--success); background: var(--success-bg); }
+.source-comparison-page #pp-reconciliation .pp-reconciliation-count { margin: var(--space-2) 0; color: var(--text-secondary); font-size: var(--text-sm); }
+.source-comparison-page #pp-reconciliation .pp-reconciliation-details summary { color: var(--accent); cursor: pointer; }
+.source-comparison-page #pp-reconciliation .pp-reconciliation-details[open] > summary { margin-bottom: var(--space-2); }
+.source-comparison-page #pp-reconciliation .pp-reconciliation-details p { margin: 0 0 var(--space-2); }
 @media (max-width: 1400px) {
   .source-comparison-page .scroll-hint { display: block; }
 }

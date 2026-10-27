@@ -160,6 +160,33 @@ def test_browser_layout_header_contrast_and_evidence(browser, client, scenario, 
         for row in root.locator('.revision-row').all():
             box = row.bounding_box()
             assert box['width'] <= 44 * 16
+            link = row.locator('.revision-heading > a')
+            link_box = link.bounding_box()
+            status_box = row.locator('.revision-statuses').bounding_box()
+            first_badge = row.locator('.status').first.bounding_box()
+            assert abs(first_badge['x'] - link_box['x']) <= 1
+            assert first_badge['y'] >= link_box['y'] + link_box['height']
+            assert status_box['y'] >= link_box['y'] + link_box['height']
+            if width == 1440:
+                meta = link.locator('.revision-meta')
+                assert meta.evaluate('el => getComputedStyle(el).display') == 'inline'
+                text_rects = link.evaluate("""el => {
+                    const meta = el.querySelector('.revision-meta');
+                    const rect = node => {
+                        const range = document.createRange();
+                        range.selectNodeContents(node);
+                        const box = range.getBoundingClientRect();
+                        return {top: box.top, bottom: box.bottom};
+                    };
+                    for (const node of el.childNodes) {
+                        if (node === meta) break;
+                        if (node.nodeType === Node.TEXT_NODE && node.textContent.trim()) {
+                            return {organization: rect(node), metadata: rect(meta)};
+                        }
+                    }
+                }""")
+                assert text_rects['metadata']['top'] < text_rects['organization']['bottom']
+                assert text_rects['metadata']['bottom'] > text_rects['organization']['top']
             for badge in row.locator('.status').all():
                 b = badge.bounding_box()
                 assert 0 <= b['x'] - box['x'] < 44 * 16

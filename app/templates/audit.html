@@ -1,8 +1,70 @@
 {% extends "base.html" %}
-{% block page_title %}Denetim Geçmişi{% endblock %}
+{% block page_title %}Denetim geçmişi{% endblock %}
 {% block page_subtitle %}Kullanıcı ve sistem işlemlerinin uygulama kaydı{% endblock %}
 {% block content %}
-<section><form class="audit-filters" method="get">{% if period %}<input type="hidden" name="period_id" value="{{ period.id }}">{% endif %}<label>İşlem<select name="action"><option value="">Tüm işlemler</option>{% for action in actions %}<option value="{{ action }}" {{ 'selected' if action==selected_action else '' }}>{{ action }}</option>{% endfor %}</select></label><label>Kullanıcı e-postası<input name="user" value="{{ user_text }}" placeholder="e-posta içinde ara"></label><button class="button primary" type="submit">Filtrele</button><a class="button" href="/audit{{ period_query }}">Temizle</a><a class="button" href="/api/audit/export.csv?period_id={{ period.id }}&action={{ selected_action|urlencode }}&user={{ user_text|urlencode }}">CSV indir</a></form></section>
-<div class="table-wrap section"><table><thead><tr><th>Tarih</th><th>Kullanıcı</th><th>İşlem</th><th>Varlık</th><th>Ayrıntı</th></tr></thead><tbody>{% for row in rows %}<tr><td>{{ row.created_at|turkey_time }}</td><td>{{ users.get(row.user_id)|actor_label }}</td><td><b>{{ row.action }}</b></td><td>{{ row.entity_type }}{% if row.entity_id %} #{{ row.entity_id }}{% endif %}</td><td>{{ safe_details(row.details) or '-' }}</td></tr>{% else %}<tr><td colspan="5">Filtreye uygun kayıt bulunamadı.</td></tr>{% endfor %}</tbody></table></div>
-<div class="actions">{% if page>1 %}<a class="button" href="?period_id={{ period.id }}&page={{ page-1 }}&action={{ selected_action|urlencode }}&user={{ user_text|urlencode }}">Önceki</a>{% endif %}{% if has_next %}<a class="button" href="?period_id={{ period.id }}&page={{ page+1 }}&action={{ selected_action|urlencode }}&user={{ user_text|urlencode }}">Sonraki</a>{% endif %}</div>
+  <link rel="stylesheet" href="/static/design/audit.css">
+  <div class="audit-page">
+    <section class="audit-filter-panel">
+      <form class="audit-filters" method="get">
+        {% if period %}
+          <input type="hidden" name="period_id" value="{{ period.id }}">
+        {% endif %}
+        <label>
+          İşlem
+          <select name="action">
+            <option value="">Tüm işlemler</option>
+            {% for action in actions %}
+              <option value="{{ action }}" {{ 'selected' if action==selected_action else '' }}>{{ action }}</option>
+            {% endfor %}
+          </select>
+        </label>
+        <label>
+          Kullanıcı e-postası
+          <input name="user" value="{{ user_text }}" placeholder="e-posta içinde ara">
+        </label>
+        <button class="button primary" type="submit">Filtrele</button>
+        <a class="button" href="/audit{{ period_query }}">Temizle</a>
+        <a class="button" href="/api/audit/export.csv?period_id={{ period.id }}&action={{ selected_action|urlencode }}&user={{ user_text|urlencode }}">CSV indir</a>
+      </form>
+    </section>
+    <section class="audit-table-panel">
+      <p class="audit-scroll-hint">Tablonun tamamını görmek için yatay kaydırın.</p>
+      <div class="table-wrap" role="region" aria-label="Denetim geçmişi tablosu" tabindex="0">
+        <table>
+          <thead>
+            <tr>
+              <th>Tarih</th>
+              <th>Kullanıcı</th>
+              <th>İşlem</th>
+              <th>Varlık</th>
+              <th>Ayrıntı</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in rows %}
+              <tr>
+                <td class="audit-date">{{ row.created_at|turkey_time }}</td>
+                <td>{{ users.get(row.user_id)|actor_label }}</td>
+                <td><b>{{ row.action }}</b></td>
+                <td>{{ row.entity_type }}{% if row.entity_id %} #{{ row.entity_id }}{% endif %}</td>
+                <td class="audit-details">{{ safe_details(row.details) or '-' }}</td>
+              </tr>
+            {% else %}
+              <tr>
+                <td class="muted" colspan="5">Filtreye uygun kayıt bulunamadı.</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+    <div class="actions audit-pagination">
+      {% if page>1 %}
+        <a class="button" href="?period_id={{ period.id }}&page={{ page-1 }}&action={{ selected_action|urlencode }}&user={{ user_text|urlencode }}">Önceki</a>
+      {% endif %}
+      {% if has_next %}
+        <a class="button" href="?period_id={{ period.id }}&page={{ page+1 }}&action={{ selected_action|urlencode }}&user={{ user_text|urlencode }}">Sonraki</a>
+      {% endif %}
+    </div>
+  </div>
 {% endblock %}

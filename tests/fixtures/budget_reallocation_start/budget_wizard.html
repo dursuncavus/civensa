@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+{% block page_title %}Yeni Bütçe Aktarması{% endblock %}
+{% block page_subtitle %}1 · Tutarlar → 2 · Uygun kayıtlar ve önizleme → 3 · Dayanak → 4 · Uygula{% endblock %}
+{% block content %}
+<div id="budget-error" role="alert" class="card" hidden></div>
+<section class="card"><h2>1 · Müdürlükler ve tutarlar</h2><div class="form-grid">
+<label>PP dönemi<select id="period">{% for period in periods %}<option value="{{ period.id }}" data-year="{{ period.year }}">{{ period.year }}</option>{% endfor %}</select></label>
+<label>Yıl<input id="year" type="number" value="{{ periods[0].year if periods else '' }}"></label>
+<label>Değer türü<select id="value-kind"><option value="budget">Bütçe</option><option value="forecast">Tahmin</option><option value="midyear_spend">Haziran sonu harcama</option><option value="year_end_estimate">Yıl sonu tahmini</option></select></label></div>
+<table><thead><tr><th>Müdürlük</th><th>Yön</th><th>Giriş</th><th>Tutar / oran</th><th></th></tr></thead><tbody id="legs"></tbody></table>
+<template id="leg-template"><tr class="leg"><td><select class="department">{% for dep in departments %}<option value="{{ dep.id }}">{{ department_names[dep.id] }}</option>{% endfor %}</select></td><td><select class="direction"><option value="decrease">Azalt</option><option value="increase">Artır</option></select></td><td><select class="input-mode"><option value="amount">TL</option><option value="ratio">Yüzde (%)</option></select></td><td><input class="leg-amount" inputmode="decimal" placeholder="5.000.000,00"></td><td><button type="button" class="button remove-leg">Kaldır</button></td></tr></template>
+<div class="actions"><button class="button" id="add-leg">Müdürlük ekle</button></div>
+<label><input type="checkbox" id="change-total"> Toplam bütçe değişiyor</label><br>
+<label><input type="checkbox" id="change-outside"> Bütçe dışı rakamları da aynı oranda değiştir</label>
+<p class="muted">Yüzde hesabının tabanı müdürlüğün tüm bütçe içi ekonomik toplamıdır. Dış bütçe açıksa, seçilen dış ekonomik toplam aynı müdürlük oranıyla değişir; faaliyetlere aynı TL farkı dağıtılır. Böylece iki tablonun mevcut farkı korunur.</p>
+<button class="button primary" id="preview-button">Uygun kayıtları ve önizlemeyi göster</button></section>
+<section class="card" id="preview-section" hidden><h2>2 · Uygun kayıtlar ve önizleme</h2><p>01 Personel, 02 SGK ve sözleşmeye bağlı faaliyetler dağıtım dışında kalır. Diğer kayıtları aşağıdan çıkarabilirsiniz.</p><div id="eligible-choices"></div><button class="button" id="refresh-preview">Seçimlerle yeniden hesapla</button><div id="preview-result"></div><button class="button primary" id="continue-reference">Dayanak adımına geç</button></section>
+<section class="card" id="reference-section" hidden><h2>3 · Dayanak ve uygulama</h2>{% include 'budget_reference.html' %}<p>Uygula ile tüm satırlar birlikte kaydedilir; paketlerin onay durumu korunur. Önizleme 30 dakika geçerlidir.</p><button class="button primary" id="apply-button">Uygula</button></section>
+{% endblock %}
+{% block scripts %}<script id="budget-department-names" type="application/json">{{ department_names_by_period|tojson }}</script><script src="/static/budget.js"></script>{% endblock %}
