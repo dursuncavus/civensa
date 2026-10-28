@@ -67,16 +67,13 @@
 .activity-report-detail-page .indicator-summary,
 .activity-report-detail-page .indicator-definition { max-width: 44rem; }
 .activity-report-detail-page .indicator-value-summary {
-  display: grid; grid-template-columns: max-content max-content; align-items: start;
-  column-gap: var(--space-3); row-gap: var(--space-1);
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--space-2) var(--space-3);
 }
-.activity-report-detail-page .indicator-value-summary h3,
-.activity-report-detail-page .indicator-value-summary .indicator-actual { grid-column: 1 / -1; }
 .activity-report-detail-page .indicator-actual {
-  display: flex; flex-wrap: nowrap; align-items: baseline; gap: var(--space-2);
+  display: contents;
   color: var(--text-secondary);
 }
-.activity-report-detail-page .indicator-actual .status { align-self: center; }
+.activity-report-detail-page .indicator-actual .status { align-items: baseline; }
 .activity-report-detail-page .indicator-actual strong {
   color: var(--text); font-size: var(--text-display); font-weight: var(--font-semibold);
   font-variant-numeric: tabular-nums;
@@ -102,7 +99,11 @@
   font-size: var(--text-sm);
 }
 .activity-report-detail-page .indicator-evidence-list { margin-block: var(--space-3) 0; }
-.activity-report-detail-page .indicator-evidence-list li > p { margin: 0 0 var(--space-2); }
+.activity-report-detail-page .indicator-evidence-list li + li { margin-top: var(--space-4); }
+.activity-report-detail-page .indicator-evidence-list li > p { margin: 0; }
+.activity-report-detail-page .indicator-evidence-list li > p + p {
+  margin-top: var(--space-1); padding-left: var(--space-4); font-size: var(--text-sm);
+}
 .activity-report-detail-page .indicator-definition dl { display: grid; gap: var(--space-2); margin: 0 0 var(--space-4); }
 .activity-report-detail-page .indicator-definition dl > div {
   display: grid; grid-template-columns: minmax(7rem, 0.35fr) minmax(0, 1fr);
@@ -114,7 +115,6 @@
 .activity-report-detail-page :is(label, dt) { text-transform: none; letter-spacing: normal; }
 @media (max-width: 480px) {
   .activity-report-detail-page .indicator-definition dl > div { grid-template-columns: minmax(0, 1fr); gap: var(--space-1); }
-  .activity-report-detail-page .indicator-value-summary { grid-template-columns: minmax(0, 1fr); }
 }
 /* app.js appends AJAX errors to the record; retain that hook and show them above its form. */
 .activity-report-detail-page [data-draft-record] { display: flex; flex-direction: column; }
