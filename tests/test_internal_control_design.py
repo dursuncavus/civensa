@@ -155,8 +155,9 @@ def test_css_uses_only_existing_tokens():
         assert 'var(--' in declaration or declaration.strip() == '0'
 
 
-@pytest.mark.parametrize('width', [1440, 390])
-@pytest.mark.parametrize('screen', SCENES, indirect=True)
+@pytest.mark.parametrize(('screen', 'width'),
+    [(scene, width) for scene in SCENES for width in (1440, 390)]
+    + [('monitoring-populated', 1280)], indirect=['screen'])
 def test_frozen_browser_layout_contrast_and_navigation(browser, screen, ic_client, width):
     from playwright.sync_api import expect
     scene, path, response, html = screen
@@ -183,7 +184,13 @@ def test_frozen_browser_layout_contrast_and_navigation(browser, screen, ic_clien
         page.evaluate('document.fonts.ready')
         root = page.locator('.internal-control-page')
         assert page.evaluate('document.documentElement.scrollWidth === innerWidth')
-        assert root.bounding_box()['width'] <= 704
+        monitoring_page = scene.startswith('monitoring-')
+        root_width = root.bounding_box()['width']
+        if monitoring_page:
+            available = root.evaluate("el => { const p = el.parentElement; const s = getComputedStyle(p); return p.clientWidth - parseFloat(s.paddingLeft) - parseFloat(s.paddingRight); }")
+            assert abs(root_width - available) <= 1
+        else:
+            assert root_width <= 704
         for form in root.locator('form[method=post]').all():
             expect(form.locator('[name=csrf_token]')).to_have_value(response.context['request'].session['csrf_token'])
         for badge in root.locator('.status').all():
@@ -191,7 +198,7 @@ def test_frozen_browser_layout_contrast_and_navigation(browser, screen, ic_clien
         panels = root.locator('section, .card')
         for panel in panels.all():
             box = panel.bounding_box()
-            if box: assert box['width'] <= 704
+            if box: assert box['width'] <= (root_width if monitoring_page else 704)
         top_panels = root.locator(':scope > section')
         boxes = [p.bounding_box() for p in top_panels.all()]
         assert all(a['y'] + a['height'] <= b['y'] + 1 and abs(a['x'] - b['x']) <= 1 for a, b in zip(boxes, boxes[1:]))
@@ -212,6 +219,12 @@ def test_frozen_browser_layout_contrast_and_navigation(browser, screen, ic_clien
                 pairs.update(map(tuple, page.evaluate(script)))
         assert all(contrast(pair) >= 4.5 for pair in pairs), [(p, contrast(p)) for p in pairs if contrast(p) < 4.5]
         for scroll in root.locator('.ic-scroll').all():
+            if monitoring_page and width >= 1280:
+                assert scroll.evaluate('el => el.scrollWidth <= el.clientWidth')
+                for cell in scroll.locator('th,td').all():
+                    assert cell.evaluate('el => el.scrollWidth <= el.clientWidth')
+                    assert cell.evaluate('el => getComputedStyle(el).fontSize') == '14px'
+                continue
             assert scroll.evaluate('el => el.scrollWidth > el.clientWidth')
             scroll.evaluate('el => el.scrollLeft = el.scrollWidth')
             assert scroll.evaluate('el => el.scrollLeft > 0')
@@ -231,7 +244,7 @@ def test_frozen_browser_layout_contrast_and_navigation(browser, screen, ic_clien
             assert root.locator('[name=file]').evaluate('el => el.validity.valueMissing')
             assert not any(data is not None for _, data in calls)
         folder = os.getenv('CIVENSA_CIV145_SCREENSHOTS')
-        if folder:
+        if folder and width in (1440, 390):
             target = Path(folder); target.mkdir(parents=True, exist_ok=True)
             if scene != 'index-file-required':
                 page.evaluate('document.activeElement.blur()')

@@ -3,7 +3,7 @@
 {% block page_title %}İç Kontrol · 6 Aylık İzleme{% endblock %}
 {% block page_subtitle %}Strateji Geliştirme dönem yönetimi, inceleme ve raporlar{% endblock %}
 {% block content %}
-<link rel="stylesheet" href="/static/design/internal-control.css"><div class="internal-control-page">
+<link rel="stylesheet" href="/static/design/internal-control.css"><div class="internal-control-page internal-control-monitoring-page">
 <section class="card"><h2>İzleme dönemi aç</h2>{% if plans %}
 {% filter pp_form(request) %}<form method="post" action="/internal-control/monitoring/open">{{ token(request) }}
 <label>Etkin plan<select name="plan_id">{% for plan in plans %}<option value="{{ plan.id }}">{{ plan.title }} · {{ plan.version_label }}</option>{% endfor %}</select></label>

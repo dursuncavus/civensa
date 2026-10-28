@@ -1,6 +1,8 @@
 /* CIV-145: reuse the shipped panel, form, table, disclosure and status styles.
    Scope every rule to these five screens; shared macro markup stays unchanged. */
 .internal-control-page { width: 100%; max-width: 44rem; min-width: 0; color: var(--text); overflow-wrap: anywhere; }
+/* The monitoring overview uses the available width for its report tables. */
+.internal-control-page.internal-control-monitoring-page { max-width: none; }
 .internal-control-page * { box-sizing: border-box; text-transform: none; letter-spacing: normal; }
 .internal-control-page :is(label,span,th,td) { text-transform: none; letter-spacing: normal; }
 .internal-control-page :is(h2,h3,h4,p,dl) { margin: 0 0 var(--space-3); }
