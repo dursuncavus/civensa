@@ -84,3 +84,5 @@
 /* Divide the short count values evenly; reuse the existing 1000px table minimum
    so complete header words also fit in equal columns on narrow screens. */
 .internal-control-monitoring-page .ic-counts-table { table-layout: fixed; width: 100%; min-width: 1000px; }
+
+.internal-control-monitoring-page .ic-counts-table th { vertical-align: bottom; }

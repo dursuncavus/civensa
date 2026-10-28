@@ -8,6 +8,8 @@ Beş ekran mevcut panel, form, tablo, metinli durum rozeti ve açılır ayrınt�
 
 ## Owner eşit sütun düzeltmesi
 
+Sayı tablosunun yalnız `th` hücreleri `vertical-align: bottom` ile alta hizalanır. Veri hücreleri ve resmî özet tablosu üst hizasını korur. Tarayıcı testleri tüm başlıkların son metin satırı alt kenarları arasında en fazla 1px fark olduğunu ve veri hücrelerinin değişmeyen `top` hizasını denetler. Yeni token eklenmedi; İzleme 1440/390 çekimleri yenilendi.
+
 Yalnız Bileşen / standart durum sayıları tablosuna `ic-counts-table` sınıfı eklendi: `table-layout: fixed; width: 100%`. Başlıklar `overflow-wrap: normal; word-break: normal; hyphens: none` kurallarını korur. Dar ekranda uzun tek kelimelerin komşu hücrelere taşmasını önlemek için mevcut tasarım sistemi tablo minimumu (kaynak karşılaştırma/kullanıcı tablolarındaki **1000px**) yeniden kullanılır; tablo kendi alanında yatay kayar. Yeni token yok. Resmî rapor özeti tablosunun otomatik düzeni korunur.
 
 `python -m pytest -q --require-postgres tests/test_internal_control_design.py -k 'monitoring or standard_numbers'` — **15 geçti**. Her başlık/veri satırında sütun genişlikleri arasındaki fark en fazla 1px; hücre metni taşmıyor, kelime ortasında bölünmüyor ve mevcut form/metin/hook sözleşmeleri korunuyor. Altı İzleme durumu × 1440/390 = **12 PNG yeniden alındı**. Bu düzeltmede ortak kabuk/makro dosyaları değişmedi; aşağıdaki D-252 kaydı ortak menü değişikliğinin kanıtıdır.

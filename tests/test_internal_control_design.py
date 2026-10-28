@@ -253,6 +253,12 @@ def test_frozen_browser_layout_contrast_and_navigation(browser, screen, ic_clien
             if counts_table:
                 expect(table).to_have_class('ic-counts-table')
                 assert table.evaluate('el => getComputedStyle(el).tableLayout') == 'fixed'
+                bottoms = table.locator('th').evaluate_all('''els => els.map(el => {
+                    const range = document.createRange();
+                    range.selectNodeContents(el);
+                    return Math.max(...[...range.getClientRects()].map(rect => rect.bottom));
+                })''')
+                assert max(bottoms) - min(bottoms) <= 1
                 for row in table.locator('tr').all():
                     widths = [cell.bounding_box()['width'] for cell in row.locator('th,td').all()]
                     assert max(widths) - min(widths) <= 1
@@ -261,6 +267,8 @@ def test_frozen_browser_layout_contrast_and_navigation(browser, screen, ic_clien
             for cell in scroll.locator('th,td').all():
                 assert cell.evaluate('el => el.scrollWidth <= el.clientWidth')
                 assert cell.evaluate('el => getComputedStyle(el).fontSize') == '14px'
+                alignment = 'bottom' if counts_table and cell.evaluate('el => el.tagName') == 'TH' else 'top'
+                assert cell.evaluate('el => getComputedStyle(el).verticalAlign') == alignment
                 assert cell.evaluate('el => getComputedStyle(el).overflowWrap') == 'normal'
                 assert cell.evaluate('el => getComputedStyle(el).wordBreak') == 'normal'
                 assert cell.evaluate('el => getComputedStyle(el).hyphens') == 'none'
