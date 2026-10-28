@@ -2,7 +2,8 @@
 {% from 'internal_control/monitoring_shared.html' import entries with context %}
 {% block page_title %}İç Kontrol İzleme Paketi{% endblock %}
 {% block page_subtitle %}{{ period_label(monitoring_period) }}{% endblock %}
-{% block content %}{% include 'internal_control/monitoring_shared.html' %}<div class="ic-wrap">
+{% block content %}
+<link rel="stylesheet" href="/static/design/internal-control.css"><div class="internal-control-page">
 <p><a href="{{ '/internal-control/monitoring?period_id=' if user.role=='strategy' else '/internal-control/our-actions?period_id=' }}{{ monitoring_period.id }}">Dönem ekranına dön</a></p>
 {{ entries(detail, monitoring_period, user, request, statuses, states) }}
 {% include 'internal_control/monitoring_notes.html' %}
