@@ -9,7 +9,7 @@ Tags: DOĞRULANDI (lead checked) · TARİHSEL (past fact) · BEYAN (owner said) 
 DEEPSEEK BACKUP LEAD UNTIL SAT 31 OCT 00:00 (D-308, owner decision to save Claude quota). Claude handles only what BACKUP_LEAD.md reserves for the lead; returns after the weekly reset.
 Claude's next session: `CV Lider 38 · Claude Opus 5.5 · civensa-lead`. Read this section, the last decision in DECISIONS.md, and "Civensa Yedek Kaydı" (Drive) first; re-check every DeepSeek MERGE OK and dispatched task.
 Allowed work for DeepSeek (BACKUP_LEAD.md "YOU MAY"):
-1. #228 CIV-143 users table — lead-reviewed head 1bd4180 (D-308). If CI is green and behind 0: MERGE OK, owner merges. If Copilot pushes again: review that head first.
+1. #228 CIV-143 users table — merged by the lead → 14c692c (D-308). Owner look pending in the gallery.
 2. #232 CIV-144 (Copilot) — 007/008 value row on ONE baseline line (owner 10:00: all six items bottom-aligned, no "·") + evidence list: file line indented under its source, smaller gap inside a source than between sources; also the "İncelenmeli" state (owner 10:02). Review against issue #231 and lead comments 6462795106, 6462821999, 6462865204. Check the 1440 screenshots for the two defects before MERGE OK.
 3. One Codex task at a time, next ID CIV-145: bring the İç Kontrol screens (031; templates app/templates/internal_control/*.html) onto the design system per D-243 (existing components only; same pattern and evidence rule D-252 as CIV-127..140). Codex reads the repo itself; DeepSeek writes the package in the standard format incl. PRIOR ART (D-271). 003 waits for Ali; 025–028 wait for the lead (screen definitions not in the repo).
 4. Owner looks: gallery "Civensa Onay 2" https://claude.ai/artifact/3N57MjqiTX6ud7q4Krij9c (017, users, 007/008) — record the owner's answers in the backup log.
@@ -26,8 +26,8 @@ Evidence rule (D-252): one-screen changes → targeted tests + changed-state scr
 ## Open pull requests (DOĞRULANDI 28 Oct ~05:45)
 | PR | Task | State | Next action |
 | --- | --- | --- | --- |
-| #228 (issue #227) | CIV-143 users table follow-up | ready, head 1bd4180 reviewed by lead (D-308), CI running | merge after green (DeepSeek MERGE OK → owner) → owner look |
 | #232 (issue #231) | CIV-144 value row + evidence list | Copilot draft | review → CI → merge → owner look |
+Merged 28 Oct (D-308): #228 CIV-143 → 14c692c · #230 night record → f0f1222.
 Merged 27 Oct late (D-304/D-306): #222 CIV-141 → 70fc4da · #223 CIV-142 → c3ccfcc.
 Merged 27 Oct evening (D-303): #199 CIV-128 → 0200f60 · #205 CIV-134 → 5106ad5 · #209 CIV-137 → c6a8fab · #218 CIV-138 → 2b1e7df · #207 CIV-136 → 1f74a2d · #214 CIV-139 → 6ba0e55 · #216 CIV-140 → 0e2cf1c.
 Merged 27 Oct: #211 CIV-135 → 43f4de6 · #192 CIV-127 → 97f2225 · #201 CIV-133 → 5b683c4 · #195 CIV-129 → fd930c9 · #203 CIV-131 → 2d1de5f · #202 CIV-132 → f441bdf · #196 CIV-130 → db5aa88 · #194 CIV-126 → c810bd3 · #188 CIV-124 → bb03104 · CI fix D-298 (cc34fce) · #185 CIV-123 → 758a02b · #165 CIV-112 (owner) · #168 CIV-114 · #179 CIV-119 · #173 CIV-117 · #178 certifi phase5 · #184 CIV-122 · #167 CIV-115 · #181 CIV-120 · #175 CIV-118 · #186 rule v1.5 + push CI · #183 CIV-121 · #189 CIV-125 · #172 CIV-116 prototype · main: #177 certifi → ce0cb4d, live on civensa-pilot (D-293).
