@@ -6,6 +6,12 @@ Beş ekran mevcut panel, form, tablo, metinli durum rozeti ve açılır ayrınt�
 
 **Ortak dosya değişikliği: yok.** `monitoring_shared.html`, `monitoring_notes.html`, `monitoring_ours.html` ve CIV-105 `our_actions.html` kaynak hashleri korunur. İki ekran, CIV-105 örneğindeki gibi makroları import eder; eski satır içi CSS bloğunu include etmez. Makro işaretlemesi değişmez; D-252 ortak dosya sayım özeti gerekmez. Yeni token veya bileşen tanımlanmadı.
 
+## Owner form düzeni düzeltmesi
+
+İzleme sayfasındaki mevcut `.ic-grid`, 1100px ve üstünde üç, 701–1099px aralığında iki, 700px ve altında tek sütun kullanır. Etkin plan seçimi ve gönderim düğmesi kendi satırlarında kalır. Düğme öncesi boşluk mevcut `--space-4` değeridir; yeni token eklenmedi. Diğer ekranlar ve şablon işaretlemesi değişmedi.
+
+`python -m pytest -q --require-postgres tests/test_internal_control_design.py -k monitoring-populated` — **4 geçti** (1440/1280: üç sütun, 1000: iki sütun, 390: tek sütun). Alanların satır/sütun konumları, plan seçiminin üstte ve düğmenin altta ayrı satırlarda olması, tablolar, kontrast ve değişmeyen form/hook sözleşmeleri kontrol edildi. `monitoring-populated-1440.png` ve `monitoring-populated-390.png` yeniden alındı. Güncel tam test sonucu PR açıklamasındadır.
+
 ## Owner genişlik düzeltmesi
 
 Yalnız `monitoring.html` köküne sayfa sınıfı ve bu sınıfa `max-width: none` eklendi; diğer dört ekranın stilleri ve tüm metin/form/hook sözleşmeleri korundu. `monitoring-populated-1440.png` ve `monitoring-populated-390.png` yenilendi. Diğer İzleme durum görüntüleri önceki 44rem çekimleridir.

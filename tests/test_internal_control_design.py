@@ -157,7 +157,7 @@ def test_css_uses_only_existing_tokens():
 
 @pytest.mark.parametrize(('screen', 'width'),
     [(scene, width) for scene in SCENES for width in (1440, 390)]
-    + [('monitoring-populated', 1280)], indirect=['screen'])
+    + [('monitoring-populated', 1280), ('monitoring-populated', 1000)], indirect=['screen'])
 def test_frozen_browser_layout_contrast_and_navigation(browser, screen, ic_client, width):
     from playwright.sync_api import expect
     scene, path, response, html = screen
@@ -191,6 +191,27 @@ def test_frozen_browser_layout_contrast_and_navigation(browser, screen, ic_clien
             assert abs(root_width - available) <= 1
         else:
             assert root_width <= 704
+        if monitoring_page:
+            opening = root.locator('form[action="/internal-control/monitoring/open"]')
+            if opening.count():
+                grid = opening.locator('.ic-grid')
+                fields = [field.bounding_box() for field in grid.locator(':scope > label').all()]
+                columns = 3 if width >= 1100 else 2 if width > 700 else 1
+                for i, field in enumerate(fields):
+                    if i % columns:
+                        previous = fields[i - 1]
+                        assert abs(field['y'] - previous['y']) <= 1
+                        assert field['x'] >= previous['x'] + previous['width']
+                    elif i:
+                        previous = fields[i - columns]
+                        assert field['y'] >= previous['y'] + previous['height']
+                plan = opening.locator(':scope > label').bounding_box()
+                grid_box = grid.bounding_box()
+                submit = opening.locator('button').bounding_box()
+                assert plan['y'] + plan['height'] <= grid_box['y']
+                assert abs(plan['width'] - grid_box['width']) <= 1
+                assert submit['y'] >= grid_box['y'] + grid_box['height'] + 16
+                assert abs(submit['x'] - grid_box['x']) <= 1
         for form in root.locator('form[method=post]').all():
             expect(form.locator('[name=csrf_token]')).to_have_value(response.context['request'].session['csrf_token'])
         for badge in root.locator('.status').all():
