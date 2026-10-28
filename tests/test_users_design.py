@@ -328,6 +328,14 @@ def test_browser_layout_contrast_and_existing_controls(browser, accounts, users_
             columns = page.locator('#newUserForm').evaluate('el => getComputedStyle(el).gridTemplateColumns.split(" ").length')
             assert columns == (3 if width >= 1024 else 1)
             if width == 1440:
+                overflow = page.locator('.users-table td').evaluate_all("""cells => cells.flatMap(cell => {
+                  const paddingRight = parseFloat(getComputedStyle(cell).paddingRight);
+                  const right = cell.getBoundingClientRect().right - paddingRight + 1;
+                  return [...cell.querySelectorAll('*')].filter(el => el.getClientRects().length &&
+                    !el.classList.contains('sr-only') && el.getBoundingClientRect().right > right)
+                    .map(el => [cell.cellIndex, el.className, el.getBoundingClientRect().right, right]);
+                })""")
+                assert not overflow, overflow
                 assert page.locator('.users-table .user-email').evaluate_all("""emails => emails.every(el => {
                   const text = el.textContent;
                   for (let index = 0; index < text.length - 1; index += 1) {
@@ -353,14 +361,11 @@ def test_browser_layout_contrast_and_existing_controls(browser, accounts, users_
             assert inactive.locator('td:last-child .status').evaluate(
                 'el => getComputedStyle(el).color === getComputedStyle(document.querySelector(".users-page .muted")).color')
             wrap = page.locator('.users-table')
-            if width == 390:
-                assert wrap.evaluate('el => el.scrollWidth > el.clientWidth')
-                wrap.focus()
-                page.keyboard.press('ArrowRight')
-                assert wrap.evaluate('el => el.scrollLeft > 0')
-            else:
-                wrap_dimensions = wrap.evaluate('el => [el.clientWidth, el.scrollWidth]')
-                assert wrap_dimensions[0] <= wrap_dimensions[1], wrap_dimensions
+            assert wrap.evaluate('el => el.scrollWidth > el.clientWidth')
+            wrap.focus()
+            page.keyboard.press('ArrowRight')
+            assert wrap.evaluate('el => el.scrollLeft > 0')
+            if width == 1440:
                 assert page.locator('.users-table td:last-child .user-status-controls').evaluate_all("""controls => controls.every(el => {
                   const cell = el.closest('td');
                   const style = getComputedStyle(cell);

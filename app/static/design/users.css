@@ -45,11 +45,11 @@
 .users-page :is(th, td) { padding: var(--space-3); border-bottom: 1px solid var(--border); font-size: var(--text-sm); text-align: left; vertical-align: middle; }
 .users-page th { color: var(--text-secondary); background: var(--surface-muted); font-weight: var(--font-medium); }
 .users-page .users-table th { white-space: nowrap; }
-.users-page .users-table th:nth-child(1) { width: 5%; }
-.users-page .users-table th:nth-child(2) { width: 16%; }
-.users-page .users-table th:nth-child(3) { width: 17%; }
-.users-page .users-table th:nth-child(4) { width: 24%; }
-.users-page .users-table th:nth-child(5) { width: 14%; }
+.users-page .users-table th:nth-child(1) { width: 4%; }
+.users-page .users-table th:nth-child(2) { width: 20%; }
+.users-page .users-table th:nth-child(3) { width: 14%; }
+.users-page .users-table th:nth-child(4) { width: 22%; }
+.users-page .users-table th:nth-child(5) { width: 16%; }
 .users-page .users-table th:nth-child(6) { width: 24%; }
 .users-page .user-identity :is(.user-email, .user-role) { display: block; }
 .users-page .user-email { overflow-wrap: normal; }
