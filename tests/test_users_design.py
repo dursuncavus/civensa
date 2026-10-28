@@ -334,6 +334,12 @@ def test_browser_layout_contrast_and_existing_controls(browser, accounts, users_
             columns = page.locator('#newUserForm').evaluate('el => getComputedStyle(el).gridTemplateColumns.split(" ").length')
             assert columns == (3 if width >= 1024 else 1)
             if width == 1440:
+                assert page.locator('.users-policy-table').evaluate("""panel => {
+                  const style = getComputedStyle(panel);
+                  const content = panel.getBoundingClientRect().width - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight) - parseFloat(style.borderLeftWidth) - parseFloat(style.borderRightWidth);
+                  const paragraphs = [...panel.querySelectorAll(':scope > p'), document.querySelector('#accountChangePolicy')];
+                  return paragraphs.length >= 2 && paragraphs.every(p => p.getBoundingClientRect().width >= content - 1);
+                }""")
                 overflow = page.locator('.users-table td').evaluate_all("""cells => cells.flatMap(cell => {
                   const paddingRight = parseFloat(getComputedStyle(cell).paddingRight);
                   const right = cell.getBoundingClientRect().right - paddingRight + 1;
