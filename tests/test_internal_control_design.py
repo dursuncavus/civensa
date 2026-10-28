@@ -240,6 +240,8 @@ def test_frozen_browser_layout_contrast_and_navigation(browser, screen, ic_clien
             page.screenshot(path=str(target / f'{scene}-{width}.png'), full_page=True)
             if scene == 'plan-populated':
                 root.locator('details summary').first.click()
+                page.evaluate('document.activeElement.blur(); window.scrollTo(0,0)')
+                page.mouse.move(0, 0)
                 page.screenshot(path=str(target / f'{scene}-expanded-{width}.png'), full_page=True)
         # Prove the existing forms still carry the exact route, values and CSRF.
         if scene in {'monitoring-populated', 'plan-populated'}:
