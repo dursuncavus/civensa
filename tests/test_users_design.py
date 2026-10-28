@@ -233,6 +233,29 @@ def test_browser_layout_contrast_and_existing_controls(browser, accounts, users_
         row = page.locator('tr[data-user]').filter(has_text='Ada Sentetik')
         folder = os.getenv('CIVENSA_CIV130_SCREENSHOTS')
         if phase == 'after' and width == 1440:
+            assert page.locator('.users-table th').evaluate_all("""headers => headers.every(header => {
+              const range = document.createRange();
+              range.selectNodeContents(header);
+              return new Set([...range.getClientRects()].map(rect => Math.round(rect.top))).size === 1;
+            })""")
+            assert page.locator('.users-table select.user-position').evaluate_all("""selects => selects.every(select => {
+              const option = select.selectedOptions[0];
+              const style = getComputedStyle(select);
+              const canvas = document.createElement('canvas');
+              const context = canvas.getContext('2d');
+              context.font = style.font;
+              const textWidth = context.measureText(option.textContent.trim()).width;
+              const arrowWidth = parseFloat(style.fontSize) + 2;
+              const padding = parseFloat(style.paddingLeft) + parseFloat(style.paddingRight);
+              return select.clientWidth >= Math.ceil(textWidth + arrowWidth + padding);
+            })""")
+            assert page.locator('.users-table td:nth-child(3)').evaluate_all("""cells => {
+              const cell = cells.find(cell => cell.textContent.includes('Strateji Geliştirme Müdürlüğü'));
+              if (!cell) return false;
+              const range = document.createRange();
+              range.selectNodeContents(cell);
+              return new Set([...range.getClientRects()].map(rect => Math.round(rect.top))).size <= 2;
+            }""")
             assert page.locator('.users-table tbody tr').evaluate_all("""rows => {
               const unwrapped = rows.filter(row => {
                 const identity = row.querySelector('.user-identity');
@@ -305,6 +328,14 @@ def test_browser_layout_contrast_and_existing_controls(browser, accounts, users_
             columns = page.locator('#newUserForm').evaluate('el => getComputedStyle(el).gridTemplateColumns.split(" ").length')
             assert columns == (3 if width >= 1024 else 1)
             if width == 1440:
+                overflow = page.locator('.users-table td').evaluate_all("""cells => cells.flatMap(cell => {
+                  const paddingRight = parseFloat(getComputedStyle(cell).paddingRight);
+                  const right = cell.getBoundingClientRect().right - paddingRight + 1;
+                  return [...cell.querySelectorAll('*')].filter(el => el.getClientRects().length &&
+                    !el.classList.contains('sr-only') && el.getBoundingClientRect().right > right)
+                    .map(el => [cell.cellIndex, el.className, el.getBoundingClientRect().right, right]);
+                })""")
+                assert not overflow, overflow
                 assert page.locator('.users-table .user-email').evaluate_all("""emails => emails.every(el => {
                   const text = el.textContent;
                   for (let index = 0; index < text.length - 1; index += 1) {
@@ -330,14 +361,17 @@ def test_browser_layout_contrast_and_existing_controls(browser, accounts, users_
             assert inactive.locator('td:last-child .status').evaluate(
                 'el => getComputedStyle(el).color === getComputedStyle(document.querySelector(".users-page .muted")).color')
             wrap = page.locator('.users-table')
-            if width == 390:
-                assert wrap.evaluate('el => el.scrollWidth > el.clientWidth')
-                wrap.focus()
-                page.keyboard.press('ArrowRight')
-                assert wrap.evaluate('el => el.scrollLeft > 0')
-            else:
-                wrap_dimensions = wrap.evaluate('el => [el.clientWidth, el.scrollWidth]')
-                assert wrap_dimensions[0] == wrap_dimensions[1], wrap_dimensions
+            assert wrap.evaluate('el => el.scrollWidth > el.clientWidth')
+            wrap.focus()
+            page.keyboard.press('ArrowRight')
+            assert wrap.evaluate('el => el.scrollLeft > 0')
+            if width == 1440:
+                assert page.locator('.users-table td:last-child .user-status-controls').evaluate_all("""controls => controls.every(el => {
+                  const cell = el.closest('td');
+                  const style = getComputedStyle(cell);
+                  return el.getBoundingClientRect().right <=
+                    cell.getBoundingClientRect().right - parseFloat(style.paddingRight) + 1;
+                })""")
                 assert row.locator('.password-reset').evaluate("""el => {
                   const input = el.querySelector('input').getBoundingClientRect();
                   const button = el.querySelector('button').getBoundingClientRect();
