@@ -15,7 +15,7 @@ Diğer mevcut görünen metinler, durum ifadeleri, hedef farkı uyarısı, kanı
 
 ## Ekran görüntüleri
 
-Chromium, tam sayfa, `tr-TR`, 1440 ve 390 piksel. Öncesi görüntüleri CIV-135 görünümüdür; sonrası görüntüleri CIV-140 şablonuyla aynı sentetik bağlamlarda yakalanmıştır. PNG başına üst sınır 1.500.000 bayttır.
+Chromium, tam sayfa, `tr-TR`, 1440 ve 390 piksel. Öncesi görüntüleri CIV-135 görünümüdür; CIV-140 sonrası görüntülerinden onaylı ve müdürlük taslağı durumları CIV-144 değer bloğu hizalamasıyla yenilenmiştir. PNG başına üst sınır 1.500.000 bayttır.
 
 | Durum | 1440 önce | 1440 sonra | 390 önce | 390 sonra |
 | --- | --- | --- | --- | --- |
@@ -25,4 +25,4 @@ Chromium, tam sayfa, `tr-TR`, 1440 ve 390 piksel. Öncesi görüntüleri CIV-135
 
 ## Doğrulama
 
-Odaklı PostgreSQL doğrulaması: `CIVENSA_CIV135_SCREENSHOTS=docs/design/rollout/civ-140 python -m pytest -q --require-postgres tests/test_activity_report_detail_design.py` — **55 geçti** (mevcut Starlette/httpx deprecation uyarısı). Tarayıcı kontrolleri iki görünüm alanında taşma, 44rem sınırı, durum metni kontrastı, kanıt ve form davranışı, bar uygunluğu ve hedef işaretçisinin konumunu denetler. Görselleri yeniden üretmek için aynı komutu çalıştırın.
+Odaklı PostgreSQL doğrulaması: `python -m pytest -q --require-postgres tests/test_activity_report_detail_design.py` — **56 geçti** (mevcut Starlette/httpx deprecation uyarısı). Tarayıcı kontrolleri iki görünüm alanında taşma, 44rem sınırı, değer/birim baseline hizası, durum rozeti merkezlemesi, hedef/fark satırı, durum metni kontrastı, kanıt ve form davranışı, bar uygunluğu ve hedef işaretçisinin konumunu denetler.
