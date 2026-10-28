@@ -47,7 +47,7 @@
       <div class="nav-group">
         <p>İç Kontrol</p>
         {% if user.role=='strategy' %}
-        {{ nav_link('/internal-control', 'İç Kontrol · Uyum Eylem Planı', path.startswith('/internal-control')) }}
+        {{ nav_link('/internal-control', 'Uyum Eylem Planı', path.startswith('/internal-control')) }}
         {% else %}
         {{ nav_link('/internal-control/our-actions', 'İç Kontrol Eylemlerimiz', path.startswith('/internal-control')) }}
         {% endif %}

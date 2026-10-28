@@ -76,3 +76,7 @@
 @media (min-width: 1100px) {
   .internal-control-monitoring-page .ic-grid { grid-template-columns: repeat(3,minmax(0,1fr)); }
 }
+
+/* Preserve complete words and let header content determine table column widths. */
+.internal-control-monitoring-page table { table-layout: auto; }
+.internal-control-monitoring-page :is(th,td) { overflow-wrap: normal; word-break: normal; hyphens: none; }

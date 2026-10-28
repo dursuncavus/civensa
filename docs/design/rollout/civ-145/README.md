@@ -1,10 +1,22 @@
 # CIV-145 · İç Kontrol ekranları tasarım sistemine
 
-Beş ekran mevcut panel, form, tablo, metinli durum rozeti ve açılır ayrıntı desenlerini kullanır (D-243). İzleme (monitoring) sayfası kullanılabilir içerik genişliğini kullanır; diğer dört ekranın içerik ve panelleri en fazla 44rem kalır. Paneller solda, yukarıdan aşağıya sıralanır. İzleme tabloları 1280/1440 genişlikte yatay kaydırma olmadan sığar; dar ekranda kendi alanında yatay kayar. Planın eylem ayrıntıları mevcut eylem metnini özet olarak kullanır; klavyeyle açılabilir.
+Beş ekran mevcut panel, form, tablo, metinli durum rozeti ve açılır ayrıntı desenlerini kullanır (D-243). İzleme (monitoring) sayfası kullanılabilir içerik genişliğini kullanır; diğer dört ekranın içerik ve panelleri en fazla 44rem kalır. Paneller solda, yukarıdan aşağıya sıralanır. İzleme tabloları başlık kelimelerine göre otomatik genişler; kelime ortasında bölünme ve tireleme yoktur. Gerektiğinde kendi alanlarında yatay kayarlar. Planın eylem ayrıntıları mevcut eylem metnini özet olarak kullanır; klavyeyle açılabilir.
 
-**Görünen metin değişikliği: yok.** Başlangıç sürümü `69021f0` ile aynı bağlamda render edilen beş şablon; metinler, form alanları/değerleri/yöntemleri/adresleri, bağlantılar, kimlikler, data-* ve aria-* öznitelikleri bakımından karşılaştırılır. `tests/fixtures/civ145_internal_control/` yalnız bu karşılaştırmanın kaynak kopyalarını içerir.
+**Owner tarafından istenen görünen metin değişiklikleri:** Strateji menüsünde `İç Kontrol · Uyum Eylem Planı` → `Uyum Eylem Planı`. İzleme Standart hücresinde yalnız bileşen öneki kaldırılır: `KOS1–4` → `1–4`, `RDS5–6` → `5–6`, `KFS7–12` → `7–12`, `BİS13–16` → `13–16`, `İS17–18` → `17–18`. Kayıtlar, anahtarlar, form alanları ve dışa aktarılan kodlar değişmez. Diğer metinler korunur. Başlangıç sürümü `69021f0` ile aynı bağlamda render edilen beş şablon; metinler, form alanları/değerleri/yöntemleri/adresleri, bağlantılar, kimlikler, data-* ve aria-* öznitelikleri bakımından karşılaştırılır. `tests/fixtures/civ145_internal_control/` yalnız bu karşılaştırmanın kaynak kopyalarını içerir.
 
-**Ortak dosya değişikliği: yok.** `monitoring_shared.html`, `monitoring_notes.html`, `monitoring_ours.html` ve CIV-105 `our_actions.html` kaynak hashleri korunur. İki ekran, CIV-105 örneğindeki gibi makroları import eder; eski satır içi CSS bloğunu include etmez. Makro işaretlemesi değişmez; D-252 ortak dosya sayım özeti gerekmez. Yeni token veya bileşen tanımlanmadı.
+**Ortak kabuk:** `base.html` yalnız yukarıdaki tek menü etiketi için değişti. `monitoring_shared.html`, `monitoring_notes.html`, `monitoring_ours.html` ve CIV-105 `our_actions.html` kaynak hashleri korunur. İki ekran, CIV-105 örneğindeki gibi makroları import eder; eski satır içi CSS bloğunu include etmez. Makro işaretlemesi değişmez. Ortak kabuk için D-252 sayımı aşağıdadır. Yeni token veya bileşen tanımlanmadı.
+
+## Owner tablo ve menü düzeltmesi
+
+İzleme `th/td` hücrelerinde `overflow-wrap: normal`, `word-break: normal`, `hyphens: none`; tabloda `table-layout: auto` kullanılır. `ic-scroll` korunur. Hücrelerdeki sözcüklerin gerçek Chromium metin aralıklarının aynı satırda kalması, yatay kaydırma ve 14px metin kontrol edilir. Üç bileşenli gerçek sentetik plan testi `KOS1 → 1`, `RDS5 → 5`, `BİS13 → 13` gösterimini ve servis anahtarlarının değişmediğini doğrular. Menü bağlantısının hedefi ve aktiflik kuralı aynı kalır; rol/pozisyon/dönem testleri kısalan etiketi kontrol eder.
+
+Altı İzleme durumu (boş/dolu/alan hatası/incelemede/iade/kapalı) 1440/390 genişlikte yeniden yakalandı: **12 PNG**. `python -m pytest -q --require-postgres tests/test_internal_control_design.py -k 'monitoring or standard_numbers'` — **15 geçti**. Güncel tam test/CI sonucu PR açıklamasındadır.
+
+## D-252 · ortak kabuk kısa sayımı
+
+Mevcut UI haritasının **97 ekran/durumu × 1440/390 = 194 çekim** tamamlandı: **15.278 form/bağlantı/kimlik hedefi**, **0 eksik çekim**, **0 taşma**, **0 kırpılma/örtüşme**, **0 kabuk yerleşim sorunu**. Kısalan menü etiketi **124 çekimde** mevcut; müdürlük menü etiketi korundu. Aynı DOM üzerinde eski/yeni menü etiketi karşılaştırmasında **0 yeni sorun, 0 değişen hedef/hook/form özniteliği**. `8505763` ile `base.html` kaynak karşılaştırması yalnız tek etiket farkını doğrular. Tam PNG’ler, envanter ve geçici çalıştırıcı yalnız `/tmp/civ145-owner3-shell-proof/` ve `/tmp/civ145_owner3_shell_*.py` altında; repoya yalnız bu kısa sayım eklendi.
+
+Son yerel çalışma: `python -m pytest -q --require-postgres tests/test_internal_control_design.py tests/test_design_shell.py tests/test_sidebar_ui.py` — **75 geçti**; mevcut İç Kontrol/izleme/resmî rapor/CIV-105 regresyonları — **178 geçti**. Toplam **253 test geçti**; mevcut Starlette/httpx deprecation uyarısı. Regresyon dosyaları geçici çalıştırıcıyla `/tmp` altına yönlendirildi; `tests/artifacts/**` değişmedi.
 
 ## Owner form düzeni düzeltmesi
 
@@ -14,9 +26,9 @@ Beş ekran mevcut panel, form, tablo, metinli durum rozeti ve açılır ayrınt�
 
 ## Owner genişlik düzeltmesi
 
-Yalnız `monitoring.html` köküne sayfa sınıfı ve bu sınıfa `max-width: none` eklendi; diğer dört ekranın stilleri ve tüm metin/form/hook sözleşmeleri korundu. `monitoring-populated-1440.png` ve `monitoring-populated-390.png` yenilendi. Diğer İzleme durum görüntüleri önceki 44rem çekimleridir.
+Yalnız `monitoring.html` köküne sayfa sınıfı ve bu sınıfa `max-width: none` eklendi; diğer dört ekranın stilleri ve tüm metin/form/hook sözleşmeleri korundu. `monitoring-populated-1440.png` ve `monitoring-populated-390.png` yenilendi. Tüm İzleme durum görüntüleri son tablo/menü düzeltmesiyle yenilendi.
 
-`python -m pytest -q --require-postgres tests/test_internal_control_design.py -k monitoring-populated` — **3 geçti** (1280, 1440, 390). Geniş ekranda her iki tablonun ve hücre metinlerinin taşmadığı, 14px yazının korunduğu; dar ekranda yerel kaydırmanın çalıştığı doğrulandı. Aynı test dört diğer ekranın 44rem sınırını korumaya devam eder. Güncel tam test sonucu PR açıklamasındadır.
+`python -m pytest -q --require-postgres tests/test_internal_control_design.py -k monitoring-populated` — **3 geçti** (1280, 1440, 390). Geniş ekranda 14px yazının korunduğu; dar ekranda yerel kaydırmanın çalıştığı doğrulandı. Aynı test dört diğer ekranın 44rem sınırını korumaya devam eder. Güncel tam test sonucu PR açıklamasındadır.
 
 ## Ekran görüntüleri
 
@@ -54,7 +66,7 @@ Geçici yerel PostgreSQL 18.6, sentetik kayıtlar, Chromium 151; tam sayfa PNG, 
 
 Tarayıcı testleri diğer dört ekranın 44rem sınırını, İzleme sayfasının kullanılabilir genişliği doldurmasını, soldan okuma sırasını, belge taşmasını, tablo kaydırmasını, normal/hover/focus/açık ayrıntı metinlerinin en az 4,5:1 kontrastını, klavye odağını, gerçek 422 yanıtlarında alan değerlerini ve CSRF/form gönderimlerini kontrol eder. Mevcut yükleme–eşleştirme–kaydetme–etkinleştirme, izleme ve resmî rapor regresyonları da çalıştırılır. İki eski byte eşitliği kontrolü, yeni görünümün metin/form sözleşmelerini koruma kontrolüne çevrildi.
 
-İlk görüntüleri üreten odaklı çalışma: `CIVENSA_CHROMIUM_PATH=/usr/bin/chromium CIVENSA_CIV145_SCREENSHOTS=docs/design/rollout/civ-145 python -m pytest -q --require-postgres tests/test_internal_control_design.py` — **50 geçti**. `CIVENSA_TEST_POSTGRES_URL` yalnız geçici yerel test veritabanına ayarlandı. 50 PNG bağlantısının varlığı, genişliği ve 1.500.000 bayt altı boyutu doğrulandı (en büyük 281.271 bayt).
+İlk görüntüleri üreten odaklı çalışma: `CIVENSA_CHROMIUM_PATH=/usr/bin/chromium CIVENSA_CIV145_SCREENSHOTS=docs/design/rollout/civ-145 python -m pytest -q --require-postgres tests/test_internal_control_design.py` — **50 geçti**. `CIVENSA_TEST_POSTGRES_URL` yalnız geçici yerel test veritabanına ayarlandı. 50 PNG bağlantısının varlığı, genişliği ve 1.500.000 bayt altı boyutu doğrulandı (ilk çekimde en büyük 281.271 bayt).
 
 İlk regresyon çalışması: `python -m pytest -q --require-postgres tests/test_internal_control.py tests/test_internal_control_monitoring.py tests/test_internal_control_official_report.py tests/test_ic_our_actions_design.py` — **178 geçti**. Eski testlerin ürettiği dosyalar geçici bir pytest çalıştırıcı eklentisiyle `/tmp` altına yönlendirildi; `tests/artifacts/**` değişikliği yok. Toplam **228 test geçti**; mevcut Starlette/httpx deprecation uyarısı dışında uyarı yok. `git diff --check` ve `python -m compileall -q app` başarılı.
 

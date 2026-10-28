@@ -1,6 +1,7 @@
 """CIV-145: frozen content contracts and browser checks with disposable data."""
 from collections import Counter
 from hashlib import sha256
+from html import escape
 from html.parser import HTMLParser
 import os
 from pathlib import Path
@@ -49,6 +50,13 @@ def frozen(response):
     actual = response.template.render(response.context)
     request.state.pp_attempt_rendered = False
     expected = env.get_template(response.template.name).render(response.context)
+    if response.template.name == 'internal_control/monitoring.html':
+        # Owner-approved display-only change in the standard column.
+        for component, standard in response.context['counts']:
+            before = f'<td>{escape(component)}</td><td>{escape(standard)}</td>'
+            after = f'<td>{escape(component)}</td><td>{escape(standard.removeprefix(component))}</td>'
+            assert expected.count(before) == 1
+            expected = expected.replace(before, after, 1)
     new, old = ScreenContract(actual), ScreenContract(expected)
     assert new.controls == old.controls
     assert new.bindings == old.bindings
@@ -240,13 +248,28 @@ def test_frozen_browser_layout_contrast_and_navigation(browser, screen, ic_clien
                 pairs.update(map(tuple, page.evaluate(script)))
         assert all(contrast(pair) >= 4.5 for pair in pairs), [(p, contrast(p)) for p in pairs if contrast(p) < 4.5]
         for scroll in root.locator('.ic-scroll').all():
-            if monitoring_page and width >= 1280:
-                assert scroll.evaluate('el => el.scrollWidth <= el.clientWidth')
-                for cell in scroll.locator('th,td').all():
-                    assert cell.evaluate('el => el.scrollWidth <= el.clientWidth')
-                    assert cell.evaluate('el => getComputedStyle(el).fontSize') == '14px'
+            assert scroll.locator('table').evaluate('el => getComputedStyle(el).tableLayout') == 'auto'
+            for cell in scroll.locator('th,td').all():
+                assert cell.evaluate('el => el.scrollWidth <= el.clientWidth')
+                assert cell.evaluate('el => getComputedStyle(el).fontSize') == '14px'
+                assert cell.evaluate('el => getComputedStyle(el).overflowWrap') == 'normal'
+                assert cell.evaluate('el => getComputedStyle(el).wordBreak') == 'normal'
+                assert cell.evaluate('el => getComputedStyle(el).hyphens') == 'none'
+                # Each word's rendered range must stay on one line, while spaces may wrap.
+                assert cell.evaluate(r'''el => {
+                    const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+                    for (let node; node = walker.nextNode();) {
+                        for (const word of node.textContent.matchAll(/\S+/gu)) {
+                            const range = document.createRange();
+                            range.setStart(node, word.index);
+                            range.setEnd(node, word.index + word[0].length);
+                            if (new Set([...range.getClientRects()].map(r => Math.round(r.y))).size > 1) return false;
+                        }
+                    }
+                    return true;
+                }''')
+            if scroll.evaluate('el => el.scrollWidth <= el.clientWidth'):
                 continue
-            assert scroll.evaluate('el => el.scrollWidth > el.clientWidth')
             scroll.evaluate('el => el.scrollLeft = el.scrollWidth')
             assert scroll.evaluate('el => el.scrollLeft > 0')
             scroll.evaluate('el => el.scrollLeft = 0')
@@ -293,3 +316,28 @@ def test_frozen_browser_layout_contrast_and_navigation(browser, screen, ic_clien
                 form.locator('button').first.click()
                 assert calls[-1] == (endpoint, {k: [v] for k, v in expected.items()})
         assert not errors
+
+
+def test_standard_numbers_are_display_only(ic_client, db, sample):
+    from lxml.html import fromstring
+    from app import internal_control_service as ic
+
+    login(ic_client, sample['strategy'].email)
+    codes = [('KOS', 'KOS1', '1'), ('RDS', 'RDS5', '5'), ('BİS', 'BİS13', '13')]
+    plan = saved(db, sample, workbook([action_row(**{
+        '0': component, '1': standard, '2': standard + '.1', '5': standard + '.1.1',
+    }) for component, standard, _ in codes]))
+    ic.activate_plan(db, sample['strategy'], plan.id)
+    db.commit()
+    from datetime import timedelta
+    period = monitoring.open_period(db, sample['strategy'], plan.id, 2027, 1,
+                                    monitoring.today(db) + timedelta(days=1000))
+    db.commit()
+    response = ic_client.get('/internal-control/monitoring')
+    before = list(response.context['counts'])
+    markup = frozen(response)
+    rows = fromstring(markup).xpath('//table')[-1].xpath('./tbody/tr')
+    assert [(r[0].text_content(), r[1].text_content()) for r in rows] == [
+        (component, number) for component, _, number in codes]
+    assert list(monitoring.overview(db, sample['strategy'], period)[1]) == before
+    assert before == [(component, standard) for component, standard, _ in codes]

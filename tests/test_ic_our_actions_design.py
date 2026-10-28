@@ -69,6 +69,10 @@ class VisibleText(HTMLParser):
 
 
 def visible_text_deltas(template_name, context):
+    if template_name == 'internal_control/monitoring.html':
+        # Owner-approved standard labels; the component remains in its own cell.
+        return [(f'{component} {standard} ', f'{component} {standard.removeprefix(component)} ')
+                for component, standard in context['counts']]
     if template_name != 'internal_control/our_actions.html':
         return []
     actions = context.get('responsible', []) + context.get('cooperating', [])
