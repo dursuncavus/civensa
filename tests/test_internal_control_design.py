@@ -248,7 +248,16 @@ def test_frozen_browser_layout_contrast_and_navigation(browser, screen, ic_clien
                 pairs.update(map(tuple, page.evaluate(script)))
         assert all(contrast(pair) >= 4.5 for pair in pairs), [(p, contrast(p)) for p in pairs if contrast(p) < 4.5]
         for scroll in root.locator('.ic-scroll').all():
-            assert scroll.locator('table').evaluate('el => getComputedStyle(el).tableLayout') == 'auto'
+            table = scroll.locator('table')
+            counts_table = table.locator('th').nth(1).inner_text() == 'Standart'
+            if counts_table:
+                expect(table).to_have_class('ic-counts-table')
+                assert table.evaluate('el => getComputedStyle(el).tableLayout') == 'fixed'
+                for row in table.locator('tr').all():
+                    widths = [cell.bounding_box()['width'] for cell in row.locator('th,td').all()]
+                    assert max(widths) - min(widths) <= 1
+            else:
+                assert table.evaluate('el => getComputedStyle(el).tableLayout') == 'auto'
             for cell in scroll.locator('th,td').all():
                 assert cell.evaluate('el => el.scrollWidth <= el.clientWidth')
                 assert cell.evaluate('el => getComputedStyle(el).fontSize') == '14px'

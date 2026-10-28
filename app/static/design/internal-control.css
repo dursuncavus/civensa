@@ -80,3 +80,7 @@
 /* Preserve complete words and let header content determine table column widths. */
 .internal-control-monitoring-page table { table-layout: auto; }
 .internal-control-monitoring-page :is(th,td) { overflow-wrap: normal; word-break: normal; hyphens: none; }
+
+/* Divide the short count values evenly; reuse the existing 1000px table minimum
+   so complete header words also fit in equal columns on narrow screens. */
+.internal-control-monitoring-page .ic-counts-table { table-layout: fixed; width: 100%; min-width: 1000px; }
