@@ -105,7 +105,7 @@ def render_pair(ctx):
             r'<p class="indicator-report-summary">(.*?)</p>',
             r'<span class="indicator-unit">(.*?)</span>',
             r'<p class="indicator-difference">(.*?)</p>',
-            r'<p>\s*(Dosya:)\s*<a\b.*?</a>.*?</p>',
+            r'<p(?: class="indicator-evidence-file")?>\s*(Dosya:)\s*<a\b.*?</a>.*?</p>',
             r'<summary>Gösterge tanımı</summary>',
             r'<dt>(Birim|Kod|Müdürlük|Hesaplama|Kaynak|Açıklama)</dt>',
             r'<h3 class="actual-form-heading">(.*?)</h3>',
@@ -353,6 +353,8 @@ def test_browser_layout_contrast_and_evidence(browser, client, tmp_path, scenari
             assert '·' not in value_summary.inner_text()
             assert page.evaluate('(el) => getComputedStyle(el).display', value_summary.element_handle()) == 'flex'
             assert page.evaluate('(el) => getComputedStyle(el).alignItems', value_summary.element_handle()) == 'baseline'
+            assert value_summary.evaluate('(el) => getComputedStyle(el).flexWrap') == 'wrap'
+            assert value_summary.evaluate('(el) => getComputedStyle(el).justifyContent') in ('normal', 'flex-start')
             assert page.evaluate('(el) => getComputedStyle(el).display', actual.element_handle()) == 'contents'
             label_box = value_summary.locator('h3').bounding_box()
             target_line = value_summary.locator('.indicator-target')
@@ -363,18 +365,39 @@ def test_browser_layout_contrast_and_evidence(browser, client, tmp_path, scenari
                 number = actual.locator('strong')
                 unit = actual.locator('.indicator-unit')
                 status = actual.locator('.status')
-                if width == 1440:
-                    baselines = page.evaluate("""els => els.map(el => {
+                # Zero-height inline probes measure text baselines, including the
+                # pill's text rather than its padded border box.
+                text_items = [value_summary.locator('h3'), number, unit, status, target_line, difference]
+                metrics = page.evaluate("""els => els.map(el => {
+                      const range = document.createRange();
+                      range.selectNodeContents(el);
+                      const rects = [...range.getClientRects()];
                       const probe = document.createElement('span');
                       probe.style.cssText = 'display:inline-block;width:0;height:0;padding:0;margin:0;border:0;vertical-align:baseline';
                       el.append(probe);
                       const baseline = probe.getBoundingClientRect().y;
                       probe.remove();
-                      return baseline;
-                    })""", [value_summary.locator('h3').element_handle(), number.element_handle(),
-                           unit.element_handle(), status.element_handle(),
-                           target_line.element_handle(), difference.element_handle()])
+                      const box = el.getBoundingClientRect();
+                      return {baseline, x: box.x, right: box.right,
+                              singleLine: rects.every(r => Math.abs(r.y - rects[0].y) <= 1)};
+                    })""", [el.element_handle() for el in text_items])
+                assert len(metrics) == 6
+                assert all(m['singleLine'] for m in metrics), metrics
+                if width == 1440:
+                    baselines = [m['baseline'] for m in metrics]
                     assert max(baselines) - min(baselines) <= 1, baselines
+                    assert all(a['right'] <= b['x'] for a, b in zip(metrics, metrics[1:])), metrics
+                else:
+                    # Items that overlap vertically must share a baseline. Each
+                    # new flex line starts at the summary/bar's left edge.
+                    boxes = [el.bounding_box() for el in text_items]
+                    for index, metric in enumerate(metrics):
+                        if index == 0 or metric['baseline'] > metrics[index - 1]['baseline'] + 1:
+                            assert abs(metric['x'] - label_box['x']) <= 1, metrics
+                        for earlier in range(index):
+                            a, b = boxes[earlier], boxes[index]
+                            if min(a['y'] + a['height'], b['y'] + b['height']) > max(a['y'], b['y']):
+                                assert abs(metric['baseline'] - metrics[earlier]['baseline']) <= 1, metrics
             if scenario == 'department-review':
                 assert latest['state'] == 'needs_review'
                 assert latest['value'] == 100
@@ -383,30 +406,39 @@ def test_browser_layout_contrast_and_evidence(browser, client, tmp_path, scenari
                 assert target_line.inner_text() == 'Hedef: 100'
                 assert difference.inner_text() == 'Fark: 0'
                 assert 'Dönem kayıtları kontrol ediliyor.' in item.inner_text()
-                history = item.locator('xpath=..').locator('details').last
-                history.evaluate('(el) => { el.open = true; }')
-                evidence_lists = [
-                    item.locator('.indicator-evidence-list').first,
-                    history.locator('.indicator-evidence-list').first,
-                ]
-                for evidence_list in evidence_lists:
-                    sources = evidence_list.locator(':scope > li')
-                    assert sources.count() == 2
-                    source_line, file_line, next_source_line = page.evaluate("""els => els.map(el => {
-                      const range = document.createRange();
-                      range.selectNodeContents(el);
-                      const rect = range.getBoundingClientRect();
-                      return {x: rect.x, y: rect.y, bottom: rect.bottom};
-                    })""", [sources.nth(0).locator('p').nth(0).element_handle(),
-                           sources.nth(0).locator('p').nth(1).element_handle(),
-                           sources.nth(1).locator('p').nth(0).element_handle()])
-                    assert file_line['x'] > source_line['x']
-                    assert file_line['y'] - source_line['bottom'] < next_source_line['y'] - file_line['bottom']
-                    source_paragraph, file_paragraph = sources.nth(0).locator('p').all()
-                    assert file_paragraph.inner_text().startswith('Dosya:')
-                    source_font, file_font = page.evaluate("""els => els.map(el => parseFloat(getComputedStyle(el).fontSize))""",
-                                                           [source_paragraph.element_handle(), file_paragraph.element_handle()])
-                    assert file_font < source_font
+            # Current evidence and every history revision must group files with
+            # their source in verified and no-bar needs_review states alike.
+            history = item.locator('xpath=..').locator('details').last
+            history.evaluate('(el) => { el.open = true; }')
+            evidence_lists = [*item.locator('.indicator-evidence-list').all(),
+                              *history.locator('.indicator-evidence-list').all()]
+            assert len(evidence_lists) == 1 + len(row['actuals'])
+            for evidence_list in evidence_lists:
+                sources = evidence_list.locator(':scope > li')
+                assert sources.count() == 2
+                source_line, file_line, next_source_line = page.evaluate("""els => els.map(el => {
+                  const range = document.createRange();
+                  range.selectNodeContents(el);
+                  const rect = range.getBoundingClientRect();
+                  return {x: rect.x, y: rect.y, bottom: rect.bottom};
+                })""", [sources.nth(0).locator('p').nth(0).element_handle(),
+                       sources.nth(0).locator('p').nth(1).element_handle(),
+                       sources.nth(1).locator('p').nth(0).element_handle()])
+                assert file_line['x'] - source_line['x'] == pytest.approx(16, abs=1)
+                inside_gap = file_line['y'] - source_line['bottom']
+                between_gap = next_source_line['y'] - file_line['bottom']
+                assert between_gap - inside_gap >= 8
+                source_paragraph, file_paragraph = sources.nth(0).locator('p').all()
+                assert file_paragraph.inner_text().startswith('Dosya:')
+                link = file_paragraph.locator('a')
+                assert link.inner_text() == 'sentetik-kanit.pdf · Dosya sürümü 1'
+                assert link.get_attribute('href') == row['actuals'][-1]['evidence'][0]['files'][0]['download_url']
+                assert file_paragraph.evaluate("el => el.firstChild.textContent.trim()") == 'Dosya:'
+                assert file_paragraph.evaluate("el => getComputedStyle(el).color") == 'rgb(84, 91, 100)'
+                source_font, file_font = page.evaluate("""els => els.map(el => parseFloat(getComputedStyle(el).fontSize))""",
+                                                       [source_paragraph.element_handle(), file_paragraph.element_handle()])
+                assert (source_font, file_font) == (16, 14)
+            history.evaluate('(el) => { el.open = false; }')
             if expected_bar:
                 track_box = bar.bounding_box()
                 marker_box = bar.locator('.indicator-bullet-target').bounding_box()

@@ -70,10 +70,12 @@
   display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--space-2) var(--space-3);
 }
 .activity-report-detail-page .indicator-actual {
+  /* Let label, number, unit, pill, target and difference share the flex baseline. */
   display: contents;
   color: var(--text-secondary);
 }
-.activity-report-detail-page .indicator-actual .status { align-items: baseline; }
+/* The outer row aligns the pill by its text baseline, including on wrapped lines. */
+.activity-report-detail-page .indicator-actual .status { display: inline-block; }
 .activity-report-detail-page .indicator-actual strong {
   color: var(--text); font-size: var(--text-display); font-weight: var(--font-semibold);
   font-variant-numeric: tabular-nums;
@@ -101,8 +103,10 @@
 .activity-report-detail-page .indicator-evidence-list { margin-block: var(--space-3) 0; }
 .activity-report-detail-page .indicator-evidence-list li + li { margin-top: var(--space-4); }
 .activity-report-detail-page .indicator-evidence-list li > p { margin: 0; }
-.activity-report-detail-page .indicator-evidence-list li > p + p {
+.activity-report-detail-page .indicator-evidence-list li > p:first-child { font-size: var(--text-base); }
+.activity-report-detail-page .indicator-evidence-list .indicator-evidence-file {
   margin-top: var(--space-1); padding-left: var(--space-4); font-size: var(--text-sm);
+  color: var(--text-secondary);
 }
 .activity-report-detail-page .indicator-definition dl { display: grid; gap: var(--space-2); margin: 0 0 var(--space-4); }
 .activity-report-detail-page .indicator-definition dl > div {

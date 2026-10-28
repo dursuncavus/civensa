@@ -174,7 +174,7 @@
                 <li>
                   <p>{{ source.title }} · {{ source.locator }} · Kaynak sürümü: {{ source.source_revision }}</p>
                   {% for file in source.files|default([]) %}
-                    <p>
+                    <p class="indicator-evidence-file">
                       Dosya: <a href="{{ file.download_url }}">{{ file.filename }} · Dosya sürümü {{ file.version }}</a>
                     </p>
                   {% endfor %}
@@ -219,7 +219,7 @@
                     <li>
                       <p>{{ source.title }} · {{ source.locator }} · Kaynak sürümü: {{ source.source_revision }}</p>
                       {% for file in source.files|default([]) %}
-                        <p>
+                        <p class="indicator-evidence-file">
                           Dosya: <a href="{{ file.download_url }}">{{ file.filename }} · Dosya sürümü {{ file.version }}</a> · SHA256:
                           <code>{{ file.sha256 }}</code>
                         </p>
