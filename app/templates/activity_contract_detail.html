@@ -149,7 +149,6 @@
             <p class="indicator-actual">
               <strong>{{ latest.value|trnum if latest.value is not none else 'Kayıt yok' }}</strong>
               <span class="indicator-unit">{{ row.definition.unit }}</span>
-              <span class="indicator-value-separator">·</span>
               <span class="status indicator-state {{ latest.state }}">{{ {'verified':'Doğrulanmış','needs_review':'İncelenmeli','missing':'Eksik'}.get(latest.state, latest.state) }}</span>
             </p>
             <p class="indicator-target">Hedef: {% if row.definition.targets %}{% for target in row.definition.targets %}{{ target.value|trnum if target.state == 'verified' and target.value is not none else 'Doğrulanmalı' }}{% endfor %}{% else %}Kayıt yok{% endif %}</p>

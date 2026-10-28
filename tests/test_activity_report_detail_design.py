@@ -116,7 +116,9 @@ def render_pair(ctx):
     expected.subtract({'Raporu': 1, 'Performans': 1, 'Programı': 1})
     expected.update({'raporu': 1, 'performans': 1, 'programı': 1})
     indicator_count = len(ctx['report']['indicators'])
-    expected.subtract({'Hesaplama:': indicator_count, 'Kaynak:': indicator_count, '·': 3 * indicator_count})
+    separators = sum(bool(row['actuals']) for row in ctx['report']['indicators'])
+    expected.subtract({'Hesaplama:': indicator_count, 'Kaynak:': indicator_count,
+                       '·': 3 * indicator_count + separators})
     expected.update(added_words(after))
     assert visible_words(after) == +expected
     return before, after
@@ -342,6 +344,34 @@ def test_browser_layout_contrast_and_evidence(browser, client, tmp_path, scenari
             bar = item.locator('.indicator-bullet')
             assert bar.count() == int(expected_bar)
             assert '%' not in item.inner_text()
+            value_summary = item.locator('.actual-summary')
+            actual = value_summary.locator('.indicator-actual')
+            assert value_summary.locator('.indicator-value-separator').count() == 0
+            assert '·' not in value_summary.inner_text()
+            label_box = value_summary.locator('h3').bounding_box()
+            actual_box = actual.bounding_box()
+            target_box = value_summary.locator('.indicator-target').bounding_box()
+            assert abs(label_box['x'] - actual_box['x']) <= 1
+            assert abs(label_box['x'] - target_box['x']) <= 1
+            if bar.count():
+                assert abs(label_box['x'] - bar.bounding_box()['x']) <= 1
+            difference = value_summary.locator('.indicator-difference')
+            if difference.count():
+                difference_box = difference.bounding_box()
+                if width == 1440:
+                    assert abs(target_box['y'] - difference_box['y']) <= 2
+                if width == 390:
+                    assert abs(label_box['x'] - difference_box['x']) <= 1
+            if latest and latest['value'] is not None:
+                number = actual.locator('strong')
+                unit = actual.locator('.indicator-unit')
+                status = actual.locator('.status')
+                assert page.evaluate('(el) => getComputedStyle(el).alignItems', actual.element_handle()) == 'baseline'
+                number_box = number.bounding_box()
+                unit_box = unit.bounding_box()
+                status_box = status.bounding_box()
+                assert abs(number_box['y'] + number_box['height'] / 2
+                           - status_box['y'] - status_box['height'] / 2) <= 2
             if expected_bar:
                 track_box = bar.bounding_box()
                 marker_box = bar.locator('.indicator-bullet-target').bounding_box()

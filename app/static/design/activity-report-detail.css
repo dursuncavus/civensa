@@ -66,11 +66,17 @@
 .activity-report-detail-page .indicator-summary-separator { color: var(--text-secondary); }
 .activity-report-detail-page .indicator-summary,
 .activity-report-detail-page .indicator-definition { max-width: 44rem; }
-.activity-report-detail-page .indicator-value-summary { justify-content: flex-start; }
+.activity-report-detail-page .indicator-value-summary {
+  display: grid; grid-template-columns: max-content max-content; align-items: start;
+  column-gap: var(--space-3); row-gap: var(--space-1);
+}
+.activity-report-detail-page .indicator-value-summary h3,
+.activity-report-detail-page .indicator-value-summary .indicator-actual { grid-column: 1 / -1; }
 .activity-report-detail-page .indicator-actual {
-  display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--space-2);
+  display: flex; flex-wrap: nowrap; align-items: baseline; gap: var(--space-2);
   color: var(--text-secondary);
 }
+.activity-report-detail-page .indicator-actual .status { align-self: center; }
 .activity-report-detail-page .indicator-actual strong {
   color: var(--text); font-size: var(--text-display); font-weight: var(--font-semibold);
   font-variant-numeric: tabular-nums;
@@ -108,6 +114,7 @@
 .activity-report-detail-page :is(label, dt) { text-transform: none; letter-spacing: normal; }
 @media (max-width: 480px) {
   .activity-report-detail-page .indicator-definition dl > div { grid-template-columns: minmax(0, 1fr); gap: var(--space-1); }
+  .activity-report-detail-page .indicator-value-summary { grid-template-columns: minmax(0, 1fr); }
 }
 /* app.js appends AJAX errors to the record; retain that hook and show them above its form. */
 .activity-report-detail-page [data-draft-record] { display: flex; flex-direction: column; }
