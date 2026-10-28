@@ -488,7 +488,8 @@ def test_deadline_readonly_and_stale_edits(db, monitoring, monkeypatch):
 @pytest.mark.parametrize('expired', [False, True])
 def test_strategy_forms_unchanged_at_deadline(db, monitoring, client, monkeypatch, status, expired):
     from app.main import app, require_user
-    from test_ic_our_actions_design import frozen_environment, ScreenContract
+    from test_ic_our_actions_design import ScreenContract
+    from test_internal_control_design import frozen
 
     d = monitoring
     batch = d['body']
@@ -509,8 +510,8 @@ def test_strategy_forms_unchanged_at_deadline(db, monitoring, client, monkeypatc
     for path in ['/internal-control/monitoring', f'/internal-control/monitoring/batches/{batch.id}']:
         response = client.get(path)
         assert response.status_code == 200
-        expected = frozen_environment().get_template(response.template.name).render(response.context)
-        assert response.content == expected.encode()
+        # CIV-145 changes presentation while preserving all rendered contracts.
+        frozen(response)
         if '/batches/' in path:
             actions = {dict(attrs)['value'] for tag, attrs in ScreenContract(response.text).controls
                        if tag == 'button' and dict(attrs).get('name') == 'action'}

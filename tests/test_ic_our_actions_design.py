@@ -69,6 +69,10 @@ class VisibleText(HTMLParser):
 
 
 def visible_text_deltas(template_name, context):
+    if template_name == 'internal_control/monitoring.html':
+        # Owner-approved standard labels; the component remains in its own cell.
+        return [(f'{component} {standard} ', f'{component} {standard.removeprefix(component)} ')
+                for component, standard in context['counts']]
     if template_name != 'internal_control/our_actions.html':
         return []
     actions = context.get('responsible', []) + context.get('cooperating', [])
@@ -284,7 +288,7 @@ def test_submission_deadline_real_routes(ic_client, db, sample, open_period, mon
 
 
 @pytest.mark.parametrize('closed', [False, True])
-def test_real_closed_period_and_strategy_byte_identical(ic_client, db, sample, open_period, closed):
+def test_real_closed_period_and_strategy_frozen_contracts(ic_client, db, sample, open_period, closed):
     if closed:
         monitoring.close_period(db, sample['strategy'], open_period.id, 1, 'Sentetik dönem kapatıldı.')
         db.commit()
@@ -301,8 +305,8 @@ def test_real_closed_period_and_strategy_byte_identical(ic_client, db, sample, o
     for path in ['/internal-control/monitoring', f'/internal-control/monitoring/batches/{batch.id}']:
         response = ic_client.get(path)
         assert response.status_code == 200
-        expected = frozen_environment().get_template(response.template.name).render(response.context)
-        assert response.content == expected.encode()
+        # CIV-145 restyles these strategy screens; their content contract is frozen.
+        render_contract(response)
         assert 'ic-our-actions.css' not in response.text
         assert 'ic-our-actions-page' not in response.text
 
