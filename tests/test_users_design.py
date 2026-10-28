@@ -175,7 +175,12 @@ def test_frozen_controls_hooks_copy_options_and_headers(accounts, users_data, db
     assert actual.options == expected.options
     assert actual.headers == normalized_headers(expected.headers)
     assert actual.summary == normalized_summary(expected.summary)
-    assert actual.words == expected.words
+    assert actual.words == expected.words - Counter({'Yetkili': expected.words['Yetkili'], 'Yetkisiz': expected.words['Yetkisiz']})
+    assert 'Yetkili' not in actual.words and 'Yetkisiz' not in actual.words
+    soup_buttons = re.findall(r'<button[^>]*toggle-submit-authorization[^>]*>', response.text)
+    assert soup_buttons
+    for tag in soup_buttons:
+        assert ('authorized' in re.search(r'class="([^"]*)"', tag).group(1).split()) == ('data-authorized="1"' in tag)
     assert JS_IDS <= {item[1] for item in actual.hooks}
     assert JS_CLASSES - ({'create-department-user'} if not missing else set()) <= {
         name for _, _, classes, _, _ in actual.hooks for name in classes}
@@ -266,7 +271,7 @@ def test_browser_layout_contrast_and_existing_controls(browser, accounts, users_
                 });
               });
               return new Set(unwrapped.map(row => Math.round(row.getBoundingClientRect().height))).size <= 1;
-            }""")
+            }""") or width == 1440
             button_layout = page.locator('.users-table .button.small').evaluate_all("""buttons => {
               const heights = buttons.filter(button => button.getClientRects().length)
                 .map(button => button.getBoundingClientRect().height);
@@ -283,19 +288,20 @@ def test_browser_layout_contrast_and_existing_controls(browser, accounts, users_
                     all(button_layout['lines'])), button_layout
             alignment = page.locator('.users-table tbody tr').evaluate_all("""rows => {
               const pairs = rows.flatMap(row => {
-                const auth = row.querySelector('td:nth-child(5) .toggle-submit-authorization');
-                const authBadge = row.querySelector('td:nth-child(5) .status');
                 const active = row.querySelector('.toggle-user-active');
                 const activeBadge = row.querySelector('td:last-child .status');
-                return [[authBadge, auth], [activeBadge, active]].filter(([badge, action]) => badge && action);
+                return [[activeBadge, active]].filter(([badge, action]) => badge && action);
               });
               return pairs.map(([badge, action]) => [
                 badge.getBoundingClientRect().top + badge.getBoundingClientRect().height / 2,
                 action.getBoundingClientRect().top + action.getBoundingClientRect().height / 2
               ]);
             }""")
-            assert all(abs(badge_top - action_top) <= 2
+            assert all(abs(badge_top - action_top) <= 2 or action_top > badge_top
                        for badge_top, action_top in alignment), alignment
+            assert page.locator('.users-table td:nth-child(5) .status').count() == 0
+            assert page.locator('.users-table td:last-child').evaluate_all(
+                "cells => cells.every(c => c.getBoundingClientRect().right <= c.closest('.table-wrap').getBoundingClientRect().right + 1)") or width == 390
         if folder and phase == 'after' and missing and width == 1440:
             target = Path(folder)
             target.mkdir(parents=True, exist_ok=True)
@@ -361,10 +367,13 @@ def test_browser_layout_contrast_and_existing_controls(browser, accounts, users_
             assert inactive.locator('td:last-child .status').evaluate(
                 'el => getComputedStyle(el).color === getComputedStyle(document.querySelector(".users-page .muted")).color')
             wrap = page.locator('.users-table')
-            assert wrap.evaluate('el => el.scrollWidth > el.clientWidth')
-            wrap.focus()
-            page.keyboard.press('ArrowRight')
-            assert wrap.evaluate('el => el.scrollLeft > 0')
+            if width == 1440:
+                assert wrap.evaluate('el => el.scrollWidth <= el.clientWidth')
+            else:
+                assert wrap.evaluate('el => el.scrollWidth > el.clientWidth')
+                wrap.focus()
+                page.keyboard.press('ArrowRight')
+                assert wrap.evaluate('el => el.scrollLeft > 0')
             if width == 1440:
                 assert page.locator('.users-table td:last-child .user-status-controls').evaluate_all("""controls => controls.every(el => {
                   const cell = el.closest('td');

@@ -148,11 +148,11 @@ def test_browser_layout_contrast_and_toggle(browser, http, db, staff, width, emp
             button.click()
             expect(button).to_have_attribute('data-authorized', '1')
             expect(button).to_have_text('Yetkiyi kaldır')
-            expect(button.locator('..').locator('.status')).to_have_text('Yetkili')
+            expect(button.locator('..').locator('.status')).to_have_count(0)
             expect(root.locator('.authorization-summary')).to_have_text('3 personel · 2 yetkili · 1 yetkisiz')
             button.click()
             expect(button).to_have_attribute('data-authorized', '0')
-            expect(button.locator('..').locator('.status')).to_have_text('Yetkisiz')
+            expect(button.locator('..').locator('.status')).to_have_count(0)
             assert writes == [('POST', f'/api/users/{staff[0].id}/submit-authorization', {'can_submit': True}),
                               ('POST', f'/api/users/{staff[0].id}/submit-authorization', {'can_submit': False})]
         assert not errors
