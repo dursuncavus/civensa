@@ -575,3 +575,6 @@ Release plan (trigger = CIV-152/153/154 merged; 002/003 and pending owner looks 
 
 ## D-316 (29 Oct 2026 ~23:50 Istanbul, owner + lead, live session CV Lider 40) — final council-approved 2027 PP PDF tomorrow
 BEYAN (owner 23:45): on 30 Oct during the day the owner gives the lead the final 2027 Performans Programı PDF approved by the council (meclis). Decision: this PDF becomes the only source for the 2027 first load (D-315 step 6). Lead first compares it with the source used in docs/first-load/dryrun-printed.md (counts per department, cards, indicators, activities, economic values; changed amounts listed), reports differences to the owner, then updates the first-load source and live-runbook. No live action from this step.
+
+## D-317 (29 Oct 2026 ~23:55 Istanbul, owner + lead, live session CV Lider 40) — overnight slot: CIV-156
+BEYAN (owner 23:48): Codex has four tasks (CIV-152 done, CIV-153/154/155 running); one more slot free overnight. CIV-156 (Codex, GPT-6.1 Sol, effort Yüksek): synthetic upgrade test from the live schema (c048) through the seven phase5 revisions to head, twice, zero row loss, app start + key pages. Supports D-315 step 2 (the real-backup rehearsal still decides). No file overlap with other tasks.
