@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block page_title %}Faaliyet Eşleştirme Kuyruğu{% endblock %}
+{% block page_subtitle %}{{ period.year }} Performans Programı · Faaliyetlerin alt program, kart ve resmî katalog bağlantılarını tamamlayın{% endblock %}
+{% block content %}
+<div class="cards mapping-summary">
+  <div class="card"><span>Eşleştirme bekleyen faaliyet</span><b class="{{ 'bad' if unresolved_count else 'ok' }}">{{ unresolved_count }}</b></div>
+  <div class="card"><span>Alt program eksik</span><b>{{ mapping_counts.subprogram }}</b></div>
+  <div class="card"><span>Kart eksik</span><b>{{ mapping_counts.card }}</b></div>
+  <div class="card"><span>Resmî katalog eksik</span><b>{{ mapping_counts.catalogue }}</b></div>
+  <div class="card"><span>Müdürlük</span><b>{{ groups|length }}</b></div>
+  <div class="card"><span>Metin önerisi</span><b>{{ suggestion_count }}</b></div>
+  <div class="card"><span>Güçlü öneri</span><b class="{{ 'ok' if strong_suggestion_count else '' }}">{{ strong_suggestion_count }}</b></div>
+  <div class="card"><span>Durum</span><b class="{{ 'bad' if unresolved_count else 'ok' }}">{{ 'Kontrol gerekli' if unresolved_count else 'Hazır' }}</b></div>
+</div>
+
+{% if groups %}
+<section class="mapping-help">
+  <div class="section-head"><div><h2>Nasıl kullanılır?</h2><p class="muted">Civensa yalnız güvenli kaynak ilişkilerini otomatik bağlar. Buradaki kayıtlar için tahmin zorlamaz. Uygun Program / Alt Programı seçip topluca kaydedebilirsiniz.</p></div><div class="rowbuttons"><a class="button" href="/api/activity-mappings/export.csv?period_id={{ period.id }}">Kuyruğu CSV indir</a><button id="selectStrongSuggestions" class="button">Güçlü önerileri seç</button><button id="saveAllMappings" class="button primary">Seçimleri Kaydet</button></div></div>
+  <p class="muted">Toplam, en az bir bağlantısı eksik faaliyetleri sayar; aynı faaliyette birden fazla eksik olabilir. Kart ve katalog bağlantıları için “Performans Kartlarını Aç” adımını kullanın. CSV ve toplu kayıt yalnız alt program bağlantısını değiştirir.</p>
+  <p class="muted">Öneriler hiçbir zaman kendiliğinden seçilmez veya kaydedilmez. “Güçlü önerileri seç” yalnız güveni en az %50 olan önerileri forma taşır; kaydetmeden önce kullanıcı onayı gerekir.</p>
+  <div class="mapping-csv-import">
+    <label>Doldurulmuş eşleştirme CSV'si<input id="mappingCsvFile" type="file" accept=".csv,text/csv"></label>
+    <div class="actions"><button id="previewMappingCsv" class="button">CSV'yi kontrol et</button><button id="applyMappingCsv" class="button primary" disabled>Onayla ve eşleştir</button></div>
+    <div id="mappingCsvResult" class="muted" aria-live="polite">Boş bırakılan satırlar atlanır; dosyanın tamamı doğrulanmadan hiçbir eşleştirme kaydedilmez.</div>
+  </div>
+</section>
+{% if recent_batches %}<section><div class="section-head"><div><h2>Son CSV işlemleri</h2><p class="muted">Sonradan değişmeyen işlem grupları tek adımda güvenle geri alınabilir.</p></div></div><div class="snapshot-list">{% for batch in recent_batches %}<div class="snapshot-item"><b>{{ batch.count }} faaliyet · {{ batch.created_at|turkey_time }} · {{ batch.actor|actor_label }}</b><span>{{ batch.status|status_label }} · İşlem {{ batch.id }}</span>{% if batch.can_revert %}<button class="button small revert-mapping-batch" data-batch="{{ batch.id }}">Geri al</button>{% else %}<span>Geri alma kilitli</span>{% endif %}</div>{% endfor %}</div></section>{% endif %}
+<div class="mapping-filterbar">
+  <label>Müdürlük filtresi<select id="mappingDepartmentFilter"><option value="">Tüm müdürlükler</option>{% for g in groups %}<option value="{{ g.department.id }}">{{ department_names[g.department.id] }}</option>{% endfor %}</select></label>
+  <label>Arama<input id="mappingSearch" placeholder="Faaliyet adında ara"></label>
+</div>
+
+<div id="mappingGroups" class="mapping-groups">
+{% for g in groups %}
+<section class="mapping-group" data-department="{{ g.department.id }}">
+  <div class="section-head"><div><h2>{{ department_names[g.department.id] }}</h2><p class="muted">{{ g.activities|length }} faaliyet eşleştirme bekliyor · {{ g.choices|length }} Program / Alt Program seçeneği</p></div><a class="button small" href="/department/{{ g.department.id }}?period_id={{ period.id }}">Müdürlüğü Aç</a></div>
+  {% if not g.choices %}<div class="issue-list">Bu müdürlük için performans göstergelerinden türetilebilen Program / Alt Program bulunamadı. Önce gösterge yapısını kontrol edin.</div>{% endif %}
+  <div class="mapping-list">
+  {% for a in g.activities %}
+    {% set suggestion=g.suggestions[a.id] %}
+    {% set state=mapping_states[a.id] %}
+    <article class="mapping-row" data-activity="{{ a.id }}" data-name="{{ a.name|lower }}">
+      <div class="mapping-activity"><span class="eyebrow">Faaliyet</span><h3>{{ a.name }}</h3>{% if a.explanation %}<p>{{ a.explanation }}</p>{% endif %}
+        <ul class="mapping-states">
+          <li class="{{ 'ok' if state.subprogram else 'bad' }}">Alt program: {{ 'Tamam' if state.subprogram else 'Eksik' }}{% if not state.subprogram %}<p>Alt program seçilmedi: bu faaliyet için Program / Alt Program seçip kaydedin.</p>{% endif %}</li>
+          <li class="{{ 'ok' if state.card else 'bad' }}">Kart: {{ 'Tamam' if state.card else 'Eksik' }}{% if not state.card %}<p>Kart seçilmedi: faaliyeti bir performans kartına bağlayın.</p>{% endif %}</li>
+          <li class="{{ 'ok' if state.catalogue else 'bad' }}">Resmî katalog: {{ 'Tamam' if state.catalogue else 'Eksik' }}{% if not state.catalogue %}<p>Resmî katalog bağlantısı yok: faaliyeti resmî faaliyet kataloğundaki bir kayda bağlayın.</p>{% endif %}</li>
+        </ul>
+        {% if not state.card or not state.catalogue %}<a class="button small" href="/program/{{ g.department.id }}?period_id={{ period.id }}">Performans Kartlarını Aç</a>{% endif %}
+      </div>
+      <div class="mapping-choice">
+        {% if not state.subprogram %}
+        <label>Program / Alt Program
+          <select class="mapping-select" data-activity="{{ a.id }}" {% if not g.choices %}disabled{% endif %}>
+            <option value="">Seçim yapın</option>
+            {% for sp in g.choices %}<option value="{{ sp.id }}">{{ sp.program.name }} / {{ sp.name }}</option>{% endfor %}
+          </select>
+        </label>
+        {% if suggestion.subprogram_id and suggestion.score>=0.22 %}<div class="mapping-suggestion {{ 'strong' if suggestion.score>=0.50 else '' }}">Civensa önerisi · güven {{ (suggestion.score*100)|round|int }}% <button type="button" class="button small choose-suggestion" data-activity="{{ a.id }}" data-subprogram="{{ suggestion.subprogram_id }}" data-score="{{ (suggestion.score*100)|round|int }}">Öneriyi seç</button></div>{% else %}<div class="mapping-suggestion muted-suggestion">Otomatik öneri için yeterli kanıt yok.</div>{% endif %}
+        {% endif %}
+      </div>
+    </article>
+  {% endfor %}
+  </div>
+</section>
+{% endfor %}
+</div>
+<div class="sticky-save"><span><b id="selectedMappingCount">0</b> faaliyet seçildi</span><button id="saveMappingsBottom" class="button primary">Seçimleri Kaydet</button></div>
+{% else %}
+<section class="empty-state mapping-empty"><h2>Eşleştirme kuyruğu temiz</h2><p>Bu dönemdeki tüm faaliyetlerin alt program, kart ve resmî katalog bağlantıları tamamlandı.</p><a class="button primary" href="/dashboard?period_id={{ period.id }}">Genel Bakışa Dön</a></section>
+{% endif %}
+{% endblock %}
