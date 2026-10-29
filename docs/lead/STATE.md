@@ -8,11 +8,11 @@ Tags: DOĞRULANDI (lead checked) · TARİHSEL (past fact) · BEYAN (owner said) 
 ## Next session — start here (D-253)
 Claude live (CV Lider 40, 29 Oct). CIV-151 merged 0b8c72a; CIV-149 merged by the owner 49abd45 (D-312).
 Claude's next session: `CV Lider 41 · Claude Opus 5.5 · civensa-lead`. Read this section and the last decision in DECISIONS.md first.
-1. Codex: CIV-152 006 + 015 (D-312) — review its PR → CI → merge.
+1. Codex: CIV-152 006 + 015 (D-312) and CIV-153 038 Ekonomik dağılım (D-313) — review each PR → CI → merge.
 2. Owner looks pending: CIV-144 (007/008 value row + evidence), CIV-145 (İç Kontrol 031), CIV-146/147 (users), CIV-148 (016 audit labels), CIV-149, CIV-150 (001), CIV-151 (039/040; LOW items in D-312). Give the owner one gallery artifact (screenshots in docs/design/rollout/**).
-3. Next screens after CIV-152: 002/003 (003 waits for Ali); check helper templates budget_detail, economic_split, assurance_statement, first_period, structure_wizard against INDEX.
+3. Next screens after CIV-152/153: 002/003 (003 waits for Ali); check helper templates budget_detail, assurance_statement, first_period, structure_wizard against INDEX.
 4. Quota (BEYAN 29 Oct 20:49): week 76%, reset Sat 00:00; owner: keep working until then.
-Next IDs: task CIV-153, decision D-313.
+Next IDs: task CIV-154, decision D-314.
 
 ## Claude quota (BEYAN, owner 27 Oct 16:21)
 - Session 11%, week 67%, weekly reset Saturday 00:00 (D-300). Copilot 96 / 1,500 credits, reset 1 Nov.
@@ -25,6 +25,7 @@ Evidence rule (D-252): one-screen changes → targeted tests + changed-state scr
 | PR | Task | State | Next action |
 | --- | --- | --- | --- |
 | Codex | CIV-152 006/015 | dispatched 29 Oct | review → CI → merge → owner look |
+| Codex | CIV-153 038 Ekonomik dağılım | dispatched 29 Oct | review → CI → merge → owner look |
 Merged 29 Oct (D-312): #246 CIV-151 → 0b8c72a · #241 CIV-149 (owner) → 49abd45.
 Merged 29 Oct (D-311): #244 CIV-150 → 7e4335b.
 Merged 28–29 Oct by the owner (D-309): #232 CIV-144 · #234 CIV-145 → 22e35b7 · #236 CIV-146 → eff4a06 · #238 CIV-147 → f1b7adb · #239 CIV-148 → c622bf2.
