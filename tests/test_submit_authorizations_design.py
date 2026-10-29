@@ -132,26 +132,67 @@ def test_browser_layout_contrast_and_toggle(browser, http, db, staff, width, emp
             control.focus()
             pairs.update(map(tuple, page.evaluate(script)))
         assert all(contrast(pair) >= 4.5 for pair in pairs), [(p, contrast(p)) for p in pairs if contrast(p) < 4.5]
-        folder = os.getenv('CIVENSA_CIV119_SCREENSHOTS')
+        def colors(button):
+            return button.evaluate("""el => {
+                const style = getComputedStyle(el);
+                const token = (property, name) => {
+                    const probe = document.createElement('span');
+                    probe.style[property] = `var(${name})`;
+                    document.body.append(probe);
+                    const value = getComputedStyle(probe)[property];
+                    probe.remove();
+                    return value;
+                };
+                return {
+                    color: style.color,
+                    background: style.backgroundColor,
+                    border: style.borderColor,
+                    success: token('color', '--success'),
+                    successBackground: token('backgroundColor', '--success-bg'),
+                    defaultColor: token('color', '--text'),
+                    defaultBackground: token('backgroundColor', '--surface'),
+                    defaultBorder: token('borderColor', '--text-secondary')
+                };
+            }""")
+
+        if not empty:
+            authorized = root.locator(f'button[data-user="{staff[1].id}"]')
+            unauthorized = root.locator(f'button[data-user="{staff[0].id}"]')
+            authorized_colors = colors(authorized)
+            assert authorized_colors['color'] == authorized_colors['success']
+            assert authorized_colors['background'] == authorized_colors['successBackground']
+            unauthorized_colors = colors(unauthorized)
+            assert unauthorized_colors['color'] == unauthorized_colors['defaultColor']
+            assert unauthorized_colors['background'] == unauthorized_colors['defaultBackground']
+            assert unauthorized_colors['border'] == unauthorized_colors['defaultBorder']
+
+        folder = os.getenv('CIVENSA_CIV149_SCREENSHOTS')
         if folder:
             target = Path(folder)
             target.mkdir(parents=True, exist_ok=True)
             page.evaluate('document.activeElement.blur()')
             page.mouse.move(0, 0)
             if not empty and width == 390:
-                page.screenshot(path=str(target / 'authorizations-status-390.png'), full_page=True)
                 root.locator('.table-wrap').evaluate('el => el.scrollLeft = 0')
-            page.screenshot(path=str(target / f'authorizations-{"empty-" if empty else ""}{width}.png'), full_page=True)
+            if not empty:
+                page.screenshot(path=str(target / f'submit-authorizations-{width}.png'), full_page=True)
         if not empty:
             button = root.locator(f'button[data-user="{staff[0].id}"]')
             expect(button).to_have_text('Yetki ver')
             button.click()
             expect(button).to_have_attribute('data-authorized', '1')
             expect(button).to_have_text('Yetkiyi kaldır')
+            toggled_colors = colors(button)
+            assert toggled_colors['color'] == toggled_colors['success']
+            assert toggled_colors['background'] == toggled_colors['successBackground']
             expect(button.locator('..').locator('.status')).to_have_count(0)
             expect(root.locator('.authorization-summary')).to_have_text('3 personel · 2 yetkili · 1 yetkisiz')
             button.click()
             expect(button).to_have_attribute('data-authorized', '0')
+            reverted_colors = colors(button)
+            assert reverted_colors['color'] == reverted_colors['defaultColor']
+            assert reverted_colors['background'] == reverted_colors['defaultBackground']
+            assert reverted_colors['border'] == reverted_colors['defaultBorder']
             expect(button.locator('..').locator('.status')).to_have_count(0)
             assert writes == [('POST', f'/api/users/{staff[0].id}/submit-authorization', {'can_submit': True}),
                               ('POST', f'/api/users/{staff[0].id}/submit-authorization', {'can_submit': False})]
