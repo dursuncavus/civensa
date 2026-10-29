@@ -87,13 +87,15 @@ def empty(data):
                 suggestion_count=0, strong_suggestion_count=0, recent_batches=[])
 
 
-@pytest.mark.parametrize('state', ['populated', 'no-batches', 'empty', *range(8)])
+@pytest.mark.parametrize('state', ['populated', 'no-batches', 'history-whitespace', 'empty', *range(8)])
 def test_frozen_controls_hooks_attributes_links_and_all_visible_text(queue, state):
     response, data = queue
     if state == 'empty':
         data = empty(data)
     elif state == 'no-batches':
         data = dict(data, recent_batches=[])
+    elif state == 'history-whitespace':
+        data['recent_batches'][0].actor = Record(full_name='Sentetik <Yetkili>\nAdı & Soyadı', position='director')
     elif isinstance(state, int):
         data['mapping_states'][801] = Record(subprogram=bool(state & 1), card=bool(state & 2), catalogue=bool(state & 4))
     assert contract(render(response, data)) == contract(render(response, data, before=True))

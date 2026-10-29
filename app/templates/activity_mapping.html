@@ -80,7 +80,7 @@
             {% for batch in recent_batches %}
               <li>
                 {# Keep the existing compact history HTML contract used by test_pp_display. #}
-                {% filter replace('\n', '') %}
+                {% filter replace('\n', ' ') %}
                 <div class="snapshot-item">
                   <span class="mapping-batch-text">
                     <b>{{ batch.count }} faaliyet · {{ batch.created_at|turkey_time }} · {{ batch.actor|actor_label }}</b>
