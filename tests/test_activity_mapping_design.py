@@ -139,13 +139,18 @@ def assert_design(page, width, populated):
             assert control.evaluate("el => getComputedStyle(el).outlineStyle === 'solid'")
             pairs.update(map(tuple, page.evaluate(script)))
     assert all(contrast(pair) >= 4.5 for pair in pairs), [(p, contrast(p)) for p in pairs if contrast(p) < 4.5]
-    for item in root.locator('.mapping-counts > div,.mapping-states,.mapping-choice,.mapping-info,.snapshot-item,.mapping-filterbar,.section-head').all():
+    for item in root.locator('.mapping-counts > div,.mapping-states,.mapping-choice,.mapping-info,.mapping-csv-import,.snapshot-item,.mapping-filterbar,.section-head').all():
         assert item.bounding_box()['width'] <= 704
     status = root.locator('.mapping-summary .status')
     expect(status).to_have_text('Kontrol gerekli' if populated else 'Hazır')
     if not populated:
         return
     assert root.locator('.mapping-info p').count() == 3
+    if width >= 1024:
+        file = root.locator('#mappingCsvFile').bounding_box()
+        for control in root.locator('.mapping-csv-fields .button').all():
+            box = control.bounding_box()
+            assert abs(file['y'] + file['height'] - box['y'] - box['height']) <= 1
     filters = root.locator('.mapping-filterbar')
     assert len(filters.evaluate('el => getComputedStyle(el).gridTemplateColumns').split()) == (2 if width >= 1024 else 1)
     for row in root.locator('.mapping-row').all():
