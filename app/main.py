@@ -2281,7 +2281,7 @@ def audit_export(request: Request, db: Session = Depends(get_db), user: User = D
     users = {item.id: item for item in db.scalars(select(User).where(User.id.in_(user_ids))).all()} if user_ids else {}
     output = io.StringIO()
     writer = csv.writer(output)
-    writer.writerow(csv_row(["Tarih", "Kullanıcı", "İşlem", "Varlık", "Varlık ID", "Ayrıntı"]))
+    writer.writerow(csv_row(["Tarih", "Kullanıcı", "İşlem", "Kayıt", "Kayıt ID", "Değişiklik"]))
     for row in rows:
         actor = users.get(row.user_id)
         writer.writerow(csv_row([row.created_at.isoformat(sep=" "), actor.email if actor else "sistem", row.action, row.entity_type, row.entity_id or "", safe_audit_details(row.details)]))
