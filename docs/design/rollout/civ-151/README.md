@@ -28,6 +28,7 @@ içerik korunuyor; 040'ta ekleme/koruma/çakışma metin ve tabloları açık.
 Diğer görünür metinler, formlar, alan değerleri, seçili seçenekler, açık kayıtlar,
 ID/data/aria/role nitelikleri ve bağlantılar dondurulmuş sözleşmeyle karşılaştırılır.
 `test_publication_history.py` içindeki dört metin iddiası yeni ayraçlara birebir uyarlandı.
+`test_pp_manifest_ui.py` içindeki bir tam metin seçicisi de önizlemedeki yeni ayraca uyarlandı.
 
 ## Doğrulama
 
@@ -36,6 +37,8 @@ ID/data/aria/role nitelikleri ve bağlantılar dondurulmuş sözleşmeyle karş�
   **4 geçti**; kapsam, bölüm, dönemden kopyalama, katalog kaydı ve 422 yayın engeli.
 - Mevcut yayın geçmişi, form hata kurtarma, PP gösterim, yapı değişikliği ve mali
   mutabakat testleri: **151 geçti**.
+- Önizleme ayraç seçicisi güncellendikten sonra mevcut manifest tarayıcı akışları:
+  **4 geçti**. Geri alma düğmesinin normal/hover rengini kapsayan kontrol: **5 geçti**.
 - 1440/390: sayfa yatay taşması yok; tablolar kendi sarmalayıcılarında kayar;
   görünen metinlerde normal/hover/focus kontrastı en az **4,5:1**; uppercase dönüşümü yok;
   alanlar ve durum satırları en fazla 44rem, masaüstü alan ızgaraları iki sütun,

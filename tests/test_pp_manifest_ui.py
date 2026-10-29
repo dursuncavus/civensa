@@ -132,7 +132,7 @@ def test_word_preview_displays_sections_and_applies_and_reverts_in_browser(brows
         assert not db.scalar(select(ReportSection.id))
         page.get_by_role('link', name='Genel Bölüm İçeriklerini İncele').click()
         expect(page).to_have_url(f'http://testserver/report-builder/import/1?period_id={period.id}')
-        page.get_by_text('A- Yetki, Görev ve Sorumluluklar · Eklenecek', exact=True).click()
+        page.get_by_text('A- Yetki, Görev ve Sorumluluklar Eklenecek', exact=True).click()
         expect(page.get_by_text('5393 sayılı Kanun kapsamında hizmet sunulur.', exact=False)).to_be_visible()
         page.get_by_role('button', name='Önizlemeyi Uygula', exact=True).click()
         expect(page).to_have_url(f'http://testserver/report-builder/manifest?period_id={period.id}')
