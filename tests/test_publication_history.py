@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 import os
 from pathlib import Path
 
+from lxml.html import fromstring
 import pytest
 from playwright.sync_api import expect
 from sqlalchemy import event, select
@@ -52,7 +53,7 @@ def test_empty_and_single_publication(ready, db):
     assert 'Güncel sürüm' not in section(strategy, sub.period_id)
     publish(strategy, sub.period_id)
     text = section(strategy, sub.period_id)
-    assert 'Sürüm 1 · Güncel sürüm' in text
+    assert 'Sürüm 1 Güncel sürüm' in ' '.join(fromstring(text).text_content().split())
     assert 'Önceki sürüm' not in text
     assert 'düzeltme için açılan paketler' not in text
     assert 'role="alert"' not in text
@@ -91,7 +92,8 @@ def test_real_reopen_reapprove_republish_preserves_downloads(ready, db, sample, 
                          json={'decision': 'approve'}).status_code == 200
     publish(strategy, sub.period_id)
     text = section(strategy, sub.period_id)
-    assert text.index('Sürüm 2 · Güncel sürüm') < text.index('Sürüm 1 · Önceki sürüm — Sürüm 2 ile değiştirildi')
+    labels = ' '.join(fromstring(text).text_content().split())
+    assert labels.index('Sürüm 2 Güncel sürüm') < labels.index('Sürüm 1 Önceki sürüm · Sürüm 2 ile değiştirildi')
     current, previous = text.split('data-publication-version="1"')
     assert REASON in current and REASON not in previous
     assert 'Test Müdürlüğü' in current and 'Strateji' in current
@@ -220,10 +222,10 @@ def test_chromium_turkish_history(browser, ready, db, sample, viewport):
         page = context.new_page(); page.on('pageerror', lambda error: errors.append(str(error)))
         page.goto(f'http://testserver/report-builder?period_id={sub.period_id}#publication-history')
         history = page.get_by_role('region', name='Yayın sürümleri')
-        expect(history.get_by_role('heading', name='Sürüm 3 · Güncel sürüm', exact=True)).to_be_visible()
+        expect(history.get_by_role('heading', name='Sürüm 3 Güncel sürüm', exact=True)).to_be_visible()
         expect(history.get_by_role('alert')).to_contain_text('Yeniden onaydan sonra yeni sürüm oluşturun.')
         expect(history.locator('article')).to_have_count(3)
-        expect(history.locator('article').nth(1)).to_contain_text('Önceki sürüm — Sürüm 3 ile değiştirildi')
+        expect(history.locator('article').nth(1)).to_contain_text('Önceki sürüm · Sürüm 3 ile değiştirildi')
         expect(history.locator('article').nth(1)).to_contain_text(REASON)
         expect(history.locator('article').nth(1)).to_contain_text('20.10.2026 14:00')
         expect(history.locator('article').last).not_to_contain_text('düzeltme için açılan paketler')
