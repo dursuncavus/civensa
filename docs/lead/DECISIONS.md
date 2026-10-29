@@ -562,3 +562,7 @@ CIV-152 (Codex, GPT-6.1 Sol, effort Orta — two small templates): 006 Gösterge
 
 ## D-313 (29 Oct 2026 ~23:30 Istanbul, owner + lead, live session CV Lider 40) — second Codex slot: CIV-153
 BEYAN (owner 23:23): two Codex slots free. CIV-152 takes one; CIV-153 (Codex, GPT-6.1 Sol, effort Yüksek — money form with app.js hooks) takes the other: 038 Ekonomik dağılım (economic_split.html, last changed CIV-045, old style) onto the design system. No file overlap with CIV-152.
+
+## D-314 (29 Oct 2026 ~23:35 Istanbul, owner + lead, live session CV Lider 40) — third Codex slot: CIV-154; INDEX has 97 screens
+BEYAN (owner 23:27): CIV-152 and CIV-153 running, one more Codex slot free. CIV-154 (Codex, GPT-6.1 Sol, effort Yüksek — money screen with budget.js hooks and a shared include): 095 Bütçe aktarma ayrıntısı (budget_detail.html, last changed CIV-060, old style). No file overlap with CIV-152/153 (budget-reallocation.css append-only).
+DOĞRULANDI correction: ui-map-v1 INDEX lists 97 screens, not 49; 050–097 are mostly states of screens already moved. Lead to check 069 (first_period), 070–074 (structure wizard, CIV-131), 077–081 (modals), 082–097 states before choosing the next packages.
