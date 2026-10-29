@@ -22,6 +22,7 @@
 .submit-authorizations-page :is(.status.approved, .account-state.active) { color: var(--success); background: var(--success-bg); }
 .submit-authorizations-page :is(.status.draft, .account-state.inactive) { color: var(--text-secondary); background: var(--surface-muted); }
 .submit-authorizations-page .button.small { display: inline-flex; align-items: center; justify-content: center; min-height: var(--row-height); margin: var(--space-2) 0 0; padding: var(--space-1) var(--space-3); border: 1px solid var(--text-secondary); border-radius: var(--radius); background: var(--surface); color: var(--text); font: var(--font-medium) var(--text-sm) / var(--line-height) var(--font-family); }
+.submit-authorizations-page .toggle-submit-authorization.authorized { color: var(--success); background: var(--success-bg); border-color: var(--success); }
 .submit-authorizations-page .button.small:hover { background: var(--surface-muted); color: var(--text); }
 .submit-authorizations-page :is(button, [tabindex]):focus { outline: var(--focus); outline-offset: var(--focus-offset); box-shadow: none; }
 @media (max-width: 1100px) {
