@@ -196,6 +196,12 @@ def test_browser_synthetic_evidence(scenes, strategy_client, browser, width, sta
             expect(page.locator('fieldset')).to_have_attribute('disabled', '')
             expect(page.locator('[data-split-share]').first).to_be_disabled()
             expect(page.locator('button[type=submit]')).to_be_disabled()
+            if not before:
+                assert page.locator('button[type=submit]').evaluate("""el => {
+                  const select = document.querySelector('select');
+                  return getComputedStyle(el).backgroundColor === getComputedStyle(select).backgroundColor &&
+                    getComputedStyle(el).color === getComputedStyle(select).color;
+                }""")
         if not before:
             assert_visuals(page)
         # Capture after the interaction checks, at the top with table scroll reset.

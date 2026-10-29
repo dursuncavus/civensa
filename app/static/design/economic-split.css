@@ -44,4 +44,5 @@
 .economic-split-page .split-reason { width: 100%; max-width: 44rem; margin: var(--space-6) 0 var(--space-4); }
 .economic-split-page textarea { min-height: calc(var(--control-height) * 3); resize: vertical; }
 .economic-split-page :is(input,select,textarea,button):disabled,
+.economic-split-page .button:disabled,
 .economic-split-page .button:disabled:hover { border-color: var(--text-secondary); background: var(--surface-muted); color: var(--text-secondary); opacity: 1; cursor: not-allowed; }
