@@ -1,0 +1,47 @@
+/* CIV-153 · screen 038: page-local money form and disclosure panels. */
+.economic-split-page { min-width: 0; color: var(--text); overflow-wrap: anywhere; }
+.economic-split-page * { box-sizing: border-box; text-transform: none; letter-spacing: normal; }
+.economic-split-page p { margin: 0 0 var(--space-3); font-size: var(--text-sm); line-height: var(--line-height); }
+.economic-split-page strong { font-weight: var(--font-semibold); }
+.economic-split-page .page-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); max-width: 44rem; margin-bottom: var(--space-6); }
+.economic-split-page .button { display: inline-flex; align-items: center; justify-content: center; width: fit-content; max-width: 100%; min-height: var(--control-height); padding: var(--space-2) var(--space-4); border: 1px solid var(--text-secondary); border-radius: var(--radius); background: var(--surface); color: var(--text); font: var(--font-medium) var(--text-sm) / var(--line-height) var(--font-family); white-space: normal; text-decoration: none; cursor: pointer; }
+.economic-split-page .button:hover { background: var(--surface-muted); color: var(--text); }
+.economic-split-page .button.primary { border-color: var(--accent); background: var(--accent); color: var(--surface); }
+.economic-split-page .button.primary:hover { border-color: var(--accent-hover); background: var(--accent-hover); }
+.economic-split-page :is(a,button,input,select,textarea,summary,[tabindex]):focus { outline: var(--focus); outline-offset: var(--focus-offset); box-shadow: none; }
+.economic-split-page :is(.split-success,.split-error,.split-warning,.split-info,.split-empty) { max-width: 44rem; margin: 0 0 var(--space-4); padding: var(--space-4); border: 1px solid var(--border); border-radius: var(--radius); font-size: var(--text-sm); line-height: var(--line-height); }
+.economic-split-page .split-success { border-color: var(--success); background: var(--success-bg); color: var(--success); font-weight: var(--font-medium); }
+.economic-split-page .split-error { border-color: var(--danger); background: var(--danger-bg); color: var(--danger); }
+.economic-split-page .split-warning { border-color: var(--warning); background: var(--warning-bg); color: var(--warning); }
+.economic-split-page .split-info { background: var(--accent-soft); color: var(--text); }
+.economic-split-page .split-info > :last-child { margin-bottom: 0; }
+.economic-split-page .split-empty { background: var(--surface); color: var(--text-secondary); }
+.economic-split-page .record { min-width: 0; margin: 0 0 var(--space-6); padding: var(--space-4); border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); box-shadow: none; }
+.economic-split-page summary { max-width: 44rem; padding: var(--space-2); color: var(--text); font-size: var(--text-sm); font-weight: var(--font-medium); cursor: pointer; }
+.economic-split-page .record[open] > summary { margin-bottom: var(--space-3); }
+.economic-split-page .table-wrap { width: 100%; min-width: 0; max-width: 100%; overflow: auto; padding: var(--space-1); border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); }
+.economic-split-page table { width: 100%; min-width: 680px; margin: 0; border-collapse: collapse; }
+.economic-split-page :is(th,td) { padding: var(--space-3); border-bottom: 1px solid var(--border); color: var(--text); font-size: var(--text-sm); line-height: var(--line-height); text-align: left; vertical-align: top; }
+.economic-split-page th { background: var(--surface-muted); color: var(--text-secondary); font-weight: var(--font-medium); }
+.economic-split-page tbody tr:last-child > :is(th,td) { border-bottom: 0; }
+.economic-split-page fieldset { min-width: 0; margin: 0; padding: 0; border: 0; }
+.economic-split-page .split-table { min-width: 1280px; }
+.economic-split-page .split-table tbody th { min-width: 16rem; width: 16rem; background: var(--surface); color: var(--text); }
+.economic-split-page .split-table td:nth-child(2) { min-width: 15rem; }
+.economic-split-page .split-table td:nth-child(3) { min-width: 9rem; }
+.economic-split-page .money { text-align: right; font-variant-numeric: tabular-nums; }
+.economic-split-page .money > strong { white-space: nowrap; }
+.economic-split-page .money p { margin: var(--space-2) 0; color: var(--text-secondary); }
+.economic-split-page .remaining { min-width: 10rem; background: var(--accent-soft); }
+.economic-split-page output { display: block; font-weight: var(--font-semibold); }
+.economic-split-page .source-check { text-align: left; color: var(--warning); }
+.economic-split-page .source-check summary { width: fit-content; margin: 0 0 var(--space-2); padding: var(--space-1) var(--space-2); border-radius: var(--radius); background: var(--warning-bg); color: var(--warning); }
+.economic-split-page label { display: grid; min-width: 0; gap: var(--space-2); color: var(--text); font-size: var(--text-sm); font-weight: var(--font-medium); }
+.economic-split-page th label { margin-top: var(--space-3); }
+.economic-split-page :is(input:not([type=hidden]),select,textarea) { width: 100%; min-width: 0; max-width: 100%; min-height: var(--control-height); margin: 0; padding: var(--space-2) var(--space-3); border: 1px solid var(--text-secondary); border-radius: var(--radius); background: var(--surface); color: var(--text); font: var(--font-regular) var(--text-base) / var(--line-height) var(--font-family); }
+.economic-split-page input[data-split-share] { width: 10.5rem; min-width: 10.5rem; text-align: right; font-variant-numeric: tabular-nums; }
+.economic-split-page :is(input,textarea)::placeholder { color: var(--text-secondary); opacity: 1; }
+.economic-split-page .split-reason { width: 100%; max-width: 44rem; margin: var(--space-6) 0 var(--space-4); }
+.economic-split-page textarea { min-height: calc(var(--control-height) * 3); resize: vertical; }
+.economic-split-page :is(input,select,textarea,button):disabled,
+.economic-split-page .button:disabled:hover { border-color: var(--text-secondary); background: var(--surface-muted); color: var(--text-secondary); opacity: 1; cursor: not-allowed; }
