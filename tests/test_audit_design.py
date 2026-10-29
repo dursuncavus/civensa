@@ -101,7 +101,8 @@ def assert_frozen(response, **options):
     before, after = AuditContract(old), AuditContract(actual)
     assert before.controls == after.controls
     assert before.links == after.links
-    assert before.headers == after.headers == ['Tarih', 'Kullanıcı', 'İşlem', 'Varlık', 'Ayrıntı']
+    assert before.headers == ['Tarih', 'Kullanıcı', 'İşlem', 'Varlık', 'Ayrıntı']
+    assert after.headers == ['Tarih', 'Kullanıcı', 'İşlem', 'Kayıt', 'Değişiklik']
     if options.get('rows') == []:
         assert after.cells[-1] == 'Filtreye uygun kayıt bulunamadı.'
     else:
@@ -170,7 +171,7 @@ def test_csv_export_preserves_original_codes_and_raw_details(audit_client, db, s
         f'/api/audit/export.csv?period_id={sample["period"].id}&action=activity_update')
     assert response.status_code == 200
     assert response.content == (
-        '\ufeffTarih,Kullanıcı,İşlem,Varlık,Varlık ID,Ayrıntı\r\n'
+        '\ufeffTarih,Kullanıcı,İşlem,Kayıt,Kayıt ID,Değişiklik\r\n'
         f'2026-10-26 09:30:00,{sample["strategy"].email},activity_update,activity,'
         f'{sample["activity"].id},revision=3;subprogram_id=15\r\n'
     ).encode('utf-8')
