@@ -1,0 +1,63 @@
+/* CIV-151: page-local publication panels, fields, disclosures and text badges. */
+:is(.report-builder-page,.section-import-page) { min-width: 0; color: var(--text); overflow-wrap: anywhere; }
+:is(.report-builder-page,.section-import-page) * { box-sizing: border-box; text-transform: none; letter-spacing: normal; }
+:is(.report-builder-page,.section-import-page) :is(h2,h3,h4,p,ul) { margin: 0 0 var(--space-3); }
+:is(.report-builder-page,.section-import-page) :is(h2,h3,h4) { color: var(--text); font-weight: var(--font-semibold); }
+:is(.report-builder-page,.section-import-page) h2 { font-size: var(--text-section); }
+:is(.report-builder-page,.section-import-page) h3 { font-size: var(--text-card); }
+:is(.report-builder-page,.section-import-page) h4 { font-size: var(--text-base); }
+:is(.report-builder-page,.section-import-page) :is(p,.muted) { color: var(--text-secondary); font-size: var(--text-sm); line-height: var(--line-height); }
+:is(.report-builder-page,.section-import-page) p { max-width: 44rem; }
+:is(.report-builder-page,.section-import-page) section { min-width: 0; margin: 0 0 var(--space-6); padding: var(--space-6); border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); box-shadow: none; }
+:is(.report-builder-page,.section-import-page) section > :last-child { margin-bottom: 0; }
+:is(.report-builder-page,.section-import-page) a { color: var(--accent); }
+:is(.report-builder-page,.section-import-page) a:hover { color: var(--accent-hover); }
+:is(.report-builder-page,.section-import-page) :is(a,button,input,select,textarea,summary):focus { outline: var(--focus); outline-offset: var(--focus-offset); box-shadow: none; }
+:is(.report-builder-page,.section-import-page) .record { min-width: 0; margin: 0; padding: var(--space-4) 0; border: 0; border-top: 1px solid var(--border); border-radius: 0; background: var(--surface); box-shadow: none; }
+:is(.report-builder-page,.section-import-page) summary { max-width: 44rem; padding: var(--space-2) 0; cursor: pointer; color: var(--text); font-size: var(--text-base); font-weight: var(--font-medium); }
+:is(.report-builder-page,.section-import-page) summary > span { vertical-align: middle; }
+:is(.report-builder-page,.section-import-page) summary .status { margin-left: var(--space-2); }
+:is(.report-builder-page,.section-import-page) details[open] > summary { margin-bottom: var(--space-4); }
+:is(.report-builder-page,.section-import-page) .status { display: inline-block; padding: var(--space-1) var(--space-2); border-radius: var(--radius); background: var(--surface-muted); color: var(--text-secondary); font-size: var(--text-sm); font-weight: var(--font-medium); }
+:is(.report-builder-page,.section-import-page) :is(.status.success,.pp-status-success) { color: var(--success); background: var(--success-bg); }
+:is(.report-builder-page,.section-import-page) :is(.status.warning,.pp-status-warning) { color: var(--warning); background: var(--warning-bg); }
+.report-builder-page .pp-status-danger { color: var(--danger); background: var(--danger-bg); }
+.report-builder-page .report-fields, .report-builder-page form.record { display: grid; grid-template-columns: minmax(0,1fr); align-items: end; gap: var(--space-4); max-width: 44rem; margin: var(--space-4) 0 0; }
+.report-builder-page label { display: grid; min-width: 0; gap: var(--space-2); color: var(--text); font-size: var(--text-sm); font-weight: var(--font-medium); }
+.report-builder-page :is(input:not([type=hidden]),select,textarea) { width: 100%; min-width: 0; max-width: 100%; min-height: var(--control-height); margin: 0; padding: var(--space-2) var(--space-3); border: 1px solid var(--text-secondary); border-radius: var(--radius); background: var(--surface); color: var(--text); font: var(--font-regular) var(--text-base) / var(--line-height) var(--font-family); }
+.report-builder-page input[type=file] { font-size: var(--text-sm); }
+.report-builder-page input[type=file]::file-selector-button { margin-right: var(--space-2); padding: var(--space-1) var(--space-2); border: 1px solid var(--text-secondary); border-radius: var(--radius); background: var(--surface-muted); color: var(--text); font: inherit; }
+.report-builder-page textarea { min-height: calc(var(--control-height) * 3); resize: vertical; }
+.report-builder-page .report-fields > :is(button,.return-note,label:has(textarea),label:has(select[multiple])) { grid-column: 1 / -1; }
+:is(.report-builder-page,.section-import-page) .button { display: inline-flex; align-items: center; justify-content: center; width: fit-content; min-height: var(--control-height); max-width: 100%; margin: 0; padding: var(--space-2) var(--space-4); border: 1px solid var(--text-secondary); border-radius: var(--radius); background: var(--surface); color: var(--text); font: var(--font-medium) var(--text-sm) / var(--line-height) var(--font-family); text-decoration: none; white-space: normal; }
+:is(.report-builder-page,.section-import-page) .button:hover { background: var(--surface-muted); color: var(--text); }
+:is(.report-builder-page,.section-import-page) .button.primary { border-color: var(--accent); background: var(--accent); color: var(--surface); }
+:is(.report-builder-page,.section-import-page) .button.primary:hover { border-color: var(--accent-hover); background: var(--accent-hover); }
+.section-import-page .button.danger { border-color: var(--danger); background: var(--danger); color: var(--surface); }
+:is(.report-builder-page,.section-import-page) .button:disabled { border-color: var(--text-secondary); background: var(--surface-muted); color: var(--text-secondary); opacity: 1; cursor: not-allowed; }
+:is(.report-builder-page,.section-import-page) .report-actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); max-width: 44rem; margin-bottom: var(--space-6); }
+.section-import-page .report-actions { margin-top: var(--space-6); }
+:is(.report-builder-page,.section-import-page) :is(.report-info,.report-warning,.return-note,.warning-panel) { max-width: 44rem; margin-bottom: var(--space-4); padding: var(--space-4); border: 1px solid var(--border); border-radius: var(--radius); background: var(--accent-soft); color: var(--text); font-size: var(--text-sm); }
+:is(.report-builder-page,.section-import-page) :is(.report-warning,.warning-panel) { border-color: var(--warning); background: var(--warning-bg); color: var(--warning) !important; }
+.report-builder-page .return-note { border-color: var(--danger); background: var(--danger-bg); color: var(--danger); }
+.report-builder-page .field-error { color: var(--danger); font-size: var(--text-sm); }
+.report-builder-page [aria-invalid=true] { border-color: var(--danger); }
+.report-builder-page .report-info > :last-child { margin-bottom: 0; }
+.report-builder-page .publication-row h3 { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); max-width: 44rem; }
+.report-builder-page .replaced-by { color: var(--text-secondary); font-size: var(--text-sm); font-weight: var(--font-regular); }
+.report-builder-page .publication-reopens { max-width: 44rem; margin: var(--space-4) 0 0; padding-left: var(--space-4); border-left: 1px solid var(--border); }
+.report-builder-page .publication-reopens ul { margin: 0; padding-left: var(--space-4); }
+.report-builder-page .publication-reopens li { margin-top: var(--space-3); }
+:is(.report-builder-page,.section-import-page) .table-wrap { width: 100%; min-width: 0; max-width: 100%; margin-bottom: var(--space-4); overflow-x: auto; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); }
+:is(.report-builder-page,.section-import-page) table { width: 100%; min-width: 740px; margin: 0; border-collapse: collapse; }
+:is(.report-builder-page,.section-import-page) :is(th,td) { padding: var(--space-3); border-bottom: 1px solid var(--border); color: var(--text); font-size: var(--text-sm); vertical-align: top; }
+:is(.report-builder-page,.section-import-page) th { background: var(--surface-muted); color: var(--text-secondary); font-weight: var(--font-medium); }
+.report-builder-page .pp-reconciliation-status { display: inline-block; padding: var(--space-1) var(--space-2); border-radius: var(--radius); font-size: var(--text-sm); font-weight: var(--font-medium); }
+.section-import-page .section-text { white-space: pre-wrap; }
+@media (min-width: 1024px) {
+  .report-builder-page .report-fields { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .report-builder-page .report-publish .report-fields { grid-template-columns: minmax(0,1fr); }
+}
+@media (max-width: 700px) {
+  :is(.report-builder-page,.section-import-page) section { padding: var(--space-4); }
+}
