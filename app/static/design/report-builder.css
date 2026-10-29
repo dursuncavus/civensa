@@ -33,7 +33,7 @@
 :is(.report-builder-page,.section-import-page) .button:hover { background: var(--surface-muted); color: var(--text); }
 :is(.report-builder-page,.section-import-page) .button.primary { border-color: var(--accent); background: var(--accent); color: var(--surface); }
 :is(.report-builder-page,.section-import-page) .button.primary:hover { border-color: var(--accent-hover); background: var(--accent-hover); }
-.section-import-page .button.danger { border-color: var(--danger); background: var(--danger); color: var(--surface); }
+.section-import-page .button.danger, .section-import-page .button.danger:hover { border-color: var(--danger); background: var(--danger); color: var(--surface); }
 :is(.report-builder-page,.section-import-page) .button:disabled { border-color: var(--text-secondary); background: var(--surface-muted); color: var(--text-secondary); opacity: 1; cursor: not-allowed; }
 :is(.report-builder-page,.section-import-page) .report-actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); max-width: 44rem; margin-bottom: var(--space-6); }
 .section-import-page .report-actions { margin-top: var(--space-6); }

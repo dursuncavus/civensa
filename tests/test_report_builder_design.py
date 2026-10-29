@@ -272,7 +272,10 @@ def assert_design(page, width, builder):
     pairs = set(map(tuple, page.evaluate(TEXT_PAIRS.replace('.section-index-page', selector))))
     for control in root.locator('summary,.button,a').all():
         if control.is_visible() and control.is_enabled():
+            background = control.evaluate('el => getComputedStyle(el).backgroundColor')
             control.hover()
+            if control.get_attribute('id') == 'revertSections':
+                assert control.evaluate('el => getComputedStyle(el).backgroundColor') == background
             control.focus()
             assert control.evaluate("el => getComputedStyle(el).outlineStyle === 'solid'")
             pairs.update(map(tuple, page.evaluate(TEXT_PAIRS.replace('.section-index-page', selector))))
