@@ -10,9 +10,9 @@ Claude live again (CV Lider 39, 29 Oct). DeepSeek backup period (D-308) re-check
 Claude's next session: `CV Lider 40 · Claude Opus 5.5 · civensa-lead`. Read this section and the last decision in DECISIONS.md first.
 1. #240 CIV-149 (Copilot): review the PR (CSS-only, submit-authorizations.css), check its 1440/390 screenshots, mark ready, CI, merge.
 2. Owner looks pending: CIV-144 (007/008 value row + evidence), CIV-145 (İç Kontrol 031), CIV-146/147 (users), CIV-148 (016 audit labels), CIV-149 when merged. Give the owner one gallery artifact (screenshots live in docs/design/rollout/**).
-3. Codex: CIV-150 001 Faaliyet Eşleştirme (D-310) — review its PR. Next screens: 039 Nihai Rapor + 040 Genel bölüm içe aktarma; then check 006, 015; 003 waits for Ali. 025–028 are done (CIV-145).
+3. Codex: CIV-151 039 Nihai Rapor + 040 (D-311) — review its PR. CIV-150 merged (7e4335b). Next: check 006, 015; 002/003 (003 waits for Ali). 025–028 done (CIV-145).
 4. Quota (BEYAN 29 Oct 20:49): week 76%, reset Sat 00:00; owner: keep working until then.
-Next IDs: task CIV-151, decision D-311.
+Next IDs: task CIV-152, decision D-312.
 
 ## Claude quota (BEYAN, owner 27 Oct 16:21)
 - Session 11%, week 67%, weekly reset Saturday 00:00 (D-300). Copilot 96 / 1,500 credits, reset 1 Nov.
@@ -24,8 +24,9 @@ Evidence rule (D-252): one-screen changes → targeted tests + changed-state scr
 ## Open pull requests (DOĞRULANDI 29 Oct ~21:00)
 | PR | Task | State | Next action |
 | --- | --- | --- | --- |
-| Codex | CIV-150 001 Faaliyet Eşleştirme | dispatched 29 Oct | review → CI → merge → owner look |
-| #240 (issue) | CIV-149 submit-authorizations state colour | Copilot working | review → CI → merge → owner look |
+| Codex | CIV-151 039/040 Nihai Rapor | dispatched 29 Oct | review → CI → merge → owner look |
+| #241 (issue #240) | CIV-149 submit-authorizations state colour | reviewed, ready, CI on bd76851 | review → CI → merge → owner look |
+Merged 29 Oct (D-311): #244 CIV-150 → 7e4335b.
 Merged 28–29 Oct by the owner (D-309): #232 CIV-144 · #234 CIV-145 → 22e35b7 · #236 CIV-146 → eff4a06 · #238 CIV-147 → f1b7adb · #239 CIV-148 → c622bf2.
 Merged 28 Oct (D-308): #228 CIV-143 → 14c692c · #230 night record → f0f1222.
 Merged 27 Oct late (D-304/D-306): #222 CIV-141 → 70fc4da · #223 CIV-142 → c3ccfcc.
