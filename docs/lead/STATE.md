@@ -1,20 +1,18 @@
 # CIVENSA — CURRENT STATE
 
-Updated: 28 Oct 2026, ~10:15 Istanbul (live session CV Lider 37, D-308).
+Updated: 29 Oct 2026, ~21:00 Istanbul (live session CV Lider 39, D-309).
 Rules: AI_WORKING_CONSTITUTION v1.2 (Drive, global) · `HIERARCHY.md` v1.5 · `PROJECT_RULES.md` v1.4 (D-271: PRIOR ART field mandatory in every package) · `BACKUP_LEAD.md` v2.
 Backup log ("Civensa Yedek Kaydı", Drive): no entries, last modified 23 Oct (DOĞRULANDI 27 Oct 05:45).
 Tags: DOĞRULANDI (lead checked) · TARİHSEL (past fact) · BEYAN (owner said) · BELİRSİZ (unknown).
 
 ## Next session — start here (D-253)
-DEEPSEEK BACKUP LEAD UNTIL SAT 31 OCT 00:00 (D-308, owner decision to save Claude quota). Claude handles only what BACKUP_LEAD.md reserves for the lead; returns after the weekly reset.
-Claude's next session: `CV Lider 38 · Claude Opus 5.5 · civensa-lead`. Read this section, the last decision in DECISIONS.md, and "Civensa Yedek Kaydı" (Drive) first; re-check every DeepSeek MERGE OK and dispatched task.
-Allowed work for DeepSeek (BACKUP_LEAD.md "YOU MAY"):
-1. #228 CIV-143 users table — merged by the lead → 14c692c (D-308). Owner look pending in the gallery.
-2. #232 CIV-144 (Copilot) — 007/008 value row on ONE baseline line (owner 10:00: all six items bottom-aligned, no "·") + evidence list: file line indented under its source, smaller gap inside a source than between sources; also the "İncelenmeli" state (owner 10:02). Review against issue #231 and lead comments 6462795106, 6462821999, 6462865204. Check the 1440 screenshots for the two defects before MERGE OK.
-3. One Codex task at a time, next ID CIV-145: bring the İç Kontrol screens (031; templates app/templates/internal_control/*.html) onto the design system per D-243 (existing components only; same pattern and evidence rule D-252 as CIV-127..140). Codex reads the repo itself; DeepSeek writes the package in the standard format incl. PRIOR ART (D-271). 003 waits for Ali; 025–028 wait for the lead (screen definitions not in the repo).
-4. Owner looks: gallery "Civensa Onay 2" https://claude.ai/artifact/3N57MjqiTX6ud7q4Krij9c (017, users, 007/008) — record the owner's answers in the backup log.
-Not allowed: anything under "YOU MUST NOT"; merges into staging/main; docs/lead edits.
-Next IDs: task CIV-145, decision D-309.
+Claude live again (CV Lider 39, 29 Oct). DeepSeek backup period (D-308) re-checked in D-309: five owner merges into phase5, all CI green; one defect → CIV-149.
+Claude's next session: `CV Lider 40 · Claude Opus 5.5 · civensa-lead`. Read this section and the last decision in DECISIONS.md first.
+1. #240 CIV-149 (Copilot): review the PR (CSS-only, submit-authorizations.css), check its 1440/390 screenshots, mark ready, CI, merge.
+2. Owner looks pending: CIV-144 (007/008 value row + evidence), CIV-145 (İç Kontrol 031), CIV-146/147 (users), CIV-148 (016 audit labels), CIV-149 when merged. Give the owner one gallery artifact (screenshots live in docs/design/rollout/**).
+3. Codex: CIV-150 001 Faaliyet Eşleştirme (D-310) — review its PR. Next screens: 039 Nihai Rapor + 040 Genel bölüm içe aktarma; then check 006, 015; 003 waits for Ali. 025–028 are done (CIV-145).
+4. Quota (BEYAN 29 Oct 20:49): week 76%, reset Sat 00:00; owner: keep working until then.
+Next IDs: task CIV-151, decision D-311.
 
 ## Claude quota (BEYAN, owner 27 Oct 16:21)
 - Session 11%, week 67%, weekly reset Saturday 00:00 (D-300). Copilot 96 / 1,500 credits, reset 1 Nov.
@@ -23,10 +21,12 @@ Next IDs: task CIV-145, decision D-309.
 Dispatch format (D-232, D-249): platform + environment ("Bulut → civensa") + exact model (Codex: GPT-6.1 Sol) + effort; title is the first line inside the paste block. Session end: one-line handover (D-253) after this file is rewritten.
 Evidence rule (D-252): one-screen changes → targeted tests + changed-state screenshots + contrast; all-screen capture only when shared files change, committed as a short count summary.
 
-## Open pull requests (DOĞRULANDI 28 Oct ~05:45)
+## Open pull requests (DOĞRULANDI 29 Oct ~21:00)
 | PR | Task | State | Next action |
 | --- | --- | --- | --- |
-| #232 (issue #231) | CIV-144 value row + evidence list | Copilot draft | review → CI → merge → owner look |
+| Codex | CIV-150 001 Faaliyet Eşleştirme | dispatched 29 Oct | review → CI → merge → owner look |
+| #240 (issue) | CIV-149 submit-authorizations state colour | Copilot working | review → CI → merge → owner look |
+Merged 28–29 Oct by the owner (D-309): #232 CIV-144 · #234 CIV-145 → 22e35b7 · #236 CIV-146 → eff4a06 · #238 CIV-147 → f1b7adb · #239 CIV-148 → c622bf2.
 Merged 28 Oct (D-308): #228 CIV-143 → 14c692c · #230 night record → f0f1222.
 Merged 27 Oct late (D-304/D-306): #222 CIV-141 → 70fc4da · #223 CIV-142 → c3ccfcc.
 Merged 27 Oct evening (D-303): #199 CIV-128 → 0200f60 · #205 CIV-134 → 5106ad5 · #209 CIV-137 → c6a8fab · #218 CIV-138 → 2b1e7df · #207 CIV-136 → 1f74a2d · #214 CIV-139 → 6ba0e55 · #216 CIV-140 → 0e2cf1c.
