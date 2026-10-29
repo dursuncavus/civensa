@@ -1,18 +1,18 @@
 # CIVENSA — CURRENT STATE
 
-Updated: 29 Oct 2026, ~21:00 Istanbul (live session CV Lider 39, D-309).
+Updated: 29 Oct 2026, ~23:40 Istanbul (live session CV Lider 40, D-312).
 Rules: AI_WORKING_CONSTITUTION v1.2 (Drive, global) · `HIERARCHY.md` v1.5 · `PROJECT_RULES.md` v1.4 (D-271: PRIOR ART field mandatory in every package) · `BACKUP_LEAD.md` v2.
 Backup log ("Civensa Yedek Kaydı", Drive): no entries, last modified 23 Oct (DOĞRULANDI 27 Oct 05:45).
 Tags: DOĞRULANDI (lead checked) · TARİHSEL (past fact) · BEYAN (owner said) · BELİRSİZ (unknown).
 
 ## Next session — start here (D-253)
-Claude live again (CV Lider 39, 29 Oct). DeepSeek backup period (D-308) re-checked in D-309: five owner merges into phase5, all CI green; one defect → CIV-149.
-Claude's next session: `CV Lider 40 · Claude Opus 5.5 · civensa-lead`. Read this section and the last decision in DECISIONS.md first.
-1. #240 CIV-149 (Copilot): review the PR (CSS-only, submit-authorizations.css), check its 1440/390 screenshots, mark ready, CI, merge.
-2. Owner looks pending: CIV-144 (007/008 value row + evidence), CIV-145 (İç Kontrol 031), CIV-146/147 (users), CIV-148 (016 audit labels), CIV-149 when merged. Give the owner one gallery artifact (screenshots live in docs/design/rollout/**).
-3. Codex: CIV-151 039 Nihai Rapor + 040 (D-311) — review its PR. CIV-150 merged (7e4335b). Next: check 006, 015; 002/003 (003 waits for Ali). 025–028 done (CIV-145).
+Claude live (CV Lider 40, 29 Oct). CIV-151 merged 0b8c72a; CIV-149 merged by the owner 49abd45 (D-312).
+Claude's next session: `CV Lider 41 · Claude Opus 5.5 · civensa-lead`. Read this section and the last decision in DECISIONS.md first.
+1. Codex: CIV-152 006 + 015 (D-312) — review its PR → CI → merge.
+2. Owner looks pending: CIV-144 (007/008 value row + evidence), CIV-145 (İç Kontrol 031), CIV-146/147 (users), CIV-148 (016 audit labels), CIV-149, CIV-150 (001), CIV-151 (039/040; LOW items in D-312). Give the owner one gallery artifact (screenshots in docs/design/rollout/**).
+3. Next screens after CIV-152: 002/003 (003 waits for Ali); check helper templates budget_detail, economic_split, assurance_statement, first_period, structure_wizard against INDEX.
 4. Quota (BEYAN 29 Oct 20:49): week 76%, reset Sat 00:00; owner: keep working until then.
-Next IDs: task CIV-152, decision D-312.
+Next IDs: task CIV-153, decision D-313.
 
 ## Claude quota (BEYAN, owner 27 Oct 16:21)
 - Session 11%, week 67%, weekly reset Saturday 00:00 (D-300). Copilot 96 / 1,500 credits, reset 1 Nov.
@@ -21,11 +21,11 @@ Next IDs: task CIV-152, decision D-312.
 Dispatch format (D-232, D-249): platform + environment ("Bulut → civensa") + exact model (Codex: GPT-6.1 Sol) + effort; title is the first line inside the paste block. Session end: one-line handover (D-253) after this file is rewritten.
 Evidence rule (D-252): one-screen changes → targeted tests + changed-state screenshots + contrast; all-screen capture only when shared files change, committed as a short count summary.
 
-## Open pull requests (DOĞRULANDI 29 Oct ~21:00)
+## Open pull requests (DOĞRULANDI 29 Oct ~23:40)
 | PR | Task | State | Next action |
 | --- | --- | --- | --- |
-| Codex | CIV-151 039/040 Nihai Rapor | dispatched 29 Oct | review → CI → merge → owner look |
-| #241 (issue #240) | CIV-149 submit-authorizations state colour | reviewed, ready, CI on bd76851 | review → CI → merge → owner look |
+| Codex | CIV-152 006/015 | dispatched 29 Oct | review → CI → merge → owner look |
+Merged 29 Oct (D-312): #246 CIV-151 → 0b8c72a · #241 CIV-149 (owner) → 49abd45.
 Merged 29 Oct (D-311): #244 CIV-150 → 7e4335b.
 Merged 28–29 Oct by the owner (D-309): #232 CIV-144 · #234 CIV-145 → 22e35b7 · #236 CIV-146 → eff4a06 · #238 CIV-147 → f1b7adb · #239 CIV-148 → c622bf2.
 Merged 28 Oct (D-308): #228 CIV-143 → 14c692c · #230 night record → f0f1222.
