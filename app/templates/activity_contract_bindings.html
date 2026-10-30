@@ -1,4 +1,47 @@
 {% extends "base.html" %}
 {% block page_title %}{{ year }} · Program v{{ publication.version }} · Gösterge kimlikleri{% endblock %}
-{% block content %}<section class="card"><p>Ad ve kod benzerliğine göre eşleme yapılmaz. Eski yayın içeriği değiştirilmez; açık kimlik ilişkisi ayrı saklanır. Aynı kavramı temsil ettiğini doğrulamadan mevcut kimlik seçmeyin. Eşleme kaydedildikten sonra üzerine yazılmaz.</p></section>
-{% for row in rows %}<section class="card"><h2>{{ row.name }}</h2><p>{{ row.department }} · {{ row.unit }} · {{ row.code or 'Kod belirtilmedi' }}</p>{% if row.bound %}<p>Kimlik ve tanım sürümü sabitlenmiş.</p>{% else %}<form method="post" action="/activity-reports/publications/{{ publication.id }}/bindings"><input type="hidden" name="csrf_token" value="{{ request.session.get('csrf_token') }}"><input type="hidden" name="snapshot_indicator_id" value="{{ row.id }}"><label>Kalıcı kimlik<select name="indicator_id"><option value="">Yeni, bağımsız gösterge kimliği oluştur</option>{% for identity in identities %}{% if identity.organization_id == row.organization_id %}<option value="{{ identity.indicator_id }}">{{ identity.label }}</option>{% endif %}{% endfor %}</select></label><label>Eşleme gerekçesi<textarea name="reason" required></textarea></label><button class="button">Açık kimlik ilişkisini kaydet</button></form>{% endif %}</section>{% endfor %}<a class="button" href="/activity-reports">Raporlara dön</a>{% endblock %}
+{% block content %}
+<link rel="stylesheet" href="/static/design/activity-reports.css">
+<link rel="stylesheet" href="/static/design/indicator-bindings.css">
+<div class="activity-reports-page indicator-bindings-page">
+  <div class="page-actions">
+    <a class="button" href="/activity-reports">Raporlara dön</a>
+  </div>
+  <section class="info-panel">
+    <p>Ad ve kod benzerliğine göre eşleme yapılmaz. Eski yayın içeriği değiştirilmez; açık kimlik ilişkisi ayrı saklanır. Aynı kavramı temsil ettiğini doğrulamadan mevcut kimlik seçmeyin. Eşleme kaydedildikten sonra üzerine yazılmaz.</p>
+  </section>
+  <div class="reports-panel">
+    {% for row in rows %}
+    <section class="binding-row">
+      <div class="binding-heading">
+        <h2>{{ row.name }}</h2>
+        <span class="status {{ 'success' if row.bound else 'warning' }}">{{ 'Sabitlendi' if row.bound else 'Eşleme bekliyor' }}</span>
+      </div>
+      <p class="secondary">{{ row.department }} · {{ row.unit }} · {{ row.code or 'Kod belirtilmedi' }}</p>
+      {% if row.bound %}
+      <p>Kimlik ve tanım sürümü sabitlenmiş.</p>
+      {% else %}
+      <form class="form-grid" method="post" action="/activity-reports/publications/{{ publication.id }}/bindings">
+        <input type="hidden" name="csrf_token" value="{{ request.session.get('csrf_token') }}">
+        <input type="hidden" name="snapshot_indicator_id" value="{{ row.id }}">
+        <label>Kalıcı kimlik
+          <select name="indicator_id">
+            <option value="">Yeni, bağımsız gösterge kimliği oluştur</option>
+            {% for identity in identities %}
+            {% if identity.organization_id == row.organization_id %}
+            <option value="{{ identity.indicator_id }}">{{ identity.label }}</option>
+            {% endif %}
+            {% endfor %}
+          </select>
+        </label>
+        <label>Eşleme gerekçesi
+          <textarea name="reason" required></textarea>
+        </label>
+        <button class="button primary">Açık kimlik ilişkisini kaydet</button>
+      </form>
+      {% endif %}
+    </section>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}
