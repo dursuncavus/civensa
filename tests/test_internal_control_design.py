@@ -263,7 +263,8 @@ def test_frozen_browser_layout_contrast_and_navigation(browser, screen, ic_clien
                     widths = [cell.bounding_box()['width'] for cell in row.locator('th,td').all()]
                     assert max(widths) - min(widths) <= 1
             else:
-                assert table.evaluate('el => getComputedStyle(el).tableLayout') == 'auto'
+                expected_layout = 'fixed' if 'ic-result-table' in (table.get_attribute('class') or '').split() else 'auto'
+                assert table.evaluate('el => getComputedStyle(el).tableLayout') == expected_layout
             for cell in scroll.locator('th,td').all():
                 assert cell.evaluate('el => el.scrollWidth <= el.clientWidth')
                 assert cell.evaluate('el => getComputedStyle(el).fontSize') == '14px'
