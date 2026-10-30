@@ -1,20 +1,19 @@
 # CIVENSA — CURRENT STATE
 
-Updated: 30 Oct 2026, ~22:15 Istanbul (live session CV Lider 45, D-340).
+Updated: 30 Oct 2026, ~22:45 Istanbul (live session CV Lider 46, D-341).
 Rules: AI_WORKING_CONSTITUTION v1.2 (Drive, global) · `HIERARCHY.md` v1.5 · `PROJECT_RULES.md` v1.4 (D-271: PRIOR ART field mandatory in every package) · `BACKUP_LEAD.md` v2.
 Backup log ("Civensa Yedek Kaydı", Drive): no entries, last modified 23 Oct (DOĞRULANDI 30 Oct 05:45).
 Tags: DOĞRULANDI (lead checked) · TARİHSEL (past fact) · BEYAN (owner said) · BELİRSİZ (unknown).
 
 ## Next session — start here (D-253)
-Claude live (CV Lider 45, 30 Oct, ended ~22:15). CIV-085 (soru formu) and CIV-161 (table alignment) merged; real 70-question list in docs/internal-control/ic-kontrol-soru-formu-70.xlsx. İç Kontrol import still waits for Ali Abi.
-Claude's next session: `CV Lider 46 · Claude Opus 5.5 · civensa-lead`. Read this section and the last decision in DECISIONS.md first.
-1. CIV-085 (#280 → b299845) + CIV-161 (#284 → fa2f693) merged. Look approved (D-340). Live after next release + deploy.
-2. İç Kontrol import (D-331): waits for Ali Abi's answers in the shared sheet "CV İç Kontrol Dönüşümü – Ortak Liste" (https://docs.google.com/spreadsheets/d/1O4DmrNnBfcz9HJuxAXxGwMCvukTo2467HobZptmz-XI/edit) — read its note columns first. Then the lead edits the committed workbook, owner uploads on civensa-pilot → maps 8 names → commits draft; activation with the lead. Owner ticks the 49 action rows against the PDF (D-177).
-3. FIRST in CV Lider 46: package CIV-160 (G6 narrative sections per D-184/D-185: Misyon/Vizyon entered by Strateji, read-only for directorates; bileşen değerlendirmeleri, güçlü yönler, gelişim alanları, öneriler, puan aralığı institution-level by Strateji; versioned per period, frozen on approval; added to the official Word report). Real 70-question list converted (D-336): docs/internal-control/ic-kontrol-soru-formu-70.xlsx — Ali Abi to compare with the current form.
-4. CIV-159 /health readiness + guard fix are in phase5; live after the next release + deploy (owner), then check /health ready=true.
-5. Watch department reactions to the 554 book-check items (D-324). LOW backlog (D-328). Screens 002/003 (003 waits for Ali); INDEX check 069, 077–097 (D-314).
-6. Quota (BEYAN 29 Oct 20:49): week 76% then, reset Sat 00:00. Claude Pro ends 3 Nov (owner renews on the web).
-Next IDs: task CIV-162 (CIV-160 reserved for G6), decision D-341.
+Claude live (CV Lider 46, 30 Oct ~22:45). CIV-160 packaged (D-341) and handed to the owner for Codex. İç Kontrol import still waits for Ali Abi.
+Claude's next session: `CV Lider 47 · Claude Opus 5.5 · civensa-lead`. Read this section and the last decision in DECISIONS.md first.
+1. CIV-160 (G6 anlatı bölümleri) → Codex, GPT-6.1 Sol, Yüksek. Review the PR against docs/lead/tasks/CIV-160.md: Word bytes unchanged without narrative, official Excel unchanged, no hard-coded bands, SoD on approval, directorates see only approved Misyon/Vizyon.
+2. CIV-085 + CIV-161 look approved (D-340); CIV-159 /health readiness in phase5. All live after the next release + deploy (owner), then check /health ready=true.
+3. İç Kontrol import (D-331): waits for Ali Abi's answers in "CV İç Kontrol Dönüşümü – Ortak Liste" (https://docs.google.com/spreadsheets/d/1O4DmrNnBfcz9HJuxAXxGwMCvukTo2467HobZptmz-XI/edit) — read its note columns first. Then the lead edits the committed workbook, owner uploads on civensa-pilot → maps 8 names → commits draft; activation with the lead. Owner ticks the 49 action rows against the PDF (D-177). Ali Abi also compares the 70-question list (D-336).
+4. Watch department reactions to the 554 book-check items (D-324). LOW backlog (D-328). Screens 002/003 (003 waits for Ali); INDEX check 069, 077–097 (D-314).
+5. Quota (BEYAN 29 Oct 20:49): week 76% then, reset Sat 00:00. Claude Pro ends 3 Nov (owner renews on the web).
+Next IDs: task CIV-162, decision D-342.
 
 ## Claude quota (BEYAN, owner 27 Oct 16:21)
 - Session 11%, week 67%, weekly reset Saturday 00:00 (D-300). Copilot 96 / 1,500 credits, reset 1 Nov.
