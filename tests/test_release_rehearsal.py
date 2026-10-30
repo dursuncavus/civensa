@@ -208,3 +208,20 @@ def test_summary_only_counts_and_escaped_names(tmp_path, monkeypatch):
     assert '| old&#124;&lt;table&gt; | 5 | 4 |' in text
     assert '| new | new | 0 |' in text
     assert 'FAIL' in text
+
+
+@pytest.mark.parametrize('message', [
+    'BACKUP_AGE_IDENTITY eksik; depo sorumlusu özel anahtarı güvenli olarak tanımlamalıdır.',
+    'Yedek şifreleme/çözme başarısız; anahtarı ve dosya bütünlüğünü kontrol edin.',
+])
+def test_decrypt_failure_reports_fixed_crypto_message(monkeypatch, message):
+    from ops.backup_crypto import BackupCryptoError
+
+    def decrypt(source, destination):
+        raise BackupCryptoError(message)
+
+    monkeypatch.setattr(release_rehearsal, 'decrypt_backup', decrypt)
+    with pytest.raises(release_rehearsal.RehearsalFailure) as failure:
+        release_rehearsal.verify_dump()
+    assert str(failure.value) == f'Yedek çözülemedi: {message}'
+    assert failure.value.__cause__ is None
