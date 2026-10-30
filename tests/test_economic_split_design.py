@@ -205,10 +205,26 @@ def test_browser_synthetic_evidence(scenes, strategy_client, browser, width, sta
         if not before:
             assert_visuals(page)
             if state == 'populated':
+                group = page.locator('[name=zero_group_602]')
+                selected_group = group.input_value()
+                for value in group.locator('option').evaluate_all('options => options.map(option => option.value)'):
+                    group.select_option(value)
+                    assert group.evaluate("""el => {
+                      const style = getComputedStyle(el), canvas = document.createElement('canvas');
+                      const ctx = canvas.getContext('2d');
+                      ctx.font = style.font;
+                      const text = el.selectedOptions[0].textContent;
+                      return ctx.measureText(text).width <= el.clientWidth -
+                        parseFloat(style.paddingLeft) - parseFloat(style.paddingRight) - 24;
+                    }"""), f"Selected group option {value!r} is clipped at {width}px"
+                group.select_option(selected_group)
                 table = page.locator('.split-table')
                 wrap = table.locator('xpath=..')
                 if width == 1440:
-                    assert table.evaluate('el => el.scrollWidth <= el.closest(".table-wrap").clientWidth')
+                    assert table.evaluate('el => el.scrollWidth <= el.closest(".table-wrap").clientWidth'), table.evaluate("""el => ({
+                      table: el.scrollWidth, wrap: el.closest('.table-wrap').clientWidth,
+                      first: el.querySelector('tbody th').getBoundingClientRect().width
+                    })""")
                     assert page.locator('[data-split-cell="601"] output').evaluate("""el => {
                       const box = el.getBoundingClientRect();
                       return box.left >= 0 && box.right <= innerWidth &&
