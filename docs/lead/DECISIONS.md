@@ -759,3 +759,9 @@ DOĞRULANDI: main is 31 commits behind phase5; pending code: #262 CIV-157, #266 
 Lead dispatched db-backup run 41131079715 → civensa-db-backup-20261030-2127Z (success), then Release migration rehearsal run 41131273683 on 81f2d9d → success (restores the latest successful backup = 2127Z, upgrades twice, starts the app).
 Release PR #292 (head 81f2d9d) opened for the owner. Owner steps (escalation, rule §4): merge #292 when its tests are green → lead dispatches a pre-deploy backup → owner Render civensa-pilot "Deploy latest commit" → /health ready=true + 3 pages. Data entry is open, so the owner picks a quiet hour for the deploy.
 Next IDs: task CIV-162, decision D-346.
+
+## D-346 (31 Oct 2026 ~01:15 Istanbul, owner + lead, live session CV Lider 47) — release live on civensa-pilot
+DOĞRULANDI: owner merged #292 (21:58Z) → main 80b6ca1; tests green on 6d9be83. Lead dispatched pre-deploy backup run 41134993416 → civensa-db-backup-20261030-2159Z. Owner Render civensa-pilot "Deploy latest commit".
+DOĞRULANDI (owner pasted /health, 01:10): status ok, environment production, database ok (11 ms), ready true, migration current = head = c160a1b2c3d4. CIV-157/158/159/085/161/160 are live. 3-page check: owner to confirm.
+Finding (owner screenshot): civensa-pilot is a Render Free instance → sleeps after 15 min idle, first request waits ~50 s. Departments now enter live data, so this reads as "system down". Source-backed (render.com pricing, checked 31 Oct): Starter web service $7/month, 512 MB / 0.5 CPU, always on; database stays on Neon (no Render Postgres cost). Lead recommendation: move civensa-pilot to Starter (payment = owner decision, §4).
+Next IDs: task CIV-162, decision D-347.
