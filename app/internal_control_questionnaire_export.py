@@ -25,6 +25,14 @@ def questionnaire_export(db, actor, period_id, *, draft=False):
         for row in rows:
             literal_row(sheet, ([row['code'], q.COMPONENTS[row['component']], row['question']] if question_sheet else [row['label']]) +
                 [row['rates'][key] for key in q.ANSWERS])
+    sheet = book['Bileşen özeti']
+    literal_row(sheet, [])
+    literal_row(sheet, ['Müdürlük puanları'])
+    literal_row(sheet, [q.SCORING_ASSUMPTION])
+    literal_row(sheet, ['Müdürlük', *headers, 'Toplam puan', 'Azami puan', 'Gerçekleşme oranı'])
+    for row in results['directorates'] + [results['total']]:
+        literal_row(sheet, [row['label'], *[row['counts'][key] for key in q.ANSWERS],
+            row['score'], row['max_score'], row['realisation_rate']])
     sheet = book.create_sheet('Müdürlük yanıtları')
     literal_row(sheet, ['TASLAK' if draft else 'Onaylı veriler', m.period_label(period)])
     literal_row(sheet, ['Müdürlük', 'Durum', 'Kod', 'Soru', 'Yanıt', 'Açıklama'])
@@ -36,6 +44,6 @@ def questionnaire_export(db, actor, period_id, *, draft=False):
     for sheet in book:
         sheet.freeze_panes = 'B5'
         sheet.column_dimensions['A'].width = 34
-        for col in 'BCDEF':
+        for col in 'BCDEFG':
             sheet.column_dimensions[col].width = 30
     return export_book(book)

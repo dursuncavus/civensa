@@ -18,7 +18,7 @@ from .pp_errors import payload
 
 def context():
     return dict(states=m.STATES, answer_labels=q.ANSWERS, components=q.COMPONENTS,
-                period_label=m.period_label, tsi=m.tsi)
+                period_label=m.period_label, tsi=m.tsi, scoring_assumption=q.SCORING_ASSUMPTION)
 
 
 def batch_context(db, user, batch_id):

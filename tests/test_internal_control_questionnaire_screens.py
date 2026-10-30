@@ -35,9 +35,14 @@ def test_questionnaire_screen_matrix(db, monitoring, client):
                     route.fulfill(status=response.status_code,headers=headers,body=response.content)
                 context.route('http://testserver/**',serve)
                 page = context.new_page()
-                def capture(name):
+                def capture(name, *, scroll_scores=False):
                     for width, height in ((1366,900),(390,844)):
                         page.set_viewport_size({'width':width,'height':height})
+                        if scroll_scores:
+                            scores = page.get_by_role('region', name='Müdürlük puanları', exact=True)
+                            scores.scroll_into_view_if_needed()
+                            scores.evaluate('el => { el.scrollLeft = el.scrollWidth; }')
+                            expect(scores.get_by_role('cell', name='75,00% (3/4)', exact=True).first).to_be_in_viewport()
                         assert page.evaluate('document.documentElement.scrollWidth <= window.innerWidth'), name
                         page.screenshot(path=str(ARTIFACTS/f'{name}-{width}.png'),full_page=True)
                         captures.append(f'{name}-{width}.png')
@@ -83,6 +88,14 @@ def test_questionnaire_screen_matrix(db, monitoring, client):
                     capture('mudurluk-'+state)
                     current['user'] = d['strategy']
                     goto(period_path)
+                    scores = page.get_by_role('region', name='Müdürlük puanları', exact=True)
+                    if state == 'onayli':
+                        expect(scores.get_by_role('cell', name='5', exact=True)).to_have_count(2)
+                        expect(scores.get_by_role('cell', name='8', exact=True)).to_have_count(2)
+                        expect(scores.get_by_role('cell', name='75,00% (3/4)', exact=True)).to_have_count(2)
+                    else:
+                        expect(scores.get_by_role('cell', name='—', exact=True)).to_have_count(1)
+                        expect(scores.get_by_role('cell', name='— (0/0)', exact=True)).to_have_count(1)
                     capture('genel-'+state)
                     goto(form_path)
                     capture('detay-'+state)
@@ -120,6 +133,9 @@ def test_questionnaire_screen_matrix(db, monitoring, client):
                 goto(form_path)
                 page.get_by_role('button',name='Onayla',exact=True).click()
                 state_screens('onayli')
+                goto(period_path)
+                capture('puan-sutunlari', scroll_scores=True)
+                goto(form_path)
                 page.locator('[name="reason"]').fill('Sentetik yeniden açma gerekçesi.')
                 page.get_by_role('button',name='Gerekçeli yeniden aç',exact=True).click()
                 state_screens('yeniden-acildi')
@@ -131,5 +147,7 @@ def test_questionnaire_screen_matrix(db, monitoring, client):
         'Yükleme: boş, hata, önizleme, kayıtlı. Bağlama: boş, hata, bağlı.\n'
         'Müdürlük, genel görünüm ve detay: boş, kısmi, gönderildi, iade, onaylı, yeniden açıldı.\n'
         'Müdürlük gönderim hatası ve Strateji inceleme hatası ayrıca doğrulandı.\n'
+        'D-336: onaylı müdürlük ve kurum için 5/8 puan, %75,00 (3/4); onaysız/yeniden açılmış formlar puana katılmaz.\n'
+        'Puan sütunları 390 px genişlikte tablo kaydırılarak görünürlük denetiminden geçti.\n'
         'Her durumda sayfa taşması yok; tablolar kendi alanında yatay kaydırılır.\n'
         'Tüm sorular sentetiktir (Test sorusu 1…4).\n',encoding='utf-8')

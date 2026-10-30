@@ -13,6 +13,7 @@ from .pp_errors import pp_error
 
 ANSWERS = {'yes': 'Evet', 'no': 'Hayır', 'developing': 'Geliştirilmekte'}
 HEADERS = ['Sıra', 'Bileşen', 'Kod', 'Soru']
+SCORING_ASSUMPTION = '2022 uygulaması — Strateji teyit edecek'
 
 
 def template():
@@ -253,22 +254,34 @@ def transition(db, actor, batch_id, action, expected_revision, reason=''):
 def results(db, actor, period):
     m.require_access(db, actor, strategy=True)
     selected = batches(db, period.id)
-    included, pending, approved = [], [], []
+    included, pending, approved, units = [], [], [], []
     for batch in selected:
         last = latest_event(db, batch.id)
         if last and last.to_status == 'approved':
             included.append(batch.label)
-            approved.extend(json.loads(last.snapshot_json))
+            content = json.loads(last.snapshot_json)
+            approved.extend(content)
+            units.append((batch, content))
         else:
             pending.append(batch.label)
     def tally(label, answers):
         counts = {key: sum(r['answer'] == key for r in answers) for key in ANSWERS}
         return dict(label=label, counts=counts, total=len(answers), rates={k: m.rate_text(v, len(answers)) for k, v in counts.items()})
+
+    def scored(label, answers):
+        result = tally(label, answers)
+        counts, total = result['counts'], result['total']
+        realised = counts['yes'] + counts['developing']
+        return dict(result, score=2 * counts['yes'] + counts['developing'] if total else None,
+                    max_score=2 * total, realisation_count=realised,
+                    realisation_rate=m.rate_text(realised, total))
+
     qs = questions(db, period.id)
     by_question = [{**tally(q['code'], [r for r in approved if r['code'] == q['code']]), **q} for q in qs]
     by_component = []
     for code, label in COMPONENTS.items():
         codes = {q['code'] for q in qs if q['component'] == code}
         by_component.append(tally(label, [r for r in approved if r['code'] in codes]))
-    return dict(questions=by_question, components=by_component, total=tally('Kurum toplamı', approved),
+    return dict(questions=by_question, components=by_component, total=scored('Kurum toplamı', approved),
+        directorates=[dict(scored(batch.label, content), batch_id=batch.id) for batch, content in units],
         included=included, pending=pending, participant_count=len(selected))
