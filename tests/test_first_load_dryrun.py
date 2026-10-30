@@ -20,7 +20,7 @@ def test_print_book_has_no_header_label_indicators():
 @pytest.mark.postgres
 def test_idml_rehearsal_loads_every_activity_link_and_keeps_source_issues(db):
     path = Path(__file__).parent / 'fixtures/first_load/source/pp2027_print_d3.idml'
-    parsed, conversion = parse_book(path, exclude_source_tables=[195])
+    parsed, conversion = parse_book(path)
     assert conversion['counts']['card'] == conversion['counts']['membership']
     assert all(len(a['source_memberships']) == 1 for d in parsed['departments'] for a in d['activities'])
     assert any('Özel Kalem' in issue and '0006.' in issue for issue in parsed['membership_issues'])
@@ -36,7 +36,8 @@ def test_idml_rehearsal_loads_every_activity_link_and_keeps_source_issues(db):
     costs = {v['funding_type']: v['amount'] for v in activity['costs'] if (v['year'], v['kind']) == (2027, 'budget')}
     assert costs == {'total': '44333709.00', 'inside': '45333709.00', 'outside': '0.00'}
     assert source_pages(parsed, park['name'], activity['name'] + ': toplam farklı') == ['128']
-    assert parsed['excluded_source_tables'][0]['page'] == '243'
+    assert parsed['excluded_source_tables'] == []
+    assert next(t for t in conversion['non_printed'] if t['story'] == 'u4258')['spread_pages'] == ['242', '243']
     assert not parsed['rejected_economic_tables']
     from scripts.first_load_audit import audit_results, checklist
     audit = audit_results(parsed, inspection['results'])
@@ -75,13 +76,13 @@ def test_idml_rehearsal_loads_every_activity_link_and_keeps_source_issues(db):
     assert all(not a['explanation'] for a in kultur['stored']['activities'] if a['name'].startswith(('0015.', '0016.', '0017.')))
 
 
-def test_full_idml_still_rejects_p243_without_rehearsal_exclusion():
+def test_pasteboard_p243_is_excluded_without_rehearsal_exclusion():
     path = Path(__file__).parent / 'fixtures/first_load/source/pp2027_print_d3.idml'
     parsed, _ = parse_book(path)
     assert 'membership_issues' in parsed and 'source_tables' in parsed
-    assert parsed['rejected_economic_tables'][0]['table_number'] == 195
+    assert parsed['rejected_economic_tables'] == []
     assert parsed['excluded_source_tables'] == []
-    assert parsed['source_tables']['195']['page'] == '243'
+    assert all(t['page'] != '243' for t in parsed['source_tables'].values())
 
 
 def test_repeatable_exclusions_use_original_word_numbers_and_are_reported(book):
@@ -104,3 +105,21 @@ def test_repeatable_exclusions_use_original_word_numbers_and_are_reported(book):
     for bad in [0, 6]:
         with pytest.raises(ValueError, match='tablo numarası bulunamadı'):
             parse_book(word, exclude_source_tables=[bad])
+
+
+def test_amount_comparison_aligns_insertions_and_preserves_missing_states():
+    from scripts.first_load_dryrun import amount_changes
+    old = dict(id='old-export-id', page='1', department='Örnek', label='T1', rows=[
+        ['Faaliyetler', '2027 Bütçe', '2028 Tahmin'],
+        ['A', '', '-'], ['B', '0,00', '1.000,00'], ['Toplam', '0,00', '1.000,00']])
+    new = dict(old, id='new-export-id', rows=[
+        old['rows'][0], ['A', '-', '0,00'], ['B', '0,00', '1.250,50'],
+        ['Yeni faaliyet', '50,00', ''], ['Toplam', '50,00', '1.250,50']])
+    changes = amount_changes({('other',): old}, {('other',): new})
+    assert len(changes) == 7
+    blank = next(c for c in changes if c['old'] == 'BOŞ' and c['new'] == '-')
+    assert blank['difference'] == 'Hesaplanamaz'
+    assert next(c for c in changes if c['old'] == '-' and c['new'] == '0,00')['difference'] == 'Hesaplanamaz'
+    assert next(c for c in changes if c['old'] == '1.000,00' and c['new'] == '1.250,50')['difference'] == '250,5'
+    assert sum(c['old'] == 'YOK (satır/hücre yok)' for c in changes) == 2
+    assert next(c for c in changes if 'Toplam' in c['row'])['row'].startswith('r4 → r5')

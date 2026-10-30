@@ -468,9 +468,10 @@ def report(parsed, inspection, path, digest, output_path=None):
                   f'python scripts/first_load_dryrun.py {shlex.quote(path.as_posix())}{flags} --out {output_path or "docs/first-load/dryrun-d3.md"}',
                   '```', '',
                   'Yalnızca localhost test URL adresi okunur; '
-                  'her prova ayrı veritabanı oluşturur ve sonunda siler. Dışlama yalnızca prova betiğinde, '
-                  'geçici Word üzerinde yapılır; üretici ve canlı yükleyici tablo çıkarmaz. '
-                  'Kurum özetleri IDML kaynağından ayrıca okunur; dışlama bu denetimleri kaldırmaz.', '',
+                  'her prova ayrı veritabanı oluşturur ve sonunda siler. Basılmayan IDML hikâyeleri ortak '
+                  'geometri kontrolüyle hem Word yüklemesinden hem bütün denetimlerden çıkarılır ve aşağıda listelenir. '
+                  'İsteğe bağlı numaralı prova dışlaması yalnız geçici Word üzerinde yapılır; '
+                  'basılı kurum özetlerinin denetimini kaldırmaz.', '',
                   'Tek kurum, doğrulanmış dönem şablonu, ad eşlemesi ve denetimli/idempotent faaliyet kataloğu '
                   'gerçek servislerle hazırlanır. Boş, çizgi ve sıfır ayrıdır. Kaynak sayıları değiştirilmedi; '
                   'doğrulama kuralları gevşetilmedi. Sayfalar IDML hikâyesinin ilk basılı sayfasıdır. '
@@ -590,6 +591,20 @@ def report(parsed, inspection, path, digest, output_path=None):
         lines.extend('- ' + cell(json.dumps(t, ensure_ascii=False)) for t in audit['transfers'])
     conversion = inspection.get('conversion')
     if conversion:
+        lines.extend(['## Basılmayan (pasteboard) tablolar — yüklenmedi', '',
+                      'Sayfayla kısmen bile kesişen frame korunur. Threaded frame ve basılı hikâyeye '
+                      'anchored frame aynı basılı hikâye kapsamındadır. Bu tablolar bütün denetimlerin dışındadır.', '',
+                      f"{sum(t['reason'] == 'pasteboard' for t in conversion.get('non_printed', []))} pasteboard tablo; "
+                      f"ayrıca {sum(t['reason'] == 'unplaced' for t in conversion.get('non_printed', []))} yerleşimsiz tablo (önceki okuyucu da yüklemiyordu).", '',
+                      '| Story | Spread sayfaları | Tablo | İlk başlık hücreleri |',
+                      '| --- | --- | --- | --- |'])
+        for table in conversion.get('non_printed', []):
+            lines.append('| ' + ' | '.join(cell(v) for v in (
+                table['story'], '–'.join(table['spread_pages']) or 'Yerleşimsiz',
+                table['id'], ' / '.join(v or 'BOŞ' for v in table['header']))) + ' |')
+        if not conversion.get('non_printed'):
+            lines.append('Yok.')
+        lines.append('')
         lines.extend(['## Dönüşüm ve varsayımlar', '',
                       'Eşlenmeyen ad (ham metin korundu, yerleşik müdürlük eşlemesi uygulandı): '
                       + cell('; '.join(conversion['unmapped']) or 'Yok') + '.', '',
@@ -652,13 +667,236 @@ def parse_book(path, name_map=NAME_MAP, exclude_source_tables=()):
         return parsed, conversion
 
 
+def comparison_tables(path, conversion):
+    """Match printed tables by department/type/occurrence, never export-local IDs."""
+    from scripts.book_to_load_docx import extract_tables
+    from scripts.institution_summary import table_kind
+    provenance = {t['id']: t for t in conversion['tables']}
+    counts = Counter()
+    result = {}
+    for table in sorted(extract_tables(path), key=lambda t: (int(t['page']), t['id'])):
+        source = provenance.get(table['id'])
+        if source:
+            base = ('department', source['department'], source['type'])
+            title = {'card': 'Kart', 'membership': 'Kart faaliyet üyeliği',
+                     'cost': 'Faaliyet maliyetleri', 'economic': 'Ekonomik tablo'}[source['type']]
+            label = f"T{source['table_number']} / {title}"
+        else:
+            kind = table_kind(table)
+            base = ('institution', kind) if kind else ('other', table['page'], label_key(table['rows'][0][0]))
+            label = table['rows'][0][0] or 'Başlıksız tablo'
+        counts[base] += 1
+        result[(*base, counts[base])] = dict(table, department=source['department'] if source else 'Kurum / diğer',
+                                          label=label)
+    return result
+
+
+def paired_rows(old, new):
+    """Align insertions by row labels; keep positional label corrections visible."""
+    from difflib import SequenceMatcher
+    if len(old) == len(new):
+        return [(i, i) for i in range(len(old))]
+    pairs = []
+    labels = lambda rows: [label_key(row[0]) for row in rows]
+    for tag, a, b, c, d in SequenceMatcher(None, labels(old), labels(new), autojunk=False).get_opcodes():
+        length = max(b - a, d - c)
+        pairs.extend((a + i if a + i < b else None, c + i if c + i < d else None) for i in range(length))
+    return pairs
+
+
+def amount_changes(old_tables, new_tables):
+    """Compare every printed numeric/sentinel cell, including institution totals.
+
+    Missing rows/cells use YOK, a different state from a printed blank. Raw text
+    is preserved beside formatted numeric values, including ambiguous numbers.
+    """
+    from app.numbers import source_cell, format_number
+    def numeric(raw):
+        return raw is not None and bool(re.fullmatch(r'[+\-−\d.,%₺()\s]+(?:TL|Mn|İçerik)?', str(raw).strip()))
+    def display(raw, exists):
+        if not exists:
+            return 'YOK (satır/hücre yok)'
+        if raw is None or raw == '':
+            return 'BOŞ'
+        return str(raw)
+    changes = []
+    for key in sorted(old_tables.keys() | new_tables.keys()):
+        old, new = old_tables.get(key), new_tables.get(key)
+        before, after = old['rows'] if old else [], new['rows'] if new else []
+        for ri, rj in paired_rows(before, after):
+            a, b = before[ri] if ri is not None else [], after[rj] if rj is not None else []
+            for column in range(1, max(len(a), len(b))):
+                ae, be = column < len(a), column < len(b)
+                av, bv = a[column] if ae else None, b[column] if be else None
+                if ae == be and av == bv:
+                    continue
+                # Merged-cell markers carry structure, never a value.
+                if av in ('→', '↓') or bv in ('→', '↓'):
+                    continue
+                empty = lambda v: v is None or v in ('', '-', '–', '—')
+                if not (numeric(av) or numeric(bv) or (empty(av) and empty(bv))):
+                    continue
+                an = source_cell(av)['number'] if ae else None
+                bn = source_cell(bv)['number'] if be else None
+                delta = (format_number(Decimal(bn) - Decimal(an),
+                                       money=key[0] == 'institution' or (key[0] == 'department' and key[2] != 'card'))
+                         if an is not None and bn is not None else 'Hesaplanamaz')
+                label = (b or a)[0] or 'BOŞ satır etiketi'
+                if a and b and a[0] != b[0]:
+                    label = f'{a[0] or "BOŞ"} → {b[0] or "BOŞ"}'
+                table = new or old
+                header = next((row[column] for row in table['rows'] if len(row) > column
+                               and ('Performans Göstergesi' in (row[0] or '') or row is table['rows'][0])), None)
+                # Card metadata uses merged columns; indicator columns are named
+                # by the indicator header rather than the budget-year row.
+                if key[0] == 'department' and key[2] == 'card':
+                    header = next((row[column] for row in table['rows'] if len(row) > column
+                                   and (row[0] or '').startswith('Performans Göstergesi')), header)
+                changes.append(dict(department=table['department'],
+                    page=f"{old['page'] if old else 'YOK'} → {new['page'] if new else 'YOK'}",
+                    table=f"{old['label'] if old else 'YOK'} → {new['label'] if new else 'YOK'}",
+                    row=f"r{ri + 1 if ri is not None else 'YOK'} → r{rj + 1 if rj is not None else 'YOK'} / {label}",
+                    column=f"c{column + 1} / {header or 'BOŞ başlık'}", old=display(av, ae), new=display(bv, be), difference=delta))
+    return changes
+
+
+def difference_report(old_path, new_path, old_parsed, new_parsed, old_inspection, new_inspection,
+                      old_conversion, new_conversion, output_path):
+    """Owner-facing evidence, reproduced together with the approved dry-run."""
+    from scripts.first_load_audit import audit_results, checklist
+    import shlex
+    audits = [audit_results(p, i['results']) for p, i in (
+        (old_parsed, old_inspection), (new_parsed, new_inspection))]
+    checks = [checklist(p, i['results'], a) for p, i, a in zip(
+        (old_parsed, new_parsed), (old_inspection, new_inspection), audits)]
+    old_items, new_items = checks[0]['items'], checks[1]['items']
+    changes = amount_changes(comparison_tables(old_path, old_conversion), comparison_tables(new_path, new_conversion))
+    lines = ['# Onaylı 2027 PP — 16 Ekim kaynağına göre fark', '',
+             'Muhatap: proje sahibi ve Strateji. 2027 ilk yüklemesinin tek kaynağı onaylı IDML’dir (D-316). '
+             'Bu rapor kaynak değerlerini ve yükleyici/doğrulama kurallarını değiştirmez.', '',
+             f"Eski: `{old_path.name}`; SHA256 `{hashlib.sha256(old_path.read_bytes()).hexdigest()}`.", '',
+             f"Yeni: `{new_path.name}`; SHA256 `{hashlib.sha256(new_path.read_bytes()).hexdigest()}`.", '',
+             'Karşılaştırma, iki kaynağı da aynı basılı sayfa geometrisi filtresiyle ve ayrı geçici yerel '
+             'PostgreSQL veritabanlarında gerçek servislerle çalıştırır. '
+             'Eski rapor `docs/first-load/dryrun-printed.md` ve `dryrun-d3.md` değiştirilmez. '
+             'Onaylı arşivdeki 240 tablonun 229’u basılı, 7’si pasteboard ve 4’ü yerleşimsizdir; '
+             'yerleşimsiz dört tablo önceki okuyucu tarafından da yüklenmiyordu.', '',
+             '## Yeniden üretme', '', '```sh',
+             '# CIVENSA_TEST_POSTGRES_URL: yerel, disposable PostgreSQL 16+; CREATE DATABASE yetkisi.',
+             f'python scripts/first_load_dryrun.py {shlex.quote(new_path.as_posix())} '
+             f'--out docs/first-load/dryrun-onayli.md --compare-source {shlex.quote(old_path.as_posix())} '
+             f'--diff-out {output_path.as_posix()}', '```', '',
+             '## Müdürlük sayımları', '',
+             'Her hücre eski → yeni. Ekonomik değer sayısı kategori kayıtlarını sayar; toplam satırları ayrıca denetlenir. '
+             'YOK müdürlüğün kaynakta bulunmadığı anlamına gelir.', '',
+             '| Müdürlük | Kart | Gösterge | Faaliyet | Ekonomik değer | Kitap maddesi | Hazır |',
+             '| --- | ---: | ---: | ---: | ---: | ---: | --- |']
+    departments = [{d['name']: d for d in p['departments']} for p in (old_parsed, new_parsed)]
+    def counts(d):
+        return (len(d['blocks']), sum(len(b['indicators']) for b in d['blocks']), len(d['activities']),
+                sum(len(t['values']) for t in d['economic_tables'])) if d else ('YOK',) * 4
+    totals = [[0] * 4, [0] * 4]
+    for name in sorted(departments[0].keys() | departments[1].keys()):
+        values = [counts(d.get(name)) for d in departments]
+        for index in range(2):
+            totals[index] = [x + (y if isinstance(y, int) else 0) for x, y in zip(totals[index], values[index])]
+        item_counts = [sum(i['department'] == name for i in items) for items in (old_items, new_items)]
+        ready = [next(('Evet' if r['ready'] else 'Hayır' for r in inspection['results']
+                       if r['name'] == name), 'YOK') for inspection in (old_inspection, new_inspection)]
+        lines.append('| ' + ' | '.join([cell(name)] + [f'{a} → {b}' for a, b in zip(*values)]
+                                      + [f'{item_counts[0]} → {item_counts[1]}', ' → '.join(ready)]) + ' |')
+    lines.extend(['| **Toplam** | ' + ' | '.join(f'**{a} → {b}**' for a, b in zip(*totals))
+                  + f" | **{len(old_items)} → {len(new_items)}** | "
+                  f"**{sum(r['ready'] for r in old_inspection['results'])} → {sum(r['ready'] for r in new_inspection['results'])}** |", '',
+                  f"Müdürlük: {len(departments[0])} → {len(departments[1])}; "
+                  f"yeni: {', '.join(sorted(departments[1].keys() - departments[0].keys())) or 'Yok'}; "
+                  f"eksilen: {', '.join(sorted(departments[0].keys() - departments[1].keys())) or 'Yok'}.", '',
+                  '## Değişen bütün tutar / gösterge hücreleri', '',
+                  f'**{len(changes)} değişen hücre**. Kapsam: bütün basılı IDML tabloları; kurum özetleri ve diğer '
+                  'sayısal tablolar dahildir. T numarası üretilen Word tablosudur. Basılmayan tablolar kapsam dışıdır. '
+                  'Fark = yeni − eski; BOŞ, çizgi, sıfır ve YOK ayrı tutulur. Ham değerler aynen korunur; '
+                  'yalnız fark Türkçe sayı biçimiyle yazılır. Ham biçim değişip sayısal değer aynı kalırsa fark 0’dır. '
+                  'Belirsiz/okunamayan veya eksik bir taraf varsa fark hesaplanmaz.', '',
+                  'Tablolar müdürlük + tür + basılı sıra ile; kurum tabloları başlık türüyle; diğer tablolar '
+                  'sayfa + ilk başlık + sıra ile eşlenir. IDML kimlikleri dışa aktarmada yenilendiğinden eşleme anahtarı değildir. '
+                  'Aynı boyutlu tablolarda satır konumu korunur; eklenen satırlar etiket dizisiyle hizalanır. '
+                  'Sütunlar fiziksel sıradadır; satır/sütun konumu ve başlık birlikte kanıttır.', '',
+                  '| Müdürlük / kapsam | Sayfa eski → yeni | Tablo eski → yeni | Satır / etiket | Sütun / etiket | Eski ham değer | Yeni ham değer | Fark |',
+                  '| --- | --- | --- | --- | --- | ---: | ---: | ---: |'])
+    for change in changes:
+        lines.append('| ' + ' | '.join(cell(change[k]) for k in (
+            'department', 'page', 'table', 'row', 'column', 'old', 'new', 'difference')) + ' |')
+    lines.extend(['', '## Kitap kontrolü ve gönderime hazırlık', '',
+                  f"Kitap kontrol maddesi: **{len(old_items)} → {len(new_items)}**; "
+                  f"gönderime hazır müdürlük: **{sum(r['ready'] for r in old_inspection['results'])}/{len(old_inspection['results'])} → "
+                  f"{sum(r['ready'] for r in new_inspection['results'])}/{len(new_inspection['results'])}**.", '',
+                  f"Mesajlar: kitap {checks[0]['book_messages']} → {checks[1]['book_messages']}; "
+                  f"yalnız program grubu {checks[0]['allocation_messages']} → {checks[1]['allocation_messages']}; "
+                  f"SYSTEM {sum(f['side'] == 'SYSTEM' for f in audits[0]['findings'])} → "
+                  f"{sum(f['side'] == 'SYSTEM' for f in audits[1]['findings'])}.", ''])
+    def item_map(items):
+        result = {}
+        for item in items:
+            key = item['department'], item['title']
+            if key in result:
+                raise ValueError('Fark raporunda kontrol maddesi kimliği belirsiz: ' + str(key))
+            result[key] = item
+        return result
+    before, after = item_map(old_items), item_map(new_items)
+    resolved, remaining, added = before.keys() - after.keys(), before.keys() & after.keys(), after.keys() - before.keys()
+    lines.extend([f'Eski {len(old_items)} madde: **{len(resolved)} çözüldü, {len(remaining)} açık**. '
+                  f'**{len(added)} yeni madde** var. Kimlik müdürlük + kontrol başlığı/yılıdır; '
+                  'durum aynı kontrol alanının geçip geçmediğini gösterir, gerekçe ve tutar değişmiş olabilir. '
+                  'Örneğin Sağlık toplam etiketi düzelmiştir; 2026 Haziran ve 2029 ekonomik kontrolleri '
+                  'yeni aritmetik farklar nedeniyle açık kalır. Kurum özet bulguları bu sayıya dahil değildir.', '',
+                  '| Durum | Müdürlük | Kontrol maddesi | Eski sayfa / tablo / hücre | Yeni sayfa / tablo / hücre |',
+                  '| --- | --- | --- | --- | --- |'])
+    def refs(item):
+        return reference_text(item['cells']) if item else 'YOK'
+    for status, keys in (('Çözüldü', resolved), ('Açık', remaining), ('Yeni', added)):
+        for key in sorted(keys):
+            lines.append('| ' + ' | '.join(cell(v) for v in (
+                status, *key, refs(before.get(key)), refs(after.get(key)))) + ' |')
+    lines.extend(['', '## Okuma sınırları, kaynak sorunları ve teyit', '',
+                  'Onaylı PDF bu çalışmada ayrıca açılıp doğrulanmadı; PDF ile eşleşme bilgisi görevde verilen '
+                  'D-320 teyididir. IDML SHA256 değeri doğrulandı. Çok sayfalı story için ilk basılı sayfa gösterilir; '
+                  'InDesign dizgi motoru kullanılmadığından hücrenin kesin devam sayfası doğrulanamaz.', '',
+                  'Özel Kalem’de 0006 emekli ikramiyesi maliyet satırı onaylı kaynakta vardır: faaliyet sayısının '
+                  '290’dan 291’e çıkması bu satırdır; maliyet uydurulmadı. Sağlık ekonomik tablosunun eski BOŞ '
+                  'toplam etiketi onaylı kaynakta “BÜTÇE İÇİ TOPLAM KAYNAK” olmuştur; aynı tutarın artık tanınması '
+                  'sayısal düzeltmeyle karıştırılmamalıdır.', '',
+                  'İşletme ve İştirakler’de basılı kart üyelik kodları 0011/0012/0013/0014/0015, maliyet kodları '
+                  '0001/0002/0033/0004/0005’tir. Tekil kod eşlemesi beş faaliyeti bağlayamaz: 5 üyelik kontrol '
+                  'maddesi ve 10 SYSTEM bağlantı mesajı vardır. Bu, kaynak kod uyuşmazlığıdır; parser kusuru '
+                  'olduğu kanıtlanmadı. Kodlar düzeltilmedi, ad benzerliğiyle bağlanmadı, tablo dışlanmadı.', '',
+                  'Diğer çözülmemiş SYSTEM bulguları onaylı dry-run’da ayrı listelenir. Bu görevde pasteboard '
+                  'dışında kanıtlanmış parser kusuru düzeltilmedi. Belirsiz sayı biçimi, eksik kaynak ve '
+                  'doğrulama sorunları raporda korunur. Canlı veritabanına bağlanılmadı.', ''])
+    for p, a, c in zip((old_path, new_path), audits, (old_conversion, new_conversion)):
+        findings = a.get('institution', {}).get('findings', [])
+        states = Counter(f['status'] for f in findings)
+        classes = Counter(f.get('classification') for f in findings if f['status'] == 'FAIL')
+        lines.extend([f"`{p.name}`: kurum {states['PASS']} PASS / {states['FAIL']} FAIL; "
+                      f"sınıflar {dict(classes)}. Geometriyle dışlanan: "
+                      f"{sum(t['reason'] == 'pasteboard' for t in c['non_printed'])} pasteboard + "
+                      f"{sum(t['reason'] == 'unplaced' for t in c['non_printed'])} yerleşimsiz tablo.", ''])
+    return '\n'.join(lines)
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('book', type=Path)
     parser.add_argument('--exclude-source-table', type=int, action='append', default=[],
                         help='Yalnızca provada çıkarılacak Word tablo numarası; tekrarlanabilir')
     parser.add_argument('--out', type=Path, help='Markdown çıktı dosyası; verilmezse stdout')
+    parser.add_argument('--compare-source', type=Path, help='Eski IDML kaynağını aynı kurallarla karşılaştır')
+    parser.add_argument('--diff-out', type=Path, help='Türkçe kaynak fark raporu; --compare-source ile birlikte')
     args = parser.parse_args()
+    if bool(args.compare_source) != bool(args.diff_out):
+        parser.error('--compare-source ve --diff-out birlikte gerekli')
+    if args.compare_source and (args.exclude_source_table or args.book.suffix.lower() != '.idml'
+                                or args.compare_source.suffix.lower() != '.idml'):
+        parser.error('Kaynak karşılaştırması dışlamasız iki IDML gerektirir')
     sys.path.insert(0, str(ROOT))
     try:
         url = local_test_url()  # Refuse unsafe targets before any connection.
@@ -677,6 +915,16 @@ def main():
             print(f'Rapor yazıldı: {args.out}')
         else:
             print(content)
+        if args.compare_source:
+            old_parsed, old_conversion = parse_book(args.compare_source)
+            with disposable_database(url) as engine:
+                with Session(engine, expire_on_commit=False) as db:
+                    old_inspection = inspect_import(db, deepcopy(old_parsed), args.compare_source.name)
+            comparison = difference_report(args.compare_source, args.book, old_parsed, parsed,
+                                           old_inspection, inspection, old_conversion, conversion, args.diff_out)
+            args.diff_out.parent.mkdir(parents=True, exist_ok=True)
+            args.diff_out.write_text(comparison, encoding='utf-8')
+            print(f'Fark raporu yazıldı: {args.diff_out}')
     except ValueError as exc:
         print(f'Kuru deneme çalıştırılamadı: {exc}', file=sys.stderr)
         return 1

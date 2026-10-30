@@ -69,8 +69,11 @@ def synthetic_idml(path):
             entry = ET.SubElement(design, 'Spread', src=f'Spreads/{page}.xml')
             root = ET.Element('Package')
             spread = ET.SubElement(root, 'Spread')
-            ET.SubElement(spread, 'Page', Name=str(number))
-            ET.SubElement(spread, 'TextFrame', ParentStory=story_id)
+            ET.SubElement(spread, 'Page', Name=str(number), GeometricBounds='0 0 100 100')
+            frame = ET.SubElement(spread, 'TextFrame', ParentStory=story_id)
+            points = ET.SubElement(ET.SubElement(frame, 'Properties'), 'PathPointArray')
+            for anchor in ('10 10', '90 10', '90 90', '10 90'):
+                ET.SubElement(points, 'PathPointType', Anchor=anchor)
             archive.writestr(entry.attrib['src'], ET.tostring(root))
         archive.writestr('designmap.xml', ET.tostring(design))
 
