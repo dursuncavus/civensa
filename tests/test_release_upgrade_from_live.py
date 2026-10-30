@@ -33,10 +33,6 @@ NEW_TABLES = {
 pytestmark = pytest.mark.postgres
 
 
-class HealthReadinessMismatch(AssertionError):
-    """Only the confirmed health contract defect may be an expected failure."""
-
-
 @pytest.fixture
 def live_database(monkeypatch, isolated_application_startup):
     configured = os.getenv('CIVENSA_TEST_POSTGRES_URL')
@@ -255,8 +251,6 @@ def assert_head(engine, head):
         assert connection.execute(text('SELECT version_num FROM public.alembic_version')).scalars().all() == [head]
 
 
-@pytest.mark.xfail(strict=True, raises=HealthReadinessMismatch,
-    reason='CIV-156: /health returns status=ok without readiness or Alembic head revision')
 def test_populated_live_schema_upgrades_twice_and_serves_app(live_database, monkeypatch):
     engine = live_database
     assert row_counts(engine) == {}
@@ -309,6 +303,9 @@ def test_populated_live_schema_upgrades_twice_and_serves_app(live_database, monk
         assert health.status_code == 200
         assert health.json()['database']['backend'] == 'postgresql'
         assert health.json()['database']['status'] == 'ok'
+        assert health.json()['status'] == 'ok'
+        assert health.json()['ready'] is True
+        assert health.json()['migration'] == {'current': head, 'head': head}
         assert client.get('/login').status_code == 200
         login = client.post('/login', data={'email': 'upgrade-strategy@example.invalid',
             'password': password}, follow_redirects=False)
@@ -319,7 +316,3 @@ def test_populated_live_schema_upgrades_twice_and_serves_app(live_database, monk
         # Login adds audit/throttle rows; all pre-existing rows must still match.
         assert_head(engine, head)
         assert_preserved(engine, before_counts, before_values, metadata)
-        # /health currently tests SELECT 1 only. Keep the requested readiness
-        # contract visible without hiding migration, value, login or page failures.
-        if health.json().get('status') != 'ready' or health.json().get('migration') != head:
-            raise HealthReadinessMismatch('/health must report ready and the current Alembic head')

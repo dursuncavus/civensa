@@ -15,7 +15,7 @@ import time
 from functools import lru_cache
 from urllib.parse import quote
 
-from fastapi import FastAPI, Request, Depends, Form, HTTPException, UploadFile, File
+from fastapi import FastAPI, Request, Response, Depends, Form, HTTPException, UploadFile, File
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -1975,18 +1975,28 @@ def activate_period(period_id: int, db: Session = Depends(get_db), user: User = 
 
 
 @app.get("/health")
-def health():
+def health(response: Response = None):
     backend = engine.url.get_backend_name()
+    head = migration_head()
+    current = None
     started = time.perf_counter()
     try:
         with engine.connect() as connection:
             connection.exec_driver_sql("SELECT 1")
+            try:
+                current = connection.exec_driver_sql(
+                    "SELECT version_num FROM alembic_version LIMIT 2"
+                ).scalar_one_or_none()
+            except Exception:
+                # Missing or unreadable revision metadata must fail readiness.
+                current = None
         database_status = "ok"
     except Exception:
         database_status = "error"
     database_latency_ms = round((time.perf_counter() - started) * 1000, 1)
+    ready = database_status == "ok" and current == head
     payload = {
-        "status": "ok" if database_status == "ok" else "degraded",
+        "status": "ok" if ready else "degraded",
         "app": "civensa",
         "version": APP_VERSION,
         "environment": "production" if is_production() else "qa",
@@ -1994,8 +2004,12 @@ def health():
             "backend": backend, "status": database_status,
             "latency_ms": database_latency_ms,
         },
+        "ready": ready,
+        "migration": {"current": current, "head": head},
     }
-    return payload if database_status == "ok" else JSONResponse(payload, status_code=503)
+    if response is not None:
+        response.status_code = 200 if ready else 503
+    return payload
 
 
 @app.get("/export/department/{department_id}.json")

@@ -20,7 +20,7 @@ from scripts import clear_preprint_2027 as clear
 from ops.backup_crypto import decrypt_backup
 from ops.release_rehearsal import database_state, require_fresh_backup, RehearsalFailure
 
-EXPECTED = dict(departments=33, cards=61, indicators=256, activities=285, economic_values=1300)
+EXPECTED = dict(departments=34, cards=64, indicators=263, activities=291, economic_values=1340)
 
 
 def private(command, env):
@@ -230,10 +230,10 @@ def rehearse(backup, organization_id, actor_id, record):
             before = snapshot(engine)
             plan = live.execute(engine, parsed, **ids)
             if snapshot(engine) != before or any(plan['counts'][k] != v for k, v in EXPECTED.items()):
-                raise live.Refusal('Basılı ilk yükleme planı 33/61/256/285/1300 veya sıfır yazma ile uyuşmuyor.')
+                raise live.Refusal('Basılı ilk yükleme planı 34/64/263/291/1340 veya sıfır yazma ile uyuşmuyor.')
             skipped = [d['name'] for d in plan['skipped']]
-            if skipped != [live.SKIPPED]:
-                raise live.Refusal('Basılı plan yalnız İşletme ve İştirakler Müdürlüğünü atlamalıdır.')
+            if skipped:
+                raise live.Refusal('Onaylı kitap planında hiçbir müdürlük atlanmamalıdır.')
             record['steps'].append(dict(step='first-load-plan', counts=dict(plan['counts']), writes=0,
                 created_source_names=[d['source_name'] for d in plan['departments'] if d['action'] == 'create'],
                 skipped_source_names=skipped))
@@ -246,7 +246,9 @@ def rehearse(backup, organization_id, actor_id, record):
                 loaded = live.execute(engine, parsed, apply=True, **ids)
             if loaded['failed'] or loaded['counts'] != plan['counts']:
                 raise live.Refusal('Yerel ilk yükleme uygulaması plan sayımlarını tamamlayamadı.')
-            record['steps'].append(dict(step='first-load-apply', counts=dict(loaded['counts'])))
+            record['steps'].append(dict(step='first-load-apply', counts=dict(loaded['counts']),
+                validation_departments=len(loaded['validation']),
+                validation_errors=sum(len(v['errors']) for v in loaded['validation'])))
             before = snapshot(engine)
             plan = live.execute(engine, parsed, resume=True, **ids)
             if snapshot(engine) != before or any(plan['counts'].values()):

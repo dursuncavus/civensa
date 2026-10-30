@@ -23,10 +23,22 @@ def positive_id(value):
 
 def download_verified_run(run_id):
     repo = os.environ['GITHUB_REPOSITORY']
+    refusal = (
+        'Kaynak yalnız varsayılan daldaki (schedule veya elle başlatılan) yeşil '
+        'Daily verified database backup çalışması olabilir.'
+    )
+    try:
+        metadata = github_json(f'repos/{repo}')
+    except Exception:
+        raise live.Refusal(refusal) from None
+    default_branch = metadata.get('default_branch') if isinstance(metadata, dict) else None
+    if not isinstance(default_branch, str) or not default_branch.strip():
+        raise live.Refusal(refusal)
     run = github_json(f'repos/{repo}/actions/runs/{run_id}')
-    if (run['name'] != 'Daily verified database backup' or run['head_branch'] != 'main'
+    if (run['name'] != 'Daily verified database backup' or run['head_branch'] != default_branch
+            or run.get('event') not in {'schedule', 'workflow_dispatch'}
             or run['status'] != 'completed' or run['conclusion'] != 'success'):
-        raise live.Refusal('Kaynak yalnız main dalındaki yeşil Daily verified database backup çalışması olabilir.')
+        raise live.Refusal(refusal)
     require_fresh_backup(run['created_at'])
     artifacts = github_json(f'repos/{repo}/actions/runs/{run_id}/artifacts')['artifacts']
     artifacts = [a for a in artifacts if not a['expired'] and a['name'].startswith('civensa-db-backup-')]

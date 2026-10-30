@@ -1,0 +1,22 @@
+<section class="card" id="soru-formu"><h2>Soru formu</h2><p><a class="button" href="/internal-control/questionnaires">Soru listesi yükle / sürümleri incele</a></p>
+{% if user.position=='director' and not monitoring_period.closed_at %}
+<p>Katılımcı birimleri Strateji seçer — varsayım, Strateji teyit edecek. İlk yanıt kaydedildikten sonra liste ve katılımcılar korunur; yeni müdürlük eklenebilir.</p>
+{% if question_lists %}{% filter pp_form(request) %}<form method="post" action="/internal-control/monitoring/periods/{{ monitoring_period.id }}/questionnaire">{{ token(request) }}
+<input type="hidden" name="expected_revision" value="{{ question_attachment.revision if question_attachment else 0 }}">
+<label>Soru listesi<select name="list_id">{% for list in question_lists %}<option value="{{ list.id }}" {{ 'selected' if question_attachment and question_attachment.list_id==list.id else '' }}>{{ list.name }} · Sürüm {{ list.id }}</option>{% endfor %}</select></label>
+<input type="hidden" name="department_ids" value=""><fieldset><legend>Katılımcı müdürlükler</legend>{% for department in question_departments %}<label class="ic-choice"><input type="checkbox" name="department_ids" value="{{ department.id }}" {{ 'checked' if question_selected is none or department.id in question_selected else '' }}>{{ department.name }}</label>{% endfor %}</fieldset>
+<button class="button primary">Listeyi ve katılımcıları döneme bağla</button></form>{% endfilter %}{% else %}<p>Önce soru listesini yükleyip inceleyerek kaydedin.</p>{% endif %}{% endif %}
+<h3>Müdürlüklerin soru formu durumu</h3>{% for d in question_details %}<article><a href="/internal-control/questionnaires/batches/{{ d.batch.id }}">{{ d.batch.label }}</a> · <span class="status {{ d.status }}">{{ states[d.status] }}</span> · Yanıtlanan {{ d.answered }}/{{ d.rows|length }}</article>{% else %}<p>Bu döneme soru formu bağlanmadı.</p>{% endfor %}
+</section>
+{% if question_attachment %}<section class="card ic-results-card"><h2>Soru formu sonuçları</h2>
+<p>Hesaba katılan onaylı müdürlük: {{ question_results.included|length }}/{{ question_results.participant_count }}. Oran = ilgili yanıt sayısı / onaylı formlardaki yanıt sayısı × 100.</p>
+<p>Henüz onaylanmayan müdürlükler: {{ question_results.pending|join(', ') or 'Yok' }}</p>
+<h3>Müdürlük puanları</h3>
+<p>{{ scoring_assumption }}. Toplam puan = 2 × Evet + Geliştirilmekte; azami puan = 2 × soru sayısı. Gerçekleşme oranı = (Evet + Geliştirilmekte) / soru sayısı × 100.</p>
+<p>Kurum hesabı onaylı müdürlüklerin bütün soru yanıtlarını toplar. Onaysız müdürlüklere puan verilmez.</p>
+<div class="ic-scroll" role="region" aria-label="Müdürlük puanları" tabindex="0"><table class="ic-result-table ic-result-table-scores"><thead><tr><th>Müdürlük</th>{% for label in answer_labels.values() %}<th>{{ label }}</th>{% endfor %}<th>Toplam puan</th><th>Azami puan</th><th>Gerçekleşme oranı</th></tr></thead><tbody>
+{% for row in question_results.directorates + [question_results.total] %}<tr class="{{ 'ic-total-row' if row == question_results.total else '' }}"><th scope="row">{{ row.label }}</th>{% for key in answer_labels %}<td>{{ row.counts[key]|trnum }}</td>{% endfor %}<td>{{ row.score|trnum if row.score is not none else '—' }}</td><td>{{ row.max_score|trnum }}</td><td>{{ row.realisation_rate }}</td></tr>{% endfor %}
+</tbody></table></div>
+{% for title, result_rows in [('Bileşen özeti', question_results.components + [question_results.total]), ('Soru özeti', question_results.questions)] %}<h3>{{ title }}</h3><div class="ic-scroll" role="region" aria-label="{{ title }}" tabindex="0"><table class="ic-result-table ic-result-table-summary"><thead><tr><th>{{ 'Kod / Soru' if title=='Soru özeti' else 'Bileşen' }}</th>{% for label in answer_labels.values() %}<th>{{ label }}</th>{% endfor %}</tr></thead><tbody>{% for row in result_rows %}<tr class="{{ 'ic-total-row' if row == question_results.total else '' }}"><th scope="row">{{ row.label }}{% if row.question %} · {{ row.question }}{% endif %}</th>{% for key in answer_labels %}<td>{{ row.rates[key] }}</td>{% endfor %}</tr>{% endfor %}</tbody></table></div>{% endfor %}
+<div class="ic-actions"><a class="button" href="/internal-control/monitoring/periods/{{ monitoring_period.id }}/questionnaire.xlsx">Soru formu sonuçları · Onaylı Excel indir</a><a class="button" href="/internal-control/monitoring/periods/{{ monitoring_period.id }}/questionnaire.xlsx?draft=true">Soru formu sonuçları · TASLAK Excel indir</a></div>
+</section>{% endif %}

@@ -1,0 +1,8 @@
+58 ekran görüntüsü; 29 durum × 2 genişlik (1366 ve 390 px).
+Yükleme: boş, hata, önizleme, kayıtlı. Bağlama: boş, hata, bağlı.
+Müdürlük, genel görünüm ve detay: boş, kısmi, gönderildi, iade, onaylı, yeniden açıldı.
+Müdürlük gönderim hatası ve Strateji inceleme hatası ayrıca doğrulandı.
+D-336: onaylı müdürlük ve kurum için 5/8 puan, %75,00 (3/4); onaysız/yeniden açılmış formlar puana katılmaz.
+Puan sütunları 390 px genişlikte tablo kaydırılarak görünürlük denetiminden geçti.
+Her durumda sayfa taşması yok; tablolar kendi alanında yatay kaydırılır.
+Tüm sorular sentetiktir (Test sorusu 1…4).

@@ -37,8 +37,14 @@ def our_screen(request, db, user, period_id=None):
         Batch.department_id == user.department_id)).all() if period else []
     notes = m.visible_notes(db, user, period) if period else []
     details = [batch_context(db, user, b.id) for b in batches]
-    return templates.TemplateResponse(request, 'internal_control/monitoring_ours.html', dict(
-        user=user, monitoring_period=period, periods=available, details=details, notes=notes, note_codes={n.action_id: db.get(ICAction, n.action_id).action_code_raw for n in notes},
+    from . import internal_control_narrative_service as n
+    from . import internal_control_questionnaire_service as q
+    from .internal_control_questionnaire_routes import batch_context as question_context
+    question_details = [question_context(db, user, b.id) for b in q.batches(db, period.id) if b.department_id == user.department_id] if period else []
+    return templates.TemplateResponse(request, 'internal_control/questionnaire_ours.html' if question_details else 'internal_control/monitoring_ours.html', dict(
+        user=user, monitoring_period=period, periods=available, details=details, notes=notes,
+        narrative_mission_vision=n.approved_mission_vision(db, period.id) if period else None,
+        question_details=question_details, answer_labels=q.ANSWERS, note_codes={n.action_id: db.get(ICAction, n.action_id).action_code_raw for n in notes},
         note_editable=bool(period and not period.closed_at and m.today(db) <= period.deadline),
         cooperating=m.cooperating_actions(db, user, period) if period else [], **context()))
 
@@ -58,13 +64,15 @@ def overview_screen(request, db, user, period_id=None):
     available = periods(db)
     period = m.get_period(db, user, m.number(period_id, 'period_id')) if period_id else (available[0] if available else None)
     details, counts = m.overview(db, user, period) if period else ([], {})
+    from .internal_control_questionnaire_routes import overview_context as question_context
     return templates.TemplateResponse(request, 'internal_control/monitoring.html', dict(user=user,
         monitoring_period=period, periods=available, details=details, counts=counts,
         official_metrics=m.official_metrics(db, user, period) if period else None,
         unassigned=db.scalars(select(Department).where(Department.is_active.is_(True),
             Department.id.not_in([d['batch'].department_id for d in details if d['batch'].department_id])).order_by(Department.name)).all() if period else [],
         plans=db.scalars(select(ICPlan).where(ICPlan.status == 'active')).all(),
-        period_events=db.scalars(select(PeriodEvent).where(PeriodEvent.period_id == period.id).order_by(PeriodEvent.id)).all() if period else [], **context()))
+        period_events=db.scalars(select(PeriodEvent).where(PeriodEvent.period_id == period.id).order_by(PeriodEvent.id)).all() if period else [],
+        **({k: v for k, v in question_context(db, user, period).items() if k not in context()} if period else {}), **context()))
 
 
 def detail_screen(request, db, user, batch_id):
@@ -162,3 +170,9 @@ def register(app):
         data = export.annual_export(db, user, plan_id, year)
         return StreamingResponse(BytesIO(data), media_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
             headers={'Content-Disposition': 'attachment; filename="ic-yillik.xlsx"'})
+
+    from .internal_control_questionnaire_routes import register as register_questionnaires
+    register_questionnaires(app)
+
+    from .internal_control_narrative_routes import register as register_narratives
+    register_narratives(app)

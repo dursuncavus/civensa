@@ -21,11 +21,10 @@ from scripts.first_load_dryrun import environment, parse_book
 with environment(DATABASE_URL='sqlite://', MIGRATION_DATABASE_URL=None):
     import app.db  # noqa: F401
 
-BOOK = ROOT / 'tests/fixtures/first_load/source/2027-performans-programi_16102026_duzeltilmis 2.idml'
-BOOK_SHA256 = '261cd17fd0be13dead1c573966bb3cc17b63664adc867b2e6fc4e156df28f36e'
-HEAD = 'c048a1b2c3d4'
+BOOK = ROOT / 'tests/fixtures/first_load/source/2027-performans-programi_ONAYLI.idml'
+BOOK_SHA256 = 'cbbf9018302d0a1d33d1dde0c4a64a2418d12b55cc29d046205371018673bd71'
+HEAD = 'c160a1b2c3d4'
 TARGET_ENV = 'CIVENSA_FIRST_LOAD_DATABASE_URL'
-SKIPPED = 'İşletme ve İştirakler Müdürlüğü'
 MARKER = 'first_load_department'
 LOCK = 520027
 
@@ -200,9 +199,7 @@ def department_plan(db, parsed, completed):
     for source in plan['parsed']['departments']:
         m = mapping[department_key(source['name'])]
         reason = None
-        if department_key(source['name']) == department_key(SKIPPED):
-            reason = 'Meclis verisi bekleniyor; D-88 gereği atlandı.'
-        elif m.get('department_id') in completed:
+        if m.get('department_id') in completed:
             reason = 'Önceki ilk yüklemede tamamlandı; kullanıcı düzeltmeleri korunarak atlandı.'
         elif m['action'] == 'unresolved' or (m['action'] == 'match' and m['confidence'] != 1):
             reason = 'Tekil kesin müdürlük eşleşmesi yok; sorumluya bildirin.'

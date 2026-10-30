@@ -510,10 +510,15 @@ def _read_response(conn, timeout):
 @pytest.mark.postgres
 def test_decision_body_wait_never_freezes_the_server(db, sample):
     """T1 sends headers and holds its body; T2 decides the same submission; /health must stay live."""
+    from alembic import command
+    from alembic.config import Config
     import httpx
     import uvicorn
     from app.main import app
     from app.db import get_db
+
+    # The isolated SQLite health database has no lifespan to stamp its revision.
+    command.stamp(Config(str(Path(__file__).resolve().parents[1] / 'alembic.ini')), 'head')
 
     tag = 'civensa-a1f4-' + uuid.uuid4().hex[:8]
     bind = db.get_bind()

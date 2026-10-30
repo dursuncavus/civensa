@@ -6,6 +6,7 @@ All route and browser examples use disposable PostgreSQL and synthetic records.
 from collections import Counter
 from datetime import date, datetime, timedelta
 from hashlib import sha256
+from html import escape
 from html.parser import HTMLParser
 from pathlib import Path
 from types import SimpleNamespace
@@ -99,6 +100,29 @@ def frozen_environment():
     return templates.env.overlay(loader=ChoiceLoader([DictLoader(sources), templates.env.loader]))
 
 
+def narrative_deltas(template_name, context, expected):
+    """D-342: only CIV-160's state-dependent link and approved read-only block."""
+    period = context.get('monitoring_period')
+    if template_name == 'internal_control/monitoring.html' and period:
+        assert context['user'].role == 'strategy'
+        marker = '<section class="card"><h2>Eylem bazında resmî rapor özeti</h2>'
+        link = (f'<p><a class="button" href="/internal-control/monitoring/periods/{period.id}/narrative">'
+                'Rapor anlatı bölümleri</a></p>')
+        assert expected.count(marker) == 1
+        expected = expected.replace(marker, link + '\n' + marker, 1)
+    approved = context.get('narrative_mission_vision')
+    if template_name in ('internal_control/monitoring_ours.html', 'internal_control/questionnaire_ours.html') and approved:
+        assert period and context['user'].role == 'department'
+        assert set(approved) == {'mission', 'vision'}
+        block = ('<section class="card" aria-label="Misyon ve Vizyon"><h2>Misyon ve Vizyon</h2>'
+                 '<h3>Misyon</h3><p style="white-space:pre-wrap;overflow-wrap:anywhere">' + escape(approved['mission']) + '</p>'
+                 '<h3>Vizyon</h3><p style="white-space:pre-wrap;overflow-wrap:anywhere">' + escape(approved['vision']) + '</p></section>')
+        marker = '<h2>Sorumlu olduğumuz eylemler</h2>'
+        assert expected.count(marker) == 1
+        expected = expected.replace(marker, block + '\n' + marker, 1)
+    return expected
+
+
 def render_contract(response, context=None):
     assert response.status_code == 200
     context = dict(context or response.context)
@@ -107,6 +131,7 @@ def render_contract(response, context=None):
     actual = response.template.render(context)
     request.state.pp_attempt_rendered = False
     expected = frozen_environment().get_template(response.template.name).render(context)
+    expected = narrative_deltas(response.template.name, context, expected)
     new, old = ScreenContract(actual), ScreenContract(expected)
     assert new.controls == old.controls
     assert new.bindings == old.bindings

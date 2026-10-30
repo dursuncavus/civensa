@@ -1,0 +1,5 @@
+22 ekran görüntüsü; 11 durum × 2 genişlik (1366 ve 390 px).
+Editör: boş, dolu taslak, gönderildi, iade, onaylı, sınır hatasında korunan değerler, kapalı dönem.
+Ek: gerekçe hatası, yeniden açıldı, Strateji genel görünüm bağlantısı, müdürlük Misyon/Vizyon bloğu.
+Gerçek Chromium ile düğmeler, kayıt durumu, karakter sayacı, hata değerleri ve yatay taşma denetlendi.
+Bütün anlatı metinleri açıkça sentetiktir (Test misyon metni …, Test vizyon metni …).

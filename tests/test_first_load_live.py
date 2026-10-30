@@ -1,4 +1,4 @@
-"""CIV-052: real migration schema and writes only in disposable local PostgreSQL."""
+"""CIV-158: approved source, real migration schema and writes only in disposable local PostgreSQL."""
 from copy import deepcopy
 from datetime import datetime, timedelta, timezone
 import hashlib
@@ -10,8 +10,8 @@ from sqlalchemy import select, text
 from sqlalchemy.orm import Session
 
 from scripts import first_load_live as live
-from scripts.first_load_dryrun import disposable_database, local_test_url
-from tests.first_load_checkpoint import disposable_release50_database
+from scripts.first_load_dryrun import local_test_url
+from tests.first_load_checkpoint import disposable_first_load_database
 from app.models import (Activity, AuditLog, Department, EconomicValue, ImportBatch,
                         Indicator, IndicatorValue, Organization, ReportingPeriod, Submission, User)
 
@@ -23,7 +23,7 @@ def printed():
 
 @pytest.fixture
 def target():
-    with disposable_release50_database(local_test_url()) as engine:
+    with disposable_first_load_database(local_test_url()) as engine:
         with Session(engine) as db:
             org = Organization(name='Yerel ilk yükleme testi')
             actor = User(email='strategy@example.invalid', full_name='Strateji test',
@@ -60,22 +60,25 @@ def test_printed_plan_apply_repeat_resume_preserves_corrections(target, printed)
     before = state(engine)
     plan = live.execute(engine, printed, **ids)
     assert state(engine) == before
-    assert dict(plan['counts']) == dict(departments=33, created_departments=33, cards=61,
-                                       indicators=256, activities=285, economic_values=1300)
-    assert plan['skipped'] == [dict(name=live.SKIPPED, reason='Meclis verisi bekleniyor; D-88 gereği atlandı.')]
+    assert dict(plan['counts']) == dict(departments=34, created_departments=34, cards=64,
+                                       indicators=263, activities=291, economic_values=1340)
+    assert plan['skipped'] == []
     applied = live.execute(engine, printed, apply=True, **ids)
     assert not applied['failed']
     assert applied['counts'] == plan['counts']
     assert applied['departments'] == plan['departments']
-    assert len(applied['validation']) == 33
+    assert len(applied['validation']) == 34
     assert any(v['errors'] for v in applied['validation'])
+    business_validation = next(v for v in applied['validation']
+                               if v['name'] == 'İşletme ve İştirakler Müdürlüğü')
+    assert business_validation['errors']  # D-324: diagnostic, still saved as draft.
     after = state(engine)
     with pytest.raises(live.Refusal, match='2027 PP verisi zaten var'):
         live.execute(engine, printed, apply=True, **ids)
     assert state(engine) == after
     with Session(engine) as db:
         assert set(db.scalars(select(Submission.status))) == {'draft'}
-        assert db.scalar(select(Department.id).where(Department.name == live.SKIPPED)) is None
+        assert db.scalar(select(Department.id).where(Department.name == 'İşletme ve İştirakler Müdürlüğü')) is not None
         review = db.scalar(select(IndicatorValue).where(IndicatorValue.state == 'needs_review'))
         assert review is not None
         review_id = review.id
@@ -92,12 +95,12 @@ def test_printed_plan_apply_repeat_resume_preserves_corrections(target, printed)
     assert state(engine) == after_correction
     with Session(engine) as db:
         assert db.get(Indicator, saved[0]).explanation == saved[1]
-        assert len(list(db.scalars(select(AuditLog).where(AuditLog.action == live.MARKER)))) == 33
+        assert len(list(db.scalars(select(AuditLog).where(AuditLog.action == live.MARKER)))) == 34
         assert db.scalar(select(IndicatorValue).where(IndicatorValue.id == review_id)).state == 'needs_review'
 
 
 @pytest.mark.postgres
-def test_cli_plan_on_release50_schema_writes_nothing(target, monkeypatch, capsys):
+def test_cli_plan_on_c086_schema_writes_nothing(target, monkeypatch, capsys):
     engine, ids = target
     monkeypatch.setenv(live.TARGET_ENV, engine.url.set(query={}).render_as_string(hide_password=False))
     before = state(engine)
@@ -106,7 +109,7 @@ def test_cli_plan_on_release50_schema_writes_nothing(target, monkeypatch, capsys
     output = capsys.readouterr().out
     assert 'PLAN: Hedefe 0 satır yazıldı.' in output
     assert 'İşletme ve İştirakler Müdürlüğü' in output
-    assert '1300' in output
+    assert '1340' in output
     assert engine.url.render_as_string(hide_password=False) not in output
 
 
@@ -135,7 +138,8 @@ def test_plan_lists_department_actions_without_writes(target, printed, monkeypat
     assert actions[2] == dict(source_name=sources[2]['name'], action='match',
                              department_id=exact_ids[1], name=sources[2]['name'])
     assert actions[3] == dict(source_name=sources[3]['name'], action='create', name=sources[3]['name'])
-    assert actions[4] == dict(source_name=live.SKIPPED, action='skip', reason=plan['skipped'][-1]['reason'])
+    assert sources[4]['name'] == 'İşletme ve İştirakler Müdürlüğü'
+    assert actions[4] == dict(source_name=sources[4]['name'], action='create', name=sources[4]['name'])
     monkeypatch.setattr(live, 'verify_book', lambda path: data)
     monkeypatch.setenv(live.TARGET_ENV, engine.url.set(query={}).render_as_string(hide_password=False))
     assert live.main(['--organization-id', str(ids['organization_id']), '--actor-id', str(ids['actor_id'])]) == 0
@@ -144,7 +148,7 @@ def test_plan_lists_department_actions_without_writes(target, printed, monkeypat
     assert f"Eşleştir: {sources[0]['name']} → {sources[0]['name']} (müdürlük #{exact_ids[0]})" in text_output
     assert f"Oluştur: {sources[3]['name']} → {sources[3]['name']}" in text_output
     assert f"Atla: {sources[1]['name']} · " in text_output
-    assert f'Atla: {live.SKIPPED} · ' in text_output
+    assert f"Oluştur: {sources[4]['name']} → {sources[4]['name']}" in text_output
     assert json.loads('{' + json_output)['departments'] == actions
 
 
@@ -201,12 +205,14 @@ def test_concurrent_loader_guard(target, printed):
 
 
 @pytest.mark.postgres
-@pytest.mark.parametrize('guard', ['head', 'multiple_heads', 'actor', 'inactive_actor', 'organization', 'period', 'template', 'unknown_data'])
+@pytest.mark.parametrize('guard', ['head', 'old_head', 'multiple_heads', 'actor', 'inactive_actor', 'organization', 'period', 'template', 'unknown_data'])
 def test_database_guards_refuse_without_writes(target, printed, guard):
     engine, ids = target
     with Session(engine) as db:
         if guard == 'head':
             db.execute(text("UPDATE alembic_version SET version_num='wrong_head'"))
+        elif guard == 'old_head':
+            db.execute(text("UPDATE alembic_version SET version_num='c048a1b2c3d4'"))
         elif guard == 'multiple_heads':
             db.execute(text("INSERT INTO alembic_version VALUES ('other_head')"))
         elif guard == 'actor':
@@ -345,7 +351,7 @@ def test_neon_channel_binding_other_values_and_extra_keys_are_refused(monkeypatc
         live.target_url()
 
 
-@pytest.mark.parametrize('confirmation', ['', 'incorrect', live.BOOK_SHA256])
+@pytest.mark.parametrize('confirmation', ['', 'incorrect', '261cd17fd0be', live.BOOK_SHA256])
 def test_cli_apply_requires_typed_prefix_before_connection(tmp_path, monkeypatch, capsys, confirmation):
     monkeypatch.setenv(live.TARGET_ENV, 'postgresql://unused@localhost/never_connect')
     monkeypatch.setattr(live, 'verify_book', lambda path: {})
@@ -374,12 +380,25 @@ def test_secret_cli_argument_is_rejected_without_echo(capsys):
     assert 'secret-connection' not in capsys.readouterr().err
 
 
-@pytest.mark.postgres
-def test_live_scripts_still_refuse_new_application_schema():
-    # Application migrations must not widen the release-pinned operator tool.
-    with disposable_database(local_test_url()) as engine:
-        before = state(engine)
-        with Session(engine) as db:
-            with pytest.raises(live.Refusal, match='Hedef şema uyuşmuyor'):
-                live.require_head(db)
-        assert state(engine) == before
+def test_live_pin_equals_single_repository_alembic_head():
+    from alembic.config import Config
+    from alembic.script import ScriptDirectory
+    heads = ScriptDirectory.from_config(Config(str(live.ROOT / 'alembic.ini'))).get_heads()
+    assert heads == [live.HEAD] == ['c160a1b2c3d4']
+
+
+def test_approved_source_pin_and_old_book_refusal():
+    assert live.BOOK.name == '2027-performans-programi_ONAYLI.idml'
+    assert live.BOOK_SHA256 == 'cbbf9018302d0a1d33d1dde0c4a64a2418d12b55cc29d046205371018673bd71'
+    with pytest.raises(live.Refusal, match='Kitap SHA256'):
+        live.verify_book(live.BOOK.with_name('2027-performans-programi_16102026_duzeltilmis 2.idml'))
+
+
+def test_cli_refuses_old_book_before_connection(monkeypatch, capsys):
+    monkeypatch.setenv(live.TARGET_ENV, 'postgresql://unused@localhost/never_connect')
+    def connection_forbidden(*args, **kwargs):
+        pytest.fail('Old book must be refused before an engine is created')
+    monkeypatch.setattr('sqlalchemy.create_engine', connection_forbidden)
+    old_book = live.BOOK.with_name('2027-performans-programi_16102026_duzeltilmis 2.idml')
+    assert live.main(['--organization-id', '1', '--actor-id', '1', '--book', str(old_book)]) == 1
+    assert 'Kitap SHA256 uyuşmuyor' in capsys.readouterr().err

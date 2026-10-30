@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+{% from 'internal_control/monitoring_shared.html' import token with context %}
+{% block page_title %}Rapor anlatı bölümleri{% endblock %}
+{% block page_subtitle %}{{ period_label(monitoring_period) }}{% endblock %}
+{% block content %}
+<link rel="stylesheet" href="/static/design/internal-control.css">
+<div class="internal-control-page internal-control-monitoring-page ic-narrative">
+<p><a href="/internal-control/monitoring?period_id={{ monitoring_period.id }}">Dönem ekranına dön</a></p>
+<section class="card"><h2>Rapor anlatı bölümleri · <span class="status {{ status }}">{{ states[status] }}</span></h2>
+<p>Revizyon {{ revision }} · {{ 'Kapalı dönem' if monitoring_period.closed_at else 'Açık dönem' }}</p>
+{% if monitoring_period.closed_at %}<p role="status">İzleme dönemi kapalı. Metinler ve işlem geçmişi salt okunurdur.</p>{% endif %}
+{% if editable %}
+{% if revision == 0 %}{% filter pp_form(request) %}<form method="post" action="/internal-control/monitoring/periods/{{ monitoring_period.id }}/narrative/copy">{{ token(request) }}<input type="hidden" name="expected_revision" value="0"><button class="button">Önceki dönemden kopyala</button></form>{% endfilter %}{% endif %}
+{% filter pp_form(request) %}
+<form method="post" action="/internal-control/monitoring/periods/{{ monitoring_period.id }}/narrative/save" data-narrative-form>
+{{ token(request) }}<input type="hidden" name="expected_revision" value="{{ revision }}">
+<p role="status" data-save-state>{{ 'Kaydedildi' if revision else 'Henüz kaydedilmedi' }}</p>
+{% for key,label,limit in fields %}
+{% if key == 'band_label' %}{% include 'internal_control/narrative_reference.html' %}{% endif %}
+<label for="narrative-{{ key }}">{{ label }}</label>
+<textarea id="narrative-{{ key }}" name="{{ key }}" rows="{{ 2 if key == 'band_label' else 5 }}" data-limit="{{ limit }}" aria-describedby="count-{{ key }}">{{ values[key] }}</textarea>
+<p class="muted" id="count-{{ key }}" data-counter="{{ key }}">{{ values[key]|length }} / {{ limit|trnum }} karakter</p>
+{% endfor %}
+<div class="ic-actions"><button class="button primary" name="operation" value="save">Metinleri kaydet</button><button class="button" name="operation" value="submit">Kaydet ve incelemeye gönder</button></div>
+</form>{% endfilter %}
+{% else %}
+{% for key,label,limit in fields %}
+{% if key == 'band_label' %}{% include 'internal_control/narrative_reference.html' %}{% endif %}
+<h3>{{ label }}</h3><p class="ic-narrative-text">{{ values[key] or '—' }}</p>
+{% endfor %}
+{% endif %}
+</section>
+{% if not monitoring_period.closed_at and user.position == 'director' and status in ('submitted','approved') %}
+<section class="card"><h2>Strateji Müdürü incelemesi</h2>
+{% filter pp_form(request) %}<form method="post" action="/internal-control/monitoring/periods/{{ monitoring_period.id }}/narrative/transition">
+{{ token(request) }}<input type="hidden" name="expected_revision" value="{{ revision }}">
+<label>İade / yeniden açma gerekçesi<textarea name="reason" rows="3"></textarea></label>
+<div class="ic-actions">{% if status == 'submitted' %}<button class="button" name="action" value="return">Gerekçeli iade</button><button class="button primary" name="action" value="approve">Onayla</button>{% else %}<button class="button" name="action" value="reopen">Gerekçeli yeniden aç</button>{% endif %}</div>
+</form>{% endfilter %}</section>{% endif %}
+<section class="card"><h2>Anlatı işlem geçmişi (TSİ)</h2>
+{% for event in events %}<article><p>Revizyon {{ event.revision }} · {{ actions[event.action] }} · {{ event.actor_name }} · {{ tsi(event.created_at) }}</p><p>{{ states[event.from_status] }} → {{ states[event.to_status] }}{% if event.reason %} · {{ event.reason }}{% endif %}</p></article>{% else %}<p>Henüz anlatı kaydedilmedi.</p>{% endfor %}
+</section></div>
+{% endblock %}
+{% block scripts %}<script src="/internal-control/monitoring/narrative-editor.js"></script>{% endblock %}

@@ -86,3 +86,85 @@
 .internal-control-monitoring-page .ic-counts-table { table-layout: fixed; width: 100%; min-width: 1000px; }
 
 .internal-control-monitoring-page .ic-counts-table th { vertical-align: bottom; }
+/* CIV-085: native radio groups and checkboxes in the existing table system. */
+.internal-control-page label.ic-choice { display: flex; align-items: center; gap: var(--space-2); margin: var(--space-2) 0; }
+.internal-control-page .ic-choice input { display: inline-block; width: 1.2rem; min-width: 1.2rem; height: 1.2rem; min-height: 1.2rem; margin: 0; padding: 0; }
+.internal-control-page .ic-question-grid th { width: 40%; }
+.internal-control-page .ic-question-grid td { min-width: 13rem; }
+.internal-control-page .ic-question-grid th p { margin-top: var(--space-2); font-weight: var(--font-regular); }
+.internal-control-page .ic-question-grid textarea { min-height: 6rem; }
+.internal-control-page fieldset { min-width: 0; margin: var(--space-4) 0; border: 1px solid var(--border); border-radius: var(--radius); }
+
+/* CIV-161: one result-table system; summary columns share the question width. */
+.internal-control-monitoring-page .ic-result-table {
+  table-layout: fixed;
+  width: 100%;
+  min-width: 1000px;
+}
+.internal-control-monitoring-page .ic-result-table th:first-child { width: 28%; }
+.internal-control-monitoring-page .ic-result-table-summary { min-width: 1000px; }
+.internal-control-monitoring-page .ic-result-table-summary th:first-child { width: 46%; }
+.internal-control-monitoring-page .ic-result-table :is(th,td):not(:first-child) {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  padding-inline: var(--space-2);
+}
+.internal-control-monitoring-page .ic-result-table td:not(:first-child) { white-space: nowrap; }
+.internal-control-monitoring-page .ic-result-table thead th {
+  white-space: normal;
+  overflow-wrap: normal;
+  word-break: normal;
+  hyphens: none;
+}
+.internal-control-monitoring-page .ic-result-table tbody th[scope="row"] {
+  background: var(--surface);
+  color: var(--text);
+  font-weight: var(--font-regular);
+  text-align: left;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.internal-control-monitoring-page .ic-result-table tbody .ic-total-row > :is(th[scope="row"],td) {
+  font-weight: var(--font-medium);
+  border-top: 2px solid var(--border);
+}
+.internal-control-monitoring-page .ic-results-card h3 {
+  margin-top: var(--space-6);
+  margin-bottom: var(--space-3);
+}
+
+/* CIV-161 addendum: question, answer and explanation widths in both form views. */
+.internal-control-page .ic-question-form-table { table-layout: fixed; width: 100%; min-width: 1000px; }
+.internal-control-page .ic-question-form-table th:nth-child(1) { width: 46%; }
+.internal-control-page .ic-question-form-table thead th:nth-child(2) { width: 16%; }
+.internal-control-page .ic-question-form-table thead th:nth-child(3) { width: 38%; }
+.internal-control-page .ic-question-form-table td { min-width: 0; }
+.internal-control-page .ic-question-form-table tbody th[scope="row"] {
+  background: var(--surface); color: var(--text); font-weight: var(--font-regular);
+  text-align: left; white-space: normal; overflow-wrap: anywhere;
+}
+.internal-control-page .ic-question-form-table [role="radiogroup"] {
+  display: flex; flex-direction: column; gap: var(--space-2);
+}
+.internal-control-page .ic-question-form-table label.ic-choice {
+  margin: 0; min-height: var(--control-height); white-space: nowrap;
+}
+.internal-control-page .ic-question-form-table textarea { width: 100%; max-width: 100%; min-width: 0; }
+
+/* CIV-161 addendum: short catalogue identifiers leave room for full questions. */
+.internal-control-page .ic-question-upload-table { table-layout: fixed; width: 100%; min-width: 900px; }
+.internal-control-page .ic-question-upload-table :is(th,td):is(:nth-child(1),:nth-child(3)) {
+  width: 4.5rem; text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap;
+}
+.internal-control-page .ic-question-upload-table :is(th,td):nth-child(2) { width: 12rem; }
+.internal-control-page .ic-question-upload-table :is(th,td):nth-child(4) { white-space: normal; overflow-wrap: anywhere; }
+.internal-control-page .ic-question-saved-list { padding-left: var(--space-6); }
+.internal-control-page .ic-question-saved-list li { margin-bottom: var(--space-2); overflow-wrap: anywhere; }
+.internal-control-page .ic-question-saved-list li::marker { font-variant-numeric: tabular-nums; }
+
+/* CIV-160: existing labelled text editor, counters and saved state. */
+.ic-narrative textarea { width: 100%; box-sizing: border-box; resize: vertical; }
+.ic-narrative label { display: block; margin-top: var(--space-4); font-weight: var(--font-semibold); }
+.ic-narrative-text { white-space: pre-wrap; overflow-wrap: anywhere; }
+.ic-narrative .card, .ic-narrative article, .ic-narrative-reference { min-width: 0; overflow-wrap: anywhere; }
+.ic-narrative-reference { border-left: 3px solid var(--border); padding: var(--space-2) var(--space-4); margin-top: var(--space-6); }
