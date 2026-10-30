@@ -101,7 +101,7 @@ def transition(db, actor, period_id, action, expected_revision, reason=''):
         m.fail('İade veya yeniden açma gerekçesi eksik. Gerekçe yazıp yeniden deneyin.', 'reason')
     if action == 'approve':
         boundary = db.scalar(select(Event.revision).where(Event.period_id == period.id,
-            Event.action.in_(['return', 'reopen'])).order_by(Event.revision.desc()).limit(1)) or 0
+            Event.action == 'approve').order_by(Event.revision.desc()).limit(1)) or 0
         if db.scalar(select(Event.id).where(Event.period_id == period.id, Event.revision > boundary,
                 Event.actor_id == actor.id, Event.action == 'save').limit(1)):
             m.fail(m.SOD_ERROR.format(record='İç Kontrol rapor anlatı bölümleri'), status=403)

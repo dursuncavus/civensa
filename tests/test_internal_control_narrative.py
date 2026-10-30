@@ -139,7 +139,60 @@ def test_stale_and_closed_period_refuse_all_mutations(db, monitoring):
     assert n.state(db,d['period'].id)[1] == 1
 
 
-def test_workflow_reasons_permissions_sod_and_frozen_history(db, monitoring):
+@pytest.fixture
+def second_director(db, monitoring):
+    department = Department(organization_id=monitoring['department'].organization_id,
+        name='Test İkinci Strateji Birimi')
+    db.add(department)
+    db.flush()
+    director = User(email='second-director@civ160.invalid', full_name='Test İkinci Strateji Müdürü',
+        role='strategy', position='director', department_id=department.id, password_hash='unused')
+    db.add(director)
+    db.commit()
+    return director
+
+
+def test_return_and_unchanged_resubmit_do_not_reset_authorship(db, monitoring, second_director):
+    d = monitoring
+    period_id = d['period'].id
+    first = save(db, d, d['strategy'])
+    n.transition(db, d['strategy'], period_id, 'submit', first.revision)
+    n.transition(db, second_director, period_id, 'return', 2, 'Test iade gerekçesi')
+    resubmitted = n.transition(db, d['strategy'], period_id, 'submit', 3)
+    db.commit()
+    assert resubmitted.snapshot_json == first.snapshot_json
+    with pytest.raises(HTTPException) as exc:
+        n.transition(db, d['strategy'], period_id, 'approve', 4)
+    assert exc.value.status_code == 403
+    assert exc.value.detail == m.SOD_ERROR.format(record='İç Kontrol rapor anlatı bölümleri')
+    assert n.state(db, period_id) == ('submitted', 4)
+    approval = n.transition(db, second_director, period_id, 'approve', 4)
+    db.commit()
+    assert approval.actor_id == second_director.id
+    assert approval.snapshot_json == first.snapshot_json
+
+
+def test_last_approval_starts_new_authorship_window(db, monitoring, second_director):
+    d = monitoring
+    period_id = d['period'].id
+    first = save(db, d, d['strategy'])
+    n.transition(db, second_director, period_id, 'submit', first.revision)
+    prior_approval = n.transition(db, second_director, period_id, 'approve', 2)
+    n.transition(db, second_director, period_id, 'reopen', 3, 'Test yeni değerlendirme')
+    edited = save(db, d, mission='Test personel tarafından düzeltilmiş misyon metni …')
+    n.transition(db, d['staff'], period_id, 'submit', edited.revision)
+    db.commit()
+    with pytest.raises(HTTPException) as exc:
+        n.transition(db, d['staff'], period_id, 'approve', 6)
+    assert exc.value.status_code == 403
+    approval = n.transition(db, d['strategy'], period_id, 'approve', 6)
+    db.commit()
+    assert first.revision < prior_approval.revision < edited.revision < approval.revision
+    assert approval.actor_id == d['strategy'].id
+    assert approval.snapshot_json == edited.snapshot_json != first.snapshot_json
+
+
+def test_workflow_reasons_permissions_sod_and_frozen_history(db, monitoring, second_director):
     d = monitoring
     record = save(db,d,d['strategy'])
     n.transition(db,d['staff'],d['period'].id,'submit',record.revision)
@@ -154,7 +207,10 @@ def test_workflow_reasons_permissions_sod_and_frozen_history(db, monitoring):
     n.transition(db,d['strategy'],d['period'].id,'return',2,'Test eksikleri tamamlayın')
     save(db,d)
     n.transition(db,d['strategy'],d['period'].id,'submit',4)
-    first_approval = n.transition(db,d['strategy'],d['period'].id,'approve',5)
+    with pytest.raises(HTTPException) as exc:
+        n.transition(db,d['strategy'],d['period'].id,'approve',5)
+    assert exc.value.status_code == 403
+    first_approval = n.transition(db,second_director,d['period'].id,'approve',5)
     db.commit()
     with pytest.raises(HTTPException): save(db,d)
     with pytest.raises(HTTPException) as exc: n.transition(db,d['staff'],d['period'].id,'reopen',6,'Test gerekçe')
