@@ -1977,16 +1977,26 @@ def activate_period(period_id: int, db: Session = Depends(get_db), user: User = 
 @app.get("/health")
 def health():
     backend = engine.url.get_backend_name()
+    head = migration_head()
+    current = None
     started = time.perf_counter()
     try:
         with engine.connect() as connection:
             connection.exec_driver_sql("SELECT 1")
+            try:
+                current = connection.exec_driver_sql(
+                    "SELECT version_num FROM alembic_version LIMIT 2"
+                ).scalar_one_or_none()
+            except Exception:
+                # Missing or unreadable revision metadata must fail readiness.
+                current = None
         database_status = "ok"
     except Exception:
         database_status = "error"
     database_latency_ms = round((time.perf_counter() - started) * 1000, 1)
+    ready = database_status == "ok" and current == head
     payload = {
-        "status": "ok" if database_status == "ok" else "degraded",
+        "status": "ok" if ready else "degraded",
         "app": "civensa",
         "version": APP_VERSION,
         "environment": "production" if is_production() else "qa",
@@ -1994,8 +2004,10 @@ def health():
             "backend": backend, "status": database_status,
             "latency_ms": database_latency_ms,
         },
+        "ready": ready,
+        "migration": {"current": current, "head": head},
     }
-    return payload if database_status == "ok" else JSONResponse(payload, status_code=503)
+    return payload if ready else JSONResponse(payload, status_code=503)
 
 
 @app.get("/export/department/{department_id}.json")

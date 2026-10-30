@@ -25,6 +25,7 @@ repository inspection alone cannot verify live Render or Neon settings.
 | Instance | Free |
 | Deploy branch | `main` |
 | Root Directory | Empty (repository root) |
+| `/health` response | Existing fields remain; `ready` is true only when the database is reachable and `migration.current` equals `migration.head`; HTTP 200 and `status=ok` when ready, otherwise HTTP 503 and `status=degraded` (missing/unreadable revision: `current=null`); the live Render health-check path and body parsing are not verified in repository configuration. |
 
 Build Command:
 
