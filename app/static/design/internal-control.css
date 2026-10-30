@@ -132,3 +132,32 @@
   margin-top: var(--space-6);
   margin-bottom: var(--space-3);
 }
+
+/* CIV-161 addendum: question, answer and explanation widths in both form views. */
+.internal-control-page .ic-question-form-table { table-layout: fixed; width: 100%; min-width: 1000px; }
+.internal-control-page .ic-question-form-table th:nth-child(1) { width: 46%; }
+.internal-control-page .ic-question-form-table thead th:nth-child(2) { width: 16%; }
+.internal-control-page .ic-question-form-table thead th:nth-child(3) { width: 38%; }
+.internal-control-page .ic-question-form-table td { min-width: 0; }
+.internal-control-page .ic-question-form-table tbody th[scope="row"] {
+  background: var(--surface); color: var(--text); font-weight: var(--font-regular);
+  text-align: left; white-space: normal; overflow-wrap: anywhere;
+}
+.internal-control-page .ic-question-form-table [role="radiogroup"] {
+  display: flex; flex-direction: column; gap: var(--space-2);
+}
+.internal-control-page .ic-question-form-table label.ic-choice {
+  margin: 0; min-height: var(--control-height); white-space: nowrap;
+}
+.internal-control-page .ic-question-form-table textarea { width: 100%; max-width: 100%; min-width: 0; }
+
+/* CIV-161 addendum: short catalogue identifiers leave room for full questions. */
+.internal-control-page .ic-question-upload-table { table-layout: fixed; width: 100%; min-width: 900px; }
+.internal-control-page .ic-question-upload-table :is(th,td):is(:nth-child(1),:nth-child(3)) {
+  width: 4.5rem; text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap;
+}
+.internal-control-page .ic-question-upload-table :is(th,td):nth-child(2) { width: 12rem; }
+.internal-control-page .ic-question-upload-table :is(th,td):nth-child(4) { white-space: normal; overflow-wrap: anywhere; }
+.internal-control-page .ic-question-saved-list { padding-left: var(--space-6); }
+.internal-control-page .ic-question-saved-list li { margin-bottom: var(--space-2); overflow-wrap: anywhere; }
+.internal-control-page .ic-question-saved-list li::marker { font-variant-numeric: tabular-nums; }

@@ -3,7 +3,7 @@
 <p><span class="status {{ detail.status }}">{{ states[detail.status] }}</span> · Yanıtlanan {{ detail.answered }}/{{ detail.rows|length }}</p>
 {% filter pp_form(request) %}
 <form method="post" action="/internal-control/questionnaires/batches/{{ detail.batch.id }}/answers">{{ token(request) }}<input type="hidden" name="expected_revision" value="{{ detail.revision }}"><input type="hidden" name="list_id" value="{{ detail.list_id }}">
-<div class="ic-scroll" role="region" aria-label="Soru yanıtları" tabindex="0"><table class="ic-question-grid"><thead><tr><th>Kod / Soru</th><th>Yanıt</th><th>Açıklama (isteğe bağlı)</th></tr></thead><tbody>
+<div class="ic-scroll" role="region" aria-label="Soru yanıtları" tabindex="0"><table class="ic-question-grid ic-question-form-table"><thead><tr><th>Kod / Soru</th><th>Yanıt</th><th>Açıklama (isteğe bağlı)</th></tr></thead><tbody>
 {% for row in detail.rows %}<tr><th scope="row" id="question-{{ detail.batch.id }}-{{ loop.index }}">{{ row.code }}<p>{{ row.question }}</p></th><td>
 {% if detail.editable %}<div role="radiogroup" aria-labelledby="question-{{ detail.batch.id }}-{{ loop.index }}">
 {% for value, label in answer_labels.items() %}<label class="ic-choice"><input type="radio" name="answer_{{ row.code }}" value="{{ value }}" {{ 'checked' if row.answer==value else '' }}>{{ label }}</label>{% endfor %}

@@ -11,13 +11,14 @@ import pytest
 from app import internal_control_questionnaire_service as q
 from app.main import app, require_user, templates
 from test_internal_control_monitoring import monitoring, approve
-from test_internal_control_questionnaire import questionnaire
+from test_internal_control_questionnaire import questionnaire, question_file
 from test_sidebar_ui import browser
-from test_section_index_design import contrast
+from test_section_index_design import contrast, Contract
 
 pytestmark = pytest.mark.postgres
 ROOT = Path(__file__).resolve().parents[1]
 BASE_HASHES = {'monitoring.html': 'e0855fc6b48941ece746418038bbd629410578e4e9dc3fa9268bcceb2b104e3c', 'questionnaire_overview.html': '8a5df40acbb1e341c2fcb821c2d0092ad56f78812c45e26d5a181ea244301156'}
+BASE_HASHES.update({'questionnaire_form.html': 'cf2d49769a63cbb417abc23078adbfe129154b0ff4c38b9f753b4b42a4379af8', 'questionnaire_upload.html': '513f8f3165124f8c1a57f75b8adb9761543222e5667e7318c873e96d2f37cc11'})
 
 
 def original_source(name):
@@ -25,6 +26,8 @@ def original_source(name):
     source = source.replace('class="card ic-results-card"', 'class="card"')
     source = re.sub(r' class="ic-result-table ic-result-table-(?:scores|summary)"', '', source)
     source = source.replace(' class="{{ \'ic-total-row\' if row == question_results.total else \'\' }}"', '')
+    source = source.replace('ic-question-grid ic-question-form-table', 'ic-question-grid')
+    source = source.replace(' class="ic-question-upload-table"', '').replace(' class="ic-question-saved-list"', '')
     assert sha256(source.encode()).hexdigest() == BASE_HASHES[name], 'Only the authorized class attributes may change'
     return source
 
@@ -175,3 +178,152 @@ def test_result_geometry_and_contrast(db, result_screen, client, browser):
                             image = target / f'{"once" if before else "sonra"}-{label}-{"onayli" if approved else "bos"}-{width}.png'
                             locator.screenshot(path=str(image))
                             assert image.stat().st_size <= 1_500_000
+
+
+
+def assert_original_render(response, environment):
+    assert response.status_code == 200
+    response.context['request'].state.pp_attempt_rendered = False
+    before = environment.get_template(response.template.name).render(response.context)
+    assert Cells(before).cells == Cells(response.text).cells
+    old, new = Contract(before), Contract(response.text)
+    assert (old.controls, old.bindings, old.labels) == (new.controls, new.bindings, new.labels)
+
+
+def test_question_forms_and_upload_geometry(db, questionnaire, client, browser):
+    """Synthetic fixture text normally; first six workbook questions only for captures."""
+    d = questionnaire
+    evidence = os.getenv('CIVENSA_CIV161_EVIDENCE')
+    sources = {f'internal_control/{name}': original_source(name) for name in BASE_HASHES}
+    old_env = templates.env.overlay(loader=ChoiceLoader([DictLoader(sources), templates.env.loader]))
+    workbook = (ROOT / 'docs/internal-control/ic-kontrol-soru-formu-70.xlsx').read_bytes() if evidence else question_file(count=70)
+    parsed = q.parse_questions(workbook)
+    six = question_file([[row['order'], row['component'], row['code'], row['question']]
+                         for row in parsed[:6]])
+    catalogue = q.save_list(db, d['strategy'], 'Altı soruluk görünüm denemesi', six)
+    q.attach(db, d['strategy'], d['period'].id, catalogue.id,
+             [batch.department_id for batch in d['question_batches']], 1)
+    db.commit()
+    current = {'user': d['user']}
+    app.dependency_overrides[require_user] = lambda: current['user']
+    batch = d['question_owned']
+    questions = q.questions(db, d['period'].id)
+    ours = f'/internal-control/our-actions?period_id={d["period"].id}'
+    detail = f'/internal-control/questionnaires/batches/{batch.id}'
+    overview = f'/internal-control/monitoring?period_id={d["period"].id}'
+    mode = {'before': False}
+    responses = {}
+    with browser.new_context() as context:
+        def serve(route):
+            response = responses.get(route.request.url) or client.get(route.request.url)
+            body = response.content
+            if mode['before']:
+                if hasattr(response, 'template'):
+                    response.context['request'].state.pp_attempt_rendered = False
+                    body = old_env.get_template(response.template.name).render(response.context).encode()
+                elif route.request.url.endswith('/internal-control.css'):
+                    body = body.split(b'/* CIV-161:')[0]
+            headers = dict(response.headers)
+            headers.pop('set-cookie', None)
+            headers.pop('content-length', None)
+            route.fulfill(status=response.status_code, headers=headers, body=body)
+        context.route('http://testserver/**', serve)
+        page = context.new_page()
+
+        def capture(path, name, kind, *, cached=None):
+            response = cached if cached is not None else client.get(path)
+            assert_original_render(response, old_env)
+            url = 'http://testserver' + path
+            responses[url] = response
+            for width in (1440, 390):
+                page.set_viewport_size({'width': width, 'height': 1000 if width == 1440 else 844})
+                for before in ((True, False) if evidence else (False,)):
+                    mode['before'] = before
+                    page.goto(url)
+                    page.evaluate('document.fonts.ready')
+                    if kind == 'saved':
+                        target = page.locator('article').filter(has=page.get_by_role('heading', name='Yetmiş soruluk görünüm denemesi', exact=False))
+                        target.locator('summary').click()
+                    elif kind == 'summary':
+                        target = page.locator('.card' if before else '.ic-results-card').filter(has=page.get_by_role('heading', name='Soru formu sonuçları', exact=True))
+                    elif kind == 'preview':
+                        target = page.locator('section').filter(has=page.get_by_role('heading', name='Kaydetmeden önce inceleyin', exact=True))
+                    else:
+                        target = page.locator('.questionnaire-form')
+                    if not before:
+                        assert page.evaluate('document.documentElement.scrollWidth <= innerWidth')
+                        if kind == 'form':
+                            table = target.locator('.ic-question-form-table')
+                            assert table.locator('tbody tr').count() == 6
+                            assert table.evaluate('e => getComputedStyle(e).tableLayout') == 'fixed'
+                            widths = table.locator('thead th').evaluate_all('els => els.map(e => e.getBoundingClientRect().width)')
+                            for actual, share in zip(widths, (.46, .16, .38)):
+                                assert abs(actual / sum(widths) - share) < .002
+                            for header in table.locator('tbody th').all():
+                                color, bg, weight, align = header.evaluate('e => {const s=getComputedStyle(e); return [s.color,s.backgroundColor,s.fontWeight,s.textAlign]}')
+                                assert contrast((color, bg)) >= 4.5
+                                assert bg == 'rgb(255, 255, 255)' and weight == '400' and align == 'left'
+                            for group in table.locator('[role=radiogroup]').all():
+                                labels = group.locator('label')
+                                assert labels.count() == 3
+                                boxes = [label.bounding_box() for label in labels.all()]
+                                assert all(abs(a['x'] - b['x']) <= 1 and a['y'] + a['height'] <= b['y']
+                                           for a, b in zip(boxes, boxes[1:]))
+                                for label in labels.all():
+                                    assert label.evaluate('e => getComputedStyle(e).whiteSpace') == 'nowrap'
+                                    assert label.evaluate('e => e.scrollWidth <= e.clientWidth')
+                            for field in table.locator('textarea').all():
+                                assert field.evaluate('e => { const cell=e.closest("td"), s=getComputedStyle(cell); return Math.abs(e.getBoundingClientRect().width - (cell.clientWidth-parseFloat(s.paddingLeft)-parseFloat(s.paddingRight))) <= 1 }')
+                            if width == 390:
+                                scroll = table.locator('..')
+                                assert scroll.evaluate('e => e.scrollWidth > e.clientWidth')
+                                scroll.evaluate('e => e.scrollLeft = e.scrollWidth')
+                                assert table.locator('tbody td:last-child').first.bounding_box()['x'] < width
+                                scroll.evaluate('e => e.scrollLeft = 0')
+                        elif kind == 'preview':
+                            table = target.locator('.ic-question-upload-table')
+                            assert table.locator('tbody tr').count() == 70
+                            assert table.evaluate('e => getComputedStyle(e).tableLayout') == 'fixed'
+                            widths = table.locator('thead th').evaluate_all('els => els.map(e => e.getBoundingClientRect().width)')
+                            assert all(64 <= widths[i] <= 80 for i in (0, 2))
+                            assert abs(widths[1] - 192) <= 1 and widths[3] > widths[1]
+                            for cell in table.locator('tr > :is(:nth-child(1),:nth-child(3))').all():
+                                assert cell.evaluate('e => [getComputedStyle(e).textAlign,getComputedStyle(e).fontVariantNumeric]') == ['right', 'tabular-nums']
+                            assert table.locator('th,td').evaluate_all('els => els.every(e => e.scrollWidth <= e.clientWidth)')
+                            if width == 390:
+                                assert table.locator('..').evaluate('e => e.scrollWidth > e.clientWidth')
+                        elif kind == 'saved':
+                            assert target.locator('ol.ic-question-saved-list li').count() == 70
+                        else:
+                            assert page.get_by_role('region', name='Soru özeti', exact=True).locator('tbody tr').count() == 6
+                    if evidence:
+                        image = Path(evidence) / f'{"once" if before else "sonra"}-ek-{name}-{width}.png'
+                        target.screenshot(path=str(image))
+                        assert image.stat().st_size <= 1_500_000
+
+        capture(ours, 'mudurluk-bos', 'form')
+        first = questions[0]['code']
+        partial = {f'answer_{first}': 'yes', f'explanation_{first}': 'Sentetik değerlendirme açıklaması; kanıt hazırlığı sürüyor.'}
+        q.save_answers(db, d['user'], batch.id, q.state(db, batch.id)[1], partial)
+        db.commit()
+        capture(ours, 'mudurluk-kismi', 'form')
+        complete = {f'answer_{row["code"]}': ('yes', 'no', 'developing')[i % 3] for i, row in enumerate(questions)}
+        complete.update({f'explanation_{first}': partial[f'explanation_{first}']})
+        q.save_answers(db, d['user'], batch.id, q.state(db, batch.id)[1], complete, submit=True)
+        q.transition(db, d['strategy'], batch.id, 'return', q.state(db, batch.id)[1], 'Sentetik iade: değerlendirme açıklamasını tamamlayın.')
+        db.commit()
+        capture(ours, 'mudurluk-iade', 'form')
+        q.transition(db, d['user'], batch.id, 'submit', q.state(db, batch.id)[1])
+        db.commit()
+        current['user'] = d['strategy']
+        capture(detail, 'strateji-detay', 'form')
+        q.transition(db, d['strategy'], batch.id, 'approve', q.state(db, batch.id)[1])
+        db.commit()
+        capture(overview, 'alti-soru-ozeti', 'summary')
+        upload = client.get('/internal-control/questionnaires')
+        token = upload.context['request'].session.get('csrf_token', '')
+        preview = client.post('/internal-control/questionnaires/preview', data={'csrf_token': token, 'name': 'Yetmiş soruluk görünüm denemesi'},
+                              files={'file': ('sorular.xlsx', workbook, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')})
+        capture('/internal-control/questionnaires/preview', 'onizleme-70-soru', 'preview', cached=preview)
+        saved = client.post('/internal-control/questionnaires/save', data={'csrf_token': token, 'preview_token': preview.context['preview_token']})
+        capture('/internal-control/questionnaires', 'kayitli-70-soru', 'saved', cached=saved)
