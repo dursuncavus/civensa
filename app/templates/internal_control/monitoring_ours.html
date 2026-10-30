@@ -21,6 +21,7 @@
   {% if monitoring_period %}
   <h2>{{ period_label(monitoring_period) }}</h2>
   {% endif %}
+  {% include 'internal_control/narrative_ours.html' %}
   <h2>Sorumlu olduğumuz eylemler</h2>
   {% for detail in details %}
   <div class="batch-content">

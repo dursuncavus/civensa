@@ -60,3 +60,19 @@ Sentetik örnek (resmî soru metni değildir): T1–T4, **Test sorusu 1…4**. T
 **Soru formu sonuçları** Excel indirmesi üç sayfadır: bileşen özeti (kurum toplamı dahil), soru özeti ve müdürlük yanıtları. Sonuç özetleri yalnız güncel onaylı formları kullanır. Bütün katılımcılar onaylanmadan yalnız **TASLAK** dosya alınabilir; bu dosyanın müdürlük yanıtları sayfası güncel kısmi girişleri de durumuyla gösterir. Mevcut Word/Excel, CIV-084 resmî rapor ve yıllık Excel üretimi değişmez.
 
 Göç **c085a1b2c3d4**, **c086a1b2c3d4** üzerine dört yeni tablo ekler: soru listesi sürümleri, dönem bağlantı sürümleri, müdürlük paketleri ve yanıt/karar olayları. ORM ve PostgreSQL değiştirilemezlik korumaları geçmişin güncellenmesini, silinmesini ve toplu boşaltılmasını reddeder. Yeni tablolardan herhangi birinde veri varsa sürüm düşürme Türkçe mesajla reddedilir; yalnız hepsi boşken tablolar kaldırılır.
+
+## Rapor anlatı bölümleri (CIV-160)
+
+Strateji, seçili izleme döneminin **Rapor anlatı bölümleri** bağlantısından kurum metinlerini hazırlar. Misyon ve Vizyon en çok 2.000'er; planın her bileşeni için katalog sırasındaki Bileşen değerlendirmesi, Güçlü yönler, Gelişim alanları ve Öneriler en çok 8.000'er karakterdir. Puan aralığı etiketi en çok 100, açıklaması en çok 2.000 karakterdir. Düz metin ve satır sonları korunur; baştaki ve sondaki boşluklar temizlenir. Taslakta boş alan bırakılabilir. Gönderimde puan aralığı açıklaması dışındaki bütün alanlar zorunludur. Hatalı girişte değerler korunur; eski revizyonla işlem yapılırsa sayfa yenilenmelidir.
+
+Strateji Personeli ve Müdürü kaydeder ve incelemeye gönderir. Her kaydetme bütün alanları içeren yeni, değiştirilemez revizyondur. Strateji Müdürü gerekçeyle iade eder, onaylar veya onaylı metni gerekçeyle yeniden açar. CIV-079 görevler ayrılığı geçerlidir: incelemedeki revizyonun verisini girmiş/değiştirmiş Müdür onaylayamaz; yalnız gönderim yazarlık sayılmaz. Yeniden açma yeni taslak oluşturur; önceki onay ve metinler geçmişte korunur. Kapalı dönemde kayıt, gönderim ve karar yapılamaz. Geçmişte işlem, aktör, gerekçe ve TSİ zamanı gösterilir.
+
+Henüz revizyonu olmayan dönemde **Önceki dönemden kopyala**, aynı planın en yakın önceki dönemindeki son onaylı revizyonun bütün alanlarını kopyalayan kullanıcı adına yeni taslak kaydeder. Sonradan açılmış taslak kaynak alınmaz. Kaynak yoksa hiçbir kayıt oluşturulmaz ve ekranda açıklanır.
+
+**puan aralığı Strateji tarafından yazılır; sistem bant hesaplamaz**. Aynı dönemin CIV-085 kurum puanı, azami puanı, gerçekleşme oranı ve onaylı müdürlük sayısı yalnız referans olarak gösterilir; onaylı soru formu yoksa “—” görünür. Sistem bu sayıdan etiket veya bant önermez.
+
+Müdürlükler anlatı ekranına ve karar yollarına erişemez. **İç Kontrol Eylemlerimiz** ekranında seçili dönemin yalnız son onaylı Misyon ve Vizyon metinlerini salt okunur görürler. Onay yoksa blok görünmez; diğer anlatı alanları gösterilmez.
+
+Resmî Word raporunda kapak satırlarının ardından, sayfa sonundan önce şu sıra kullanılır: Misyon → Vizyon → Bileşen değerlendirmeleri (katalog adlarıyla alt başlıklar) → Puan aralığı (etiket ve açıklama) → Güçlü yönler → Gelişim alanları → Öneriler. Her metin satırı ayrı paragraftır. Anlatı başlatılmış ama güncel durumu onaylanmamışsa nihai Word reddedilir; TASLAK son revizyonu kullanır ve onaysız bölüm başlıklarına “(taslak metin)” ekler. Anlatı hiç başlatılmamışsa Word aynen korunur. Resmî Excel ve diğer çıktılar değişmez.
+
+Göç `c160a1b2c3d4`, `c085a1b2c3d4` üzerine yalnız anlatı olay tablosunu ekler. ORM ve PostgreSQL korumaları geçmişin güncellenmesini, silinmesini ve boşaltılmasını reddeder. Anlatı verisi varsa sürüm düşürme Türkçe mesajla reddedilir; tablo yalnız boşken kaldırılır.

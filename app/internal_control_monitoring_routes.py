@@ -37,11 +37,13 @@ def our_screen(request, db, user, period_id=None):
         Batch.department_id == user.department_id)).all() if period else []
     notes = m.visible_notes(db, user, period) if period else []
     details = [batch_context(db, user, b.id) for b in batches]
+    from . import internal_control_narrative_service as n
     from . import internal_control_questionnaire_service as q
     from .internal_control_questionnaire_routes import batch_context as question_context
     question_details = [question_context(db, user, b.id) for b in q.batches(db, period.id) if b.department_id == user.department_id] if period else []
     return templates.TemplateResponse(request, 'internal_control/questionnaire_ours.html' if question_details else 'internal_control/monitoring_ours.html', dict(
         user=user, monitoring_period=period, periods=available, details=details, notes=notes,
+        narrative_mission_vision=n.approved_mission_vision(db, period.id) if period else None,
         question_details=question_details, answer_labels=q.ANSWERS, note_codes={n.action_id: db.get(ICAction, n.action_id).action_code_raw for n in notes},
         note_editable=bool(period and not period.closed_at and m.today(db) <= period.deadline),
         cooperating=m.cooperating_actions(db, user, period) if period else [], **context()))
@@ -171,3 +173,6 @@ def register(app):
 
     from .internal_control_questionnaire_routes import register as register_questionnaires
     register_questionnaires(app)
+
+    from .internal_control_narrative_routes import register as register_narratives
+    register_narratives(app)

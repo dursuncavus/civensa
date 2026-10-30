@@ -1,0 +1,6 @@
+<aside class="ic-narrative-reference" aria-label="Soru formu referans puanı">
+<h3>Soru formu kurum puanı (referans)</h3>
+<p>Toplam puan / azami: <strong>{{ (reference.total.score|trnum) ~ ' / ' ~ (reference.total.max_score|trnum) if reference.total.score is not none else '—' }}</strong></p>
+<p>Gerçekleşme oranı: {{ reference.total.realisation_rate if reference.included else '—' }} · Onaylı müdürlük: {{ reference.included|length|trnum }}</p>
+<p>Puan aralığı Strateji tarafından yazılır; sistem bant hesaplamaz.</p>
+</aside>
