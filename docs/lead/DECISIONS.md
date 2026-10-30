@@ -636,3 +636,18 @@ Blocking finding (lead): ops/preprint_rehearsal.py accepted only backup runs wit
 Post-deploy backup run 41029891358 (phase5, workflow_dispatch, 08:57Z) green — first backup at c086. Actions "CIV-058 verified backup rehearsal" run 41035318472 on fa7848f with that backup → success (the script refuses on any count other than 34/64/263/291/1340, any skipped department, any non-zero final plan, or any write in plan steps, so success = PASS; the Summary text itself is not readable from the session). The live data still satisfies the D-135 cleanup guards as of 08:57Z.
 Next: D-315 step 6 live first load by the owner per docs/first-load/live-runbook.md (escalation: live database), in a new live session. Note: data entered after 08:57Z would change the cleanup guards → runbook step 3 takes a fresh backup anyway.
 Next IDs: task CIV-159, decision D-327.
+
+## D-327 (30 Oct 2026 ~14:50 Istanbul, owner + lead, live session CV Lider 43) — live first load done (D-315 step 6)
+DOĞRULANDI (owner terminal output, lead read every step): owner Mac repo `~/civensa-ilkyukleme` on phase5 310546c; runbook docs/first-load/live-runbook.md, organization 1, actor 1 (from rehearsal run 41035318472 Summary).
+1 Source: Alembic head c086a1b2c3d4, approved IDML SHA256 cbbf9018…bd71 OK.
+2 Rehearsal: run 41035318472 (backup 41029891358, 08:57Z) PASS stands; BEYAN owner: no data entered after it.
+3 Backup: lead dispatched db-backup run 41037923940 → civensa-db-backup-20261030-1004Z; owner downloaded, decrypted, verify_backup OK.
+4 Cleanup plan: 34 departments, batches 3–10, already_cleared false (totals not readable on screen; apply repeats every guard).
+5 Cleanup apply (confirmation typed): UYGULAMA SONUCU, 34 departments, batches 3–10, personnel/SGK 93, indicators 324, indicator values 1729, activities 288, activity costs 2538, submissions 34 — identical to the rehearsal.
+6 Post-cleanup backup run 41044642314 → civensa-db-backup-20261030-1059Z (the 1004Z backup expired before step 7; rollback point for the load is now the clean state, the 1004Z backup restores pre-cleanup). Load plan: 34/64/263/291/1340, created 2 (Araştırma ve Geliştirme, İşletme ve İştirakler), matched 32, skipped/failed none. Cleaned-but-not-matched: Koordinasyon İşleri, Yapı Kontrol. BEYAN owner: all four are separate units → Koordinasyon İşleri and Yapı Kontrol have no 2027 data (not in the approved book); no rename mapping.
+7 Load apply (confirmation cbbf9018302d): 34 departments loaded as drafts, counts 34/64/263/291/1340, created 2, skipped/failed none, 554 book-check validation errors (= synthetic rehearsal).
+8 Resume plan: 0 rows written, all counts 0, 34 skipped.
+Pending: owner UI check (new departments visible, tables filled, blanks not 0, drafts) before reopening data entry.
+Owner decision (BEYAN 14:14): the Neon direct connection string (with password) appeared in a chat screenshot and in the Mac zsh history; owner chose not to rotate the password now. Risk recorded: chat/screenshot sharing would expose the database. Lead offers rotation steps (Neon reset → Render env + Actions secret NEON_BACKUP_DATABASE_URL) whenever the owner wants.
+Lessons (lead): (a) `tee >/dev/null` and `grep` on stdout hid the input() confirmation prompt twice → the owner waited ~20 min each time; (b) the plan JSON is longer than the terminal scrollback, totals are printed only per department; (c) each plan/apply takes ~9–20 min with no progress line, so the 60-minute backup window is tight for steps 5–7. → small task: confirmation prompt on /dev/tty, a one-screen totals summary before the JSON, progress lines, runbook note that steps 5 and 7 normally need two backups.
+Next IDs: task CIV-159, decision D-328.
