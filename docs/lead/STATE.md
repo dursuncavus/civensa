@@ -1,20 +1,20 @@
 # CIVENSA — CURRENT STATE
 
-Updated: 29 Oct 2026, ~23:40 Istanbul (live session CV Lider 40, D-312).
+Updated: 30 Oct 2026, ~05:45 Istanbul (scheduled run "Civensa gece kontrol", D-318).
 Rules: AI_WORKING_CONSTITUTION v1.2 (Drive, global) · `HIERARCHY.md` v1.5 · `PROJECT_RULES.md` v1.4 (D-271: PRIOR ART field mandatory in every package) · `BACKUP_LEAD.md` v2.
-Backup log ("Civensa Yedek Kaydı", Drive): no entries, last modified 23 Oct (DOĞRULANDI 27 Oct 05:45).
+Backup log ("Civensa Yedek Kaydı", Drive): no entries, last modified 23 Oct (DOĞRULANDI 30 Oct 05:45).
 Tags: DOĞRULANDI (lead checked) · TARİHSEL (past fact) · BEYAN (owner said) · BELİRSİZ (unknown).
 
 ## Next session — start here (D-253)
 Claude live (CV Lider 40, 29 Oct). CIV-151 merged 0b8c72a; CIV-149 merged by the owner 49abd45 (D-312).
 Claude's next session: `CV Lider 41 · Claude Opus 5.5 · civensa-lead`. Read this section and the last decision in DECISIONS.md first.
-1. Codex (BEYAN 23:48: CIV-152 done, PR to review; CIV-153/154/155/156 running): CIV-152 006 + 015 (D-312) CIV-153 038 Ekonomik dağılım (D-313), CIV-154 095 Bütçe aktarma ayrıntısı (D-314), CIV-155 rehearsal gate (D-315), CIV-156 upgrade test (D-317) — review each PR → CI → merge.
+1. Night run D-318: all five Codex PRs reviewed. #257 CIV-156 ready to merge (merge refused in scheduled run → owner or live session). #256 CIV-155, #250 CIV-152, #252 CIV-154: no MEDIUM, branches updated → merge after CI green on the new head. #251 CIV-153: MEDIUM 1440 regression, "@codex" fix requested (comment 6513689155) → review the new head.
 2. Owner looks pending: CIV-144 (007/008 value row + evidence), CIV-145 (İç Kontrol 031), CIV-146/147 (users), CIV-148 (016 audit labels), CIV-149, CIV-150 (001), CIV-151 (039/040; LOW items in D-312). Give the owner one gallery artifact (screenshots in docs/design/rollout/**).
-3. GO-LIVE (D-315): when CIV-152/153/154 are merged run the release plan in D-315 (CIV-155 → backup + rehearsal → release PR → owner merge + Render deploy → checks → first load). Dispatch CIV-155 to the next free Codex slot.
+3. GO-LIVE (D-315): when CIV-152/153/154 are merged run the release plan in D-315 (CIV-155 → backup + rehearsal → release PR → owner merge + Render deploy → checks → first load). CIV-155 is PR #256.
    30 Oct: owner attaches the final council-approved 2027 PP PDF (D-316) → lead compares it with the dry-run source and reports differences before the first load.
 4. Next screens after CIV-152/153/154: 002/003 (003 waits for Ali); INDEX has 97 screens (D-314) — check 069, 077–097 states and helper templates assurance_statement, first_period, structure_wizard against INDEX.
 5. Quota (BEYAN 29 Oct 20:49): week 76%, reset Sat 00:00; owner: keep working until then.
-Next IDs: task CIV-157, decision D-318.
+Next IDs: task CIV-157, decision D-319.
 
 ## Claude quota (BEYAN, owner 27 Oct 16:21)
 - Session 11%, week 67%, weekly reset Saturday 00:00 (D-300). Copilot 96 / 1,500 credits, reset 1 Nov.
@@ -23,12 +23,14 @@ Next IDs: task CIV-157, decision D-318.
 Dispatch format (D-232, D-249): platform + environment ("Bulut → civensa") + exact model (Codex: GPT-6.1 Sol) + effort; title is the first line inside the paste block. Session end: one-line handover (D-253) after this file is rewritten.
 Evidence rule (D-252): one-screen changes → targeted tests + changed-state screenshots + contrast; all-screen capture only when shared files change, committed as a short count summary.
 
-## Open pull requests (DOĞRULANDI 29 Oct ~23:40)
+## Open pull requests (DOĞRULANDI 30 Oct ~05:45, D-318)
 | PR | Task | State | Next action |
 | --- | --- | --- | --- |
-| Codex | CIV-152 006/015 | dispatched 29 Oct | review → CI → merge → owner look |
-| Codex | CIV-153 038 Ekonomik dağılım | dispatched 29 Oct | review → CI → merge → owner look |
-| Codex | CIV-154 095 Bütçe aktarma ayrıntısı | dispatched 29 Oct | review → CI → merge → owner look |
+| #257 | CIV-156 upgrade test from live schema | reviewed, CI green 8a6acdb, behind 0 | merge (owner / live session) |
+| #256 | CIV-155 rehearsal backup from default branch | reviewed, update-branch 30 Oct | merge after CI green on new head |
+| #250 | CIV-152 006/015 | reviewed (LOW only), update-branch 30 Oct | merge after CI → owner look |
+| #252 | CIV-154 095 Bütçe aktarma ayrıntısı | reviewed (LOW only), update-branch 30 Oct | merge after CI → owner look |
+| #251 | CIV-153 038 Ekonomik dağılım | MEDIUM 1440 regression, @codex fix asked | review Codex's new head |
 Merged 29 Oct (D-312): #246 CIV-151 → 0b8c72a · #241 CIV-149 (owner) → 49abd45.
 Merged 29 Oct (D-311): #244 CIV-150 → 7e4335b.
 Merged 28–29 Oct by the owner (D-309): #232 CIV-144 · #234 CIV-145 → 22e35b7 · #236 CIV-146 → eff4a06 · #238 CIV-147 → f1b7adb · #239 CIV-148 → c622bf2.
@@ -46,11 +48,11 @@ Merged 26 Oct: #163 CIV-113 → 88c9dfb; #154 CIV-109 → 34329a7; #161 CIV-111 
 - (closed) Look approvals CIV-101/102/103 (D-267); public repo (D-261); merges by the lead in live sessions (D-214); Codex "Tam erişim" ON (D-210); plaintext password files not tracked (D-217).
 
 ## Open queue — lead / scheduled run "Civensa gece kontrol" (05:41 only, D-265)
-1. Scheduled-run merges are refused by the session permission check (D-213, again D-255 on #132) — scheduled runs review and record; live sessions or the owner merge.
+1. Scheduled-run merges are refused by the session permission check (D-213, D-255 on #132, again D-318 on #257) — scheduled runs review and record; live sessions or the owner merge.
 2. Ask-Ali list (13 items) artifact "Ali Abi Soruları" https://claude.ai/artifact/KVuaFCeKzTv9kQGpwRWiz8 ; e-mailed 26 Oct; answers in "CIVENSA-CEVAPLAR v1" format.
 3. D-177 plan conversion, CIV-085, live first load — after the go-live deploy (D-315), live session only.
 4. Measure scheduled run cost; reduce or stop if costly.
 5. (closed, D-286) D-205 Drive archive and pointer "KAYITLAR GITHUB'DA" done.
-6. DeepSeek mirror GUNCEL-DURUM.md: not reachable in scheduled runs; the lead refreshes it in the next live session with the Mac linked (still pending 28 Oct).
+6. DeepSeek mirror GUNCEL-DURUM.md: not reachable in scheduled runs; the lead refreshes it in the next live session with the Mac linked (still pending 30 Oct).
 7. Codex cloud fixes from PR comments: not set up (D-242); fix rounds move to Copilot (D-246/D-248).
-8. LOW backlog: shell top-right period label repeats the title on Genel Bakış (D-273);  012 date input display format (BELİRSİZ, D-251); 024 summary widens the 2027 column (D-250); 021 progress table at 390 has no scroll hint (D-268) — watch only; 022 home runs the all-department progress overview per load (D-285) — watch on pilot data.
+8. LOW backlog: /health has no readiness/Alembic-head field (CIV-156 xfail, D-318); flaky test_report_builder_design revert-after-390 (D-318); shell top-right period label repeats the title on Genel Bakış (D-273);  012 date input display format (BELİRSİZ, D-251); 024 summary widens the 2027 column (D-250); 021 progress table at 390 has no scroll hint (D-268) — watch only; 022 home runs the all-department progress overview per load (D-285) — watch on pilot data.
