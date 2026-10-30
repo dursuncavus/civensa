@@ -1,0 +1,7 @@
+{% extends 'internal_control/index.html' %}
+{% block content %}
+{% set navigation %}<section class="card"><h2>Soru formu</h2><p>İzleme dönemlerinde müdürlüklerin yanıtlayacağı soru listesini yükleyip inceleyin.</p><a class="button" href="/internal-control/questionnaires">Soru formu listeleri</a></section>{% endset %}
+{# Keep the existing single screen container and all plan controls. #}
+{% set anchor = '<section class="card"><h2>Plan yükle' %}
+{{ super()|replace(anchor, navigation ~ anchor) }}
+{% endblock %}

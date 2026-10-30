@@ -1,0 +1,7 @@
+{% extends 'base.html' %}
+{% block page_title %}İç Kontrol Soru Formu{% endblock %}
+{% block page_subtitle %}{{ period_label(monitoring_period) }}{% endblock %}
+{% block content %}<link rel="stylesheet" href="/static/design/internal-control.css"><div class="internal-control-page internal-control-monitoring-page">
+<p><a href="{{ '/internal-control/monitoring?period_id=' if user.role=='strategy' else '/internal-control/our-actions?period_id=' }}{{ monitoring_period.id }}">Dönem ekranına dön</a></p>
+{% include 'internal_control/questionnaire_form.html' %}
+<section class="card"><h2>Soru formu işlem geçmişi (TSİ)</h2>{% for event in detail.events %}<article><p>Revizyon {{ event.revision }} · {{ {'save':'Yanıtlar kaydedildi','submit':'Gönderildi','return':'İade edildi','approve':'Onaylandı','reopen':'Yeniden açıldı'}[event.action] }} · {{ event.actor_name }} · {{ tsi(event.created_at) }}</p><p>{{ states[event.from_status] }} → {{ states[event.to_status] }}{% if event.reason %} · {{ event.reason }}{% endif %}</p></article>{% else %}<p>Henüz yanıt kaydedilmedi.</p>{% endfor %}</section></div>{% endblock %}

@@ -1,0 +1,11 @@
+{% extends 'internal_control/monitoring_ours.html' %}
+{% block content %}
+<link rel="stylesheet" href="/static/design/internal-control.css">
+<div class="internal-control-page internal-control-monitoring-page">
+{% for detail in question_details %}
+{% include 'internal_control/questionnaire_form.html' %}
+<p><a href="/internal-control/questionnaires/batches/{{ detail.batch.id }}">Soru formu işlem geçmişini gör</a></p>
+{% endfor %}
+</div>
+{{ super() }}
+{% endblock %}

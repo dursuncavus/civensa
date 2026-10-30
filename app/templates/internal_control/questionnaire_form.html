@@ -1,0 +1,20 @@
+{% from 'internal_control/monitoring_shared.html' import token with context %}
+<section class="card questionnaire-form"><h2>Soru formu · {{ detail.batch.label }}</h2>
+<p><span class="status {{ detail.status }}">{{ states[detail.status] }}</span> · Yanıtlanan {{ detail.answered }}/{{ detail.rows|length }}</p>
+{% filter pp_form(request) %}
+<form method="post" action="/internal-control/questionnaires/batches/{{ detail.batch.id }}/answers">{{ token(request) }}<input type="hidden" name="expected_revision" value="{{ detail.revision }}"><input type="hidden" name="list_id" value="{{ detail.list_id }}">
+<div class="ic-scroll" role="region" aria-label="Soru yanıtları" tabindex="0"><table class="ic-question-grid"><thead><tr><th>Kod / Soru</th><th>Yanıt</th><th>Açıklama (isteğe bağlı)</th></tr></thead><tbody>
+{% for row in detail.rows %}<tr><th scope="row" id="question-{{ detail.batch.id }}-{{ loop.index }}">{{ row.code }}<p>{{ row.question }}</p></th><td>
+{% if detail.editable %}<div role="radiogroup" aria-labelledby="question-{{ detail.batch.id }}-{{ loop.index }}">
+{% for value, label in answer_labels.items() %}<label class="ic-choice"><input type="radio" name="answer_{{ row.code }}" value="{{ value }}" {{ 'checked' if row.answer==value else '' }}>{{ label }}</label>{% endfor %}
+</div>
+{% else %}{{ answer_labels.get(row.answer, 'Yanıt seçilmedi') }}{% endif %}</td><td>
+{% if detail.editable %}<label>{{ row.code }} açıklaması<textarea name="explanation_{{ row.code }}" maxlength="1000">{{ row.explanation }}</textarea></label>{% else %}{{ row.explanation or '—' }}{% endif %}</td></tr>{% endfor %}
+</tbody></table></div>
+{% if detail.editable %}<div class="ic-actions"><button class="button" name="operation" value="save">Yanıtları kaydet</button>{% if user.position=='director' or user.can_submit %}<button class="button primary" name="operation" value="submit">Kaydet ve incelemeye gönder</button>{% endif %}</div>{% endif %}
+</form>{% endfilter %}
+{% if user.role=='strategy' and user.position=='director' and not monitoring_period.closed_at and detail.status in ['submitted','approved'] %}
+{% filter pp_form(request) %}<form method="post" action="/internal-control/questionnaires/batches/{{ detail.batch.id }}/transition">{{ token(request) }}<input type="hidden" name="expected_revision" value="{{ detail.revision }}"><input type="hidden" name="list_id" value="{{ detail.list_id }}">
+<label>İade / yeniden açma gerekçesi<textarea name="reason"></textarea></label>
+<div class="ic-actions">{% if detail.status=='submitted' %}<button class="button" name="action" value="return">Gerekçeli iade</button><button class="button primary" name="action" value="approve">Onayla</button>{% else %}<button class="button" name="action" value="reopen">Gerekçeli yeniden aç</button>{% endif %}</div></form>{% endfilter %}{% endif %}
+</section>

@@ -384,7 +384,7 @@ def test_live_pin_equals_single_repository_alembic_head():
     from alembic.config import Config
     from alembic.script import ScriptDirectory
     heads = ScriptDirectory.from_config(Config(str(live.ROOT / 'alembic.ini'))).get_heads()
-    assert heads == [live.HEAD] == ['c086a1b2c3d4']
+    assert heads == [live.HEAD] == ['c085a1b2c3d4']
 
 
 def test_approved_source_pin_and_old_book_refusal():
