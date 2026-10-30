@@ -724,3 +724,7 @@ DOĞRULANDI: #284 CIV-161 → fa2f693 (branch updated to behind 0, head 23fe214;
 Owner: look approval of CIV-085 + CIV-161 from docs/design/rollout/civ-161/ (sonra-*). Live after the next release + deploy.
 Next: CIV-160 (G6 narrative) package in the next session — this conversation is long.
 Next IDs: task CIV-162 (CIV-160 reserved for G6), decision D-340.
+
+## D-340 (30 Oct 2026 22:16 Istanbul, owner, live session CV Lider 45) — look approval CIV-085 + CIV-161
+BEYAN (owner 22:16): "Hepsi tamam" — look approved for the İç Kontrol soru formu screens (CIV-085) with the CIV-161 alignment (directorate form, Strateji results, upload preview, official summary table).
+Next IDs: task CIV-162 (CIV-160 reserved for G6), decision D-341.
