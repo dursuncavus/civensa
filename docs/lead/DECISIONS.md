@@ -752,3 +752,10 @@ Next IDs: task CIV-162, decision D-344.
 ## D-344 (31 Oct 2026 00:18 Istanbul, owner, live session CV Lider 46) — look approval CIV-160
 BEYAN (owner 00:18): "Ekranlar tamamdır" — look approved for the CIV-160 narrative screens (editor states, Strateji overview link, directorate Misyon/Vizyon block; tests/artifacts/civ160/).
 Next IDs: task CIV-162, decision D-345.
+
+## D-345 (31 Oct 2026 ~00:45 Istanbul, lead, live session CV Lider 47) — release prepared: PR #292 phase5 → main
+Session start check: no open PRs; Ali's "CV İç Kontrol Dönüşümü – Ortak Liste" has no answers yet (tabs 1–2 note columns empty, DOĞRULANDI 00:30). UI redesign queue: only 002/003 Faaliyet Raporu hazırlık (activity_report.html) left; it is a placeholder page whose content waits for Ali → no UI task now (rule 15). 069 first-period form shows only before the first period exists (live already has periods) → not worth a task.
+DOĞRULANDI: main is 31 commits behind phase5; pending code: #262 CIV-157, #266 CIV-158, #277 CIV-159, #280 CIV-085, #284 CIV-161, #289 CIV-160; migrations c085a1b2c3d4 + c160a1b2c3d4 on the live c086a1b2c3d4.
+Lead dispatched db-backup run 41131079715 → civensa-db-backup-20261030-2127Z (success), then Release migration rehearsal run 41131273683 on 81f2d9d → success (restores the latest successful backup = 2127Z, upgrades twice, starts the app).
+Release PR #292 (head 81f2d9d) opened for the owner. Owner steps (escalation, rule §4): merge #292 when its tests are green → lead dispatches a pre-deploy backup → owner Render civensa-pilot "Deploy latest commit" → /health ready=true + 3 pages. Data entry is open, so the owner picks a quiet hour for the deploy.
+Next IDs: task CIV-162, decision D-346.
