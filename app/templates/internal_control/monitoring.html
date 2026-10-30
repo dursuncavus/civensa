@@ -10,6 +10,7 @@
 <div class="ic-grid"><label>Yıl<input name="year" inputmode="numeric" value="{{ plans[0].start_year }}"></label><label>Yarıyıl<select name="half"><option value="1">I. dönem Ocak–Haziran</option><option value="2">II. dönem Temmuz–Aralık</option></select></label><label>Son giriş tarihi<input name="deadline" type="date"></label></div><button class="button primary">Dönemi aç</button></form>{% endfilter %}{% else %}<p>Önce <a href="/internal-control">bir planı etkinleştirin</a>.</p>{% endif %}</section>
 <section class="card"><h2>Dönem seçimi</h2><form method="get"><label>İzleme dönemi<select name="period_id">{% for p in periods %}<option value="{{ p.id }}" {{ 'selected' if monitoring_period and p.id==monitoring_period.id else '' }}>{{ period_label(p) }} · {{ 'Kapalı' if p.closed_at else 'Açık' }}</option>{% endfor %}</select></label><button class="button">Dönemi göster</button></form></section>
 {% if monitoring_period %}<h2>{{ period_label(monitoring_period) }}</h2><p>Son giriş: {{ monitoring_period.deadline.strftime('%d.%m.%Y') }} · <span class="status {{ 'closed' if monitoring_period.closed_at else 'active' }}">{{ 'Kapalı' if monitoring_period.closed_at else 'Açık' }}</span></p>
+<p><a class="button" href="/internal-control/monitoring/periods/{{ monitoring_period.id }}/narrative">Rapor anlatı bölümleri</a></p>
 {% if question_lists %}{% include 'internal_control/questionnaire_overview.html' %}{% endif %}
 <section class="card"><h2>Eylem bazında resmî rapor özeti</h2>
 <p>Gerçekleşme Oranı: <strong>{{ official_metrics.period_rate }}</strong></p>

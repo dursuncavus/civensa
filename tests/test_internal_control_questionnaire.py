@@ -411,7 +411,7 @@ def test_migration_postgresql_roundtrip_refusal_and_single_head():
             result = migrate(direction,revision)
             assert result.returncode == 0, result.stderr
         heads = subprocess.run([sys.executable,'-m','alembic','heads'], cwd=ROOT, env=env, capture_output=True,text=True)
-        assert heads.stdout.strip() == 'c085a1b2c3d4 (head)'
+        assert heads.stdout.strip() == 'c160a1b2c3d4 (head)'
         with engine.begin() as conn:
             conn.execute(text("INSERT INTO organizations(id,name) VALUES (1,'Sentetik')"))
             conn.execute(text("INSERT INTO departments(id,organization_id,name) VALUES (1,1,'Test Müdürlüğü')"))
@@ -425,7 +425,7 @@ def test_migration_postgresql_roundtrip_refusal_and_single_head():
         assert result.returncode != 0 and 'Soru formu verisi var' in result.stderr
         with engine.connect() as conn:
             assert before == conn.execute(text('SELECT * FROM ic_question_lists')).all()
-            assert conn.execute(text('SELECT version_num FROM alembic_version')).scalar() == 'c085a1b2c3d4'
+            assert conn.execute(text('SELECT version_num FROM alembic_version')).scalar() == 'c160a1b2c3d4'
     finally:
         engine.dispose()
         with base.begin() as conn: conn.execute(DropSchema(schema,cascade=True))

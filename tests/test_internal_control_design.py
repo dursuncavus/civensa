@@ -13,7 +13,7 @@ import pytest
 from app import internal_control_monitoring_service as monitoring
 from app.main import templates
 from test_activity_sections import login
-from test_ic_our_actions_design import ic_client, VisibleText, ScreenContract
+from test_ic_our_actions_design import ic_client, VisibleText, ScreenContract, narrative_deltas
 from test_internal_control import stage, saved, workbook, action_row
 from test_internal_control_monitoring import monitoring as monitoring_data, fill
 from test_section_index_design import TEXT_PAIRS, contrast
@@ -50,6 +50,7 @@ def frozen(response):
     actual = response.template.render(response.context)
     request.state.pp_attempt_rendered = False
     expected = env.get_template(response.template.name).render(response.context)
+    expected = narrative_deltas(response.template.name, response.context, expected)
     if response.template.name == 'internal_control/monitoring.html':
         # Owner-approved display-only change in the standard column.
         for component, standard in response.context['counts']:
@@ -147,7 +148,13 @@ def test_shared_sources_and_department_screen_unchanged():
     # Exact source hashes from phase5 69021f0 cover shared files and CIV-105.
     hashes = {'monitoring_shared': '7f855dc94b101377db64a6860dfa713606d3b117b3bc8e2514832ba73142dc82', 'monitoring_notes': '7122a66ff3c0dde77dc0b17c154203eaeb431a05f80aaaa7837d34768702fd07', 'monitoring_ours': 'ddd743a343c78a4a4b39ad3102b6d8e7265525cf8652958d014fe0b162545daf', 'our_actions': '57ed2f6df50e9ee2757fad56f44cf5faa731e0203e3cf8e0b56e8befe1c9c1f9'}
     for name in hashes:
-        assert sha256(Path(f'app/templates/internal_control/{name}.html').read_bytes()).hexdigest() == hashes[name]
+        source = Path(f'app/templates/internal_control/{name}.html').read_bytes()
+        if name == 'monitoring_ours':
+            # D-342 permits only the state-dependent, read-only narrative include.
+            delta = b"  {% include 'internal_control/narrative_ours.html' %}\n"
+            assert source.count(delta) == 1
+            source = source.replace(delta, b'', 1)
+        assert sha256(source).hexdigest() == hashes[name]
     # The already-restyled screen is tested by its existing frozen suite.
     assert 'internal-control.css' not in Path('app/templates/internal_control/our_actions.html').read_text()
 

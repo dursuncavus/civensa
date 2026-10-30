@@ -161,3 +161,10 @@
 .internal-control-page .ic-question-saved-list { padding-left: var(--space-6); }
 .internal-control-page .ic-question-saved-list li { margin-bottom: var(--space-2); overflow-wrap: anywhere; }
 .internal-control-page .ic-question-saved-list li::marker { font-variant-numeric: tabular-nums; }
+
+/* CIV-160: existing labelled text editor, counters and saved state. */
+.ic-narrative textarea { width: 100%; box-sizing: border-box; resize: vertical; }
+.ic-narrative label { display: block; margin-top: var(--space-4); font-weight: var(--font-semibold); }
+.ic-narrative-text { white-space: pre-wrap; overflow-wrap: anywhere; }
+.ic-narrative .card, .ic-narrative article, .ic-narrative-reference { min-width: 0; overflow-wrap: anywhere; }
+.ic-narrative-reference { border-left: 3px solid var(--border); padding: var(--space-2) var(--space-4); margin-top: var(--space-6); }

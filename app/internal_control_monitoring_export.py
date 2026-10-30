@@ -260,6 +260,8 @@ def official_export(db, actor, period_id, format, *, draft=False):
             for cell in sheet[1]:
                 cell.font = Font(bold=True)
         return export_book(book)
+    from .internal_control_narrative_export import narrative_for_word, insert_narrative
+    narrative = narrative_for_word(db, period, draft=draft)
     doc = Document()
     section = doc.sections[0]
     section.orientation = WD_ORIENT.LANDSCAPE
@@ -271,6 +273,8 @@ def official_export(db, actor, period_id, format, *, draft=False):
     doc.add_heading(('TASLAK · ' if draft else '') + 'İç Kontrol İzleme Raporu · Resmî format', 0)
     for line in [title, subtitle, *cover]:
         doc.add_paragraph(line)
+    if narrative:
+        insert_narrative(doc, db, period, narrative)
     doc.add_page_break()
     for headers, contents in [(COMPONENT_HEADERS, metrics['components']), (OFFICIAL_HEADERS, rows)]:
         table = doc.add_table(rows=1, cols=len(headers))

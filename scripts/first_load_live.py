@@ -23,7 +23,7 @@ with environment(DATABASE_URL='sqlite://', MIGRATION_DATABASE_URL=None):
 
 BOOK = ROOT / 'tests/fixtures/first_load/source/2027-performans-programi_ONAYLI.idml'
 BOOK_SHA256 = 'cbbf9018302d0a1d33d1dde0c4a64a2418d12b55cc29d046205371018673bd71'
-HEAD = 'c085a1b2c3d4'
+HEAD = 'c160a1b2c3d4'
 TARGET_ENV = 'CIVENSA_FIRST_LOAD_DATABASE_URL'
 MARKER = 'first_load_department'
 LOCK = 520027
