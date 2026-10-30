@@ -1,20 +1,20 @@
 # CIVENSA — CURRENT STATE
 
-Updated: 29 Oct 2026, ~23:40 Istanbul (live session CV Lider 40, D-312).
+Updated: 30 Oct 2026, ~10:25 Istanbul (live session CV Lider 41, D-319..D-321).
 Rules: AI_WORKING_CONSTITUTION v1.2 (Drive, global) · `HIERARCHY.md` v1.5 · `PROJECT_RULES.md` v1.4 (D-271: PRIOR ART field mandatory in every package) · `BACKUP_LEAD.md` v2.
-Backup log ("Civensa Yedek Kaydı", Drive): no entries, last modified 23 Oct (DOĞRULANDI 27 Oct 05:45).
+Backup log ("Civensa Yedek Kaydı", Drive): no entries, last modified 23 Oct (DOĞRULANDI 30 Oct 05:45).
 Tags: DOĞRULANDI (lead checked) · TARİHSEL (past fact) · BEYAN (owner said) · BELİRSİZ (unknown).
 
 ## Next session — start here (D-253)
-Claude live (CV Lider 40, 29 Oct). CIV-151 merged 0b8c72a; CIV-149 merged by the owner 49abd45 (D-312).
-Claude's next session: `CV Lider 41 · Claude Opus 5.5 · civensa-lead`. Read this section and the last decision in DECISIONS.md first.
-1. Codex (BEYAN 23:48: CIV-152 done, PR to review; CIV-153/154/155/156 running): CIV-152 006 + 015 (D-312) CIV-153 038 Ekonomik dağılım (D-313), CIV-154 095 Bütçe aktarma ayrıntısı (D-314), CIV-155 rehearsal gate (D-315), CIV-156 upgrade test (D-317) — review each PR → CI → merge.
-2. Owner looks pending: CIV-144 (007/008 value row + evidence), CIV-145 (İç Kontrol 031), CIV-146/147 (users), CIV-148 (016 audit labels), CIV-149, CIV-150 (001), CIV-151 (039/040; LOW items in D-312). Give the owner one gallery artifact (screenshots in docs/design/rollout/**).
-3. GO-LIVE (D-315): when CIV-152/153/154 are merged run the release plan in D-315 (CIV-155 → backup + rehearsal → release PR → owner merge + Render deploy → checks → first load). Dispatch CIV-155 to the next free Codex slot.
-   30 Oct: owner attaches the final council-approved 2027 PP PDF (D-316) → lead compares it with the dry-run source and reports differences before the first load.
-4. Next screens after CIV-152/153/154: 002/003 (003 waits for Ali); INDEX has 97 screens (D-314) — check 069, 077–097 states and helper templates assurance_statement, first_period, structure_wizard against INDEX.
-5. Quota (BEYAN 29 Oct 20:49): week 76%, reset Sat 00:00; owner: keep working until then.
-Next IDs: task CIV-157, decision D-318.
+Claude live (CV Lider 41, 30 Oct). Merged today: #257 CIV-156, #256 CIV-155, #250 CIV-152, #259 rehearsal diagnostics (D-319).
+Claude's next session: `CV Lider 42 · Claude Opus 5.5 · civensa-lead`. Read this section and the last decision in DECISIONS.md first.
+1. GO-LIVE BLOCKER (D-319): release rehearsal fails — BACKUP_AGE_IDENTITY in environment `production` does not decrypt the backups. Owner re-enters it from the Passwords copy → lead re-runs "Release migration rehearsal" (workflow 389644374) on phase5. Still failing → new key pair + new backups (escalate).
+2. Open PRs: #252 CIV-154 (reviewed, LOW only; shard-0 flaky activity_mapping 390 test, CI re-running) → merge when green + behind 0. #251 CIV-153 (Copilot round 3: no sticky, no mid-word breaks) → lead looks at the new 1440/390 screenshots, "@codex review" (Copilot model unknown), CI → merge. #258 night record (docs) → merge.
+3. CIV-157 (D-320): approved PP source + pasteboard exclusion + dryrun-onayli.md + onayli-fark.md → dispatch to Codex after the lead PR with the fixture merges; then review; report differences to the owner before the first load; update live-runbook (D-315 step 6).
+4. Owner looks pending: CIV-150 (001), CIV-151 (039/040), CIV-152 (006/015), then CIV-153/154. One gallery artifact (screenshots in docs/design/rollout/**).
+5. Next screens: 002/003 (003 waits for Ali); check 069, 077–097 states and helper templates against INDEX (D-314).
+6. Quota (BEYAN 29 Oct 20:49): week 76% then, reset Sat 00:00; owner: keep working until then.
+Next IDs: task CIV-158, decision D-322.
 
 ## Claude quota (BEYAN, owner 27 Oct 16:21)
 - Session 11%, week 67%, weekly reset Saturday 00:00 (D-300). Copilot 96 / 1,500 credits, reset 1 Nov.
@@ -23,12 +23,13 @@ Next IDs: task CIV-157, decision D-318.
 Dispatch format (D-232, D-249): platform + environment ("Bulut → civensa") + exact model (Codex: GPT-6.1 Sol) + effort; title is the first line inside the paste block. Session end: one-line handover (D-253) after this file is rewritten.
 Evidence rule (D-252): one-screen changes → targeted tests + changed-state screenshots + contrast; all-screen capture only when shared files change, committed as a short count summary.
 
-## Open pull requests (DOĞRULANDI 29 Oct ~23:40)
+## Open pull requests (DOĞRULANDI 30 Oct ~10:25, D-319)
 | PR | Task | State | Next action |
 | --- | --- | --- | --- |
-| Codex | CIV-152 006/015 | dispatched 29 Oct | review → CI → merge → owner look |
-| Codex | CIV-153 038 Ekonomik dağılım | dispatched 29 Oct | review → CI → merge → owner look |
-| Codex | CIV-154 095 Bütçe aktarma ayrıntısı | dispatched 29 Oct | review → CI → merge → owner look |
+| #252 | CIV-154 095 Bütçe aktarma ayrıntısı | reviewed (LOW only), update-branch 30 Oct 10:20 | merge after CI → owner look |
+| #251 | CIV-153 038 Ekonomik dağılım | Copilot fix round 3 | lead look + @codex review → CI → merge |
+| #258 | night record D-318 | docs only, guard green | merge |
+Merged 30 Oct (D-319): #257 CIV-156 → 2f2276c · #256 CIV-155 → 3544177 · #250 CIV-152 → 5936096 · #259 lead rehearsal diagnostics → a4bf3ef.
 Merged 29 Oct (D-312): #246 CIV-151 → 0b8c72a · #241 CIV-149 (owner) → 49abd45.
 Merged 29 Oct (D-311): #244 CIV-150 → 7e4335b.
 Merged 28–29 Oct by the owner (D-309): #232 CIV-144 · #234 CIV-145 → 22e35b7 · #236 CIV-146 → eff4a06 · #238 CIV-147 → f1b7adb · #239 CIV-148 → c622bf2.
