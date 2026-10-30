@@ -21,10 +21,17 @@ jobs:
           HEAD_REF: ${{ github.event.pull_request.head.ref }}
           HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
           BASE_REPO: ${{ github.repository }}
+          BASE_REF: ${{ github.event.pull_request.base.ref }}
         run: |
           if [ "$HEAD_REPO" != "$BASE_REPO" ]; then
             echo "::error title=Lead records are protected::Fork PR'ları docs/lead/ ve AGENTS.md dosyalarını değiştiremez (D-205)."
             exit 1
+          fi
+          # D-322/D-333: a release PR carries already-reviewed lead records from the
+          # canonical development branch to main; only that exact pair is allowed.
+          if [ "$HEAD_REF" = "feature/authorization-workflow-phase5" ] && [ "$BASE_REF" = "main" ]; then
+            echo "Release PR phase5 -> main — allowed."
+            exit 0
           fi
           case "$HEAD_REF" in
             lead/*)
