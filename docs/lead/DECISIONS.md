@@ -657,3 +657,7 @@ BEYAN (owner 14:53): UI check OK (Ar-Ge and İşletme visible, 2027 tables fille
 DOĞRULANDI (owner terminal 14:57): decrypted dumps in ~/civensa-yedek/*/cozulmus deleted; every line containing a postgresql:// URL removed from ~/.zsh_history and ~/.zsh_sessions/*.history (check: none left). Encrypted 1004Z/1059Z copies kept.
 Decision: the D-327 CLI UX lessons go to the LOW backlog, not a task now — the one-time load is done; worth it only before the next real load or a resume (constitution rule 15: can ≠ should).
 Next IDs: task CIV-159, decision D-329.
+
+## D-329 (30 Oct 2026 ~15:00 Istanbul, owner, live session CV Lider 43) — look approvals CIV-150–154
+BEYAN (owner 14:59): look approved for CIV-150 (001), CIV-151 (039/040), CIV-152 (006/015), CIV-153 (038), CIV-154 (095). No gallery artifact needed now.
+Next IDs: task CIV-159, decision D-330.

@@ -1,6 +1,6 @@
 # CIVENSA — CURRENT STATE
 
-Updated: 30 Oct 2026, ~15:00 Istanbul (live session CV Lider 43, D-328).
+Updated: 30 Oct 2026, ~15:00 Istanbul (live session CV Lider 43, D-329).
 Rules: AI_WORKING_CONSTITUTION v1.2 (Drive, global) · `HIERARCHY.md` v1.5 · `PROJECT_RULES.md` v1.4 (D-271: PRIOR ART field mandatory in every package) · `BACKUP_LEAD.md` v2.
 Backup log ("Civensa Yedek Kaydı", Drive): no entries, last modified 23 Oct (DOĞRULANDI 30 Oct 05:45).
 Tags: DOĞRULANDI (lead checked) · TARİHSEL (past fact) · BEYAN (owner said) · BELİRSİZ (unknown).
@@ -11,11 +11,11 @@ Claude's next session: `CV Lider 44 · Claude Opus 5.5 · civensa-lead`. Read th
 1. (done, D-328) Owner UI check OK (BEYAN 14:53) → data entry reopened by the owner. Decrypted dumps deleted, connection-string lines removed from zsh history (DOĞRULANDI owner output 14:57). Encrypted backups 1004Z/1059Z stay in ~/civensa-yedek. Password rotation declined (D-327) — offer only if asked.
 2. Watch the first department reactions to the 554 book-check items (D-324).
 3. LOW backlog (D-328): first_load_live UX (confirmation prompt on /dev/tty, one-screen totals, progress lines; runbook: steps 5 and 7 need two backups) — only before the next real load or resume.
-4. Owner looks pending: CIV-150 (001), CIV-151 (039/040), CIV-152 (006/015), CIV-153 (038), CIV-154 (095). One gallery artifact (screenshots in docs/design/rollout/**).
+4. (done, D-329) Owner look approvals CIV-150/151/152/153/154 (BEYAN 14:59).
 5. Next after the load: D-177 İç Kontrol plan conversion (owner attaches 2024–2026 plan PDF), CIV-085. Next screens: 002/003 (003 waits for Ali); INDEX check of 069, 077–097 (D-314). Watch how departments react to the 554 book-check items (D-324: accepted-with-reason UI is a later question).
 6. Small tasks to package: /health readiness + Alembic head field (D-318); lead-docs guard should pass release PRs phase5 → main (D-322).
 7. Quota (BEYAN 29 Oct 20:49): week 76% then, reset Sat 00:00.
-Next IDs: task CIV-159, decision D-329.
+Next IDs: task CIV-159, decision D-330.
 
 ## Claude quota (BEYAN, owner 27 Oct 16:21)
 - Session 11%, week 67%, weekly reset Saturday 00:00 (D-300). Copilot 96 / 1,500 credits, reset 1 Nov.
