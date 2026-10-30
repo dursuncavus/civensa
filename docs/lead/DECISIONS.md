@@ -735,3 +735,8 @@ Decisions: (1) One narrative per monitoring period: Misyon, Vizyon, one Bileşen
 Research gate (PROJECT_RULES §24): internal prior art is enough — real report structure (CIV-082), workflow reuse (CIV-079/CIV-085), text editor pattern (Faaliyet Raporu activity_sections_editor). No Gemini run.
 Package: docs/lead/tasks/CIV-160.md. Dispatch: ChatGPT Codex, Bulut → civensa, GPT-6.1 Sol, effort Yüksek (new migration + workflow + official export change).
 Next IDs: task CIV-162, decision D-342.
+
+## D-342 (30 Oct 2026 ~22:35 Istanbul, lead, live session CV Lider 46) — CIV-160 addendum: frozen design-test exception
+Codex question (via owner 22:30): tests/test_internal_control_design.py and tests/test_ic_our_actions_design.py freeze every link and visible text of the monitoring overview and İç Kontrol Eylemlerimiz (CIV-145 frozen contracts); the new "Rapor anlatı bölümleri" link and the read-only "Misyon ve Vizyon" block fail them. DOĞRULANDI: both files compare rendered output to a frozen template copy (visible_text_deltas / frozen()).
+Approved, narrow: add only the new link and the Misyon/Vizyon block as allowed deltas (visible only when the state that shows them is present); every other frozen assertion (route, values, CSRF, text, layout, contrast) stays; name both in the PR (D-167). Same pattern as D-338. tests/test_internal_control_monitoring.py and tests/test_internal_control_official_report.py stay unchanged. Package CONSTRAINTS updated.
+Next IDs: task CIV-162, decision D-343.
