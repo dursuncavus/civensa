@@ -56,3 +56,26 @@
 @media (max-width: 700px) {
   .budget-reallocation-page :is(.budget-panel,.info-panel,.error-panel) { padding: var(--space-4); }
 }
+
+/* CIV-154 · 095: recorded amounts and reversal, scoped to the detail page. */
+.budget-detail-page .actions { margin-top: 0; margin-bottom: var(--space-6); }
+.budget-detail-page .operation-meta { line-height: 2; }
+.budget-detail-page .status-badge { display: inline-block; padding: 0 var(--space-2); border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface-muted); color: var(--text-secondary); font-size: var(--text-sm); font-weight: var(--font-medium); }
+.budget-detail-page .detail-facts { max-width: 44rem; margin: 0 0 var(--space-6); }
+.budget-detail-page .detail-facts > div { display: flex; align-items: baseline; flex-wrap: wrap; gap: var(--space-1) var(--space-4); padding: var(--space-2) 0; }
+.budget-detail-page .detail-facts dt { flex: 0 1 auto; min-width: 0; color: var(--text-secondary); }
+.budget-detail-page .detail-facts dd { margin: 0; color: var(--text); }
+.budget-detail-page .department-summaries { max-width: 44rem; margin: 0 0 var(--space-6); padding: 0; list-style: none; }
+.budget-detail-page .department-summaries > li { min-width: 0; padding: var(--space-4) 0; border-top: 1px solid var(--border); }
+.budget-detail-page .department-summaries h3 { margin-bottom: var(--space-2); }
+.budget-detail-page .money-facts { margin-bottom: 0; }
+.budget-detail-page .money-facts dd { margin-left: auto; text-align: right; font-variant-numeric: tabular-nums; }
+.budget-detail-page .selection-disclosure { max-width: 44rem; margin-bottom: var(--space-4); padding: var(--space-4); border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface-muted); }
+.budget-detail-page .selection-disclosure p { margin: var(--space-4) 0 0; }
+.budget-detail-page .warning-panel { max-width: 44rem; margin-bottom: var(--space-4); padding: var(--space-4); border: 1px solid var(--warning); border-radius: var(--radius); color: var(--warning); background: var(--warning-bg); }
+.budget-detail-page :is(th,td):nth-child(n+4) { text-align: right; font-variant-numeric: tabular-nums; }
+.budget-detail-page .info-panel p { margin: 0; }
+.budget-detail-page .form-grid { grid-template-columns: minmax(0,1fr); }
+.budget-detail-page .button.danger { border-color: var(--danger); background: var(--danger); color: var(--surface); }
+.budget-detail-page .button.danger:is(:hover,:focus) { background: var(--danger-bg); color: var(--danger); }
+.budget-detail-page .button.danger:disabled { border-color: var(--text-secondary); background: var(--surface-muted); color: var(--text-secondary); opacity: 1; }
