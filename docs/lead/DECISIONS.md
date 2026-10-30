@@ -623,3 +623,8 @@ Dry-run on the approved source (DOĞRULANDI from the committed reports): 34 depa
 BEYAN (owner 11:45): the council-approved book cannot be corrected ("kitap kesin"). Decision: load exactly as printed; book-check items stay diagnostic validation (consistent with D-88/D-111), they do not block the load; İşletme ve İştirakler is loaded (D-88 skip reason — missing council data — no longer holds). A way to mark approved-source discrepancies as accepted with a reason in the UI is a later question (watch how departments react after the load), not a go-live blocker.
 Finding: `scripts/first_load_live.py` still pins the 16 Oct book, Alembic c048 and the İşletme skip; the rehearsal workflow defaults the old confirmation; live-runbook targets release #50. → CIV-158 (Codex, GPT-6.1 Sol, effort Yüksek): approved book + SHA, HEAD c086 with a pin-equals-repo-head test, no İşletme skip, counts 34/64/263/291/1340, cleanup proven on c086, synthetic full rehearsal, runbook rewrite. Workflow lines in that PR get a lead line-by-line review.
 Next IDs: task CIV-159, decision D-325.
+
+## D-325 (30 Oct 2026 ~12:25 Istanbul, lead, live session CV Lider 42) — CIV-157 merged; CIV-158 scope +1 test file
+DOĞRULANDI: #265 (D-324 records) → 3a3f208. #262 CIV-157 → 7f6029e (head 5906ff7 = reviewed 26bc24e + two base merges of docs/lead only; CI both shards green on that head, behind 0).
+CIV-158: Codex asked (via the owner, 11:30) to add tests/test_clear_preprint_2027.py, which pins the old book, 33 departments and the İşletme skip. Approved (lead error: the package missed this test; prevention: grep every pinned constant across tests before writing CONSTRAINTS). Only expectations/fixture references may change there; reviewed in the PR.
+Next IDs: task CIV-159, decision D-326.
