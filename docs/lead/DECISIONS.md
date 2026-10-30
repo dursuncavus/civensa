@@ -765,3 +765,10 @@ DOĞRULANDI: owner merged #292 (21:58Z) → main 80b6ca1; tests green on 6d9be83
 DOĞRULANDI (owner pasted /health, 01:10): status ok, environment production, database ok (11 ms), ready true, migration current = head = c160a1b2c3d4. CIV-157/158/159/085/161/160 are live. 3-page check: owner to confirm.
 Finding (owner screenshot): civensa-pilot is a Render Free instance → sleeps after 15 min idle, first request waits ~50 s. Departments now enter live data, so this reads as "system down". Source-backed (render.com pricing, checked 31 Oct): Starter web service $7/month, 512 MB / 0.5 CPU, always on; database stays on Neon (no Render Postgres cost). Lead recommendation: move civensa-pilot to Starter (payment = owner decision, §4).
 Next IDs: task CIV-162, decision D-347.
+
+## D-347 (31 Oct 2026 ~01:25 Istanbul, owner + lead, live session CV Lider 47) — 3-page check OK; CIV-162 dispatched while Ali's answers wait
+BEYAN (owner 01:10): the three pages after the deploy open fine ("Kalanlar da tamam") → D-346 release fully closed.
+Owner asked whether work stops until Ali Abi answers. Lead check: İç Kontrol import and UI 002/003 wait for Ali; first-load CLI UX stays parked (D-328). Worth doing now: the D-343 LOW — DB approval guard weaker than the app rule (separation of duties, the narrative goes into the official report). Doing it now instead of "with the next İç Kontrol migration" because no such migration is planned and the gap is security-relevant; one small migration, cost low.
+Package: docs/lead/tasks/CIV-162.md. Dispatch: ChatGPT Codex, Bulut → civensa, GPT-6.1 Sol, effort Orta (one function swap + tests). Goes live with the next release (needs rehearsal + deploy).
+Open owner decision: Render Starter $7/month for civensa-pilot (D-346).
+Next IDs: task CIV-163, decision D-348.

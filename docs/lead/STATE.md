@@ -1,6 +1,6 @@
 # CIVENSA — CURRENT STATE
 
-Updated: 31 Oct 2026, ~01:15 Istanbul (live session CV Lider 47, D-346).
+Updated: 31 Oct 2026, ~01:15 Istanbul (live session CV Lider 47, D-347).
 Rules: AI_WORKING_CONSTITUTION v1.2 (Drive, global) · `HIERARCHY.md` v1.5 · `PROJECT_RULES.md` v1.4 (D-271: PRIOR ART field mandatory in every package) · `BACKUP_LEAD.md` v2.
 Backup log ("Civensa Yedek Kaydı", Drive): no entries, last modified 23 Oct (DOĞRULANDI 30 Oct 05:45).
 Tags: DOĞRULANDI (lead checked) · TARİHSEL (past fact) · BEYAN (owner said) · BELİRSİZ (unknown).
@@ -8,12 +8,13 @@ Tags: DOĞRULANDI (lead checked) · TARİHSEL (past fact) · BEYAN (owner said) 
 ## Next session — start here (D-253)
 Claude live (CV Lider 47, 31 Oct ~00:45). Release #292 merged and deployed; /health ready=true, migration c160 (D-346). İç Kontrol import still waits for Ali Abi.
 Claude's next session: `CV Lider 48 · Claude Opus 5.5 · civensa-lead`. Read this section and the last decision in DECISIONS.md first.
-1. Release live (D-346). Owner: confirm 3 pages; decide Render Starter ($7/month, no sleep) for civensa-pilot.
-2. LOW: align the DB approval guard civ160_event_guard with the app rule in the next İç Kontrol migration (D-343).
+1. Release live, 3 pages OK (D-346/D-347). Owner decision open: Render Starter ($7/month, no sleep) for civensa-pilot.
+1b. CIV-162 (DB approval guard = app rule) dispatched to Codex (D-347): review its PR, merge, include in the next release.
+2. (moved to CIV-162)
 3. İç Kontrol import (D-331): waits for Ali Abi's answers in "CV İç Kontrol Dönüşümü – Ortak Liste" (https://docs.google.com/spreadsheets/d/1O4DmrNnBfcz9HJuxAXxGwMCvukTo2467HobZptmz-XI/edit) — empty at 31 Oct 00:30. Then the lead edits the committed workbook, owner uploads on civensa-pilot → maps 8 names → commits draft; activation with the lead. Owner ticks the 49 action rows against the PDF (D-177). Ali Abi also compares the 70-question list (D-336).
 4. Watch department reactions to the 554 book-check items (D-324). LOW backlog (D-328). UI: only 002/003 left, waits for Ali (D-345).
 5. Quota: weekly reset Sat 00:00. Claude Pro ends 3 Nov (owner renews on the web).
-Next IDs: task CIV-162, decision D-347.
+Next IDs: task CIV-163, decision D-348.
 
 ## Claude quota (BEYAN, owner 27 Oct 16:21)
 - Session 11%, week 67%, weekly reset Saturday 00:00 (D-300). Copilot 96 / 1,500 credits, reset 1 Nov.
