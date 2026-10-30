@@ -119,3 +119,5 @@ event.listen(ICMonitoringPeriod, 'before_delete', reject_history_change)
 
 from .internal_control_monitoring_guards import metadata_guards  # noqa: E402
 event.listen(Base.metadata, 'after_create', metadata_guards)
+
+from . import internal_control_questionnaire_models  # noqa: E402,F401

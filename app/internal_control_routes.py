@@ -104,7 +104,7 @@ def register(app):
         if user.role == 'department':
             return RedirectResponse('/internal-control/our-actions', 303)
         plans = db.scalars(select(ICPlan).order_by(ICPlan.id.desc())).all()
-        return templates.TemplateResponse(request, 'internal_control/index.html',
+        return templates.TemplateResponse(request, 'internal_control/questionnaire_index.html',
             dict(user=user, plans=plans, status_labels=STATUS_LABELS))
 
     @app.get('/internal-control/template.xlsx')

@@ -1,0 +1,6 @@
+56 ekran görüntüsü; 28 durum × 2 genişlik (1366 ve 390 px).
+Yükleme: boş, hata, önizleme, kayıtlı. Bağlama: boş, hata, bağlı.
+Müdürlük, genel görünüm ve detay: boş, kısmi, gönderildi, iade, onaylı, yeniden açıldı.
+Müdürlük gönderim hatası ve Strateji inceleme hatası ayrıca doğrulandı.
+Her durumda sayfa taşması yok; tablolar kendi alanında yatay kaydırılır.
+Tüm sorular sentetiktir (Test sorusu 1…4).
