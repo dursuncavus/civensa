@@ -23,12 +23,23 @@ BASE_HASHES.update({'questionnaire_form.html': 'cf2d49769a63cbb417abc23078adbfe1
 
 def original_source(name):
     source = (ROOT / 'app/templates/internal_control' / name).read_text()
+    if name == 'monitoring.html':
+        # CIV-160: the user authorized only this new period-dependent link delta.
+        delta = ('<p><a class="button" href="/internal-control/monitoring/periods/'
+                 '{{ monitoring_period.id }}/narrative">Rapor anlatı bölümleri</a></p>\n')
+        assert source.count(delta) == 1
+        source = source.replace(delta, '', 1)
     source = source.replace('class="card ic-results-card"', 'class="card"')
     source = re.sub(r' class="ic-result-table ic-result-table-(?:scores|summary)"', '', source)
     source = source.replace(' class="{{ \'ic-total-row\' if row == question_results.total else \'\' }}"', '')
     source = source.replace('ic-question-grid ic-question-form-table', 'ic-question-grid')
     source = source.replace(' class="ic-question-upload-table"', '').replace(' class="ic-question-saved-list"', '')
     assert sha256(source.encode()).hexdigest() == BASE_HASHES[name], 'Only the authorized class attributes may change'
+    if name == 'monitoring.html':
+        # Keep the authorized link in both renders; all control assertions remain.
+        marker = '{% if question_lists %}'
+        assert source.count(marker) == 1
+        source = source.replace(marker, delta + marker, 1)
     return source
 
 

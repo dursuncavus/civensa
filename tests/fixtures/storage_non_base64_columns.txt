@@ -2,6 +2,7 @@
 # Classify new image payload columns in BASE64_COLUMNS instead of adding them here.
 # CIV-086 stable_key columns: String(36) UUID text, never base64.
 # CIV-085: question/answer text, department IDs and audit labels; no binary/base64 file payloads.
+# CIV-160: plain narrative text snapshots and workflow/actor/reason labels; no image or base64 file payloads.
 activities.code
 activities.explanation
 activities.name
@@ -178,6 +179,12 @@ ic_monitoring_notes.content
 ic_monitoring_period_events.action
 ic_monitoring_period_events.actor_name
 ic_monitoring_period_events.reason
+ic_narrative_events.action
+ic_narrative_events.actor_name
+ic_narrative_events.from_status
+ic_narrative_events.reason
+ic_narrative_events.snapshot_json
+ic_narrative_events.to_status
 ic_plans.source_filename
 ic_plans.source_sha256
 ic_plans.status
