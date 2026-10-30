@@ -1,0 +1,29 @@
+/* CIV-152: existing report panels, text statuses and contained differences table. */
+.financial-import-page { min-width: 0; color: var(--text); overflow-wrap: anywhere; font: var(--font-regular) var(--text-base) / var(--line-height) var(--font-family); }
+.financial-import-page * { box-sizing: border-box; text-transform: none; letter-spacing: normal; }
+.financial-import-page :is(h2,p) { margin: 0 0 var(--space-3); }
+.financial-import-page h2 { font-size: var(--text-section); font-weight: var(--font-semibold); }
+.financial-import-page p { max-width: 44rem; font-size: var(--text-sm); line-height: var(--line-height); }
+.financial-import-page .page-actions { display: flex; flex-wrap: wrap; gap: var(--space-3); margin-bottom: var(--space-6); }
+.financial-import-page .ar-panel { min-width: 0; margin: 0 0 var(--space-6); padding: var(--space-6); border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); box-shadow: none; }
+.financial-import-page :is(.info-panel,.error-panel,.warning-panel) { max-width: 44rem; margin: 0 0 var(--space-4); padding: var(--space-4); border: 1px solid var(--border); border-radius: var(--radius); background: var(--accent-soft); color: var(--text); }
+.financial-import-page .error-panel { border-color: var(--danger); background: var(--danger-bg); color: var(--danger); }
+.financial-import-page .warning-panel { border-color: var(--warning); background: var(--warning-bg); color: var(--warning); }
+.financial-import-page .table-wrap { width: 100%; min-width: 0; max-width: 100%; margin-bottom: var(--space-4); overflow-x: auto; border: 1px solid var(--border); border-radius: var(--radius); }
+.financial-import-page .ar-table { width: 100%; min-width: 44rem; margin: 0; border-collapse: collapse; }
+.financial-import-page :is(th,td) { padding: var(--space-3); border-bottom: 1px solid var(--border); color: var(--text); font-size: var(--text-sm); text-align: left; vertical-align: top; }
+.financial-import-page th { background: var(--surface-muted); color: var(--text-secondary); font-weight: var(--font-medium); }
+.financial-import-page .numeric { text-align: right; font-variant-numeric: tabular-nums; }
+.financial-import-page .status { display: inline-block; white-space: nowrap; padding: var(--space-1) var(--space-2); border-radius: var(--radius); font-size: var(--text-sm); font-weight: var(--font-medium); }
+.financial-import-page .status.success { color: var(--success); background: var(--success-bg); }
+.financial-import-page .status.danger { color: var(--danger); background: var(--danger-bg); }
+.financial-import-page .status.warning { color: var(--warning); background: var(--warning-bg); }
+.financial-import-page form { margin: 0; }
+.financial-import-page .button { display: inline-flex; align-items: center; justify-content: center; min-height: var(--control-height); max-width: 100%; padding: var(--space-2) var(--space-4); border: 1px solid var(--text-secondary); border-radius: var(--radius); background: var(--surface); color: var(--text); font: var(--font-medium) var(--text-sm) / var(--line-height) var(--font-family); text-decoration: none; white-space: normal; }
+.financial-import-page .button:hover { background: var(--surface-muted); color: var(--text); }
+.financial-import-page .button.primary { border-color: var(--accent); background: var(--accent); color: var(--surface); }
+.financial-import-page .button.primary:hover { border-color: var(--accent-hover); background: var(--accent-hover); }
+.financial-import-page :is(a,button):focus { outline: var(--focus); outline-offset: var(--focus-offset); box-shadow: none; }
+@media (max-width: 700px) {
+  .financial-import-page .ar-panel { padding: var(--space-4); }
+}

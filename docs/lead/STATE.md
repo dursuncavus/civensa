@@ -8,11 +8,13 @@ Tags: DOĞRULANDI (lead checked) · TARİHSEL (past fact) · BEYAN (owner said) 
 ## Next session — start here (D-253)
 Claude live (CV Lider 40, 29 Oct). CIV-151 merged 0b8c72a; CIV-149 merged by the owner 49abd45 (D-312).
 Claude's next session: `CV Lider 41 · Claude Opus 5.5 · civensa-lead`. Read this section and the last decision in DECISIONS.md first.
-1. Codex: CIV-152 006 + 015 (D-312) and CIV-153 038 Ekonomik dağılım (D-313) — review each PR → CI → merge.
+1. Codex (BEYAN 23:48: CIV-152 done, PR to review; CIV-153/154/155/156 running): CIV-152 006 + 015 (D-312) CIV-153 038 Ekonomik dağılım (D-313), CIV-154 095 Bütçe aktarma ayrıntısı (D-314), CIV-155 rehearsal gate (D-315), CIV-156 upgrade test (D-317) — review each PR → CI → merge.
 2. Owner looks pending: CIV-144 (007/008 value row + evidence), CIV-145 (İç Kontrol 031), CIV-146/147 (users), CIV-148 (016 audit labels), CIV-149, CIV-150 (001), CIV-151 (039/040; LOW items in D-312). Give the owner one gallery artifact (screenshots in docs/design/rollout/**).
-3. Next screens after CIV-152/153: 002/003 (003 waits for Ali); check helper templates budget_detail, assurance_statement, first_period, structure_wizard against INDEX.
-4. Quota (BEYAN 29 Oct 20:49): week 76%, reset Sat 00:00; owner: keep working until then.
-Next IDs: task CIV-154, decision D-314.
+3. GO-LIVE (D-315): when CIV-152/153/154 are merged run the release plan in D-315 (CIV-155 → backup + rehearsal → release PR → owner merge + Render deploy → checks → first load). Dispatch CIV-155 to the next free Codex slot.
+   30 Oct: owner attaches the final council-approved 2027 PP PDF (D-316) → lead compares it with the dry-run source and reports differences before the first load.
+4. Next screens after CIV-152/153/154: 002/003 (003 waits for Ali); INDEX has 97 screens (D-314) — check 069, 077–097 states and helper templates assurance_statement, first_period, structure_wizard against INDEX.
+5. Quota (BEYAN 29 Oct 20:49): week 76%, reset Sat 00:00; owner: keep working until then.
+Next IDs: task CIV-157, decision D-318.
 
 ## Claude quota (BEYAN, owner 27 Oct 16:21)
 - Session 11%, week 67%, weekly reset Saturday 00:00 (D-300). Copilot 96 / 1,500 credits, reset 1 Nov.
@@ -26,6 +28,7 @@ Evidence rule (D-252): one-screen changes → targeted tests + changed-state scr
 | --- | --- | --- | --- |
 | Codex | CIV-152 006/015 | dispatched 29 Oct | review → CI → merge → owner look |
 | Codex | CIV-153 038 Ekonomik dağılım | dispatched 29 Oct | review → CI → merge → owner look |
+| Codex | CIV-154 095 Bütçe aktarma ayrıntısı | dispatched 29 Oct | review → CI → merge → owner look |
 Merged 29 Oct (D-312): #246 CIV-151 → 0b8c72a · #241 CIV-149 (owner) → 49abd45.
 Merged 29 Oct (D-311): #244 CIV-150 → 7e4335b.
 Merged 28–29 Oct by the owner (D-309): #232 CIV-144 · #234 CIV-145 → 22e35b7 · #236 CIV-146 → eff4a06 · #238 CIV-147 → f1b7adb · #239 CIV-148 → c622bf2.
@@ -45,7 +48,7 @@ Merged 26 Oct: #163 CIV-113 → 88c9dfb; #154 CIV-109 → 34329a7; #161 CIV-111 
 ## Open queue — lead / scheduled run "Civensa gece kontrol" (05:41 only, D-265)
 1. Scheduled-run merges are refused by the session permission check (D-213, again D-255 on #132) — scheduled runs review and record; live sessions or the owner merge.
 2. Ask-Ali list (13 items) artifact "Ali Abi Soruları" https://claude.ai/artifact/KVuaFCeKzTv9kQGpwRWiz8 ; e-mailed 26 Oct; answers in "CIVENSA-CEVAPLAR v1" format.
-3. D-177 plan conversion, CIV-085, live first load — owner sets the time, live session only.
+3. D-177 plan conversion, CIV-085, live first load — after the go-live deploy (D-315), live session only.
 4. Measure scheduled run cost; reduce or stop if costly.
 5. (closed, D-286) D-205 Drive archive and pointer "KAYITLAR GITHUB'DA" done.
 6. DeepSeek mirror GUNCEL-DURUM.md: not reachable in scheduled runs; the lead refreshes it in the next live session with the Mac linked (still pending 28 Oct).

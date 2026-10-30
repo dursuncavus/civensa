@@ -1,0 +1,16 @@
+/* CIV-152: report-family list rows and full-width binding fields. */
+.indicator-bindings-page { font: var(--font-regular) var(--text-base) / var(--line-height) var(--font-family); }
+.indicator-bindings-page .page-actions { margin-bottom: var(--space-6); }
+.indicator-bindings-page .info-panel { max-width: 44rem; padding: var(--space-4); font-size: var(--text-sm); }
+.indicator-bindings-page .binding-row { max-width: 44rem; margin: 0; padding: var(--space-6) 0; border: 0; border-bottom: 1px solid var(--border); border-radius: 0; background: var(--surface); box-shadow: none; }
+.indicator-bindings-page .binding-row:first-child { padding-top: 0; }
+.indicator-bindings-page .binding-row:last-child { padding-bottom: 0; border-bottom: 0; }
+.indicator-bindings-page .binding-heading { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); margin-bottom: var(--space-3); }
+.indicator-bindings-page .binding-heading h2 { margin: 0; }
+.indicator-bindings-page .status.warning { color: var(--warning); background: var(--warning-bg); }
+.indicator-bindings-page .form-grid { grid-template-columns: minmax(0, 1fr); margin: var(--space-4) 0 0; }
+.indicator-bindings-page label { display: grid; gap: var(--space-2); }
+.indicator-bindings-page :is(select, textarea) { display: block; width: 100%; min-width: 0; max-width: 100%; min-height: var(--control-height); margin: 0; padding: var(--space-2) var(--space-3); border: 1px solid var(--text-secondary); border-radius: var(--radius); background: var(--surface); color: var(--text); font: var(--font-regular) var(--text-base) / var(--line-height) var(--font-family); box-shadow: none; }
+.indicator-bindings-page textarea { min-height: calc(var(--control-height) + var(--space-8)); resize: vertical; }
+.indicator-bindings-page .form-grid > button { justify-self: start; }
+.indicator-bindings-page :is(select, textarea):focus { outline: var(--focus); outline-offset: var(--focus-offset); box-shadow: none; }
