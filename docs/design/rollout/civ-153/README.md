@@ -13,7 +13,7 @@ PNG'ler tam sayfadır ve her biri 1,5 MB sınırının altındadır.
 | Dosya kalıbı | Durum |
 | --- | --- |
 | `{before,after}-populated-{1440,390}.png` | Üç program kartı; çoklu kaynak sayfası; pozitif, sıfır ve belirsiz kaynak; kaynak kontrol uyarısı. Girilen pay `12.000.000,00`, kalan `500.000,23`; sıfır hücrede grup seçilmiş. |
-| `{before,after}-populated-money-{1440,390}.png` | Aynı dolu formun sağa kaydırılmış tablosu. `after-1440` tüm sütunları kaydırma olmadan gösterir; `after-390` kaydırılan paylar ve Kalan yanında sabit ilk sütunu gösterir. |
+| `{before,after}-populated-money-{1440,390}.png` | Aynı dolu formun sağa kaydırılmış tablosu. `after-1440` tüm sütunları kaydırma olmadan gösterir; `after-390` tablo kendi içinde kayar ve ilk sütun da içerikle birlikte kayar. |
 | `{before,after}-server-error-{1440,390}.png` | Sunucu hatasıyla yeniden çizilen form: gönderilen paylar, fingerprint, sıfır grubu ve çok satırlı gerekçe korunur. |
 | `{before,after}-blocked-{1440,390}.png` | Kapalı dönem / incelemedeki paket uyarısı ve devre dışı alanlar. |
 
@@ -30,7 +30,8 @@ bağlarını kapsar. Her iki genişlikte önce/sonra gerçek kayıt akışı; ha
 odak, başarılı yönlendirme ve HTTP 422 sonrası değerlerin korunması doğrulanır.
 Yeni tasarımda sayfa yatay taşmaz; 1440 px'de dağılım tablosu kaydırma gerektirmeden
 sığar ve ilk satırın Kalan değeri görünür; 390 px'de tablo kendi içinde kayar ve
-ilk sütun sabit kalır. Normal, hover, focus
+ilk sütun sabitlenmez. Tablo hücrelerinde sözcükler satır ortasında bölünmez.
+Normal, hover, focus
 ve disabled metin kontrastı en az 4,5:1; para girişleri sağa hizalı ve tabular,
 `12.500.000,00` giriş genişliğine sığar. Açıklama ve gerekçe en çok 44rem'dir.
 

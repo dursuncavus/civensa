@@ -26,20 +26,21 @@
 .economic-split-page tbody tr:last-child > :is(th,td) { border-bottom: 0; }
 .economic-split-page fieldset { min-width: 0; margin: 0; padding: 0; border: 0; }
 .economic-split-page .split-table { min-width: 1040px; }
-.economic-split-page .split-table thead th:first-child { position: sticky; left: 0; z-index: 2; background: var(--surface-muted); }
-.economic-split-page .split-table tbody th { position: sticky; left: 0; z-index: 1; min-width: 17rem; width: 17rem; background: var(--surface); color: var(--text); }
-.economic-split-page .split-table td:nth-child(2) { min-width: 8.5rem; }
-.economic-split-page .split-table td:nth-child(3) { min-width: 5rem; }
+.economic-split-page .split-table :is(th,td) { overflow-wrap: normal; word-break: normal; hyphens: none; }
+.economic-split-page .split-table :is(th,td) { padding-inline: var(--space-2); }
+.economic-split-page .split-table tbody th { min-width: 15rem; width: 15rem; background: var(--surface); color: var(--text); }
+.economic-split-page .split-table td:nth-child(2) { min-width: 7.5rem; }
+.economic-split-page .split-table td:nth-child(3) { min-width: 6.5rem; }
 .economic-split-page .money { text-align: right; font-variant-numeric: tabular-nums; }
 .economic-split-page .money > strong { white-space: nowrap; }
 .economic-split-page .money p { margin: var(--space-2) 0; color: var(--text-secondary); }
-.economic-split-page .remaining { min-width: 6rem; background: var(--accent-soft); }
+.economic-split-page .remaining { min-width: 7.5rem; background: var(--accent-soft); }
 .economic-split-page output { display: block; font-weight: var(--font-semibold); }
 .economic-split-page .source-check { text-align: left; color: var(--warning); }
 .economic-split-page .source-check summary { width: fit-content; margin: 0 0 var(--space-2); padding: var(--space-1) var(--space-2); border-radius: var(--radius); background: var(--warning-bg); color: var(--warning); }
 .economic-split-page label { display: grid; min-width: 0; gap: var(--space-2); color: var(--text); font-size: var(--text-sm); font-weight: var(--font-medium); }
 .economic-split-page th label { margin-top: var(--space-3); }
-.economic-split-page .split-table tbody th select { font: var(--font-regular) var(--text-sm) / var(--line-height) var(--font-family); }
+.economic-split-page .split-table tbody th select { padding: var(--space-1); font: var(--font-regular) var(--text-sm) / var(--line-height) var(--font-family); }
 .economic-split-page :is(input:not([type=hidden]),select,textarea) { width: 100%; min-width: 0; max-width: 100%; min-height: var(--control-height); margin: 0; padding: var(--space-2) var(--space-3); border: 1px solid var(--text-secondary); border-radius: var(--radius); background: var(--surface); color: var(--text); font: var(--font-regular) var(--text-base) / var(--line-height) var(--font-family); }
 .economic-split-page input[data-split-share] { width: 9rem; min-width: 9rem; scroll-margin-inline: 4px; text-align: right; font-variant-numeric: tabular-nums; }
 .economic-split-page :is(input,textarea)::placeholder { color: var(--text-secondary); opacity: 1; }

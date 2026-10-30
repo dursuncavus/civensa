@@ -220,26 +220,28 @@ def test_browser_synthetic_evidence(scenes, strategy_client, browser, width, sta
                 group.select_option(selected_group)
                 table = page.locator('.split-table')
                 wrap = table.locator('xpath=..')
+                assert table.locator('th, td').evaluate_all(r'''cells => cells.every(cell => {
+                  const walker = document.createTreeWalker(cell, NodeFilter.SHOW_TEXT);
+                  for (let node; node = walker.nextNode();) {
+                    for (const word of node.textContent.matchAll(/\S+/gu)) {
+                      const range = document.createRange();
+                      range.setStart(node, word.index);
+                      range.setEnd(node, word.index + word[0].length);
+                      if (new Set([...range.getClientRects()].map(rect => Math.round(rect.y))).size > 1) return false;
+                    }
+                  }
+                  return true;
+                })''')
                 if width == 1440:
-                    assert table.evaluate('el => el.scrollWidth <= el.closest(".table-wrap").clientWidth'), table.evaluate("""el => ({
-                      table: el.scrollWidth, wrap: el.closest('.table-wrap').clientWidth,
-                      first: el.querySelector('tbody th').getBoundingClientRect().width
-                    })""")
+                    assert table.evaluate('el => el.scrollWidth <= el.closest(".table-wrap").clientWidth')
                     assert page.locator('[data-split-cell="601"] output').evaluate("""el => {
                       const box = el.getBoundingClientRect();
                       return box.left >= 0 && box.right <= innerWidth &&
                         box.top >= 0 && box.bottom <= innerHeight;
                     }""")
                 else:
-                    wrap.evaluate('el => el.scrollLeft = el.scrollWidth')
-                    assert wrap.evaluate('el => el.scrollLeft > 0')
-                    for selector in ('.split-table thead th:first-child', '.split-table tbody th'):
-                        assert page.locator(selector).first.evaluate("""el => {
-                          const box = el.getBoundingClientRect();
-                          const wrap = el.closest('.table-wrap').getBoundingClientRect();
-                          return getComputedStyle(el).position === 'sticky' &&
-                            box.left >= wrap.left && box.right <= wrap.right;
-                        }""")
+                    assert wrap.evaluate('el => el.scrollWidth > el.clientWidth')
+                    assert table.locator('tbody th').first.evaluate('el => getComputedStyle(el).position !== "sticky"')
         # Capture after the interaction checks, at the top with table scroll reset.
         page.evaluate("document.querySelectorAll('.table-wrap').forEach(el => el.scrollLeft=0); window.scrollTo(0,0); document.activeElement.blur()")
         directory = os.getenv('CIVENSA_CIV153_EVIDENCE_DIR')
