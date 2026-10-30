@@ -2,30 +2,116 @@
 {% block page_title %}{{ department.name }} — Program Grubu Dağılımı{% endblock %}
 {% block page_subtitle %}{{ period.year }} · Strateji Geliştirme · Kaynak tutarı koruyarak dağıtım{% endblock %}
 {% block content %}
-<p><a class="button" href="/program/{{ department.id }}?period_id={{ period.id }}">Müdürlüğün Program Sayfasına Dön</a></p>
-{% if saved %}<p class="ok-text" role="status">{{ saved }} kaynak hücrenin dağılımı gerekçesi ve denetim kaydıyla birlikte kaydedildi.</p>{% endif %}
-<div id="economicSplitErrors" class="return-note" role="alert" tabindex="-1" {% if not error %}hidden{% endif %}>{{ error or '' }}</div>
-<details class="record" open><summary>Referans: Müdürlüğün Program Kartları</summary>
-<div class="table-wrap"><table><thead><tr><th>Kart</th><th>Program / Alt Program</th><th>Program grubu</th><th>Kaynak sayfa</th></tr></thead><tbody>
-{% for card in cards %}<tr><td>{{ card.source_title }}</td><td>{{ card.subprogram.program.name }} / {{ card.subprogram.name }}</td><td>{{ 'Yönetim ve Destek Programı' if card.subprogram.program.name.startswith('Yönetim ve Destek') else 'Hizmet Programları' }}</td><td>{{ card.source_page or 'Belirtilmemiş' }}</td></tr>{% endfor %}
-</tbody></table></div></details>
-{% if blocked %}<p class="return-note">Dönem kapalı veya müdürlük paketi incelemede / onaylı. Kapalı dönemi Genel Bakış ekranından etkinleştirin; incelemedeki / onaylı paketin İnceleme kuyruğundan iade edilmesini isteyin.</p>{% endif %}
-{% if cells %}
-<p>Her kaynak hücrenin tutarını program gruplarına paylaştırın. Paylar negatif olamaz ve toplamları kaynak tutara tam eşit olmalıdır. <strong>Yalnız bu formda, mevcut kaynak hücrenin boş pay alanı 0 kabul edilir.</strong> Sıfır kaynak tutar için tek bir program grubu seçin. Diğer ekranlarda boş değer sıfır değildir.</p>
-<p>Program grubu dışındaki kaynak kontrol uyarıları korunur. Kaynak tutarı belirsiz hücreleri önce müdürlüğün program sayfasından doğrulayın. Tüm müdürlük tek işlemde kaydedilir; hata varsa hiçbir hücre değişmez.</p>
-<form id="economicSplitForm" method="post" action="/program/{{ department.id }}/economic-split">
-<input type="hidden" name="csrf_token" value="{{ request.session.get('csrf_token') }}"><input type="hidden" name="period_id" value="{{ period.id }}">
-<fieldset {% if blocked %}disabled{% endif %}>
-<div class="table-wrap"><table><thead><tr><th>Kaynak hücre</th><th>Orijinal tutar / ham kaynak</th><th>Kaynak sayfa / tablo</th>{% for group,label in groups.items() %}<th>{{ label }} (TL)</th>{% endfor %}<th>Kalan (TL)</th></tr></thead><tbody>
-{% for cell in cells %}{% set label=cell.year|string ~ ' ' ~ cell.value_kind|value_kind_label ~ ' / ' ~ categories[cell.category] ~ ' / ' ~ cell.funding_type|funding_label %}
-<tr data-split-cell="{{ cell.id }}" data-source-amount="{{ cell.amount if cell.amount is not none else '' }}"><th>{{ label }}<input type="hidden" name="cell_id" value="{{ cell.id }}"><input type="hidden" name="fingerprint_{{ cell.id }}" value="{{ data.get('fingerprint_' ~ cell.id|string, fingerprint(cell)) }}">{% if cell.amount==0 %}<label>Sıfır tutarın grubu<select name="zero_group_{{ cell.id }}" required><option value="">Grup seçin</option>{% for group,title in groups.items() %}<option value="{{ group }}" {{ 'selected' if data.get('zero_group_' ~ cell.id|string)==group else '' }}>{{ title }}</option>{% endfor %}</select></label>{% endif %}</th>
-<td><strong>{{ cell.amount|trmoney }} TL</strong><p>Ham kaynak: {{ cell.raw_text or 'Boş' }}</p>{% if cell.issue %}<details><summary>Kaynak kontrolü</summary>{{ cell.issue }}</details>{% endif %}</td>
-<td>Sayfa {{ pages.get(cell.id) or 'belirtilmemiş' }} / Tablo {{ cell.source_table_number or 'belirtilmemiş' }}</td>
-{% for group,title in groups.items() %}<td><input name="share_{{ cell.id }}_{{ group }}" value="{{ data.get('share_' ~ cell.id|string ~ '_' ~ group,'') }}" inputmode="decimal" placeholder="0,00" aria-label="{{ label }} / {{ title }}" data-split-share></td>{% endfor %}
-<td><output data-split-remaining aria-live="polite">{{ cell.amount|trmoney }}</output></td></tr>
-{% endfor %}</tbody></table></div>
-<label>Dağılım gerekçesi (zorunlu)<textarea name="reason" rows="2" required placeholder="2027 program bütçesi, Mali Hizmetler tablosu">{{ data.get('reason','') }}</textarea></label>
-<button class="button primary" type="submit">Müdürlüğün Tüm Dağılımını Kaydet</button>
-</fieldset></form>
-{% else %}<p>Bu müdürlük ve dönemde program grubu belirlenmemiş ekonomik hücre yok.</p>{% endif %}
+  <link rel="stylesheet" href="/static/design/economic-split.css">
+  <div class="economic-split-page">
+    <p class="page-actions">
+      <a class="button" href="/program/{{ department.id }}?period_id={{ period.id }}">Müdürlüğün Program Sayfasına Dön</a>
+    </p>
+    {% if saved %}
+      <p class="ok-text split-success" role="status">{{ saved }} kaynak hücrenin dağılımı gerekçesi ve denetim kaydıyla birlikte kaydedildi.</p>
+    {% endif %}
+    <div id="economicSplitErrors" class="return-note split-error" role="alert" tabindex="-1" {% if not error %}hidden{% endif %}>{{ error or '' }}</div>
+    <details class="record" open>
+      <summary>Referans: Müdürlüğün Program Kartları</summary>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Kart</th>
+              <th>Program / Alt Program</th>
+              <th>Program grubu</th>
+              <th>Kaynak sayfa</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for card in cards %}
+              <tr>
+                <td>{{ card.source_title }}</td>
+                <td>{{ card.subprogram.program.name }} / {{ card.subprogram.name }}</td>
+                <td>{{ 'Yönetim ve Destek Programı' if card.subprogram.program.name.startswith('Yönetim ve Destek') else 'Hizmet Programları' }}</td>
+                <td>{{ card.source_page or 'Belirtilmemiş' }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </details>
+    {% if blocked %}
+      <p class="return-note split-warning">Dönem kapalı veya müdürlük paketi incelemede / onaylı. Kapalı dönemi Genel Bakış ekranından etkinleştirin; incelemedeki / onaylı paketin İnceleme kuyruğundan iade edilmesini isteyin.</p>
+    {% endif %}
+    {% if cells %}
+      <div class="split-info">
+        <p>Her kaynak hücrenin tutarını program gruplarına paylaştırın. Paylar negatif olamaz ve toplamları kaynak tutara tam eşit olmalıdır. <strong>Yalnız bu formda, mevcut kaynak hücrenin boş pay alanı 0 kabul edilir.</strong> Sıfır kaynak tutar için tek bir program grubu seçin. Diğer ekranlarda boş değer sıfır değildir.</p>
+        <p>Program grubu dışındaki kaynak kontrol uyarıları korunur. Kaynak tutarı belirsiz hücreleri önce müdürlüğün program sayfasından doğrulayın. Tüm müdürlük tek işlemde kaydedilir; hata varsa hiçbir hücre değişmez.</p>
+      </div>
+      <form id="economicSplitForm" method="post" action="/program/{{ department.id }}/economic-split">
+        <input type="hidden" name="csrf_token" value="{{ request.session.get('csrf_token') }}">
+        <input type="hidden" name="period_id" value="{{ period.id }}">
+        <fieldset {% if blocked %}disabled{% endif %}>
+          <div class="table-wrap">
+            <table class="split-table">
+              <thead>
+                <tr>
+                  <th>Kaynak hücre</th>
+                  <th class="money">Orijinal tutar / ham kaynak</th>
+                  <th>Kaynak sayfa / tablo</th>
+                  {% for group,label in groups.items() %}
+                    <th class="money">{{ label }} (TL)</th>
+                  {% endfor %}
+                  <th class="money">Kalan (TL)</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for cell in cells %}
+                  {% set label=cell.year|string ~ ' ' ~ cell.value_kind|value_kind_label ~ ' / ' ~ categories[cell.category] ~ ' / ' ~ cell.funding_type|funding_label %}
+                  <tr data-split-cell="{{ cell.id }}" data-source-amount="{{ cell.amount if cell.amount is not none else '' }}">
+                    <th>
+                      {{ label }}
+                      <input type="hidden" name="cell_id" value="{{ cell.id }}">
+                      <input type="hidden" name="fingerprint_{{ cell.id }}" value="{{ data.get('fingerprint_' ~ cell.id|string, fingerprint(cell)) }}">
+                      {% if cell.amount==0 %}
+                        <label>Sıfır tutarın grubu
+                          <select name="zero_group_{{ cell.id }}" required>
+                            <option value="">Grup seçin</option>
+                            {% for group,title in groups.items() %}
+                              <option value="{{ group }}" {{ 'selected' if data.get('zero_group_' ~ cell.id|string)==group else '' }}>{{ title }}</option>
+                            {% endfor %}
+                          </select>
+                        </label>
+                      {% endif %}
+                    </th>
+                    <td class="money">
+                      <strong>{{ cell.amount|trmoney }} TL</strong>
+                      <p>Ham kaynak: {{ cell.raw_text or 'Boş' }}</p>
+                      {% if cell.issue %}
+                        <details class="source-check">
+                          <summary>Kaynak kontrolü</summary>
+                          {{ cell.issue }}
+                        </details>
+                      {% endif %}
+                    </td>
+                    <td>Sayfa {{ pages.get(cell.id) or 'belirtilmemiş' }} / Tablo {{ cell.source_table_number or 'belirtilmemiş' }}</td>
+                    {% for group,title in groups.items() %}
+                      <td class="money">
+                        <input name="share_{{ cell.id }}_{{ group }}" value="{{ data.get('share_' ~ cell.id|string ~ '_' ~ group,'') }}" inputmode="decimal" placeholder="0,00" aria-label="{{ label }} / {{ title }}" data-split-share>
+                      </td>
+                    {% endfor %}
+                    <td class="money remaining">
+                      <output data-split-remaining aria-live="polite">{{ cell.amount|trmoney }}</output>
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          <label class="split-reason">Dağılım gerekçesi (zorunlu)
+            <textarea name="reason" rows="2" required placeholder="2027 program bütçesi, Mali Hizmetler tablosu">{{ data.get('reason','') }}</textarea>
+          </label>
+          <button class="button primary" type="submit">Müdürlüğün Tüm Dağılımını Kaydet</button>
+        </fieldset>
+      </form>
+    {% else %}
+      <p class="split-empty">Bu müdürlük ve dönemde program grubu belirlenmemiş ekonomik hücre yok.</p>
+    {% endif %}
+  </div>
 {% endblock %}
