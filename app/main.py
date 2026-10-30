@@ -15,7 +15,7 @@ import time
 from functools import lru_cache
 from urllib.parse import quote
 
-from fastapi import FastAPI, Request, Depends, Form, HTTPException, UploadFile, File
+from fastapi import FastAPI, Request, Response, Depends, Form, HTTPException, UploadFile, File
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -1975,7 +1975,7 @@ def activate_period(period_id: int, db: Session = Depends(get_db), user: User = 
 
 
 @app.get("/health")
-def health():
+def health(response: Response = None):
     backend = engine.url.get_backend_name()
     head = migration_head()
     current = None
@@ -2007,7 +2007,9 @@ def health():
         "ready": ready,
         "migration": {"current": current, "head": head},
     }
-    return payload if ready else JSONResponse(payload, status_code=503)
+    if response is not None:
+        response.status_code = 200 if ready else 503
+    return payload
 
 
 @app.get("/export/department/{department_id}.json")
