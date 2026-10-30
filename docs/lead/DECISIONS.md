@@ -718,3 +718,9 @@ Process note: lead PR #282 (D-337 records) was merged while its checks were stil
 Addendum 20:55 (owner 20:52, directorate form screenshot): Yanıt column narrower, Açıklama wider; owner cannot judge the Kod/Soru column from synthetic text → CIV-161 items 8–9 (answer grid widths; screenshots with the first 6 real questions loaded at capture time). 20:58: upload preview — Sıra and Kod columns too wide → item 10.
 21:30: Codex asked to change tests/test_internal_control_design.py:~266 (non-counts tables must be `auto`) — approved: only tables with `ic-result-table` expect `fixed`; every other assertion (word integrity, font size, alignment, no overflow) stays; named in the PR (D-167).
 Next IDs: task CIV-162 (CIV-160 reserved for G6), decision D-339.
+
+## D-339 (30 Oct 2026 ~22:15 Istanbul, lead, live session CV Lider 45) — CIV-161 merged
+DOĞRULANDI: #284 CIV-161 → fa2f693 (branch updated to behind 0, head 23fe214; CI green: test 18/0, 18/1, security, secrets). Includes the addendum (answer grid 46/16/38, upload preview narrow Sıra/Kod, evidence with the real questions) and the approved design-test exception (only `ic-result-table` tables expect `fixed`; other assertions unchanged). Bileşen özeti and Soru özeti share a 46% first column so their answer columns align; numbers right-aligned, tabular; total rows marked. Lead checked the after-screenshots (directorate form with 6 real questions, results with 70 questions): aligned, readable.
+Owner: look approval of CIV-085 + CIV-161 from docs/design/rollout/civ-161/ (sonra-*). Live after the next release + deploy.
+Next: CIV-160 (G6 narrative) package in the next session — this conversation is long.
+Next IDs: task CIV-162 (CIV-160 reserved for G6), decision D-340.
