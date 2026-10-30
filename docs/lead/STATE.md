@@ -1,6 +1,6 @@
 # CIVENSA — CURRENT STATE
 
-Updated: 30 Oct 2026, ~18:30 Istanbul (live session CV Lider 45, D-335).
+Updated: 30 Oct 2026, ~18:45 Istanbul (live session CV Lider 45, D-336).
 Rules: AI_WORKING_CONSTITUTION v1.2 (Drive, global) · `HIERARCHY.md` v1.5 · `PROJECT_RULES.md` v1.4 (D-271: PRIOR ART field mandatory in every package) · `BACKUP_LEAD.md` v2.
 Backup log ("Civensa Yedek Kaydı", Drive): no entries, last modified 23 Oct (DOĞRULANDI 30 Oct 05:45).
 Tags: DOĞRULANDI (lead checked) · TARİHSEL (past fact) · BEYAN (owner said) · BELİRSİZ (unknown).
@@ -8,13 +8,13 @@ Tags: DOĞRULANDI (lead checked) · TARİHSEL (past fact) · BEYAN (owner said) 
 ## Next session — start here (D-253)
 Claude live (CV Lider 45, 30 Oct ~18:30). CIV-085 (İç Kontrol soru formu, G5) packaged and given to the owner for Codex (D-335). İç Kontrol import still waits for Ali Abi (sheet checked 18:15: no notes).
 Claude's next session: `CV Lider 46 · Claude Opus 5.5 · civensa-lead`. Read this section and the last decision in DECISIONS.md first.
-1. CIV-085 PR: review when it opens (migration on c086a1b2c3d4, existing exports byte-identical, no invented question text, D-185 roles). Merge when CI green + behind 0.
+1. CIV-085 PR (package amended D-336: Toplam puan + Gerçekleşme oranı, real-file upload test): review when it opens (migration on c086a1b2c3d4, existing exports byte-identical, no invented question text, D-185 roles). Merge when CI green + behind 0.
 2. İç Kontrol import (D-331): waits for Ali Abi's answers in the shared sheet "CV İç Kontrol Dönüşümü – Ortak Liste" (https://docs.google.com/spreadsheets/d/1O4DmrNnBfcz9HJuxAXxGwMCvukTo2467HobZptmz-XI/edit) — read its note columns first. Then the lead edits the committed workbook, owner uploads on civensa-pilot → maps 8 names → commits draft; activation with the lead. Owner ticks the 49 action rows against the PDF (D-177).
-3. After CIV-085 merges: package CIV-160 (G6 narrative sections per D-184/D-185: Misyon/Vizyon entered by Strateji, read-only for directorates; bileşen değerlendirmeleri, güçlü yönler, gelişim alanları, öneriler, puan aralığı institution-level by Strateji; versioned per period, frozen on approval; added to the official Word report). Before first real use: lead converts the real 70-question list from the 2025 six-month report (owner attaches that PDF).
+3. After CIV-085 merges: package CIV-160 (G6 narrative sections per D-184/D-185: Misyon/Vizyon entered by Strateji, read-only for directorates; bileşen değerlendirmeleri, güçlü yönler, gelişim alanları, öneriler, puan aralığı institution-level by Strateji; versioned per period, frozen on approval; added to the official Word report). Real 70-question list converted (D-336): docs/internal-control/ic-kontrol-soru-formu-70.xlsx — Ali Abi to compare with the current form.
 4. CIV-159 /health readiness + guard fix are in phase5; live after the next release + deploy (owner), then check /health ready=true.
 5. Watch department reactions to the 554 book-check items (D-324). LOW backlog (D-328). Screens 002/003 (003 waits for Ali); INDEX check 069, 077–097 (D-314).
 6. Quota (BEYAN 29 Oct 20:49): week 76% then, reset Sat 00:00. Claude Pro ends 3 Nov (owner renews on the web).
-Next IDs: task CIV-161 (CIV-160 reserved for G6), decision D-336.
+Next IDs: task CIV-161 (CIV-160 reserved for G6), decision D-337.
 
 ## Claude quota (BEYAN, owner 27 Oct 16:21)
 - Session 11%, week 67%, weekly reset Saturday 00:00 (D-300). Copilot 96 / 1,500 credits, reset 1 Nov.
