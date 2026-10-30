@@ -94,3 +94,41 @@
 .internal-control-page .ic-question-grid th p { margin-top: var(--space-2); font-weight: var(--font-regular); }
 .internal-control-page .ic-question-grid textarea { min-height: 6rem; }
 .internal-control-page fieldset { min-width: 0; margin: var(--space-4) 0; border: 1px solid var(--border); border-radius: var(--radius); }
+
+/* CIV-161: one result-table system; summary columns share the question width. */
+.internal-control-monitoring-page .ic-result-table {
+  table-layout: fixed;
+  width: 100%;
+  min-width: 1000px;
+}
+.internal-control-monitoring-page .ic-result-table th:first-child { width: 28%; }
+.internal-control-monitoring-page .ic-result-table-summary { min-width: 1000px; }
+.internal-control-monitoring-page .ic-result-table-summary th:first-child { width: 46%; }
+.internal-control-monitoring-page .ic-result-table :is(th,td):not(:first-child) {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  padding-inline: var(--space-2);
+}
+.internal-control-monitoring-page .ic-result-table td:not(:first-child) { white-space: nowrap; }
+.internal-control-monitoring-page .ic-result-table thead th {
+  white-space: normal;
+  overflow-wrap: normal;
+  word-break: normal;
+  hyphens: none;
+}
+.internal-control-monitoring-page .ic-result-table tbody th[scope="row"] {
+  background: var(--surface);
+  color: var(--text);
+  font-weight: var(--font-regular);
+  text-align: left;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.internal-control-monitoring-page .ic-result-table tbody .ic-total-row > :is(th[scope="row"],td) {
+  font-weight: var(--font-medium);
+  border-top: 2px solid var(--border);
+}
+.internal-control-monitoring-page .ic-results-card h3 {
+  margin-top: var(--space-6);
+  margin-bottom: var(--space-3);
+}
