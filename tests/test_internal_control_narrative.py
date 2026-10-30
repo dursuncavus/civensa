@@ -345,13 +345,15 @@ def test_no_narrative_word_and_all_excel_legacy_exports_are_byte_identical(db, m
 
 def test_word_order_components_lines_draft_and_final_refusal(db, monitoring, client):
     d=monitoring
-    for batch in d['batches']: approve(db,d,batch)
     token=strategy_client(client,d)
     record=save(db,d,mission='Test misyon ilk satır\r\nTest misyon ikinci satır');db.commit()
     url=f'/internal-control/monitoring/periods/{d["period"].id}/official-report.docx'
     response=client.get(url)
     assert response.status_code==409
     assert 'Rapor anlatı bölümleri onaylanmadı.' in response.text
+    # The narrative-specific refusal also applies while action batches are pending.
+    for batch in d['batches']: approve(db,d,batch)
+    assert 'Rapor anlatı bölümleri onaylanmadı.' in client.get(url).text
     draft=Document(BytesIO(export.official_export(db,d['strategy'],d['period'].id,'docx',draft=True)))
     headings=[p.text for p in draft.paragraphs if p.style.name.startswith('Heading')]
     assert all(h.endswith('(taslak metin)') for h in headings)

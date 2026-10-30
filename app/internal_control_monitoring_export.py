@@ -222,6 +222,12 @@ def official_data(db, actor, period_id, *, draft=False):
 def official_export(db, actor, period_id, format, *, draft=False):
     if format not in ('docx', 'xlsx'):
         m.fail('Rapor dosya biçimi geçersiz. Word veya Excel bağlantısını seçin.', 'format')
+    narrative = None
+    if format == 'docx':
+        from .internal_control_narrative_export import narrative_for_word, insert_narrative
+        require_access(db, actor, strategy=True)
+        narrative_period = m.get_period(db, actor, period_id, lock=True)
+        narrative = narrative_for_word(db, narrative_period, draft=draft)
     period, plan, rows, metrics = official_data(db, actor, period_id, draft=draft)
     title, subtitle = plan.title + ' · ' + plan.version_label, m.period_label(period)
     cover = [f"Gerçekleşme Oranı: {metrics['period_rate']}",
@@ -260,8 +266,6 @@ def official_export(db, actor, period_id, format, *, draft=False):
             for cell in sheet[1]:
                 cell.font = Font(bold=True)
         return export_book(book)
-    from .internal_control_narrative_export import narrative_for_word, insert_narrative
-    narrative = narrative_for_word(db, period, draft=draft)
     doc = Document()
     section = doc.sections[0]
     section.orientation = WD_ORIENT.LANDSCAPE
