@@ -45,7 +45,10 @@ def target(printed):
             period = m.ReportingPeriod(year=2027, status='active')
             db.add(period)
             db.flush()
-            names = [i['source']['name'] for i in live.department_plan(db, printed, set()) if not i['skip']]
+            # Keep the synthetic September pre-print shape at 33 departments.
+            # İşletme is added later by the approved-book load (D-324).
+            names = [i['source']['name'] for i in live.department_plan(db, printed, set())
+                     if not i['skip'] and i['source']['name'] != 'İşletme ve İştirakler Müdürlüğü']
             departments = [m.Department(organization_id=org.id, name=n) for n in names]
             db.add_all(departments)
             db.flush()
@@ -169,9 +172,10 @@ def test_clear_chain_and_preserved_rows(target, printed):
     assert state(engine) == after
     planned = live.execute(engine, printed, **ids)
     assert state(engine) == after
-    for field, count in dict(departments=33, cards=61, indicators=256, activities=285, economic_values=1300).items():
+    for field, count in dict(departments=34, cards=64, indicators=263, activities=291, economic_values=1340).items():
         assert planned['counts'][field] == count
-    assert planned['skipped'][0]['name'] == live.SKIPPED
+    assert planned['skipped'] == []
+    assert planned['counts']['created_departments'] == 1
     written = live.execute(engine, printed, apply=True, **ids)
     assert not written['failed']
     assert written['counts'] == planned['counts']

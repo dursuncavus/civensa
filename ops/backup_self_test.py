@@ -69,7 +69,9 @@ def self_test():
                 for source_file in encrypted.glob("*.age"):
                     shutil.copyfile(source_file, root / "preprint" / source_file.name)
 
-            responses = [dict(name="Daily verified database backup", head_branch="main",
+            responses = [dict(default_branch="feature/authorization-workflow-phase5"),
+                         dict(name="Daily verified database backup",
+                              head_branch="feature/authorization-workflow-phase5", event="schedule",
                               status="completed", conclusion="success", created_at=manifest["utc_timestamp"]),
                          dict(artifacts=[dict(id=1, name="civensa-db-backup-synthetic", expired=False)])]
             with patch.dict(os.environ, BACKUP_AGE_IDENTITY="", BACKUP_AGE_IDENTITY_FILE=str(key),

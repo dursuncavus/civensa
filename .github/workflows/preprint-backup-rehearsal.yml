@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       backup_run_id:
-        description: 'main dalındaki yeşil Daily verified database backup çalışma numarası'
+        description: 'Varsayılan daldaki yeşil Daily verified database backup çalışma numarası'
         required: true
         type: string
       confirmation:
@@ -12,7 +12,7 @@ on:
         required: true
         type: string
       book_confirmation:
-        description: 'Yalnız geçici kopya için kitap SHA256 öneki: 261cd17fd0be'
+        description: 'Yalnız geçici kopya için kitap SHA256 öneki: cbbf9018302d'
         required: true
         type: string
       organization_id:
@@ -90,7 +90,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           CIVENSA_REHEARSAL_BACKUP_RUN: ${{ inputs.backup_run_id }}
           CIVENSA_REHEARSAL_CONFIRM: ${{ inputs.confirmation || '2027 ON BASKI TASLAGINI SIL' }}
-          CIVENSA_REHEARSAL_BOOK_CONFIRM: ${{ inputs.book_confirmation || '261cd17fd0be' }}
+          CIVENSA_REHEARSAL_BOOK_CONFIRM: ${{ inputs.book_confirmation || 'cbbf9018302d' }}
           CIVENSA_REHEARSAL_ORG_ID: ${{ inputs.organization_id }}
           CIVENSA_REHEARSAL_ACTOR_ID: ${{ inputs.actor_id }}
         run: python -m ops.preprint_rehearsal
