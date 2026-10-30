@@ -1,21 +1,20 @@
 # CIVENSA — CURRENT STATE
 
-Updated: 30 Oct 2026, ~12:25 Istanbul (live session CV Lider 42, D-325).
+Updated: 30 Oct 2026, ~13:00 Istanbul (live session CV Lider 42, D-326).
 Rules: AI_WORKING_CONSTITUTION v1.2 (Drive, global) · `HIERARCHY.md` v1.5 · `PROJECT_RULES.md` v1.4 (D-271: PRIOR ART field mandatory in every package) · `BACKUP_LEAD.md` v2.
 Backup log ("Civensa Yedek Kaydı", Drive): no entries, last modified 23 Oct (DOĞRULANDI 30 Oct 05:45).
 Tags: DOĞRULANDI (lead checked) · TARİHSEL (past fact) · BEYAN (owner said) · BELİRSİZ (unknown).
 
 ## Next session — start here (D-253)
-Claude live (CV Lider 42, 30 Oct). Go-live done (D-323): civensa-pilot Live on main 7ef5a20, Alembic c086a1b2c3d4. Pre-deploy backup civensa-db-backup-20261030-0817Z.
+Claude live (CV Lider 42, 30 Oct). Go-live done (D-323): civensa-pilot on main 7ef5a20, Alembic c086a1b2c3d4. CIV-157 and CIV-158 merged; Actions first-load rehearsal PASS (D-326).
 Claude's next session: `CV Lider 43 · Claude Opus 5.5 · civensa-lead`. Read this section and the last decision in DECISIONS.md first.
-1. CIV-157 #262 merged → 7f6029e (D-325).
-2. Approved book is final (D-324, BEYAN): load as printed, book checks diagnostic, İşletme loaded. Give the owner the difference report (onayli-fark.md) as a short summary only if he asks; no book-correction list.
-3. CIV-158 (D-324, Codex, GPT-6.1 Sol, Yüksek): dispatched ~11:50. Scope +tests/test_clear_preprint_2027.py (D-325, expectations only). Review: HEAD pin test, SHA/confirmation, workflow lines line by line, synthetic rehearsal counts, runbook. Then D-315 step 6 in a live session: Actions rehearsal on a fresh verified backup → owner runs the live load per the new runbook.
-4. Owner looks pending: CIV-150 (001), CIV-151 (039/040), CIV-152 (006/015), CIV-153 (038), CIV-154 (095). One gallery artifact (screenshots in docs/design/rollout/**).
-5. After the first load: D-177 İç Kontrol plan conversion (owner attaches 2024–2026 plan PDF), CIV-085. Next screens: 002/003 (003 waits for Ali); INDEX check of 069, 077–097 (D-314).
-6. Small tasks to package: /health readiness + Alembic head field (D-318); lead-docs guard should pass release PRs phase5 → main (D-322).
-7. Quota (BEYAN 29 Oct 20:49): week 76% then, reset Sat 00:00; owner: keep working until then.
-Next IDs: task CIV-159, decision D-326.
+1. LIVE FIRST LOAD (D-315 step 6, escalation): owner runs docs/first-load/live-runbook.md on phase5 fa7848f or newer (his Mac repo must be updated: git pull + venv). Lead guides block by block: 1 source check → 2 rehearsal (done: run 41035318472 with backup 41029891358; repeat only if >48 h or data changed) → 3 stop data entry + fresh backup → 4 cleanup plan (expect 93 personnel/SGK) → 5 cleanup apply → 6 plan (34/64/263/291/1340, 0 skipped) → 7 apply (confirmation cbbf9018302d) → 8 zero-write plan → record counts. Rollback = restore the step-3 backup (section 10).
+2. Approved book is final (D-324): book checks diagnostic; İşletme loaded; 5 İşletme activity-code mismatches stay reported.
+3. Owner looks pending: CIV-150 (001), CIV-151 (039/040), CIV-152 (006/015), CIV-153 (038), CIV-154 (095). One gallery artifact (screenshots in docs/design/rollout/**).
+4. After the first load: D-177 İç Kontrol plan conversion (owner attaches 2024–2026 plan PDF), CIV-085. Next screens: 002/003 (003 waits for Ali); INDEX check of 069, 077–097 (D-314).
+5. Small tasks to package: /health readiness + Alembic head field (D-318); lead-docs guard should pass release PRs phase5 → main (D-322).
+6. Quota (BEYAN 29 Oct 20:49): week 76% then, reset Sat 00:00; owner: keep working until then.
+Next IDs: task CIV-159, decision D-327.
 
 ## Claude quota (BEYAN, owner 27 Oct 16:21)
 - Session 11%, week 67%, weekly reset Saturday 00:00 (D-300). Copilot 96 / 1,500 credits, reset 1 Nov.
@@ -24,10 +23,11 @@ Next IDs: task CIV-159, decision D-326.
 Dispatch format (D-232, D-249): platform + environment ("Bulut → civensa") + exact model (Codex: GPT-6.1 Sol) + effort; title is the first line inside the paste block. Session end: one-line handover (D-253) after this file is rewritten.
 Evidence rule (D-252): one-screen changes → targeted tests + changed-state screenshots + contrast; all-screen capture only when shared files change, committed as a short count summary.
 
-## Open pull requests (DOĞRULANDI 30 Oct ~11:50, D-324)
+## Open pull requests (DOĞRULANDI 30 Oct ~13:00, D-326)
 | PR | Task | State | Next action |
 | --- | --- | --- | --- |
-| Codex | CIV-158 first load → approved source | dispatched 30 Oct ~11:50 | review → CI → merge → live first load |
+| — | none open | — | — |
+Merged 30 Oct (D-326): #266 CIV-158 → fa7848f · #267 D-325 records → 329b381.
 Merged 30 Oct (D-325): #262 CIV-157 → 7f6029e · #265 D-324 records → 3a3f208.
 Merged 30 Oct (D-324): #264 D-323 records → bb05bcb.
 Merged 30 Oct (D-322): #261 release phase5 → main (owner) → 7ef5a20 · #251 CIV-153 → 516e90c · #252 CIV-154 → f17dc64 · #260 lead records + approved IDML → 6b1fb71.
