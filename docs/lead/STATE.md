@@ -1,6 +1,6 @@
 # CIVENSA — CURRENT STATE
 
-Updated: 30 Oct 2026, ~11:25 Istanbul (live session CV Lider 41, D-322).
+Updated: 30 Oct 2026, ~11:25 Istanbul (live session CV Lider 41, D-322, D-323).
 Rules: AI_WORKING_CONSTITUTION v1.2 (Drive, global) · `HIERARCHY.md` v1.5 · `PROJECT_RULES.md` v1.4 (D-271: PRIOR ART field mandatory in every package) · `BACKUP_LEAD.md` v2.
 Backup log ("Civensa Yedek Kaydı", Drive): no entries, last modified 23 Oct (DOĞRULANDI 30 Oct 05:45).
 Tags: DOĞRULANDI (lead checked) · TARİHSEL (past fact) · BEYAN (owner said) · BELİRSİZ (unknown).
@@ -8,13 +8,13 @@ Tags: DOĞRULANDI (lead checked) · TARİHSEL (past fact) · BEYAN (owner said) 
 ## Next session — start here (D-253)
 Claude live (CV Lider 41, 30 Oct). Release #261 merged by the owner → main 7ef5a20; pre-deploy backup green (D-322).
 Claude's next session: `CV Lider 42 · Claude Opus 5.5 · civensa-lead`. Read this section and the last decision in DECISIONS.md first.
-1. GO-LIVE (D-315 steps 4–5): owner was asked to Deploy latest commit (7ef5a20) on Render civensa-pilot and open Genel Bakış, Nihai Rapor, Faaliyet Raporu. Ask the result first. Failed deploy → rollback = restore backup civensa-db-backup-20261030-0817Z (run 41025414920) per RELEASE_V5; escalate.
-2. CIV-157 (D-320, Codex, GPT-6.1 Sol, Yüksek): dispatched ~10:35 (model at capacity at 10:42, auto-retry). Review the PR: pasteboard exclusion, dryrun-onayli.md, onayli-fark.md → give the owner the difference report → update docs/first-load/live-runbook.md (written for release #50 / c048) → first load in a live session (D-315 step 6).
+1. GO-LIVE DONE (D-323, BEYAN 11:22): civensa-pilot Live on main 7ef5a20; Genel Bakış, Nihai Rapor, Faaliyet Raporu open. Pre-deploy backup: civensa-db-backup-20261030-0817Z (run 41025414920).
+2. CIV-157 is PR #262 (D-320) — review first: pasteboard exclusion, dryrun-onayli.md, onayli-fark.md → give the owner the difference report → update docs/first-load/live-runbook.md (written for release #50 / c048) → first load in a live session (D-315 step 6).
 3. Owner looks pending: CIV-150 (001), CIV-151 (039/040), CIV-152 (006/015), CIV-153 (038), CIV-154 (095). One gallery artifact (screenshots in docs/design/rollout/**).
 4. After go-live: D-177 İç Kontrol plan conversion (owner attaches 2024–2026 plan PDF), CIV-085. Next screens: 002/003 (003 waits for Ali); INDEX check of 069, 077–097 (D-314).
 5. Small tasks to package: /health readiness + Alembic head field (D-318); lead-docs guard should pass release PRs phase5 → main (D-322).
 6. Quota (BEYAN 29 Oct 20:49): week 76% then, reset Sat 00:00; owner: keep working until then.
-Next IDs: task CIV-158, decision D-323.
+Next IDs: task CIV-158, decision D-324.
 
 ## Claude quota (BEYAN, owner 27 Oct 16:21)
 - Session 11%, week 67%, weekly reset Saturday 00:00 (D-300). Copilot 96 / 1,500 credits, reset 1 Nov.
@@ -26,7 +26,7 @@ Evidence rule (D-252): one-screen changes → targeted tests + changed-state scr
 ## Open pull requests (DOĞRULANDI 30 Oct ~11:25, D-322)
 | PR | Task | State | Next action |
 | --- | --- | --- | --- |
-| Codex | CIV-157 approved PP source + pasteboard | dispatched 30 Oct | review → CI → merge → owner gets onayli-fark.md |
+| #262 | CIV-157 approved PP source + pasteboard | opened, not reviewed | review → CI → merge → owner gets onayli-fark.md |
 Merged 30 Oct (D-322): #261 release phase5 → main (owner) → 7ef5a20 · #251 CIV-153 → 516e90c · #252 CIV-154 → f17dc64 · #260 lead records + approved IDML → 6b1fb71.
 Merged 30 Oct (D-319): #257 CIV-156 → 2f2276c · #256 CIV-155 → 3544177 · #250 CIV-152 → 5936096 · #259 lead rehearsal diagnostics → a4bf3ef.
 Merged 29 Oct (D-312): #246 CIV-151 → 0b8c72a · #241 CIV-149 (owner) → 49abd45.

@@ -611,3 +611,7 @@ DOĞRULANDI: owner re-uploaded BACKUP_AGE_IDENTITY to environment `production` f
 Merges: #252 CIV-154 → f17dc64 (shard-0 activity_mapping 390 failure did not repeat after update-branch — flaky, LOW backlog) · #251 CIV-153 → 516e90c (Copilot rounds 1–3, lead look at 1440: table fits, select readable, no mid-word breaks; "@codex review" no major issues on b86977e; CI green on dc46f5d, behind 0) · #260 lead records + approved IDML → 6b1fb71. #258 closed, its D-318 text folded into #260.
 Release PR #261 phase5 → main (head 516e90c): tests green; "guard" (lead-docs-guard) red because the release head is not a lead/ branch — expected for a release PR, main is not protected; LOW: let the guard pass when base is main and head is phase5. Owner merged 08:16Z → main 7ef5a20. Pre-deploy backup run 41025414920 green (civensa-db-backup-20261030-0817Z). Owner deploys Render civensa-pilot "Deploy latest commit" (D-315 step 4); lead could not find the live URL in the repo and the session network may not reach it → owner checks Live + 3 pages (step 5).
 Next IDs: task CIV-158, decision D-323.
+
+## D-323 (30 Oct 2026 ~11:22 Istanbul, owner, live session CV Lider 41) — go-live done
+BEYAN (owner 11:22): Render civensa-pilot deploy of main 7ef5a20 is Live; Genel Bakış, Nihai Rapor and Faaliyet Raporu open. D-315 steps 4–5 done (lead /health check not possible from the session; owner check stands). Next: D-315 step 6 after CIV-157 (#262) review.
+Next IDs: task CIV-158, decision D-324.
