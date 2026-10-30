@@ -30,7 +30,7 @@
 .economic-split-page .split-table :is(th,td) { padding-inline: var(--space-2); }
 .economic-split-page .split-table tbody th { min-width: 15rem; width: 15rem; background: var(--surface); color: var(--text); }
 .economic-split-page .split-table td:nth-child(2) { min-width: 7.5rem; }
-.economic-split-page .split-table td:nth-child(3) { min-width: 6.5rem; }
+.economic-split-page .split-table td:nth-child(3) { min-width: 7.5rem; }
 .economic-split-page .money { text-align: right; font-variant-numeric: tabular-nums; }
 .economic-split-page .money > strong { white-space: nowrap; }
 .economic-split-page .money p { margin: var(--space-2) 0; color: var(--text-secondary); }
