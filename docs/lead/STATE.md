@@ -1,19 +1,19 @@
 # CIVENSA — CURRENT STATE
 
-Updated: 31 Oct 2026, ~00:20 Istanbul (live session CV Lider 46, D-344).
+Updated: 31 Oct 2026, ~00:45 Istanbul (live session CV Lider 47, D-345).
 Rules: AI_WORKING_CONSTITUTION v1.2 (Drive, global) · `HIERARCHY.md` v1.5 · `PROJECT_RULES.md` v1.4 (D-271: PRIOR ART field mandatory in every package) · `BACKUP_LEAD.md` v2.
 Backup log ("Civensa Yedek Kaydı", Drive): no entries, last modified 23 Oct (DOĞRULANDI 30 Oct 05:45).
 Tags: DOĞRULANDI (lead checked) · TARİHSEL (past fact) · BEYAN (owner said) · BELİRSİZ (unknown).
 
 ## Next session — start here (D-253)
-Claude live (CV Lider 46, ended 31 Oct ~00:20). CIV-160 merged (#289 → e061e93, D-343); look approved (D-344). İç Kontrol import still waits for Ali Abi.
-Claude's next session: `CV Lider 47 · Claude Opus 5.5 · civensa-lead`. Read this section and the last decision in DECISIONS.md first.
-1. CIV-160 merged (D-343), look approved (D-344). LOW: align the DB approval guard with the app rule in the next İç Kontrol migration.
-2. CIV-160 (D-344) + CIV-085 + CIV-161 (D-340) look approved; CIV-159 /health readiness in phase5. All live after the next release + deploy (owner), then check /health ready=true.
-3. İç Kontrol import (D-331): waits for Ali Abi's answers in "CV İç Kontrol Dönüşümü – Ortak Liste" (https://docs.google.com/spreadsheets/d/1O4DmrNnBfcz9HJuxAXxGwMCvukTo2467HobZptmz-XI/edit) — read its note columns first. Then the lead edits the committed workbook, owner uploads on civensa-pilot → maps 8 names → commits draft; activation with the lead. Owner ticks the 49 action rows against the PDF (D-177). Ali Abi also compares the 70-question list (D-336).
-4. Watch department reactions to the 554 book-check items (D-324). LOW backlog (D-328). Screens 002/003 (003 waits for Ali); INDEX check 069, 077–097 (D-314).
-5. Quota (BEYAN 29 Oct 20:49): week 76% then, reset Sat 00:00. Claude Pro ends 3 Nov (owner renews on the web).
-Next IDs: task CIV-162, decision D-345.
+Claude live (CV Lider 47, 31 Oct ~00:45). Release PR #292 phase5 → main opened, rehearsal PASS (D-345). İç Kontrol import still waits for Ali Abi.
+Claude's next session: `CV Lider 48 · Claude Opus 5.5 · civensa-lead`. Read this section and the last decision in DECISIONS.md first.
+1. Release (D-345): owner merges #292 (https://github.com/dursuncavus/civensa/pull/292) once tests are green → lead dispatches a pre-deploy backup → owner deploys Render civensa-pilot → check /health ready=true + 3 pages. If phase5 moves before the merge, rerun the rehearsal on the new head.
+2. LOW: align the DB approval guard civ160_event_guard with the app rule in the next İç Kontrol migration (D-343).
+3. İç Kontrol import (D-331): waits for Ali Abi's answers in "CV İç Kontrol Dönüşümü – Ortak Liste" (https://docs.google.com/spreadsheets/d/1O4DmrNnBfcz9HJuxAXxGwMCvukTo2467HobZptmz-XI/edit) — empty at 31 Oct 00:30. Then the lead edits the committed workbook, owner uploads on civensa-pilot → maps 8 names → commits draft; activation with the lead. Owner ticks the 49 action rows against the PDF (D-177). Ali Abi also compares the 70-question list (D-336).
+4. Watch department reactions to the 554 book-check items (D-324). LOW backlog (D-328). UI: only 002/003 left, waits for Ali (D-345).
+5. Quota: weekly reset Sat 00:00. Claude Pro ends 3 Nov (owner renews on the web).
+Next IDs: task CIV-162, decision D-346.
 
 ## Claude quota (BEYAN, owner 27 Oct 16:21)
 - Session 11%, week 67%, weekly reset Saturday 00:00 (D-300). Copilot 96 / 1,500 credits, reset 1 Nov.
@@ -25,7 +25,7 @@ Evidence rule (D-252): one-screen changes → targeted tests + changed-state scr
 ## Open pull requests (DOĞRULANDI 30 Oct ~14:55, D-327)
 | PR | Task | State | Next action |
 | --- | --- | --- | --- |
-| — | none open | — | — |
+| #292 | release phase5 → main | tests running; rehearsal PASS | owner merges, then deploy (D-345) |
 Merged 31 Oct (D-343): #289 CIV-160 → e061e93 · #288 D-342 → 85d3e9b · #287 D-341 → a5c40f6.
 Merged 30 Oct (D-339): #284 CIV-161 → fa2f693 · #283 D-338 → c4fa7c1 · #282 D-337 → fee1955.
 Merged 30 Oct (D-337): #280 CIV-085 → b299845 · #281 D-336 → cd3a514 · #279 D-335 → 3b724ac.
