@@ -1,0 +1,610 @@
+<!doctype html>
+<html lang="tr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Örnek Hizmet Müdürlüğü · Civensa prototip</title>
+    <link rel="stylesheet" href="../fonts.css" />
+    <link rel="stylesheet" href="../tokens.css" />
+    <link rel="stylesheet" href="../prototype.css" />
+    <script src="../prototype.js" defer></script>
+  </head>
+  <body>
+    <a class="skip" href="#main">İçeriğe geç</a>
+    <div class="app-shell">
+      <aside class="sidebar" id="navigation">
+        <a class="brand" href="034-modules.html"
+          >Civensa<span>Kurumsal raporlama</span></a
+        >
+        <nav aria-label="Ana gezinme">
+          <div class="nav-group">
+            <p>Performans Programı</p>
+            <a
+              id="e003"
+              data-source-id="E003"
+              data-original-target="/dashboard?period_id=1"
+              class="nav-link"
+              href="#destination-dialog"
+              data-open="destination-dialog"
+              >Genel Bakış</a
+            ><a
+              id="e006"
+              data-source-id="E006"
+              data-original-target="/department/1?period_id=1"
+              class="nav-link selected"
+              aria-current="page"
+              href="024-department.html"
+              >Veri Girişi</a
+            ><a
+              id="e004"
+              data-source-id="E004"
+              data-original-target="/source-comparison?period_id=1"
+              class="nav-link"
+              href="#destination-dialog"
+              data-open="destination-dialog"
+              >PP Kaynak Karşılaştırması</a
+            >
+          </div>
+          <div class="nav-group">
+            <p>Faaliyet Raporu</p>
+            <a
+              id="e001"
+              data-source-id="E001"
+              data-original-target="/activity-sections"
+              class="nav-link"
+              href="#destination-dialog"
+              data-open="destination-dialog"
+              >Faaliyet Raporu · EK-1</a
+            >
+          </div>
+          <div class="nav-group">
+            <p>İç Kontrol</p>
+            <a
+              id="e005"
+              data-source-id="E005"
+              data-original-target="/internal-control/our-actions"
+              class="nav-link"
+              href="#destination-dialog"
+              data-open="destination-dialog"
+              >İç Kontrol Eylemlerimiz</a
+            >
+          </div>
+          <div class="nav-group">
+            <p>Yönetim</p>
+            <a
+              id="e002"
+              data-source-id="E002"
+              data-original-target="/modules"
+              class="nav-link"
+              href="034-modules.html"
+              >Modüller</a
+            ><a
+              id="e007"
+              data-source-id="E007"
+              data-original-target="/submit-authorizations?period_id=1"
+              class="nav-link"
+              href="#destination-dialog"
+              data-open="destination-dialog"
+              >Gönderim Yetkileri</a
+            >
+          </div>
+        </nav>
+        <div class="account-actions">
+          <button
+            type="button"
+            id="e008"
+            data-source-id="E008"
+            data-original-target="#passwordModal"
+            class="ghost"
+            data-open="password-dialog"
+          >
+            Parolamı Değiştir
+          </button>
+          <form
+            id="e009"
+            data-source-id="E009"
+            data-original-target="POST /logout"
+            class=""
+            action="#simulation-dialog"
+            method="get"
+          >
+            <button
+              type="button"
+              id="e010"
+              data-source-id="E010"
+              data-original-target="POST /logout"
+              class="ghost"
+              data-open="simulation-dialog"
+            >
+              Çıkış
+            </button>
+          </form>
+        </div>
+        <p class="sidebar-note">
+          Örnek Hizmet Müdürlüğü<br />Sentetik çalışma alanı
+        </p>
+      </aside>
+      <div class="workspace">
+        <div class="topbar">
+          <a href="#navigation" class="mobile-nav"
+            >Menüye git
+            <svg
+              class="icon icon-down"
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.5"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+              focusable="false"
+            >
+              <path d="m9 5 7 7-7 7" /></svg
+          ></a>
+          <p>Örnek Hizmet Müdürlüğü</p>
+          <div class="userbox">
+            <button
+              type="button"
+              id="e011"
+              data-source-id="E011"
+              data-original-target="GET /api/notifications → #notificationPanel"
+              class="ghost"
+              data-open="notification-dialog"
+            >
+              Bildirimler</button
+            ><span>Müdürlük<br /><strong>Birim Müdürü (sentetik)</strong></span>
+          </div>
+        </div>
+        <main id="main">
+          <nav class="breadcrumb" aria-label="İçerik yolu">
+            <a href="034-modules.html">Modüller</a
+            ><span aria-hidden="true">/</span><span>Müdürlük veri girişi</span>
+          </nav>
+          <header class="page-header">
+            <div>
+              <h1>Örnek Hizmet Müdürlüğü</h1>
+              <p>2027 Performans Programı · Müdürlük veri giriş alanı</p>
+            </div>
+            <span class="prototype-mark">Statik prototip · 024</span>
+          </header>
+          <section
+            class="card report-summary"
+            aria-labelledby="remaining-title"
+          >
+            <div>
+              <div class="actions">
+                <h2>Müdürlük paketi</h2>
+                <span class="badge warning"
+                  ><svg
+                    class="icon"
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.5"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                    focusable="false"
+                  >
+                    <path d="m15 4 5 5M4 20l4-1L20 7a3 3 0 0 0-4-4L4 15z" />
+                  </svg>
+                  Taslak</span
+                >
+              </div>
+              <h3 id="remaining-title">Kalan işler</h3>
+              <ul>
+                <li><a href="#e024">Göstergeye ilişkin açıklama boş.</a></li>
+              </ul>
+              <p class="help">
+                Göndermeden önce tüm zorunlu alanlar ve Civensa kontrolleri
+                temizlenmelidir.
+              </p>
+            </div>
+            <div class="summary-actions">
+              <button
+                type="button"
+                id="e031"
+                data-source-id="E031"
+                data-original-target="POST /api/indicators/1/save"
+                class="primary"
+                data-open="simulation-dialog"
+              >
+                Kaydet ve Kontrol Et</button
+              ><button
+                type="button"
+                id="e032"
+                data-source-id="E032"
+                data-original-target="POST /api/departments/1/submit"
+                class="secondary"
+                data-open="simulation-dialog"
+              >
+                Stratejiye Gönder
+              </button>
+            </div>
+          </section>
+          <ol class="stepper" aria-label="Rapor aşamaları">
+            <li class="current" aria-current="step">
+              <span class="step-number">1</span> Veri Girişi
+            </li>
+            <li class="">
+              <span class="step-number">2</span> Strateji İncelemesi
+            </li>
+            <li class=""><span class="step-number">3</span> Onay</li>
+          </ol>
+          <div class="section-toolbar">
+            <a
+              id="e012"
+              data-source-id="E012"
+              data-original-target="/program/1?period_id=1"
+              class="button secondary"
+              href="#destination-dialog"
+              data-open="destination-dialog"
+              >Performans Kartları ve Ekonomik Tablolar</a
+            >
+          </div>
+          <nav class="tabs" aria-label="Veri girişi görünümleri">
+            <a
+              id="e013"
+              data-source-id="E013"
+              data-original-target="#indicators"
+              href="#indicators"
+              >Performans Göstergeleri</a
+            ><a
+              id="e014"
+              data-source-id="E014"
+              data-original-target="#activities"
+              href="#activities"
+              >Faaliyet Maliyetleri</a
+            >
+          </nav>
+          <section
+            id="indicators"
+            class="card indicator-panel"
+            aria-labelledby="indicator-title"
+          >
+            <div class="card-heading">
+              <div>
+                <p class="help">
+                  Yerel Hizmetler Programı / Erişilebilir Hizmetler
+                </p>
+                <h2 id="indicator-title">Tamamlanan hizmet sayısı</h2>
+              </div>
+              <details class="menu">
+                <summary>
+                  <svg
+                    class="icon disclosure-icon"
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.5"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                    focusable="false"
+                  >
+                    <path d="m9 5 7 7-7 7" /></svg
+                  >Diğer işlemler
+                </summary>
+                <div class="menu-items">
+                  <button
+                    type="button"
+                    id="e027"
+                    data-source-id="E027"
+                    data-original-target="Aynı sayfadaki ayrıntı bölümü"
+                    class="ghost danger-text"
+                    data-open="remove-dialog"
+                  >
+                    Göstergeyi Kaldır
+                  </button>
+                </div>
+              </details>
+            </div>
+            <div class="error-summary" role="alert">
+              <strong
+                ><svg
+                  class="icon"
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.5"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                  focusable="false"
+                >
+                  <path
+                    d="m10.3 4-8 14a2 2 0 0 0 1.7 3h16a2 2 0 0 0 1.7-3l-8-14a2 2 0 0 0-3.4 0ZM12 9v4M12 17h.01"
+                  />
+                </svg>
+                1 kontrol</strong
+              >
+              <p>
+                <a
+                  id="e015"
+                  data-source-id="E015"
+                  data-original-target="Aynı gösterge kartındaki sorunlu alan"
+                  href="#e024"
+                  >Göstergeye ilişkin açıklama boş.</a
+                >
+              </p>
+            </div>
+            <div class="grid two">
+              <div class="field">
+                <label for="e016">Gösterge adı</label
+                ><input
+                  id="e016"
+                  data-source-id="E016"
+                  data-original-target="POST /api/indicators/1/save"
+                  type="text"
+                  value="Tamamlanan hizmet sayısı"
+                />
+              </div>
+              <div class="field">
+                <label for="e017">Ölçü birimi</label
+                ><input
+                  id="e017"
+                  data-source-id="E017"
+                  data-original-target="POST /api/indicators/1/save"
+                  type="text"
+                  value="Adet"
+                />
+              </div>
+            </div>
+            <fieldset>
+              <legend>Yıllık değerler <span class="help">· Adet</span></legend>
+              <div class="grid three">
+                <div class="field">
+                  <label for="e018">2025 gerçekleşme</label
+                  ><input
+                    id="e018"
+                    data-source-id="E018"
+                    data-original-target="POST /api/indicators/1/save"
+                    type="number"
+                    value=""
+                    inputmode="decimal"
+                  />
+                </div>
+                <div class="field">
+                  <label for="e019">2026 planlanan</label
+                  ><input
+                    id="e019"
+                    data-source-id="E019"
+                    data-original-target="POST /api/indicators/1/save"
+                    type="number"
+                    value=""
+                    inputmode="decimal"
+                  />
+                </div>
+                <div class="field">
+                  <label for="e020">2026 yıl sonu gerçekleşme tahmini</label
+                  ><input
+                    id="e020"
+                    data-source-id="E020"
+                    data-original-target="POST /api/indicators/1/save"
+                    type="number"
+                    value=""
+                    inputmode="decimal"
+                  />
+                </div>
+                <div class="field">
+                  <label for="e021">2027 hedef</label
+                  ><input
+                    id="e021"
+                    data-source-id="E021"
+                    data-original-target="POST /api/indicators/1/save"
+                    type="number"
+                    value="120"
+                    inputmode="decimal"
+                  />
+                </div>
+                <div class="field">
+                  <label for="e022">2028 tahmin</label
+                  ><input
+                    id="e022"
+                    data-source-id="E022"
+                    data-original-target="POST /api/indicators/1/save"
+                    type="number"
+                    value="120"
+                    inputmode="decimal"
+                  />
+                </div>
+                <div class="field">
+                  <label for="e023">2029 tahmin</label
+                  ><input
+                    id="e023"
+                    data-source-id="E023"
+                    data-original-target="POST /api/indicators/1/save"
+                    type="number"
+                    value="120"
+                    inputmode="decimal"
+                  />
+                </div>
+              </div>
+              <p class="help">Boş değerler sıfır olarak değerlendirilmez.</p>
+            </fieldset>
+            <div class="field">
+              <label for="e024">Göstergeye ilişkin açıklama</label
+              ><textarea
+                id="e024"
+                data-source-id="E024"
+                data-original-target="POST /api/indicators/1/save"
+                aria-describedby="e024-help"
+                aria-invalid="true"
+                rows="3"
+              ></textarea>
+              <p id="e024-help" class="field-error">
+                <svg
+                  class="icon"
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.5"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                  focusable="false"
+                >
+                  <path
+                    d="m10.3 4-8 14a2 2 0 0 0 1.7 3h16a2 2 0 0 0 1.7-3l-8-14a2 2 0 0 0-3.4 0ZM12 9v4M12 17h.01"
+                  />
+                </svg>
+                Göstergeye ilişkin açıklama boş. Açıklamayı girin.
+              </p>
+            </div>
+            <div class="grid two">
+              <div class="field">
+                <label for="e025">Hesaplama yöntemi</label
+                ><textarea
+                  id="e025"
+                  data-source-id="E025"
+                  data-original-target="POST /api/indicators/1/save"
+                  rows="3"
+                ></textarea>
+              </div>
+              <div class="field">
+                <label for="e026">Verinin kaynağı</label
+                ><textarea
+                  id="e026"
+                  data-source-id="E026"
+                  data-original-target="POST /api/indicators/1/save"
+                  rows="3"
+                ></textarea>
+              </div>
+            </div>
+          </section>
+          <section id="activities" class="card activity-panel">
+            <h2>Faaliyet Maliyetleri</h2>
+            <p class="help">
+              Örnek Hizmet Müdürlüğü · 2027 Performans Programı
+            </p>
+            <table class="financial">
+              <caption>
+                Örnek faaliyet maliyeti
+              </caption>
+              <thead>
+                <tr>
+                  <th>Faaliyet</th>
+                  <th class="numeric">2027 bütçe (TL)</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Hizmet noktalarının iyileştirilmesi</td>
+                  <td class="numeric">12.500,23</td>
+                </tr>
+              </tbody>
+              <tfoot>
+                <tr>
+                  <th>Toplam</th>
+                  <td class="numeric">12.500,23</td>
+                </tr>
+              </tfoot>
+            </table>
+          </section>
+          <dialog id="remove-dialog" aria-labelledby="remove-title">
+            <h2 id="remove-title">Göstergeyi Kaldır</h2>
+            <p>
+              “Tamamlanan hizmet sayısı” kaydını bu taslak paketten kaldırmayı
+              onaylıyor musunuz? Bu işlem geri alınamaz; bağlı kayıtlar ve
+              geçmiş kontrol edilir. Kaldırma başarılı olursa sayfa yenilenir ve
+              bu sayfadaki kaydedilmemiş değişiklikler kaybolur.
+            </p>
+            <p class="help">Statik prototip: kaldırma işlemi uygulanmaz.</p>
+            <form
+              id="e028"
+              data-source-id="E028"
+              data-original-target="POST /program/1/indicator/1/remove"
+              class=""
+              action="#simulation-dialog"
+              method="get"
+            >
+              <div class="actions">
+                <button
+                  type="button"
+                  id="e030"
+                  data-source-id="E030"
+                  data-original-target="Aynı taslak kaldırma kutusu"
+                  class="secondary"
+                  data-open="simulation-dialog"
+                  data-close
+                >
+                  Vazgeç</button
+                ><button
+                  type="button"
+                  id="e029"
+                  data-source-id="E029"
+                  data-original-target="POST /program/1/indicator/1/remove"
+                  class="danger-button"
+                  data-open="simulation-dialog"
+                >
+                  Kaldırmayı Onayla
+                </button>
+              </div>
+            </form>
+          </dialog>
+          <footer class="prototype-footer">
+            <span>CIV-095 · Görsel inceleme</span>
+            <nav aria-label="Prototip sayfaları">
+              <a href="../components.html">Tasarım sistemi</a
+              ><a href="034-modules.html">034 Modüller</a
+              ><a href="024-department.html">024 Veri girişi</a
+              ><a href="012-section-editor.html">012 EK-1</a>
+            </nav>
+          </footer>
+        </main>
+      </div>
+    </div>
+    <dialog id="destination-dialog" aria-labelledby="destination-title">
+      <h2 id="destination-title">Bağlantı hedefi</h2>
+      <p>Bu ekran prototip kapsamı dışındadır.</p>
+      <p class="help">Mevcut uygulamadaki hedef:</p>
+      <code id="destination-target">Ekran haritasında belirtilen bağlantı</code>
+      <form method="dialog"><button autofocus>Kapat</button></form>
+    </dialog>
+    <dialog id="simulation-dialog" aria-labelledby="simulation-title">
+      <h2 id="simulation-title">Statik prototip</h2>
+      <p>
+        Bu işlem görsel inceleme için temsil edilir. Veri kaydedilmez,
+        gönderilmez veya silinmez.
+      </p>
+      <form method="dialog"><button autofocus>Kapat</button></form>
+    </dialog>
+    <dialog id="password-dialog" aria-labelledby="password-title">
+      <h2 id="password-title">Parolamı Değiştir</h2>
+      <p class="help">Statik form örneği; gerçek parola girmeyin.</p>
+      <div class="field">
+        <label for="old-password">Mevcut parola</label
+        ><input id="old-password" type="password" autocomplete="off" />
+      </div>
+      <div class="field">
+        <label for="new-password">Yeni parola</label
+        ><input id="new-password" type="password" autocomplete="off" />
+      </div>
+      <div class="field">
+        <label for="repeat-password">Yeni parola (tekrar)</label
+        ><input id="repeat-password" type="password" autocomplete="off" />
+      </div>
+      <form method="dialog" class="actions">
+        <button autofocus>Vazgeç</button><button>Parolayı değiştir</button>
+      </form>
+    </dialog>
+    <dialog id="notification-dialog" aria-labelledby="notification-title">
+      <h2 id="notification-title">Bildirimler</h2>
+      <div class="empty">
+        <p>Yeni bildirim yok.</p>
+        <p class="help">Sentetik bildirim paneli örneği.</p>
+      </div>
+      <form method="dialog"><button autofocus>Kapat</button></form>
+    </dialog>
+  </body>
+</html>

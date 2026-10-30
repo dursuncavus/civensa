@@ -1,0 +1,50 @@
+/* CIV-125 · assurance editor only. Shared legal statement markup stays frozen. */
+.assurance-editor-page { min-width: 0; color: var(--text); }
+.assurance-editor-page :is(p,h2,h3,li) { overflow-wrap: anywhere; }
+.assurance-editor-page :is(p,h2,h3) { margin: 0 0 var(--space-3); }
+.assurance-editor-page :is(h2,h3) { font-weight: var(--font-semibold); }
+.assurance-editor-page h2 { font-size: var(--text-section); }
+.assurance-editor-page h3 { font-size: var(--text-card); }
+.assurance-editor-page a { color: var(--accent); text-underline-offset: 3px; }
+.assurance-editor-page a:hover { color: var(--accent-hover); }
+.assurance-editor-page :is(a,button,input,textarea,[tabindex]):focus-visible {
+  outline: var(--focus); outline-offset: var(--focus-offset); box-shadow: none;
+}
+.assurance-editor-page :is(input,textarea):focus { outline: var(--focus); outline-offset: var(--focus-offset); border-color: var(--text-secondary); box-shadow: none; }
+.assurance-editor-page .assurance-back { margin-bottom: var(--space-6); }
+.assurance-editor-page .panel { min-width: 0; margin-bottom: var(--space-6); padding: var(--space-6); background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: none; }
+.assurance-editor-page p { line-height: var(--line-height); }
+.assurance-editor-page :is(.assurance-info,.assurance-readonly,.ar-error) { padding: var(--space-4); margin-bottom: var(--space-6); border: 1px solid var(--border); border-radius: var(--radius); }
+.assurance-editor-page .assurance-info { background: var(--accent-soft); color: var(--accent); }
+.assurance-editor-page .assurance-readonly { background: var(--surface-muted); color: var(--text-secondary); }
+.assurance-editor-page .ar-error { color: var(--danger); background: var(--danger-bg); border-color: var(--danger); }
+.assurance-editor-page :is(label,th) { text-transform: none; letter-spacing: normal; }
+.assurance-editor-page label { display: grid; gap: var(--space-2); min-width: 0; margin-bottom: var(--space-4); color: var(--text); font-size: var(--text-sm); font-weight: var(--font-medium); }
+.assurance-editor-page :is(input:not([type=hidden]),textarea) { box-sizing: border-box; width: 100%; min-width: 0; max-width: 100%; min-height: var(--control-height); padding: var(--space-2) var(--space-3); border: 1px solid var(--text-secondary); border-radius: var(--radius); background: var(--surface); color: var(--text); font: var(--font-regular) var(--text-base) / var(--line-height) var(--font-family); box-shadow: none; }
+.assurance-editor-page textarea { min-height: 6rem; resize: vertical; }
+.assurance-editor-page .assurance-location { max-width: 44rem; display: grid; gap: 0 var(--space-6); margin-bottom: var(--space-4); }
+.assurance-editor-page .assurance-location input { height: var(--control-height); }
+.assurance-editor-page .ar-scroll { min-width: 0; max-width: 100%; overflow-x: auto; margin-bottom: var(--space-6); border: 1px solid var(--border); border-radius: var(--radius); }
+.assurance-editor-page .ar-table { width: 100%; margin: 0; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+.assurance-editor-page .ar-table :is(th,td) { padding: var(--space-2); border-bottom: 1px solid var(--border); text-align: left; vertical-align: top; }
+.assurance-editor-page .ar-table th { background: var(--surface-muted); color: var(--text-secondary); font-size: var(--text-sm); font-weight: var(--font-medium); }
+.assurance-editor-page .ar-table input { min-width: 9rem; padding: var(--space-2); font-size: var(--text-sm); }
+.assurance-editor-page .assurance-scroll-hint { color: var(--text-secondary); font-size: var(--text-sm); }
+.assurance-editor-page .assurance-reservation { max-width: 44rem; padding: var(--space-4); margin-bottom: var(--space-4); background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); }
+.assurance-editor-page .assurance-reservation label:last-child { margin-bottom: 0; }
+.assurance-editor-page .button.primary { display: inline-flex; align-items: center; min-height: var(--control-height); max-width: 100%; padding: var(--space-2) var(--space-4); border: 1px solid var(--accent); border-radius: var(--radius); background: var(--accent); color: var(--surface); font: var(--font-medium) var(--text-sm) / var(--line-height) var(--font-family); cursor: pointer; box-shadow: none; }
+.assurance-editor-page .button.primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
+.assurance-editor-page .assurance-document { max-width: 72ch; padding: var(--space-6); border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg); line-height: var(--line-height); }
+.assurance-editor-page .assurance-document h3 { text-align: center; margin-bottom: var(--space-6); }
+/* The immutable statement already emits each signature label beside its value. */
+.assurance-editor-page .assurance-document p { max-width: 72ch; }
+.assurance-editor-page .assurance-document ol { padding-left: var(--space-6); }
+.assurance-editor-page [aria-label="Mevzuat dipnotları"] { color: var(--text-secondary); font-size: var(--text-sm); border-top: 1px solid var(--border); padding-top: var(--space-4); }
+.assurance-editor-page .panel > ul { max-width: 44rem; padding-left: var(--space-6); }
+.assurance-editor-page li { margin-bottom: var(--space-2); }
+@media (min-width: 1024px) {
+  .assurance-editor-page .assurance-location { grid-template-columns: repeat(2,minmax(0,1fr)); }
+}
+@media (max-width: 700px) {
+  .assurance-editor-page :is(.panel,.assurance-document) { padding: var(--space-4); }
+}

@@ -1,0 +1,1 @@
+<section class="card"><h2>Katkı notları</h2>{% for note in notes %}<article><h3>{{ note_codes[note.action_id] }}</h3><p>{{ note.content }}</p><small>{{ note.actor_name }} · {{ tsi(note.created_at) }}</small></article>{% else %}<p>Görünür katkı notu bulunmuyor.</p>{% endfor %}</section>

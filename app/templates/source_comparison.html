@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+{% block page_title %}PP kaynak karşılaştırması{% endblock %}
+{% block page_subtitle %}{{ period.year }} dönemi · Word kaynak hücreleri ve güncel kayıtlar · Salt okunur{% endblock %}
+{% block content %}
+<link rel="stylesheet" href="/static/design/source-comparison.css">
+<section class="source-comparison-page">
+  <div class="page-actions">
+    <a class="button secondary" href="/source-comparison.csv?period_id={{ period.id }}{% if department_id %}&amp;department_id={{ department_id }}{% endif %}">CSV indir</a>
+    <a class="button link-button" href="/dashboard?period_id={{ period.id }}">Genel bakış</a>
+  </div>
+  <div class="info-panel">
+    <p>Her satır özgün kaynak hücresini güncel kayıtla karşılaştırır. Bilinmeyen konumlar “Bilinmiyor” olarak gösterilir. Boş hücre sıfır değildir. Geri alınmış içe aktarmalar karşılaştırmaya katılmaz.</p>
+    <dl aria-label="Durumlar">
+      <dt>Eşleşiyor</dt>
+      <dd>Kaynak hücresi ve güncel kayıt eşleşiyor.</dd>
+      <dt>Kararla değişti</dt>
+      <dd>Güncel kayıt kararla değişti.</dd>
+      <dt>Fark var</dt>
+      <dd>Kaynak hücresi ve güncel kayıt arasında fark var.</dd>
+      <dt>Kaynakta yok</dt>
+      <dd>Kaynak hücresinde yok.</dd>
+      <dt>Kayıtta yok</dt>
+      <dd>Güncel kayıtta yok.</dd>
+    </dl>
+  </div>
+  {% for notice in comparison.notices %}
+  <p class="return-note warning-panel">{{ notice }}</p>
+  {% endfor %}
+  {% set statuses = ['Eşleşiyor', 'Kararla değişti', 'Fark var', 'Kaynakta yok', 'Kayıtta yok'] %}
+  <p class="comparison-summary">{{ comparison.rows|length }} satır · {{ comparison.rows|selectattr('status', 'equalto', 'Eşleşiyor')|list|length }} eşleşiyor · {{ comparison.rows|selectattr('status', 'equalto', 'Kararla değişti')|list|length }} kararla değişti · {{ comparison.rows|selectattr('status', 'equalto', 'Fark var')|list|length }} fark var · {{ comparison.rows|selectattr('status', 'equalto', 'Kaynakta yok')|list|length }} kaynakta yok · {{ comparison.rows|selectattr('status', 'equalto', 'Kayıtta yok')|list|length }} kayıtta yok</p>
+  <div class="status-filter" role="group" aria-label="Duruma göre filtrele" hidden>
+    <button type="button" class="button" data-filter-status="">Tümü ({{ comparison.rows|length }})</button>
+    {% for status in statuses %}
+    {% set count = comparison.rows|selectattr('status', 'equalto', status)|list|length %}
+    {% if count %}
+    <button type="button" class="button" data-filter-status="{{ status }}">{{ status }} ({{ count }})</button>
+    {% endif %}
+    {% endfor %}
+  </div>
+  <p class="filter-empty" role="status" hidden>Bu durumda satır yok.</p>
+  <p class="scroll-hint" id="comparison-scroll-hint">Tablonun devamını görmek için yatay kaydırın.</p>
+  <div class="table-wrap" tabindex="0" role="region" aria-label="Kaynak karşılaştırma tablosu" aria-describedby="comparison-scroll-hint">
+    <table id="source-comparison">
+      <thead>
+        <tr>
+          <th scope="col">Müdürlük / kayıt</th>
+          <th scope="col">Belge ve konum</th>
+          <th scope="col" class="amount">Kaynak değer</th>
+          <th scope="col" class="amount">Güncel değer</th>
+          <th scope="col" class="amount">Fark</th>
+          <th scope="col">Durum / karar</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in comparison.rows %}
+        <tr data-status="{{ row.status }}" data-model="{{ row.model }}">
+          <td>
+            <strong>{{ row.department }}</strong>
+            <p>{{ row.record }}</p>
+            {{ row.year or 'Bilinmiyor' }} {{ row.kind }} {{ row.funding }}
+          </td>
+          <td>
+            <details>
+              <summary>{{ row.document }} · İçe aktarma {{ row.batch_id or 'Bilinmiyor' }}</summary>
+              <p>Belge SHA-256:
+                <code>{{ row.document_sha256 }}</code>
+              </p>
+            </details>
+            <p>Tablo {{ row.table }} · Satır {{ row.row }} · Sütun {{ row.column }} · Sayfa {{ row.page }}</p>
+          </td>
+          <td class="amount">
+            {{ row.source_amount }}
+            <p class="muted">Kaynak hücre: {{ row.raw_text or 'Boş' }}</p>
+          </td>
+          <td class="amount">{{ row.stored_amount }}</td>
+          <td class="amount">{{ row.difference }}</td>
+          <td>
+            <strong class="status {{ 'success' if row.status in ['Eşleşiyor', 'Kararla değişti'] else 'warning' if row.status == 'Fark var' else 'danger' }}">{{ row.status }}</strong>
+            {% if row.decision %}
+            <p>Karar: {{ row.decision }}</p>
+            {% endif %}
+            {% if row.note %}
+            <p>{{ row.note }}</p>
+            {% endif %}
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="6">Seçilen dönemde karşılaştırılacak kaynak veya kayıt bulunamadı.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% include "pp_reconciliation.html" %}
+</section>
+<script src="/static/design/source-comparison.js" defer></script>
+{% endblock %}

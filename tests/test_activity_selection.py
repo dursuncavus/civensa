@@ -9,7 +9,7 @@ def test_invalid_subprogram_rejected_without_mutation(client, db, sample, raw, o
     activity = sample['activity']
     before = (activity.name, activity.explanation, activity.subprogram_id, activity.card_id)
     count = db.scalar(select(func.count()).select_from(Activity))
-    payload = {'name': 'Değişmemeli', 'explanation': 'Değişmemeli', 'subprogram_id': raw}
+    payload = {'period_id': sample['period'].id, 'name': 'Değişmemeli', 'explanation': 'Değişmemeli', 'subprogram_id': raw}
     response = (client.post('/api/activities', json=payload) if operation == 'create'
                 else client.put(f'/api/activities/{activity.id}', json=payload))
     assert response.status_code == 422
@@ -30,7 +30,7 @@ def test_subprogram_scope_and_valid_selection(client, db, sample, operation, raw
         program = Program(period_id=period.id, name='Başka'); db.add(program); db.flush()
         subprogram = SubProgram(period_id=period.id, program_id=program.id, name='Başka')
         db.add(subprogram); db.commit(); sid = subprogram.id
-    payload = {'name': 'Geçerli faaliyet', 'subprogram_id': sid}
+    payload = {'period_id': sample['period'].id, 'name': 'Geçerli faaliyet', 'subprogram_id': sid}
     response = (client.post('/api/activities', json=payload) if operation == 'create'
                 else client.put(f'/api/activities/{sample["activity"].id}', json=payload))
     assert response.status_code == (200 if raw_kind in {'integer', 'string'} else 422)

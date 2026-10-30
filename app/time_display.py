@@ -7,4 +7,4 @@ def turkey_time(value):
         value = datetime.fromisoformat(value)
     if value.tzinfo is None:
         value = value.replace(tzinfo=timezone.utc)
-    return value.astimezone(ZoneInfo('Europe/Istanbul')).strftime('%d.%m.%Y %H:%M') + ' (Türkiye saati, UTC+03:00)'
+    return value.astimezone(ZoneInfo('Europe/Istanbul')).strftime('%d.%m.%Y %H:%M') + ' TSİ'

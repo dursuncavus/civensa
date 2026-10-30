@@ -1,0 +1,225 @@
+/* CIV-104 · 021/022; all palette, type and spacing values use D-224 tokens. */
+.dashboard-page { min-width: 0; color: var(--text); }
+.dashboard-page :is(p,h2,h3) { margin: 0 0 var(--space-3); overflow-wrap: anywhere; }
+.dashboard-page h2 { font-size: var(--text-section); font-weight: var(--font-semibold); }
+.dashboard-page :is(label,th,.card span) { text-transform: none; letter-spacing: normal; }
+.dashboard-page :is(.muted,.smallnote,small) { color: var(--text-secondary); font-size: var(--text-sm); }
+.dashboard-page a { color: var(--accent); text-underline-offset: 3px; }
+.dashboard-page a:hover { color: var(--accent-hover); }
+.dashboard-page .ok { color: var(--success) !important; }
+.dashboard-page .bad { color: var(--warning) !important; }
+.dashboard-page .dashboard-issues.ok { color: var(--text) !important; }
+.dashboard-page :is(a,button,input,select,[tabindex]):focus-visible,
+.dashboard-page :is(input,select):focus { outline: var(--focus); outline-offset: var(--focus-offset); box-shadow: none; }
+.dashboard-page :is(.card,.dashboard-panel) { min-width: 0; padding: var(--space-6); border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); box-shadow: none; }
+.dashboard-page .card { padding: var(--space-3) var(--space-4); }
+.dashboard-page .dashboard-panel { margin-top: var(--space-4); }
+.dashboard-page .cards { grid-template-columns: repeat(3,minmax(0,1fr)); align-items: start; gap: var(--space-3); }
+.dashboard-page .strategy-cards { grid-template-columns: repeat(4,minmax(0,1fr)); }
+.dashboard-page .dashboard-panel .cards { grid-template-columns: repeat(5,minmax(0,1fr)); margin: var(--space-4) 0; }
+.dashboard-page .card span { font-size: var(--text-sm); color: var(--text-secondary); }
+.dashboard-page .card b { margin-top: var(--space-1); font-size: var(--text-title); line-height: 1.2; font-weight: var(--font-semibold); overflow-wrap: anywhere; }
+.dashboard-page .action-card { display: block; text-decoration: none; }
+.dashboard-page .action-card small { margin-top: 0; font-size: var(--text-sm); }
+.dashboard-page .action-card:hover { border-color: var(--accent); background: var(--accent-soft); }
+.dashboard-page .progress-filter[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--accent); }
+.dashboard-page .progress-filter-status { margin: 0 0 var(--space-3); }
+.dashboard-page .section-head { align-items: center; flex-wrap: wrap; gap: var(--space-4); }
+.dashboard-page .section-head > div:first-child { flex: 1 1 24rem; min-width: 0; }
+.dashboard-page .section-head h2 { margin-bottom: var(--space-2); }
+.dashboard-page .rowbuttons { flex-wrap: wrap; gap: var(--space-2); }
+.dashboard-page .button { min-height: var(--control-height); max-width: 100%; padding: var(--space-2) var(--space-4); border: 1px solid var(--text-secondary); border-radius: var(--radius); background: var(--surface); color: var(--text); font: var(--font-medium) var(--text-sm) / var(--line-height) var(--font-family); text-decoration: none; }
+.dashboard-page .button:hover { color: var(--text); background: var(--surface-muted); }
+.dashboard-page .button.primary { color: var(--surface); background: var(--accent); border-color: var(--accent); }
+.dashboard-page .button.primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
+.dashboard-page .button:disabled { opacity: 1; color: var(--text-secondary); background: var(--surface-muted); border-color: var(--border); cursor: not-allowed; }
+.dashboard-page .period-grid { gap: var(--space-3); margin-top: var(--space-4); }
+.dashboard-page .period-item { padding: var(--space-4); border-color: var(--border); border-radius: var(--radius); }
+.dashboard-page .period-item.current { background: var(--accent-soft); border-color: var(--accent); }
+.dashboard-page .period-item b { font-size: var(--text-card); }
+.dashboard-page .period-item span { color: var(--text-secondary); font-size: var(--text-sm); }
+.dashboard-page .period-item .current-period { color: var(--accent); font-weight: var(--font-semibold); }
+.dashboard-page .inline-form { grid-template-columns: minmax(0,1fr) minmax(0,1.5fr) auto auto; gap: var(--space-3); padding: var(--space-4); margin-top: var(--space-4); border-color: var(--border); border-radius: var(--radius); background: var(--surface-muted); }
+.dashboard-page [hidden] { display: none !important; }
+.dashboard-page label { min-width: 0; color: var(--text); font-size: var(--text-sm); font-weight: var(--font-medium); }
+.dashboard-page :is(input,select) { min-width: 0; min-height: var(--control-height); border: 1px solid var(--text-secondary); border-radius: var(--radius); background: var(--surface); color: var(--text); font-size: var(--text-base); }
+.dashboard-page .snapshot-list { gap: var(--space-3); margin-top: var(--space-4); }
+.dashboard-page .snapshot-item { max-width: 100%; padding: var(--space-3) var(--space-4); border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); color: var(--text); overflow-wrap: anywhere; }
+.dashboard-page .snapshot-item:hover { background: var(--surface-muted); }
+.dashboard-page .snapshot-item :is(b,span) { font-size: var(--text-sm); }
+.dashboard-page .snapshot-item span { color: var(--text-secondary); }
+.dashboard-page .empty-state { margin: var(--space-4) 0 0; padding: var(--space-6); border: 1px dashed var(--border); border-radius: var(--radius); background: var(--surface); color: var(--text-secondary); }
+.dashboard-page .table-wrap { position: relative; max-width: 100%; overflow-x: auto; border-color: var(--border); border-radius: var(--radius); background: var(--surface); }
+.dashboard-page table { min-width: 900px; width: 100%; border-collapse: collapse; }
+.dashboard-page :is(th,td) { padding: var(--space-3); border-bottom: 1px solid var(--border); color: var(--text); font-size: var(--text-sm); text-align: left; }
+.dashboard-page th { background: var(--surface-muted); color: var(--text-secondary); font-weight: var(--font-medium); }
+.dashboard-page .status { display: inline-block; padding: var(--space-1) var(--space-2); border-radius: var(--radius); background: var(--surface-muted); color: var(--text-secondary); font-size: var(--text-sm); font-weight: var(--font-medium); }
+.dashboard-page .status:is(.in_progress,.ready,.submitted) { background: var(--accent-soft); color: var(--accent); }
+.dashboard-page .status:is(.needs_attention,.returned) { background: var(--warning-bg); color: var(--warning); }
+.dashboard-page .status.approved { background: var(--success-bg); color: var(--success); }
+.dashboard-page progress { display: block; width: 120px; height: var(--space-3); margin-bottom: var(--space-1); accent-color: var(--accent); border: 0; border-radius: var(--radius); background: var(--surface-muted); }
+.dashboard-page progress::-webkit-progress-bar { background: var(--surface-muted); border-radius: var(--radius); }
+.dashboard-page progress::-webkit-progress-value { background: var(--accent); border-radius: var(--radius); }
+.dashboard-page progress::-moz-progress-bar { background: var(--accent); }
+.dashboard-page .dashboard-sr-only { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+/* Shared JavaScript renders these result elements inside the page root. */
+.dashboard-page :is(.template-box,.import-summary,.import-department) { background: var(--surface); border-color: var(--border); border-radius: var(--radius); color: var(--text); }
+.dashboard-page .template-box.missing { background: var(--warning-bg); border-color: var(--warning); color: var(--warning); }
+.dashboard-page .template-box.present { background: var(--success-bg); border-color: var(--success); color: var(--success); }
+.dashboard-page .template-box :is(h4,ul) { font-size: var(--text-sm); }
+@media (max-width: 1100px) {
+  .dashboard-page :is(.strategy-cards,.dashboard-panel .cards) { grid-template-columns: repeat(2,minmax(0,1fr)); }
+}
+@media (max-width: 760px) {
+  .dashboard-page :is(.cards,.strategy-cards,.dashboard-panel .cards) { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .dashboard-page .inline-form { grid-template-columns: minmax(0,1fr); }
+  .dashboard-page .dashboard-panel { padding: var(--space-4); }
+  .dashboard-page .period-item { align-items: stretch; }
+  .dashboard-page .section-head > div:first-child { flex-basis: 100%; }
+}
+.dashboard-page :is(.import-preview,.import-dept,.import-coverage,.import-review) { border-color: var(--border); border-radius: var(--radius); color: var(--text); overflow-wrap: anywhere; }
+.dashboard-page .import-preview h4 { background: var(--surface-muted); color: var(--text); border-color: var(--border); font-size: var(--text-sm); }
+.dashboard-page .import-dept { font-size: var(--text-sm); }
+.dashboard-page .import-dept span { color: var(--text-secondary); }
+.dashboard-page .ok-text { color: var(--success); font-size: var(--text-sm); }
+.dashboard-page .issue-list { background: var(--warning-bg); color: var(--warning); border-color: var(--warning); font-size: var(--text-sm); }
+@media (min-width: 1280px) {
+  .dashboard-page .dashboard-layout { display: grid; grid-template-columns: minmax(0,1fr) 18rem; gap: var(--space-6); align-items: start; }
+  .dashboard-page .dashboard-main { grid-column: 1; grid-row: 1; min-width: 0; }
+  .dashboard-page .dashboard-summary { position: sticky; top: var(--space-6); grid-column: 2; grid-row: 1; min-width: 0; }
+  .dashboard-page .dashboard-summary > .cards { grid-template-columns: minmax(0,1fr); gap: var(--space-3); }
+  .dashboard-page .dashboard-main > .dashboard-panel:first-child,
+  .dashboard-page .dashboard-main > p + .dashboard-panel { margin-top: 0; }
+}
+#mudurluk-ilerleme .progress-list {
+  display: grid;
+  grid-template-columns: minmax(0,1fr);
+  column-gap: var(--space-6);
+  max-width: 44rem;
+  margin: var(--space-4) 0;
+}
+#mudurluk-ilerleme .progress-row {
+  display: grid;
+  grid-template-columns: minmax(0,1fr) auto;
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 0;
+  min-height: 44px;
+  padding: var(--space-2) var(--space-3);
+  border: 0;
+  border-bottom: 1px solid var(--border);
+  border-radius: 0;
+  background: transparent;
+  color: var(--text);
+  text-decoration: none;
+}
+#mudurluk-ilerleme .progress-row:hover { background: var(--surface-muted); }
+#mudurluk-ilerleme .progress-row[aria-pressed="true"] {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+#mudurluk-ilerleme .progress-row span {
+  min-width: 0;
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+  line-height: var(--line-height);
+  text-transform: none;
+  overflow-wrap: anywhere;
+}
+#mudurluk-ilerleme .progress-row b {
+  margin: 0;
+  font-size: var(--text-card);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+@media (min-width: 1024px) {
+  #mudurluk-ilerleme .progress-list { grid-template-columns: repeat(2,minmax(0,1fr)); }
+}
+
+/* CIV-112 · approved 022 task list; department scope only. */
+.department-dashboard .home-tasks h2 {
+  font-size: var(--text-section);
+  margin-bottom: var(--space-2);
+}
+.department-dashboard .home-task-list {
+  counter-reset: home-step;
+  list-style: none;
+  padding: 0;
+  margin: var(--space-6) 0 0;
+  /* CIV-122: keep each status close to its step on wide screens (owner, 27 Oct). */
+  max-width: 44rem;
+}
+.department-dashboard .home-task-list li {
+  counter-increment: home-step;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) minmax(0, auto);
+  gap: var(--space-3);
+  align-items: start;
+  padding-block: var(--space-4);
+  border-top: 1px solid var(--border);
+}
+.department-dashboard .home-task-list li::before {
+  content: counter(home-step) ".";
+  font-weight: var(--font-medium);
+  font-variant-numeric: tabular-nums;
+}
+.department-dashboard .home-task-list a {
+  font-weight: var(--font-medium);
+}
+.department-dashboard .home-task-list .badge {
+  max-width: 36ch;
+  justify-self: end;
+}
+@media (max-width: 700px) {
+  .department-dashboard .home-task-list li {
+    grid-template-columns: auto minmax(0, 1fr);
+    row-gap: var(--space-2);
+  }
+  .department-dashboard .home-task-list .badge {
+    grid-column: 2;
+    justify-self: start;
+    max-width: 100%;
+  }
+}
+
+.department-dashboard .badge { display: inline-flex; align-items: center; gap: var(--space-1); padding: var(--space-1) var(--space-2); font-size: var(--text-sm); line-height: var(--line-height); font-weight: var(--font-medium); border-radius: var(--radius); overflow-wrap: anywhere; }
+.department-dashboard .badge.neutral { color: var(--text-secondary); background: var(--surface-muted); }
+.department-dashboard .badge.warning { color: var(--warning); background: var(--warning-bg); }
+.department-dashboard .badge.success { color: var(--success); background: var(--success-bg); }
+
+/* CIV-123 · summary only; the progress panel and department task list keep
+   their own layouts. Two columns require a wide summary container. */
+.dashboard-page .dashboard-summary { container-type: inline-size; }
+.dashboard-page .dashboard-summary > .cards {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0 var(--space-6);
+  max-width: 44rem;
+}
+.dashboard-page .dashboard-summary .card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) max-content;
+  column-gap: var(--space-3);
+  align-items: center;
+  min-height: var(--control-height);
+  padding: 0;
+  border: 0;
+  border-bottom: 1px solid var(--border);
+  border-radius: 0;
+  background: transparent;
+}
+.dashboard-page .dashboard-summary .card :is(span, b, small) { line-height: 20px; }
+.dashboard-page .dashboard-summary .card span { grid-column: 1; grid-row: 1; }
+.dashboard-page .dashboard-summary .card b {
+  grid-column: 2;
+  margin: 0;
+  font-size: var(--text-sm);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+.dashboard-page .dashboard-summary .card:has(small) b { grid-row: 1 / span 2; }
+.dashboard-page .dashboard-summary .card small { grid-column: 1; grid-row: 2; }
+.dashboard-page .dashboard-summary .card:hover { background: var(--accent-soft); }
+@container (min-width: 48rem) {
+  .dashboard-page .dashboard-summary > .cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}

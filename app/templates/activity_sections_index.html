@@ -2,24 +2,50 @@
 {% block page_title %}Faaliyet Raporu · EK-1{% endblock %}
 {% block page_subtitle %}Birim ve idare raporları · Bölümler, sahipler ve eksikler{% endblock %}
 {% block content %}
-<link rel="stylesheet" href="/static/activity_sections.css">
+<link rel="stylesheet" href="/static/design/section-index.css">
+<div class="section-index-page">
 {% if user.role=='strategy' %}
-<section class="panel ar-panel"><h2>Yıl raporlarını oluştur</h2><p>Kapsamdaki müdürlüklere birer birim raporu ve kuruma bir idare raporu açılır. Mevcut kayıtlar korunur.</p>
-<form method="post" action="/activity-sections/years" class="ar-filters">
+<section class="index-panel"><h2>Yıl raporlarını oluştur</h2><p>Kapsamdaki müdürlüklere birer birim raporu ve kuruma bir idare raporu açılır. Mevcut kayıtlar korunur.</p>
+<form method="post" action="/activity-sections/years" class="index-filters">
 <input type="hidden" name="csrf_token" value="{{ request.session.get('csrf_token') }}">
 <label>Kurum<select name="organization_id">{% for org in organizations %}<option value="{{ org.id }}">{{ org.name }}</option>{% endfor %}</select></label>
 <label>Raporlama yılı<select name="period_id">{% for period in periods %}<option value="{{ period.id }}">{{ period.year }}</option>{% endfor %}</select></label>
 <label><input type="checkbox" name="copy_previous"> Önceki yılın onaylı kopyasından doldur</label><button class="button primary">Raporları oluştur</button></form></section>
 {% endif %}
-<section class="panel ar-panel"><h2>Tamamlanma görünümü</h2>
-<form method="get" class="ar-filters"><label>Yıl<select name="period_id"><option value="">Tümü</option>{% for p in periods %}<option value="{{ p.id }}" {% if selected_period==p.id %}selected{% endif %}>{{ p.year }}</option>{% endfor %}</select></label>
+<section class="index-panel"><h2>Tamamlanma görünümü</h2>
+<form method="get" class="index-filters"><label>Yıl<select name="period_id"><option value="">Tümü</option>{% for p in periods %}<option value="{{ p.id }}" {% if selected_period==p.id %}selected{% endif %}>{{ p.year }}</option>{% endfor %}</select></label>
 <label>Bölüm<select name="section"><option value="">Tüm bölümler</option>{% for d in definitions %}<option value="{{ d.code }}" {% if selected_section==d.code %}selected{% endif %}>{{ d.code }} · {{ d.title }}</option>{% endfor %}</select></label>
 <label>Durum<select name="status"><option value="">Tümü</option>{% for k,v in statuses.items() %}<option value="{{ k }}" {% if selected_status==k %}selected{% endif %}>{{ v }}</option>{% endfor %}</select></label><button class="button">Filtrele</button></form>
-<div class="ar-scroll"><table class="ar-table"><thead><tr><th>Yıl / Rapor</th><th>Bölüm</th><th>Durum</th><th>Sahibi</th><th>Eksikler</th></tr></thead><tbody>
-{% for item in reports %}{% for s in item.matches %}<tr><td>{{ item.report.year }} · {{ item.report.department }}{% if item.report.frozen %}<br><strong>Onaylı kopya</strong>{% endif %}</td><td><a href="/activity-sections/reports/{{ item.report.id }}?code={{ s.code }}">{{ s.code }} · {{ s.title }}</a></td><td><span class="ar-status ar-{{ s.status }}">{{ statuses[s.status] }}</span></td><td>{{ owners[s.owner] }}</td><td>{% for missing in s.missing %}<div>{{ missing }}</div>{% else %}—{% endfor %}</td></tr>{% endfor %}{% else %}<tr><td colspan="5">Bu filtrelerle rapor bulunamadı. Yıl raporlarını oluşturun veya filtreleri değiştirin.</td></tr>{% endfor %}
-</tbody></table></div></section>
-<section class="panel ar-panel"><h2>Word çıktıları</h2>
+{% for error in report_errors %}<p class="ar-warning" role="status">{{ error.year }} yılı · Rapor {{ error.document_id }}: {{ error.message }}</p>{% endfor %}
+{% for item in reports %}
+<article class="report-group" aria-labelledby="report-{{ item.report.id }}">
+<header class="report-heading"><div><h3 id="report-{{ item.report.id }}">{{ item.report.year }} · {{ item.report.department }}</h3></div>
+<div class="report-badges">{% if item.report.workflow %}<span class="workflow-badge workflow-{{ item.report.workflow.status }}">{{ item.report.workflow.label }}</span>{% endif %}{% if item.report.frozen %}<span class="approved-badge">Onaylı kopya</span>{% endif %}</div></header>
+<table class="ar-table index-table"><thead><tr><th scope="col">Bölüm</th><th scope="col">Durum</th><th scope="col">Sahibi</th><th scope="col">Eksikler</th></tr></thead><tbody>
+{% for s in item.matches %}
+<tr><td data-label="Bölüm"><a href="/activity-sections/reports/{{ item.report.id }}?code={{ s.code }}">{{ s.code }} · {{ s.title }}</a></td>
+<td data-label="Durum"><span class="ar-status ar-{{ s.status }}">{{ statuses[s.status] }}</span></td><td data-label="Sahibi">{{ owners[s.owner] }}</td>
+<td data-label="Eksikler">{% for missing in s.missing %}<div>{{ missing }}</div>{% else %}—{% endfor %}
+{% set similarity=item.similarities.get(s.code) %}
+{% if similarity %}
+{% if similarity.message %}<p class="ar-warning" role="status" data-ar-similarity>{{ similarity.message }}{% if similarity.source_url %} <a href="{{ similarity.source_url }}">{{ similarity.source_label }}</a>{% endif %}</p>
+{% elif similarity.percent is not none %}<p class="muted" data-ar-similarity-percent>Önceki yıl benzerliği: %{{ similarity.percent }}</p>{% endif %}
+{% endif %}</td></tr>
+{% endfor %}
+</tbody></table></article>
+{% else %}<p class="empty-state">Bu filtrelerle rapor bulunamadı. Yıl raporlarını oluşturun veya filtreleri değiştirin.</p>{% endfor %}
+</section>
+<section class="index-panel"><h2>Word ve PDF çıktıları</h2>
 {% for item in reports %}{% if user.role=='strategy' or (item.report.department_id and item.report.department_id==user.department_id) %}
-<p>{{ item.report.year }} · {{ item.report.department }} · <a class="button" href="/activity-sections/reports/{{ item.report.id }}/export.docx">Word olarak indir</a></p>
-{% endif %}{% endfor %}</section>
+<article class="export-report"><h3>{{ item.report.year }} · {{ item.report.department }}</h3>
+<details class="section-export"><summary>Dışa aktar</summary><div class="export-items"><a class="button" href="/activity-sections/reports/{{ item.report.id }}/export.docx">Word olarak indir</a> <a class="button" href="/activity-sections/reports/{{ item.report.id }}/export.pdf">PDF olarak indir</a> <a class="button" href="/activity-sections/reports/{{ item.report.id }}/typeset.json">Dizgi verisi (JSON)</a></div></details>
+{% if not item.report.department_id %}
+{% if item.report.reopened %}<p class="ar-warning" role="alert">Güncel sürüm gerekçeyle açıldı; düzeltmeden sonra yeni sürüm oluşturun.</p>{% endif %}
+{% for release in item.report.releases %}
+<p><strong>{% if not loop.last %}Sürüm {{ release.version }} · {% endif %}{{ release.label }}</strong>
+{% for format,label in [('docx','Word'),('pdf','PDF'),('json','JSON')] %} · <a href="/activity-sections/reports/{{ item.report.id }}/export.{{ format }}?version={{ release.version }}">Sürüm {{ release.version }} {{ label }} indir</a>{% endfor %} · <a href="/activity-sections/reports/{{ item.report.id }}/typeset.json?version={{ release.version }}">Dizgi verisi (JSON)</a></p>
+{% if release.reopen %}<p>Gerekçeyle açıldı · {{ release.reopen.actor_name or ("Kullanıcı " ~ release.reopen.actor_id) }} · {{ release.reopen.created_at|ar_time }}</p><p class="ar-paragraph">{{ release.reopen.reason }}</p>{% endif %}
+{% endfor %}{% endif %}
+</article>{% endif %}{% endfor %}</section>
+</div>
 {% endblock %}

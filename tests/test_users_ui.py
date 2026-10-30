@@ -10,7 +10,10 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 import pytest
 from playwright.sync_api import sync_playwright, expect
 from sqlalchemy import select
+from sqlalchemy.orm import Session
 
+from app.db import get_db
+from app.main import app
 from app.models import AuditLog, User
 from tests.test_users_personal_accounts import accounts, csv_bytes, row
 
@@ -18,10 +21,17 @@ pytestmark = pytest.mark.postgres
 
 
 @pytest.fixture
-def local_accounts_http(accounts):
+def local_accounts_http(accounts, db):
     # A loopback HTTP bridge lets Chromium follow the app's actual 303 redirects.
-    # A single server thread also serializes access to the disposable DB Session.
     client = accounts[0]()
+    previous_database = app.dependency_overrides[get_db]
+    def request_database():
+        # Browser requests can overlap assertions on the fixture's Session.
+        # Match production's per-request lifetime: rollback/close must never
+        # close the assertion thread's in-use connection.
+        with Session(db.get_bind(), expire_on_commit=False) as request_db:
+            yield request_db
+    app.dependency_overrides[get_db] = request_database
     class Handler(BaseHTTPRequestHandler):
         def serve(self):
             body = self.rfile.read(int(self.headers.get('content-length', '0')))
@@ -43,6 +53,31 @@ def local_accounts_http(accounts):
         yield 'http://127.0.0.1:' + str(server.server_port)
     finally:
         server.shutdown(); server.server_close(); thread.join(timeout=5)
+        app.dependency_overrides[get_db] = previous_database
+
+
+@pytest.fixture
+def policy_browser():
+    with sync_playwright() as pw:
+        options = {'headless': True}
+        if os.getenv('CIVENSA_CHROMIUM_PATH'):
+            options['executable_path'] = os.environ['CIVENSA_CHROMIUM_PATH']
+        with pw.chromium.launch(**options) as browser:
+            yield browser
+
+
+def test_account_change_policy_visible_by_table_and_in_new_user_form(policy_browser, local_accounts_http):
+    policy = ('Rol veya müdürlük değişiminde hesap taşınmaz. '
+              'Mevcut hesabı gerekçe yazarak kapatın, kişiye yeni hesap açın. '
+              'Eski işlemler eski müdürlükte kalır.')
+    with policy_browser.new_page() as page:
+        page.goto(local_accounts_http + '/users')
+        expect(page.locator('#accountChangePolicy')).to_have_text(policy)
+        expect(page.locator('#accountChangePolicy')).to_be_visible()
+        expect(page.locator('#accountChangePolicy + .table-wrap table')).to_be_visible()
+        expect(page.locator('#newUserForm')).to_be_hidden()
+        page.get_by_role('button', name='Kullanıcı ekle', exact=True).click()
+        expect(page.locator('#newUserForm').get_by_text(policy, exact=True)).to_be_visible()
 
 
 def test_strategy_six_step_import_retirement_and_first_login(db, sample, accounts, local_accounts_http):
@@ -106,7 +141,7 @@ def test_strategy_six_step_import_retirement_and_first_login(db, sample, account
             assert page.locator('input[name="email"]').count(), page.locator('body').inner_text()
             page.locator('input[name="email"]').fill(issued[0]['E-posta'])
             page.locator('input[name="password"]').fill(issued[0]['Geçici Parola'])
-            page.get_by_role('button', name='Giriş Yap', exact=True).click()
+            page.get_by_role('button', name='Giriş yap', exact=True).click()
             expect(page).to_have_url(base + '/change-password')
             expect(page.get_by_text('Devam etmek için kendi parolanızı belirleyin.', exact=True)).to_be_visible()
             screenshot('personal-first-login.png')

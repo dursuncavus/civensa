@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+{% block page_title %}
+  Genel Bölüm İçe Aktarma Önizlemesi
+{% endblock %}
+{% block page_subtitle %}
+  {{ period.year }} · {{ batch.filename }}
+{% endblock %}
+{% block content %}
+  <link rel="stylesheet" href="/static/design/report-builder.css">
+  <div class="section-import-page">
+    <section class="report-panel">
+      <p class="report-info">Önizleme bölüm kayıtlarını değiştirmez. Uygulama mevcut hedef bölümleri korur; farklı içerikler aşağıda çakışma olarak gösterilir. İçe aktarılan bölüm daha sonra düzenlenirse otomatik geri alma engellenir.</p>
+      {% for item in preview.general_sections %}
+        <details class="record">
+          <summary>
+            <span>{{ item.title }}</span>
+            <span class="status {{ {'create':'success','keep':'neutral','conflict':'warning'}[item.action] }}">{{ {'create':'Eklenecek','keep':'Mevcut bölüm korunacak','conflict':'Çakışma — hedef bölüm korunacak'}[item.action] }}</span>
+          </summary>
+          {% if item.kind=='text' %}
+            <p class="section-text">{{ item.content.text }}</p>
+          {% elif item.kind=='table' %}
+            <div class="table-wrap">
+              <table>
+                {% for row in item.content.rows %}
+                  <tr>
+                    {% for cell in row %}
+                      <td>{{ cell }}</td>
+                    {% endfor %}
+                  </tr>
+                {% endfor %}
+              </table>
+            </div>
+          {% else %}
+            <p>Kaynak görseli bölüm kaydına eklenecek.</p>
+          {% endif %}
+          {% for id in item.target_ids %}
+            <a href="/report-builder?period_id={{ period.id }}#section-{{ id }}">Hedef Bölümü Aç</a>
+          {% endfor %}
+        </details>
+      {% else %}
+        <p>Kaynakta tanınan genel bölüm bulunamadı. Kitap Bölümleri ekranından eksik içeriği ekleyin.</p>
+      {% endfor %}
+      {% for warning in preview.warnings %}
+        <p class="bad report-warning">{{ warning }}</p>
+      {% endfor %}
+      {% for warning in preview.general_section_warnings %}
+        <p class="bad report-warning">{{ warning }}</p>
+      {% endfor %}
+      {% if preview.can_apply %}
+        <button class="button primary" id="applySections" data-batch-id="{{ batch.id }}" data-period-id="{{ period.id }}">Önizlemeyi Uygula</button>
+      {% elif preview.can_revert %}
+        <button class="button danger primary" id="revertSections" data-batch-id="{{ batch.id }}" data-period-id="{{ period.id }}">İçe Aktarmayı Geri Al</button>
+      {% elif batch.status=='applied' %}
+        <p>{{ preview.revert_reason }}</p>
+      {% endif %}
+      <p class="report-actions">
+        <a href="/report-builder/manifest?period_id={{ period.id }}">PP Tamamlanma Listesi</a>
+        ·
+        <a href="/dashboard?period_id={{ period.id }}">İçe Aktarma Geçmişi</a>
+      </p>
+    </section>
+  </div>
+{% endblock %}
+{% block scripts %}
+  <script src="/report-builder/sections.js"></script>
+{% endblock %}

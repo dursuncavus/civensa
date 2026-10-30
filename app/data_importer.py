@@ -1,4 +1,5 @@
 import io
+import hashlib
 import json
 import re
 import unicodedata
@@ -93,12 +94,57 @@ def iter_document_tables(doc):
             yield Table(element, doc)
 
 
+def _use_accepted_view(doc):
+    """Project visible OOXML into the structure python-docx reads.
+
+    Work only on the in-memory import document. Unwrap inserted/moved-to text
+    and displayed content controls, including block controls around paragraphs
+    or tables; discard deleted/moved-from subtrees altogether.
+    """
+    hidden = {qn('w:del'), qn('w:moveFrom')}
+    wrappers = {qn('w:ins'), qn('w:moveTo'), qn('w:sdt')}
+    for element in reversed(list(doc.element.iter())):
+        parent = element.getparent()
+        if element.tag in hidden:
+            parent.remove(element)
+        elif element.tag in wrappers:
+            content = element.find(qn('w:sdtContent')) if element.tag == qn('w:sdt') else element
+            index = parent.index(element)
+            for child in list(content) if content is not None else []:
+                parent.insert(index, child)
+                index += 1
+            parent.remove(element)
+
+
+def _indicator_header_spec(header):
+    """Require an explicit, unique year AND kind, never infer from position."""
+    years = set(re.findall(r'(?<!\d)20\d{2}(?!\d)', header))
+    key = _key(header)
+    markers = {'actual': 'gerceklesme', 'target': 'hedef', 'forecast': 'tahmin',
+               'planned': 'planlanan', 'budget': 'butce',
+               'midyear_spend': 'haziran', 'year_end_estimate': 'yil sonu'}
+    kinds = {kind for kind, marker in markers.items() if marker in key}
+    # “Değer” qualifies explicit kinds (“Hedef Değeri”); only use the generic
+    # kind on its own. Preserve the legacy kind of the “Gerçekleşen” label.
+    if not kinds and ('deger' in key or 'gerceklesen' in key):
+        kinds.add('value')
+    # “Yıl Sonu Gerçekleşme Tahmini” is one Ministry kind, not three kinds.
+    if 'year_end_estimate' in kinds:
+        kinds.difference_update({'actual', 'forecast'})
+    if 'midyear_spend' in kinds:
+        kinds.discard('actual')
+    if len(years) != 1 or len(kinds) != 1:
+        return None
+    return int(next(iter(years))), next(iter(kinds))
+
+
 def _parse_indicator_table(table):
     rows=table.rows
     header_idx = next((idx for idx, row in enumerate(rows)
                        if _label_key(row.cells[0].text).startswith(
                            ("performansgostergesi", "performansgostergeleri"))
-                       and any(_value_kind(cell.text) for cell in row.cells[1:])), None)
+                       and any(_label_key(cell.text) == 'olcubirimi' or _value_kind(cell.text)
+                               for cell in row.cells[1:])), None)
     if header_idx is None:
         return None
 
@@ -116,14 +162,40 @@ def _parse_indicator_table(table):
     rationale = label_value("gerekceveaciklamalar")
     goal = label_value("altprograminhedefi")
     headers=[_clean(c.text) for c in rows[header_idx].cells]
+    header_cells = rows[header_idx].cells
+    data_start = header_idx + 1
+    unit_column = max((col for col, text in enumerate(headers)
+                       if _label_key(text) == 'olcubirimi'), default=1)
+    if data_start < len(rows):
+        continuation = [_clean(c.text) for c in rows[data_start].cells]
+        # Blank or vertically merged label cells distinguish the second header
+        # row from an indicator. Join by grid column, preserving year and kind.
+        if all(not text or text == headers[col]
+               for col, text in enumerate(continuation[:unit_column + 1])):
+            header_cells = rows[data_start].cells
+            headers = [' '.join(dict.fromkeys((text, continuation[col]))).strip()
+                       if col < len(continuation) else text for col, text in enumerate(headers)]
+            data_start += 1
     value_columns=[]
-    for col,h in enumerate(headers):
-        spec=_value_kind(h)
-        if spec: value_columns.append((col,*spec))
+    header_errors=[]
+    for col in range(unit_column + 1, len(headers)):
+        spec = _indicator_header_spec(headers[col])
+        if spec:
+            value_columns.append((col, *spec))
+        else:
+            header_errors.append(col + 1)
+    for col, year, kind in value_columns:
+        # Word repeats a horizontally merged header cell in the grid. Preserve
+        # that established source representation; independent duplicate headers
+        # cannot identify distinct values and must be refused.
+        if any((other_year, other_kind) == (year, kind)
+               and header_cells[other_col]._tc is not header_cells[col]._tc
+               for other_col, other_year, other_kind in value_columns):
+            header_errors.append(col + 1)
     indicators=[]
     metadata={"explanation":"","calculation_method":"","data_source":"","responsible":""}
     stop_idx=len(rows)
-    for idx in range(header_idx+1,len(rows)):
+    for idx in range(data_start,len(rows)):
         first=_clean(rows[idx].cells[0].text)
         lower=_label_key(first)
         if lower.startswith(("gostergeye", "gostergelere")):
@@ -142,7 +214,7 @@ def _parse_indicator_table(table):
                 unit=candidate; break
         values=[]
         for col,year,kind in value_columns:
-            values.append({"year":year,"kind":kind,**_source_value(cells[col] if col<len(cells) else "", "value")})
+            values.append({"year":year,"kind":kind,"row_number":idx+1,"column_number":col+1,**_source_value(cells[col] if col<len(cells) else "", "value")})
         indicators.append({"name":first,"unit":unit,"values":values})
     for row in rows[stop_idx+1:]:
         first=_label_key(row.cells[0].text)
@@ -155,7 +227,7 @@ def _parse_indicator_table(table):
             metadata["responsible"]=val
     for ind in indicators:
         ind.update(metadata)
-    return {"department":department,"budget_year":budget_year,"program":program,"subprogram":subprogram,"rationale":rationale,"goal":goal,"source_title":budget_year_text,"administration":administration,"metadata":metadata,"indicators":indicators}
+    return {"department":department,"budget_year":budget_year,"program":program,"subprogram":subprogram,"rationale":rationale,"goal":goal,"source_title":budget_year_text,"administration":administration,"metadata":metadata,"indicators":indicators,"header_errors":header_errors}
 
 
 def _parse_activity_table(table, table_number=None, budget_year=None):
@@ -167,7 +239,7 @@ def _parse_activity_table(table, table_number=None, budget_year=None):
     for col,h in enumerate(headers):
         spec=_value_kind(h)
         if spec: value_columns.append((col,*spec))
-    activities=[]; explanation_start=None; personnel=[]
+    activities=[]; explanation_start=None; personnel=[]; assertions=[]
     i=1
     while i<len(rows):
         cells=[_clean(c.text) for c in rows[i].cells]
@@ -175,10 +247,14 @@ def _parse_activity_table(table, table_number=None, budget_year=None):
         if lower.startswith("faaliyetlereiliskinaciklamalar"):
             explanation_start=i+1; break
         if lower.startswith("toplam") or lower.startswith("geneltoplam") or lower.startswith("genelbutce"):
+            for col,year,kind in value_columns:
+                assertions.append({"label":first,"year":year,"kind":kind,
+                    "table_number":table_number,"row_number":i+1,"column_number":col+1,
+                    **_cost_source_value(cells, col, year, kind, budget_year)})
             i+=1; continue
         if lower.startswith("personelvesgk"):
             for col,year,kind in value_columns:
-                personnel.append({"year":year,"kind":kind,"table_number":table_number,"row_number":i+1,**_cost_source_value(cells, col, year, kind, budget_year)})
+                personnel.append({"year":year,"kind":kind,"table_number":table_number,"row_number":i+1,"column_number":col+1,**_cost_source_value(cells, col, year, kind, budget_year)})
             i+=1; continue
         if not first or lower in {"butceici","butcedisi"}:
             i+=1; continue
@@ -192,14 +268,14 @@ def _parse_activity_table(table, table_number=None, budget_year=None):
             continue
         total=[]
         for col,year,kind in value_columns:
-            total.append({"year":year,"kind":kind,"funding_type":"total","table_number":table_number,"row_number":i+1,**_cost_source_value(cells, col, year, kind, budget_year)})
+            total.append({"year":year,"kind":kind,"funding_type":"total","table_number":table_number,"row_number":i+1,"column_number":col+1,**_cost_source_value(cells, col, year, kind, budget_year)})
         inside=[]; outside=[]
         icells=[_clean(c.text) for c in rows[i+1].cells]
         for col,year,kind in value_columns:
-            inside.append({"year":year,"kind":kind,"funding_type":"inside","table_number":table_number,"row_number":i+2,**_cost_source_value(icells, col, year, kind, budget_year)})
+            inside.append({"year":year,"kind":kind,"funding_type":"inside","table_number":table_number,"row_number":i+2,"column_number":col+1,**_cost_source_value(icells, col, year, kind, budget_year)})
         ocells=[_clean(c.text) for c in rows[i+2].cells]
         for col,year,kind in value_columns:
-            outside.append({"year":year,"kind":kind,"funding_type":"outside","table_number":table_number,"row_number":i+3,**_cost_source_value(ocells, col, year, kind, budget_year)})
+            outside.append({"year":year,"kind":kind,"funding_type":"outside","table_number":table_number,"row_number":i+3,"column_number":col+1,**_cost_source_value(ocells, col, year, kind, budget_year)})
         activities.append({"name":first,"explanation":"","official_name":"","costs":total+inside+outside})
         i+=3
     if explanation_start is not None:
@@ -233,11 +309,12 @@ def _parse_activity_table(table, table_number=None, budget_year=None):
                 pair = candidates[0]
                 activity.update(official_name=pair['official'], explanation=pair['description'],
                                 explanation_source={k: pair[k] for k in ('table_number', 'title_row', 'row_number')})
-    return {"activities":activities,"personnel":personnel,"columns":[{"column":c,"year":y,"kind":k,"label":headers[c]} for c,y,k in value_columns]}
+    return {"activities":activities,"personnel":personnel,"total_assertions":assertions,"columns":[{"column":c,"year":y,"kind":k,"label":headers[c]} for c,y,k in value_columns]}
 
 
 def parse_performance_docx(data: bytes):
     doc=Document(io.BytesIO(data))
+    _use_accepted_view(doc)
     departments=OrderedDict(); current_department=None; errors=[]; coverage_items=[]
     indicator_table_count=0; activity_table_count=0; economic_table_count=0
     pending_blocks=[]; rejected_economic_tables=[]
@@ -246,6 +323,8 @@ def parse_performance_docx(data: bytes):
         perf=_parse_indicator_table(table)
         if perf and perf["indicators"]:
             indicator_table_count+=1; current_department=None
+            for column in perf['header_errors']:
+                errors.append(f"Tablo {index+1}, sütun {column}: gösterge başlık bilgisinde tek bir yıl ve değer türü belirlenemedi. Başlığı yıl ve Gerçekleşme/Hedef/Tahmin gibi tek bir tür içerecek şekilde düzeltip dosyayı yeniden yükleyin.")
             if perf["budget_year"] is None:
                 errors.append(f"Tablo {index+1}: Bütçe Yılı alanında tek bir yıl bulunamadı (alan eksik, boş veya birden fazla farklı yıl içeriyor). Bütçe Yılı alanına tek bir dört haneli yıl yazıp dosyayı yeniden yükleyin.")
             required_fields = (
@@ -278,12 +357,13 @@ def parse_performance_docx(data: bytes):
             continue
         budget_year = departments[current_department]['blocks'][-1]['budget_year'] if current_department else None
         cost=_parse_activity_table(table, table_number=index+1, budget_year=budget_year)
-        if cost and cost["columns"] and cost["activities"]:
+        if cost and cost["columns"] and (cost["activities"] or cost['total_assertions']):
             activity_table_count+=1
             if not current_department:
                 errors.append(f"Tablo {index+1}: faaliyet tablosu bir müdürlükle eşleştirilemedi. Önüne İdare Birim Adı içeren gösterge tablosunu ekleyip dosyayı yeniden yükleyin."); continue
             dept=departments.setdefault(current_department,{"name":current_department,"blocks":[],"activities":[],"personnel":[]})
             dept["activities"].extend(cost["activities"]); dept["personnel"].extend(cost["personnel"])
+            dept.setdefault('total_assertions', []).extend(cost['total_assertions'])
             continue
         economic = _parse_economic_table(table, index+1, pending_blocks if current_department else [])
         if economic is not None:
@@ -292,6 +372,8 @@ def parse_performance_docx(data: bytes):
                 rejected_economic_tables.append(economic)
                 errors.append(economic['error'])
             else:
+                departments[current_department].setdefault('economic_assertions', []).extend(
+                    economic.pop('source_assertions'))
                 departments[current_department].setdefault('economic_tables', []).append(economic)
             pending_blocks=[]
             continue
@@ -322,7 +404,22 @@ def parse_performance_docx(data: bytes):
     _check_economic_personnel(result)
     review_items = _review_items(result)
     economic_count = sum(len(t['values']) for d in result for t in d.get('economic_tables', []))
+    # Informational/unclassified tables remain outside the financial importer,
+    # but their numeric cells still need visible source comparison evidence.
+    unmapped_cells = []
+    for item in coverage_items:
+        number = item['table_number']
+        for row_number, row in enumerate(tables[number-1].rows, 1):
+            for column_number, cell in enumerate(row.cells, 1):
+                value = source_cell(_clean(cell.text))
+                if value['number'] is not None:
+                    unmapped_cells.append({'value': value['number'], 'raw_text': value['raw_text'],
+                        'state': value['state'], 'label': item['first_cell_text'],
+                        'table_number': number, 'row_number': row_number, 'column_number': column_number})
     return {
+        "document_sha256": hashlib.sha256(data).hexdigest(),
+        "source_assertion_version": 1,
+        "unmapped_source_cells": unmapped_cells,
         "departments":result,
         "summary":{"department_count":len(result),"indicator_table_count":indicator_table_count,"indicator_count":indicator_count,"activity_table_count":activity_table_count,"activity_count":activity_count,"table_count":len(tables),"source_years":source_years,"economic_table_count":economic_table_count,"economic_value_count":economic_count,"needs_review_count":len(review_items)},
         "warnings":list(errors) + membership_issues,
@@ -423,8 +520,8 @@ def _parse_economic_table(table, table_number, blocks):
                    + ' Bu tabloyu ilgili müdürlüğün kartından hemen sonra yerleştirin veya kaynaktan çıkarın.')
         return {'table_number': table_number, 'header_row': headers, 'error': message}
     expected = economic_columns(year)
-    source_rows = {}; totals = {}
-    for row in table.rows[1:]:
+    source_rows = {}; totals = {}; assertions = []
+    for row_number, row in enumerate(table.rows[1:], 2):
         label = _label_key(row.cells[0].text)
         category = codes.get(_clean(row.cells[0].text)) or next(
             (categories[_label_key(cell.text)] for cell in row.cells[:2]
@@ -436,6 +533,11 @@ def _parse_economic_table(table, table_number, blocks):
             continue
         values = [{'year': y, 'kind': k, **_economic_cell(row, columns.get((y, k), -1))}
                   for y, k in expected]
+        assertions.extend({**v, 'category': category, 'funding_type': 'inside' if category else total,
+                           'label': _clean(row.cells[0].text), 'table_number': table_number,
+                           'row_number': row_number,
+                           'column_number': columns[(v['year'], v['kind'])] + 1
+                               if (v['year'], v['kind']) in columns else None} for v in values)
         if category:
             if category in source_rows:
                 for previous, value in zip(source_rows[category], values):
@@ -504,7 +606,7 @@ def _parse_economic_table(table, table_number, blocks):
                         value['amount'] = None  # No category-level financing split is given.
                 values.append(value)
     return {'table_number': table_number, 'block_table_numbers': [b['table_number'] for b in blocks],
-            'categories': list(source_rows), 'totals': totals, 'values': values}
+            'categories': list(source_rows), 'totals': totals, 'values': values, 'source_assertions': assertions}
 
 
 def _review_items(departments):

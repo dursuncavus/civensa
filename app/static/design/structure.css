@@ -1,0 +1,78 @@
+/* CIV-131: page-local fields, panels, table, text badges and disclosures. */
+.structure-page { min-width: 0; color: var(--text); overflow-wrap: anywhere; }
+.structure-page * { box-sizing: border-box; text-transform: none; letter-spacing: normal; }
+.structure-page :is(h2,h3,p) { margin: 0 0 var(--space-3); }
+.structure-page :is(h2,h3) { color: var(--text); font-weight: var(--font-semibold); }
+.structure-page h2 { font-size: var(--text-section); }
+.structure-page h3 { margin-top: var(--space-6); font-size: var(--text-card); }
+.structure-page :is(.muted,.smallnote) { color: var(--text-secondary); font-size: var(--text-sm); }
+.structure-page section { min-width: 0; margin: 0 0 var(--space-6); padding: var(--space-6); border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); box-shadow: none; }
+.structure-page section > :last-child { margin-bottom: 0; }
+.structure-page .structure-error { border-color: var(--danger); background: var(--danger-bg); color: var(--danger); }
+.structure-page .structure-error h2 { color: var(--danger); }
+.structure-page .structure-warning { margin-bottom: var(--space-4); padding: var(--space-4); border: 1px solid var(--warning); border-radius: var(--radius); background: var(--warning-bg); color: var(--warning); }
+.structure-page .structure-warning h2 { color: var(--warning); }
+.structure-page :is(ul,li) { max-width: 44rem; }
+.structure-page ul { padding-left: var(--space-6); }
+.structure-page a { color: var(--accent); }
+.structure-page :is(a,button,input,select,textarea,summary,[tabindex]):focus-visible { outline: var(--focus); outline-offset: var(--focus-offset); box-shadow: none; }
+.structure-page :is(input,select,textarea):focus { outline: var(--focus); outline-offset: var(--focus-offset); border-color: var(--text-secondary); box-shadow: none; }
+.structure-page label { display: grid; min-width: 0; gap: var(--space-2); color: var(--text); font-size: var(--text-sm); font-weight: var(--font-medium); }
+.structure-page :is(input:not([type=checkbox]):not([type=hidden]),select,textarea) { width: 100%; min-width: 0; max-width: 100%; min-height: var(--control-height); padding: var(--space-2) var(--space-3); border: 1px solid var(--text-secondary); border-radius: var(--radius); background: var(--surface); color: var(--text); font: var(--font-regular) var(--text-base) / var(--line-height) var(--font-family); }
+.structure-page textarea { min-height: calc(var(--control-height) * 3); resize: vertical; }
+.structure-page .button { width: fit-content; min-height: var(--control-height); max-width: 100%; margin: 0; padding: var(--space-2) var(--space-4); border: 1px solid var(--text-secondary); border-radius: var(--radius); background: var(--surface); color: var(--text); font: var(--font-medium) var(--text-sm) / var(--line-height) var(--font-family); text-decoration: none; }
+.structure-page .button:hover { background: var(--surface-muted); color: var(--text); }
+.structure-page .button.primary { background: var(--accent); border-color: var(--accent); color: var(--surface); }
+.structure-page .button.primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
+.structure-page .status-control { min-height: var(--control-height); border-radius: 999px; }
+.structure-page .status-control.is-active,
+.structure-page .status-control.is-active:hover { background: var(--success-bg); border-color: var(--success); color: var(--success); }
+.structure-page .status-control.is-inactive,
+.structure-page .status-control.is-inactive:hover { background: var(--surface-muted); border-color: var(--text-secondary); color: var(--text-secondary); }
+.structure-page :is(.structure-form,.structure-row) { display: grid; grid-template-columns: minmax(0,1fr); gap: var(--space-4); align-items: end; margin: var(--space-4) 0; }
+.structure-page .structure-form > .button { grid-column: 1 / -1; }
+.structure-page .structure-form > label:has(textarea) { grid-column: 1 / -1; }
+.structure-page .structure-row { max-width: 44rem; }
+.structure-page .structure-program { background: var(--surface-muted); }
+.structure-page .structure-item { width: 100%; max-width: 44rem; padding: var(--space-4); margin: var(--space-3) 0; border: 1px solid var(--border); border-radius: var(--radius); }
+.structure-page details > summary { cursor: pointer; padding: var(--space-2) 0; color: var(--accent); font-size: var(--text-base); font-weight: var(--font-medium); }
+.structure-page details[open] > summary { margin-bottom: var(--space-4); }
+.structure-page details .structure-form { grid-template-columns: minmax(0,1fr); }
+.structure-page fieldset { min-width: 0; margin: var(--space-4) 0; padding: var(--space-4); border: 1px solid var(--border); border-radius: var(--radius); }
+.structure-page legend { max-width: 100%; padding: 0 var(--space-2); color: var(--text); font-weight: var(--font-medium); }
+.structure-page .structure-choices { display: grid; grid-template-columns: minmax(0,1fr); gap: var(--space-3); padding: var(--space-3) 0; }
+.structure-page .structure-choices label { display: flex; align-items: start; gap: var(--space-2); }
+.structure-page input[type=checkbox] { flex-shrink: 0; width: var(--text-section); min-width: var(--text-section); height: var(--text-section); margin: 0; accent-color: var(--accent); }
+.structure-page .section-head { display: flex; justify-content: flex-start; align-items: start; flex-wrap: wrap; max-width: 44rem; gap: var(--space-4); }
+.structure-page .section-head > div { flex: 1 1 20rem; min-width: 0; }
+.structure-page .section-head .structure-row { grid-template-columns: minmax(0,1fr) auto; margin: 0 0 var(--space-4); }
+.structure-page .table-wrap { width: 100%; max-width: 100%; overflow-x: auto; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); }
+.structure-page table { width: 100%; min-width: 740px; margin: 0; border-collapse: collapse; table-layout: fixed; }
+.structure-page :is(th,td) { padding: var(--space-4); border-bottom: 1px solid var(--border); vertical-align: top; font-size: var(--text-sm); }
+.structure-page th { background: var(--surface-muted); color: var(--text-secondary); font-weight: var(--font-medium); }
+.structure-page .structure-departments th:first-child { width: 78%; }
+.structure-page .structure-departments th:nth-child(2) { width: 22%; }
+.structure-page tbody tr:last-child td { border-bottom: 0; }
+.structure-page td .structure-row { display: flex; flex-wrap: nowrap; gap: var(--space-2); margin: 0; }
+.structure-page td .structure-row input { flex: 1; min-width: 0; }
+.structure-page td .structure-row .button { flex-shrink: 0; }
+.structure-page .status { display: inline-block; padding: var(--space-1) var(--space-2); border-radius: var(--radius); background: var(--surface-muted); color: var(--text-secondary); font-size: var(--text-sm); font-weight: var(--font-medium); }
+.structure-page .status.approved { color: var(--success); background: var(--success-bg); }
+.structure-page td > form { margin-top: var(--space-2); }
+.structure-page .smallnote { margin-top: var(--space-2); }
+.structure-page #structure-wizard { max-width: 44rem; }
+.structure-page #structure-wizard fieldset { display: grid; grid-template-columns: minmax(0,1fr); gap: var(--space-4); margin: var(--space-4) 0; padding: var(--space-4); border: 1px solid var(--border); border-radius: var(--radius); }
+.structure-page #structure-wizard legend { font-weight: var(--font-medium); padding: 0 var(--space-2); }
+.structure-page #structure-wizard :is([data-old-departments],[data-receivers]) label { display: flex; align-items: start; gap: var(--space-2); padding: var(--space-2) 0; }
+.structure-page #structure-summary p { margin: 0 0 var(--space-3); }
+.structure-page #structure-wizard .structure-row { display: flex; flex-wrap: wrap; }
+.structure-page [hidden], .structure-page #structure-wizard [hidden] { display: none; }
+.structure-page .field-error { color: var(--danger); font-size: var(--text-sm); }
+.structure-page [aria-invalid=true] { border-color: var(--danger); }
+@media (min-width: 1024px) {
+  .structure-page section > .structure-form { grid-template-columns: repeat(2,minmax(0,1fr)); max-width: 44rem; }
+  .structure-page .structure-program { grid-template-columns: minmax(0,1fr) auto; }
+}
+@media (max-width: 700px) {
+  .structure-page section { padding: var(--space-4); }
+}

@@ -2,6 +2,9 @@
 {% block page_title %}İç Kontrol · Uyum Eylem Planı{% endblock %}
 {% block page_subtitle %}Kamu İç Kontrol Standartlarına Uyum Eylem Planı{% endblock %}
 {% block content %}
+<link rel="stylesheet" href="/static/design/internal-control.css">
+<div class="internal-control-page">
+<p><a class="button primary" href="/internal-control/monitoring">6 aylık izleme ve raporlar</a></p>
 <section class="card"><h2>Plan yükle</h2><p>Excel şablonunu doldurun. Önce doğrulama raporunu inceleyin ve birim adlarını eşleştirin; ardından taslak planı kaydedin.</p>
 <a class="button" href="/internal-control/template.xlsx">Şablon indir</a>
 <form method="post" action="/internal-control/imports" enctype="multipart/form-data">
@@ -9,5 +12,6 @@
 <label>Plan dosyası (.xlsx, en fazla 15 MB)<input type="file" name="file" accept=".xlsx" required></label>
 <button class="button primary">Yükle ve doğrula</button></form></section>
 <section class="card"><h2>Planlar</h2><p>Yeni sürüm önceki planı korur. Bir plan etkinleştirildiğinde önceki etkin plan arşivlenir.</p>
-{% for plan in plans %}<p><a href="/internal-control/plans/{{ plan.id }}">{{ plan.title }} · {{ plan.start_year }}–{{ plan.end_year }} · {{ plan.version_label }}</a> — {{ status_labels[plan.status] }}</p>{% else %}<p>Henüz plan kaydedilmedi.</p>{% endfor %}</section>
+{% for plan in plans %}<p><a href="/internal-control/plans/{{ plan.id }}">{{ plan.title }} · {{ plan.start_year }}–{{ plan.end_year }} · {{ plan.version_label }}</a> — <span class="status {{ plan.status }}">{{ status_labels[plan.status] }}</span></p>{% else %}<p>Henüz plan kaydedilmedi.</p>{% endfor %}</section>
+</div>
 {% endblock %}

@@ -1,6 +1,7 @@
 """Render an EK-1 report snapshot using the owner's Word styles; no database access."""
 from io import BytesIO
 from pathlib import Path
+from zipfile import ZipFile, ZIP_DEFLATED
 
 from docx import Document
 from docx.enum.section import WD_SECTION, WD_ORIENT
@@ -36,107 +37,8 @@ def _field(paragraph, instruction, placeholder=''):
     paragraph._p.append(field)
 
 
-class _Report:
-    def __init__(self, payload, template_path):
-        self.payload = payload
-        self.doc = Document(template_path)
-        for name in STYLES:
-            if name not in self.doc.styles:
-                raise ValueError(f'Word şablonunda “{name}” stili eksik. Şablonu bu stille kaydedin.')
-        # The template owns styles and page setup; its sample body is replaced.
-        for node in list(self.doc._element.body):
-            if node.tag != qn('w:sectPr'):
-                self.doc._element.body.remove(node)
-        section = self.doc.sections[0]
-        self.portrait = (min(section.page_width, section.page_height),
-                         max(section.page_width, section.page_height))
-        section.orientation = WD_ORIENT.PORTRAIT
-        section.page_width, section.page_height = self.portrait
-        self.doc.settings.odd_and_even_pages_header_footer = False
-        section.different_first_page_header_footer = True
-        for part in (section.first_page_header, section.first_page_footer):
-            for node in list(part._element):
-                part._element.remove(node)
-            part.add_paragraph(style=BODY)
-        header = section.header.paragraphs[0]
-        header.clear()
-        header.style = NOTE
-        if not payload['frozen']:
-            header.add_run(DRAFT)
-        footer = section.footer.paragraphs[0]
-        footer.clear()
-        footer.style = NOTE
-        if payload['frozen']:
-            footer.add_run(f"Onaylı kopya · SHA-256: {payload['sha256'][:16]} · ")
-        footer.add_run('Sayfa ')
-        _field(footer, 'PAGE', '1')
-        update = self.doc.settings.element.find(qn('w:updateFields'))
-        if update is not None:
-            self.doc.settings.element.remove(update)
-
-    def paragraph(self, text, style=BODY):
-        return self.doc.add_paragraph('' if text == '' else _text(text), style)
-
-    def toc(self, sections):
-        # A complex field can contain a multi-paragraph cached result. fldSimple
-        # cannot hold these TOC paragraphs reliably in Microsoft Word.
-        paragraph = self.paragraph('')
-        begin = OxmlElement('w:fldChar')
-        begin.set(qn('w:fldCharType'), 'begin')
-        paragraph.add_run()._r.append(begin)
-        instruction = OxmlElement('w:instrText')
-        instruction.set(qn('xml:space'), 'preserve')
-        instruction.text = ' TOC \\o "1-3" \\h \\z \\u '
-        paragraph.add_run()._r.append(instruction)
-        separate = OxmlElement('w:fldChar')
-        separate.set(qn('w:fldCharType'), 'separate')
-        paragraph.add_run()._r.append(separate)
-        for section in sections:
-            level = section['depth'] + 1
-            if level <= 3:
-                paragraph = self.paragraph(section['title'], f'TOC {level}')
-        end = OxmlElement('w:fldChar')
-        end.set(qn('w:fldCharType'), 'end')
-        paragraph.add_run()._r.append(end)
-
-    def orientation(self, landscape):
-        section = self.doc.add_section(WD_SECTION.NEW_PAGE)
-        self.doc.paragraphs[-1].style = BODY
-        section.orientation = WD_ORIENT.LANDSCAPE if landscape else WD_ORIENT.PORTRAIT
-        width, height = self.portrait
-        section.page_width, section.page_height = (height, width) if landscape else (width, height)
-        section.different_first_page_header_footer = False
-        return section
-
-    def table(self, headers, rows, title=None):
-        if not headers:
-            return
-        wide = len(headers) > 6
-        section = self.orientation(True) if wide else self.doc.sections[-1]
-        if title:
-            self.paragraph(title, CAPTION)
-        available = Length(section.page_width - section.left_margin - section.right_margin)
-        table = self.doc.add_table(rows=1, cols=len(headers))
-        table.style = 'Civensa Tablo'
-        table.autofit = False
-        # Set both the grid and cell widths; Word otherwise retains the default grid.
-        width = Twips(available.twips // len(headers))
-        table._tbl.tblPr.find(qn('w:tblW')).set(qn('w:w'), str(width.twips * len(headers)))
-        table._tbl.tblPr.find(qn('w:tblW')).set(qn('w:type'), 'dxa')
-        for column in table.columns:
-            column.width = width
-        repeat = OxmlElement('w:tblHeader')
-        repeat.set(qn('w:val'), 'true')
-        table.rows[0]._tr.get_or_add_trPr().append(repeat)
-        for index, row in enumerate([headers, *rows]):
-            cells = table.rows[0].cells if index == 0 else table.add_row().cells
-            for cell, value in zip(cells, row):
-                cell.width = width
-                cell.text = _text(value)
-                for paragraph in cell.paragraphs:
-                    paragraph.style = CAPTION if index == 0 else BODY
-        if wide:
-            self.orientation(False)
+class _ReportContent:
+    """Content and number rules shared by the Word and PDF renderers."""
 
     def blocks(self, blocks):
         for block in blocks:
@@ -269,8 +171,115 @@ class _Report:
                 self.paragraph(footnote, NOTE)
 
 
-def build_activity_report_docx(payload, template_path) -> bytes:
-    report = _Report(payload, template_path)
+class _Report(_ReportContent):
+    def __init__(self, payload, template_path):
+        self.payload = payload
+        self.doc = Document(template_path)
+        for name in STYLES:
+            if name not in self.doc.styles:
+                raise ValueError(f'Word şablonunda “{name}” stili eksik. Şablonu bu stille kaydedin.')
+        # The template owns styles and page setup; its sample body is replaced.
+        for node in list(self.doc._element.body):
+            if node.tag != qn('w:sectPr'):
+                self.doc._element.body.remove(node)
+        section = self.doc.sections[0]
+        self.portrait = (min(section.page_width, section.page_height),
+                         max(section.page_width, section.page_height))
+        section.orientation = WD_ORIENT.PORTRAIT
+        section.page_width, section.page_height = self.portrait
+        self.doc.settings.odd_and_even_pages_header_footer = False
+        section.different_first_page_header_footer = True
+        for part in (section.first_page_header, section.first_page_footer):
+            for node in list(part._element):
+                part._element.remove(node)
+            part.add_paragraph(style=BODY)
+        header = section.header.paragraphs[0]
+        header.clear()
+        header.style = NOTE
+        if not payload['frozen']:
+            header.add_run(DRAFT)
+        footer = section.footer.paragraphs[0]
+        footer.clear()
+        footer.style = NOTE
+        if payload['frozen']:
+            footer.add_run(f"Onaylı kopya · SHA-256: {payload['sha256'][:16]} · ")
+        footer.add_run('Sayfa ')
+        _field(footer, 'PAGE', '1')
+        update = self.doc.settings.element.find(qn('w:updateFields'))
+        if update is not None:
+            self.doc.settings.element.remove(update)
+
+    def paragraph(self, text, style=BODY):
+        return self.doc.add_paragraph('' if text == '' else _text(text), style)
+
+    def page_break(self):
+        self.paragraph('').add_run().add_break(WD_BREAK.PAGE)
+
+    def toc(self, sections):
+        self.paragraph("Sayfa numaraları için Word'de içindekilere sağ tıklayıp Alanı Güncelleştir seçin.", NOTE)
+        # A complex field can contain a multi-paragraph cached result. fldSimple
+        # cannot hold these TOC paragraphs reliably in Microsoft Word.
+        paragraph = self.paragraph('')
+        begin = OxmlElement('w:fldChar')
+        begin.set(qn('w:fldCharType'), 'begin')
+        paragraph.add_run()._r.append(begin)
+        instruction = OxmlElement('w:instrText')
+        instruction.set(qn('xml:space'), 'preserve')
+        instruction.text = ' TOC \\o "1-3" \\h \\z \\u '
+        paragraph.add_run()._r.append(instruction)
+        separate = OxmlElement('w:fldChar')
+        separate.set(qn('w:fldCharType'), 'separate')
+        paragraph.add_run()._r.append(separate)
+        for section in sections:
+            level = section['depth'] + 1
+            if level <= 3:
+                paragraph = self.paragraph(section['title'], f'TOC {level}')
+        end = OxmlElement('w:fldChar')
+        end.set(qn('w:fldCharType'), 'end')
+        paragraph.add_run()._r.append(end)
+
+    def orientation(self, landscape):
+        section = self.doc.add_section(WD_SECTION.NEW_PAGE)
+        self.doc.paragraphs[-1].style = BODY
+        section.orientation = WD_ORIENT.LANDSCAPE if landscape else WD_ORIENT.PORTRAIT
+        width, height = self.portrait
+        section.page_width, section.page_height = (height, width) if landscape else (width, height)
+        section.different_first_page_header_footer = False
+        return section
+
+    def table(self, headers, rows, title=None):
+        if not headers:
+            return
+        wide = len(headers) > 6
+        section = self.orientation(True) if wide else self.doc.sections[-1]
+        if title:
+            self.paragraph(title, CAPTION)
+        available = Length(section.page_width - section.left_margin - section.right_margin)
+        table = self.doc.add_table(rows=1, cols=len(headers))
+        table.style = 'Civensa Tablo'
+        table.autofit = False
+        # Set both the grid and cell widths; Word otherwise retains the default grid.
+        width = Twips(available.twips // len(headers))
+        table._tbl.tblPr.find(qn('w:tblW')).set(qn('w:w'), str(width.twips * len(headers)))
+        table._tbl.tblPr.find(qn('w:tblW')).set(qn('w:type'), 'dxa')
+        for column in table.columns:
+            column.width = width
+        repeat = OxmlElement('w:tblHeader')
+        repeat.set(qn('w:val'), 'true')
+        table.rows[0]._tr.get_or_add_trPr().append(repeat)
+        for index, row in enumerate([headers, *rows]):
+            cells = table.rows[0].cells if index == 0 else table.add_row().cells
+            for cell, value in zip(cells, row):
+                cell.width = width
+                cell.text = _text(value)
+                for paragraph in cell.paragraphs:
+                    paragraph.style = CAPTION if index == 0 else BODY
+        if wide:
+            self.orientation(False)
+
+
+def _render_activity_report(report):
+    payload = report.payload
     report.paragraph(str(payload['year']), 'Civensa Kapak Başlık')
     report.paragraph('FAALİYET RAPORU', 'Civensa Kapak Başlık')
     report.paragraph(payload.get('organization'), 'Civensa Kapak Başlık')
@@ -278,12 +287,11 @@ def build_activity_report_docx(payload, template_path) -> bytes:
         report.paragraph('Kurum adı bu onaylı kopyada saklanmamış. Ayrıntı için Strateji ile iletişime geçin.', NOTE)
     if payload.get('department_id'):
         report.paragraph(payload['department'], 'Civensa Kapak Başlık')
-    report.paragraph('').add_run().add_break(WD_BREAK.PAGE)
+    report.page_break()
     report.paragraph('İçindekiler', 'Civensa Kapak Başlık')
-    report.paragraph("Sayfa numaraları için Word'de içindekilere sağ tıklayıp Alanı Güncelleştir seçin.", NOTE)
     sections = sorted(payload['sections'], key=lambda row: row['position'])
     report.toc(sections)
-    report.paragraph('').add_run().add_break(WD_BREAK.PAGE)
+    report.page_break()
     for section in sections:
         report.paragraph(section['title'], f"Civensa Başlık {min(section['depth'] + 1, 4)}")
         if not payload['frozen'] and section.get('missing'):
@@ -297,6 +305,18 @@ def build_activity_report_docx(payload, template_path) -> bytes:
         if section['code'] == 'III.B.2.i':
             report.core()
         report.assurances(section.get('assurances', []))
+
+
+def build_activity_report_docx(payload, template_path) -> bytes:
+    report = _Report(payload, template_path)
+    _render_activity_report(report)
     output = BytesIO()
     report.doc.save(output)
-    return output.getvalue()
+    # OPC parts are deterministic; ZIP's wall-clock member timestamps are not.
+    # Normalize the archive so retained releases download identically later.
+    stable = BytesIO()
+    with ZipFile(output) as source, ZipFile(stable, 'w', compression=ZIP_DEFLATED) as target:
+        for part in source.infolist():
+            part.date_time = (1980, 1, 1, 0, 0, 0)
+            target.writestr(part, source.read(part.filename))
+    return stable.getvalue()

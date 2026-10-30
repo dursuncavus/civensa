@@ -14,13 +14,13 @@ def events(db):
 
 def test_return_correct_resubmit_approve(client, db, sample):
     sub = db.scalar(select(Submission))
-    path = f'/api/submissions/{sub.id}/decision'
-    assert client.post('/api/departments/1/submit').json() == {'ok': True, 'revision': 1}
+    path = f'/api/submissions/{sub.id}/decision?period_id=1'
+    assert client.post('/api/departments/1/submit?period_id=1').json() == {'ok': True, 'revision': 1, 'period_id': 1, 'year': 2027, 'redirect_url': '/department/1?period_id=1'}
     db.refresh(sub)
     assert sub.status == 'submitted' and sub.submitted_at is not None
     original_snapshot = events(db)[0].snapshot_json
-    assert client.post('/api/departments/1/submit').status_code == 409
-    assert client.post('/api/indicators/1/save', json={'value_2027_target': '9'}).status_code == 409
+    assert client.post('/api/departments/1/submit?period_id=1').status_code == 409
+    assert client.post('/api/indicators/1/save?period_id=1', json={'value_2027_target': '9'}).status_code == 409
     assert client.post(path, json={'decision': 'approve'}).status_code == 403
     actor(sample, 'strategy')
     assert client.post(path, json={'decision': 'return', 'note': '   '}).status_code == 422
@@ -30,8 +30,8 @@ def test_return_correct_resubmit_approve(client, db, sample):
     assert sub.status == 'returned' and sub.return_note == 'Hedefi düzeltin.'
     assert sub.reviewed_at is not None and sub.revision == 1
     actor(sample, 'user')
-    assert client.post('/api/indicators/1/save', json={'value_2027_target': '2,5'}).status_code == 200
-    assert client.post('/api/departments/1/submit').json() == {'ok': True, 'revision': 2}
+    assert client.post('/api/indicators/1/save?period_id=1', json={'value_2027_target': '2,5'}).status_code == 200
+    assert client.post('/api/departments/1/submit?period_id=1').json() == {'ok': True, 'revision': 2, 'period_id': 1, 'year': 2027, 'redirect_url': '/department/1?period_id=1'}
     db.refresh(sub)
     assert sub.status == 'submitted' and sub.return_note == ''
     assert events(db)[0].snapshot_json == original_snapshot
@@ -40,8 +40,8 @@ def test_return_correct_resubmit_approve(client, db, sample):
     assert client.post(path, json={'decision': 'approve'}).json() == {'ok': True, 'status': 'approved'}
     assert client.post(path, json={'decision': 'return', 'note': 'Tekrar'}).status_code == 409
     actor(sample, 'user')
-    assert client.post('/api/departments/1/submit').status_code == 409
-    assert client.post('/api/indicators/1/save', json={'value_2027_target': '9'}).status_code == 409
+    assert client.post('/api/departments/1/submit?period_id=1').status_code == 409
+    assert client.post('/api/indicators/1/save?period_id=1', json={'value_2027_target': '9'}).status_code == 409
     db.expire_all()
     assert db.scalar(select(IndicatorValue)).value == Decimal('2.5')
     history = events(db)
@@ -59,8 +59,11 @@ def test_return_correct_resubmit_approve(client, db, sample):
 
 def test_invalid_submission_has_no_workflow_side_effects(client, db, sample):
     db.scalar(select(DepartmentCostValue)).state = 'needs_review'; db.commit()
-    response = client.post('/api/departments/1/submit')
-    assert response.status_code == 422 and response.json()['errors']
+    response = client.post('/api/departments/1/submit?period_id=1')
+    assert response.status_code == 422
+    body = response.json()
+    assert isinstance(body['detail'], str) and body['errors']
+    assert all(error['field'] == 'department_id' and error['message'] for error in body['errors'])
     db.expire_all()
     sub = db.scalar(select(Submission))
     assert sub.status == 'draft' and sub.revision == 0 and sub.submitted_at is None
@@ -69,11 +72,14 @@ def test_invalid_submission_has_no_workflow_side_effects(client, db, sample):
 
 
 def test_approval_revalidates_current_data(client, db, sample):
-    assert client.post('/api/departments/1/submit').status_code == 200
+    assert client.post('/api/departments/1/submit?period_id=1').status_code == 200
     db.scalar(select(DepartmentCostValue)).state = 'needs_review'; db.commit()
     actor(sample, 'strategy')
-    response = client.post('/api/submissions/1/decision', json={'decision': 'approve'})
-    assert response.status_code == 409 and isinstance(response.json()['detail'], list)
+    response = client.post('/api/submissions/1/decision?period_id=1', json={'decision': 'approve'})
+    assert response.status_code == 409
+    body = response.json()
+    assert isinstance(body['detail'], str) and 'personel ve SGK gideri eksik' in body['detail']
+    assert body['errors'] and all(error['field'] and error['message'] for error in body['errors'])
     db.expire_all()
     assert db.scalar(select(Submission)).status == 'submitted'
     assert len(events(db)) == 1

@@ -19,6 +19,7 @@ Civensa is an institutional reporting platform for Turkish municipalities (perfo
 - Legacy Activity Report write paths stay closed for any report that has a ReportCandidate or ReportRelease. Do not reopen them.
 - Migrations: exactly one Alembic head; never edit an existing migration; new migrations must not discard data on downgrade.
 - Never print secrets, connection strings or passwords in code, logs or pull requests.
+- Never edit `docs/lead/**` or this file. They are the lead's canonical records (rules, state, decisions, task packages) and a CI guard rejects changes from task branches. You may read them for context; the task text stays the authority for scope.
 
 ## Data rules
 - Blank/null is not zero. Keep them distinct.

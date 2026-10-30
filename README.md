@@ -72,3 +72,41 @@ separately in `docs/issues/postgres-migration-test-repeat.md`.
 After the integration PR is approved and merged with a **merge commit**, future
 work must branch from updated GitHub `main`. Do not squash or rebase this bridge:
 its two parents are necessary to preserve both existing histories.
+
+## PP guide screenshots (CIV-054)
+
+Refresh the Turkish Strateji PP guide images from the 2027 book in one command
+from the repository root, after installing `requirements-dev.txt` and Chromium
+(`python -m playwright install chromium`):
+
+```sh
+python scripts/guide_screenshots.py --out docs/screenshots/guide-pp-v1
+```
+
+Set `CIVENSA_TEST_POSTGRES_URL` in your environment to a **local PostgreSQL 16+**
+test database whose role can create and drop databases. Only `localhost`,
+`127.0.0.1` and `::1` without URL query parameters are accepted; connections are
+pinned to loopback. Inherited `DATABASE_URL` and `MIGRATION_DATABASE_URL` are
+ignored. To use an installed Chromium instead of Playwright's bundled version,
+set `CIVENSA_CHROMIUM_PATH` to its executable path.
+
+The script reuses `first_load_dryrun.py` to migrate a new disposable database,
+load `pp2027_print_d3.idml` excluding source table 195, activate 2027 with its
+verified template, and submit exactly one already-valid package through the real
+submit implementation. Test passwords are random, stay in memory, and are never
+printed. The database is dropped on success, failure, SIGINT or SIGTERM (a forced
+process/host kill cannot run cleanup).
+
+Chromium captures at 1440×900, scale 1, light theme, `tr-TR`, `Europe/Istanbul`.
+Only the review queue, budget reallocations and modules images use full-page
+capture; every PNG must be under 1,500,000 bytes. Browser requests are restricted
+to loopback GETs; accounts log in before the browser starts. Return/password
+dialogs are cancelled and persisted workflow/password/audit state is compared
+before and after capture. No package is approved or returned.
+
+See [the screenshot index](docs/screenshots/guide-pp-v1/INDEX.md) for each filename,
+URL, visible content and account, plus source provenance and department choices.
+Re-running replaces these named outputs; a failed shot removes its stale PNG,
+records the reason in the index, and returns a nonzero exit code. After a UI
+redesign, update the script's `SHOTS`/interaction selectors if labels change and
+run the same command. This is an opt-in local tool, outside the default CI run.

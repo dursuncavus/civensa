@@ -198,7 +198,7 @@ def test_economic_review_can_be_resolved_explicitly(db, sample, client):
     row = db.scalar(select(EconomicValue).where(EconomicValue.year==2027, EconomicValue.category=='goods_services', EconomicValue.funding_type=='inside'))
     row.amount = None; row.raw_text = 'hatalı'; row.state = 'needs_review'; row.issue = 'Kaynağı kontrol edin.'
     db.commit()
-    response = client.post(f"/program/{sample['department'].id}/verify-money/economic/{row.id}",
+    response = client.post(f"/program/{sample['department'].id}/verify-money/economic/{row.id}?period_id=1",
                           data={'amount':'123,45', 'program_group':'service'}, follow_redirects=False)
     assert response.status_code == 303, response.text
     db.refresh(row)

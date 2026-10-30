@@ -394,9 +394,9 @@ def test_zero_source_uses_one_explicit_group_and_turkish_thousands_parse(client,
 def test_allocation_only_directorate_submits_but_splitter_cannot_approve(client,db,sample,split_rows):
     assert post_split(client,sample,payload(split_rows)).status_code==303
     app.dependency_overrides[require_user]=lambda:sample['user']
-    submitted=client.post('/api/departments/1/submit')
+    submitted=client.post('/api/departments/1/submit?period_id=1')
     assert submitted.status_code==200,submitted.text
     strategy(sample)
-    rejected=client.post('/api/submissions/1/decision',json={'decision':'approve'})
+    rejected=client.post('/api/submissions/1/decision?period_id=1',json={'decision':'approve'})
     assert rejected.status_code==403 and 'Görevler ayrılığı' in rejected.json()['detail']
     assert db.scalar(select(Submission)).status=='submitted'

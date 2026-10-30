@@ -1,10 +1,66 @@
 {% extends 'base.html' %}
 {% block page_title %}Malî Bilgiler · İçe Aktarma Önizlemesi{% endblock %}
 {% block page_subtitle %}{{ report.year }} · {{ report.department }} · Uygulamadan önce farkları kontrol edin{% endblock %}
-{% block content %}<link rel="stylesheet" href="/static/activity_sections.css">
-<p><a href="/activity-sections/reports/{{ report.id }}?code=III.A.1">← Bütçe uygulama sonuçları</a></p>
-<section class="panel ar-panel"><h2>Satır kontrolleri</h2>{% for error in preview.errors %}<p class="ar-error" role="alert">{{ error.message }}</p>{% else %}<p>Satır hatası bulunmadı. {{ preview.rows|length }} satır okunarak doğrulandı.</p>{% endfor %}
-{% if stale %}<p class="ar-warning">Rapor önizlemeden sonra değişti. Dosyayı yeniden yükleyip güncel farkları kontrol edin.</p>{% endif %}
-<h2>Değişikliklerin önizlemesi</h2><p>Bu tablonun önceki içe aktarılan satırları değiştirilecek. Elle girilmiş satırlar korunur. Eski ve yeni değerler denetim geçmişinde saklanır.</p>
-<div class="ar-scroll"><table class="ar-table"><thead><tr><th>Değişiklik</th><th>Satır</th><th>Alan</th><th>Önceki değer</th><th>Yeni değer</th></tr></thead><tbody>{% for diff in preview.differences %}{% for key,label in columns %}{% if (diff.before or {}).get(key)!=(diff.after or {}).get(key) %}<tr><td>{{ {'added':'Eklenecek','removed':'Kaldırılacak','changed':'Değişecek'}[diff.action] }}</td><td>{{ diff.label }}</td><td>{{ label }}</td><td>{% set v=(diff.before or {}).get(key) %}{{ v|ar_number if key in ['initial','added','deducted','entered_final','actual','cancelled','carried','estimate','refunds'] else (v if v is not none else '—') }}</td><td>{% set v=(diff.after or {}).get(key) %}{{ v|ar_number if key in ['initial','added','deducted','entered_final','actual','cancelled','carried','estimate','refunds'] else (v if v is not none else '—') }}</td></tr>{% endif %}{% endfor %}{% else %}<tr><td colspan="5">Önceki içe aktarmaya göre fark yok.</td></tr>{% endfor %}</tbody></table></div>
-{% if not preview.errors and not stale and not report.frozen %}<form method="post" action="/activity-sections/reports/{{ report.id }}/financial/imports/{{ preview.id }}/apply"><input type="hidden" name="csrf_token" value="{{ request.session.get('csrf_token') }}"><input type="hidden" name="expected_revision" value="{{ report.revision }}"><button class="button primary">Farkları onayla ve içe aktarmayı uygula</button></form>{% endif %}</section>{% endblock %}
+{% block content %}
+<link rel="stylesheet" href="/static/activity_sections.css">
+<link rel="stylesheet" href="/static/design/financial-import.css">
+<div class="financial-import-page">
+  <div class="page-actions">
+    <a class="button" href="/activity-sections/reports/{{ report.id }}?code=III.A.1">← Bütçe uygulama sonuçları</a>
+  </div>
+  <section class="panel ar-panel">
+    <h2>Satır kontrolleri</h2>
+    {% for error in preview.errors %}
+    <p class="ar-error error-panel" role="alert">{{ error.message }}</p>
+    {% else %}
+    <p class="info-panel">Satır hatası bulunmadı. {{ preview.rows|length }} satır okunarak doğrulandı.</p>
+    {% endfor %}
+    {% if stale %}
+    <p class="ar-warning warning-panel">Rapor önizlemeden sonra değişti. Dosyayı yeniden yükleyip güncel farkları kontrol edin.</p>
+    {% endif %}
+    <h2>Değişikliklerin önizlemesi</h2>
+    <p>Bu tablonun önceki içe aktarılan satırları değiştirilecek. Elle girilmiş satırlar korunur. Eski ve yeni değerler denetim geçmişinde saklanır.</p>
+    <div class="ar-scroll table-wrap">
+      <table class="ar-table">
+        <thead>
+          <tr>
+            <th>Değişiklik</th>
+            <th>Satır</th>
+            <th>Alan</th>
+            <th class="numeric">Önceki değer</th>
+            <th class="numeric">Yeni değer</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for diff in preview.differences %}
+          {% for key,label in columns %}
+          {% if (diff.before or {}).get(key)!=(diff.after or {}).get(key) %}
+          <tr>
+            <td>
+              <span class="status {{ {'added':'success','removed':'danger','changed':'warning'}[diff.action] }}">{{ {'added':'Eklenecek','removed':'Kaldırılacak','changed':'Değişecek'}[diff.action] }}</span>
+            </td>
+            <td>{{ diff.label }}</td>
+            <td>{{ label }}</td>
+            <td{% if key in ['initial','added','deducted','entered_final','actual','cancelled','carried','estimate','refunds'] %} class="numeric"{% endif %}>{% set v=(diff.before or {}).get(key) %}{{ v|ar_number if key in ['initial','added','deducted','entered_final','actual','cancelled','carried','estimate','refunds'] else (v if v is not none else '—') }}</td>
+            <td{% if key in ['initial','added','deducted','entered_final','actual','cancelled','carried','estimate','refunds'] %} class="numeric"{% endif %}>{% set v=(diff.after or {}).get(key) %}{{ v|ar_number if key in ['initial','added','deducted','entered_final','actual','cancelled','carried','estimate','refunds'] else (v if v is not none else '—') }}</td>
+          </tr>
+          {% endif %}
+          {% endfor %}
+          {% else %}
+          <tr>
+            <td colspan="5">Önceki içe aktarmaya göre fark yok.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% if not preview.errors and not stale and not report.frozen %}
+    <form method="post" action="/activity-sections/reports/{{ report.id }}/financial/imports/{{ preview.id }}/apply">
+      <input type="hidden" name="csrf_token" value="{{ request.session.get('csrf_token') }}">
+      <input type="hidden" name="expected_revision" value="{{ report.revision }}">
+      <button class="button primary">Farkları onayla ve içe aktarmayı uygula</button>
+    </form>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}

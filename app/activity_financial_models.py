@@ -4,6 +4,7 @@ from decimal import Decimal
 from sqlalchemy import CheckConstraint, DateTime, ForeignKey, LargeBinary, Numeric, String, Text, UniqueConstraint, event, func
 from sqlalchemy.orm import Mapped, mapped_column
 from .db import Base
+from .ar_typeset_keys import new_key, uuid_default
 from .activity_sections_models import immutable
 
 
@@ -52,7 +53,8 @@ class ARFinancialEntry(Base):
     kind: Mapped[str] = mapped_column(String(30))
     position: Mapped[int] = mapped_column()
     payload_json: Mapped[str] = mapped_column(Text)
-    __table_args__ = (CheckConstraint("kind IN ('assets','aid','audit','explanations')"),)
+    stable_key: Mapped[str] = mapped_column(String(36), default=new_key, server_default=uuid_default())
+    __table_args__ = (UniqueConstraint('document_id', 'kind', 'stable_key', name='uq_ar_financial_stable_key'), CheckConstraint("kind IN ('assets','aid','audit','explanations')"),)
 
 
 class ARFinancialStatement(Base):
@@ -68,6 +70,16 @@ class ARFinancialStatement(Base):
     sha256: Mapped[str] = mapped_column(String(64), default='')
     file_data: Mapped[bytes | None] = mapped_column(LargeBinary)
     __table_args__ = (UniqueConstraint('document_id', 'name'),)
+
+
+class ARStatementFigureKey(Base):
+    __tablename__ = 'ar_statement_figure_keys'
+    id: Mapped[int] = mapped_column(primary_key=True)
+    document_id: Mapped[int] = mapped_column(ForeignKey('ar_documents.id'))
+    statement_id: Mapped[int] = mapped_column(ForeignKey('ar_financial_statements.id'))
+    stable_key: Mapped[str] = mapped_column(String(36), default=new_key, server_default=uuid_default())
+    position: Mapped[int] = mapped_column()
+    __table_args__ = (UniqueConstraint('statement_id', 'stable_key', name='uq_ar_statement_figure_key'),)
 
 
 class ARFinancialImport(Base):

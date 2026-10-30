@@ -10,7 +10,7 @@ import pytest
 from fastapi.testclient import TestClient
 from playwright.sync_api import sync_playwright, expect
 
-VIEWPORTS = [(1012, 1103), (1366, 768), (1280, 600), (800, 900), (800, 320)]
+VIEWPORTS = [(1440, 900), (390, 900), (1012, 1103), (1366, 768), (1280, 600), (800, 900), (800, 320)]
 
 
 @pytest.fixture(scope='module')
@@ -72,6 +72,13 @@ def test_sidebar_controls_separate_and_clickable(browser, db, sample, role, view
             context.route('http://testserver/**', serve)
             page = context.new_page()
             page.goto('http://testserver/modules')
+            page.keyboard.press('Tab')
+            expect(page.get_by_role('link', name='İçeriğe geç', exact=True)).to_be_focused()
+            page.keyboard.press('Enter')
+            expect(page.locator('#main')).to_be_focused()
+            if viewport[0] == 390:
+                page.get_by_role('link', name='Menüye git', exact=False).click()
+                expect(page.locator('#navigation')).to_be_focused()
             password = page.get_by_role('button', name='Parolamı Değiştir', exact=True)
             logout = page.get_by_role('button', name='Çıkış', exact=True)
             password.scroll_into_view_if_needed()
@@ -94,9 +101,18 @@ def test_sidebar_controls_separate_and_clickable(browser, db, sample, role, view
             password.click()
             expect(page.locator('#passwordModal')).to_be_visible()
             expect(page.locator('#currentPassword')).to_be_focused()
+            page.keyboard.press('Shift+Tab')
+            expect(page.locator('#savePasswordChange')).to_be_focused()
+            page.keyboard.press('Tab')
+            expect(page.locator('#currentPassword')).to_be_focused()
+            page.keyboard.press('Escape')
+            expect(page.locator('#passwordModal')).to_be_hidden()
+            expect(password).to_be_focused()
+            password.click()
             assert client.get('/modules').status_code == 200
             page.get_by_role('button', name='Vazgeç', exact=True).click()
             expect(page.locator('#passwordModal')).to_be_hidden()
+            expect(password).to_be_focused()
             logout.click()
             assert page.url == 'http://testserver/logout'
             assert logout_redirects == [(303, '/login')]

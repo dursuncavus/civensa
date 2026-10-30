@@ -10,7 +10,7 @@ def row(db, sample):
 
 @pytest.mark.parametrize('problem', ['missing_finance', 'missing_economic_zero', 'unverified_personnel', 'mismatch', 'missing_card'])
 def test_invalid_package_never_ready(client, db, sample, problem):
-    assert client.post(f'/api/indicators/{sample["indicator"].id}/save', json={}).status_code == 200
+    assert client.post(f'/api/indicators/{sample["indicator"].id}/save?period_id=1', json={}).status_code == 200
     assert row(db, sample)['state'] == 'ready'
     if problem == 'missing_finance': db.delete(db.scalar(select(ActivityCostValue).where(ActivityCostValue.year == 2028, ActivityCostValue.funding_type == 'outside')))
     elif problem == 'missing_economic_zero': db.delete(db.scalar(select(EconomicValue).where(EconomicValue.year == 2027, EconomicValue.category == 'lending', EconomicValue.funding_type == 'outside')))
@@ -22,11 +22,11 @@ def test_invalid_package_never_ready(client, db, sample, problem):
     assert result['state'] == 'needs_attention'
     assert result['progress_percent'] < 100
     assert result['warning_count'] > 0
-    assert client.post('/api/departments/1/submit').status_code == 422
+    assert client.post('/api/departments/1/submit?period_id=1').status_code == 422
 
 
 def test_corrected_finance_restores_ready(client, db, sample):
-    client.post('/api/indicators/1/save', json={})
+    client.post('/api/indicators/1/save?period_id=1', json={})
     cost = db.scalar(select(DepartmentCostValue)); cost.state = 'needs_review'; db.commit()
     assert row(db, sample)['state'] == 'needs_attention'
     cost.state = 'verified'; db.commit()
@@ -36,7 +36,7 @@ def test_corrected_finance_restores_ready(client, db, sample):
 
 @pytest.mark.parametrize('status', ['submitted', 'approved', 'returned'])
 def test_workflow_progress_status_preserved(client, db, sample, status):
-    client.post('/api/indicators/1/save', json={})
+    client.post('/api/indicators/1/save?period_id=1', json={})
     db.scalar(select(Submission)).status = status
     db.scalar(select(DepartmentCostValue)).state = 'needs_review'; db.commit()
     result = row(db, sample)

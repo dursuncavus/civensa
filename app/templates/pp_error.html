@@ -1,0 +1,6 @@
+<!doctype html>
+<html lang="tr"><head><meta charset="utf-8"><title>Performans programı — İşlem tamamlanamadı</title></head>
+<body><main><h1>İşlem tamamlanamadı</h1><p role="alert">{{ detail }}</p>
+<ul>{% for error in errors %}<li>{{ error.message }}</li>{% endfor %}</ul>
+{% include 'pp_form_fallback.html' %}
+<a href="/dashboard">Genel Bakış ekranını açın</a></main></body></html>

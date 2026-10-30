@@ -190,9 +190,17 @@ def register(app):
             **catalogue(db, plan, component=component, standard=standard, department_id=department_id, q=q)))
 
     @app.get('/internal-control/our-actions')
-    def ours(request: Request, db: Session = Depends(get_db), user=Depends(require_user)):
+    def ours(request: Request, period_id: str = '', db: Session = Depends(get_db), user=Depends(require_user)):
+        from .internal_control_monitoring_routes import our_screen
+        from .internal_control_monitoring_models import ICMonitoringPeriod
+        if period_id or db.scalar(select(ICMonitoringPeriod.id).join(ICPlan).where(ICPlan.status == 'active').limit(1)):
+            return our_screen(request, db, user, period_id)
         responsible = service.directorate_actions(db, user, 'responsible')
         cooperating = service.directorate_actions(db, user, 'cooperating')
         plan = db.scalar(select(ICPlan).where(ICPlan.status == 'active'))
         return templates.TemplateResponse(request, 'internal_control/our_actions.html',
-            dict(user=user, plan=plan, responsible=responsible, cooperating=cooperating))
+            dict(user=user, plan=plan, responsible=responsible, cooperating=cooperating,
+                 last_monitoring_period_id=db.scalar(select(ICMonitoringPeriod.id).order_by(ICMonitoringPeriod.id.desc()).limit(1))))
+
+    from .internal_control_monitoring_routes import register as register_monitoring
+    register_monitoring(app)

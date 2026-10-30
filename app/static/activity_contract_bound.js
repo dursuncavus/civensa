@@ -3,7 +3,9 @@ document.addEventListener('change', async event => {
   if (!field) return;
   field.disabled = true;
   try {
-    const response = await fetch(`/api/activities/${field.dataset.activityId}/contract-bound`, {
+    const periodId = document.querySelector('meta[name="pp-period-id"]')?.content;
+    const query = periodId ? `?period_id=${encodeURIComponent(periodId)}` : '';
+    const response = await fetch(`/api/activities/${field.dataset.activityId}/contract-bound${query}`, {
       method: 'POST', headers: {'Content-Type': 'application/json', 'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content},
       body: JSON.stringify({contract_bound: field.checked})
     });

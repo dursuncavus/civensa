@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% from 'internal_control/monitoring_shared.html' import entries, token with context %}
+{% block page_title %}İç Kontrol Eylemlerimiz{% endblock %}
+{% block page_subtitle %}6 aylık izleme girişi ve işbirliği katkıları{% endblock %}
+{% block content %}
+{# Import the macros without including their legacy global shell styles. #}
+<link rel="stylesheet" href="/static/design/ic-our-actions.css">
+<div class="ic-our-actions-page">
+  <section class="card">
+    <form method="get" class="period-toolbar">
+      <label>İzleme dönemi
+        <select name="period_id">
+          {% for p in periods %}
+          <option value="{{ p.id }}" {{ 'selected' if monitoring_period and p.id==monitoring_period.id else '' }}>{{ period_label(p) }} · {{ 'Kapalı' if p.closed_at else 'Açık' }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <button class="button">Dönemi göster</button>
+    </form>
+  </section>
+  {% if monitoring_period %}
+  <h2>{{ period_label(monitoring_period) }}</h2>
+  {% endif %}
+  <h2>Sorumlu olduğumuz eylemler</h2>
+  {% for detail in details %}
+  <div class="batch-content">
+    {# Add only presentation markup to the macro's escaped heading. #}
+    {% set old_heading %}<h2>{{ detail.batch.label }} · {{ states[detail.status] }}</h2>{% endset %}
+    {% set new_heading %}<h2 class="batch-heading">{{ detail.batch.label }} · <span class="status {{ detail.status }}">{{ states[detail.status] }}</span></h2>{% endset %}
+    {# This replacement is coupled to the heading markup emitted by entries(). #}
+    {{ entries(detail, monitoring_period, user, request, statuses, states)|replace(old_heading, new_heading) }}
+    <p class="history-link"><a href="/internal-control/monitoring/batches/{{ detail.batch.id }}">İşlem geçmişini ve katkı notlarını gör</a></p>
+  </div>
+  {% else %}
+  <p class="empty-state">Bu dönemde sorumlu eyleminiz bulunmuyor.</p>
+  {% endfor %}
+  <section class="card cooperating-section">
+    <h2>İşbirliği yapacağımız eylemler</h2>
+    <p>Sorumlu birimin girişini değiştirmeden katkı notu ekleyebilirsiniz.</p>
+    {% for a in cooperating %}
+    <article>
+      <h3>{{ a.action_code_raw }} · {{ a.text }}</h3>
+      {% if note_editable %}
+      {% filter pp_form(request) %}
+      <form method="post" action="/internal-control/monitoring/periods/{{ monitoring_period.id }}/notes">
+        {{ token(request) }}
+        <input type="hidden" name="id" value="{{ a.id }}">
+        <label>Katkı notu
+          <textarea name="content" maxlength="2000"></textarea>
+        </label>
+        <button class="button">Katkı notu ekle</button>
+      </form>
+      {% endfilter %}
+      {% endif %}
+    </article>
+    {% else %}
+    <p class="empty-state">İşbirliği görevi bulunmuyor.</p>
+    {% endfor %}
+  </section>
+  <div class="notes-content">
+    {% include 'internal_control/monitoring_notes.html' %}
+  </div>
+</div>
+{% endblock %}

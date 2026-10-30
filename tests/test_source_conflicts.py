@@ -106,7 +106,7 @@ def test_total_disagreement_http_unchanged_and_explicit_decision(db, sample, liv
     browser = live_client()
     token = login(browser, sample['user'].email)
     headers = {'X-CSRF-Token': token}
-    endpoint = f"/api/activities/{sample['activity'].id}"
+    endpoint = f"/api/activities/{sample['activity'].id}?period_id=1"
     body = {'cost_2027_budget_inside': '100,00', 'cost_2027_budget_outside': '33,50'}
     before = (total.amount, total.state, total.raw_text, total.source_amount, total.source_raw_text)
     assert browser.put(endpoint, json=body).status_code == 403
@@ -120,9 +120,10 @@ def test_total_disagreement_http_unchanged_and_explicit_decision(db, sample, liv
     assert page.status_code == 200 and 'Kaynak: 140,00' in page.text and '133,50' in page.text
     assert 'confirm-source-total' in page.text
     # The old money-verification route must not bypass a reasoned total decision.
-    verify = browser.post(f"/program/{sample['department'].id}/verify-money/activity/{total.id}",
+    verify = browser.post(f"/program/{sample['department'].id}/verify-money/activity/{total.id}?period_id=1",
                           headers=headers, data={'amount': '133,50'})
-    assert verify.status_code == 422 and '140,00' in verify.json()['detail']
+    assert verify.status_code == 422 and '140,00' in verify.text
+    assert verify.headers['content-type'].startswith('text/html')
     body['cost_2027_budget_use_computed'] = True
     assert browser.put(endpoint, headers=headers, json=body).status_code == 422
     body['cost_2027_budget_reason'] = 'Finansman dağılımı kontrol edildi.'
@@ -160,7 +161,7 @@ def test_matching_split_http_saves_normally(db, sample, live_client):
     total = source_total(db, sample, matching=True)
     browser = live_client()
     token = login(browser, sample['user'].email)
-    response = browser.put(f"/api/activities/{sample['activity'].id}", headers={'X-CSRF-Token': token},
+    response = browser.put(f"/api/activities/{sample['activity'].id}?period_id=1", headers={'X-CSRF-Token': token},
                            json={'cost_2027_budget_inside': '100,00', 'cost_2027_budget_outside': '40,00'})
     assert response.status_code == 200, response.text
     db.refresh(total)

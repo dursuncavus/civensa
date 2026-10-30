@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="tr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Rapor hazırlığı · Civensa prototip</title>
+    <link rel="stylesheet" href="../fonts.css" />
+    <link rel="stylesheet" href="../tokens.css" />
+    <link rel="stylesheet" href="../prototype.css" />
+    <script src="../prototype.js" defer></script>
+  </head>
+  <body class="report-preparation-prototype">
+    <a class="skip" href="#main">İçeriğe geç</a>
+    <div class="app-shell">
+      <aside class="sidebar" id="navigation">
+        <a class="brand" href="034-modules.html"
+          >Civensa<span>Kurumsal raporlama</span></a
+        >
+        <nav aria-label="Ana gezinme">
+          <div class="nav-group">
+            <p>Performans programı</p>
+            <a
+              id="e003"
+              data-source-id="E003"
+              data-original-target="/dashboard"
+              class="nav-link"
+
+              href="022-department-home.html"
+              >Genel bakış</a
+            ><a
+              id="e005"
+              data-source-id="E005"
+              data-original-target="/department/1"
+              class="nav-link"
+              href="024-department.html"
+              >Veri girişi</a
+            >
+          </div>
+          <div class="nav-group">
+            <p>Faaliyet raporu</p>
+            <a
+              id="e001"
+              data-source-id="E001"
+              data-original-target="/activity-sections"
+              class="nav-link"
+              href="#destination-dialog"
+              data-open="destination-dialog"
+              >Faaliyet raporu · EK-1</a
+            >
+          </div>
+          <div class="nav-group">
+            <p>İç kontrol</p>
+            <a
+              id="e004"
+              data-source-id="E004"
+              data-original-target="/internal-control/our-actions"
+              class="nav-link"
+              href="#destination-dialog"
+              data-open="destination-dialog"
+              >İç kontrol eylemlerimiz</a
+            >
+          </div>
+          <div class="nav-group">
+            <p>Yönetim</p>
+            <a
+              id="e002"
+              data-source-id="E002"
+              data-original-target="/modules"
+              class="nav-link"
+              href="034-modules.html"
+              >Modüller</a
+            ><a
+              id="e006"
+              data-source-id="E006"
+              data-original-target="/submit-authorizations"
+              class="nav-link"
+              href="#destination-dialog"
+              data-open="destination-dialog"
+              >Gönderim yetkileri</a
+            >
+          </div>
+        </nav>
+        <a class="nav-link selected" aria-current="page" href="037-report-preparation.html">Rapor hazırlığı</a><div class="account-actions">
+          <button
+            type="button"
+            id="e007"
+            data-source-id="E007"
+            data-original-target="#passwordModal"
+            class="ghost"
+            data-open="password-dialog"
+          >
+            Parolamı değiştir
+          </button>
+          <form
+            id="e008"
+            data-source-id="E008"
+            data-original-target="POST /logout"
+            class=""
+            action="#simulation-dialog"
+            method="get"
+          >
+            <button
+              type="button"
+              id="e009"
+              data-source-id="E009"
+              data-original-target="POST /logout"
+              class="ghost"
+              data-open="simulation-dialog"
+            >
+              Çıkış
+            </button>
+          </form>
+        </div>
+        <p class="sidebar-note">
+          Örnek Hizmet Müdürlüğü<br />Sentetik çalışma alanı
+        </p>
+      </aside>
+      <div class="workspace">
+        <div class="topbar">
+          <a href="#navigation" class="mobile-nav"
+            >Menüye git
+            <svg
+              class="icon icon-down"
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.5"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+              focusable="false"
+            >
+              <path d="m9 5 7 7-7 7" /></svg
+          ></a>
+          <p>Örnek Hizmet Müdürlüğü</p>
+          <div class="userbox">
+            <button
+              type="button"
+              id="e010"
+              data-source-id="E010"
+              data-original-target="GET /api/notifications → #notificationPanel"
+              class="ghost"
+              data-open="notification-dialog"
+            >
+              Bildirimler</button
+            ><span>Müdürlük<br /><strong>Birim Müdürü (sentetik)</strong></span>
+          </div>
+        </div>
+        <main id="main">
+<nav class="breadcrumb" aria-label="İçerik yolu"><a href="022-department-home.html">Genel bakış</a><span>/</span><span>Rapor hazırlığı</span></nav>
+<header class="page-header"><div><h1>Örnek Hizmet Müdürlüğü — Rapor hazırlığı</h1><p>2026 · Performans kartları, kaynak kontrolü ve ekonomik tablolar</p></div><span class="prototype-mark">Statik prototip · 037</span></header>
+<div class="field rp-switcher"><label for="report-state">Prototip durumu</label><select id="report-state"><option value="a">a · Yeni dönem, başlanmadı</option><option value="b" selected>b · Devam ediyor, sorunlar var</option><option value="c">c · Tamamlandı, düzenlenebilir</option><option value="d">d · Onaylandı, salt okunur</option><option value="e">e · Strateji görünümü</option></select></div>
+<p><a class="button primary" href="024-department.html">Gösterge ve faaliyet girişi</a></p>
+<p id="rp-readonly" class="badge neutral" hidden>Onaylandı · Bu rapor salt okunur. Gönderilen veya dönemi kapalı raporlar da aynı görünümü kullanır.</p>
+<div class="rp-layout"><div class="rp-content"><section class="card" aria-labelledby="rp-overview"><h2 id="rp-overview">Bu sayfadaki işler</h2><p id="rp-counts" class="help"></p><ol class="rp-tasks"><li><a href="#section-1" aria-describedby="rp-status-1">Performans kartları</a><span class="badge neutral" id="rp-status-1">Başlanmadı</span></li><li><a href="#section-2" aria-describedby="rp-status-2">Gösterge ve faaliyetlerin kartlara atanması</a><span class="badge neutral" id="rp-status-2">Başlanmadı</span></li><li><a href="#section-3" aria-describedby="rp-status-3">Sorumlu harcama birimleri kataloğu bağlantısı</a><span class="badge neutral" id="rp-status-3">Başlanmadı</span></li><li><a href="#section-4" aria-describedby="rp-status-4">Kaynak değerlerini doğrulama</a><span class="badge neutral" id="rp-status-4">Başlanmadı</span></li><li><a href="#section-5" aria-describedby="rp-status-5">Faaliyet finansmanı</a><span class="badge neutral" id="rp-status-5">Başlanmadı</span></li><li><a href="#section-6" aria-describedby="rp-status-6">Ekonomik tablo</a><span class="badge neutral" id="rp-status-6">Başlanmadı</span></li></ol><details class="rp-record" id="rp-issues" open><summary><svg class="icon disclosure-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg><span>3 eksik / tutarsız kayıt</span> </summary><ul><li><a href="#section-2">Park bakımı ve atık toplama faaliyetleri kartsız. İlgili kartları seçin.</a></li><li><a href="#section-4">Personel ve SGK giderleri · 2026 tutarı kaynakla doğrulanmadı. Kaynak belgesini kontrol edin.</a></li></ul></details><details class="rp-record" id="rp-warnings"><summary><svg class="icon disclosure-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg><span>İncelenecek birim uyarıları</span> </summary><p>Ekonomik tablo · Kaynak toplamı yok. Kaynak belgesindeki toplamı kontrol edin.</p></details><p id="rp-checks" class="help"></p></section><section class="card"><h2>Maliyet ara toplamları ve kaynak mutabakatı</h2><p>Güncel faaliyet maliyetleri program → alt program → müdürlük sırasıyla toplanır. Bağlantısı veya tutarı eksik kayıt varsa kısmi toplam gösterilmez ve yayın durur. Kaynak toplamı, bütün alt kayıtların saklanan kaynak tutarlarından oluşur; bulunmaması uyarıdır. Personel ve SGK giderleri kitabın ortak maliyet tablosunda ayrıca gösterilir.</p><div class="rp-table" tabindex="0" role="region" aria-label="Maliyet mutabakatı"><table><thead><tr><th>Program / alt program / müdürlük</th><th>Yıl / değer türü</th><th>Hesaplanan (TL)</th><th>Kaynak (TL)</th><th>Fark (TL)</th><th>Durum / yapılacak işlem</th></tr></thead><tbody id="rp-reconciliation"></tbody></table></div></section><section class="card" id="section-1" aria-labelledby="heading-1"><h2 id="heading-1">1. Performans kartları</h2><p class="rp-empty">Henüz performans kartı yok. Yeni kart ekleyerek başlayın.</p><div class="rp-existing"><details class="rp-record" ><summary><svg class="icon disclosure-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg><span>2026 · Yeşil alan hizmetleri</span> <span class="badge neutral rp-record-status">Tamamlandı</span></summary><form><div class="grid two"><label class="field">Kitaptaki sıra<input value="1"></label><label class="field">Program / alt program<select><option>Çevre / Çevre hizmetleri</option></select></label></div><label class="field">Bütçe yılı / kart başlığı<textarea rows="2">2026 · Yeşil alan hizmetleri</textarea></label><label class="field">İdare / birim adı<textarea rows="2">Örnek Belediyesi / Örnek Hizmet Müdürlüğü</textarea></label><label class="field">Sorumlu idare<textarea rows="2">Örnek Belediyesi</textarea></label><label class="field">Gerekçe ve açıklamalar<textarea rows="2">Hizmet kalitesinin artırılması</textarea></label><label class="field">Alt programın hedefi<textarea rows="2">Erişilebilir ve sürdürülebilir çevre</textarea></label><label class="field">Göstergeye ilişkin ortak açıklama<textarea rows="2">Yıllık faaliyet kayıtları esas alınır.</textarea></label><label class="field">Ortak hesaplama yöntemi<textarea rows="2">Yıl içinde tamamlanan işlerin toplamı</textarea></label><label class="field">Verinin kaynağı<textarea rows="2">Müdürlük kayıtları</textarea></label><label class="field">Dipnot<textarea rows="2">Değerler sentetiktir.</textarea></label><label class="field">Kaynak sayfa<textarea rows="2">42</textarea></label><label class="field">Hizmet alanı<textarea rows="2">Çevre hizmetleri</textarea></label><label class="field">Stratejik plan / PH bağlantısı<textarea rows="2">Amaç 2 / PH 2.1</textarea></label><button class="rp-save">Kartı kaydet</button></form></details><details class="rp-record" ><summary><svg class="icon disclosure-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg><span>2026 · Temiz çevre hizmetleri</span> <span class="badge neutral rp-record-status">Tamamlandı</span></summary><form><div class="grid two"><label class="field">Kitaptaki sıra<input value="2"></label><label class="field">Program / alt program<select><option>Çevre / Çevre hizmetleri</option></select></label></div><label class="field">Bütçe yılı / kart başlığı<textarea rows="2">2026 · Temiz çevre hizmetleri</textarea></label><label class="field">İdare / birim adı<textarea rows="2">Örnek Belediyesi / Örnek Hizmet Müdürlüğü</textarea></label><label class="field">Sorumlu idare<textarea rows="2">Örnek Belediyesi</textarea></label><label class="field">Gerekçe ve açıklamalar<textarea rows="2">Hizmet kalitesinin artırılması</textarea></label><label class="field">Alt programın hedefi<textarea rows="2">Erişilebilir ve sürdürülebilir çevre</textarea></label><label class="field">Göstergeye ilişkin ortak açıklama<textarea rows="2">Yıllık faaliyet kayıtları esas alınır.</textarea></label><label class="field">Ortak hesaplama yöntemi<textarea rows="2">Yıl içinde tamamlanan işlerin toplamı</textarea></label><label class="field">Verinin kaynağı<textarea rows="2">Müdürlük kayıtları</textarea></label><label class="field">Dipnot<textarea rows="2">Değerler sentetiktir.</textarea></label><label class="field">Kaynak sayfa<textarea rows="2">42</textarea></label><label class="field">Hizmet alanı<textarea rows="2">Çevre hizmetleri</textarea></label><label class="field">Stratejik plan / PH bağlantısı<textarea rows="2">Amaç 2 / PH 2.1</textarea></label><button class="rp-save">Kartı kaydet</button></form></details></div><details class="rp-record rp-new"><summary><svg class="icon disclosure-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg><span>Yeni kart</span> <span class="badge neutral rp-record-status">İsteğe bağlı</span></summary><form><label class="field">Kitaptaki sıra<input value="3"></label><label class="field">Program / alt program<select><option>Çevre / Çevre hizmetleri</option></select></label><label class="field">Bütçe yılı / kart başlığı<textarea rows="2"></textarea></label><label class="field">İdare / birim adı<textarea rows="2"></textarea></label><label class="field">Sorumlu idare<textarea rows="2"></textarea></label><label class="field">Gerekçe ve açıklamalar<textarea rows="2"></textarea></label><label class="field">Alt programın hedefi<textarea rows="2"></textarea></label><label class="field">Göstergeye ilişkin ortak açıklama<textarea rows="2"></textarea></label><label class="field">Ortak hesaplama yöntemi<textarea rows="2"></textarea></label><label class="field">Verinin kaynağı<textarea rows="2"></textarea></label><label class="field">Dipnot<textarea rows="2"></textarea></label><label class="field">Kaynak sayfa<textarea rows="2"></textarea></label><label class="field">Hizmet alanı<textarea rows="2"></textarea></label><label class="field">Stratejik plan / PH bağlantısı<textarea rows="2"></textarea></label><button class="rp-save">Kartı kaydet</button></form></details></section><section class="card" id="section-2" aria-labelledby="heading-2"><h2 id="heading-2">2. Gösterge ve faaliyetlerin kartlara atanması</h2><p>Aynı alt programda birden fazla kart olabilir. Kaydın ait olduğu kartı seçin.</p><p class="rp-empty">Atanacak gösterge veya faaliyet yok.</p><div class="rp-existing"><form><h3>Bakımı yapılan park sayısı</h3><div class="grid three"><label class="field">Kart<select><option>Yeşil alan hizmetleri</option><option>Kart seçin</option><option>Yeşil alan hizmetleri</option><option>Temiz çevre hizmetleri</option></select></label><label class="field">Kaynak kodu<input value="G01"></label><label class="field">Sıra<input value="1"></label></div><button class="rp-save">Atamayı kaydet</button></form><form><h3>Yeni yeşil alan miktarı</h3><div class="grid three"><label class="field">Kart<select><option>Yeşil alan hizmetleri</option><option>Kart seçin</option><option>Yeşil alan hizmetleri</option><option>Temiz çevre hizmetleri</option></select></label><label class="field">Kaynak kodu<input value="G02"></label><label class="field">Sıra<input value="2"></label></div><button class="rp-save">Atamayı kaydet</button></form><form><h3>Toplanan atık miktarı</h3><div class="grid three"><label class="field">Kart<select><option>Temiz çevre hizmetleri</option><option>Kart seçin</option><option>Yeşil alan hizmetleri</option><option>Temiz çevre hizmetleri</option></select></label><label class="field">Kaynak kodu<input value="G03"></label><label class="field">Sıra<input value="3"></label></div><button class="rp-save">Atamayı kaydet</button></form><form><h3>Geri kazanım oranı</h3><div class="grid three"><label class="field">Kart<select><option>Temiz çevre hizmetleri</option><option>Kart seçin</option><option>Yeşil alan hizmetleri</option><option>Temiz çevre hizmetleri</option></select></label><label class="field">Kaynak kodu<input value="G04"></label><label class="field">Sıra<input value="4"></label></div><button class="rp-save">Atamayı kaydet</button></form><form><h3>Park bakımı</h3><div class="grid three"><label class="field">Kart<select><option>Yeşil alan hizmetleri</option><option>Kart seçin</option><option>Yeşil alan hizmetleri</option><option>Temiz çevre hizmetleri</option></select></label><label class="field">Kaynak kodu<input value="F05"></label><label class="field">Sıra<input value="5"></label></div><button class="rp-save">Atamayı kaydet</button></form><form><h3>Atık toplama</h3><div class="grid three"><label class="field">Kart<select><option>Temiz çevre hizmetleri</option><option>Kart seçin</option><option>Yeşil alan hizmetleri</option><option>Temiz çevre hizmetleri</option></select></label><label class="field">Kaynak kodu<input value="F06"></label><label class="field">Sıra<input value="6"></label></div><button class="rp-save">Atamayı kaydet</button></form><form><h3>Geri dönüşüm eğitimi</h3><div class="grid three"><label class="field">Kart<select><option>Temiz çevre hizmetleri</option><option>Kart seçin</option><option>Yeşil alan hizmetleri</option><option>Temiz çevre hizmetleri</option></select></label><label class="field">Kaynak kodu<input value="F07"></label><label class="field">Sıra<input value="7"></label></div><button class="rp-save">Atamayı kaydet</button></form><details class="rp-record" data-edit-only><summary><svg class="icon disclosure-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg><span>Yeni gösterge</span> <span class="badge neutral rp-record-status">İsteğe bağlı</span></summary><form><label class="field">Kart<select><option>Yeşil alan hizmetleri</option></select></label><label class="field">Gösterge adı<input value=""></label><label class="field">Ölçü birimi<input value=""></label><button class="rp-save">Gösterge ekle</button></form></details></div></section><section class="card" id="section-3" aria-labelledby="heading-3"><h2 id="heading-3">3. Sorumlu harcama birimleri kataloğu bağlantısı</h2><p class="rp-empty">Bağlanacak faaliyet yok.</p><div class="rp-existing"><form><h3>Park bakımı</h3><label class="field">Resmî faaliyetler<select multiple size="3"><option>01 · Park ve yeşil alan hizmetleri</option><option>02 · Temizlik hizmetleri</option><option>03 · Çevre eğitimi</option></select></label><button class="rp-save">Bağlantıyı kaydet</button></form><form><h3>Atık toplama</h3><label class="field">Resmî faaliyetler<select multiple size="3"><option>01 · Park ve yeşil alan hizmetleri</option><option>02 · Temizlik hizmetleri</option><option>03 · Çevre eğitimi</option></select></label><button class="rp-save">Bağlantıyı kaydet</button></form><form><h3>Geri dönüşüm eğitimi</h3><label class="field">Resmî faaliyetler<select multiple size="3"><option>01 · Park ve yeşil alan hizmetleri</option><option>02 · Temizlik hizmetleri</option><option>03 · Çevre eğitimi</option></select></label><button class="rp-save">Bağlantıyı kaydet</button></form></div></section><section class="card" id="section-4" aria-labelledby="heading-4"><h2 id="heading-4">4. Kaynak değerlerini doğrulama</h2><p class="rp-empty">Doğrulanacak kaynak değeri yok.</p><p class="rp-complete">Kaynak değerleri doğrulandı.</p><div class="rp-unverified"><form><h3>Bakımı yapılan park sayısı · 2026</h3><p>Kaynak gösterimi: 24 · Önceki tür: Değer</p><label class="field">Doğrulanmış değer<input value="24"></label><label class="field">Değer türü<select><option>Hedef</option><option>Gerçekleşme</option><option>Planlanan</option><option>Yıl sonu gerçekleşme tahmini</option><option>Tahmin</option></select></label><button class="rp-save">Kaynağa göre doğrula</button></form><form><h3>Park bakımı · 2026 bütçe içi</h3><p>Ham kaynak: 1.250.000,00 TL</p><label class="field">Kaynakla doğrulanmış tutar (TL)<input value="1.250.000,00"></label><button class="rp-save">Tutarı doğrula</button></form><form><h3>Personel ve SGK giderleri · 2026</h3><p>Ham kaynak: 1.250.000,00 TL</p><label class="field">Kaynakla doğrulanmış tutar (TL)<input value="1.250.000,00"></label><button class="rp-save">Tutarı doğrula</button></form></div></section><section class="card" id="section-5" aria-labelledby="heading-5"><h2 id="heading-5">5. Faaliyet finansmanı</h2><p>Her dönemde bütçe içi ve bütçe dışını ayrı girin. Kaynak yoksa 0 yazın; henüz belirlenmediyse ikisini de boş bırakın. Toplam otomatik hesaplanır.</p><p class="rp-empty">Finansman girilecek faaliyet yok.</p><div class="rp-existing"><details class="rp-record" ><summary><svg class="icon disclosure-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg><span>Park bakımı</span> <span class="badge neutral rp-record-status">Tamamlandı</span></summary><form><div class="grid two"><label class="field">2025 bütçe · Bütçe içi<input value="1.250.000,00"></label><label class="field">2025 bütçe · Bütçe dışı<input value="0,00"></label><label class="field">2026 bütçe · Bütçe içi<input value="1.250.000,00"></label><label class="field">2026 bütçe · Bütçe dışı<input value="0,00"></label><label class="field">2026 haziran sonu harcama · Bütçe içi<input value="1.250.000,00"></label><label class="field">2026 haziran sonu harcama · Bütçe dışı<input value="0,00"></label><label class="field">2026 yıl sonu harcama tahmini · Bütçe içi<input value="1.250.000,00"></label><label class="field">2026 yıl sonu harcama tahmini · Bütçe dışı<input value="0,00"></label><label class="field">2027 tahmin · Bütçe içi<input value="1.250.000,00"></label><label class="field">2027 tahmin · Bütçe dışı<input value="0,00"></label><label class="field">2028 tahmin · Bütçe içi<input value="1.250.000,00"></label><label class="field">2028 tahmin · Bütçe dışı<input value="0,00"></label></div><p>Toplam · 2026 bütçe: 1.250.000,00 TL</p><button class="rp-save">Finansmanı kaydet</button></form></details><details class="rp-record" ><summary><svg class="icon disclosure-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg><span>Atık toplama</span> <span class="badge neutral rp-record-status">Tamamlandı</span></summary><form><div class="grid two"><label class="field">2025 bütçe · Bütçe içi<input value="1.000.000,00"></label><label class="field">2025 bütçe · Bütçe dışı<input value="0,00"></label><label class="field">2026 bütçe · Bütçe içi<input value="1.000.000,00"></label><label class="field">2026 bütçe · Bütçe dışı<input value="0,00"></label><label class="field">2026 haziran sonu harcama · Bütçe içi<input value="1.000.000,00"></label><label class="field">2026 haziran sonu harcama · Bütçe dışı<input value="0,00"></label><label class="field">2026 yıl sonu harcama tahmini · Bütçe içi<input value="1.000.000,00"></label><label class="field">2026 yıl sonu harcama tahmini · Bütçe dışı<input value="0,00"></label><label class="field">2027 tahmin · Bütçe içi<input value="1.000.000,00"></label><label class="field">2027 tahmin · Bütçe dışı<input value="0,00"></label><label class="field">2028 tahmin · Bütçe içi<input value="1.000.000,00"></label><label class="field">2028 tahmin · Bütçe dışı<input value="0,00"></label></div><p>Toplam · 2026 bütçe: 1.000.000,00 TL</p><button class="rp-save">Finansmanı kaydet</button></form></details><details class="rp-record" ><summary><svg class="icon disclosure-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg><span>Geri dönüşüm eğitimi</span> <span class="badge neutral rp-record-status">Tamamlandı</span></summary><form><div class="grid two"><label class="field">2025 bütçe · Bütçe içi<input value="250.000,00"></label><label class="field">2025 bütçe · Bütçe dışı<input value="0,00"></label><label class="field">2026 bütçe · Bütçe içi<input value="250.000,00"></label><label class="field">2026 bütçe · Bütçe dışı<input value="0,00"></label><label class="field">2026 haziran sonu harcama · Bütçe içi<input value="250.000,00"></label><label class="field">2026 haziran sonu harcama · Bütçe dışı<input value="0,00"></label><label class="field">2026 yıl sonu harcama tahmini · Bütçe içi<input value="250.000,00"></label><label class="field">2026 yıl sonu harcama tahmini · Bütçe dışı<input value="0,00"></label><label class="field">2027 tahmin · Bütçe içi<input value="250.000,00"></label><label class="field">2027 tahmin · Bütçe dışı<input value="0,00"></label><label class="field">2028 tahmin · Bütçe içi<input value="250.000,00"></label><label class="field">2028 tahmin · Bütçe dışı<input value="0,00"></label></div><p>Toplam · 2026 bütçe: 250.000,00 TL</p><button class="rp-save">Finansmanı kaydet</button></form></details></div></section><section class="card" id="section-6" aria-labelledby="heading-6"><h2 id="heading-6">6. Ekonomik tablo</h2><p id="rp-strategy" class="warning" hidden>Program grubu belirlenmemiş kaynak hücreler var. <a href="#destination-dialog" data-open="destination-dialog" data-original-target="/program/1/economic-split?period_id=1">Program grubu dağılımı</a></p><div class="rp-unverified"><form><h3>Mal ve hizmet alım giderleri · 2026 bütçe · Bütçe içi</h3><p>Kaynak tablo 7: 2.500.000,00 · Program grubu belirlenmedi.</p><label class="field">Kaynakla doğrulanmış tutar (TL)<input value="2.500.000,00"></label><label class="field">Program grubu<select><option>Çevre hizmetleri</option></select></label><button class="rp-save">Tutarı doğrula</button></form></div><form><div class="rp-toolbar"><label class="field">Program grubu<select><option>Çevre hizmetleri</option><option>Genel yönetim</option><option>Dağıtılmamış</option></select></label><label class="field">Kaynak<select><option>Bütçe içi</option><option>Bütçe dışı</option></select></label><button>Tabloyu aç</button></div></form><h3>Çevre hizmetleri · Bütçe içi</h3><p>Gider yoksa açıkça 0 girin. Boş hücre belirlenmemiştir.</p><p class="help rp-scroll-hint">Tablonun devamını görmek için yatay kaydırın.</p><form><div class="rp-table" tabindex="0" role="region" aria-label="Ekonomik tablo, yatay kaydırılabilir"><table class="financial"><caption>Ekonomik tutarlar (TL)</caption><thead><tr><th>Ekonomik ad</th><th class="numeric">2025 Bütçe</th><th class="numeric">2026 Bütçe</th><th class="numeric">2026 Haziran sonu harcama</th><th class="numeric">2027 Tahmin</th><th class="numeric">2028 Tahmin</th></tr></thead><tbody><tr><th scope="row">Personel giderleri</th><td><label class="field">Personel giderleri · 2025 bütçe (TL)<input value="1.250.000,00"></label></td><td><label class="field">Personel giderleri · 2026 bütçe (TL)<input value="1.250.000,00"></label></td><td><label class="field">Personel giderleri · 2026 haziran sonu harcama (TL)<input value="1.250.000,00"></label></td><td><label class="field">Personel giderleri · 2027 tahmin (TL)<input value="1.250.000,00"></label></td><td><label class="field">Personel giderleri · 2028 tahmin (TL)<input value="1.250.000,00"></label></td></tr><tr><th scope="row">SGK giderleri</th><td><label class="field">SGK giderleri · 2025 bütçe (TL)<input value="250.000,00"></label></td><td><label class="field">SGK giderleri · 2026 bütçe (TL)<input value="250.000,00"></label></td><td><label class="field">SGK giderleri · 2026 haziran sonu harcama (TL)<input value="250.000,00"></label></td><td><label class="field">SGK giderleri · 2027 tahmin (TL)<input value="250.000,00"></label></td><td><label class="field">SGK giderleri · 2028 tahmin (TL)<input value="250.000,00"></label></td></tr><tr><th scope="row">Mal ve hizmet alım giderleri</th><td><label class="field">Mal ve hizmet alım giderleri · 2025 bütçe (TL)<input value="2.500.000,00"></label></td><td><label class="field">Mal ve hizmet alım giderleri · 2026 bütçe (TL)<input value="2.500.000,00"></label></td><td><label class="field">Mal ve hizmet alım giderleri · 2026 haziran sonu harcama (TL)<input value="2.500.000,00"></label></td><td><label class="field">Mal ve hizmet alım giderleri · 2027 tahmin (TL)<input value="2.500.000,00"></label></td><td><label class="field">Mal ve hizmet alım giderleri · 2028 tahmin (TL)<input value="2.500.000,00"></label></td></tr></tbody></table></div><button class="rp-save">Tabloyu kaydet</button></form><div class="rp-table" tabindex="0" role="region" aria-label="Ekonomik kayıtlar, yatay kaydırılabilir"><table><caption>Kaydedilen ekonomik tutarlar</caption><thead><tr><th>Yıl / tür</th><th>Ekonomik ad</th><th>Program grubu</th><th>Kaynak</th><th class="numeric">Tutar (TL)</th></tr></thead><tbody class="rp-existing"><tr><td>2026 / Bütçe</td><td>Personel giderleri</td><td>Çevre hizmetleri</td><td>Bütçe içi</td><td class="numeric">1.250.000,00</td></tr><tr><td>2026 / Bütçe</td><td>SGK giderleri</td><td>Çevre hizmetleri</td><td>Bütçe içi</td><td class="numeric">250.000,00</td></tr><tr><td>2026 / Bütçe</td><td>Mal ve hizmet alım giderleri</td><td>Çevre hizmetleri</td><td>Bütçe içi</td><td class="numeric">2.500.000,00</td></tr></tbody></table></div><details class="rp-record" data-edit-only><summary><svg class="icon disclosure-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg><span>Ekonomik tutar ekle / güncelle</span> <span class="badge neutral rp-record-status">İsteğe bağlı</span></summary><form><p>Aynı yıl, tür, gider, program grubu ve kaynak seçildiğinde mevcut hücre güncellenir. Tutarı boş bırakmak o hücreyi kaldırır.</p><div class="grid two"><label class="field">Yıl<select><option>2025</option><option>2026</option><option>2027</option><option>2028</option></select></label><label class="field">Tür<select><option>Bütçe</option><option>Haziran sonu harcama</option><option>Tahmin</option></select></label><label class="field">Ekonomik ad<select><option>Personel giderleri</option></select></label><label class="field">Program grubu<select><option>Çevre hizmetleri</option></select></label><label class="field">Kaynak<select><option>Bütçe içi</option><option>Bütçe dışı</option></select></label><label class="field">Tutar (TL)<input value=""></label></div><button class="rp-save">Tutarı kaydet</button></form></details></section></div><aside class="rp-contents"><nav aria-label="Bu sayfada"><h2>Bu sayfada</h2><ul><li><a href="#section-1">Performans kartları</a></li><li><a href="#section-2">Gösterge ve faaliyetlerin kartlara atanması</a></li><li><a href="#section-3">Sorumlu harcama birimleri kataloğu bağlantısı</a></li><li><a href="#section-4">Kaynak değerlerini doğrulama</a></li><li><a href="#section-5">Faaliyet finansmanı</a></li><li><a href="#section-6">Ekonomik tablo</a></li></ul></nav></aside></div><footer class="prototype-footer">CIV-116 · Görsel inceleme<a href="../components.html">Tasarım sistemi</a></footer>
+        </main>
+      </div>
+    </div>
+    <dialog id="destination-dialog" aria-labelledby="destination-title">
+      <h2 id="destination-title">Bağlantı hedefi</h2>
+      <p>Bu ekran prototip kapsamı dışındadır.</p>
+      <p class="help">Mevcut uygulamadaki hedef:</p>
+      <code id="destination-target">Ekran haritasında belirtilen bağlantı</code>
+      <form method="dialog"><button autofocus>Kapat</button></form>
+    </dialog>
+    <dialog id="simulation-dialog" aria-labelledby="simulation-title">
+      <h2 id="simulation-title">Statik prototip</h2>
+      <p>
+        Bu işlem görsel inceleme için temsil edilir. Veri kaydedilmez,
+        gönderilmez veya silinmez.
+      </p>
+      <form method="dialog"><button autofocus>Kapat</button></form>
+    </dialog>
+    <dialog id="password-dialog" aria-labelledby="password-title">
+      <h2 id="password-title">Parolamı değiştir</h2>
+      <p class="help">Statik form örneği; gerçek parola girmeyin.</p>
+      <div class="field">
+        <label for="old-password">Mevcut parola</label
+        ><input id="old-password" type="password" autocomplete="off" />
+      </div>
+      <div class="field">
+        <label for="new-password">Yeni parola</label
+        ><input id="new-password" type="password" autocomplete="off" />
+      </div>
+      <div class="field">
+        <label for="repeat-password">Yeni parola (tekrar)</label
+        ><input id="repeat-password" type="password" autocomplete="off" />
+      </div>
+      <form method="dialog" class="actions">
+        <button autofocus>Vazgeç</button><button>Parolayı değiştir</button>
+      </form>
+    </dialog>
+    <dialog id="notification-dialog" aria-labelledby="notification-title">
+      <h2 id="notification-title">Bildirimler</h2>
+      <div class="empty">
+        <p>Yeni bildirim yok.</p>
+        <p class="help">Sentetik bildirim paneli örneği.</p>
+      </div>
+      <form method="dialog"><button autofocus>Kapat</button></form>
+    </dialog>
+  </body>
+</html>

@@ -21,7 +21,7 @@ def integer(value, label):
 
 
 def register(app):
-    from .main import require_strategy, templates, session_period, active_period
+    from .main import require_strategy, templates, session_period, active_period, require_pp_period
 
     def render(request, db, user, period_id=None, attempted=None, action='', error='', status=200):
         periods = db.scalars(select(ReportingPeriod).order_by(ReportingPeriod.year.desc())).all()
@@ -67,7 +67,9 @@ def register(app):
     async def change(request, db, user, operation):
         form = await request.form()
         try:
+            selected_period = session_period(request, db, form)
             pid = operation(form)
+            pid = pid or (selected_period.id if selected_period else None)
             db.commit()
             return RedirectResponse('/structure' + (f'?period_id={pid}' if pid else ''), 303)
         except (HTTPException, IntegrityError) as exc:
@@ -81,21 +83,21 @@ def register(app):
                 values[key] = form.getlist(key)
             return render(request, db, user, pid, values, request.url.path, message, status)
 
-    @app.post('/structure/changes')
+    @app.post('/structure/changes', dependencies=[Depends(require_pp_period)])
     async def create_structure_change(request: Request, db: Session = Depends(get_db), user: User = Depends(require_strategy)):
         def operation(form):
             structure.save_change(db, user, form)
             return integer(form.get('period_id'), 'Dönem')
         return await change(request, db, user, operation)
 
-    @app.post('/structure/changes/{change_id}/cancel')
+    @app.post('/structure/changes/{change_id}/cancel', dependencies=[Depends(require_pp_period)])
     async def cancel_structure_change(change_id: str, request: Request, db: Session = Depends(get_db), user: User = Depends(require_strategy)):
         def operation(form):
             structure.cancel_change(db, user, integer(change_id, 'Yapı kararı'), form.get('note'))
             return integer(form.get('period_id'), 'Dönem') if form.get('period_id') else None
         return await change(request, db, user, operation)
 
-    @app.post('/structure/departments')
+    @app.post('/structure/departments', dependencies=[Depends(require_pp_period)])
     async def create_department(request: Request, db: Session = Depends(get_db), user: User = Depends(require_strategy)):
         def operation(form):
             oid = integer(form.get('organization_id'), 'Kurum')
@@ -106,7 +108,7 @@ def register(app):
             audit_change(db, user, 'department_create', obj, None, {'name': name, 'organization_id': oid, 'is_active': True})
         return await change(request, db, user, operation)
 
-    @app.post('/structure/departments/{department_id}/rename')
+    @app.post('/structure/departments/{department_id}/rename', dependencies=[Depends(require_pp_period)])
     async def rename_department(department_id: str, request: Request, db: Session = Depends(get_db), user: User = Depends(require_strategy)):
         def operation(form):
             obj = db.get(Department, integer(department_id, 'Müdürlük'))
@@ -141,7 +143,7 @@ def register(app):
         obj.is_active = form['active'] == '1'
         audit_change(db, user, 'department_active', obj, old, {'is_active': obj.is_active})
 
-    @app.post('/structure/departments/{department_id}/active')
+    @app.post('/structure/departments/{department_id}/active', dependencies=[Depends(require_pp_period)])
     async def department_active(department_id: str, request: Request, db: Session = Depends(get_db), user: User = Depends(require_strategy)):
         return await change(request, db, user, lambda form: set_department_active(form, db, user, department_id))
 
@@ -176,23 +178,23 @@ def register(app):
             return pid
         return await change(request, db, user, operation)
 
-    @app.post('/structure/programs')
+    @app.post('/structure/programs', dependencies=[Depends(require_pp_period)])
     async def create_program(request: Request, db: Session = Depends(get_db), user: User = Depends(require_strategy)):
         return await save_hierarchy(request, db, user, Program)
 
-    @app.post('/structure/programs/{program_id}')
+    @app.post('/structure/programs/{program_id}', dependencies=[Depends(require_pp_period)])
     async def update_program(program_id: str, request: Request, db: Session = Depends(get_db), user: User = Depends(require_strategy)):
         return await save_hierarchy(request, db, user, Program, program_id)
 
-    @app.post('/structure/subprograms')
+    @app.post('/structure/subprograms', dependencies=[Depends(require_pp_period)])
     async def create_subprogram(request: Request, db: Session = Depends(get_db), user: User = Depends(require_strategy)):
         return await save_hierarchy(request, db, user, SubProgram)
 
-    @app.post('/structure/subprograms/{subprogram_id}')
+    @app.post('/structure/subprograms/{subprogram_id}', dependencies=[Depends(require_pp_period)])
     async def update_subprogram(subprogram_id: str, request: Request, db: Session = Depends(get_db), user: User = Depends(require_strategy)):
         return await save_hierarchy(request, db, user, SubProgram, subprogram_id)
 
-    @app.post('/structure/scopes')
+    @app.post('/structure/scopes', dependencies=[Depends(require_pp_period)])
     async def save_scope(request: Request, db: Session = Depends(get_db), user: User = Depends(require_strategy)):
         def operation(form):
             pid = integer(form.get('period_id'), 'Dönem'); period_record(db, pid)
@@ -220,7 +222,7 @@ def register(app):
             return pid
         return await change(request, db, user, operation)
 
-    @app.post('/structure/subprograms/{subprogram_id}/responsibilities')
+    @app.post('/structure/subprograms/{subprogram_id}/responsibilities', dependencies=[Depends(require_pp_period)])
     async def responsibilities(subprogram_id: str, request: Request, db: Session = Depends(get_db), user: User = Depends(require_strategy)):
         def operation(form):
             pid = integer(form.get('period_id'), 'Dönem'); period_record(db, pid)

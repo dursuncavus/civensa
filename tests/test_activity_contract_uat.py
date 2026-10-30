@@ -121,7 +121,7 @@ def test_audit_people_and_turkey_time_without_timestamp_mutation(client,db,sampl
     assert client.post(f"/api/activity-reports/revisions/{report['revision_id']}/approve").status_code==200
     approval=db.scalar(select(ActivityReportApproval));approval_time=approval.created_at
     page=client.get(f"/activity-reports/revisions/{report['revision_id']}")
-    assert 'Giren: Test' in page.text and 'Onaylayan: Strateji' in page.text and 'Türkiye saati, UTC+03:00' in page.text
+    assert 'Giren: Test' in page.text and 'Onaylayan: Strateji' in page.text and 'TSİ' in page.text
     data=client.get(f"/api/activity-reports/revisions/{report['revision_id']}").json()
     assert data['approval']['created_by']==sample['strategy'].id
     assert data['indicators'][0]['actuals'][0]['created_by']==sample['user'].id
@@ -129,7 +129,7 @@ def test_audit_people_and_turkey_time_without_timestamp_mutation(client,db,sampl
 
 @pytest.mark.parametrize('value',[datetime(2027,1,1,22,30),datetime(2027,1,1,22,30,tzinfo=timezone.utc),'2027-01-01T22:30:00'])
 def test_turkey_time_rollover(value):
-    assert turkey_time(value)=='02.01.2027 01:30 (Türkiye saati, UTC+03:00)'
+    assert turkey_time(value)=='02.01.2027 01:30 TSİ'
 
 @pytest.mark.parametrize('field',['department_id','subprogram_id'])
 def test_v3_card_relationship_still_validated(field):

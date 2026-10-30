@@ -1,0 +1,88 @@
+/* CIV-145: reuse the shipped panel, form, table, disclosure and status styles.
+   Scope every rule to these five screens; shared macro markup stays unchanged. */
+.internal-control-page { width: 100%; max-width: 44rem; min-width: 0; color: var(--text); overflow-wrap: anywhere; }
+/* The monitoring overview uses the available width for its report tables. */
+.internal-control-page.internal-control-monitoring-page { max-width: none; }
+.internal-control-page * { box-sizing: border-box; text-transform: none; letter-spacing: normal; }
+.internal-control-page :is(label,span,th,td) { text-transform: none; letter-spacing: normal; }
+.internal-control-page :is(h2,h3,h4,p,dl) { margin: 0 0 var(--space-3); }
+.internal-control-page h2 { font-size: var(--text-section); font-weight: var(--font-semibold); }
+.internal-control-page h3 { font-size: var(--text-card); font-weight: var(--font-semibold); }
+.internal-control-page h4 { font-size: var(--text-base); font-weight: var(--font-medium); }
+.internal-control-page :is(section,.card) {
+  min-width: 0; max-width: 100%; margin: 0 0 var(--space-6); padding: var(--space-6);
+  border: 1px solid var(--border); border-radius: var(--radius);
+  background: var(--surface); box-shadow: none;
+}
+.internal-control-page :is(.button,.card,.ic-actions) + form { margin-top: var(--space-4); }
+.internal-control-page form + .card { margin-top: var(--space-4); }
+.internal-control-page article + article { margin-top: var(--space-4); padding-top: var(--space-4); border-top: 1px solid var(--border); }
+.internal-control-page a { color: var(--accent); text-underline-offset: 3px; }
+.internal-control-page a:hover { color: var(--accent-hover); }
+.internal-control-page label { display: block; margin: var(--space-4) 0; color: var(--text); font-size: var(--text-sm); font-weight: var(--font-medium); }
+.internal-control-page :is(input,select,textarea) {
+  display: block; width: 100%; max-width: 100%; min-width: 0; min-height: var(--control-height);
+  margin-top: var(--space-2); padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--text-secondary); border-radius: var(--radius);
+  background: var(--surface); color: var(--text);
+  font: var(--font-regular) var(--text-base) / var(--line-height) var(--font-family); box-shadow: none;
+}
+.internal-control-page input[type="hidden"] { display: none; }
+.internal-control-page input[type="file"]::file-selector-button { margin-right: var(--space-2); color: var(--text); background: var(--surface-muted); border: 1px solid var(--text-secondary); border-radius: var(--radius); padding: var(--space-1) var(--space-2); font: inherit; }
+.internal-control-page textarea { min-height: 8rem; resize: vertical; }
+.internal-control-page small { display: block; margin-top: var(--space-2); color: var(--text-secondary); font-size: var(--text-sm); font-weight: var(--font-regular); }
+.internal-control-page .button {
+  display: inline-flex; min-height: var(--control-height); max-width: 100%; padding: var(--space-2) var(--space-4);
+  border: 1px solid var(--text-secondary); border-radius: var(--radius); background: var(--surface); color: var(--text);
+  font: var(--font-medium) var(--text-sm) / var(--line-height) var(--font-family); text-decoration: none; white-space: normal;
+}
+.internal-control-page .button:hover { background: var(--surface-muted); color: var(--text); }
+.internal-control-page .button.primary { border-color: var(--accent); background: var(--accent); color: var(--surface); }
+.internal-control-page .button.primary:hover { border-color: var(--accent-hover); background: var(--accent-hover); }
+.internal-control-page .button:disabled { background: var(--surface-muted); color: var(--text-secondary); border-color: var(--text-secondary); cursor: not-allowed; opacity: 1; }
+.internal-control-page :is(a,button,input,select,textarea,summary,[tabindex]):focus { outline: var(--focus); outline-offset: var(--focus-offset); box-shadow: none; }
+.internal-control-page .ic-grid { display: grid; grid-template-columns: minmax(0,1fr); gap: var(--space-4); }
+.internal-control-page .ic-grid label { margin: 0; }
+.internal-control-page .ic-actions { display: flex; flex-wrap: wrap; gap: var(--space-3); margin-bottom: var(--space-4); }
+.internal-control-page .ic-scroll { max-width: 100%; overflow-x: auto; border: 1px solid var(--border); border-radius: var(--radius); }
+.internal-control-page table { width: 100%; min-width: 700px; border-collapse: collapse; }
+.internal-control-page :is(th,td) { padding: var(--space-3); border-bottom: 1px solid var(--border); color: var(--text); font-size: var(--text-sm); text-align: left; vertical-align: top; }
+.internal-control-page th { background: var(--surface-muted); color: var(--text-secondary); font-weight: var(--font-medium); }
+.internal-control-page tbody tr:last-child td { border-bottom: 0; }
+.internal-control-page dl { display: grid; grid-template-columns: minmax(0,1fr); gap: var(--space-2); }
+.internal-control-page dt { color: var(--text-secondary); font-size: var(--text-sm); }
+.internal-control-page dd { min-width: 0; margin: 0 0 var(--space-2); }
+.internal-control-page .status { display: inline-block; max-width: 100%; padding: var(--space-1) var(--space-2); border-radius: var(--radius); font-size: var(--text-sm); font-weight: var(--font-medium); color: var(--text-secondary); background: var(--surface-muted); }
+.internal-control-page .status.submitted { color: var(--accent); background: var(--accent-soft); }
+.internal-control-page .status.returned { color: var(--warning); background: var(--warning-bg); }
+.internal-control-page .status:is(.active,.approved) { color: var(--success); background: var(--success-bg); }
+.internal-control-page details.card { padding: var(--space-4); background: var(--surface-muted); }
+.internal-control-page summary { cursor: pointer; color: var(--accent); font-size: var(--text-base); font-weight: var(--font-medium); }
+.internal-control-page details[open] summary { margin-bottom: var(--space-3); }
+.internal-control-page :is(.errorbox,[role="alert"]) { margin: var(--space-4) 0; padding: var(--space-4); border: 1px solid var(--danger); border-radius: var(--radius); background: var(--danger-bg); color: var(--danger); font-size: var(--text-sm); }
+.internal-control-page .field-error { display: block; margin-top: var(--space-2); color: var(--danger); font-size: var(--text-sm); }
+.internal-control-page [aria-invalid="true"] { border-color: var(--danger); }
+.internal-control-page .issue { background: var(--warning-bg); color: var(--warning); border-color: var(--warning); }
+.internal-control-page .issue.blocking { background: var(--danger-bg); color: var(--danger); border-color: var(--danger); }
+@media (max-width: 700px) {
+  .internal-control-page :is(section,.card) { padding: var(--space-4); }
+}
+
+/* Keep the monitoring plan selector and submit action outside the short-field grid. */
+.internal-control-monitoring-page .ic-grid { margin-bottom: var(--space-4); }
+@media (min-width: 701px) {
+  .internal-control-monitoring-page .ic-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
+}
+@media (min-width: 1100px) {
+  .internal-control-monitoring-page .ic-grid { grid-template-columns: repeat(3,minmax(0,1fr)); }
+}
+
+/* Preserve complete words and let header content determine table column widths. */
+.internal-control-monitoring-page table { table-layout: auto; }
+.internal-control-monitoring-page :is(th,td) { overflow-wrap: normal; word-break: normal; hyphens: none; }
+
+/* Divide the short count values evenly; reuse the existing 1000px table minimum
+   so complete header words also fit in equal columns on narrow screens. */
+.internal-control-monitoring-page .ic-counts-table { table-layout: fixed; width: 100%; min-width: 1000px; }
+
+.internal-control-monitoring-page .ic-counts-table th { vertical-align: bottom; }

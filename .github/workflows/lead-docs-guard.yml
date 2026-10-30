@@ -1,0 +1,37 @@
+name: Lead records guard
+# D-205: only lead branches (lead/...) of this repository may change the canonical lead records.
+# D-207: runs as pull_request_target so the check always comes from the base branch's
+# trusted copy of this file; a PR cannot rewrite the guard to pass. It never checks out
+# or runs PR code — it only reads PR metadata.
+on:
+  pull_request_target:
+    paths:
+      - 'docs/lead/**'
+      - 'AGENTS.md'
+      - '.github/workflows/lead-docs-guard.yml'
+permissions:
+  contents: read
+jobs:
+  guard:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Check branch name and origin
+        env:
+          HEAD_REF: ${{ github.event.pull_request.head.ref }}
+          HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
+          BASE_REPO: ${{ github.repository }}
+        run: |
+          if [ "$HEAD_REPO" != "$BASE_REPO" ]; then
+            echo "::error title=Lead records are protected::Fork PR'ları docs/lead/ ve AGENTS.md dosyalarını değiştiremez (D-205)."
+            exit 1
+          fi
+          case "$HEAD_REF" in
+            lead/*)
+              echo "Lead branch — allowed."
+              ;;
+            *)
+              echo "::error title=Lead records are protected::docs/lead/ ve AGENTS.md yalnızca lead/... dalından değiştirilebilir. Bu dosyalardaki değişiklikleri geri alıp yeniden gönderin (D-205)."
+              exit 1
+              ;;
+          esac

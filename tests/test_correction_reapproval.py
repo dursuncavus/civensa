@@ -2,6 +2,7 @@
 import json
 from datetime import timedelta
 import pytest
+from tests.race_helpers import run_race
 from sqlalchemy import select, func, event, text
 from sqlalchemy.exc import DBAPIError
 from sqlalchemy.orm.attributes import set_committed_value
@@ -166,17 +167,15 @@ def test_current_authority_changes_fail_closed(foundation_db,people,released,bad
 
 
 def test_concurrent_submission_binds_one_decision(foundation_db,people,released):
-    from concurrent.futures import ThreadPoolExecutor
-    from threading import Barrier
     from sqlalchemy.orm import Session
     db=foundation_db;x=people;p,rev,g,q=correction(db,x,released);version=p.version
-    pid=p.id;uid=x['user'].id;sha=rev.sha256;db.commit();barrier=Barrier(2)
-    def run(_):
+    pid=p.id;uid=x['user'].id;sha=rev.sha256;db.commit()
+    def run(barrier):
         with Session(db.get_bind(),expire_on_commit=False) as other:
             actor=other.get(User,uid);barrier.wait()
             try:packages.transition(other,actor,pid,'submit_to_director',version,sha);other.commit();return 1
             except auth.HTTPException as exc:other.rollback();return exc.status_code
-    with ThreadPoolExecutor(max_workers=2) as pool:assert sorted(pool.map(run,range(2)))==[1,409]
+    assert sorted(run_race('test_concurrent_submission_binds_one_decision', [run,run]))==[1,409]
     db.expire_all()
     assert p.state=='director_review' and p.version==version+1
     assert db.scalar(select(func.count(PackageDecision.id)).where(PackageDecision.package_revision_id==rev.id,
@@ -202,7 +201,7 @@ def test_populated_phase5a_upgrade_preserves_correction_history(foundation_db,pe
     before={t:[dict(r) for r in db.execute(text(f'SELECT * FROM {t} ORDER BY 1')).mappings()] for t in tables};db.commit()
     for _ in range(2):
         result=subprocess.run([sys.executable,'-m','alembic','upgrade','head'],cwd=ROOT,
-                              env={**os.environ,'DATABASE_URL':db.get_bind().url.render_as_string(hide_password=False)},capture_output=True,text=True)
+                              env={**os.environ,'DATABASE_URL':db.get_bind().url.render_as_string(hide_password=False)},capture_output=True,text=True, timeout=180)
         assert result.returncode==0,result.stderr
     for t,rows in before.items():assert [dict(r) for r in db.execute(text(f'SELECT * FROM {t} ORDER BY 1')).mappings()]==rows
     act(db,x,p,'submit_to_director','user');act(db,x,p,'director_approve');act(db,x,p,'strategy_approve','strategy')

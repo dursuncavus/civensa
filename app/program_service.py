@@ -5,10 +5,11 @@ from decimal import Decimal
 from collections import defaultdict
 from sqlalchemy import select, or_
 from fastapi import HTTPException
+from .pp_errors import pp_error
 from .models import (ReportCard, Indicator, IndicatorValue, Activity, ActivityCostValue,
     DepartmentCostValue, EconomicValue, DepartmentScope, Department, Program, SubProgram,
     ReportingPeriod, ReportSection, OfficialActivity, ActivityResponsibility, ActivityCatalogueLink,
-    Submission, AuditLog)
+    Submission, SubmissionEvent, AuditLog)
 from .numbers import parse_number, format_number
 from .value_labels import value_kind_label, funding_label
 import json
@@ -24,14 +25,14 @@ PROGRAM_GROUPS = {'service': 'Hizmet Programları', 'management': 'Yönetim ve D
 def save_catalogue_entry(db, period_id, values, department_ids, actor, obj=None, source=None):
     """Shared catalogue write path. Caller owns the transaction; audit is atomic."""
     if not db.get(ReportingPeriod, period_id):
-        raise HTTPException(404)
+        raise pp_error(404, 'Katalog dönemi bulunamadı. Raporlama dönemi seçimini kontrol edin.', 'period_id')
     ids = set(department_ids)
     if not ids or any(not db.get(Department, did) for did in ids):
         raise HTTPException(422, 'Geçerli sorumlu birimleri seçin.')
     if any(not str(values.get(f, '')).strip() for f in ('program_name', 'subprogram_name', 'code', 'name')):
         raise HTTPException(422, 'Katalog kod/ad alanları zorunlu.')
     if obj and obj.period_id != period_id:
-        raise HTTPException(403)
+        raise pp_error(403, 'Katalog kaydı bu döneme ait değil. Kaydın dönemini seçip yeniden deneyin.', 'id')
     existing = {r.department_id: r for r in db.scalars(select(ActivityResponsibility).where(
         ActivityResponsibility.official_activity_id == obj.id))} if obj else {}
     linked = set(db.scalars(select(Activity.department_id).join(ActivityCatalogueLink,
@@ -147,7 +148,7 @@ def save_activity_costs(db, activity, year, data, actor=None):
                 try:
                     values[funding] = parse_number(data[key], money=True)
                 except ValueError as exc:
-                    raise HTTPException(422, str(exc)) from None
+                    raise pp_error(422, f'{activity.name} / {y}: Finansman tutarı geçersiz. Türkçe sayı biçiminde girin (ör. 1.250,50).', key) from None
             else:
                 row = existing.get((y, kind, funding))
                 values[funding] = row.amount if row else None
@@ -155,14 +156,14 @@ def save_activity_costs(db, activity, year, data, actor=None):
             try:
                 total = parse_number(data[prefix], money=True)
             except ValueError as exc:
-                raise HTTPException(422, str(exc)) from None
+                raise pp_error(422, f'{activity.name} / {y}: Toplam tutar geçersiz. Bütçe içi ve dışını ayrı girin.', prefix+'_inside') from None
             old = existing.get((y, kind, 'total'))
             if total is not None and (old is None or total != old.amount):
-                raise HTTPException(422, 'Bütçe içi ve bütçe dışı tutarları ayrı girin.')
+                raise pp_error(422, f'{activity.name} / {y}: Bütçe içi ve bütçe dışı tutarları ayrı girin.', prefix+'_inside')
             if total is None:
                 values = {'inside': None, 'outside': None}
         if (values['inside'] is None) != (values['outside'] is None):
-            raise HTTPException(422, f'{y}: Bütçe içi ve dışını birlikte girin; kaynak yoksa açıkça 0 yazın.')
+            raise pp_error(422, f'{activity.name} / {y}: Bütçe içi ve dışını birlikte girin; kaynak yoksa açıkça 0 yazın.', prefix+('_inside' if values['inside'] is None else '_outside'))
         values['total'] = values['inside'] + values['outside'] if values['inside'] is not None else None
         total_row = existing.get((y, kind, 'total'))
         decision = None
@@ -174,12 +175,12 @@ def save_activity_costs(db, activity, year, data, actor=None):
                 message += ' Karşılaştırılan toplamdan onaylı aktarma etkisi çıkarılmıştır.'
             confirmation = data.get(prefix+'_use_computed')
             if confirmation is not True and confirmation not in ('true', 'on'):
-                raise HTTPException(422, message)
+                raise pp_error(422, message, prefix+'_inside')
             reason = data.get(prefix+'_reason')
             if not isinstance(reason, str) or len(reason.strip()) < 10:
-                raise HTTPException(422, message + ' Karar gerekçesi en az 10 karakter olmalı.')
+                raise pp_error(422, message + ' Karar gerekçesi en az 10 karakter olmalı.', prefix+'_reason')
             if actor is None or values['total'] is None:
-                raise HTTPException(422, message)
+                raise pp_error(422, message, prefix+'_inside')
             decision = {"actor": actor.id, "time": datetime.now(UTC).isoformat(), "activity": activity.id,
                         "activity_name": activity.name, "year": y, "kind": kind,
                         "source_total": str(total_row.source_amount), "source_raw_text": total_row.source_raw_text,
@@ -397,6 +398,187 @@ def period_departments(db, period_id):
             if department_in_year(db, d, period.year)]
 
 
+def cost_reconciliation(db, period_id, snapshots=None, *, include_historical=False):
+    """One live-row calculation for screens, publication gates and frozen exports.
+
+    Parent source totals are available only with complete ActivityCostValue source
+    coverage. Never synthesize a source total from current amounts. Existing
+    explicit source decisions and approved reallocations keep their semantics.
+    """
+    from .activity_mapping_service import activity_mapping_states
+    from types import SimpleNamespace
+    period = db.get(ReportingPeriod, period_id)
+    if snapshots is None:
+        snapshots = [department_snapshot(db, period_id, d.id) for d in period_departments(db, period_id)]
+    snapshots = sorted(snapshots, key=lambda d: ((d['scope'] or {}).get('position', 0), d['department_id']))
+    departments = {d['department_id']: d for d in snapshots
+                   if not d['scope'] or d['scope']['status'] != 'excluded'}
+    activities = [a for d in departments.values() for a in d['activities']]
+    programs = {p.id: p for p in rows(db, Program, period_id)}
+    subprograms = {s.id: s for s in rows(db, SubProgram, period_id) if s.program_id in programs}
+    cards = {c.id: c for c in rows(db, ReportCard, period_id)}
+    states = activity_mapping_states(db, period_id)
+    # Use the same serialized rows as the aggregate. Older frozen schema
+    # adapters omit source fields; absence is a warning, never a new DB query.
+    source_activities = {a['id']: SimpleNamespace(name=a['name'], cost_values=[SimpleNamespace(**{
+        **v, 'amount': Decimal(v['amount']) if v['amount'] is not None else None,
+        'source_amount': Decimal(v['source_amount']) if v.get('source_amount') is not None else None,
+        'source_resolution_json': v.get('source_resolution_json', '{}'),
+    }) for v in a['costs']]) for a in activities}
+    conflicts = {aid: activity_source_disagreements(a) for aid, a in source_activities.items()}
+    members = defaultdict(list)
+    for did in departments:
+        members['department_total', did] = []
+    problems = {}
+    for a in activities:
+        members['department_total', a['department_id']].append(a)
+        sp = subprograms.get(a['subprogram_id'])
+        card = cards.get(a['card_id'])
+        valid_card = card and card.department_id == a['department_id']
+        valid = (states[a['id']]['ready'] and sp and valid_card
+                 and card.subprogram_id == sp.id)
+        if not valid:
+            problems[a['id']] = (f"{departments[a['department_id']]['department']} / {a['name']}: "
+                'program, alt program, kart veya katalog bağlantısı eksik ya da kapsamı uyuşmuyor. '
+                'Faaliyet Eşleştirme ve Performans Kartları ekranlarında bağlantıları tamamlayın.')
+        # A card can locate an incomplete activity, but cannot make it complete.
+        inferred = subprograms.get(card.subprogram_id) if valid_card else None
+        candidates = {s.id for s in (sp, inferred) if s}
+        if not candidates:
+            # No trustworthy programme attribution: every potential parent stays
+            # incomplete. In particular, do not print a sum of the mapped subset.
+            candidates = set(subprograms)
+        for pid in sorted({subprograms[sid].program_id for sid in candidates}):
+            members['program', pid].append(a)
+        for sid in sorted(candidates):
+            members['subprogram', sid].append(a)
+            members['department', sid, a['department_id']].append(a)
+        if not candidates:
+            members['unmapped', a['department_id']].append(a)
+
+    def make_rows(key, label, path, program_id=None, subprogram_id=None, department_id=None):
+        group = members[key]
+        result = []
+        for year, kind in cost_columns(period.year)[0 if include_historical else 3:]:
+            errors = list(dict.fromkeys(problems[a['id']] for a in group if a['id'] in problems))
+            if not group and (departments[department_id]['scope'] or {}).get('status') != 'zero':
+                errors.append(f'{path} / {year}: faaliyet kaydı yok; faaliyetleri ve maliyetlerini tamamlayın '
+                    'veya gerekçeli sıfır bütçe kapsamını seçin.')
+            values = [next((v for v in a['costs'] if
+                (v['year'], v['value_kind'], v['funding_type']) == (year, kind, 'total')), None) for a in group]
+            for a in group:
+                finance = {v['funding_type']: v for v in a['costs']
+                           if (v['year'], v['value_kind']) == (year, kind)}
+                if (any(f not in finance or finance[f]['amount'] is None or finance[f]['state'] != 'verified'
+                        for f in ('inside', 'outside', 'total'))
+                    or Decimal(finance['inside']['amount']) + Decimal(finance['outside']['amount']) != Decimal(finance['total']['amount'])):
+                    errors.append(f"{path} / {a['name']} / {year} {value_kind_label(kind)}: "
+                        'maliyet bilgisi eksik, doğrulanmamış veya bütçe içi + dışı toplamı uyuşmuyor. '
+                        'Faaliyet maliyetlerini kontrol edip tamamlayın.')
+            complete = not errors
+            amount = sum((Decimal(v['amount']) for v in values), Decimal(0)) if complete else None
+            source_complete = bool(values) and not any(a['id'] in problems for a in group) and all(
+                v and v.get('source_amount') is not None for v in values)
+            source = sum((Decimal(v['source_amount']) for v in values), Decimal(0)) if source_complete else None
+            warnings = []
+            if not source_complete:
+                warnings.append(f'{path} / {year} {value_kind_label(kind)}: kaynak toplamı yok '
+                    '(tüm faaliyetleri kapsayan kaynak tutarı bulunmuyor). Kaynak belgeyi kontrol edin.')
+            # Reuse the existing source decision / approved reallocation rules.
+            for a in group:
+                conflict = conflicts[a['id']].get(f'{year}:{kind}')
+                if conflict:
+                    computed = conflict['computed_total']; original = conflict['source_total']
+                    difference = computed - original if computed is not None else None
+                    errors.append(source_total_message(source_activities[a['id']], year, kind, original, computed)
+                        + f' Fark: {format_number(difference, money=True)} TL. Kaynakla karşılaştırın.')
+            difference = amount - source if amount is not None and source is not None else None
+            if difference:
+                # A nonzero raw difference can be explained by an explicit source
+                # decision or an approved reallocation, never by silent correction.
+                message = (f'{path} / {year} {value_kind_label(kind)}: hesaplanan toplam '
+                    f'{format_number(amount, money=True)} TL, kaynak toplamı {format_number(source, money=True)} TL, '
+                    f'fark {format_number(difference, money=True)} TL.')
+                if any(conflicts[a['id']].get(f'{year}:{kind}') for a in group):
+                    errors.append(message + ' Faaliyet tutarlarını kaynakla karşılaştırın.')
+                else:
+                    warnings.append(message + ' Gerekçeli kaynak kararı veya onaylı bütçe aktarması vardır; karar kayıtlarını inceleyin.')
+            result.append(dict(level=key[0], program_id=program_id, subprogram_id=subprogram_id,
+                department_id=department_id, label=label, path=path, year=year, value_kind=kind,
+                activity_ids=sorted(a['id'] for a in group), complete=complete,
+                amount=str(amount) if amount is not None else None,
+                source_amount=str(source) if source is not None else None,
+                difference=str(difference) if difference is not None else None,
+                errors=errors, warnings=warnings,
+                status='Yayın engeli' if errors else ('Uyarı' if warnings else 'Mutabık')))
+        return result
+
+    result = []
+    for pid, program in sorted(programs.items(), key=lambda item: (item[1].name, item[0])):
+        if ('program', pid) not in members:
+            continue
+        result.extend(make_rows(('program', pid), f'Program ara toplamı: {program.name}', program.name, pid))
+        for sid, sp in sorted(subprograms.items(), key=lambda item: (item[1].name, item[0])):
+            if sp.program_id != pid or ('subprogram', sid) not in members:
+                continue
+            path = f'{program.name} / {sp.name}'
+            result.extend(make_rows(('subprogram', sid), f'Alt program ara toplamı: {sp.name}', path, pid, sid))
+            for did, d in departments.items():
+                if ('department', sid, did) in members:
+                    result.extend(make_rows(('department', sid, did), f"Müdürlük ara toplamı: {d['department']}",
+                        f"{path} / {d['department']}", pid, sid, did))
+    for did, d in departments.items():
+        if ('department_total', did) in members:
+            result.extend(make_rows(('department_total', did), f"Müdürlük faaliyetleri toplamı: {d['department']}",
+                d['department'], department_id=did))
+        if ('unmapped', did) in members:
+            result.extend(make_rows(('unmapped', did), f"Eşleştirme eksik: {d['department']}", d['department'], department_id=did))
+    return result
+
+
+def publication_checks(db, period_id):
+    """Read-only gates shared by publication and the release checklist."""
+    checks = []
+    for dept in period_departments(db, period_id):
+        scope = db.scalar(select(DepartmentScope).where(
+            DepartmentScope.department_id == dept.id, DepartmentScope.period_id == period_id))
+        checks.append(dict(id=f'scope:{dept.id}', label=f'{dept.name}: dönem kapsamı',
+            source='program_service.publication_checks / DepartmentScope',
+            observed=record(scope) if scope else None,
+            errors=[] if scope else [f'{dept.name}: dönem kapsamı belirtilmeli.']))
+        if not scope:
+            continue
+        issues, _ = validate_department(db, period_id, dept.id)
+        checks.append(dict(id=f'data:{dept.id}', label=f'{dept.name}: kayıt ve toplam doğrulaması',
+            source='program_service.validate_department', observed=dict(department_id=dept.id),
+            errors=[f'{dept.name}: {e}' for e in issues]))
+        if scope.status == 'required':
+            sub = db.scalar(select(Submission).where(
+                Submission.department_id == dept.id, Submission.period_id == period_id))
+            decision = db.scalar(select(SubmissionEvent).where(
+                SubmissionEvent.submission_id == sub.id, SubmissionEvent.event_type == 'approve',
+                SubmissionEvent.revision == sub.revision).order_by(SubmissionEvent.id.desc())) if sub else None
+            checks.append(dict(id=f'approval:{dept.id}', label=f'{dept.name}: Strateji onayı',
+                source='Submission.status / submission_decision',
+                observed=dict(submission=record(sub) if sub else None,
+                    approval_event_id=decision.id if decision else None,
+                    approver=decision.actor.full_name if decision and decision.actor else None,
+                    approver_id=decision.actor_user_id if decision else None),
+                errors=[] if sub and sub.status == 'approved' else [f'{dept.name}: onay eksik.']))
+    for model, key, label, error in (
+        (ReportSection, 'sections', 'Kitabın genel bilgi bölümleri', 'Kitabın genel bilgi bölümleri hazırlanmalı.'),
+        (OfficialActivity, 'catalogue', 'Sorumlu harcama birimleri kataloğu', 'Sorumlu harcama birimleri kataloğu hazırlanmalı.'),
+    ):
+        records = rows(db, model, period_id)
+        checks.append(dict(id=key, label=label, source=f'{model.__name__} / publication_checks',
+                           observed=dict(record_ids=[r.id for r in records]), errors=[] if records else [error]))
+    for index, subtotal in enumerate(cost_reconciliation(db, period_id)):
+        checks.append(dict(id=f'subtotal:{index}', label=f"{subtotal['path']} / {subtotal['year']}: maliyet ara toplamı",
+            source='program_service.cost_reconciliation / ActivityCostValue.source_amount',
+            observed=subtotal, errors=subtotal['errors'], warnings=subtotal['warnings']))
+    return checks
+
+
 def book_snapshot(db, period_id):
     period = db.get(ReportingPeriod, period_id)
     departments = period_departments(db, period_id)
@@ -420,6 +602,7 @@ def book_snapshot(db, period_id):
     return {'schema_version':'5.0','period':period.year,'departments':snapshots,
         'sections':[record(s) for s in sorted(rows(db,ReportSection,period_id),key=lambda s:(s.position,s.id))],
         'catalogue':catalogue,
+        'cost_reconciliation':cost_reconciliation(db, period_id, snapshots),
         'economics':[{'category':k[0],'year':k[1],'program_group':k[2],'funding_type':k[3],'amount':str(v)} for k,v in sorted(economic.items())],
         'program_costs':[{'program':k[0],'subprogram':k[1],'activity_id':k[2],'name':k[3],'year':k[4],'funding_type':k[5],'amount':str(v)} for k,v in sorted(groups.items())]}
 

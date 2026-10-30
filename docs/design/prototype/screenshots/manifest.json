@@ -1,0 +1,110 @@
+{
+  "viewport_height": 900,
+  "device_scale_factor": 1,
+  "locale": "tr-TR",
+  "timezone": "Europe/Istanbul",
+  "screenshots": [
+    {
+      "file": "components-1440.png",
+      "width": 1440,
+      "height": 5458,
+      "bytes": 493112
+    },
+    {
+      "file": "components-confirm-1440.png",
+      "width": 1440,
+      "height": 900,
+      "bytes": 108319
+    },
+    {
+      "file": "034-modules-1440.png",
+      "width": 1440,
+      "height": 1097,
+      "bytes": 122647
+    },
+    {
+      "file": "024-department-1440.png",
+      "width": 1440,
+      "height": 1663,
+      "bytes": 160105
+    },
+    {
+      "file": "024-remove-dialog-1440.png",
+      "width": 1440,
+      "height": 900,
+      "bytes": 130729
+    },
+    {
+      "file": "024-activity-costs-1440.png",
+      "width": 1440,
+      "height": 1031,
+      "bytes": 123669
+    },
+    {
+      "file": "012-section-editor-1440.png",
+      "width": 1440,
+      "height": 3187,
+      "bytes": 326661
+    },
+    {
+      "file": "012-export-menu-1440.png",
+      "width": 1440,
+      "height": 900,
+      "bytes": 114958
+    },
+    {
+      "file": "components-390.png",
+      "width": 390,
+      "height": 9379,
+      "bytes": 478173
+    },
+    {
+      "file": "components-confirm-390.png",
+      "width": 390,
+      "height": 900,
+      "bytes": 52774
+    },
+    {
+      "file": "034-modules-390.png",
+      "width": 390,
+      "height": 2192,
+      "bytes": 117972
+    },
+    {
+      "file": "024-department-390.png",
+      "width": 390,
+      "height": 3572,
+      "bytes": 161145
+    },
+    {
+      "file": "024-remove-dialog-390.png",
+      "width": 390,
+      "height": 900,
+      "bytes": 54860
+    },
+    {
+      "file": "024-activity-costs-390.png",
+      "width": 390,
+      "height": 2249,
+      "bytes": 121477
+    },
+    {
+      "file": "012-section-editor-390.png",
+      "width": 390,
+      "height": 5998,
+      "bytes": 333384
+    },
+    {
+      "file": "012-export-menu-390.png",
+      "width": 390,
+      "height": 900,
+      "bytes": 48343
+    }
+  ],
+  "mapped_elements": {
+    "034": 14,
+    "024": 32,
+    "012": 58
+  },
+  "browser": "151.0.7922.173"
+}

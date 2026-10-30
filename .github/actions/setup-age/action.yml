@@ -1,0 +1,15 @@
+name: Install verified age
+description: age 1.2.1 for Linux amd64, pinned to its release archive SHA256
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      run: |
+        set -euo pipefail
+        install -d -m 700 "$RUNNER_TEMP/civ092-age"
+        curl --fail --silent --show-error --location --retry 3 \
+          https://github.com/FiloSottile/age/releases/download/v1.2.1/age-v1.2.1-linux-amd64.tar.gz \
+          -o "$RUNNER_TEMP/civ092-age/age.tar.gz"
+        echo "7df45a6cc87d4da11cc03a539a7470c15b1041ab2b396af088fe9990f7c79d50  $RUNNER_TEMP/civ092-age/age.tar.gz" | sha256sum --check --strict
+        tar -xzf "$RUNNER_TEMP/civ092-age/age.tar.gz" -C "$RUNNER_TEMP/civ092-age" age/age age/age-keygen
+        echo "$RUNNER_TEMP/civ092-age/age" >> "$GITHUB_PATH"

@@ -1,9 +1,8 @@
 """Phase 5A only: migrated PostgreSQL correction scopes and immutable releases."""
 import json
 from datetime import timedelta
-from concurrent.futures import ThreadPoolExecutor
-from threading import Barrier
 import pytest
+from tests.race_helpers import run_race
 from sqlalchemy import select,func,text,event
 from sqlalchemy.orm import Session
 from sqlalchemy.orm.attributes import set_committed_value
@@ -75,13 +74,13 @@ def test_disjoint_grants_share_correction_branch(foundation_db,people,released):
 
 
 def test_overlap_accept_and_concurrency(foundation_db,people,released):
-    db=foundation_db;x=people;r=released;q=request(db,x,r);s=request(db,x,r);actor_id=x['strategy'].id;ids=[q.id,s.id];db.commit();barrier=Barrier(2)
-    def run(rid):
+    db=foundation_db;x=people;r=released;q=request(db,x,r);s=request(db,x,r);actor_id=x['strategy'].id;ids=[q.id,s.id];db.commit()
+    def run(rid,barrier):
         with Session(db.get_bind(),expire_on_commit=False) as other:
             actor=other.get(User,actor_id);barrier.wait()
             try:service.decide_request(other,actor,rid,'accept',0);other.commit();return 1
             except service.auth.HTTPException as exc:other.rollback();return exc.status_code
-    with ThreadPoolExecutor(max_workers=2) as pool:out=list(pool.map(run,ids))
+    out=run_race('test_overlap_accept_and_concurrency', [lambda b:run(ids[0],b),lambda b:run(ids[1],b)])
     assert sorted(out)==[1,409]
     db.expire_all();assert sorted(db.get(RevisionRequestState,rid).state for rid in ids)==['accepted','requested']
 
@@ -225,7 +224,7 @@ def test_populated_phase4_upgrade_preserves_history(foundation_db,people,release
     tables=('report_candidates','report_decisions','report_releases','report_artifacts','candidate_packages','package_revisions','workflow_events','actual_revisions','activity_report_approvals','publications','field_change_events')
     before={t:[dict(r) for r in db.execute(text(f'SELECT * FROM {t} ORDER BY id')).mappings()] for t in tables};db.commit()
     for _ in range(2):
-        result=subprocess.run([sys.executable,'-m','alembic','upgrade','head'],cwd=ROOT,env={**os.environ,'DATABASE_URL':db.get_bind().url.render_as_string(hide_password=False)},capture_output=True,text=True)
+        result=subprocess.run([sys.executable,'-m','alembic','upgrade','head'],cwd=ROOT,env={**os.environ,'DATABASE_URL':db.get_bind().url.render_as_string(hide_password=False)},capture_output=True,text=True, timeout=180)
         assert result.returncode==0,result.stderr
     for t,rows in before.items():
         actual=[dict(r) for r in db.execute(text(f'SELECT * FROM {t} ORDER BY id')).mappings()]

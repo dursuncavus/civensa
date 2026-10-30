@@ -1,6 +1,16 @@
 name: Performance program validation
 on:
   pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+    paths-ignore:
+      - 'docs/**'
+      - '**/*.md'
+  # D-292: full suite after every merge into phase5 (merge rule v1.5).
+  push:
+    branches: [feature/authorization-workflow-phase5]
+    paths-ignore:
+      - 'docs/**'
+      - '**/*.md'
   workflow_dispatch:
 permissions:
   contents: read
@@ -9,10 +19,14 @@ concurrency:
   cancel-in-progress: true
 jobs:
   test:
+    if: github.event_name == 'workflow_dispatch' || github.event_name == 'push' || github.event.pull_request.draft == false
     runs-on: ubuntu-24.04
+    timeout-minutes: 40
     strategy:
+      fail-fast: false
       matrix:
         postgres: ['18']
+        shard: [0, 1]
     services:
       postgres:
         image: postgres:${{ matrix.postgres }}
@@ -23,6 +37,7 @@ jobs:
         ports:
           - 5432:5432
         options: >-
+          --tmpfs /var/lib/postgresql:rw,size=2g
           --health-cmd "pg_isready -U civensa_test -d civensa_test"
           --health-interval 5s
           --health-timeout 5s
@@ -34,8 +49,76 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+          cache: pip
+          cache-dependency-path: |
+            requirements-dev.txt
+            requirements.txt
       - run: python -m pip install -r requirements-dev.txt
-      - run: python -m playwright install --with-deps chromium
-      - run: python -m pytest -q --require-postgres
-      - run: python -m compileall -q app
-      - run: node --check app/static/app.js
+      - name: Report runner CPU count
+        id: cpu
+        run: |
+          count=$(nproc)
+          echo "$count"
+          echo "count=$count" >> "$GITHUB_OUTPUT"
+      - name: Resolve Playwright version
+        id: playwright
+        run: echo "version=$(python -c 'from importlib.metadata import version; print(version("playwright"))')" >> "$GITHUB_OUTPUT"
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-${{ runner.arch }}-playwright-${{ steps.playwright.outputs.version }}-chromium
+      # D-294/D-298: apt (playwright install-deps) hung repeatedly on hosted
+      # runners (runs 40481576173, 40498388720, 40502607724; on the first D-298 run the
+      # first apt attempt hit 5 min and retries failed at once). The hosted
+      # image already ships Chrome's libraries, so download Chromium first,
+      # try a headless launch, and run apt only when that launch fails.
+      - name: Install Playwright Chromium
+        shell: bash
+        run: |
+          for attempt in 1 2 3; do
+            if timeout 240 python -m playwright install chromium; then exit 0; fi
+            echo "::warning::Playwright Chromium download attempt $attempt failed or exceeded 4 minutes"
+          done
+          echo "::error::Playwright Chromium download failed three times (runner setup, not a test failure)"
+          exit 1
+      - name: Check Chromium launches, install OS dependencies only if needed
+        shell: bash
+        run: |
+          launch='from playwright.sync_api import sync_playwright
+          with sync_playwright() as p:
+              p.chromium.launch().close()'
+          if timeout 60 python -c "$launch"; then echo "Chromium launches; OS dependencies already present"; exit 0; fi
+          echo "::warning::Chromium did not launch; installing OS dependencies"
+          if timeout 600 python -m playwright install-deps chromium && timeout 60 python -c "$launch"; then exit 0; fi
+          echo "::error::Playwright OS dependencies could not be installed (runner setup, not a test failure)"
+          exit 1
+      # Keep each module on one worker: role tests mutate cluster-wide roles,
+      # and migration tests within a module can share the public schema.
+      - run: >-
+          python -m pytest -q --require-postgres -n ${{ steps.cpu.outputs.count }} --dist loadfile
+          --max-worker-restart=0 --ci-shard-index=${{ matrix.shard }}
+          --ci-shard-count=2 --durations=25
+        env:
+          PYTEST_PLUGINS: ops.ci.pytest_annotations
+          CIVENSA_PYTEST_FAILURES: ${{ runner.temp }}/pytest-failures-${{ matrix.shard }}.json
+      # The runner records at most 10 errors per step. Five batches preserve
+      # the full per-shard budget without adding jobs or changing test selection.
+      - name: Annotate failing tests (1/5)
+        if: failure()
+        run: python ops/ci/pytest_annotations.py "${{ runner.temp }}/pytest-failures-${{ matrix.shard }}.json" --batch 0
+      - name: Annotate failing tests (2/5)
+        if: failure()
+        run: python ops/ci/pytest_annotations.py "${{ runner.temp }}/pytest-failures-${{ matrix.shard }}.json" --batch 1
+      - name: Annotate failing tests (3/5)
+        if: failure()
+        run: python ops/ci/pytest_annotations.py "${{ runner.temp }}/pytest-failures-${{ matrix.shard }}.json" --batch 2
+      - name: Annotate failing tests (4/5)
+        if: failure()
+        run: python ops/ci/pytest_annotations.py "${{ runner.temp }}/pytest-failures-${{ matrix.shard }}.json" --batch 3
+      - name: Annotate failing tests (5/5)
+        if: failure()
+        run: python ops/ci/pytest_annotations.py "${{ runner.temp }}/pytest-failures-${{ matrix.shard }}.json" --batch 4
+      - if: matrix.shard == 0
+        run: python -m compileall -q app
+      - if: matrix.shard == 0
+        run: node --check app/static/app.js

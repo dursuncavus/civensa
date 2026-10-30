@@ -1,0 +1,42 @@
+/* CIV-113: only the PP completion screen. */
+.pp-manifest-page { min-width: 0; padding: var(--space-6); border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); box-shadow: none; color: var(--text); overflow-wrap: anywhere; }
+.pp-manifest-page * { box-sizing: border-box; text-transform: none; letter-spacing: normal; }
+.pp-manifest-page p { margin: 0 0 var(--space-4); }
+.pp-manifest-page .period-toolbar { display: flex; align-items: center; gap: var(--space-4); margin-bottom: var(--space-4); }
+.pp-manifest-page .period-toolbar label { display: flex; align-items: center; gap: var(--space-4); margin: 0; color: var(--text); font-size: var(--text-sm); font-weight: var(--font-medium); }
+.pp-manifest-page select { width: auto; min-width: 0; min-height: var(--control-height); margin: 0; padding: var(--space-2) var(--space-3); border: 1px solid var(--text-secondary); border-radius: var(--radius); background: var(--surface); color: var(--text); font: inherit; }
+.pp-manifest-page .page-actions { display: flex; flex-wrap: wrap; gap: var(--space-3); margin-bottom: var(--space-6); }
+.pp-manifest-page .button { display: inline-flex; align-items: center; justify-content: center; min-height: var(--control-height); max-width: 100%; padding: var(--space-2) var(--space-4); border: 1px solid var(--text-secondary); border-radius: var(--radius); background: var(--surface); color: var(--text); font: var(--font-medium) var(--text-sm) / var(--line-height) var(--font-family); text-decoration: none; }
+.pp-manifest-page .button:hover { background: var(--surface-muted); color: var(--text); }
+.pp-manifest-page .button.primary { background: var(--accent); border-color: var(--accent); color: var(--surface); }
+.pp-manifest-page .button.primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
+.pp-manifest-page .info-panel { padding: var(--space-4); margin-bottom: var(--space-3); border: 1px solid var(--border); border-radius: var(--radius); background: var(--accent-soft); }
+.pp-manifest-page .info-panel p { margin-bottom: 0; }
+.pp-manifest-page dl { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: var(--space-2) var(--space-4); margin: 0 0 var(--space-3); }
+.pp-manifest-page dt { font-weight: var(--font-medium); }
+.pp-manifest-page dd { margin: 0; }
+.pp-manifest-page .muted, .pp-manifest-page .row-kind, .pp-manifest-page .scroll-hint { color: var(--text-secondary); font-size: var(--text-sm); }
+.pp-manifest-page .manifest-summary { margin-top: var(--space-6); font-weight: var(--font-medium); }
+.pp-manifest-page .scroll-hint { display: none; }
+.pp-manifest-page .table-wrap { width: 100%; max-width: 100%; overflow-x: auto; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); }
+.pp-manifest-page table { width: 100%; min-width: 700px; margin: 0; border-collapse: collapse; table-layout: fixed; }
+.pp-manifest-page :is(th, td) { padding: var(--space-3) var(--space-4); border-bottom: 1px solid var(--border); text-align: left; vertical-align: top; font-size: var(--text-base); }
+.pp-manifest-page th { background: var(--surface-muted); color: var(--text-secondary); font-size: var(--text-sm); font-weight: var(--font-medium); }
+.pp-manifest-page th:first-child { width: 40%; }
+.pp-manifest-page tbody tr:last-child td { border-bottom: 0; }
+.pp-manifest-page .row-name { font-weight: var(--font-medium); }
+.pp-manifest-page .count { text-align: right; font-variant-numeric: tabular-nums; }
+.pp-manifest-page .status { display: inline-block; padding: var(--space-1) var(--space-2); border-radius: var(--radius); font-size: var(--text-sm); font-weight: var(--font-medium); white-space: nowrap; }
+.pp-manifest-page .success { color: var(--success); background: var(--success-bg); }
+.pp-manifest-page .warning { color: var(--warning); background: var(--warning-bg); }
+.pp-manifest-page .danger { color: var(--danger); background: var(--danger-bg); }
+.pp-manifest-page a { color: var(--accent); text-underline-offset: 3px; }
+.pp-manifest-page a:hover { color: var(--accent-hover); }
+.pp-manifest-page :is(a, button, select, [tabindex]):focus { outline: var(--focus); outline-offset: var(--focus-offset); box-shadow: none; }
+.pp-manifest-page .source { margin-top: var(--space-3); }
+@media (max-width: 700px) {
+  .pp-manifest-page { padding: var(--space-4); }
+  .pp-manifest-page :is(.period-toolbar, .period-toolbar label) { flex-direction: column; align-items: stretch; }
+  .pp-manifest-page .period-toolbar label { width: 100%; }
+  .pp-manifest-page .scroll-hint { display: block; }
+}

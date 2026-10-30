@@ -93,7 +93,7 @@ def test_blank_zero_revenue_and_final_consistency(section_client,sample):
     assert data[0]['net']==800 and data[0]['rate']==80
     assert data[1]['net'] is None and data[1]['actual']==0
     page=client.get(f'/activity-sections/reports/{doc.id}?code=III.A.1')
-    assert page.status_code==200 and '12.500,23' in page.text and 'Net Tahsilat' in page.text
+    assert page.status_code==200 and '12.500,23' in page.text and '<th>Net tahsilat</th>' in page.text
 
 
 def test_thresholds_and_own_explanations(section_client,sample):
@@ -205,8 +205,8 @@ def test_dynamic_statements_hash_assets_aid_and_audit(section_client,sample,db):
     report=client.get(f'/api/activity-sections/reports/{own.id}').json()
     assert next(s for s in report['sections'] if s['code']=='III.A.4')['missing']==[]
     token=login(client,'strategy@example.invalid')
-    assert len(financial(client,doc)['entries']['aid_directorates'])==1
-    assert len(financial(client,doc)['entries']['audit_directorates'])==2
+    assert len(financial(client,doc)['entries']['aid_directorates'])==0
+    assert len(financial(client,doc)['entries']['audit_directorates'])==0
     assert post(client,token,doc,'/entries/aid',rows=[aid]).status_code==200
     assert db.scalar(select(ARContentEvent).where(ARContentEvent.action=='financial_save',ARContentEvent.actor_id==sample['strategy'].id))
 

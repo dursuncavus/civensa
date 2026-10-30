@@ -114,7 +114,7 @@ def audit_user_change(db, actor, target, field, old, new, reason=None):
 
 
 def register(app):
-    from .main import require_user, require_strategy, templates
+    from .main import require_user, require_strategy, templates, session_period
 
     @app.get('/submit-authorizations')
     def authorizations(request: Request, db: Session = Depends(get_db), user=Depends(require_user)):
@@ -123,7 +123,7 @@ def register(app):
         users = db.scalars(select(User).where(User.department_id == user.department_id,
                                              User.role == 'department', User.position == 'staff').order_by(User.full_name)).all()
         return templates.TemplateResponse(request, 'submit_authorizations.html',
-                                          {'user': user, 'users': users, 'department': db.get(Department, user.department_id)})
+                                          {'user': user, 'period': session_period(request, db), 'users': users, 'department': db.get(Department, user.department_id)})
 
     @app.post('/api/users/{user_id}/submit-authorization')
     async def submit_authorization(user_id: int, request: Request, db: Session = Depends(get_db), user=Depends(require_user)):
@@ -232,7 +232,7 @@ def track_pp_authorship(db, flush_context, instances):
 
 def require_independent_pp_approver(db, user, submission):
     returned = db.scalar(select(SubmissionEvent).where(SubmissionEvent.submission_id == submission.id,
-        SubmissionEvent.event_type == 'return').order_by(SubmissionEvent.id.desc()).limit(1))
+        SubmissionEvent.event_type.in_(['return', 'reopen'])).order_by(SubmissionEvent.id.desc()).limit(1))
     query = select(AuditLog).where(AuditLog.user_id == user.id)
     if returned:
         query = query.where(AuditLog.created_at >= returned.created_at)

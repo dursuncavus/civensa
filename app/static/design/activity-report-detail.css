@@ -1,0 +1,126 @@
+/* CIV-135: existing panel, field, disclosure and table components, scoped to 007/008. */
+.activity-report-detail-page { font: var(--font-regular) var(--text-base) / var(--line-height) var(--font-family); }
+.activity-report-detail-page h3 { font-size: var(--text-card); }
+.activity-report-detail-page :is(.warning-panel, .error-panel, .draft-error) {
+  min-width: 0; margin: 0 0 var(--space-4); padding: var(--space-4);
+  border: 1px solid var(--warning); border-radius: var(--radius);
+  color: var(--warning); background: var(--warning-bg); box-shadow: none;
+}
+.activity-report-detail-page :is(.error-panel, .draft-error) { border-color: var(--danger); color: var(--danger); background: var(--danger-bg); }
+.activity-report-detail-page [role=alert] { max-width: 44rem; }
+.activity-report-detail-page .info-panel p { margin-bottom: var(--space-3); }
+.activity-report-detail-page :is(form, [data-latest-actual], .actual-summary, .secondary, .draft-status, .report-meta, details) { max-width: 44rem; }
+.activity-report-detail-page .actual-summary { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2) var(--space-3); }
+.activity-report-detail-page .actual-summary :is(h3, p) { margin: 0; }
+.activity-report-detail-page [data-latest-actual] { margin-bottom: var(--space-4); }
+.activity-report-detail-page [data-latest-actual] > p { margin-top: var(--space-3); }
+.activity-report-detail-page :is(form, [data-evidence-rows], [data-evidence-row]) { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-4); }
+.activity-report-detail-page form { margin-bottom: var(--space-6); }
+.activity-report-detail-page form:last-child { margin-bottom: 0; }
+.activity-report-detail-page form p { margin: 0; }
+.activity-report-detail-page form > .button { justify-self: start; }
+.activity-report-detail-page label { display: grid; gap: var(--space-2); }
+.activity-report-detail-page :is(input:not([type=hidden]), select, textarea) {
+  display: block; width: 100%; min-width: 0; max-width: 100%; min-height: var(--control-height);
+  margin: 0; padding: var(--space-2) var(--space-3); border: 1px solid var(--text-secondary);
+  border-radius: var(--radius); background: var(--surface); color: var(--text);
+  font: var(--font-regular) var(--text-base) / var(--line-height) var(--font-family); box-shadow: none;
+}
+.activity-report-detail-page textarea { min-height: calc(var(--control-height) + var(--space-8)); resize: vertical; }
+.activity-report-detail-page [aria-invalid=true] { border-color: var(--danger); }
+.activity-report-detail-page [data-evidence-row] { min-width: 0; margin: 0; padding: var(--space-4); border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg); }
+.activity-report-detail-page legend { max-width: 100%; padding-inline: var(--space-2); color: var(--text); font-size: var(--text-sm); font-weight: var(--font-medium); }
+.activity-report-detail-page [data-remove-evidence] { justify-self: start; }
+.activity-report-detail-page input[type=file] { padding: var(--space-2); font-size: var(--text-sm); }
+.activity-report-detail-page input[type=file]::file-selector-button { max-width: 100%; white-space: normal; margin-right: var(--space-2); padding: var(--space-2); border: 1px solid var(--text-secondary); border-radius: var(--radius); background: var(--surface-muted); color: var(--text); font: inherit; cursor: pointer; }
+.activity-report-detail-page :is(a, button, input, select, textarea, summary):focus-visible,
+.activity-report-detail-page :is(input, select, textarea):focus { outline: var(--focus); outline-offset: var(--focus-offset); box-shadow: none; }
+.activity-report-detail-page details { margin-block: var(--space-4); }
+.activity-report-detail-page summary { min-height: var(--control-height); padding-block: var(--space-2); color: var(--accent); cursor: pointer; font-size: var(--text-sm); font-weight: var(--font-medium); }
+.activity-report-detail-page article { padding-block: var(--space-4); border-top: 1px solid var(--border); }
+.activity-report-detail-page .table-wrap { max-width: 100%; margin-bottom: var(--space-4); border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); overflow: auto; }
+.activity-report-detail-page table { min-width: 0; width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+.activity-report-detail-page :is(th, td) { padding: var(--space-3); border-bottom: 1px solid var(--border); vertical-align: top; font-size: var(--text-sm); }
+.activity-report-detail-page th { color: var(--text-secondary); background: var(--surface-muted); font-weight: var(--font-medium); }
+.activity-report-detail-page :is(ul, li, code) { overflow-wrap: anywhere; }
+.activity-report-detail-page ul { padding-left: var(--space-6); }
+.activity-report-detail-page code { color: var(--text); background: var(--surface-muted); white-space: pre-wrap; }
+.activity-report-detail-page .draft-status { margin-block: var(--space-3); color: var(--success); font-size: var(--text-sm); font-weight: var(--font-medium); }
+.activity-report-detail-page .draft-status.unsaved { color: var(--warning); }
+.activity-report-detail-page .has-draft { outline: 2px solid var(--warning); outline-offset: var(--focus-offset); }
+.activity-report-detail-page .indicator-report-summary {
+  display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2);
+  max-width: 44rem; margin: 0 0 var(--space-6);
+}
+.activity-report-detail-page .indicator-report-summary .status,
+.activity-report-detail-page .indicator-state {
+  display: inline-flex; align-items: center; min-height: 28px; padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--border); border-radius: 999px; background: var(--surface-muted);
+  color: var(--text); font-size: var(--text-sm); font-weight: var(--font-medium);
+}
+.activity-report-detail-page :is(.indicator-state.verified) { border-color: var(--accent); background: var(--accent-soft); color: var(--accent); }
+.activity-report-detail-page :is(.indicator-state.needs_review) { border-color: var(--warning); background: var(--warning-bg); color: var(--warning); }
+.activity-report-detail-page :is(.indicator-state.missing, .indicator-state.no-record, .indicator-state-empty) {
+  color: var(--text-secondary);
+}
+.activity-report-detail-page .indicator-summary-separator { color: var(--text-secondary); }
+.activity-report-detail-page .indicator-summary,
+.activity-report-detail-page .indicator-definition { max-width: 44rem; }
+.activity-report-detail-page .indicator-value-summary {
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--space-2) var(--space-3);
+}
+.activity-report-detail-page .indicator-actual {
+  /* Let label, number, unit, pill, target and difference share the flex baseline. */
+  display: contents;
+  color: var(--text-secondary);
+}
+/* The outer row aligns the pill by its text baseline, including on wrapped lines. */
+.activity-report-detail-page .indicator-actual .status { display: inline-block; }
+.activity-report-detail-page .indicator-actual strong {
+  color: var(--text); font-size: var(--text-display); font-weight: var(--font-semibold);
+  font-variant-numeric: tabular-nums;
+}
+.activity-report-detail-page .indicator-target,
+.activity-report-detail-page .indicator-difference {
+  color: var(--text-secondary); font-size: var(--text-sm); font-variant-numeric: tabular-nums;
+}
+.activity-report-detail-page .indicator-bullet {
+  position: relative; width: 100%; max-width: 44rem; height: 12px;
+  margin: 0 0 var(--space-4); border-radius: var(--radius); background: var(--surface-muted);
+}
+.activity-report-detail-page .indicator-bullet-fill {
+  position: absolute; inset: 0 auto 0 0; width: var(--actual-width);
+  border-radius: inherit; background: var(--accent);
+}
+.activity-report-detail-page .indicator-bullet-target {
+  position: absolute; top: -4px; bottom: -4px; left: var(--target-position);
+  width: 2px; background: var(--text-secondary); transform: translateX(-1px);
+}
+.activity-report-detail-page .indicator-deviation-warning {
+  width: fit-content; max-width: 100%; margin-bottom: var(--space-3); padding: var(--space-2) var(--space-3);
+  font-size: var(--text-sm);
+}
+.activity-report-detail-page .indicator-evidence-list { margin-block: var(--space-3) 0; }
+.activity-report-detail-page .indicator-evidence-list li + li { margin-top: var(--space-4); }
+.activity-report-detail-page .indicator-evidence-list li > p { margin: 0; }
+.activity-report-detail-page .indicator-evidence-list li > p:first-child { font-size: var(--text-base); }
+.activity-report-detail-page .indicator-evidence-list .indicator-evidence-file {
+  margin-top: var(--space-1); padding-left: var(--space-4); font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+.activity-report-detail-page .indicator-definition dl { display: grid; gap: var(--space-2); margin: 0 0 var(--space-4); }
+.activity-report-detail-page .indicator-definition dl > div {
+  display: grid; grid-template-columns: minmax(7rem, 0.35fr) minmax(0, 1fr);
+  gap: var(--space-3); padding-top: var(--space-2); border-top: 1px solid var(--border);
+}
+.activity-report-detail-page .indicator-definition dt { color: var(--text-secondary); font-size: var(--text-sm); font-weight: var(--font-medium); }
+.activity-report-detail-page .indicator-definition dd { margin: 0; overflow-wrap: anywhere; }
+.activity-report-detail-page .actual-form-heading { max-width: 44rem; margin: var(--space-4) 0 var(--space-3); }
+.activity-report-detail-page :is(label, dt) { text-transform: none; letter-spacing: normal; }
+@media (max-width: 480px) {
+  .activity-report-detail-page .indicator-definition dl > div { grid-template-columns: minmax(0, 1fr); gap: var(--space-1); }
+}
+/* app.js appends AJAX errors to the record; retain that hook and show them above its form. */
+.activity-report-detail-page [data-draft-record] { display: flex; flex-direction: column; }
+.activity-report-detail-page .actual-form { order: 1; width: 100%; }
+.activity-report-detail-page .draft-status { order: 2; }

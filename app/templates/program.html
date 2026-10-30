@@ -1,47 +1,738 @@
 {% extends 'base.html' %}
-{% block page_title %}{{ snapshot.department }} — Rapor Hazırlığı{% endblock %}
-{% block page_subtitle %}{{ period.year }} · Performans kartları, kaynak kontrolü ve ekonomik tablolar{% endblock %}
-{% macro token() %}<input type="hidden" name="csrf_token" value="{{ request.session.get('csrf_token') }}"><input type="hidden" name="period_id" value="{{ period.id }}">{% endmacro %}
+{% from 'draft_removal.html' import removal %}
+{% block page_title %}
+{{ snapshot.department }} — Rapor hazırlığı
+{% endblock %}
+{% block page_subtitle %}
+{{ period.year }} · Performans kartları, kaynak kontrolü ve ekonomik tablolar
+{% endblock %}
+{% macro token() %}
+<input type="hidden" name="csrf_token" value="{{ request.session.get('csrf_token') }}">
+<input type="hidden" name="period_id" value="{{ period.id }}">
+{% endmacro %}
 {% block content %}
-<p><a class="button" href="/department/{{ department.id }}">Gösterge ve Faaliyet Girişi</a></p>
-{% if errors %}<details class="return-note"><summary>{{ errors|length }} eksik / tutarsız kayıt</summary><ul>{% for error in errors %}<li>{{ error }}</li>{% endfor %}</ul></details>{% else %}<p class="ok-text">Kart ve mali tablo kontrolleri tamamlandı.</p>{% endif %}
-{% if warnings %}<details><summary>İncelenecek birim uyarıları</summary><ul>{% for warning in warnings %}<li>{{ warning }}</li>{% endfor %}</ul></details>{% endif %}
-{% set labels={'source_title':'Bütçe yılı / kart başlığı','administration':'İdare / Birim Adı','responsible':'Sorumlu İdare','rationale':'Gerekçe ve Açıklamalar','goal':'Alt Programın Hedefi','explanation':'Göstergeye İlişkin Ortak Açıklama','calculation_method':'Ortak Hesaplama Yöntemi','data_source':'Verinin Kaynağı','footnote':'Dipnot','source_page':'Kaynak Sayfa','service_area':'Hizmet Alanı','strategic_link':'Stratejik Plan / PH Bağlantısı'} %}
-<h2>Performans Kartları</h2>
-{% for card in cards + ([none] if editable else []) %}
-<details class="record" {% if not card %}open{% endif %}><summary>{{ card.source_title if card else 'Yeni Kart' }}{% if card %} · {{ card.subprogram.name }}{% endif %}</summary>
-<form method="post" action="/program/{{ department.id }}/cards">{{ token() }}{% if card %}<input type="hidden" name="id" value="{{ card.id }}">{% endif %}
-<fieldset {% if not editable %}disabled{% endif %}><label>Kitaptaki sıra<input name="position" type="number" value="{{ card.position if card else cards|length + 1 }}"></label>
-<label>Program / Alt Program<select name="subprogram_id" required>{% for sp in subprograms %}<option value="{{ sp.id }}" {{ 'selected' if card and card.subprogram_id==sp.id else '' }}>{{ sp.program.name }} / {{ sp.name }}</option>{% endfor %}</select></label>
-{% for field in fields %}<label>{{ labels[field] }}<textarea name="{{ field }}" rows="{{ 4 if field in ['rationale','goal','explanation','calculation_method','data_source'] else 2 }}">{{ card|attr(field) if card else '' }}</textarea></label>{% endfor %}
-{% if editable %}<button class="button primary">Kartı Kaydet</button>{% endif %}</fieldset></form></details>
-{% endfor %}
-<h2>Gösterge ve Faaliyetlerin Kartlara Atanması</h2>
-<p>Aynı alt programda birden fazla kart olabilir. Kaydın ait olduğu kartı seçin.</p>
-{% for kind, items in [('indicator',snapshot.indicators),('activity',snapshot.activities)] %}
-{% for item in items %}<form class="record" method="post" action="/program/{{ department.id }}/assign">{{ token() }}<input type="hidden" name="kind" value="{{ kind }}"><input type="hidden" name="record_id" value="{{ item.id }}"><b>{{ item.name }}</b><fieldset {% if not editable %}disabled{% endif %}><div class="editor-grid"><label>Kart<select name="card_id" required><option value="">Kart seçin</option>{% for c in cards %}<option value="{{ c.id }}" {{ 'selected' if item.card_id==c.id else '' }}>{{ c.source_title }} · {{ c.goal[:90] }}</option>{% endfor %}</select></label><label>Kaynak kodu<input name="code" value="{{ item.code }}"></label><label>Sıra<input type="number" name="position" value="{{ item.position }}"></label></div>{% if editable %}<button class="button">Atamayı Kaydet</button>{% endif %}</fieldset></form>{% endfor %}{% endfor %}
-{% if editable and cards %}<details class="record"><summary>Yeni Gösterge</summary><form method="post" action="/program/{{ department.id }}/indicator">{{ token() }}<label>Kart<select name="card_id">{% for c in cards %}<option value="{{ c.id }}">{{ c.source_title }} · {{ c.goal[:80] }}</option>{% endfor %}</select></label><label>Gösterge adı<input name="name" required maxlength="300"></label><label>Ölçü birimi<input name="unit" required maxlength="50"></label><button class="button">Gösterge Ekle</button></form></details>{% endif %}
-<h2>Sorumlu Harcama Birimleri Kataloğu Bağlantısı</h2>
-{% for activity in snapshot.activities %}<form class="record" method="post" action="/program/{{ department.id }}/catalogue-link">{{ token() }}<input type="hidden" name="activity_id" value="{{ activity.id }}"><b>{{ activity.name }}</b><fieldset {% if not editable %}disabled{% endif %}><label>Resmî faaliyetler<select multiple name="official_ids" size="5">{% for item in catalogue %}<option value="{{ item.id }}" {{ 'selected' if item.id in activity.official_ids else '' }}>{{ item.code }} {{ item.name }}</option>{% endfor %}</select></label>{% if editable %}<button class="button">Bağlantıyı Kaydet</button>{% endif %}</fieldset></form>{% endfor %}
-<h2>Kaynak Değerlerini Doğrulama</h2>
-{% for indicator in snapshot.indicators %}{% for value in indicator['values'] %}{% if value.state!='verified' or value.value_kind=='value' %}
-<form class="record" method="post" action="/program/{{ department.id }}/verify-value/{{ value.id }}">{{ token() }}<b>{{ indicator.name }} · {{ value.year }}</b><p>Kaynak gösterimi: {{ value.raw_text or value.value }} · Önceki tür: {{ value.value_kind|value_kind_label }}</p><fieldset {% if not editable %}disabled{% endif %}><label>Doğrulanmış değer<input name="value" value="{{ value.value|trnum if value.value is not none else '' }}" required></label><label>Değer türü<select name="value_kind">{% for kind,label in [('actual','Gerçekleşme'),('planned','Planlanan'),('year_end_estimate','Yıl Sonu Gerçekleşme Tahmini'),('target','Hedef'),('forecast','Tahmin')] %}<option value="{{ kind }}" {{ 'selected' if value.value_kind==kind else '' }}>{{ label }}</option>{% endfor %}</select></label>{% if editable %}<button class="button">Kaynağa Göre Doğrula</button>{% endif %}</fieldset></form>
-{% endif %}{% endfor %}{% endfor %}
-{% for kind,items in [('activity',snapshot.activities),('personnel',[{'name':'Personel ve SGK Giderleri','costs':snapshot.department_costs}])] %}{% for item in items %}{% for value in item.costs %}{% if value.state not in ['verified','not_applicable'] %}
-<form class="record" method="post" action="/program/{{ department.id }}/verify-money/{{ kind }}/{{ value.id }}">{{ token() }}<b>{{ item.name }} · {{ value.year }} {{ value.value_kind|value_kind_label }} {{ value.funding_type|funding_label if kind=='activity' else '' }}</b><p>Ham kaynak: {{ value.raw_text }}</p><fieldset {% if not editable %}disabled{% endif %}><label>Kaynakla doğrulanmış tutar (TL)<input name="amount" value="{{ value.amount|trmoney if value.amount is not none else '' }}" required></label>{% if editable %}<button class="button">Tutarı Doğrula</button>{% endif %}</fieldset></form>
-{% endif %}{% endfor %}{% endfor %}{% endfor %}
-<h2>Faaliyet Finansmanı</h2><p>Her dönemde bütçe içi ve bütçe dışını ayrı girin. Kaynak yoksa 0 yazın; henüz belirlenmediyse ikisini de boş bırakın. Toplam otomatik hesaplanır.</p>
-{% for activity in snapshot.activities %}<details class="record"><summary>{{ activity.name }}</summary><form method="post" action="/program/{{ department.id }}/finance/{{ activity.id }}">{{ token() }}{% set values={} %}{% for cost in activity.costs %}{% set _=values.update({cost.year|string ~ ':' ~ cost.value_kind ~ ':' ~ cost.funding_type:('-' if cost.state=='not_applicable' else cost.amount)}) %}{% endfor %}<fieldset {% if not editable %}disabled{% endif %}><div class="editor-grid">{% for year,kind in cost_columns %}{% for fund,label in [('inside','Bütçe İçi'),('outside','Bütçe Dışı')] %}<label>{{ year }} {{ {'budget':'Bütçe','midyear_spend':'Haziran Sonu Harcama','year_end_estimate':'Yıl Sonu Harcama Tahmini','forecast':'Tahmin'}[kind] }} · {{ label }}<input name="cost_{{ year }}_{{ kind }}_{{ fund }}" value="{{ '-' if values.get(year|string ~ ':' ~ kind ~ ':' ~ fund)=='-' else (values.get(year|string ~ ':' ~ kind ~ ':' ~ fund)|trmoney if values.get(year|string ~ ':' ~ kind ~ ':' ~ fund) is not none else '') }}"></label>{% endfor %}{% endfor %}</div>{% if editable %}<button class="button">Finansmanı Kaydet</button>{% endif %}</fieldset></form></details>{% endfor %}
-<h2>Ekonomik Tablo</h2>
-{% if user.role=='strategy' and snapshot.economics|selectattr('program_group','equalto','unallocated')|list %}
-<p class="return-note">Program grubu belirlenmemiş kaynak hücreler var. <a class="button primary" href="/program/{{ department.id }}/economic-split?period_id={{ period.id }}">Program Grubu Dağılımı</a></p>
+<link rel="stylesheet" href="/static/design/report-preparation.css">
+<div class="report-preparation-page">
+{% set progress = namespace(unassigned=0, unlinked=0, source=0, finance=0, economic=0, cards=0) %}
+{% for card in cards %}
+{% if not card.rationale|trim or not card.goal|trim or not card.responsible|trim %}
+{% set progress.cards = progress.cards + 1 %}
 {% endif %}
-{% for value in snapshot.economics %}{% if value.state!='verified' %}
-<form class="record" method="post" action="/program/{{ department.id }}/verify-money/economic/{{ value.id }}">{{ token() }}<b>{{ categories[value.category] }} · {{ value.year }} {{ value.value_kind|value_kind_label }} · {{ value.funding_type|funding_label }}</b><p>Kaynak tablo {{ value.source_table_number }}: {{ value.raw_text }} · {{ value.issue }}</p><fieldset {% if not editable %}disabled{% endif %}><label>Kaynakla doğrulanmış tutar (TL)<input name="amount" value="{{ value.amount|trmoney if value.amount is not none else '' }}" required></label><label>Program grubu<select name="program_group">{% for key,label in groups.items() %}{% if key!='unallocated' %}<option value="{{ key }}" {{ 'selected' if key==value.program_group else '' }}>{{ label }}</option>{% endif %}{% endfor %}</select></label>{% if editable %}<button class="button">Tutarı Doğrula</button>{% endif %}</fieldset></form>
-{% endif %}{% endfor %}
-
-<form method="get" action="/program/{{ department.id }}"><input type="hidden" name="period_id" value="{{ period.id }}"><label>Program Grubu<select name="group">{% for key,label in groups.items() %}<option value="{{ key }}" {{ 'selected' if key==selected_group else '' }}>{{ label }}</option>{% endfor %}</select></label><label>Kaynak<select name="fund"><option value="inside" {{ 'selected' if selected_fund=='inside' else '' }}>Bütçe İçi</option><option value="outside" {{ 'selected' if selected_fund=='outside' else '' }}>Bütçe Dışı</option></select></label><button class="button">Tabloyu Aç</button></form>
-<form id="economicGridForm" method="post" action="/program/{{ department.id }}/economic-grid"><div id="economicGridErrors" class="return-note" role="alert" tabindex="-1" hidden></div>{{ token() }}<input type="hidden" name="program_group" value="{{ selected_group }}"><input type="hidden" name="funding_type" value="{{ selected_fund }}"><h3>{{ groups[selected_group] }} · {{ 'Bütçe İçi' if selected_fund=='inside' else 'Bütçe Dışı' }}</h3><p>Gider yoksa açıkça 0 girin. Boş hücre belirlenmemiştir.</p><fieldset {% if not editable %}disabled{% endif %}><div class="table-wrap"><table><thead><tr><th>Ekonomik Ad</th>{% for year,kind in columns %}<th>{{ year }} {{ {'budget':'Bütçe','midyear_spend':'Haziran Sonu Harcama','forecast':'Tahmin'}[kind] }}</th>{% endfor %}</tr></thead><tbody>{% for cat,label in categories.items() %}<tr><th>{{ label }}</th>{% for year,kind in columns %}{% set key=cat ~ ':' ~ year|string ~ ':' ~ kind %}<td><input name="{{ key }}" value="{{ economic_map.get(key)|trmoney if economic_map.get(key) is not none else '' }}" aria-label="{{ label }} {{ year }} {{ kind|value_kind_label }}"></td>{% endfor %}</tr>{% endfor %}</tbody></table></div>{% if editable %}<button class="button primary">Tabloyu Kaydet</button>{% endif %}</fieldset></form>
-<div class="table-wrap"><table><thead><tr><th>Yıl / Tür</th><th>Ekonomik Ad</th><th>Program Grubu</th><th>Kaynak</th><th>Tutar</th></tr></thead><tbody>{% for v in snapshot.economics %}<tr><td>{{ v.year }} / {{ v.value_kind|value_kind_label }}</td><td>{{ categories[v.category] }}</td><td>{{ groups[v.program_group] }}</td><td>{{ 'Bütçe İçi' if v.funding_type=='inside' else 'Bütçe Dışı' }}</td><td>{{ v.amount|trmoney }}</td></tr>{% endfor %}</tbody></table></div>
-{% if editable %}<form class="record" method="post" action="/program/{{ department.id }}/economic">{{ token() }}<h3>Ekonomik Tutar Ekle / Güncelle</h3><p>Aynı yıl, tür, gider, program grubu ve kaynak seçildiğinde mevcut hücre güncellenir. Tutarı boş bırakmak o hücreyi kaldırır.</p><div class="editor-grid"><label>Yıl<select name="year">{% for y in [period.year-1,period.year,period.year+1,period.year+2] %}<option>{{ y }}</option>{% endfor %}</select></label><label>Tür<select name="value_kind"><option value="budget">Bütçe</option><option value="midyear_spend">Haziran Sonu Harcama</option><option value="forecast">Tahmin</option></select></label><label>Ekonomik Ad<select name="category">{% for key,label in categories.items() %}<option value="{{ key }}">{{ label }}</option>{% endfor %}</select></label><label>Program Grubu<select name="program_group">{% for key,label in groups.items() %}<option value="{{ key }}">{{ label }}</option>{% endfor %}</select></label><label>Kaynak<select name="funding_type"><option value="inside">Bütçe İçi</option><option value="outside">Bütçe Dışı</option></select></label><label>Tutar (TL)<input name="amount"></label></div><button class="button primary">Tutarı Kaydet</button></form>{% endif %}
+{% endfor %}
+{% for item in snapshot.indicators + snapshot.activities %}
+{% if not item.card_id %}
+{% set progress.unassigned = progress.unassigned + 1 %}
+{% endif %}
+{% endfor %}
+{% for indicator in snapshot.indicators %}
+{% for value in indicator['values'] %}
+{% if value.state != 'verified' or value.value_kind == 'value' %}
+{% set progress.source = progress.source + 1 %}
+{% endif %}
+{% endfor %}
+{% endfor %}
+{% for activity in snapshot.activities %}
+{% if not activity.official_ids %}
+{% set progress.unlinked = progress.unlinked + 1 %}
+{% endif %}
+{% endfor %}
+{% for item in snapshot.activities + [{'costs': snapshot.department_costs}] %}
+{% for value in item.costs %}
+{% if value.state not in ['verified', 'not_applicable'] %}
+{% set progress.source = progress.source + 1 %}
+{% endif %}
+{% endfor %}
+{% endfor %}
+{% macro finance_status(activity) -%}
+{% set check = namespace(missing=false) %}
+{% for year, kind in cost_columns[3:] %}
+{% for fund in ['inside', 'outside', 'total'] %}
+{% set cell = activity.costs|selectattr('year', 'equalto', year)|selectattr('value_kind', 'equalto', kind)|selectattr('funding_type', 'equalto', fund)|list %}
+{% if not cell or cell[0].amount is none or cell[0].state != 'verified' %}
+{% set check.missing = true %}
+{% endif %}
+{% endfor %}
+{% endfor %}
+{{ 'Kontrol edin' if check.missing else 'Tutarlar doğrulandı' }}
+{%- endmacro %}
+{% for activity in snapshot.activities %}
+{% if finance_status(activity)|trim == 'Kontrol edin' %}
+{% set progress.finance = progress.finance + 1 %}
+{% endif %}
+{% endfor %}
+{% for value in snapshot.economics %}
+{% if value.state != 'verified' or value.amount is none or value.program_group == 'unallocated' %}
+{% set progress.economic = progress.economic + 1 %}
+{% endif %}
+{% endfor %}
+{% set sections = [
+('cards', 'Performans Kartları', ('Başlanmadı' if not cards else (progress.cards|string ~ ' kart eksik' if progress.cards else cards|length|string ~ ' kart')), ('warning' if cards and progress.cards else 'neutral')),
+('assignments', 'Gösterge ve faaliyetlerin kartlara atanması', ('Başlanmadı' if not snapshot.indicators and not snapshot.activities else (progress.unassigned|string ~ ' kayıt kartsız' if progress.unassigned else 'Tamamlandı')), ('neutral' if not snapshot.indicators and not snapshot.activities else ('warning' if progress.unassigned else 'success'))),
+('catalogue', 'Sorumlu harcama birimleri kataloğu bağlantısı', ('Başlanmadı' if not snapshot.activities else (progress.unlinked|string ~ ' faaliyet bağlanacak' if progress.unlinked else 'Tamamlandı')), ('neutral' if not snapshot.activities else ('warning' if progress.unlinked else 'success'))),
+('sources', 'Kaynak değerlerini doğrulama', (progress.source|string ~ ' kayıt doğrulanacak' if progress.source else ('Kaynak değerleri doğrulandı' if snapshot.indicators or snapshot.activities or snapshot.department_costs else 'Başlanmadı')), ('warning' if progress.source else ('success' if snapshot.indicators or snapshot.activities or snapshot.department_costs else 'neutral'))),
+('finance', 'Faaliyet finansmanı', ('Başlanmadı' if not snapshot.activities else (progress.finance|string ~ ' faaliyet kontrol edilecek' if progress.finance else 'Tutarlar doğrulandı')), ('neutral' if not snapshot.activities else ('warning' if progress.finance else 'success'))),
+('economics', 'Ekonomik tablo', ('Başlanmadı' if not snapshot.economics else (progress.economic|string ~ ' hücre doğrulanacak' if progress.economic else 'Kaynak hücreleri doğrulandı')), ('neutral' if not snapshot.economics else ('warning' if progress.economic else 'success')))
+] %}
+<section class="rp-panel rp-overview" aria-labelledby="rp-overview-title">
+<h2 id="rp-overview-title">
+Bu sayfadaki işler
+</h2>
+{% if not editable %}
+<p class="rp-readonly">
+Salt okunur · Bu ekranda kayıt yapılamaz.
+</p>
+{% endif %}
+<ul class="rp-task-list">
+{% for id, title, status, tone in sections %}
+<li>
+<a href="#rp-{{ id }}">
+{{ title }}
+</a>
+<span class="rp-status {{ tone }}">
+{{ status }}
+</span>
+</li>
+{% endfor %}
+</ul>
+{% if errors %}
+<details class="return-note rp-errors" open>
+<summary>
+{{ errors|length }} eksik / tutarsız kayıt
+</summary>
+<ul>
+{% for error in errors %}
+<li>
+{{ error }}
+</li>
+{% endfor %}
+</ul>
+</details>
+{% else %}
+<p class="ok-text">
+Kart ve mali tablo kontrolleri tamamlandı.
+</p>
+{% endif %}
+{% if warnings %}
+<details>
+<summary>
+İncelenecek birim uyarıları
+</summary>
+<ul>
+{% for warning in warnings %}
+<li>
+{{ warning }}
+</li>
+{% endfor %}
+</ul>
+</details>
+{% endif %}
+<p>
+<a class="button" href="/department/{{ department.id }}?period_id={{ period.id }}">
+Gösterge ve faaliyet girişi
+</a>
+</p>
+</section>
+{% include 'pp_reconciliation.html' %}
+{% set labels={'source_title':'Bütçe yılı / kart başlığı','administration':'İdare / birim adı','responsible':'Sorumlu İdare','rationale':'Gerekçe ve Açıklamalar','goal':'Alt Programın Hedefi','explanation':'Göstergeye ilişkin ortak açıklama','calculation_method':'Ortak hesaplama yöntemi','data_source':'Verinin Kaynağı','footnote':'Dipnot','source_page':'Kaynak sayfa','service_area':'Hizmet alanı','strategic_link':'Stratejik plan / PH bağlantısı'} %}
+<section class="rp-panel" id="rp-cards" aria-labelledby="rp-cards-title">
+<h2 id="rp-cards-title">
+1. Performans Kartları
+</h2>
+{% for card in cards + ([none] if editable else []) %}
+<details class="record"
+{% if request.state.pp_attempt is defined %}
+open
+{% endif %}
+{% if not card and editable %}
+open
+{% endif %}
+>
+<summary>
+{{ card.source_title if card else 'Yeni kart' }}
+{% if card %}
+· {{ card.subprogram.name }}
+{% endif %}
+<span class="rp-status">
+{{ ('Kontrol edin' if not card.rationale|trim or not card.goal|trim or not card.responsible|trim else 'Kart bilgileri girildi') if card else 'Yeni kayıt' }}
+</span>
+</summary>
+{% filter pp_form(request) %}
+<form method="post" action="/program/{{ department.id }}/cards">
+{{ token() }}
+{% if card %}
+<input type="hidden" name="id" value="{{ card.id }}">
+{% endif %}
+<fieldset
+{% if not editable %}
+disabled
+{% endif %}
+>
+<label>
+Kitaptaki sıra
+<input name="position" type="number" value="{{ card.position if card else cards|length + 1 }}">
+</label>
+<label>
+Program / Alt Program
+<select name="subprogram_id" required>
+{% for sp in subprograms %}
+<option value="{{ sp.id }}" {{ 'selected' if card and card.subprogram_id==sp.id else '' }}>
+{{ sp.program.name }} / {{ sp.name }}
+</option>
+{% endfor %}
+</select>
+</label>
+{% for field in fields %}
+<label>
+{{ labels[field] }}<textarea name="{{ field }}" rows="{{ 4 if field in ['rationale','goal','explanation','calculation_method','data_source'] else 2 }}">{{ card|attr(field) if card else '' }}</textarea>
+</label>
+{% endfor %}
+{% if editable %}
+<button class="button primary">
+Kartı kaydet
+</button>
+{% endif %}
+</fieldset>
+</form>
+{% endfilter %}
+{% if card and removable %}
+{{ removal('card', card.id, card.source_title or 'Performans kartı', department.id, period.id, request.session.get('csrf_token')) }}
+{% endif %}
+</details>
+{% endfor %}
+</section>
+<section class="rp-panel" id="rp-assignments" aria-labelledby="rp-assignments-title">
+<h2 id="rp-assignments-title">
+2. Gösterge ve faaliyetlerin kartlara atanması
+</h2>
+<p>
+Aynı alt programda birden fazla kart olabilir. Kaydın ait olduğu kartı seçin.
+</p>
+{% for kind, items in [('indicator',snapshot.indicators),('activity',snapshot.activities)] %}
+{% for item in items %}
+<div class="record">
+{% filter pp_form(request) %}
+<form method="post" action="/program/{{ department.id }}/assign">
+{{ token() }}
+<input type="hidden" name="kind" value="{{ kind }}">
+<input type="hidden" name="record_id" value="{{ item.id }}">
+<b>
+{{ item.name }}
+</b>
+<fieldset
+{% if not editable %}
+disabled
+{% endif %}
+>
+<div class="editor-grid">
+<label>
+Kart
+<select name="card_id" required>
+<option value="">
+Kart seçin
+</option>
+{% for c in cards %}
+<option value="{{ c.id }}" {{ 'selected' if item.card_id==c.id else '' }}>
+{{ c.source_title }} · {{ c.goal[:90] }}
+</option>
+{% endfor %}
+</select>
+</label>
+<label>
+Kaynak kodu
+<input name="code" value="{{ item.code }}">
+</label>
+<label>
+Sıra
+<input type="number" name="position" value="{{ item.position }}">
+</label>
+</div>
+{% if editable %}
+<button class="button">
+Atamayı kaydet
+</button>
+{% endif %}
+</fieldset>
+</form>
+{% endfilter %}
+{% if kind=='indicator' and removable %}
+{{ removal(kind, item.id, item.name, department.id, period.id, request.session.get('csrf_token')) }}
+{% endif %}
+</div>
+{% endfor %}
+{% endfor %}
+{% if editable and cards %}
+<details class="record"
+{% if request.state.pp_attempt is defined %}
+open
+{% endif %}
+>
+<summary>
+Yeni gösterge
+</summary>
+{% filter pp_form(request) %}
+<form method="post" action="/program/{{ department.id }}/indicator">
+{{ token() }}
+<label>
+Kart
+<select name="card_id">
+{% for c in cards %}
+<option value="{{ c.id }}">
+{{ c.source_title }} · {{ c.goal[:80] }}
+</option>
+{% endfor %}
+</select>
+</label>
+<label>
+Gösterge adı
+<input name="name" required maxlength="300">
+</label>
+<label>
+Ölçü birimi
+<input name="unit" required maxlength="50">
+</label>
+<button class="button">
+Gösterge ekle
+</button>
+</form>
+{% endfilter %}
+</details>
+{% endif %}
+</section>
+<section class="rp-panel" id="rp-catalogue" aria-labelledby="rp-catalogue-title">
+<h2 id="rp-catalogue-title">
+3. Sorumlu harcama birimleri kataloğu bağlantısı
+</h2>
+{% for activity in snapshot.activities %}
+{% filter pp_form(request) %}
+<form class="record" method="post" action="/program/{{ department.id }}/catalogue-link">
+{{ token() }}
+<input type="hidden" name="activity_id" value="{{ activity.id }}">
+<b>
+{{ activity.name }}
+</b>
+<fieldset
+{% if not editable %}
+disabled
+{% endif %}
+>
+<label>
+Resmî faaliyetler
+<select multiple name="official_ids" size="5">
+{% for item in catalogue %}
+<option value="{{ item.id }}" {{ 'selected' if item.id in activity.official_ids else '' }}>
+{{ item.code }} {{ item.name }}
+</option>
+{% endfor %}
+</select>
+</label>
+{% if editable %}
+<button class="button">
+Bağlantıyı kaydet
+</button>
+{% endif %}
+</fieldset>
+</form>
+{% endfilter %}
+{% endfor %}
+</section>
+<section class="rp-panel" id="rp-sources" aria-labelledby="rp-sources-title">
+<h2 id="rp-sources-title">
+4. Kaynak değerlerini doğrulama
+</h2>
+{% for indicator in snapshot.indicators %}
+{% for value in indicator['values'] %}
+{% if value.state!='verified' or value.value_kind=='value' %}
+{% filter pp_form(request) %}
+<form class="record" method="post" action="/program/{{ department.id }}/verify-value/{{ value.id }}">
+{{ token() }}
+<b>
+{{ indicator.name }} · {{ value.year }}
+</b>
+<p>
+Kaynak gösterimi: {{ value.raw_text or value.value }} · Önceki tür: {{ value.value_kind|value_kind_label }}
+</p>
+<fieldset
+{% if not editable %}
+disabled
+{% endif %}
+>
+<label>
+Doğrulanmış değer
+<input name="value" value="{{ value.value|trnum if value.value is not none else '' }}" required>
+</label>
+<label>
+Değer türü
+<select name="value_kind">
+{% for kind,label in [('actual','Gerçekleşme'),('planned','Planlanan'),('year_end_estimate','Yıl Sonu Gerçekleşme Tahmini'),('target','Hedef'),('forecast','Tahmin')] %}
+<option value="{{ kind }}" {{ 'selected' if value.value_kind==kind else '' }}>
+{{ label }}
+</option>
+{% endfor %}
+</select>
+</label>
+{% if editable %}
+<button class="button">
+Kaynağa göre doğrula
+</button>
+{% endif %}
+</fieldset>
+</form>
+{% endfilter %}
+{% endif %}
+{% endfor %}
+{% endfor %}
+{% for kind,items in [('activity',snapshot.activities),('personnel',[{'name':'Personel ve SGK Giderleri','costs':snapshot.department_costs}])] %}
+{% for item in items %}
+{% for value in item.costs %}
+{% if value.state not in ['verified','not_applicable'] %}
+{% filter pp_form(request) %}
+<form class="record" method="post" action="/program/{{ department.id }}/verify-money/{{ kind }}/{{ value.id }}">
+{{ token() }}
+<b>
+{{ item.name }} · {{ value.year }} {{ value.value_kind|value_kind_label }} {{ value.funding_type|funding_label if kind=='activity' else '' }}
+</b>
+<p>
+Ham kaynak: {{ value.raw_text }}
+</p>
+<fieldset
+{% if not editable %}
+disabled
+{% endif %}
+>
+<label>
+Kaynakla doğrulanmış tutar (TL)
+<input name="amount" value="{{ value.amount|trmoney if value.amount is not none else '' }}" required>
+</label>
+{% if editable %}
+<button class="button">
+Tutarı doğrula
+</button>
+{% endif %}
+</fieldset>
+</form>
+{% endfilter %}
+{% endif %}
+{% endfor %}
+{% endfor %}
+{% endfor %}
+</section>
+<section class="rp-panel" id="rp-finance" aria-labelledby="rp-finance-title">
+<h2 id="rp-finance-title">
+5. Faaliyet finansmanı
+</h2>
+<p>
+Her dönemde bütçe içi ve bütçe dışını ayrı girin. Kaynak yoksa 0 yazın; henüz belirlenmediyse ikisini de boş bırakın. Toplam otomatik hesaplanır.
+</p>
+{% for activity in snapshot.activities %}
+<details class="record"
+{% if request.state.pp_attempt is defined %}
+open
+{% endif %}
+>
+<summary>
+{{ activity.name }}
+<span class="rp-status">
+{{ finance_status(activity)|trim }}
+</span>
+</summary>
+{% filter pp_form(request) %}
+<form method="post" action="/program/{{ department.id }}/finance/{{ activity.id }}">
+{{ token() }}
+{% set values={} %}
+{% for cost in activity.costs %}
+{% set _=values.update({cost.year|string ~ ':' ~ cost.value_kind ~ ':' ~ cost.funding_type:('-' if cost.state=='not_applicable' else cost.amount)}) %}
+{% endfor %}
+<fieldset
+{% if not editable %}
+disabled
+{% endif %}
+>
+<div class="editor-grid">
+{% for year,kind in cost_columns %}
+{% for fund,label in [('inside','Bütçe İçi'),('outside','Bütçe Dışı')] %}
+<label>
+{{ year }} {{ {'budget':'Bütçe','midyear_spend':'Haziran Sonu Harcama','year_end_estimate':'Yıl Sonu Harcama Tahmini','forecast':'Tahmin'}[kind] }} · {{ label }}
+<input name="cost_{{ year }}_{{ kind }}_{{ fund }}" value="{{ '-' if values.get(year|string ~ ':' ~ kind ~ ':' ~ fund)=='-' else (values.get(year|string ~ ':' ~ kind ~ ':' ~ fund)|trmoney if values.get(year|string ~ ':' ~ kind ~ ':' ~ fund) is not none else '') }}">
+</label>
+{% endfor %}
+{% endfor %}
+</div>
+{% if editable %}
+<button class="button">
+Finansmanı kaydet
+</button>
+{% endif %}
+</fieldset>
+</form>
+{% endfilter %}
+</details>
+{% endfor %}
+</section>
+<section class="rp-panel" id="rp-economics" aria-labelledby="rp-economics-title">
+<h2 id="rp-economics-title">
+6. Ekonomik tablo
+</h2>
+{% if user.role=='strategy' and snapshot.economics|selectattr('program_group','equalto','unallocated')|list %}
+<p class="return-note">
+Program grubu belirlenmemiş kaynak hücreler var.
+<a class="button primary" href="/program/{{ department.id }}/economic-split?period_id={{ period.id }}">
+Program Grubu Dağılımı
+</a>
+</p>
+{% endif %}
+{% for value in snapshot.economics %}
+{% if value.state!='verified' %}
+{% filter pp_form(request) %}
+<form class="record" method="post" action="/program/{{ department.id }}/verify-money/economic/{{ value.id }}">
+{{ token() }}
+<b>
+{{ categories[value.category] }} · {{ value.year }} {{ value.value_kind|value_kind_label }} · {{ value.funding_type|funding_label }}
+</b>
+<p>
+Kaynak tablo {{ value.source_table_number }}: {{ value.raw_text }} · {{ value.issue }}
+</p>
+<fieldset
+{% if not editable %}
+disabled
+{% endif %}
+>
+<label>
+Kaynakla doğrulanmış tutar (TL)
+<input name="amount" value="{{ value.amount|trmoney if value.amount is not none else '' }}" required>
+</label>
+<label>
+Program Grubu
+<select name="program_group">
+{% for key,label in groups.items() %}
+{% if key!='unallocated' %}
+<option value="{{ key }}" {{ 'selected' if key==value.program_group else '' }}>
+{{ label }}
+</option>
+{% endif %}
+{% endfor %}
+</select>
+</label>
+{% if editable %}
+<button class="button">
+Tutarı doğrula
+</button>
+{% endif %}
+</fieldset>
+</form>
+{% endfilter %}
+{% endif %}
+{% endfor %}
+{% filter pp_form(request) %}
+<form class="rp-toolbar" method="get" action="/program/{{ department.id }}">
+<input type="hidden" name="period_id" value="{{ period.id }}">
+<label>
+Program Grubu
+<select name="group">
+{% for key,label in groups.items() %}
+<option value="{{ key }}" {{ 'selected' if key==selected_group else '' }}>
+{{ label }}
+</option>
+{% endfor %}
+</select>
+</label>
+<label>
+Kaynak
+<select name="fund">
+<option value="inside" {{ 'selected' if selected_fund=='inside' else '' }}>
+Bütçe İçi
+</option>
+<option value="outside" {{ 'selected' if selected_fund=='outside' else '' }}>
+Bütçe Dışı
+</option>
+</select>
+</label>
+<button class="button">
+Tabloyu aç
+</button>
+</form>
+{% endfilter %}
+{% filter pp_form(request) %}
+<form id="economicGridForm" method="post" action="/program/{{ department.id }}/economic-grid">
+<div id="economicGridErrors" class="return-note" role="alert" tabindex="-1" hidden>
+</div>
+{{ token() }}
+<input type="hidden" name="program_group" value="{{ selected_group }}">
+<input type="hidden" name="funding_type" value="{{ selected_fund }}">
+<h3>
+{{ groups[selected_group] }} · {{ 'Bütçe İçi' if selected_fund=='inside' else 'Bütçe Dışı' }}
+</h3>
+<p>
+Gider yoksa açıkça 0 girin. Boş hücre belirlenmemiştir.
+</p>
+<fieldset
+{% if not editable %}
+disabled
+{% endif %}
+>
+<p class="rp-scroll-hint">
+Tablonun devamını görmek için yatay kaydırın.
+</p>
+<div class="table-wrap" tabindex="0" role="region" aria-label="Yatay kaydırılabilir tablo">
+<table>
+<thead>
+<tr>
+<th>
+Ekonomik Ad
+</th>
+{% for year,kind in columns %}
+<th>
+{{ year }} {{ {'budget':'Bütçe','midyear_spend':'Haziran Sonu Harcama','forecast':'Tahmin'}[kind] }}
+</th>
+{% endfor %}
+</tr>
+</thead>
+<tbody>
+{% for cat,label in categories.items() %}
+<tr>
+<th>
+{{ label }}
+</th>
+{% for year,kind in columns %}
+{% set key=cat ~ ':' ~ year|string ~ ':' ~ kind %}
+<td>
+<input name="{{ key }}" value="{{ economic_map.get(key)|trmoney if economic_map.get(key) is not none else '' }}" aria-label="{{ label }} {{ year }} {{ kind|value_kind_label }}">
+</td>
+{% endfor %}
+</tr>
+{% endfor %}
+</tbody>
+</table>
+</div>
+{% if editable %}
+<button class="button primary">
+Tabloyu kaydet
+</button>
+{% endif %}
+</fieldset>
+</form>
+{% endfilter %}
+<div class="table-wrap" tabindex="0" role="region" aria-label="Yatay kaydırılabilir tablo">
+<table>
+<thead>
+<tr>
+<th>
+Yıl / tür
+</th>
+<th>
+Ekonomik Ad
+</th>
+<th>
+Program Grubu
+</th>
+<th>
+Kaynak
+</th>
+<th>
+Tutar
+</th>
+</tr>
+</thead>
+<tbody>
+{% for v in snapshot.economics %}
+<tr>
+<td>
+{{ v.year }} / {{ v.value_kind|value_kind_label }}
+</td>
+<td>
+{{ categories[v.category] }}
+</td>
+<td>
+{{ groups[v.program_group] }}
+</td>
+<td>
+{{ 'Bütçe İçi' if v.funding_type=='inside' else 'Bütçe Dışı' }}
+</td>
+<td>
+{{ v.amount|trmoney }}
+</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+</div>
+{% if editable %}
+{% filter pp_form(request) %}
+<form class="record" method="post" action="/program/{{ department.id }}/economic">
+{{ token() }}
+<h3>
+Ekonomik tutar ekle / güncelle
+</h3>
+<p>
+Aynı yıl, tür, gider, program grubu ve kaynak seçildiğinde mevcut hücre güncellenir. Tutarı boş bırakmak o hücreyi kaldırır.
+</p>
+<div class="editor-grid">
+<label>
+Yıl
+<select name="year">
+{% for y in [period.year-1,period.year,period.year+1,period.year+2] %}
+<option>
+{{ y }}
+</option>
+{% endfor %}
+</select>
+</label>
+<label>
+Tür
+<select name="value_kind">
+<option value="budget">
+Bütçe
+</option>
+<option value="midyear_spend">
+Haziran Sonu Harcama
+</option>
+<option value="forecast">
+Tahmin
+</option>
+</select>
+</label>
+<label>
+Ekonomik Ad
+<select name="category">
+{% for key,label in categories.items() %}
+<option value="{{ key }}">
+{{ label }}
+</option>
+{% endfor %}
+</select>
+</label>
+<label>
+Program Grubu
+<select name="program_group">
+{% for key,label in groups.items() %}
+<option value="{{ key }}">
+{{ label }}
+</option>
+{% endfor %}
+</select>
+</label>
+<label>
+Kaynak
+<select name="funding_type">
+<option value="inside">
+Bütçe İçi
+</option>
+<option value="outside">
+Bütçe Dışı
+</option>
+</select>
+</label>
+<label>
+Tutar (TL)
+<input name="amount">
+</label>
+</div>
+<button class="button primary">
+Tutarı kaydet
+</button>
+</form>
+{% endfilter %}
+{% endif %}
+</section>
+{% include 'pp_form_fallback.html' %}
+</div>
 {% endblock %}

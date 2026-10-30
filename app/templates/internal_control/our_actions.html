@@ -2,6 +2,46 @@
 {% block page_title %}İç Kontrol Eylemlerimiz{% endblock %}
 {% block page_subtitle %}Etkin plandaki sorumluluk ve işbirliği görevleri{% endblock %}
 {% block content %}
-{% if plan %}<section class="card"><h2>{{ plan.title }} · {{ plan.version_label }}</h2><p>{{ plan.start_year }}–{{ plan.end_year }} · Salt okunur. Düzeltme için Strateji Geliştirme birimine başvurun.</p></section>{% else %}<p>Henüz etkin bir İç Kontrol planı yok.</p>{% endif %}
-{% for title, actions in [('Sorumlu olduğumuz eylemler', responsible), ('İşbirliği yapacağımız eylemler', cooperating)] %}<section class="card"><h2>{{ title }} ({{ actions|length|trnum }})</h2>{% for a in actions %}<article class="card"><h3>{{ a.action_code_raw }}</h3><p>{{ a.text }}</p><p>Çıktı / Sonuç: {{ a.output_text }}</p><p>Başlama: {{ a.start_raw or 'Belirtilmedi' }} · Tamamlanma: {{ a.due_raw or 'Belirtilmedi' }}</p>{% if a.note %}<p>Açıklama: {{ a.note }}</p>{% endif %}</article>{% else %}<p>Bu bölümde eylem bulunmuyor.</p>{% endfor %}</section>{% endfor %}
+<link rel="stylesheet" href="/static/design/ic-our-actions.css">
+<div class="ic-our-actions-page">
+  <div class="info-panel">
+    <p>Strateji etkin plan için henüz izleme dönemi açmadı.</p>
+    {% if last_monitoring_period_id %}
+    <a href="/internal-control/our-actions?period_id={{ last_monitoring_period_id }}">Geçmiş izleme dönemlerini gör</a>
+    {% endif %}
+  </div>
+  {% if plan %}
+  <section class="card plan-summary">
+    <h2>{{ plan.title }} · {{ plan.version_label }}</h2>
+    <p>{{ plan.start_year }}–{{ plan.end_year }} · Salt okunur. Düzeltme için Strateji Geliştirme birimine başvurun.</p>
+  </section>
+  {% else %}
+  <p class="empty-state">Henüz etkin bir İç Kontrol planı yok.</p>
+  {% endif %}
+  {% for title, actions in [('Sorumlu olduğumuz eylemler', responsible), ('İşbirliği yapacağımız eylemler', cooperating)] %}
+  <section class="action-section">
+    <h2>{{ title }} ({{ actions|length|trnum }})</h2>
+    {% for a in actions %}
+    <article class="card action-card">
+      <p class="action-code">{{ a.action_code_raw }}</p>
+      <h3>{{ a.text }}</h3>
+      <dl>
+        <dt>Çıktı / sonuç:</dt>
+        <dd>{{ a.output_text }}</dd>
+        <dt>Başlama:</dt>
+        <dd>{{ a.start_raw or 'Belirtilmedi' }}</dd>
+        <dt>Tamamlanma:</dt>
+        <dd>{{ a.due_raw or 'Belirtilmedi' }}</dd>
+        {% if a.note %}
+        <dt>Açıklama:</dt>
+        <dd>{{ a.note }}</dd>
+        {% endif %}
+      </dl>
+    </article>
+    {% else %}
+    <p class="empty-state">Bu bölümde eylem bulunmuyor.</p>
+    {% endfor %}
+  </section>
+  {% endfor %}
+</div>
 {% endblock %}

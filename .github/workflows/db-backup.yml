@@ -14,6 +14,7 @@ concurrency:
 
 jobs:
   backup:
+    environment: production
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     services:
@@ -31,10 +32,18 @@ jobs:
           --health-timeout 5s
           --health-retries 12
     steps:
-      - name: Require backup secret
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup-age
+
+      - name: Require backup secret and valid encryption recipient
         env:
           NEON_BACKUP_DATABASE_URL: ${{ secrets.NEON_BACKUP_DATABASE_URL }}
+          BACKUP_AGE_RECIPIENT: ${{ secrets.BACKUP_AGE_RECIPIENT }}
         run: |
+          set -euo pipefail
+          python -m ops.backup_crypto require-recipient
           if [ -z "$NEON_BACKUP_DATABASE_URL" ]; then
             echo "::error::Repository secret NEON_BACKUP_DATABASE_URL is empty. The owner must configure it before running backups."
             exit 1
@@ -56,6 +65,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          umask 077
           python <<'PY'
           import hashlib
           import json
@@ -178,12 +188,23 @@ jobs:
               output.write(f"timestamp={stamp}\n")
           PY
 
-      - name: Upload verified backup
+      - name: Encrypt verified dump and private manifest
+        env:
+          BACKUP_AGE_RECIPIENT: ${{ secrets.BACKUP_AGE_RECIPIENT }}
+        run: |
+          set -euo pipefail
+          python -m ops.backup_crypto encrypt backup/*.dump backup-encrypted
+          python -m ops.backup_crypto check backup-encrypted
+
+      - name: Upload verified encrypted backup
         uses: actions/upload-artifact@v4
         with:
           name: civensa-db-backup-${{ steps.backup.outputs.timestamp }}
-          path: |
-            backup/*.dump
-            backup/*.manifest.json
+          path: backup-encrypted/*.age
           if-no-files-found: error
-          retention-days: 90
+          # Bound ciphertext exposure/storage; existing 90-day artifacts need owner review.
+          retention-days: 30
+
+      - name: Remove runner backup copies
+        if: always()
+        run: rm -rf -- backup backup-encrypted

@@ -1,0 +1,54 @@
+/* CIV-120: page-local design-system components. */
+.source-comparison-page { min-width: 0; padding: var(--space-6); border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); color: var(--text); overflow-wrap: anywhere; }
+.source-comparison-page * { box-sizing: border-box; text-transform: none; letter-spacing: normal; }
+.source-comparison-page p { margin: 0 0 var(--space-3); }
+.source-comparison-page :is(.page-actions, .status-filter) { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-bottom: var(--space-4); }
+.source-comparison-page [hidden] { display: none; }
+.source-comparison-page .button { display: inline-flex; align-items: center; justify-content: center; min-height: var(--control-height); max-width: 100%; padding: var(--space-2) var(--space-4); border: 1px solid var(--text-secondary); border-radius: var(--radius); background: var(--surface); color: var(--text); font: var(--font-medium) var(--text-sm) / var(--line-height) var(--font-family); text-decoration: none; cursor: pointer; }
+.source-comparison-page .button:hover { background: var(--surface-muted); color: var(--text); }
+.source-comparison-page .link-button { border-color: var(--surface); color: var(--accent); text-decoration: underline; text-underline-offset: var(--space-1); }
+.source-comparison-page .button[aria-pressed="true"] { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
+.source-comparison-page :is(.info-panel, .warning-panel, .filter-empty) { padding: var(--space-4); border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: var(--space-4); }
+.source-comparison-page .info-panel { background: var(--accent-soft); }
+.source-comparison-page dl { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: var(--space-2) var(--space-4); margin: 0; }
+.source-comparison-page dt { font-weight: var(--font-medium); }
+.source-comparison-page dd { margin: 0; }
+.source-comparison-page .warning-panel { border-color: var(--warning); color: var(--warning); background: var(--warning-bg); }
+.source-comparison-page .comparison-summary { font-weight: var(--font-medium); margin-top: var(--space-6); }
+.source-comparison-page :is(.muted, .scroll-hint) { color: var(--text-secondary); font-size: var(--text-sm); }
+.source-comparison-page .scroll-hint { display: none; }
+.source-comparison-page .table-wrap { width: 100%; max-width: 100%; overflow-x: auto; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); }
+.source-comparison-page table { table-layout: fixed; width: 100%; min-width: 1000px; margin: 0; border-collapse: collapse; }
+.source-comparison-page :is(th, td) { padding: var(--space-3); border-bottom: 1px solid var(--border); text-align: left; vertical-align: top; font-size: var(--text-sm); }
+.source-comparison-page th { background: var(--surface-muted); color: var(--text-secondary); font-weight: var(--font-medium); }
+.source-comparison-page #source-comparison th:nth-child(1) { width: 20%; }
+.source-comparison-page #source-comparison th:nth-child(2) { width: 25%; }
+.source-comparison-page #source-comparison th:nth-child(3) { width: 15%; }
+.source-comparison-page #source-comparison th:nth-child(4) { width: 12%; }
+.source-comparison-page #source-comparison th:nth-child(5) { width: 10%; }
+.source-comparison-page #source-comparison th:nth-child(6) { width: 18%; }
+.source-comparison-page .amount { text-align: right; font-variant-numeric: tabular-nums; }
+.source-comparison-page .status { display: inline-block; padding: var(--space-1) var(--space-2); border-radius: var(--radius); font-size: var(--text-sm); font-weight: var(--font-medium); }
+.source-comparison-page .success { color: var(--success); background: var(--success-bg); }
+.source-comparison-page .warning { color: var(--warning); background: var(--warning-bg); }
+.source-comparison-page .danger { color: var(--danger); background: var(--danger-bg); }
+.source-comparison-page summary { color: var(--accent); cursor: pointer; }
+.source-comparison-page code { color: var(--text); background: var(--surface-muted); overflow-wrap: anywhere; }
+.source-comparison-page :is(a, button, summary, [tabindex]):focus { outline: var(--focus); outline-offset: var(--focus-offset); box-shadow: none; }
+.source-comparison-page #pp-reconciliation { margin-top: var(--space-6); }
+.source-comparison-page #pp-reconciliation .pp-reconciliation-status { display: inline-block; padding: var(--space-1) var(--space-2); border-radius: var(--radius); font-size: var(--text-sm); font-weight: var(--font-medium); }
+.source-comparison-page #pp-reconciliation .pp-status-danger { color: var(--danger); background: var(--danger-bg); }
+.source-comparison-page #pp-reconciliation .pp-status-warning { color: var(--warning); background: var(--warning-bg); }
+.source-comparison-page #pp-reconciliation .pp-status-success { color: var(--success); background: var(--success-bg); }
+.source-comparison-page #pp-reconciliation .pp-reconciliation-count { margin: var(--space-2) 0; color: var(--text-secondary); font-size: var(--text-sm); }
+.source-comparison-page #pp-reconciliation .pp-reconciliation-details summary { color: var(--accent); cursor: pointer; }
+.source-comparison-page #pp-reconciliation .pp-reconciliation-details[open] > summary { margin-bottom: var(--space-2); }
+.source-comparison-page #pp-reconciliation .pp-reconciliation-details p { margin: 0 0 var(--space-2); }
+@media (max-width: 1400px) {
+  .source-comparison-page .scroll-hint { display: block; }
+}
+@media (max-width: 700px) {
+  .source-comparison-page { padding: var(--space-4); }
+  .source-comparison-page dl { grid-template-columns: minmax(0, 1fr); gap: var(--space-1); }
+  .source-comparison-page dd { margin-bottom: var(--space-2); }
+}

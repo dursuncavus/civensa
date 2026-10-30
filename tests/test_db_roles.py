@@ -70,7 +70,7 @@ def roles_db(request):
                                 cwd=ROOT, env={**os.environ,
                                     'DATABASE_URL': app_url.render_as_string(hide_password=False),
                                     'MIGRATION_DATABASE_URL': owner_url.render_as_string(hide_password=False)},
-                                capture_output=True, text=True)
+                                capture_output=True, text=True, timeout=180)
         assert result.returncode == 0, 'Owner CLI migration failed (connection details suppressed)'
         yield SimpleNamespace(admin=database, owner=owner, runtime=runtime,
                               owner_url=owner_url, app_url=app_url)
@@ -163,7 +163,7 @@ def test_role_sql_defaults_idempotence_and_read_only_audit(roles_db):
     assert statements[0] == 'SET TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY'
     result = subprocess.run([sys.executable, 'tools/db_privilege_audit.py', '--url-env', 'AUDIT_TEST_URL'],
                             cwd=ROOT, env={**os.environ, 'AUDIT_TEST_URL': db.app_url.render_as_string(hide_password=False)},
-                            capture_output=True, text=True)
+                            capture_output=True, text=True, timeout=180)
     assert result.returncode == 0
     report = json.loads(result.stdout)
     assert report['role'] == 'civensa_app' and report['unsafe_runtime_privileges'] == []
@@ -277,14 +277,14 @@ def test_restricted_http_flows_and_immutable_history(roles_db, monkeypatch):
             with Session(db.runtime) as session:
                 assert session.scalars(select(LoginAttempt.email_cleared)).all() == [True]
             assert directorate.get(f'/department/{did}').status_code == 200
-            assert directorate.post(f'/api/indicators/{iid}/save', json={'value_2027_target': '2,5'}).status_code == 200
-            assert directorate.post(f'/api/departments/{did}/submit').json() == {'ok': True, 'revision': 1}
+            assert directorate.post(f'/api/indicators/{iid}/save?period_id={pid}', json={'value_2027_target': '2,5'}).status_code == 200
+            assert directorate.post(f'/api/departments/{did}/submit?period_id={pid}').json() == {'ok': True, 'revision': 1, 'period_id': pid, 'year': 2027, 'redirect_url': f'/department/{did}?period_id={pid}'}
             with Session(db.runtime) as session:
                 sub_id = session.scalar(select(Submission.id))
-            decision = f'/api/submissions/{sub_id}/decision'
+            decision = f'/api/submissions/{sub_id}/decision?period_id={pid}'
             assert strategy.post(decision, json={'decision': 'return', 'note': 'Hedefi düzeltin.'}).status_code == 200
-            assert directorate.post(f'/api/indicators/{iid}/save', json={'value_2027_target': '3,5'}).status_code == 200
-            assert directorate.post(f'/api/departments/{did}/submit').json() == {'ok': True, 'revision': 2}
+            assert directorate.post(f'/api/indicators/{iid}/save?period_id={pid}', json={'value_2027_target': '3,5'}).status_code == 200
+            assert directorate.post(f'/api/departments/{did}/submit?period_id={pid}').json() == {'ok': True, 'revision': 2, 'period_id': pid, 'year': 2027, 'redirect_url': f'/department/{did}?period_id={pid}'}
             assert strategy.post(decision, json={'decision': 'approve'}).json() == {'ok': True, 'status': 'approved'}
             assert strategy.post('/report-builder/section', data={'period_id': pid, 'title': 'Genel Bilgiler', 'kind': 'text', 'content': 'Onaylı içerik'}).status_code == 303
             response = strategy.post('/report-builder/publish', data={'period_id': pid})
@@ -358,7 +358,7 @@ def test_guard_unavailable_database_fails_closed_without_connection_details(monk
 def test_audit_failure_does_not_print_supplied_url():
     result = subprocess.run([sys.executable, 'tools/db_privilege_audit.py', '--url-env', 'AUDIT_TEST_URL'],
                             cwd=ROOT, env={**os.environ, 'AUDIT_TEST_URL': 'invalid-sensitive-value'},
-                            capture_output=True, text=True)
+                            capture_output=True, text=True, timeout=180)
     assert result.returncode == 1
     assert 'invalid-sensitive-value' not in result.stdout + result.stderr
     assert 'Connection details suppressed' in result.stderr

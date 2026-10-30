@@ -1,5 +1,7 @@
 """Budget HTTP boundary: body awaits always precede synchronous locked work."""
 import json
+from collections import defaultdict
+from decimal import Decimal
 from datetime import datetime
 from fastapi import Depends, Request, HTTPException
 from sqlalchemy import select, or_
@@ -12,7 +14,7 @@ from . import authorization_service as auth
 
 
 def register(app):
-    from .main import require_user, templates
+    from .main import require_pp_period, require_user, templates
 
     def context(db, user, period_id=None):
         org_id, _ = service.authorize(db, user)
@@ -60,7 +62,49 @@ def register(app):
     def index(request: Request, db: Session = Depends(get_db), user=Depends(require_user)):
         ctx = context(db, user)
         org_id, _ = service.authorize(db, user)
-        ctx['operations'] = db.scalars(select(BudgetOperation).where(BudgetOperation.organization_id == org_id).order_by(BudgetOperation.id.desc())).all()
+        operations = db.scalars(select(BudgetOperation).where(
+            BudgetOperation.organization_id == org_id).order_by(BudgetOperation.id.desc())).all()
+        operation_ids = {item.id for item in operations}
+        lines = db.scalars(select(BudgetOperationLine).where(
+            BudgetOperationLine.operation_id.in_(operation_ids)).order_by(
+                BudgetOperationLine.operation_id, BudgetOperationLine.id)).all() if operation_ids else []
+        department_ids = {line.department_id for line in lines}
+        departments = db.scalars(select(Department).where(Department.id.in_(department_ids))).all() if department_ids else []
+        department_names = {item.id: item.name for item in departments}
+        lines_by_operation = defaultdict(list)
+        for line in lines:
+            lines_by_operation[line.operation_id].append(line)
+
+        operation_labels = {}
+        for item in operations:
+            changes = defaultdict(Decimal)
+            for line in lines_by_operation[item.id]:
+                changes[line.department_id] += Decimal(line.after) - Decimal(line.before)
+            decreases = [(department_id, -change) for department_id, change in changes.items() if change < 0]
+            increases = [(department_id, change) for department_id, change in changes.items() if change > 0]
+            if decreases and increases:
+                period_names = ctx['department_names_by_period'].get(item.period_id, {})
+                name = lambda department_id: period_names.get(department_id) or department_names.get(department_id, '')
+                text = f'{name(decreases[0][0])} → {name(increases[0][0])}'
+                other_count = len(decreases) + len(increases) - 2
+                if other_count:
+                    text += f' ve {other_count} müdürlük daha'
+                amount = sum((change for _, change in decreases), Decimal(0))
+                operation_labels[item.id] = f'{text} · {service.money(amount)} TL'
+            else:
+                operation_labels[item.id] = 'Aktarma ayrıntısı bulunmuyor'
+
+        operations_by_id = {item.id: item for item in operations}
+        reversal_labels = {}
+        for item in operations:
+            reversed_operation = operations_by_id.get(item.reverses_id)
+            if reversed_operation:
+                reference = ctx['references'].get(reversed_operation.reference_type, 'Dayanak')
+                reference_date = datetime.fromisoformat(reversed_operation.reference_date).strftime('%d.%m.%Y')
+                reversal_labels[item.id] = (
+                    f'Telafi: {reference} {reference_date} / {reversed_operation.reference_number}'
+                )
+        ctx.update(operations=operations, operation_labels=operation_labels, reversal_labels=reversal_labels)
         return templates.TemplateResponse(request, 'budget_index.html', ctx)
 
     @app.get('/budget-reallocations/new')
@@ -101,9 +145,14 @@ def register(app):
             service.fail('Geri alma bilgileri geçersiz. Dayanağı ve gerekçeyi yeniden girin.')
         return commit(db, lambda: service.reverse(db, user, operation_id, data))
 
-    @app.post('/api/activities/{activity_id}/contract-bound')
+    @app.post('/api/activities/{activity_id}/contract-bound', dependencies=[Depends(require_pp_period)])
     async def flag(activity_id: int, request: Request, db: Session = Depends(get_db), user=Depends(require_user)):
         data = await body(request)
+        from .main import pp_period
+        from .models import Activity
+        activity = db.get(Activity, activity_id)
+        if activity:
+            pp_period(request, db, user, activity.department_id, data, activity.period_id)
         return commit(db, lambda: service.set_contract_bound(db, user, activity_id, data.get('contract_bound') if isinstance(data, dict) else None))
 
     @app.post('/api/budget-reallocations/delegations')

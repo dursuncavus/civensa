@@ -8,7 +8,9 @@ import secrets
 import subprocess
 import sys
 from datetime import datetime, timedelta, timezone
-from urllib.parse import urlsplit
+from urllib.parse import quote, urlsplit
+
+from ops.backup_crypto import BackupCryptoError, decrypt_backup
 
 BACKUP_REQUIRED = "Önce Actions → Daily verified database backup → Run workflow çalıştırın, yeşil bittikten sonra bu kontrolü yeniden çalıştırın."
 # table: one-line reason for an intentional deletion (also explain it in the PR).
@@ -68,12 +70,21 @@ def github_json(endpoint):
 
 def download_backup():
     repo = os.environ["GITHUB_REPOSITORY"]
-    runs = github_json(f"repos/{repo}/actions/workflows/db-backup.yml/runs?branch=main&status=success&per_page=1")["workflow_runs"]
+    try:
+        metadata = github_json(f"repos/{repo}")
+    except (ValueError, TypeError):
+        raise RehearsalFailure(BACKUP_REQUIRED) from None
+    default_branch = metadata.get("default_branch") if isinstance(metadata, dict) else None
+    if not isinstance(default_branch, str) or not default_branch.strip():
+        raise RehearsalFailure(BACKUP_REQUIRED)
+    branch = quote(default_branch, safe="")
+    runs = github_json(f"repos/{repo}/actions/workflows/db-backup.yml/runs?branch={branch}&status=success&per_page=1")["workflow_runs"]
     if not runs:
         raise RehearsalFailure(BACKUP_REQUIRED)
     run = runs[0]
     require_fresh_backup(run["created_at"])
-    if run["name"] != "Daily verified database backup" or run["head_branch"] != "main":
+    if (run["name"] != "Daily verified database backup" or run["head_branch"] != default_branch
+            or run.get("event") not in {"schedule", "workflow_dispatch"}):
         raise RehearsalFailure(BACKUP_REQUIRED)
     artifacts = github_json(f"repos/{repo}/actions/runs/{run['id']}/artifacts")["artifacts"]
     artifacts = [a for a in artifacts if not a["expired"] and a["name"].startswith("civensa-db-backup-")]
@@ -86,12 +97,14 @@ def download_backup():
 
 
 def verify_dump():
-    manifests = list(BACKUP_DIR.glob("*.manifest.json"))
-    dumps = list(BACKUP_DIR.glob("*.dump"))
-    if len(manifests) != 1 or len(dumps) != 1:
-        raise RehearsalFailure("Backup must contain one dump and one manifest.")
-    saved = json.loads(manifests[0].read_text())
-    dump = dumps[0]
+    try:
+        dump = decrypt_backup(BACKUP_DIR, BACKUP_DIR / "decrypted")
+    except BackupCryptoError as exc:
+        # Fixed Turkish messages from ops.backup_crypto; no paths, keys or age output.
+        raise RehearsalFailure(f"Yedek çözülemedi: {exc}") from None
+    os.environ.pop("BACKUP_AGE_IDENTITY", None)
+    os.environ.pop("BACKUP_AGE_IDENTITY_FILE", None)
+    saved = json.loads(dump.with_suffix(".manifest.json").read_text())
     require_fresh_backup(saved.get("utc_timestamp"))
     with dump.open("rb") as stream:
         digest = hashlib.file_digest(stream, "sha256").hexdigest()
@@ -151,6 +164,8 @@ def rehearse():
     before, after = {}, {}
     status = "FAIL"
     try:
+        if os.environ.get("GITHUB_EVENT_NAME") != "workflow_dispatch":
+            raise RehearsalFailure("Özel yedek yalnız elle başlatılan provada kullanılabilir.")
         url = os.environ["DATABASE_URL"]
         assert_local_database(url)
         # sitecustomize normalizes DATABASE_URL at Python startup. libpq tools
@@ -171,7 +186,7 @@ def rehearse():
                      f"{BACKUP_DIR.resolve()}:/backup:ro", "--env", "PGDATABASE", "postgres:18",
                      "sh", "-c", 'exec "$@" --dbname="$PGDATABASE"', "pg-client",
                      "pg_restore", "--exit-on-error", "--single-transaction", "--no-owner",
-                     "--no-privileges", f"/backup/{dump.name}"], "Disposable restore failed.", env=env)
+                     "--no-privileges", f"/backup/decrypted/{dump.name}"], "Disposable restore failed.", env=env)
         restored = database_state(url)
         before = restored["public_table_row_counts"]
         if any(restored[key] != saved[key] for key in restored):

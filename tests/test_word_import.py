@@ -6,15 +6,17 @@ conftest.py. No municipal document or application database is used.
 import io
 import json
 import threading
+import time
 from concurrent.futures import ThreadPoolExecutor
 from decimal import Decimal
+from queue import Queue
 from types import SimpleNamespace
 
 import pytest
 from docx import Document
 from docx.oxml import OxmlElement
 from fastapi.testclient import TestClient
-from sqlalchemy import func, select
+from sqlalchemy import func, select, text
 from sqlalchemy.orm import Session
 
 import app.import_service as service
@@ -22,7 +24,7 @@ from app.data_importer import parse_performance_docx
 from app.db import get_db
 from app.main import app, require_strategy
 from app.models import (
-    Activity, ActivityCostValue, Department, DepartmentCostValue, ImportBatch,
+    Activity, ActivityCostValue, AuditLog, Department, DepartmentCostValue, ImportBatch,
     Indicator, IndicatorValue, Organization, Program, ReportCard, ReportingPeriod,
     Submission, SubmissionEvent, SubProgram, User,
 )
@@ -145,10 +147,10 @@ def import_client(db, import_context):
         app.dependency_overrides.clear()
 
 
-def preview(client, context, **options):
+def preview(client, context, *, document=None, **options):
     response = client.post(
         f'/api/periods/{context.period.id}/data-import-preview',
-        files={'file': ('sentetik.docx', word_document(**options),
+        files={'file': ('sentetik.docx', document if document is not None else word_document(**options),
                         'application/vnd.openxmlformats-officedocument.wordprocessingml.document')},
     )
     assert response.status_code == 200, response.text
@@ -167,7 +169,9 @@ def parsed_values(**options):
 
 
 def test_preview_keeps_payload_and_does_not_write_department_data(db, import_client, import_context):
-    result = preview(import_client, import_context)
+    # DOCX ZIP timestamps can differ between saves; compare the uploaded bytes.
+    document = word_document()
+    result = preview(import_client, import_context, document=document)
     assert result['status'] == 'preview'
     assert result['can_apply'] is True
     assert result['summary']['source_years'] == [2027]
@@ -175,7 +179,7 @@ def test_preview_keeps_payload_and_does_not_write_department_data(db, import_cli
     assert result['summary']['activity_count'] == 1
     assert result['departments'][0]['name'] == 'Park ve Bahçeler Müdürlüğü'
     batch = db.get(ImportBatch, result['batch_id'])
-    assert json.loads(batch.payload_json) == parse_performance_docx(word_document())
+    assert json.loads(batch.payload_json) == parse_performance_docx(document)
     assert db.scalar(select(func.count()).select_from(Department)) == 0
     assert db.scalar(select(func.count()).select_from(Indicator)) == 0
     detail = import_client.get(f'/api/import-batches/{batch.id}').json()
@@ -284,8 +288,6 @@ def test_rollback_refuses_changed_data(db, import_client, import_context):
     assert db.get(ImportBatch, batch_id).status == 'applied'
 
 
-@pytest.mark.xfail(strict=True, raises=AssertionError,
-                   reason='VERİ-01 D1: İzlenen değişiklik ve içerik denetimindeki değerler kaybolmamalı.')
 @pytest.mark.parametrize('variant', ['tracked_change', 'content_control'])
 def test_d1_wrapped_visible_value_is_preserved(variant):
     value = parsed_values(variant=variant)[1]
@@ -299,12 +301,111 @@ def test_d2_supported_table_variants_are_recognised(variant):
     assert parsed['departments'][0]['blocks'][0]['indicators'][0]['name'] == 'Park sayısı'
 
 
-@pytest.mark.xfail(strict=True, raises=AssertionError,
-                   reason='VERİ-01 D3: İki satırlı başlık hedef ve gerçekleşme ayrımını korumalı.')
 def test_d3_two_row_header_retains_value_kinds():
     values = parsed_values(variant='two_row_header')
     assert [(v['year'], v['kind'], v['value']) for v in values] == [
         (2026, 'actual', '1234.50'), (2027, 'target', '12'), (2028, 'forecast', '0')]
+
+
+@pytest.mark.parametrize('suffix', ['Değer', 'Değeri'])
+def test_two_row_header_value_word_does_not_override_kind(suffix):
+    doc = Document(io.BytesIO(word_document(variant='two_row_header')))
+    for col in range(2, 5):
+        doc.tables[0].cell(7, col).text += ' ' + suffix
+    stream = io.BytesIO()
+    doc.save(stream)
+    parsed = parse_performance_docx(stream.getvalue())
+    assert parsed['errors'] == []
+    values = parsed['departments'][0]['blocks'][0]['indicators'][0]['values']
+    assert [(v['year'], v['kind'], v['value']) for v in values] == [
+        (2026, 'actual', '1234.50'), (2027, 'target', '12'), (2028, 'forecast', '0')]
+
+
+@pytest.mark.parametrize('layout', ['vertical_labels', 'kind_above_year', 'grouped_year'])
+def test_two_row_header_preview_apply_preserves_year_and_kind(db, import_client, import_context, layout):
+    doc = Document(io.BytesIO(word_document(variant='two_row_header')))
+    table = doc.tables[0]
+    expected_years = [2026, 2027, 2028]
+    if layout == 'vertical_labels':
+        for col in (0, 1):
+            table.cell(6, col).merge(table.cell(7, col))
+    elif layout == 'kind_above_year':
+        for col in range(2, 5):
+            table.cell(6, col).text, table.cell(7, col).text = (
+                table.cell(7, col).text, table.cell(6, col).text)
+    else:
+        table.cell(6, 2).merge(table.cell(6, 4)).text = '2027'
+        expected_years = [2027, 2027, 2027]
+    stream = io.BytesIO()
+    doc.save(stream)
+    response = import_client.post(
+        f'/api/periods/{import_context.period.id}/data-import-preview',
+        files={'file': ('iki-satir.docx', stream.getvalue())})
+    assert response.status_code == 200, response.text
+    assert response.json()['can_apply'] is True
+    apply(import_client, response.json()['batch_id'])
+    values = db.scalars(select(IndicatorValue).order_by(IndicatorValue.id)).all()
+    assert [(v.year, v.value_kind, v.value) for v in values] == list(zip(
+        expected_years, ['actual', 'target', 'forecast'], [Decimal('1234.50'), Decimal('12'), Decimal('0')]))
+
+
+@pytest.mark.parametrize('variant', ['tracked_change', 'content_control'])
+@pytest.mark.parametrize('block_control', [False, True])
+def test_wrapped_value_ignores_adjacent_tracked_deletion(import_client, import_context, db,
+                                                       variant, block_control):
+    doc = Document(io.BytesIO(word_document(variant=variant)))
+    cell = doc.tables[0].cell(7, 3)
+    paragraph = cell.paragraphs[0]._p
+    deletion = OxmlElement('w:del')
+    run = OxmlElement('w:r')
+    text = OxmlElement('w:delText')
+    text.text = '999'
+    run.append(text)
+    deletion.append(run)
+    paragraph.insert(0, deletion)
+    # A deleted subtree can itself contain an insertion or a content control.
+    # Its w:t text must still be excluded from the accepted view.
+    from copy import deepcopy
+    deletion.append(deepcopy(paragraph[-1]))
+    if block_control:
+        cell._tc.remove(paragraph)
+        wrapper = OxmlElement('w:sdt')
+        content = OxmlElement('w:sdtContent')
+        content.append(paragraph)
+        wrapper.append(content)
+        cell._tc.append(wrapper)
+    stream = io.BytesIO()
+    doc.save(stream)
+    response = import_client.post(
+        f'/api/periods/{import_context.period.id}/data-import-preview',
+        files={'file': ('izlenen.docx', stream.getvalue())})
+    assert response.status_code == 200, response.text
+    assert response.json()['can_apply'] is True
+    apply(import_client, response.json()['batch_id'])
+    value = db.scalar(select(IndicatorValue).where(IndicatorValue.year == 2027))
+    assert (value.value, value.raw_text, value.state) == (Decimal('12'), '12', 'verified')
+
+
+@pytest.mark.parametrize('header', ['', 'Belirsiz', 'Hedef / Tahmin', '2029 Hedef'])
+def test_unresolved_two_row_header_refuses_preview_and_apply(import_client, import_context, db, header):
+    doc = Document(io.BytesIO(word_document(variant='two_row_header')))
+    doc.tables[0].cell(7, 3).text = header
+    stream = io.BytesIO()
+    doc.save(stream)
+    response = import_client.post(
+        f'/api/periods/{import_context.period.id}/data-import-preview',
+        files={'file': ('belirsiz-baslik.docx', stream.getvalue())})
+    assert response.status_code == 200, response.text
+    result = response.json()
+    assert result['can_apply'] is False
+    assert any(all(part in error for part in ('Tablo 1', 'sütun 4', 'başlık', 'yeniden yükleyin'))
+               for error in result['errors'])
+    detail = import_client.get(f"/api/import-batches/{result['batch_id']}").json()
+    assert detail['can_apply'] is False
+    refused = import_client.post(f"/api/import-batches/{result['batch_id']}/apply")
+    assert refused.status_code == 409
+    assert 'sütun 4' in refused.json()['detail']
+    assert db.scalar(select(func.count()).select_from(Department)) == 0
 
 
 @pytest.mark.parametrize('options', [
@@ -316,12 +417,11 @@ def test_d4_incomplete_preview_is_not_applicable(import_client, import_context, 
     assert (result['can_apply'], detail['can_apply']) == (False, False)
 
 
-@pytest.mark.xfail(strict=True, raises=AssertionError,
-                   reason='VERİ-01 D5: Aynı önizlemenin eşzamanlı uygulanması mükerrer müdürlük oluşturmamalı.')
-def test_d5_concurrent_apply_creates_department_once(db, import_client, import_context, monkeypatch):
+def test_d5_concurrent_apply_creates_department_once(db, import_client, import_context):
     batch_id = preview(import_client, import_context)['batch_id']
-    # Avoid unrelated Program/SubProgram creation races. Hold both genuine plans
-    # after reading departments, before either transaction inserts a department.
+    # Both sessions cache the same preview before either calls the service.
+    # Rendezvous before locking: a barrier inside the plan would deadlock once
+    # the service correctly serializes planning and writes with a batch lock.
     program = Program(period_id=import_context.period.id, name='Çevre Programı')
     db.add(program)
     db.flush()
@@ -329,14 +429,6 @@ def test_d5_concurrent_apply_creates_department_once(db, import_client, import_c
     db.commit()
     bind = db.get_bind()
     rendezvous = threading.Barrier(2, timeout=10)
-    original = service.build_department_plan
-
-    def synchronized_plan(session, parsed, decisions=()):
-        plan = original(session, parsed, decisions)
-        rendezvous.wait()
-        return plan
-
-    monkeypatch.setattr(service, 'build_department_plan', synchronized_plan)
 
     def worker():
         with Session(bind, expire_on_commit=False) as session:
@@ -345,13 +437,14 @@ def test_d5_concurrent_apply_creates_department_once(db, import_client, import_c
             session.execute(text("SET LOCAL lock_timeout = '10s'"))
             session.execute(text("SET LOCAL statement_timeout = '15s'"))
             batch = session.get(ImportBatch, batch_id)
+            rendezvous.wait()
             try:
                 result = service.apply_import_batch(session, batch)
                 session.commit()
                 return result
             except ValueError as error:
                 session.rollback()
-                if str(error) != 'Bu içe aktarma paketi artık önizleme durumunda değil.':
+                if not str(error).startswith('Bu içe aktarma paketi artık önizleme durumunda değil.'):
                     raise
                 return None  # An explicit stale-preview rejection is valid.
 
@@ -362,6 +455,212 @@ def test_d5_concurrent_apply_creates_department_once(db, import_client, import_c
     count = db.scalar(select(func.count()).select_from(Department).where(
         Department.name == 'Park ve Bahçeler Müdürlüğü'))
     assert count == 1, f'Aynı müdürlük {count} kez oluşturuldu: {results}'
+    assert sum(result is not None for result in results) == 1
+    assert db.get(ImportBatch, batch_id).status == 'applied'
+
+
+def test_concurrent_http_apply_refuses_second_and_audits_once(db, import_client, import_context):
+    batch_id = preview(import_client, import_context)['batch_id']
+    bind = db.get_bind()
+    rendezvous = threading.Barrier(2, timeout=10)
+
+    def database():
+        with Session(bind, expire_on_commit=False) as session:
+            from sqlalchemy import text
+            session.execute(text("SET LOCAL lock_timeout = '10s'"))
+            session.execute(text("SET LOCAL statement_timeout = '15s'"))
+            # Also prove the lock refreshes a previously loaded ORM object.
+            cached = session.get(ImportBatch, batch_id)
+            assert cached.status == 'preview'
+            rendezvous.wait()
+            yield session
+
+    previous = app.dependency_overrides[get_db]
+    app.dependency_overrides[get_db] = database
+    try:
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            futures = [pool.submit(import_client.post, f'/api/import-batches/{batch_id}/apply')
+                       for _ in range(2)]
+            responses = [future.result(timeout=25) for future in futures]
+    finally:
+        app.dependency_overrides[get_db] = previous
+    assert sorted(response.status_code for response in responses) == [200, 409]
+    refused = next(response.json()['detail'] for response in responses if response.status_code == 409)
+    assert 'artık önizleme durumunda değil' in refused
+    assert f'#{batch_id}' in refused and 'sonucu kontrol edin' in refused
+    assert 'yeni önizleme oluşturun' in refused
+    result = next(response.json() for response in responses if response.status_code == 200)
+    assert result['status'] == 'applied' and result['created_departments'] == 1
+    db.expire_all()
+    batch = db.get(ImportBatch, batch_id)
+    assert batch.status == 'applied' and batch.applied_at and batch.applied_hash
+    assert len(json.loads(batch.snapshot_json)['created_department_ids']) == 1
+    for model in (Department, ReportCard, Indicator, Activity):
+        assert db.scalar(select(func.count()).select_from(model)) == 1
+    audits = db.scalars(select(AuditLog).where(
+        AuditLog.action == 'data_import_apply', AuditLog.entity_id == batch_id)).all()
+    assert len(audits) == 1
+    assert json.loads(audits[0].details)['created_departments'] == 1
+
+
+def assert_waiting_for_institution_lock(db, pids):
+    """Observe real PostgreSQL waits before releasing the manual-creation lock."""
+    deadline = time.monotonic() + 5
+    while time.monotonic() < deadline:
+        db.execute(text('SELECT pg_stat_clear_snapshot()'))
+        waiting = db.execute(text(
+            'SELECT pid, query FROM pg_stat_activity '
+            'WHERE pid = ANY(:pids) AND cardinality(pg_blocking_pids(pid)) > 0'
+        ), {'pids': pids}).all()
+        if len(waiting) == len(pids) and all(
+                'organizations' in query and 'FOR UPDATE' in query for _, query in waiting):
+            return
+        time.sleep(.02)
+    pytest.fail('Import must wait on the institution row before planning or writing departments')
+
+
+@pytest.mark.parametrize('preserve_existing', [False, True])
+@pytest.mark.parametrize('names', [
+    ('Park Bahçeler Müdürlüğü', 'PARK VE BAHÇELER MÜDÜRLÜĞÜ'),
+    ('İmar Müdürlüğü', '  imar   mu\u0308du\u0308rlu\u0308g\u0306u\u0308  '),
+    ('Yazı İşleri Müdürlüğü', 'YAZI İŞLERİ MÜDÜRLÜĞÜ'),
+], ids=['alias', 'nfc-whitespace-dotted-i', 'dotless-i'])
+def test_equivalent_batches_wait_for_institution_and_create_once(
+        db, import_client, import_context, preserve_existing, names):
+    batch_ids = [preview(import_client, import_context, department=name)['batch_id']
+                 for name in names]
+    assert service.department_key(names[0]) == service.department_key(names[1])
+    bind = db.get_bind()
+    pids = Queue()
+
+    def database():
+        with Session(bind, expire_on_commit=False) as session:
+            session.execute(text("SET LOCAL lock_timeout = '10s'"))
+            session.execute(text("SET LOCAL statement_timeout = '15s'"))
+            pids.put(session.scalar(text('SELECT pg_backend_pid()')))
+            yield session
+
+    previous = app.dependency_overrides[get_db]
+    app.dependency_overrides[get_db] = database
+    db.scalar(select(Organization).where(Organization.id == import_context.org.id).with_for_update())
+    try:
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            futures = [pool.submit(import_client.post, f'/api/import-batches/{bid}/apply',
+                                   params={'preserve_existing': preserve_existing})
+                       for bid in batch_ids]
+            try:
+                assert_waiting_for_institution_lock(db, [pids.get(timeout=5) for _ in futures])
+            finally:
+                db.commit()  # Release only after both requests have reached the shared lock.
+            responses = [future.result(timeout=25) for future in futures]
+    finally:
+        app.dependency_overrides[get_db] = previous
+
+    assert sorted(response.status_code for response in responses) == (
+        [200, 200] if preserve_existing else [200, 409])
+    successful = [response.json() for response in responses if response.status_code == 200]
+    assert sum(result['created_departments'] for result in successful) == 1
+    if preserve_existing:
+        assert sum(result['skipped_existing_departments'] for result in successful) == 1
+    else:
+        refused = next(response.json()['detail'] for response in responses if response.status_code == 409)
+        assert 'kart ekranını kullanın veya yeni taslak dönem açın' in refused
+    db.expire_all()
+    for model in (Department, Program, SubProgram, Submission, ReportCard, Indicator, Activity):
+        assert db.scalar(select(func.count()).select_from(model)) == 1
+    assert db.scalar(select(func.count()).select_from(IndicatorValue)) == 3
+    assert db.scalar(select(func.count()).select_from(ActivityCostValue)) == 6
+    batches = [db.get(ImportBatch, bid) for bid in batch_ids]
+    creator = next(batch for batch in batches
+                   if json.loads(batch.snapshot_json or '{}').get('created_department_ids'))
+    assert creator.status == 'applied' and creator.applied_hash
+    assert sum(batch.status == 'applied' for batch in batches) == len(successful)
+    audits = db.scalars(select(AuditLog).where(AuditLog.action == 'data_import_apply')).all()
+    assert len(audits) == len(successful)
+    assert len({audit.entity_id for audit in audits}) == len(successful)
+    assert sum(json.loads(audit.details)['created_departments'] for audit in audits) == 1
+    # A refused/skipped equivalent batch must not invalidate the creator's rollback.
+    response = import_client.post(f'/api/import-batches/{creator.id}/revert')
+    assert response.status_code == 200, response.text
+    db.expire_all()
+    for model in (Department, Program, SubProgram, Submission, ReportCard, Indicator, Activity):
+        assert db.scalar(select(func.count()).select_from(model)) == 0
+
+
+@pytest.mark.parametrize('manual_change', ['create', 'rename'])
+def test_import_waits_for_manual_department_change(db, import_client, import_context, manual_change):
+    from app.master_data_service import check_department_name
+
+    existing = None
+    if manual_change == 'rename':
+        existing = Department(organization_id=import_context.org.id, name='Fen İşleri Müdürlüğü')
+        db.add(existing)
+        db.commit()
+    batch_id = preview(import_client, import_context, department='İmar Müdürlüğü')['batch_id']
+    bind = db.get_bind()
+    pids = Queue()
+    # Use the existing manual creation path, not a separate import-only lock.
+    check_department_name(db, import_context.org.id, 'İMAR MÜDÜRLÜĞÜ',
+                          exclude_id=existing.id if existing else None)
+
+    def worker():
+        with Session(bind) as session:
+            session.execute(text("SET LOCAL lock_timeout = '10s'"))
+            session.execute(text("SET LOCAL statement_timeout = '15s'"))
+            batch = session.get(ImportBatch, batch_id)
+            cached = session.get(Department, existing.id) if existing else None
+            pids.put(session.scalar(text('SELECT pg_backend_pid()')))
+            result = service.apply_import_batch(session, batch, preserve_existing=True)
+            if cached:
+                assert cached.name == 'İMAR MÜDÜRLÜĞÜ'
+            session.commit()
+            return result
+
+    with ThreadPoolExecutor(max_workers=1) as pool:
+        future = pool.submit(worker)
+        try:
+            assert_waiting_for_institution_lock(db, [pids.get(timeout=5)])
+            if existing:
+                existing.name = 'İMAR MÜDÜRLÜĞÜ'
+            else:
+                db.add(Department(organization_id=import_context.org.id, name='İMAR MÜDÜRLÜĞÜ'))
+        finally:
+            db.commit()
+        result = future.result(timeout=25)
+    assert result['created_departments'] == 0
+    assert result['skipped_existing_departments'] == 1
+    assert db.scalar(select(func.count()).select_from(Department)) == 1
+    assert db.scalar(select(func.count()).select_from(Indicator)) == 0
+
+
+def test_revert_waits_for_institution_lock(db, import_client, import_context):
+    batch_id = preview(import_client, import_context)['batch_id']
+    apply(import_client, batch_id)
+    bind = db.get_bind()
+    pids = Queue()
+    db.scalar(select(Organization).where(Organization.id == import_context.org.id).with_for_update())
+
+    def worker():
+        with Session(bind) as session:
+            session.execute(text("SET LOCAL lock_timeout = '10s'"))
+            session.execute(text("SET LOCAL statement_timeout = '15s'"))
+            batch = session.get(ImportBatch, batch_id)
+            pids.put(session.scalar(text('SELECT pg_backend_pid()')))
+            result = service.revert_import_batch(session, batch)
+            session.commit()
+            return result
+
+    with ThreadPoolExecutor(max_workers=1) as pool:
+        future = pool.submit(worker)
+        try:
+            assert_waiting_for_institution_lock(db, [pids.get(timeout=5)])
+        finally:
+            db.commit()
+        result = future.result(timeout=25)
+    assert result == {'departments_restored': 0, 'departments_removed': 1}
+    db.expire_all()
+    assert db.get(ImportBatch, batch_id).status == 'reverted'
+    assert db.scalar(select(func.count()).select_from(Department)) == 0
 
 
 def test_d6_return_note_survives_import(db, import_client, import_context):

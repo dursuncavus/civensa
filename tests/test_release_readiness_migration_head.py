@@ -1,6 +1,7 @@
 """Release readiness must compare the database with the real Alembic script head."""
 import ast, os, shutil, subprocess, sys
 from pathlib import Path
+from lxml.html import fromstring
 
 import pytest
 from sqlalchemy import create_engine
@@ -8,7 +9,7 @@ from sqlalchemy import create_engine
 ROOT = Path(__file__).resolve().parents[1]
 CHECK_NAMES = [
     "database", "migration_head", "period_active", "departments_present", "indicators_present",
-    "activities_present", "no_orphan_activities", "no_orphan_indicators",
+    "activities_present", "activity_mappings_complete", "no_orphan_activities", "no_orphan_indicators",
     "no_duplicate_active_department_accounts", "workflow_schema_present",
 ]
 
@@ -129,5 +130,18 @@ def test_operations_gate_shows_ready_at_head(readiness, client):
     readiness()
     response = client.get("/operations")
     assert response.status_code == 200
-    assert "Yayın Uygunluk Kapısı · READY" in response.text
+    assert " ".join(fromstring(response.text).xpath('//*[@id="technical-readiness"]//h2')[0].text_content().split()) == "Teknik hazırlık · Geçti"
+    assert " ".join(fromstring(response.text).xpath('//*[@id="pp-release-checklist"]//h2')[0].text_content().split()) == "PP yayın kontrol listesi · Engelli"
     assert "✕ migration_head" not in response.text
+
+
+@pytest.mark.postgres
+@pytest.mark.parametrize('kind', ['subprogram', 'card', 'catalogue'])
+def test_mapping_gap_blocks_release_readiness(readiness, db, sample, kind):
+    from test_activity_mapping_gaps import remove_link
+    assert readiness()['status'] == 'ready'
+    remove_link(db, sample['activity'], kind)
+    payload = readiness()
+    assert payload['checks']['activity_mappings_complete'] is False
+    assert payload['status'] == 'blocked'
+    assert '1 faaliyet insan eşleştirmesi bekliyor.' in payload['warnings']

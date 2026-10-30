@@ -1,0 +1,25 @@
+<fieldset data-evidence-row>
+  <legend>Kanıt kaynağı</legend>
+  <input type="hidden" name="source_id" value="{{ source.get('source_id','') }}">
+  {% for field, label, key in [('source_title','Kaynak adı','title'),('source_locator','Kaynak konumu / sayfa / kayıt','locator'),('source_revision','Sabit kaynak sürümü / tarihli kayıt numarası / dosya özeti','source_revision')] %}
+    <label>{{ label }}
+      <input name="{{ field }}" value="{{ source.get(key,'') }}" {% if draft and error_field == field and (error_source_index is none or error_source_index == source_index) %}aria-invalid="true" aria-describedby="form-error-{{ row.report_indicator_id }}"{% endif %}>
+    </label>
+  {% endfor %}
+  {% for file in source.get('files',[]) %}
+    <p>
+      <a href="{{ file.download_url }}">{{ file.filename }} · Dosya sürümü {{ file.version }}</a> · SHA256:
+      <code>{{ file.sha256 }}</code>
+    </p>
+  {% endfor %}
+  {% if user.role == 'department' %}
+    <label>Kanıt dosyası (PDF veya XLSX, en fazla 10 MB)
+      <input type="file" name="source_file" accept=".pdf,.xlsx" {% if draft and error_field == 'source_file' and (error_source_index is none or error_source_index == source_index) %}aria-invalid="true" aria-describedby="form-error-{{ row.report_indicator_id }}"{% endif %}>
+    </label>
+  {% endif %}
+  {% if source.get('attempted_filename') %}
+    <p>Seçilen dosya: {{ source.attempted_filename }}. Kaydedilmedi; güvenliğiniz için dosyayı yeniden seçin. Diğer alanlar ve önceki ekler korundu.</p>
+  {% endif %}
+  <button class="button" type="button" data-remove-evidence>Kaynağı kaldır</button>
+  <p>Kaynağı kaldırmak geçmiş gerçekleşmelerin dosyalarını silmez.</p>
+</fieldset>

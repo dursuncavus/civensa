@@ -1,0 +1,139 @@
+/* CIV-097 · screen 024. Shared legacy content keeps app.css. */
+.data-entry-page { min-width: 0; color: var(--text); }
+.data-entry-page :is(p, h2, h3) { margin: 0; overflow-wrap: anywhere; }
+.data-entry-page :is(b, strong) { font-weight: var(--font-semibold); }
+.data-entry-page :is(label, th, .eyebrow) { text-transform: none; letter-spacing: normal; }
+.data-entry-page :is(.muted, .eyebrow) { color: var(--text-secondary); font-size: var(--text-sm); }
+.data-entry-page .page-actions { margin-bottom: var(--space-6); }
+.data-entry-page .button {
+  display: inline-flex; justify-content: center; align-items: center; gap: var(--space-2);
+  min-height: var(--control-height); max-width: 100%; padding: var(--space-2) var(--space-4);
+  border: 1px solid var(--text-secondary); border-radius: var(--radius);
+  background: var(--surface); color: var(--text); font: 500 var(--text-sm) / 20px var(--font-family);
+  text-decoration: none; cursor: pointer; overflow-wrap: anywhere;
+}
+.data-entry-page .button:hover { background: var(--surface-muted); }
+.data-entry-page .button.primary { background: var(--accent); border-color: var(--accent); color: var(--surface); }
+.data-entry-page .button.primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
+.data-entry-page .button.danger { color: var(--danger); border-color: var(--danger); }
+.data-entry-page .button.danger:hover { background: var(--danger-bg); }
+.data-entry-page .button:disabled { color: var(--text-secondary); background: var(--surface-muted); border-color: var(--text-secondary); cursor: not-allowed; opacity: 1; }
+.data-entry-page :is(a, button, summary, input, select, textarea, [tabindex]):focus-visible {
+  outline: var(--focus); outline-offset: var(--focus-offset); box-shadow: none;
+}
+.data-entry-page .workflow-strip { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-2); margin-bottom: var(--space-6); }
+.data-entry-page .workflow-strip span { padding: var(--space-3); border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); color: var(--text-secondary); font-size: var(--text-sm); font-weight: 400; }
+.data-entry-page .workflow-strip span.done { color: var(--success); background: var(--success-bg); }
+.data-entry-page .workflow-strip span.active { color: var(--accent); background: var(--accent-soft); border-color: var(--accent); font-weight: 500; }
+.data-entry-page .tabs { display: flex; flex-wrap: wrap; gap: var(--space-6); border-bottom: 1px solid var(--border); margin-bottom: var(--space-6); }
+.data-entry-page .tab { min-height: var(--control-height); padding: var(--space-2) 0; border: 0; border-bottom: 2px solid transparent; border-radius: 0; background: transparent; color: var(--text-secondary); font-size: var(--text-sm); font-weight: 400; cursor: pointer; }
+.data-entry-page .tab:hover { color: var(--accent-hover); }
+.data-entry-page .tab.active { color: var(--accent); border-bottom-color: var(--accent); font-weight: 500; }
+.data-entry-page .record-list { display: grid; gap: var(--space-6); }
+.data-entry-page :is(.record, .workflow-history) { min-width: 0; padding: var(--space-6); background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: none; }
+.data-entry-page .record-head { display: flex; justify-content: space-between; align-items: start; gap: var(--space-4); margin-bottom: var(--space-4); }
+.data-entry-page .record-head,
+.data-entry-page .workflow-history > .section-head { max-width: 44rem; }
+.data-entry-page .record-head > .badge { min-width: 6rem; }
+.data-entry-page .record-head h3 { margin-top: var(--space-1); font-size: var(--text-card); font-weight: 600; }
+.data-entry-page .badge { flex-shrink: 0; padding: var(--space-1) var(--space-2); border-radius: var(--radius); font-size: var(--text-sm); font-weight: 500; background: var(--surface-muted); color: var(--text-secondary); }
+.data-entry-page .badge.ok { color: var(--success) !important; background: var(--success-bg); }
+.data-entry-page .badge.bad { color: var(--danger) !important; background: var(--danger-bg); }
+.data-entry-page :is(.issue-list, .draft-error) { display: grid; gap: var(--space-2); margin: var(--space-4) 0; padding: var(--space-4); border: 1px solid var(--danger); border-radius: var(--radius); background: var(--danger-bg); color: var(--danger); font-size: var(--text-sm); }
+.data-entry-page .issue-jump { min-height: var(--control-height); border: 0; border-radius: var(--radius); background: transparent; padding: var(--space-2) 0; color: var(--danger); text-align: left; font-size: var(--text-sm); cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+.data-entry-page label { display: grid; gap: var(--space-2); min-width: 0; color: var(--text); font-size: var(--text-sm); font-weight: 500; }
+.data-entry-page :is(input:not([type=checkbox]), textarea, select) { width: 100%; min-width: 0; min-height: var(--control-height); border: 1px solid var(--text-secondary); border-radius: var(--radius); padding: var(--space-2) var(--space-3); background: var(--surface); color: var(--text); font-size: var(--text-base); font-weight: 400; line-height: 1.5; box-shadow: none; }
+.data-entry-page :is(input, textarea):read-only, .data-entry-page select:disabled { color: var(--text-secondary); background: var(--surface-muted); opacity: 1; }
+.data-entry-page textarea { min-height: 96px; resize: vertical; }
+.data-entry-page .editor-grid { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: var(--space-4); margin: var(--space-4) 0; }
+.data-entry-page .editor-grid.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.data-entry-page .year-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-4); margin: var(--space-6) 0; }
+.data-entry-page .year-grid label { grid-template-rows: 1fr auto; }
+.data-entry-page :is(.year-grid input, .money, [data-activity-total], [data-general-total]) { text-align: right; font-variant-numeric: tabular-nums; }
+.data-entry-page :is(.field-attention, [aria-invalid=true]) { border-color: var(--danger) !important; box-shadow: none !important; }
+.data-entry-page .field-fixed { border-color: var(--success) !important; background: var(--success-bg) !important; }
+.data-entry-page .actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: var(--space-2); margin-top: var(--space-6); }
+.data-entry-page .submit-bar { display: flex; justify-content: space-between; align-items: center; gap: var(--space-6); margin-top: var(--space-6); padding: var(--space-6); background: var(--surface); color: var(--text); border: 1px solid var(--border); border-radius: var(--radius); }
+.data-entry-page .submit-bar span { display: block; margin-top: var(--space-2); color: var(--text-secondary); font-size: var(--text-sm); }
+.data-entry-page .submit-bar .button { flex-shrink: 0; }
+.data-entry-page .return-note { padding: var(--space-4); margin-bottom: var(--space-6); border: 1px solid var(--warning); border-radius: var(--radius); color: var(--warning); background: var(--warning-bg); font-size: var(--text-sm); }
+.data-entry-page .return-note p { font-size: var(--text-sm); margin-top: var(--space-2); }
+.data-entry-page .workflow-history { margin: 0 0 var(--space-6); }
+.data-entry-page .section-head { display: flex; justify-content: space-between; align-items: start; gap: var(--space-4); margin-bottom: var(--space-4); }
+.data-entry-page .section-head h2 { font-size: var(--text-section); font-weight: 600; }
+.data-entry-page .section-head p { margin-top: var(--space-2); }
+.data-entry-page .timeline { display: grid; gap: var(--space-3); }
+.data-entry-page .timeline-item { border-left: 3px solid var(--text-secondary); background: var(--bg); border-radius: var(--radius); padding: var(--space-3) var(--space-4); }
+.data-entry-page .timeline-item.approve { border-color: var(--success); }
+.data-entry-page .timeline-item.return { border-color: var(--warning); }
+.data-entry-page .timeline-item > div { display: flex; justify-content: space-between; flex-wrap: wrap; gap: var(--space-2); }
+.data-entry-page .timeline-item span { color: var(--text-secondary); font-size: var(--text-sm); }
+.data-entry-page .timeline-item p { margin-top: var(--space-2); }
+.data-entry-page .draft-status { color: var(--success); font-size: var(--text-sm); font-weight: 500; }
+.data-entry-page .draft-status.unsaved { color: var(--warning); }
+.data-entry-page .has-draft { outline: 2px solid var(--warning); outline-offset: 2px; }
+.data-entry-page .empty-state { padding: var(--space-6); border: 1px dashed var(--border); border-radius: var(--radius); background: var(--surface); color: var(--text-secondary); text-align: center; }
+.data-entry-page .activity-scroll { max-width: 100%; overflow: auto; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); padding: var(--space-1); }
+.data-entry-page .cost-table { width: 100%; min-width: 1800px; border-collapse: collapse; }
+.data-entry-page :is(th, td) { padding: var(--space-3); border-bottom: 1px solid var(--border); font-size: var(--text-sm); text-align: left; vertical-align: top; }
+.data-entry-page th { color: var(--text-secondary); background: var(--bg); font-weight: 500; }
+.data-entry-page .cost-table :is(th, td):nth-child(n+3):not(:last-child), .data-entry-page .summary-row td:not([colspan]):not(:last-child) { text-align: right; font-variant-numeric: tabular-nums; }
+.data-entry-page .cost-table :is(.program-col, .activity-col) { min-width: 300px; }
+.data-entry-page .cost-table th:not(.program-col):not(.activity-col) { min-width: 180px; }
+.data-entry-page .cost-table .activity-subprogram { min-width: 280px; max-width: 360px; }
+.data-entry-page .cost-table .activity-name { min-width: 280px; }
+.data-entry-page .cost-table .activity-explanation { min-width: 280px; margin-top: var(--space-2); }
+.data-entry-page .cost-table input:not([type=checkbox]) { min-width: 140px; }
+.data-entry-page .cost-table label + label { margin-top: var(--space-2); }
+.data-entry-page .cost-table label:has(.contract-bound) { display: flex; align-items: start; gap: var(--space-2); margin-top: var(--space-3); }
+.data-entry-page input[type=checkbox] { appearance: none; width: 20px; height: 20px; flex-shrink: 0; margin: 0; padding: 0; border: 1px solid var(--text-secondary); border-radius: 3px; background: var(--surface); color: var(--surface); opacity: 1; }
+.data-entry-page input[type=checkbox]:checked { background: var(--accent); border-color: var(--accent); }
+.data-entry-page input[type=checkbox]:checked::before {
+  content: ''; display: block; width: 18px; height: 18px; background: currentColor;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='m4 10 4 4 8-8' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+/* The box stays in its cost cell; closed details expose only the warning title. */
+.data-entry-page .source-disagreement { margin: var(--space-1) 0 0; padding: var(--space-1) var(--space-2); text-align: left; }
+.data-entry-page .source-disclosure summary { min-height: var(--space-6); white-space: nowrap; cursor: pointer; color: var(--danger); }
+.data-entry-page .source-disclosure-body { display: grid; gap: var(--space-2); margin-top: var(--space-2); }
+.data-entry-page .rowbuttons { display: flex; flex-wrap: wrap; gap: var(--space-2); margin: 0; }
+.data-entry-page .smallnote { margin-top: var(--space-2); color: var(--danger); font-size: var(--text-sm); }
+.data-entry-page :is(.new-activity-row, .editing-row) { background: var(--warning-bg); }
+.data-entry-page .summary-row td { background: var(--bg); vertical-align: middle; }
+.data-entry-page .personnel-row td { background: var(--surface); }
+.data-entry-page .grand-total td { background: var(--surface-muted); border-top: 2px solid var(--text-secondary); }
+.data-entry-page .grand-total b { color: var(--text); }
+/* Keep the original details, warning and form. JS adds only the native modal surface. */
+.data-entry-page .draft-removal { margin-top: var(--space-6); }
+.data-entry-page .draft-removal summary { display: inline-flex; align-items: center; min-height: var(--control-height); cursor: pointer; color: var(--danger); font-size: var(--text-sm); text-decoration: underline; text-underline-offset: 3px; }
+.data-entry-page .draft-removal summary::marker { content: ''; }
+.data-entry-page .draft-removal summary::-webkit-details-marker { display: none; }
+.data-entry-page :is(.removal-dialog, .draft-confirm) { padding: var(--space-8); width: 560px; max-width: calc(100% - 32px); max-height: calc(100vh - 48px); overflow: auto; border: 1px solid var(--text-secondary); border-radius: var(--radius); background: var(--surface); color: var(--text); box-shadow: none; }
+.data-entry-page :is(.removal-dialog, .draft-confirm)::backdrop { background: rgb(31 35 40 / 40%); }
+.data-entry-page .removal-dialog form { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-top: var(--space-6); }
+.data-entry-page .removal-dialog form .return-note { flex-basis: 100%; }
+.data-entry-page .removal-dialog .return-note[hidden] { display: none; }
+.data-entry-page .removal-dialog .return-note { color: var(--danger); background: var(--danger-bg); border-color: var(--danger); }
+.data-entry-page :is(.removal-dialog, .draft-confirm) h2 { font-size: var(--text-section); margin-bottom: var(--space-4); font-weight: 600; }
+@media (max-width: 900px) {
+  .data-entry-page .year-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 700px) {
+  .data-entry-page :is(.record, .workflow-history, .submit-bar) { padding: var(--space-4); }
+  .data-entry-page :is(.editor-grid, .editor-grid.two, .year-grid, .workflow-strip) { grid-template-columns: minmax(0, 1fr); }
+  .data-entry-page :is(.record-head, .section-head, .submit-bar) { flex-direction: column; align-items: start; }
+  .data-entry-page .tabs { gap: var(--space-4); }
+  .data-entry-page :is(.removal-dialog, .draft-confirm) { padding: var(--space-6); }
+}
+.data-entry-page .tabpane { display: none; }
+.data-entry-page .tabpane.active { display: block; }
+.data-entry-page :is(input, textarea)::placeholder { color: var(--text-secondary); opacity: 1; }
+/* CIV-114 · reading/copying values, scoped away from the editable 024 draft. */
+.data-entry-page.is-readonly :is(input[readonly], textarea[readonly], select:disabled, input[type=checkbox]:disabled) {
+  border: 0; box-shadow: none; background: var(--surface-muted); color: var(--text);
+  opacity: 1; cursor: default;
+}
+.data-entry-page.is-readonly textarea[readonly] { resize: none; }
+.data-entry-page.is-readonly :is(input[readonly], textarea[readonly]):focus-visible {
+  outline: var(--focus); outline-style: dashed; outline-offset: var(--focus-offset); box-shadow: none;
+}

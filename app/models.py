@@ -186,6 +186,7 @@ class SubmissionEvent(Base):
     department_id: Mapped[int] = mapped_column(ForeignKey("departments.id"))
     period_id: Mapped[int] = mapped_column(ForeignKey("reporting_periods.id"))
     actor_user_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
+    actor: Mapped["User | None"] = relationship(viewonly=True, lazy="selectin")
     event_type: Mapped[str] = mapped_column(String(30))
     revision: Mapped[int] = mapped_column(Integer, default=1)
     note: Mapped[str] = mapped_column(Text, default="")
@@ -247,6 +248,22 @@ class AuditLog(Base):
     entity_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     details: Mapped[str] = mapped_column(Text, default="")
     created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(UTC).replace(tzinfo=None))
+
+
+class ReleaseConfirmation(Base):
+    """Append-only Strategy evidence; later events supersede without rewriting."""
+    __tablename__ = "release_confirmations"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    period_id: Mapped[int] = mapped_column(ForeignKey("reporting_periods.id"), index=True)
+    item_id: Mapped[str] = mapped_column(String(40))
+    context_sha256: Mapped[str] = mapped_column(String(64))
+    decision: Mapped[str] = mapped_column(String(20))
+    actor_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    actor_name: Mapped[str] = mapped_column(String(200))
+    reason: Mapped[str] = mapped_column(Text)
+    evidence: Mapped[str] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(UTC).replace(tzinfo=None))
+    __table_args__ = (CheckConstraint("decision IN ('confirmed', 'revoked')", name="ck_release_confirmation_decision"),)
 
 
 class ReportCard(Base):
@@ -358,6 +375,7 @@ class Publication(Base):
     sha256: Mapped[str] = mapped_column(String(64))
     template_version: Mapped[str] = mapped_column(String(30), default="5.0")
     created_by: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    creator: Mapped["User | None"] = relationship(viewonly=True, lazy="selectin")
     created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(UTC).replace(tzinfo=None))
     __table_args__ = (UniqueConstraint("period_id", "version", name="uq_publication_version"),)
 
@@ -470,7 +488,7 @@ def _immutable_revision(mapper, connection, target):
     raise ValueError('Geçmiş sürüm değiştirilemez; yeni revizyon oluşturun.')
 
 
-for _model in (Publication, IndicatorIdentity, IndicatorDefinitionRevision,
+for _model in (ReleaseConfirmation, Publication, IndicatorIdentity, IndicatorDefinitionRevision,
                PublicationIndicatorBinding, ActivityReportRevision, ReportIndicator,
                ActualRevision, ActivityReportApproval):
     event.listen(_model, 'before_update', _immutable_revision)
@@ -492,9 +510,9 @@ from .revision_workflow_models import RevisionRequest, RevisionRequestState, Rev
 from .login_throttling import LoginAttempt
 
 from .activity_sections_models import (ARSectionDefinition, ARDocument, ARSectionContent,
-    ARResourceRow, ARDocumentFreeze, ARContentEvent)
+    ARResourceRow, ARDocumentFreeze, ARContentEvent, ARUnitWorkflowEvent, ARSectionTableKey, ARSectionRowKey)
 from .activity_financial_models import (ARBudgetRow, ARFinancialPolicy, ARFinancialEntry,
-    ARFinancialStatement, ARFinancialImport)
+    ARFinancialStatement, ARFinancialImport, ARStatementFigureKey)
 
 class StructureChange(Base):
     __tablename__ = 'structure_changes'
@@ -547,3 +565,5 @@ class StructureChangeCancellation(Base):
 from .budget_models import BudgetOperation, BudgetOperationLine
 from .internal_control_models import (ICPlan, ICStandard, ICCondition, ICAction, ICActionParty,
                                       ICUnitAlias, ICImport, ICImportAudit)
+
+from .activity_evidence_models import ActivityEvidenceFile, ActivityEvidenceFreeze

@@ -1,2 +1,1 @@
-<span class="status {{ 'approved' if u.can_submit else 'draft' }}">{{ 'Yetkili' if u.can_submit else 'Yetkisiz' }}</span>
-<button type="button" class="button small toggle-submit-authorization" data-user="{{ u.id }}" data-authorized="{{ '1' if u.can_submit else '0' }}">{{ 'Yetkiyi kaldır' if u.can_submit else 'Yetki ver' }}</button>
+<button type="button" class="button small toggle-submit-authorization{{ ' authorized' if u.can_submit }}" data-user="{{ u.id }}" data-authorized="{{ '1' if u.can_submit else '0' }}">{{ 'Yetkiyi kaldır' if u.can_submit else 'Yetki ver' }}</button>

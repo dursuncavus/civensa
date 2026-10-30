@@ -1,0 +1,93 @@
+/* CIV-099 · 012 only. D-224 tokens; shared shell and legacy screens are unchanged. */
+.section-editor-page { min-width: 0; color: var(--text); }
+.section-editor-page :is(p,h2,h3) { margin: 0 0 var(--space-3); overflow-wrap: anywhere; }
+.section-editor-page :is(h2,h3) { font-weight: 600; }
+.section-editor-page h2 { font-size: var(--text-section); }
+.section-editor-page h3 { font-size: var(--text-card); }
+.section-editor-page :is(label,th,.eyebrow) { text-transform: none; letter-spacing: normal; }
+.section-editor-page :is(.muted,small) { color: var(--text-secondary); font-size: var(--text-sm); }
+.section-editor-page a { color: var(--accent); text-underline-offset: 3px; }
+.section-editor-page a:hover { color: var(--accent-hover); }
+.section-editor-page :is(a,button,input,textarea,select,summary,[tabindex]):focus-visible {
+  outline: var(--focus); outline-offset: var(--focus-offset); box-shadow: none;
+}
+.section-editor-page :is(input,textarea,select):focus { outline: var(--focus); outline-offset: var(--focus-offset); border-color: var(--text-secondary); box-shadow: none; }
+.section-editor-page :is(section,.ar-tree) { min-width: 0; margin: 0 0 var(--space-6); padding: var(--space-6); background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: none; }
+.section-editor-page .button, .section-editor-page summary {
+  display: inline-flex; align-items: center; gap: var(--space-2); min-height: var(--control-height);
+  max-width: 100%; padding: var(--space-2) var(--space-4); border: 1px solid var(--text-secondary);
+  border-radius: var(--radius); background: var(--surface); color: var(--text);
+  font: 500 var(--text-sm) / 20px var(--font-family); text-decoration: none; cursor: pointer;
+}
+.section-editor-page :is(.button,summary):hover { background: var(--surface-muted); color: var(--text); }
+.section-editor-page .button.primary { background: var(--accent); border-color: var(--accent); color: var(--surface); }
+.section-editor-page .button.primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
+.section-editor-page .icon { flex-shrink: 0; vertical-align: middle; }
+.section-editor-page .report-tools { display: flex; justify-content: space-between; align-items: start; flex-wrap: wrap; gap: var(--space-3); margin-bottom: var(--space-6); }
+.section-editor-page .report-tools p { margin: 0; }
+.section-editor-page .section-export { position: relative; }
+.section-editor-page summary { list-style: none; }
+.section-editor-page summary::marker { content: ''; }
+.section-editor-page summary::-webkit-details-marker { display: none; }
+.section-editor-page details[open] > summary .disclosure-icon { transform: rotate(90deg); }
+.section-editor-page .export-items { position: absolute; z-index: 4; right: 0; top: calc(100% + 8px); width: 240px; max-width: calc(100vw - 48px); display: grid; gap: var(--space-1); padding: var(--space-2); border: 1px solid var(--text-secondary); border-radius: var(--radius); background: var(--surface); }
+.section-editor-page .export-items .button { justify-content: start; border: 0; }
+.section-editor-page [aria-label="Birim raporu iş akışı"] { border-top: 4px solid var(--accent); }
+.section-editor-page [data-ar-workflow-status], .section-editor-page .ar-status { display: inline-flex; padding: var(--space-1) var(--space-2); font-size: var(--text-sm); font-weight: 500; background: var(--surface-muted); color: var(--text-secondary); border-radius: var(--radius); white-space: normal; }
+.section-editor-page [data-ar-workflow-status] { background: var(--accent-soft); color: var(--accent); }
+.section-editor-page .ar-layout { display: block; }
+.section-editor-page .ar-body { min-width: 0; }
+.section-editor-page .section-writing { display: grid; grid-template-columns: minmax(0,2fr) minmax(0,1fr); align-items: start; gap: var(--space-6); }
+.section-editor-page label { display: grid; gap: var(--space-2); margin-bottom: var(--space-4); color: var(--text); font-size: var(--text-sm); font-weight: 500; }
+.section-editor-page :is(input:not([type=checkbox]):not([type=radio]):not([type=hidden]),select,textarea) { width: 100%; min-width: 0; max-width: 100%; min-height: var(--control-height); padding: var(--space-2) var(--space-3); border: 1px solid var(--text-secondary); border-radius: var(--radius); background: var(--surface); color: var(--text); font-size: var(--text-base); font-weight: 400; line-height: 1.5; box-shadow: none; }
+.section-editor-page textarea { resize: vertical; }
+.section-editor-page :is(input,textarea)[readonly], .section-editor-page select:disabled { background: var(--surface-muted); color: var(--text-secondary); opacity: 1; }
+.section-editor-page input[type=checkbox], .section-editor-page input[type=radio] { width: 20px; min-width: 20px; height: 20px; accent-color: var(--accent); box-shadow: none; }
+.section-editor-page .ar-preview { min-width: 0; margin-top: 0; padding: var(--space-4); border: 1px solid var(--border); border-top: 4px solid var(--accent); border-radius: var(--radius); background: var(--bg); overflow-wrap: anywhere; overflow-x: auto; }
+.section-editor-page .ar-preview p:last-child { margin-bottom: 0; }
+.section-editor-page .ar-preview :is(table,.ar-table) { min-width: 0; table-layout: fixed; }
+.section-editor-page .ar-tree { position: static; max-height: none; overflow: visible; }
+.section-editor-page .section-links { columns: 2; column-gap: var(--space-6); }
+.section-editor-page .ar-tree a { break-inside: avoid; display: flex; align-items: start; justify-content: space-between; gap: var(--space-3); padding: var(--space-3); border-bottom: 1px solid var(--border); border-left: 4px solid transparent; border-radius: var(--radius); color: var(--text); text-decoration: none; font-size: var(--text-sm); line-height: 1.5; overflow-wrap: anywhere; }
+.section-editor-page .ar-tree a:hover { background: var(--surface-muted); }
+.section-editor-page .ar-tree a { display: grid; grid-template-columns: minmax(0, 1fr) 5rem; max-width: 44rem; }
+.section-editor-page .ar-tree a small { max-width: 100%; justify-self: start; }
+.section-editor-page .ar-tree .ar-selected { border-left-color: var(--accent); background: var(--accent-soft); font-weight: 500; }
+.section-editor-page .ar-tree small { flex-shrink: 0; max-width: 40%; padding: var(--space-1) var(--space-2); border-radius: var(--radius); background: var(--surface-muted); }
+.section-editor-page .ar-tree .ar-draft { color: var(--warning); background: var(--warning-bg); }
+.section-editor-page .ar-tree .ar-ready { color: var(--success); background: var(--success-bg); }
+.section-editor-page .ar-tree .ar-not_applicable { color: var(--text-secondary); background: var(--surface-muted); }
+.section-editor-page .ar-warning { padding: var(--space-4); color: var(--warning); background: var(--warning-bg); border: 1px solid var(--warning); border-left-width: 3px; border-radius: var(--radius); }
+.section-editor-page .ar-error { padding: var(--space-4); margin-bottom: var(--space-6); color: var(--danger); background: var(--danger-bg); border: 1px solid var(--danger); border-radius: var(--radius); }
+.section-editor-page :is(.ar-scroll,.table-wrap) { max-width: 100%; overflow: auto; border-radius: var(--radius); }
+.section-editor-page :is(table,.ar-table) { width: 100%; border-collapse: collapse; margin: var(--space-4) 0; font-variant-numeric: tabular-nums; }
+.section-editor-page :is(th,td) { padding: var(--space-2) var(--space-3); border-bottom: 1px solid var(--border); color: var(--text); font-size: var(--text-sm); vertical-align: top; overflow-wrap: anywhere; }
+.section-editor-page th { background: var(--surface-muted); color: var(--text-secondary); font-weight: 500; }
+.section-editor-page .ar-table :is(input:not([type=checkbox]),select) { min-width: 140px; }
+.section-editor-page input[inputmode=decimal] { text-align: right; font-variant-numeric: tabular-nums; }
+.section-editor-page [data-section-audit] { padding: var(--space-4) 0; border-top: 1px solid var(--border); }
+.section-editor-page [data-section-audit] > p { color: var(--text-secondary); font-size: var(--text-sm); }
+.section-editor-page [data-section-change] p { margin-bottom: var(--space-2); }
+.section-editor-page [data-section-audit] details { margin-top: var(--space-3); }
+.section-editor-page pre, .section-editor-page code { white-space: pre-wrap; overflow-wrap: anywhere; word-break: break-word; font: 400 var(--text-sm) / 1.5 var(--font-family); color: var(--text); background: var(--surface-muted); }
+.section-editor-page pre { padding: var(--space-4); border-radius: var(--radius); }
+.section-editor-page details[open] > summary { margin-bottom: var(--space-3); }
+@media (max-width: 1000px) {
+  .section-editor-page .section-writing { grid-template-columns: minmax(0,1fr); }
+}
+@media (max-width: 700px) {
+  .section-editor-page :is(section,.ar-tree) { padding: var(--space-4); }
+  .section-editor-page .section-links { display: grid; grid-template-columns: minmax(0,1fr); columns: auto; gap: 0 var(--space-6); }
+  .section-editor-page .ar-tree a { flex-wrap: wrap; }
+  .section-editor-page .ar-tree small { max-width: 100%; }
+}
+.section-editor-page input[type=file]::file-selector-button { min-height: var(--control-height); margin-right: var(--space-3); padding: var(--space-2) var(--space-3); border: 1px solid var(--text-secondary); border-radius: var(--radius); background: var(--surface-muted); color: var(--text); font: inherit; cursor: pointer; }
+.section-editor-page input[type=file]::file-selector-button:hover { background: var(--accent-soft); }
+.section-editor-page:is(.report-draft,.report-returned) [data-ar-workflow-status] { background: var(--warning-bg); color: var(--warning); }
+.section-editor-page.report-approved [data-ar-workflow-status] { background: var(--success-bg); color: var(--success); }
+.section-editor-page [aria-label="Birim raporu iş akışı"] > p:has(> strong) { padding: var(--space-4); border: 1px solid var(--warning); border-radius: var(--radius); background: var(--warning-bg); color: var(--warning); }
+
+.section-editor-page [aria-label="Birim raporu iş akışı"] > h3 { margin-top: var(--space-6); }
+
+/* Keep the resource selection header on one line in its narrow column. */
+.section-editor-page [data-ar-resource-form] th:first-child { white-space: nowrap; overflow-wrap: normal; word-break: normal; }
