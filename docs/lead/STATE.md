@@ -1,6 +1,6 @@
 # CIVENSA — CURRENT STATE
 
-Updated: 30 Oct 2026, ~15:30 Istanbul (live session CV Lider 44, D-332).
+Updated: 30 Oct 2026, ~15:30 Istanbul (live session CV Lider 44, D-333).
 Rules: AI_WORKING_CONSTITUTION v1.2 (Drive, global) · `HIERARCHY.md` v1.5 · `PROJECT_RULES.md` v1.4 (D-271: PRIOR ART field mandatory in every package) · `BACKUP_LEAD.md` v2.
 Backup log ("Civensa Yedek Kaydı", Drive): no entries, last modified 23 Oct (DOĞRULANDI 30 Oct 05:45).
 Tags: DOĞRULANDI (lead checked) · TARİHSEL (past fact) · BEYAN (owner said) · BELİRSİZ (unknown).
@@ -12,9 +12,9 @@ Claude's next session: `CV Lider 45 · Claude Opus 5.5 · civensa-lead`. Read th
 2. Then CIV-085 (İç Kontrol G5 questionnaire + G6 narrative, not built yet) — needs a task package.
 3. Watch the first department reactions to the 554 book-check items (D-324). Live first load done (D-327); encrypted backups 1004Z/1059Z stay in ~/civensa-yedek.
 4. LOW backlog (D-328): first_load_live UX — only before the next real load or resume.
-5. Small tasks to package: /health readiness + Alembic head field (D-318); lead-docs guard should pass release PRs phase5 → main (D-322). Screens 002/003 (003 waits for Ali); INDEX check 069, 077–097 (D-314).
+5. (D-333) CIV-159 /health readiness dispatched to Codex — review its PR; guard release-PR fix on lead branch, waits for @codex review. Screens 002/003 (003 waits for Ali); INDEX check 069, 077–097 (D-314).
 6. Quota (BEYAN 29 Oct 20:49): week 76% then, reset Sat 00:00. Claude Pro ends 3 Nov (owner renews on the web).
-Next IDs: task CIV-159, decision D-333.
+Next IDs: task CIV-160, decision D-334.
 
 ## Claude quota (BEYAN, owner 27 Oct 16:21)
 - Session 11%, week 67%, weekly reset Saturday 00:00 (D-300). Copilot 96 / 1,500 credits, reset 1 Nov.
@@ -26,7 +26,7 @@ Evidence rule (D-252): one-screen changes → targeted tests + changed-state scr
 ## Open pull requests (DOĞRULANDI 30 Oct ~14:55, D-327)
 | PR | Task | State | Next action |
 | --- | --- | --- | --- |
-| — | none open | — | — |
+| (soon) | CIV-159 | dispatched 30 Oct | review when the PR appears |
 Merged 30 Oct (D-326): #266 CIV-158 → fa7848f · #267 D-325 records → 329b381.
 Merged 30 Oct (D-325): #262 CIV-157 → 7f6029e · #265 D-324 records → 3a3f208.
 Merged 30 Oct (D-324): #264 D-323 records → bb05bcb.
