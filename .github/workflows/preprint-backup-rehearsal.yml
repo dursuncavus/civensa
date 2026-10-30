@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       backup_run_id:
-        description: 'main dalındaki yeşil Daily verified database backup çalışma numarası'
+        description: 'Varsayılan daldaki yeşil Daily verified database backup çalışma numarası'
         required: true
         type: string
       confirmation:
