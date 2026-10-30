@@ -1,6 +1,6 @@
 # CIVENSA — CURRENT STATE
 
-Updated: 30 Oct 2026, ~15:00 Istanbul (live session CV Lider 43, D-329).
+Updated: 30 Oct 2026, ~15:00 Istanbul (live session CV Lider 43, D-330).
 Rules: AI_WORKING_CONSTITUTION v1.2 (Drive, global) · `HIERARCHY.md` v1.5 · `PROJECT_RULES.md` v1.4 (D-271: PRIOR ART field mandatory in every package) · `BACKUP_LEAD.md` v2.
 Backup log ("Civensa Yedek Kaydı", Drive): no entries, last modified 23 Oct (DOĞRULANDI 30 Oct 05:45).
 Tags: DOĞRULANDI (lead checked) · TARİHSEL (past fact) · BEYAN (owner said) · BELİRSİZ (unknown).
@@ -12,10 +12,10 @@ Claude's next session: `CV Lider 44 · Claude Opus 5.5 · civensa-lead`. Read th
 2. Watch the first department reactions to the 554 book-check items (D-324).
 3. LOW backlog (D-328): first_load_live UX (confirmation prompt on /dev/tty, one-screen totals, progress lines; runbook: steps 5 and 7 need two backups) — only before the next real load or resume.
 4. (done, D-329) Owner look approvals CIV-150/151/152/153/154 (BEYAN 14:59).
-5. Next after the load: D-177 İç Kontrol plan conversion (owner attaches 2024–2026 plan PDF), CIV-085. Next screens: 002/003 (003 waits for Ali); INDEX check of 069, 077–097 (D-314). Watch how departments react to the 554 book-check items (D-324: accepted-with-reason UI is a later question).
+5. NEXT SESSION = D-177 İç Kontrol plan conversion (D-330). Source PDF is in the repo: docs/internal-control/source/ic-kontrol-eylem-plani-2024-2026.pdf (63 PDF pages = spreads, SHA256 fb81c707…4a03). Action tables: PDF pp. 33–37 (KOS), 39 (RDS), 41–42 (KFS), 44–45 (BİS), 46 (İS); responsibility summary pp. 47–48. Each spread = two rotated half-tables; rows "makul güvence sağlanmaktadır" without action = condition-only (D-182). Output: CIV-048 template .xlsx (Plan 13 cols + Standart Başlığı; Bilgi: title, 2024–2026, V. Versiyon) + owner/Ali decision list; check D-182 "30 actions" vs the PDF. Then CIV-085. Other: screens 002/003 (003 waits for Ali); INDEX check 069, 077–097 (D-314); watch reactions to the 554 book-check items.
 6. Small tasks to package: /health readiness + Alembic head field (D-318); lead-docs guard should pass release PRs phase5 → main (D-322).
 7. Quota (BEYAN 29 Oct 20:49): week 76% then, reset Sat 00:00.
-Next IDs: task CIV-159, decision D-330.
+Next IDs: task CIV-159, decision D-331.
 
 ## Claude quota (BEYAN, owner 27 Oct 16:21)
 - Session 11%, week 67%, weekly reset Saturday 00:00 (D-300). Copilot 96 / 1,500 credits, reset 1 Nov.

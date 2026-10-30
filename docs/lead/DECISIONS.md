@@ -661,3 +661,8 @@ Next IDs: task CIV-159, decision D-329.
 ## D-329 (30 Oct 2026 ~15:00 Istanbul, owner, live session CV Lider 43) — look approvals CIV-150–154
 BEYAN (owner 14:59): look approved for CIV-150 (001), CIV-151 (039/040), CIV-152 (006/015), CIV-153 (038), CIV-154 (095). No gallery artifact needed now.
 Next IDs: task CIV-159, decision D-330.
+
+## D-330 (30 Oct 2026 ~15:20 Istanbul, owner + lead, live session CV Lider 43) — İç Kontrol plan source in the repo; conversion in a fresh session
+BEYAN/DOĞRULANDI: owner first attached "2024-2026 İç Kontrol Eylem Planı 6 Aylık Raporu" (139 pages) — only pp. 14–19 are İç Kontrol, the rest is the 2026 Performans Programı (mis-assembled file; not a conversion source; worth telling Strateji). Then the plan itself (bcekmece.bel.tr 2024–2026 PDF, 63 pages, SHA256 fb81c70708f63ac2aa3f535c6351062b6fd2db206f45d2fb7b3ab80f0c234a03) → committed as docs/internal-control/source/ic-kontrol-eylem-plani-2024-2026.pdf (public municipal document; same reasoning as the approved IDML, D-320), so later sessions need no re-attachment. Lead and Mac-bridge shells cannot reach bcekmece.bel.tr (allowlist) — owner downloads.
+Decision: conversion (D-177, ~12 rotated table spreads, row-by-row owner check) starts in a fresh live session; this conversation is long after the first load. Lead converts (D-85), not Codex.
+Next IDs: task CIV-159, decision D-331.
