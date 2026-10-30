@@ -1,6 +1,6 @@
 # CIVENSA — CURRENT STATE
 
-Updated: 30 Oct 2026, ~15:30 Istanbul (live session CV Lider 44, D-331).
+Updated: 30 Oct 2026, ~15:30 Istanbul (live session CV Lider 44, D-332).
 Rules: AI_WORKING_CONSTITUTION v1.2 (Drive, global) · `HIERARCHY.md` v1.5 · `PROJECT_RULES.md` v1.4 (D-271: PRIOR ART field mandatory in every package) · `BACKUP_LEAD.md` v2.
 Backup log ("Civensa Yedek Kaydı", Drive): no entries, last modified 23 Oct (DOĞRULANDI 30 Oct 05:45).
 Tags: DOĞRULANDI (lead checked) · TARİHSEL (past fact) · BEYAN (owner said) · BELİRSİZ (unknown).
@@ -8,13 +8,13 @@ Tags: DOĞRULANDI (lead checked) · TARİHSEL (past fact) · BEYAN (owner said) 
 ## Next session — start here (D-253)
 Claude live (CV Lider 44, 30 Oct). İç Kontrol plan CONVERTED (D-331): `docs/internal-control/ic-kontrol-plani-2024-2026.xlsx` + `CONVERSION.md` — 77 conditions / 49 actions, validator-clean except 8 unit mappings. NOT imported yet.
 Claude's next session: `CV Lider 45 · Claude Opus 5.5 · civensa-lead`. Read this section and the last decision in DECISIONS.md first.
-1. İç Kontrol import (D-331): waits for Ali Abi's answers to the 7 questions on checklist page "İç Kontrol Planı Dönüşümü" https://claude.ai/artifact/QzL9iNZkfzmgssdCYunZXF . Then the lead edits the committed workbook directly (conversion scripts were session-only), owner uploads on civensa-pilot → maps 8 names → commits draft; activation together with the lead. Owner ticks the 49 action rows against the PDF (D-177 row check).
+1. İç Kontrol import (D-331): waits for Ali Abi's answers to the 7 questions in the shared Google Sheet "CV İç Kontrol Dönüşümü – Ortak Liste" (D-332, https://docs.google.com/spreadsheets/d/1O4DmrNnBfcz9HJuxAXxGwMCvukTo2467HobZptmz-XI/edit) — read its note columns first. Then the lead edits the committed workbook directly (conversion scripts were session-only), owner uploads on civensa-pilot → maps 8 names → commits draft; activation together with the lead. Owner ticks the 49 action rows against the PDF (D-177 row check).
 2. Then CIV-085 (İç Kontrol G5 questionnaire + G6 narrative, not built yet) — needs a task package.
 3. Watch the first department reactions to the 554 book-check items (D-324). Live first load done (D-327); encrypted backups 1004Z/1059Z stay in ~/civensa-yedek.
 4. LOW backlog (D-328): first_load_live UX — only before the next real load or resume.
 5. Small tasks to package: /health readiness + Alembic head field (D-318); lead-docs guard should pass release PRs phase5 → main (D-322). Screens 002/003 (003 waits for Ali); INDEX check 069, 077–097 (D-314).
 6. Quota (BEYAN 29 Oct 20:49): week 76% then, reset Sat 00:00. Claude Pro ends 3 Nov (owner renews on the web).
-Next IDs: task CIV-159, decision D-332.
+Next IDs: task CIV-159, decision D-333.
 
 ## Claude quota (BEYAN, owner 27 Oct 16:21)
 - Session 11%, week 67%, weekly reset Saturday 00:00 (D-300). Copilot 96 / 1,500 credits, reset 1 Nov.
