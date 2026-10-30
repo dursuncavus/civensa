@@ -17,8 +17,9 @@ PNG'ler tam sayfadır ve her biri 1,5 MB sınırının altındadır.
 | `{before,after}-server-error-{1440,390}.png` | Sunucu hatasıyla yeniden çizilen form: gönderilen paylar, fingerprint, sıfır grubu ve çok satırlı gerekçe korunur. |
 | `{before,after}-blocked-{1440,390}.png` | Kapalı dönem / incelemedeki paket uyarısı ve devre dışı alanlar. |
 
-Sıfır tutar grup seçicisi 1440 ve 390 px'de tüm seçenek metnini gösterir; tarayıcı
-kontrolü her seçeneği canvas ölçümüyle doğrular.
+`after-populated-{1440,390}.png` en uzun seçeneği, “Yönetim ve Destek Programı”nı,
+seçili gösterir. Sıfır tutar grup seçicisinin tüm seçenekleri her iki genişlikte
+canvas ölçümüyle doğrulanır.
 
 Görünür metin değişikliği yoktur. Boş payların `value=""` değerleri ve `0,00`
 yer tutucuları korunur; belirsiz kaynak sıfıra çevrilmez.

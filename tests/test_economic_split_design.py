@@ -246,6 +246,8 @@ def test_browser_synthetic_evidence(scenes, strategy_client, browser, width, sta
         if directory:
             output = Path(directory) / f'{"before" if before else "after"}-{state}-{width}.png'
             output.parent.mkdir(parents=True, exist_ok=True)
+            if not before and state == 'populated':
+                page.locator('[name=zero_group_602]').select_option('management')
             page.screenshot(path=str(output), full_page=True)
             assert output.stat().st_size <= 1_500_000
             if state == 'populated':
