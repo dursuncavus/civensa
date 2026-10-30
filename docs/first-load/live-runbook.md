@@ -63,7 +63,8 @@ BASH
 ## 2. Önce taze doğrulanmış yedekle Actions provası
 
 Actions → **CIV-058 verified backup rehearsal** → Run workflow; yukarıdaki
-onaylı değişiklikleri içeren dalı seçin. Kaynak olarak main dalındaki yeşil
+onaylı değişiklikleri içeren dalı seçin. Kaynak olarak varsayılan daldaki
+(feature/authorization-workflow-phase5) yeşil
 **Daily verified database backup** çalışmasının numarasını girin. Kaynak yedek
 48 saatten yeni olmalıdır; daha eskiyse sahibi [yedek prosedürüyle](../operations/db-backup.md)
 yeni doğrulanmış yedek alır. İki onay alanına **2027 ON BASKI TASLAGINI SIL**
