@@ -710,3 +710,9 @@ LOW (watch, no task): `questionnaire_index.html` injects the navigation card by 
 Owner: look approval of the new screens (tests/artifacts/civ085/, 76 PNG). Live effect after the next release + deploy.
 Next: CIV-160 (G6 narrative) package — files now free.
 Next IDs: task CIV-161 (CIV-160 reserved for G6), decision D-338.
+
+## D-338 (30 Oct 2026 ~20:55 Istanbul, owner + lead, live session CV Lider 45) — CIV-085 look: result tables irregular → CIV-161
+BEYAN (owner 20:47, screenshot of the Strateji monitoring overview): "hücreler çok düzensiz". Lead diagnosis: `table-layout: auto` sizes columns per table, so answer columns sit at different x positions across "Bileşen özeti" / "Soru özeti"; tbody row headers inherit the grey header background; numbers left-aligned, not tabular; total rows not distinguished; h3 spacing missing. CIV-085 look approval stays open until CIV-161 merges.
+CIV-161 → Codex (GPT-6.1 Sol, effort Orta): CSS + class attributes only, also applied to the CIV-084 official summary table on the same screen for consistency (no text/value change). Package docs/lead/tasks/CIV-161.md.
+Process note: lead PR #282 (D-337 records) was merged while its checks were still queued (GitHub 502/queue at the time) — rule is merge after "guard" is green. Markdown-only lead branch, low risk; result checked afterwards and recorded in the next entry.
+Next IDs: task CIV-162 (CIV-160 reserved for G6), decision D-339.
