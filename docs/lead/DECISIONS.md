@@ -651,3 +651,9 @@ Pending: owner UI check (new departments visible, tables filled, blanks not 0, d
 Owner decision (BEYAN 14:14): the Neon direct connection string (with password) appeared in a chat screenshot and in the Mac zsh history; owner chose not to rotate the password now. Risk recorded: chat/screenshot sharing would expose the database. Lead offers rotation steps (Neon reset → Render env + Actions secret NEON_BACKUP_DATABASE_URL) whenever the owner wants.
 Lessons (lead): (a) `tee >/dev/null` and `grep` on stdout hid the input() confirmation prompt twice → the owner waited ~20 min each time; (b) the plan JSON is longer than the terminal scrollback, totals are printed only per department; (c) each plan/apply takes ~9–20 min with no progress line, so the 60-minute backup window is tight for steps 5–7. → small task: confirmation prompt on /dev/tty, a one-screen totals summary before the JSON, progress lines, runbook note that steps 5 and 7 normally need two backups.
 Next IDs: task CIV-159, decision D-328.
+
+## D-328 (30 Oct 2026 ~15:00 Istanbul, owner + lead, live session CV Lider 43) — first load closed; housekeeping
+BEYAN (owner 14:53): UI check OK (Ar-Ge and İşletme visible, 2027 tables filled, blanks not 0, drafts) → owner reopens data entry. D-315 step 6 closed.
+DOĞRULANDI (owner terminal 14:57): decrypted dumps in ~/civensa-yedek/*/cozulmus deleted; every line containing a postgresql:// URL removed from ~/.zsh_history and ~/.zsh_sessions/*.history (check: none left). Encrypted 1004Z/1059Z copies kept.
+Decision: the D-327 CLI UX lessons go to the LOW backlog, not a task now — the one-time load is done; worth it only before the next real load or a resume (constitution rule 15: can ≠ should).
+Next IDs: task CIV-159, decision D-329.
