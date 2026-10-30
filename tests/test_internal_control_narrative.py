@@ -221,7 +221,13 @@ def test_raw_insert_enforces_permissions_snapshot_revision_and_sod(db, monitorin
 
 def test_copy_previous_latest_approved_same_plan_and_clicking_author(db, monitoring):
     d = monitoring
-    source = approved(db,d)
+    first = approved(db,d)
+    n.transition(db,d['strategy'],d['period'].id,'reopen',first.revision,'Test ikinci onay hazırlığı')
+    updated = save(db,d,mission='Test son onaylı misyon metni …')
+    n.transition(db,d['staff'],d['period'].id,'submit',updated.revision)
+    source = n.transition(db,d['strategy'],d['period'].id,'approve',updated.revision+1)
+    db.commit()
+    assert source.snapshot_json != first.snapshot_json
     n.transition(db,d['strategy'],d['period'].id,'reopen',source.revision,'Test yeni taslak')
     save(db,d,mission='Test kaynak sonraki taslak — kopyalanmamalı')
     m.close_period(db,d['strategy'],d['period'].id,1,'Test önceki dönem sonu'); db.commit()
@@ -247,6 +253,9 @@ def test_copy_no_source_uses_nearest_period_only_and_rejects_other_plan(db, moni
     third=m.open_period(db,d['strategy'],d['plan'].id,2028,1,m.today(db)); db.commit()
     with pytest.raises(HTTPException): n.copy_previous(db,d['staff'],third.id,0)
     assert n.latest(db,third.id) is None
+    # Make the other plan's nearest earlier period approved: an unscoped lookup
+    # would now copy it, so the refusal below proves plan isolation.
+    approved(db,{**d,'period':third})
     # A separate imported plan never inherits the prior plan's approval.
     from app import internal_control_service as ic
     batch,_=ic.create_import(db,d['strategy'],workbook([action_row()]),'civ160-other-test.xlsx')
