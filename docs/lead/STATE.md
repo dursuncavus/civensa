@@ -1,21 +1,20 @@
 # CIVENSA — CURRENT STATE
 
-Updated: 30 Oct 2026, ~15:00 Istanbul (live session CV Lider 43, D-330).
+Updated: 30 Oct 2026, ~15:30 Istanbul (live session CV Lider 44, D-331).
 Rules: AI_WORKING_CONSTITUTION v1.2 (Drive, global) · `HIERARCHY.md` v1.5 · `PROJECT_RULES.md` v1.4 (D-271: PRIOR ART field mandatory in every package) · `BACKUP_LEAD.md` v2.
 Backup log ("Civensa Yedek Kaydı", Drive): no entries, last modified 23 Oct (DOĞRULANDI 30 Oct 05:45).
 Tags: DOĞRULANDI (lead checked) · TARİHSEL (past fact) · BEYAN (owner said) · BELİRSİZ (unknown).
 
 ## Next session — start here (D-253)
-Claude live (CV Lider 43, 30 Oct). LIVE FIRST LOAD DONE (D-327): approved 2027 PP loaded on civensa-pilot — 34 departments (2 created: Ar-Ge, İşletme) / 64 / 263 / 291 / 1340, 554 book-check validations, all drafts; resume plan 0. Rollback points: backup 1004Z (pre-cleanup), 1059Z (clean, pre-load).
-Claude's next session: `CV Lider 44 · Claude Opus 5.5 · civensa-lead`. Read this section and the last decision in DECISIONS.md first.
-1. (done, D-328) Owner UI check OK (BEYAN 14:53) → data entry reopened by the owner. Decrypted dumps deleted, connection-string lines removed from zsh history (DOĞRULANDI owner output 14:57). Encrypted backups 1004Z/1059Z stay in ~/civensa-yedek. Password rotation declined (D-327) — offer only if asked.
-2. Watch the first department reactions to the 554 book-check items (D-324).
-3. LOW backlog (D-328): first_load_live UX (confirmation prompt on /dev/tty, one-screen totals, progress lines; runbook: steps 5 and 7 need two backups) — only before the next real load or resume.
-4. (done, D-329) Owner look approvals CIV-150/151/152/153/154 (BEYAN 14:59).
-5. NEXT SESSION = D-177 İç Kontrol plan conversion (D-330). Source PDF is in the repo: docs/internal-control/source/ic-kontrol-eylem-plani-2024-2026.pdf (63 PDF pages = spreads, SHA256 fb81c707…4a03). Action tables: PDF pp. 33–37 (KOS), 39 (RDS), 41–42 (KFS), 44–45 (BİS), 46 (İS); responsibility summary pp. 47–48. Each spread = two rotated half-tables; rows "makul güvence sağlanmaktadır" without action = condition-only (D-182). Output: CIV-048 template .xlsx (Plan 13 cols + Standart Başlığı; Bilgi: title, 2024–2026, V. Versiyon) + owner/Ali decision list; check D-182 "30 actions" vs the PDF. Then CIV-085. Other: screens 002/003 (003 waits for Ali); INDEX check 069, 077–097 (D-314); watch reactions to the 554 book-check items.
-6. Small tasks to package: /health readiness + Alembic head field (D-318); lead-docs guard should pass release PRs phase5 → main (D-322).
-7. Quota (BEYAN 29 Oct 20:49): week 76% then, reset Sat 00:00.
-Next IDs: task CIV-159, decision D-331.
+Claude live (CV Lider 44, 30 Oct). İç Kontrol plan CONVERTED (D-331): `docs/internal-control/ic-kontrol-plani-2024-2026.xlsx` + `CONVERSION.md` — 77 conditions / 49 actions, validator-clean except 8 unit mappings. NOT imported yet.
+Claude's next session: `CV Lider 45 · Claude Opus 5.5 · civensa-lead`. Read this section and the last decision in DECISIONS.md first.
+1. İç Kontrol import (D-331): waits for Ali Abi's answers to the 7 questions on checklist page "İç Kontrol Planı Dönüşümü" https://claude.ai/artifact/QzL9iNZkfzmgssdCYunZXF . Then the lead edits the committed workbook directly (conversion scripts were session-only), owner uploads on civensa-pilot → maps 8 names → commits draft; activation together with the lead. Owner ticks the 49 action rows against the PDF (D-177 row check).
+2. Then CIV-085 (İç Kontrol G5 questionnaire + G6 narrative, not built yet) — needs a task package.
+3. Watch the first department reactions to the 554 book-check items (D-324). Live first load done (D-327); encrypted backups 1004Z/1059Z stay in ~/civensa-yedek.
+4. LOW backlog (D-328): first_load_live UX — only before the next real load or resume.
+5. Small tasks to package: /health readiness + Alembic head field (D-318); lead-docs guard should pass release PRs phase5 → main (D-322). Screens 002/003 (003 waits for Ali); INDEX check 069, 077–097 (D-314).
+6. Quota (BEYAN 29 Oct 20:49): week 76% then, reset Sat 00:00. Claude Pro ends 3 Nov (owner renews on the web).
+Next IDs: task CIV-159, decision D-332.
 
 ## Claude quota (BEYAN, owner 27 Oct 16:21)
 - Session 11%, week 67%, weekly reset Saturday 00:00 (D-300). Copilot 96 / 1,500 credits, reset 1 Nov.
@@ -52,7 +51,7 @@ Merged 26 Oct: #163 CIV-113 → 88c9dfb; #154 CIV-109 → 34329a7; #161 CIV-111 
 ## Open queue — lead / scheduled run "Civensa gece kontrol" (05:41 only, D-265)
 1. Scheduled-run merges are refused by the session permission check (D-213, again D-255 on #132) — scheduled runs review and record; live sessions or the owner merge.
 2. Ask-Ali list (13 items) artifact "Ali Abi Soruları" https://claude.ai/artifact/KVuaFCeKzTv9kQGpwRWiz8 ; e-mailed 26 Oct; answers in "CIVENSA-CEVAPLAR v1" format.
-3. D-177 plan conversion, CIV-085, live first load — after the go-live deploy (D-315), live session only.
+3. (D-331) D-177 conversion done, import waits for Ali; live first load done (D-327); CIV-085 next — live session only.
 4. Measure scheduled run cost; reduce or stop if costly.
 5. (closed, D-286) D-205 Drive archive and pointer "KAYITLAR GITHUB'DA" done.
 6. DeepSeek mirror GUNCEL-DURUM.md: not reachable in scheduled runs; the lead refreshes it in the next live session with the Mac linked (still pending 28 Oct).
