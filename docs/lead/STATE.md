@@ -8,12 +8,13 @@ Tags: DOĞRULANDI (lead checked) · TARİHSEL (past fact) · BEYAN (owner said) 
 ## Next session — start here (D-253)
 Claude live (CV Lider 40, 29 Oct). CIV-151 merged 0b8c72a; CIV-149 merged by the owner 49abd45 (D-312).
 Claude's next session: `CV Lider 41 · Claude Opus 5.5 · civensa-lead`. Read this section and the last decision in DECISIONS.md first.
-1. Codex: CIV-152 006 + 015 (D-312) CIV-153 038 Ekonomik dağılım (D-313), CIV-154 095 Bütçe aktarma ayrıntısı (D-314) — review each PR → CI → merge.
+1. Codex (BEYAN 23:48: CIV-152 done, PR to review; CIV-153/154/155/156 running): CIV-152 006 + 015 (D-312) CIV-153 038 Ekonomik dağılım (D-313), CIV-154 095 Bütçe aktarma ayrıntısı (D-314), CIV-155 rehearsal gate (D-315), CIV-156 upgrade test (D-317) — review each PR → CI → merge.
 2. Owner looks pending: CIV-144 (007/008 value row + evidence), CIV-145 (İç Kontrol 031), CIV-146/147 (users), CIV-148 (016 audit labels), CIV-149, CIV-150 (001), CIV-151 (039/040; LOW items in D-312). Give the owner one gallery artifact (screenshots in docs/design/rollout/**).
 3. GO-LIVE (D-315): when CIV-152/153/154 are merged run the release plan in D-315 (CIV-155 → backup + rehearsal → release PR → owner merge + Render deploy → checks → first load). Dispatch CIV-155 to the next free Codex slot.
+   30 Oct: owner attaches the final council-approved 2027 PP PDF (D-316) → lead compares it with the dry-run source and reports differences before the first load.
 4. Next screens after CIV-152/153/154: 002/003 (003 waits for Ali); INDEX has 97 screens (D-314) — check 069, 077–097 states and helper templates assurance_statement, first_period, structure_wizard against INDEX.
 5. Quota (BEYAN 29 Oct 20:49): week 76%, reset Sat 00:00; owner: keep working until then.
-Next IDs: task CIV-156, decision D-316.
+Next IDs: task CIV-157, decision D-318.
 
 ## Claude quota (BEYAN, owner 27 Oct 16:21)
 - Session 11%, week 67%, weekly reset Saturday 00:00 (D-300). Copilot 96 / 1,500 credits, reset 1 Nov.
