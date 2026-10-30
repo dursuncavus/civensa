@@ -748,3 +748,7 @@ Lead review: directorates 403 on every narrative route and see only approved Mis
 LOW (watch, no task): the PostgreSQL insert guard civ160_event_guard still uses the old return/reopen boundary for approval, so it is weaker than the app rule (app layer enforces; DB is the second layer). Align it in the next migration that touches İç Kontrol. LOW: narrative_ours.html uses inline style for line breaks instead of a CSS class.
 Owner: look approval of the CIV-160 screens (tests/artifacts/civ160/, 22 PNG). Live after the next release + deploy.
 Next IDs: task CIV-162, decision D-344.
+
+## D-344 (31 Oct 2026 00:18 Istanbul, owner, live session CV Lider 46) — look approval CIV-160
+BEYAN (owner 00:18): "Ekranlar tamamdır" — look approved for the CIV-160 narrative screens (editor states, Strateji overview link, directorate Misyon/Vizyon block; tests/artifacts/civ160/).
+Next IDs: task CIV-162, decision D-345.
