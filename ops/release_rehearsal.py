@@ -10,7 +10,7 @@ import sys
 from datetime import datetime, timedelta, timezone
 from urllib.parse import quote, urlsplit
 
-from ops.backup_crypto import decrypt_backup
+from ops.backup_crypto import BackupCryptoError, decrypt_backup
 
 BACKUP_REQUIRED = "Önce Actions → Daily verified database backup → Run workflow çalıştırın, yeşil bittikten sonra bu kontrolü yeniden çalıştırın."
 # table: one-line reason for an intentional deletion (also explain it in the PR).
@@ -97,7 +97,11 @@ def download_backup():
 
 
 def verify_dump():
-    dump = decrypt_backup(BACKUP_DIR, BACKUP_DIR / "decrypted")
+    try:
+        dump = decrypt_backup(BACKUP_DIR, BACKUP_DIR / "decrypted")
+    except BackupCryptoError as exc:
+        # Fixed Turkish messages from ops.backup_crypto; no paths, keys or age output.
+        raise RehearsalFailure(f"Yedek çözülemedi: {exc}") from None
     os.environ.pop("BACKUP_AGE_IDENTITY", None)
     os.environ.pop("BACKUP_AGE_IDENTITY_FILE", None)
     saved = json.loads(dump.with_suffix(".manifest.json").read_text())
