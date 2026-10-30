@@ -702,3 +702,11 @@ DOĞRULANDI (12 directorates, 2021 table): Toplam puan = 2·Evet + Geliştirilme
 Decision: CIV-085 package amended — the two per-directorate/institution figures added (assumption, Strateji to confirm) and a test that the committed real file uploads with 70 rows, 0 errors. If the owner already started the Codex task, the addendum goes in as a follow-up message in that task. Strateji (Ali Abi) to compare the list with the current form before first use — added to the Ali list.
 Addendum 18:35: Codex asked to change scripts/first_load_live.py HEAD and the matching pin test to the new revision; approved — the pin is designed to equal the single repository head; package allowed list updated.
 Next IDs: task CIV-161 (CIV-160 reserved for G6), decision D-337.
+
+## D-337 (30 Oct 2026 ~20:45 Istanbul, lead, live session CV Lider 45) — CIV-085 merged
+DOĞRULANDI: #280 CIV-085 → b299845 (head 62ae8ce reviewed; CI green: test 18/0, 18/1, security, secrets, guards; behind 0). Includes the D-336 addendum (Toplam puan, Gerçekleşme oranı, real 70-question file upload test) and the approved first_load_live HEAD pin. New Alembic head c085a1b2c3d4 (on c086a1b2c3d4; id order is not chronological — opaque ids, no action).
+Lead review: answers only by the owning directorate (403 for Strateji, D-185); return/approve/reopen only Strateji Müdürü, reason required, SoD check; attach refused after first saved answer except adding departments; results from latest approved snapshots only; downgrade refused when any questionnaire row exists; existing monitoring/official export code untouched. Changed existing tests named in the PR (D-167): first_load pin, ar_typeset head/parent and downgrade revision; storage inventory extended with 12 text columns.
+LOW (watch, no task): `questionnaire_index.html` injects the navigation card by string-replacing the parent's "Plan yükle" heading — if that heading text changes, the card silently disappears.
+Owner: look approval of the new screens (tests/artifacts/civ085/, 76 PNG). Live effect after the next release + deploy.
+Next: CIV-160 (G6 narrative) package — files now free.
+Next IDs: task CIV-161 (CIV-160 reserved for G6), decision D-338.
