@@ -837,3 +837,14 @@ BEYAN (owner 14:24): the owner will provide the approved 2026 PP IDML on Monday 
 DOĞRULANDI (lead, phase5): scripts/first_load_live.py is hard-wired to 2027 (book path + SHA pin, year 2027 checks, period creation, 2027 cleanup) → a 2026 load needs a code change, rehearsal and owner-run live load like D-327; the 2027 data must stay untouched.
 Plan: (1) owner attaches the IDML in the lead session (not loaded into the live system by hand); (2) lead runs the existing dry-run checks on it and compares with the website PDF; (3) lead packages CIV-163 for Codex — year-parameterised loader for 2026 next to 2027, own SHA pin, refusal if 2027 rows would change; (4) rehearsal → backup → owner live load. Package waits for the file, because the 2026 book structure may differ from 2027.
 Next IDs: task CIV-163, decision D-358.
+
+## D-358 (31 Oct 2026 14:30 Istanbul, owner + lead, live session CV Lider 48) — İç Kontrol Eylem Planı goes to departments before Faaliyet Raporu
+BEYAN (owner 14:26): the İç Kontrol Eylem Planı comes before the Faaliyet Raporu; once its gaps are closed, departments can make their entries. Supersedes D-354's "Faaliyet Raporu first" order; D-352 (no department access until ready) still holds per module.
+DOĞRULANDI (lead 14:30): no code gap for this — plan import, actions, six-monthly monitoring, official report, question form and narrative are built and live (D-346/D-350). Shared sheet "CV İç Kontrol Dönüşümü – Ortak Liste" still has no answers. What blocks department entry:
+1. Ali Abi: 7 plan questions (tab 1) and 8 unit-name mappings (tab 2).
+2. Owner: 49 action-row check against the PDF (tab 3, D-177) — needs no Ali answer, can start now.
+3. Ali Abi (Strateji): confirm the three monitoring assumptions marked "varsayım — Strateji teyit edecek" in docs/internal-control/izleme.md (which actions fall into a period; action-level status when several units share one; question-form participants).
+4. Then: lead updates the workbook → owner uploads + maps names + commits draft → activation with the lead → Strateji opens the period (year, half, entry deadline).
+5. Department rollout items: personal accounts for the responsible units (CIV-086/K8 import exists), Render Starter on that day (D-351), short entry guide.
+Open question to the owner: which half-year the departments enter first and its deadline.
+Next IDs: task CIV-163, decision D-359.
