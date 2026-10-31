@@ -820,3 +820,9 @@ DOĞRULANDI (lead, phase5 e6bdf62; gap reports docs/reports/civ-062 (AR, 20 Oct)
 Lead estimate (model judgment, not measured): code readiness Faaliyet Raporu ~65 %, PP ~85 %, İç Kontrol ~90 %; for all three the blocker is data/decisions from Ali Abi and Mali Hizmetler, not code. Key unknown: whether an authorised 2026 PP baseline exists in the system — the 2026 Faaliyet Raporu measures against it (AR-02).
 Next: lead prepares the Faaliyet Raporu question/checklist page for Ali Abi (7 items, grouped by who handles them).
 Next IDs: task CIV-163, decision D-355.
+
+## D-355 (31 Oct 2026 14:21 Istanbul, owner + lead, live session CV Lider 48) — 2026 PP baseline source
+BEYAN (owner 14:21): the 2026 Performans Programı is published as a PDF on the municipality website. DOĞRULANDI: it is not in the repo or the system (repo has only 2027 IDML sources; D-330 noted a 139-page mis-assembled file that is mostly the 2026 PP, not a conversion source).
+Decision: the 2026 baseline (AR-02) is loaded the same way as 2027 — from the InDesign book (IDML), because the existing loader, checks and rehearsal are built for IDML and PDF table extraction is unreliable (rotated spreads, merged cells). Owner is the book designer → first ask for the 2026 InDesign file; the website PDF is the reference to compare against and the fallback only if no InDesign file exists. Also confirm with Ali Abi that the website PDF is the council-approved final (same rule as "ONAYLI" 2027, D-324).
+Conversation is long → the Faaliyet Raporu checklist page for Ali Abi moves to the next session (CV Lider 49).
+Next IDs: task CIV-163, decision D-356.
