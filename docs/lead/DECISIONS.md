@@ -759,3 +759,28 @@ DOĞRULANDI: main is 31 commits behind phase5; pending code: #262 CIV-157, #266 
 Lead dispatched db-backup run 41131079715 → civensa-db-backup-20261030-2127Z (success), then Release migration rehearsal run 41131273683 on 81f2d9d → success (restores the latest successful backup = 2127Z, upgrades twice, starts the app).
 Release PR #292 (head 81f2d9d) opened for the owner. Owner steps (escalation, rule §4): merge #292 when its tests are green → lead dispatches a pre-deploy backup → owner Render civensa-pilot "Deploy latest commit" → /health ready=true + 3 pages. Data entry is open, so the owner picks a quiet hour for the deploy.
 Next IDs: task CIV-162, decision D-346.
+
+## D-346 (31 Oct 2026 ~01:15 Istanbul, owner + lead, live session CV Lider 47) — release live on civensa-pilot
+DOĞRULANDI: owner merged #292 (21:58Z) → main 80b6ca1; tests green on 6d9be83. Lead dispatched pre-deploy backup run 41134993416 → civensa-db-backup-20261030-2159Z. Owner Render civensa-pilot "Deploy latest commit".
+DOĞRULANDI (owner pasted /health, 01:10): status ok, environment production, database ok (11 ms), ready true, migration current = head = c160a1b2c3d4. CIV-157/158/159/085/161/160 are live. 3-page check: owner to confirm.
+Finding (owner screenshot): civensa-pilot is a Render Free instance → sleeps after 15 min idle, first request waits ~50 s. Departments now enter live data, so this reads as "system down". Source-backed (render.com pricing, checked 31 Oct): Starter web service $7/month, 512 MB / 0.5 CPU, always on; database stays on Neon (no Render Postgres cost). Lead recommendation: move civensa-pilot to Starter (payment = owner decision, §4).
+Next IDs: task CIV-162, decision D-347.
+
+## D-347 (31 Oct 2026 ~01:25 Istanbul, owner + lead, live session CV Lider 47) — 3-page check OK; CIV-162 dispatched while Ali's answers wait
+BEYAN (owner 01:10): the three pages after the deploy open fine ("Kalanlar da tamam") → D-346 release fully closed.
+Owner asked whether work stops until Ali Abi answers. Lead check: İç Kontrol import and UI 002/003 wait for Ali; first-load CLI UX stays parked (D-328). Worth doing now: the D-343 LOW — DB approval guard weaker than the app rule (separation of duties, the narrative goes into the official report). Doing it now instead of "with the next İç Kontrol migration" because no such migration is planned and the gap is security-relevant; one small migration, cost low.
+Package: docs/lead/tasks/CIV-162.md. Dispatch: ChatGPT Codex, Bulut → civensa, GPT-6.1 Sol, effort Orta (one function swap + tests). Goes live with the next release (needs rehearsal + deploy).
+Open owner decision: Render Starter $7/month for civensa-pilot (D-346).
+Next IDs: task CIV-163, decision D-348.
+
+## D-348 (31 Oct 2026 night, lead, scheduled run "Civensa gece kontrol") — CIV-162 head-pin exception approved, @codex follow-up
+DOĞRULANDI: PR #296 CIV-162 (head d82612d, not draft) — lead review of the diff against docs/lead/tasks/CIV-162.md: new migration c162a1b2c3d4 on c160a1b2c3d4, only the approve boundary query changed (`action = 'approve'`), downgrade restores the frozen c160 body, app/internal_control_narrative_guards.py identical, new raw-SQL tests, first_load_live HEAD pin (allowed). No HIGH/MEDIUM finding.
+CI on d82612d: secrets, guards, backup-security green; test 18/0 and 18/1 FAIL — annotations show only existing tests pinning the previous head c160a1b2c3d4 (test_internal_control_narrative.py:462/:494, test_internal_control_questionnaire.py:414/:428, test_ar_typeset_migration.py:61/:122). Codex flagged this as a scope conflict ("no change to existing assertions") and waited.
+Decision: narrow exception (D-167 pattern) — update only current-head pin values c160 → c162; :463 (c160's parent) stays; name every line in the PR. Posted "@codex" comment https://github.com/dursuncavus/civensa/pull/296#issuecomment-6537948407. Whether Codex reacts to PR comments: BELİRSİZ (D-242). Not merged (CI red).
+Next IDs: task CIV-163, decision D-349.
+
+## D-349 (31 Oct 2026 ~13:20 Istanbul, lead, live session CV Lider 48) — CIV-162 merged; release #298 prepared
+Session start: backup log "Civensa Yedek Kaydı" unchanged since 23 Oct (DOĞRULANDI); Ali's "CV İç Kontrol Dönüşümü – Ortak Liste" not modified since 30 Oct (no answers, DOĞRULANDI). Merged night-run records #297 (D-348) → ac9b7c8.
+DOĞRULANDI: Codex applied the D-348 head-pin exception. Lead review of #296 head 4ac7593: migration c162a1b2c3d4 changes only the approve boundary query (`action = 'approve'`), downgrade restores the frozen c160 body, guards.py identical to the migration (tested), raw-SQL tests cover acceptance 1–2 in both metadata and migration-chain schemas, populated upgrade/downgrade/upgrade keeps rows equal; the six existing-test edits are only current-head pins c160 → c162 as approved (D-348), :463 parent check kept. No finding. Branch updated (behind 0) → head 02e4f42, CI green (test 18/0, 18/1, security, secrets, guards) → merged #296 → 8ff85f9.
+Release prepared (Saturday, data entry quiet): backup run 41191411296 → civensa-db-backup-20261031-1007Z (success); Release migration rehearsal run 41191527978 on 8ff85f9 → success. Release PR #298 phase5 → main opened for the owner (§4). Owner steps: merge #298 when tests are green → lead dispatches a pre-deploy backup → Render civensa-pilot "Deploy latest commit" → /health migration c162a1b2c3d4.
+Next IDs: task CIV-163, decision D-350.

@@ -40,7 +40,7 @@ BEGIN
   RAISE EXCEPTION 'Anlatı kararı kaydedilmiş metinleri korumalıdır.';
  END IF;
  IF NEW.action='approve' THEN
-  SELECT COALESCE(max(revision),0) INTO boundary FROM ic_narrative_events WHERE period_id=p.id AND action IN ('return','reopen');
+  SELECT COALESCE(max(revision),0) INTO boundary FROM ic_narrative_events WHERE period_id=p.id AND action = 'approve';
   IF EXISTS (SELECT 1 FROM ic_narrative_events WHERE period_id=p.id AND revision>boundary AND actor_id=u.id AND action='save') THEN
    RAISE EXCEPTION 'Görevler ayrılığı: veriyi giren veya değiştiren onaylayamaz.';
   END IF;
