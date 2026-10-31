@@ -810,3 +810,13 @@ DOĞRULANDI (lead, phase5 2ed0893): partial prior art only — Faaliyet Raporu f
 Lead direction (proposed, not accepted yet — scope change, §4): a form round-trip — Civensa exports one form per department pre-filled with what is already known, with hidden record keys; the returned file is uploaded, previewed with Turkish errors per field, and applied. Numbers and tables go in Excel (cells, data validation, protected key columns survive editing; Word tables break on edit); narrative text may stay Word. Research gate (rule 11/14) before the package: existing patterns for template round-trip data collection (openpyxl protection/validation, government data-collection templates).
 Open question to the owner: which report(s) the forms are for this year and when they go out to departments — sets scope and deadline.
 Next IDs: task CIV-163, decision D-354.
+
+## D-354 (31 Oct 2026 ~14:40 Istanbul, owner + lead, live session CV Lider 48) — module completion picture; Faaliyet Raporu first to departments
+BEYAN (owner 14:17): if the Faaliyet Raporu module is finished it is opened to departments; the PP side starts in 2027; owner cannot estimate the other modules → lead clarifies first.
+DOĞRULANDI (lead, phase5 e6bdf62; gap reports docs/reports/civ-062 (AR, 20 Oct) and civ-055 (PP, 21 Oct) updated with later merges #88/#89 CIV-088 AR-16, #90 CIV-090 AR-06):
+- Faaliyet Raporu: 20 gap items → 13 DONE (AR-05..12, 14, 15, 16, 19, 20), 7 PARTIAL (AR-01 PP/activity/cost binding, AR-02 trusted 2026 baseline, AR-03 Finance reconciliation, AR-04 shared general data, AR-13 official Word/PDF look, AR-17 real data entry/import, AR-18 accounts + real rehearsal). All 7 need input from Ali Abi / Strateji / Mali Hizmetler (CIV-062 input table; D-216). UI 002/003 placeholder also waits for Ali (D-345).
+- Performans Programı: 26 items → 22 DONE, PARTIAL PP-02 (general-section copy), PP-14 (wider correction design), PP-19 (production DB role evidence), OPEN PP-24 (official book Word layout acceptance). Approved 2027 book live since D-327.
+- İç Kontrol: plan import, actions, six-monthly monitoring, official report, 70-question form (CIV-085), narrative (CIV-160/162) built; real plan import waits for Ali (D-331); first realistic use July 2027 (TARİHSEL, CIV-047).
+Lead estimate (model judgment, not measured): code readiness Faaliyet Raporu ~65 %, PP ~85 %, İç Kontrol ~90 %; for all three the blocker is data/decisions from Ali Abi and Mali Hizmetler, not code. Key unknown: whether an authorised 2026 PP baseline exists in the system — the 2026 Faaliyet Raporu measures against it (AR-02).
+Next: lead prepares the Faaliyet Raporu question/checklist page for Ali Abi (7 items, grouped by who handles them).
+Next IDs: task CIV-163, decision D-355.
