@@ -831,3 +831,9 @@ Next IDs: task CIV-163, decision D-356.
 BEYAN (owner 14:23): if we are sure the module is ready, departments enter Faaliyet Raporu data directly in Civensa; if it stays incomplete, data comes by form (D-353).
 Decision (lead): the form round-trip (D-353 proposal) is NOT built now — it is a fallback, building both doubles the work (rule 15/16). Effort goes to closing the 7 AR items for direct entry. Go/no-go for direct entry on 30 Nov 2026 (the CIV-062 end-to-end gate date); if no-go, the form round-trip is packaged then — enough time before the 28 Feb 2027 unit closing (TARİHSEL, CIV-062 calendar). Checklist item 6 for Ali Abi becomes: confirm 30 Nov as the decision day.
 Next IDs: task CIV-163, decision D-357.
+
+## D-357 (31 Oct 2026 14:24 Istanbul, owner + lead, live session CV Lider 48) — approved 2026 IDML arrives Monday
+BEYAN (owner 14:24): the owner will provide the approved 2026 PP IDML on Monday 2 Nov.
+DOĞRULANDI (lead, phase5): scripts/first_load_live.py is hard-wired to 2027 (book path + SHA pin, year 2027 checks, period creation, 2027 cleanup) → a 2026 load needs a code change, rehearsal and owner-run live load like D-327; the 2027 data must stay untouched.
+Plan: (1) owner attaches the IDML in the lead session (not loaded into the live system by hand); (2) lead runs the existing dry-run checks on it and compares with the website PDF; (3) lead packages CIV-163 for Codex — year-parameterised loader for 2026 next to 2027, own SHA pin, refusal if 2027 rows would change; (4) rehearsal → backup → owner live load. Package waits for the file, because the 2026 book structure may differ from 2027.
+Next IDs: task CIV-163, decision D-358.
