@@ -58,7 +58,7 @@ def migrated():
 
 def test_single_head_and_parent():
     script = ScriptDirectory.from_config(Config(str(ROOT / 'alembic.ini')))
-    assert script.get_heads() == ['c160a1b2c3d4']
+    assert script.get_heads() == ['c162a1b2c3d4']
     assert script.get_revision('c085a1b2c3d4').down_revision == 'c086a1b2c3d4'
     assert script.get_revision('c086a1b2c3d4').down_revision == 'c084a1b2c3d4'
 
@@ -119,7 +119,7 @@ def test_downgrade_refuses_frozen_keyed_snapshots_without_losing_data(migrated, 
     assert 'Veriyi koruyan' in result.stderr
     assert 'ar_section_table_keys' in inspect(engine).get_table_names()
     with engine.connect() as conn:
-        assert conn.execute(text('SELECT version_num FROM alembic_version')).scalar_one() == 'c160a1b2c3d4'
+        assert conn.execute(text('SELECT version_num FROM alembic_version')).scalar_one() == 'c162a1b2c3d4'
 
 
 def test_sqlite_upgrade_and_downgrade_retain_existing_checks(tmp_path):
