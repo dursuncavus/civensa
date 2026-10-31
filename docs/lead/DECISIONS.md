@@ -772,3 +772,9 @@ Owner asked whether work stops until Ali Abi answers. Lead check: İç Kontrol i
 Package: docs/lead/tasks/CIV-162.md. Dispatch: ChatGPT Codex, Bulut → civensa, GPT-6.1 Sol, effort Orta (one function swap + tests). Goes live with the next release (needs rehearsal + deploy).
 Open owner decision: Render Starter $7/month for civensa-pilot (D-346).
 Next IDs: task CIV-163, decision D-348.
+
+## D-348 (31 Oct 2026 night, lead, scheduled run "Civensa gece kontrol") — CIV-162 head-pin exception approved, @codex follow-up
+DOĞRULANDI: PR #296 CIV-162 (head d82612d, not draft) — lead review of the diff against docs/lead/tasks/CIV-162.md: new migration c162a1b2c3d4 on c160a1b2c3d4, only the approve boundary query changed (`action = 'approve'`), downgrade restores the frozen c160 body, app/internal_control_narrative_guards.py identical, new raw-SQL tests, first_load_live HEAD pin (allowed). No HIGH/MEDIUM finding.
+CI on d82612d: secrets, guards, backup-security green; test 18/0 and 18/1 FAIL — annotations show only existing tests pinning the previous head c160a1b2c3d4 (test_internal_control_narrative.py:462/:494, test_internal_control_questionnaire.py:414/:428, test_ar_typeset_migration.py:61/:122). Codex flagged this as a scope conflict ("no change to existing assertions") and waited.
+Decision: narrow exception (D-167 pattern) — update only current-head pin values c160 → c162; :463 (c160's parent) stays; name every line in the PR. Posted "@codex" comment https://github.com/dursuncavus/civensa/pull/296#issuecomment-6537948407. Whether Codex reacts to PR comments: BELİRSİZ (D-242). Not merged (CI red).
+Next IDs: task CIV-163, decision D-349.
