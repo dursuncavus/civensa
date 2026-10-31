@@ -826,3 +826,8 @@ BEYAN (owner 14:21): the 2026 Performans Programı is published as a PDF on the 
 Decision: the 2026 baseline (AR-02) is loaded the same way as 2027 — from the InDesign book (IDML), because the existing loader, checks and rehearsal are built for IDML and PDF table extraction is unreliable (rotated spreads, merged cells). Owner is the book designer → first ask for the 2026 InDesign file; the website PDF is the reference to compare against and the fallback only if no InDesign file exists. Also confirm with Ali Abi that the website PDF is the council-approved final (same rule as "ONAYLI" 2027, D-324).
 Conversation is long → the Faaliyet Raporu checklist page for Ali Abi moves to the next session (CV Lider 49).
 Next IDs: task CIV-163, decision D-356.
+
+## D-356 (31 Oct 2026 14:23 Istanbul, owner + lead, live session CV Lider 48) — Faaliyet Raporu entry mode: direct, form only as fallback
+BEYAN (owner 14:23): if we are sure the module is ready, departments enter Faaliyet Raporu data directly in Civensa; if it stays incomplete, data comes by form (D-353).
+Decision (lead): the form round-trip (D-353 proposal) is NOT built now — it is a fallback, building both doubles the work (rule 15/16). Effort goes to closing the 7 AR items for direct entry. Go/no-go for direct entry on 30 Nov 2026 (the CIV-062 end-to-end gate date); if no-go, the form round-trip is packaged then — enough time before the 28 Feb 2027 unit closing (TARİHSEL, CIV-062 calendar). Checklist item 6 for Ali Abi becomes: confirm 30 Nov as the decision day.
+Next IDs: task CIV-163, decision D-357.
