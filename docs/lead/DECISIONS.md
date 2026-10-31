@@ -797,3 +797,9 @@ BEYAN (owner 14:07): departments do not log in yet; the system is not opened to 
 Correction: D-345 ("data entry is open") and D-346 ("departments now enter live data") were wrong — the lead did not verify that premise. Mistake → cause: an assumption was recorded as fact without an owner check (rule 4). Prevention: user-count / rollout facts are tagged BEYAN only after the owner confirms them.
 Decision (replaces the D-346 recommendation): civensa-pilot stays on Render Free while Ali Abi is the only user (~50 s first-load wait after 15 min idle is acceptable for one user). Move to Starter ($7/month) on the day the system is opened to departments — that step is part of the department rollout checklist. Deploy timing no longer needs a "quiet hour" until rollout.
 Next IDs: task CIV-163, decision D-352.
+
+## D-352 (31 Oct 2026 14:08 Istanbul, owner, live session CV Lider 48) — operating model until the infrastructure is complete
+BEYAN (owner 14:08): the system is NOT opened to departments until the infrastructure is complete. Until then data is collected through the old system and uploaded into Civensa by the owner or Ali Abi.
+Consequences (lead): (1) priority goes to Strategy-side upload/import and checking paths used by the owner and Ali Abi; department-facing polish is lower priority. (2) D-324 "watch how departments react" → read as "watch how Ali Abi and the owner react". (3) Render Starter stays tied to rollout day (D-351). (4) "Infrastructure complete" needs a written definition (rollout checklist) — open; the lead drafts it when the remaining Ali-dependent items (İç Kontrol import, UI 002/003) are clear.
+Open question to the owner: in what form does the old system give the data (Excel export, PDF, screen copy)? This decides whether a bulk upload tool is needed.
+Next IDs: task CIV-163, decision D-353.
