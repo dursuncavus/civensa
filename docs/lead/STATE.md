@@ -1,20 +1,20 @@
 # CIVENSA — CURRENT STATE
 
-Updated: 31 Oct 2026 ~13:20 Istanbul (live session CV Lider 48, D-349).
+Updated: 31 Oct 2026 ~14:00 Istanbul (live session CV Lider 48, D-350).
 Rules: AI_WORKING_CONSTITUTION v1.2 (Drive, global) · `HIERARCHY.md` v1.5 · `PROJECT_RULES.md` v1.4 (D-271: PRIOR ART field mandatory in every package) · `BACKUP_LEAD.md` v2.
 Backup log ("Civensa Yedek Kaydı", Drive): no entries, last modified 23 Oct (DOĞRULANDI 31 Oct 13:00).
 Tags: DOĞRULANDI (lead checked) · TARİHSEL (past fact) · BEYAN (owner said) · BELİRSİZ (unknown).
 
 ## Next session — start here (D-253)
-Claude live (CV Lider 48, 31 Oct ~13:20). CIV-162 merged; release PR #298 (phase5 → main, migration c162) waits for the owner (D-349). İç Kontrol import still waits for Ali Abi.
+Claude live (CV Lider 48, 31 Oct ~13:20). Release #298 live; /health ready=true, migration c162 (D-350). İç Kontrol import still waits for Ali Abi.
 Claude's next session: `CV Lider 49 · Claude Opus 5.5 · civensa-lead`. Read this section and the last decision in DECISIONS.md first.
-1. Release live, 3 pages OK (D-346/D-347). Owner decision open: Render Starter ($7/month, no sleep) for civensa-pilot.
-1b. Release #298 (D-349): owner merges when tests are green → lead pre-deploy backup → owner Render "Deploy latest commit" → /health migration c162a1b2c3d4.
+1. Releases live (D-346/D-350). Owner decision open: Render Starter ($7/month, no sleep) for civensa-pilot.
+1b. (closed, D-350) CIV-162 live. Render service page: https://dashboard.render.com/web/srv-dagop8vqj5pc73cvlgcg . Memory restart seen once (21 Sep) — watch.
 2. (moved to CIV-162)
 3. İç Kontrol import (D-331): waits for Ali Abi's answers in "CV İç Kontrol Dönüşümü – Ortak Liste" (https://docs.google.com/spreadsheets/d/1O4DmrNnBfcz9HJuxAXxGwMCvukTo2467HobZptmz-XI/edit) — empty at 31 Oct 00:30. Then the lead edits the committed workbook, owner uploads on civensa-pilot → maps 8 names → commits draft; activation with the lead. Owner ticks the 49 action rows against the PDF (D-177). Ali Abi also compares the 70-question list (D-336).
 4. Watch department reactions to the 554 book-check items (D-324). LOW backlog (D-328). UI: only 002/003 left, waits for Ali (D-345).
 5. Quota: weekly reset Sat 00:00. Claude Pro ends 3 Nov (owner renews on the web).
-Next IDs: task CIV-163, decision D-350.
+Next IDs: task CIV-163, decision D-351.
 
 ## Claude quota (BEYAN, owner 27 Oct 16:21)
 - Session 11%, week 67%, weekly reset Saturday 00:00 (D-300). Copilot 96 / 1,500 credits, reset 1 Nov.
@@ -23,10 +23,11 @@ Next IDs: task CIV-163, decision D-350.
 Dispatch format (D-232, D-249): platform + environment ("Bulut → civensa") + exact model (Codex: GPT-6.1 Sol) + effort; title is the first line inside the paste block. Session end: one-line handover (D-253) after this file is rewritten.
 Evidence rule (D-252): one-screen changes → targeted tests + changed-state screenshots + contrast; all-screen capture only when shared files change, committed as a short count summary.
 
-## Open pull requests (DOĞRULANDI 31 Oct ~13:20, D-349)
+## Open pull requests (DOĞRULANDI 31 Oct ~14:00, D-350)
 | PR | Task | State | Next action |
 | --- | --- | --- | --- |
-| #298 | release phase5 → main | rehearsal OK (run 41191527978) | owner merges → backup → deploy |
+| — | none open | — | — |
+Merged 31 Oct (D-350): #298 release phase5 → main (owner) → 503e970, deployed · #299 D-349 → 6999a2f.
 Merged 31 Oct (D-349): #296 CIV-162 → 8ff85f9 · #297 D-348 → ac9b7c8.
 Merged 31 Oct (D-346): #292 release phase5 → main (owner) → 80b6ca1, deployed · #293 D-345 → 6d9be83.
 Merged 31 Oct (D-343): #289 CIV-160 → e061e93 · #288 D-342 → 85d3e9b · #287 D-341 → a5c40f6.
