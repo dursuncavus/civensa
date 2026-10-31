@@ -1,6 +1,6 @@
 # CIVENSA — CURRENT STATE
 
-Updated: 31 Oct 2026 ~14:15 Istanbul (live session CV Lider 48, D-352).
+Updated: 31 Oct 2026 ~14:20 Istanbul (live session CV Lider 48, D-353).
 Rules: AI_WORKING_CONSTITUTION v1.2 (Drive, global) · `HIERARCHY.md` v1.5 · `PROJECT_RULES.md` v1.4 (D-271: PRIOR ART field mandatory in every package) · `BACKUP_LEAD.md` v2.
 Backup log ("Civensa Yedek Kaydı", Drive): no entries, last modified 23 Oct (DOĞRULANDI 31 Oct 13:00).
 Tags: DOĞRULANDI (lead checked) · TARİHSEL (past fact) · BEYAN (owner said) · BELİRSİZ (unknown).
@@ -8,13 +8,13 @@ Tags: DOĞRULANDI (lead checked) · TARİHSEL (past fact) · BEYAN (owner said) 
 ## Next session — start here (D-253)
 Claude live (CV Lider 48, 31 Oct ~13:20). Release #298 live; /health ready=true, migration c162 (D-350). İç Kontrol import still waits for Ali Abi.
 Claude's next session: `CV Lider 49 · Claude Opus 5.5 · civensa-lead`. Read this section and the last decision in DECISIONS.md first.
-1. Releases live (D-346/D-350). Only Ali Abi uses the system; departments are not opened until the infrastructure is complete — data comes from the old system, uploaded by the owner or Ali Abi (BEYAN, D-351/D-352). Open: old-system data format (asked 31 Oct). Render stays Free; move to Starter ($7/month) on department rollout day.
+1. Releases live (D-346/D-350). Only Ali Abi uses the system; departments are not opened until the infrastructure is complete — data comes from the old system, uploaded by the owner or Ali Abi (BEYAN, D-351/D-352). This year departments fill Civensa-generated forms (D-353); lead proposes an Excel form round-trip — open question: which report(s) and when forms go out. Render stays Free; move to Starter ($7/month) on department rollout day.
 1b. (closed, D-350) CIV-162 live. Render service page: https://dashboard.render.com/web/srv-dagop8vqj5pc73cvlgcg . Memory restart seen once (21 Sep) — watch.
 2. (moved to CIV-162)
 3. İç Kontrol import (D-331): waits for Ali Abi's answers in "CV İç Kontrol Dönüşümü – Ortak Liste" (https://docs.google.com/spreadsheets/d/1O4DmrNnBfcz9HJuxAXxGwMCvukTo2467HobZptmz-XI/edit) — empty at 31 Oct 00:30. Then the lead edits the committed workbook, owner uploads on civensa-pilot → maps 8 names → commits draft; activation with the lead. Owner ticks the 49 action rows against the PDF (D-177). Ali Abi also compares the 70-question list (D-336).
 4. Watch Ali Abi / owner reactions to the 554 book-check items (D-324, D-352). LOW backlog (D-328). UI: only 002/003 left, waits for Ali (D-345).
 5. Quota: weekly reset Sat 00:00. Claude Pro ends 3 Nov (owner renews on the web).
-Next IDs: task CIV-163, decision D-353.
+Next IDs: task CIV-163, decision D-354.
 
 ## Claude quota (BEYAN, owner 27 Oct 16:21)
 - Session 11%, week 67%, weekly reset Saturday 00:00 (D-300). Copilot 96 / 1,500 credits, reset 1 Nov.
