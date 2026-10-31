@@ -459,7 +459,7 @@ def test_migration_postgres_roundtrip_refuses_data_single_head(db, monitoring):
     from alembic.script import ScriptDirectory
     d=monitoring
     script=ScriptDirectory.from_config(Config(str(ROOT/'alembic.ini')))
-    assert script.get_heads()==['c160a1b2c3d4']
+    assert script.get_heads()==['c162a1b2c3d4']
     assert script.get_revision('c160a1b2c3d4').down_revision=='c085a1b2c3d4'
     # Exercise the actual migration on a disposable, independently migrated schema.
     base=create_engine(os.environ['CIVENSA_TEST_POSTGRES_URL'])
@@ -491,7 +491,7 @@ def test_migration_postgres_roundtrip_refuses_data_single_head(db, monitoring):
         result=migrate('downgrade','c085a1b2c3d4')
         assert result.returncode!=0 and 'Rapor anlatı verisi var' in result.stderr
         with engine.connect() as conn:
-            assert conn.execute(text('SELECT version_num FROM alembic_version')).scalar_one()=='c160a1b2c3d4'
+            assert conn.execute(text('SELECT version_num FROM alembic_version')).scalar_one()=='c162a1b2c3d4'
             assert conn.execute(text('SELECT snapshot_json FROM ic_narrative_events')).scalar_one()==before
     finally:
         engine.dispose()
