@@ -791,3 +791,9 @@ DOĞRULANDI (owner pasted /health, 13:58): status ok, environment production, da
 Render service page (from Render's 21 Sep e-mail, not a secret): https://dashboard.render.com/web/srv-dagop8vqj5pc73cvlgcg — give this link for deploy steps.
 Note for the open Render plan decision (D-346): the same e-mail reports civensa-pilot exceeded its memory limit and restarted on 21 Sep 2026. Starter keeps 512 MB (same as Free; source render.com pricing, D-346), so Starter fixes sleeping, not memory. No new memory alert found in Gmail since 21 Sep → watch only.
 Next IDs: task CIV-163, decision D-351.
+
+## D-351 (31 Oct 2026 14:07 Istanbul, owner + lead, live session CV Lider 48) — correction: departments not yet using the system; Render Starter postponed
+BEYAN (owner 14:07): departments do not log in yet; the system is not opened to them; only Ali Abi uses it.
+Correction: D-345 ("data entry is open") and D-346 ("departments now enter live data") were wrong — the lead did not verify that premise. Mistake → cause: an assumption was recorded as fact without an owner check (rule 4). Prevention: user-count / rollout facts are tagged BEYAN only after the owner confirms them.
+Decision (replaces the D-346 recommendation): civensa-pilot stays on Render Free while Ali Abi is the only user (~50 s first-load wait after 15 min idle is acceptable for one user). Move to Starter ($7/month) on the day the system is opened to departments — that step is part of the department rollout checklist. Deploy timing no longer needs a "quiet hour" until rollout.
+Next IDs: task CIV-163, decision D-352.
