@@ -72,8 +72,12 @@ class VisibleText(HTMLParser):
 def visible_text_deltas(template_name, context):
     if template_name == 'internal_control/monitoring.html':
         # Owner-approved standard labels; the component remains in its own cell.
-        return [(f'{component} {standard} ', f'{component} {standard.removeprefix(component)} ')
-                for component, standard in context['counts']]
+        deltas = [(f'{component} {standard} ', f'{component} {standard.removeprefix(component)} ')
+                  for component, standard in context['counts']]
+        if context.get('monitoring_period'):
+            # CIV-163: the historical template keeps its original bytes.
+            deltas.append(('Gerçekleşme Oranı (%) ', 'Gerçekleşme Oranı (%) Genel Orana Katkı (%) '))
+        return deltas
     if template_name != 'internal_control/our_actions.html':
         return []
     actions = context.get('responsible', []) + context.get('cooperating', [])
