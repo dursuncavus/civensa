@@ -863,3 +863,23 @@ DOĞRULANDI (lead 23:05): backup log "Civensa Yedek Kaydı" has no entries after
 Done: new checklist page "FR Girdileri" https://claude.ai/artifact/5bGm5xrVbPSjM7wfv1qrMA — the 7 PARTIAL AR items (AR-01/02/03/04/13/17/18, D-354) as 10 rows grouped owner / with Ali / ask Ali, plus the 30 Nov decision day (D-356) and the directorate change list (D-359). Built from docs/reports/civ-062 input table and the 14 Oct answers.
 The older page "FR 15 Aralık Girdileri" (https://claude.ai/artifact/RnDmsueBSC7LrCjhKJe1Eo, 20 Oct) is superseded; this session could not republish it (artifact edit refused: session network off), so a new page was made. Owner may delete the old one.
 Next IDs: task CIV-163, decision D-361.
+
+## D-361 (2 Nov 2026 ~23:40 Istanbul, lead, live session CV Lider 49) — Ali Abi's e-mail answers (13 questions of 26 Oct)
+Mistake: at session start the lead did not check Gmail; Ali Abi's reply (2 Nov 21:35) was found only when the owner asked. Cause: the start check covered repo, Drive and the shared sheet, not the mailbox. Prevention: every live session start also searches Gmail for Ali Abi (alikaya136@gmail.com) since the last session.
+BEYAN (Ali Kaya, e-mail 2 Nov 21:35; he is on leave, gösterge count after return):
+- IK1 overdue unfinished action: followed until the plan period ends; counted as failed only if not done at plan end. Lead check: the official report already counts ongoing/partial/delayed actions as "Devam Eden"; only "Başlanmadı" goes to "Gerçekleşmeyen" → no change now (overdue not-started mid-plan stays "Gerçekleşmeyen"; BELİRSİZ, low impact, raise with Ali only if he objects to a printed report).
+- IK2 component rate: own component first, then overall → CIV-163 (two columns).
+- IK3 wording: "Devam eden eylem." → CIV-163.
+- FR1 similarity: warn from 50 % (not 85) → CIV-163.
+- FR2: the approved 2026 PP is the final file on the municipality website (answers D-355 confirmation). Loading source stays the owner's 2026 IDML (D-355/D-357), compared to that PDF.
+- FR3: department data-entry deadline is usually 15–20 January (sometimes a few days later). Civensa must be ready for entry before 1 Jan 2027.
+- FR4: all general tables are in the 2026 report; personnel → İnsan Kaynakları, buildings → Emlak İstimlak, neighbourhood tables → Strateji Geliştirme; comparison table: none today, Ali will check.
+- FR5: departments enter indicator actuals in bulk by Excel; Strateji already has a separate Excel per directorate with every indicator listed. → reopens D-356 (direct screen entry). Lead direction (proposal, owner approves — scope change): indicator-actuals Excel import per directorate (USE/ADAPT their existing sheet layout + the existing financial XLSX preview/apply pattern), screen entry stays for corrections and evidence files. Package after one current directorate Excel arrives (rule 11/15).
+- ML1: budget actuals come from Mali Hizmetler, usually on an Excel template, sometimes PDF. Existing financial XLSX import is the target; need the template sample.
+- ML2: Mali Hizmetler totals are authoritative (kesin hesap in May). Lead direction: report prints Mali Hizmetler figures; a directorate total that differs is a visible Turkish warning with the amount, not a block. Package after reading the financial gate code (next session).
+- ML3: Mali Hizmetler sections stay with Mali Hizmetler (matches code).
+- PR1: pilot directorates Bilgi İşlem, Strateji Geliştirme, Fen İşleri; accounts opened after talking to them.
+- PR2: approval order: directorate Harcama Yetkilisi → Ali Kaya → Başkan Yardımcıları → Üst Yönetici. The system has directorate submit → Strateji approve; the last two steps are not in the system. Open question to Ali: do the Başkan Yardımcısı and Üst Yönetici steps need to be in Civensa, or on paper/signature as today? Not built until answered (rule 15).
+Task numbering: CIV-163 is used for these three small changes; the 2026 year-parameterised loader becomes CIV-164.
+Checklist page "FR Girdileri" updated with the answers.
+Next IDs: task CIV-164, decision D-362.
