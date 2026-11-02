@@ -1,6 +1,6 @@
 # CIVENSA — CURRENT STATE
 
-Updated: 31 Oct 2026 ~14:50 Istanbul (live session CV Lider 48, D-359).
+Updated: 2 Nov 2026 ~22:00 Istanbul (live session, D-360: Ali Abi's 13 answers recorded).
 Rules: AI_WORKING_CONSTITUTION v1.2 (Drive, global) · `HIERARCHY.md` v1.5 · `PROJECT_RULES.md` v1.4 (D-271: PRIOR ART field mandatory in every package) · `BACKUP_LEAD.md` v2.
 Backup log ("Civensa Yedek Kaydı", Drive): no entries, last modified 23 Oct (DOĞRULANDI 31 Oct 13:00).
 Tags: DOĞRULANDI (lead checked) · TARİHSEL (past fact) · BEYAN (owner said) · BELİRSİZ (unknown).
@@ -14,7 +14,8 @@ Claude's next session: `CV Lider 49 · Claude Opus 5.5 · civensa-lead`. Read th
 3. İç Kontrol import (D-331): waits for Ali Abi's answers in "CV İç Kontrol Dönüşümü – Ortak Liste" (https://docs.google.com/spreadsheets/d/1O4DmrNnBfcz9HJuxAXxGwMCvukTo2467HobZptmz-XI/edit) — empty at 31 Oct 00:30. Then the lead edits the committed workbook, owner uploads on civensa-pilot → maps 8 names → commits draft; activation with the lead. Owner ticks the 49 action rows against the PDF (D-177). Ali Abi also compares the 70-question list (D-336).
 4. Watch Ali Abi / owner reactions to the 554 book-check items (D-324, D-352). LOW backlog (D-328). UI: only 002/003 left, waits for Ali (D-345).
 5. Quota: weekly reset Sat 00:00. Claude Pro ends 3 Nov (owner renews on the web).
-Next IDs: task CIV-163, decision D-360.
+0. (D-360, 2 Nov) Ali Abi answered all 13 e-mail questions. CIV-164 packaged (İç Kontrol component rate + "Devam Eden Eylem." + similarity 50 %) — owner dispatches to Codex. Follow-up questions for Ali: IK1 not-started past-due actions mid-plan; ML2 rounding tolerance; PR1 rehearsal date; FR5 indicator count + his per-department Excel files. Lead next: compare AR unit approval chain with PR2 (Harcama Yetkilisi → Strateji → Başkan Yardımcıları → Üst Yönetici).
+Next IDs: task CIV-165, decision D-361 (CIV-163 reserved for the 2026 PP loader, D-357).
 
 ## Claude quota (BEYAN, owner 27 Oct 16:21)
 - Session 11%, week 67%, weekly reset Saturday 00:00 (D-300). Copilot 96 / 1,500 credits, reset 1 Nov.
@@ -56,7 +57,7 @@ Merged 26 Oct: #163 CIV-113 → 88c9dfb; #154 CIV-109 → 34329a7; #161 CIV-111 
 
 ## Open queue — lead / scheduled run "Civensa gece kontrol" (05:41 only, D-265)
 1. Scheduled-run merges are refused by the session permission check (D-213, again D-255 on #132) — scheduled runs review and record; live sessions or the owner merge.
-2. Ask-Ali list (13 items) artifact "Ali Abi Soruları" https://claude.ai/artifact/KVuaFCeKzTv9kQGpwRWiz8 ; e-mailed 26 Oct; answers in "CIVENSA-CEVAPLAR v1" format.
+2. (answered 2 Nov, D-360) Ask-Ali list (13 items) artifact "Ali Abi Soruları" https://claude.ai/artifact/KVuaFCeKzTv9kQGpwRWiz8 ; e-mailed 26 Oct; answers in "CIVENSA-CEVAPLAR v1" format.
 3. (D-331) D-177 conversion done, import waits for Ali; live first load done (D-327); CIV-085 next — live session only.
 4. Measure scheduled run cost; reduce or stop if costly.
 5. (closed, D-286) D-205 Drive archive and pointer "KAYITLAR GITHUB'DA" done.

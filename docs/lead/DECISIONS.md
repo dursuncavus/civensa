@@ -857,3 +857,25 @@ DOĞRULANDI (lead, phase5 466482a, app/structure_service.py, app/models.py Struc
 - Real case likely: the İç Kontrol mapping list already contains Afet İşleri, Teftiş Kurulu, İnsan Kaynakları Eğitim name changes (tab 2).
 Decision: (1) Ask Ali Abi on Monday for the list of directorate changes since 2024 (old name, new name/receiver, council decision no + date, effective date). (2) The lead records them on "Kurum yapısı" with the owner BEFORE the 2026 PP load (CIV-163), so the 2026 book's old names attach to the right units. (3) İç Kontrol gap (b)+(a) becomes a Codex task only if the list contains a merge/split/closure inside the 2024–2026 plan, or before the 2027–2029 plan — otherwise rule 15 (not needed yet). Packaged after Monday's list.
 Next IDs: task CIV-163, decision D-360.
+
+## D-360 (2 Nov 2026 ~22:00 Istanbul, owner + lead, live session) — Ali Abi's answers to the 13 questions (e-mail 26 Oct → reply 2 Nov 18:35 UTC)
+Source: Gmail thread "Civensa – cevabınızı beklediğimiz sorular", reply from Ali Abi 2 Nov 2026 (BEYAN Ali, read by the lead). Owner approved recording + packaging ("Evet", 2 Nov).
+İç Kontrol
+- IK1: an expired, unfinished action is followed until the END of the plan period; only then is it "başarısız". DOĞRULANDI (phase5 57dfecf, official_metrics): due actions still ongoing already count as "Devam Eden", not "Gerçekleşmeyen" → no code change. The earlier official report's 16 Gerçekleşmeyen / 0 Devam Eden was the manual practice (TARİHSEL). BELİRSİZ: an action that is past due mid-plan and NOT started — code counts it "Gerçekleşmeyen"; ask Ali whether that is right or it should also wait for plan end.
+- IK2: component rate = within the component first, then the plan-wide view ("5'ten kaçı, 30'dan kaçı"). → CIV-164 adds the in-component rate, keeps the plan-wide column, adds a total row.
+- IK3: not-yet-due text becomes "Devam Eden Eylem." → CIV-164.
+Faaliyet Raporu
+- FR1: similarity warning settings fine, but threshold 50 % instead of 85 % (warning only). → CIV-164.
+- FR2: the approved 2026 PP is the final version attached on the municipality website → confirms D-355's reference PDF as council-approved; the IDML from the owner (D-357) is still the load source.
+- FR3: department data deadline usually 15–20 January, sometimes a few days later. Calendar input for the Faaliyet Raporu period (no hard block on the 20th).
+- FR4: all four tables are in the 2026 report. Personnel → İnsan Kaynakları; buildings → Emlak İstimlak Müdürlüğü; neighbourhood tables → Strateji Geliştirme; past-years comparison table: none today, Ali will check.
+- FR5: departments enter indicator results in bulk through Excel; Strateji already has one Excel per department with its indicators listed. Indicator count: Ali answers after his leave. Lead: this touches D-356 (direct entry, form fallback) — NOT decided now; needs Ali's existing Excel files first (prior art for any import). Owner item.
+Mali
+- ML1: budget actuals come from Mali Hizmetler, usually as an Excel template, sometimes PDF (then converted to the Word template).
+- ML2: Mali Hizmetler's figures are authoritative (final account in May). Lead: in AR-03 the Mali Hizmetler total is the reference value; a department difference stays visible with its reason (AGENTS.md: never silently reconcile). BELİRSİZ: whether a rounding tolerance is allowed — Ali did not say; ask with the IK1 follow-up.
+- ML3: Mali Hizmetler sections stay with Mali Hizmetler Müdürlüğü; no change.
+Joint
+- PR1: Faaliyet Raporu rehearsal with Bilgi İşlem, Strateji Geliştirme and Fen İşleri; personal accounts opened after talking to the departments. Date: not given (BELİRSİZ).
+- PR2: report output approval is staged: department Harcama Yetkilisi → Ali Abi (Strateji) → Başkan Yardımcıları → Üst Yönetici. Lead checks the current AR unit workflow against this chain before the rehearsal (gap note in the next session; no package yet).
+Task: CIV-164 packaged (docs/lead/tasks/CIV-164.md). CIV-163 stays reserved for the 2026 PP loader (D-357).
+Next IDs: task CIV-165, decision D-361.
