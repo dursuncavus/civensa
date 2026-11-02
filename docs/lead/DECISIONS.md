@@ -857,3 +857,9 @@ DOĞRULANDI (lead, phase5 466482a, app/structure_service.py, app/models.py Struc
 - Real case likely: the İç Kontrol mapping list already contains Afet İşleri, Teftiş Kurulu, İnsan Kaynakları Eğitim name changes (tab 2).
 Decision: (1) Ask Ali Abi on Monday for the list of directorate changes since 2024 (old name, new name/receiver, council decision no + date, effective date). (2) The lead records them on "Kurum yapısı" with the owner BEFORE the 2026 PP load (CIV-163), so the 2026 book's old names attach to the right units. (3) İç Kontrol gap (b)+(a) becomes a Codex task only if the list contains a merge/split/closure inside the 2024–2026 plan, or before the 2027–2029 plan — otherwise rule 15 (not needed yet). Packaged after Monday's list.
 Next IDs: task CIV-163, decision D-360.
+
+## D-360 (2 Nov 2026 ~23:10 Istanbul, lead, live session CV Lider 49) — Faaliyet Raporu checklist page for Ali Abi
+DOĞRULANDI (lead 23:05): backup log "Civensa Yedek Kaydı" has no entries after 31 Oct; no open PRs; phase5 head 57dfecf. "CV İç Kontrol Dönüşümü – Ortak Liste" tab 1: all 7 questions still unanswered (Tamam = FALSE). Owner has not yet attached the 2026 PP IDML (D-357).
+Done: new checklist page "FR Girdileri" https://claude.ai/artifact/5bGm5xrVbPSjM7wfv1qrMA — the 7 PARTIAL AR items (AR-01/02/03/04/13/17/18, D-354) as 10 rows grouped owner / with Ali / ask Ali, plus the 30 Nov decision day (D-356) and the directorate change list (D-359). Built from docs/reports/civ-062 input table and the 14 Oct answers.
+The older page "FR 15 Aralık Girdileri" (https://claude.ai/artifact/RnDmsueBSC7LrCjhKJe1Eo, 20 Oct) is superseded; this session could not republish it (artifact edit refused: session network off), so a new page was made. Owner may delete the old one.
+Next IDs: task CIV-163, decision D-361.
