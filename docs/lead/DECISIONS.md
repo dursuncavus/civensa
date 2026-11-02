@@ -858,7 +858,7 @@ DOĞRULANDI (lead, phase5 466482a, app/structure_service.py, app/models.py Struc
 Decision: (1) Ask Ali Abi on Monday for the list of directorate changes since 2024 (old name, new name/receiver, council decision no + date, effective date). (2) The lead records them on "Kurum yapısı" with the owner BEFORE the 2026 PP load (CIV-163), so the 2026 book's old names attach to the right units. (3) İç Kontrol gap (b)+(a) becomes a Codex task only if the list contains a merge/split/closure inside the 2024–2026 plan, or before the 2027–2029 plan — otherwise rule 15 (not needed yet). Packaged after Monday's list.
 Next IDs: task CIV-163, decision D-360.
 
-## D-360 (2 Nov 2026 ~22:00 Istanbul, owner + lead, live session) — Ali Abi's answers to the 13 questions (e-mail 26 Oct → reply 2 Nov 18:35 UTC)
+## D-360 (2 Nov 2026 ~23:00 Istanbul, owner + lead, live session) — Ali Abi's answers to the 13 questions (e-mail 26 Oct → reply 2 Nov 18:35 UTC)
 Source: Gmail thread "Civensa – cevabınızı beklediğimiz sorular", reply from Ali Abi 2 Nov 2026 (BEYAN Ali, read by the lead). Owner approved recording + packaging ("Evet", 2 Nov).
 İç Kontrol
 - IK1: an expired, unfinished action is followed until the END of the plan period; only then is it "başarısız". DOĞRULANDI (phase5 57dfecf, official_metrics): due actions still ongoing already count as "Devam Eden", not "Gerçekleşmeyen" → no code change. The earlier official report's 16 Gerçekleşmeyen / 0 Devam Eden was the manual practice (TARİHSEL). BELİRSİZ: an action that is past due mid-plan and NOT started — code counts it "Gerçekleşmeyen"; ask Ali whether that is right or it should also wait for plan end.
