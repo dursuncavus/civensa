@@ -373,6 +373,11 @@ def test_questionnaire_reference_98_of_140_and_no_band_suggestion(db, monitoring
 
 def baseline_export():
     source=(ROOT/'tests/artifacts/civ160/official_export_before_civ160.py').read_text()
+    # CIV-163 adds column H to the component summary. Apply only its width
+    # delta in memory; the committed historical source stays byte-identical.
+    width_loop = "for col in 'BCDEFG':"
+    assert source.count(width_loop) == 1
+    source = source.replace(width_loop, "for col in 'BCDEFGH':", 1)
     module=ModuleType('app._civ160_baseline_export')
     module.__dict__.update(export.__dict__)
     exec(compile(source,'CIV-160 base official export','exec'),module.__dict__)
