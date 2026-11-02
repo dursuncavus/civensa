@@ -883,3 +883,9 @@ BEYAN (Ali Kaya, e-mail 2 Nov 21:35; he is on leave, gösterge count after retur
 Task numbering: CIV-163 is used for these three small changes; the 2026 year-parameterised loader becomes CIV-164.
 Checklist page "FR Girdileri" updated with the answers.
 Next IDs: task CIV-164, decision D-362.
+
+## D-362 (2 Nov 2026 ~23:55 Istanbul, owner + lead, live session CV Lider 49) — İç Kontrol 49-row check: machine + Gemini, not the owner
+Owner (23:18): why is he checking 49 rows by eye? High chance of missing something. Lead agrees: a manual cell-by-cell comparison of ~12 rotated spreads is the weakest check available, and the owner is not the right checker (rule 16/19).
+Done (DOĞRULANDI): machine word check of every workbook cell against the PDF text layer (method in docs/internal-control/CONVERSION.md). Found one real conversion defect, Plan!E19 KOS 1.6 Mevcut Durum letter-spaced text → fixed (only that cell changed; sheets, row/column counts equal). The 28 dated actions were already cross-checked against the responsibility summary pp. 47–48 (D-331).
+Remaining risk: right words in the wrong row (unit, date or text attached to the wrong action). Decision: independent check by Gemini (different model family, HIERARCHY §b) — owner pastes one prompt and attaches the PDF + workbook; Gemini lists differences only; the lead verifies each against the PDF and fixes the workbook; the owner sees only differences that need an institutional answer (go to Ali). Replaces the D-177/D-331 owner tick of 49 rows.
+Next IDs: task CIV-164, decision D-363.

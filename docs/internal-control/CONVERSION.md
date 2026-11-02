@@ -13,6 +13,9 @@ Action tables PDF pp. 33–37 (KOS), 39 (RDS), 41–42 (KFS), 44–45 (BİS), 46
 - The repository's own `parse_workbook` + `validate_source` (run against the 34 pilot department names from the first-load records) give 77 conditions / 49 actions; the only blocking items are 8 unmatched unit names, which the import screen's mapping step resolves. No warnings.
 - Table 7 says 30 actions; no count of the tables gives 30 (49 actions, 28 dated, 21 continuous) → owner/Ali question.
 
+## Machine word check (D-362, 2 Nov 2026)
+Every word of every workbook cell was compared with the PDF text layer of the action pages (pdftotext, pp. 33–37, 39, 41–42, 44–46; ș→ş, hyphenation joined). Result: all text words found except code spellings, dates written as month names in the PDF, the known hyphen joins, and one real defect — Plan!E19 (KOS 1.6 Mevcut Durum) had letter-spaced text ("a k t a rı lm ış v e b u ...") copied from the PDF; fixed to "Tüm belgeler elektronik ortama aktarılmış ve bu belgelere sağlıklı bir şekilde ulaşılmaktadır." (only cell changed). This check proves words, not placement: a correct text in the wrong row is not caught → independent row-placement check by Gemini (D-362).
+
 ## Conversion rules (lead decisions, reversible before commit)
 1. Rows without a responsible unit are condition-only (D-182): action columns and Açıklama left empty. This includes the 6 actions the plan says will not be done (KOS 1.4.6, KOS 3.6.1, KOS 3.7.1, KFS 7.2.1, İS 18.1.1, İS 18.2.1) — owner/Ali to confirm.
 2. One condition holds one current-state text, so the distinct Mevcut Durum texts of a condition's rows are joined in source order with line breaks.
