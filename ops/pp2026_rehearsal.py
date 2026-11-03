@@ -47,8 +47,8 @@ def service_url():
 
 
 def period_counts(db, year):
-    from app.models import (Activity, DepartmentScope, ImportBatch, Indicator,
-                            OfficialActivity, Program, ReportingPeriod)
+    from app.models import (Activity, DepartmentCostValue, DepartmentScope, EconomicValue,
+                            ImportBatch, Indicator, OfficialActivity, Program, ReportCard, ReportingPeriod)
     period = db.scalar(select(ReportingPeriod).where(ReportingPeriod.year == year))
     # Status fields are DB content too: expose only known enum labels.
     status = period.status if period and period.status in {'draft', 'active', 'closed', 'published', 'archived'} else 'diğer'
@@ -57,7 +57,8 @@ def period_counts(db, year):
                 template_status=template if period else 'yok', counts={
                     model.__tablename__: db.scalar(select(func.count()).select_from(model).where(
                         model.period_id == period.id)) if period else 0
-                    for model in (Program, OfficialActivity, ImportBatch, Indicator, Activity, DepartmentScope)})
+                    for model in (Program, OfficialActivity, ImportBatch, Indicator, Activity, DepartmentScope,
+                                  ReportCard, EconomicValue, DepartmentCostValue)})
 
 
 def protected_state(engine):
@@ -77,8 +78,8 @@ def run_loader(engine, parsed, ids, record, step, **options):
             result = live.execute(engine, parsed, year=2026, **ids, **options)
     except live.Refusal:
         record[step] = dict(refusals=1, failed=[], counts={}, departments=[])
-        if step == 'plan' and any(record['source_2026']['counts'][key] for key in
-                ('programs', 'official_activities', 'import_batches', 'indicators', 'activities')):
+        if step == 'plan' and any(value for key, value in record['source_2026']['counts'].items()
+                                  if key != 'department_scopes'):
             check(record, snapshot(engine) == before,
                   'Reddedilen plan satır/sıra değiştirdi; sorumlu yükleyiciyi incelesin.')
             record['plan']['writes'] = 0

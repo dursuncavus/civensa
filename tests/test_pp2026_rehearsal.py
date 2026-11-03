@@ -141,7 +141,7 @@ def test_full_backup_restore_pass_preserves_2027_edit_and_extra_scope(
 
 
 @pytest.mark.postgres
-@pytest.mark.parametrize('pp_model', ['ImportBatch', 'Program', 'OfficialActivity'])
+@pytest.mark.parametrize('pp_model', ['ImportBatch', 'Program', 'OfficialActivity', 'EconomicValue'])
 def test_occupied_2026_loader_refusal_zero_writes(
         pp_model, target, pg18_clients, tmp_path, monkeypatch, capsys):
     from app import models
@@ -153,6 +153,12 @@ def test_occupied_2026_loader_refusal_zero_writes(
         kwargs = dict(period_id=period.id)
         if pp_model == 'ImportBatch':
             kwargs.update(filename='private@example.invalid', status='preview', payload_json='{}', created_by=ids['actor_id'])
+        elif pp_model == 'EconomicValue':
+            department = models.Department(organization_id=ids['organization_id'], name='Test Müdürlüğü')
+            db.add(department)
+            db.flush()
+            kwargs.update(department_id=department.id, year=2026, value_kind='budget', category='personnel',
+                          program_group='total', funding_type='inside', raw_text='private-value')
         else:
             kwargs['name'] = 'private-value'
             if pp_model == 'OfficialActivity':
