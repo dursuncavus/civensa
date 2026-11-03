@@ -996,3 +996,17 @@ Lead check (DOĞRULANDI): DeepSeek has no GitHub account (D-201) and the workspa
 Decision: hierarchy v1.6 §2 e — DeepSeek may implement small, self-contained tasks; delivery = git format-patch + RESULT.md in its workspace; Claude applies, pushes, CI tests, Claude reviews; DeepSeek never reviews/merges its own code as backup lead; migrations/auth/live-write logic stay with Codex. Trial task CIV-170 (real need from D-327 lessons, never implemented — DOĞRULANDI: first_load_live.py still reads input() from stdin, no summary, no progress): confirmation prompt via /dev/tty, one-screen ÖZET before and after the JSON, per-directorate progress on stderr. Needed before the owner's 2026 live load. Files: scripts/first_load_live.py + tests only (disjoint from CIV-168/169 except CIV-168 importing execute/main, whose semantics stay unchanged). Package copied to the DeepSeek workspace civ170/TASK.md.
 Acceptance of the new lane: patch applies on phase5, CI green, Claude review passes with ≤1 fix round. If it fails, DeepSeek returns to reviewer/backup roles only.
 Next IDs: task CIV-171, decision D-379.
+
+## D-379 (3 Nov 2026 ~16:10 Istanbul, owner + lead, live session CV Lider 52) — CIV-170 head-to-head: DeepSeek vs Gemini (Jules); scoring fixed before results
+BEYAN (owner 16:03): DeepSeek is already working on CIV-170; give the same task to Gemini too and compare — fully objective, no "political" decision.
+Lead check: Jules (Google Labs coding agent, included in Google AI Pro, GitHub-integrated, Gemini 3.1 Pro per a Mar 2026 source — current model BELİRSİZ) is a candidate third coding lane that opens PRs itself. Comparison adds real value (rule 17: choosing a lane), cost is one small task. Neither is Claude's model family, so the lead reviews both.
+Precondition: Jules needs GitHub write access; main/staging/phase5 have NO branch protection (DOĞRULANDI 3 Nov ~16:00, API 404 "Branch not protected"). Jules is connected only after a ruleset (PR required, no force push, no deletion) is in place — owner approval needed (security setting).
+Scoring (fixed now, before either result is seen; 100 points; ties broken by fewer review findings):
+1. Scope & rules (20): only scripts/first_load_live.py + tests changed; AGENTS.md hard rules kept; no secrets; Turkish texts. −10 per violation.
+2. CI (25): full CI green on first pushed commit = 25; green after one fix round = 12; more = 0.
+3. Acceptance 1–5 of tasks/CIV-170.md (25): 5 points each, checked by the lead in the diff and tests.
+4. Lead review findings (20): 20 − 5 per MEDIUM − 10 per HIGH (LOW free).
+5. Honest report (10): RESULT/PR text claims only what was run; −10 if any claim is false.
+Not scored: speed (different queues), diff size. Owner effort is noted, not scored.
+Delivery: DeepSeek → workspace civ170/ patch, lead pushes branch task/civ-170-deepseek; Jules → its own branch, PR title "CIV-170 — … (Jules)". Each scored separately by the lead with the same checklist, written into this log before the merge decision. Only the winner is merged; the other PR is closed with its score. Result decides the third coding lane in hierarchy v1.6 §2 e (DeepSeek or Jules).
+Next IDs: task CIV-171, decision D-380.
