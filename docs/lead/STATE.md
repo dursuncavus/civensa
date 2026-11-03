@@ -64,6 +64,6 @@ Merged 26 Oct: #163 CIV-113 → 88c9dfb; #154 CIV-109 → 34329a7; #161 CIV-111 
 3. (D-331) D-177 conversion done, import waits for Ali; live first load done (D-327); CIV-085 next — live session only.
 4. Measure scheduled run cost; reduce or stop if costly.
 5. (closed, D-286) D-205 Drive archive and pointer "KAYITLAR GITHUB'DA" done.
-6. DeepSeek mirror GUNCEL-DURUM.md: not reachable in scheduled runs; the lead refreshes it in the next live session with the Mac linked (still pending 3 Nov).
+6. (done 3 Nov ~15:50, CV Lider 52) DeepSeek mirror GUNCEL-DURUM.md refreshed from STATE.md (D-376) with the Mac linked; YEDEK-KAYIT.md has no entry after 29 Oct (already covered by D-309). Refresh again in the next live session with the Mac linked.
 7. Codex cloud fixes from PR comments: not set up (D-242); fix rounds move to Copilot (D-246/D-248).
 8. LOW backlog: shell top-right period label repeats the title on Genel Bakış (D-273);  012 date input display format (BELİRSİZ, D-251); 024 summary widens the 2027 column (D-250); 021 progress table at 390 has no scroll hint (D-268) — watch only; 022 home runs the all-department progress overview per load (D-285) — watch on pilot data.
