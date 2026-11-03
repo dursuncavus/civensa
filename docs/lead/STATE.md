@@ -29,7 +29,7 @@ Evidence rule (D-252): one-screen changes → targeted tests + changed-state scr
 ## Open pull requests (DOĞRULANDI 3 Nov ~16:05, D-376)
 | PR | Task | State | Next action |
 | --- | --- | --- | --- |
-| #336 | CIV-169 | open, CI | lead reviews |
+| #336 | CIV-169 | CI RED on head (5 failures: internal_control_result_tables ×3 class contract, test_2026_screen_walk PDF export Afet name, internal_control_period_names display name); follow-up pasted into the Codex task by the owner (3 Nov ~18:00) | lead reviews after green |
 | — | CIV-171 | dispatched, PR expected | lead reviews |
 Merged 3 Nov: #333 CIV-168 → a5cfeee (D-382) · #342 CIV-170 Gemini → 3f7dec1 (D-384); closed #337/#343 (DeepSeek, D-384).
 Merged 3 Nov (D-375): #328 CIV-165 → a6cdc83. (D-373): #321 CIV-167 → 21812ec.
