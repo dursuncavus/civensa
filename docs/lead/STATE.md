@@ -1,22 +1,23 @@
 # CIVENSA — CURRENT STATE
 
-Updated: 3 Nov 2026 ~13:55 Istanbul (live session CV Lider 51, D-372).
+Updated: 3 Nov 2026 ~16:05 Istanbul (live session CV Lider 52, D-376).
 Rules: AI_WORKING_CONSTITUTION v1.2 (Drive, global) · `HIERARCHY.md` v1.5 · `PROJECT_RULES.md` v1.4 (D-271: PRIOR ART field mandatory in every package) · `BACKUP_LEAD.md` v2.
 Backup log ("Civensa Yedek Kaydı", Drive): no entries after 31 Oct (DOĞRULANDI 3 Nov 05:45, file unchanged since 23 Oct).
 Tags: DOĞRULANDI (lead checked) · TARİHSEL (past fact) · BEYAN (owner said) · BELİRSİZ (unknown).
 
 ## Next session — start here (D-253)
-Claude live (CV Lider 51, 3 Nov ~13:35). Release #298 live; /health ready=true, migration c162 (D-350). CIV-163 (b2a500f) and CIV-166 (758522c) merged to phase5 — not yet on main/live.
-Claude's next session: `CV Lider 52 · Claude Opus 5.5 · civensa-lead`. First job: review the CIV-165 PR (2026 PP load) (CIV-167 merged, D-373). Read this section and the last decision in DECISIONS.md first. Session start also checks Gmail for Ali Abi's mails (D-361).
+Claude live (CV Lider 52, 3 Nov ~15:20–16:05). Release #298 live; /health ready=true, migration c162 (D-350). On phase5, not on main/live: CIV-163 (b2a500f), CIV-166 (758522c), CIV-167 (21812ec), CIV-165 (a6cdc83).
+Claude's next session: `CV Lider 53 · Claude Opus 5.5 · civensa-lead`. First job: review the CIV-168 PR (2026 backup rehearsal workflow). Read this section and the last decision in DECISIONS.md first. Session start also checks Gmail for Ali Abi's mails (D-361).
 1. Releases live (D-346/D-350). Only Ali Abi uses the system; departments are not opened until the infrastructure is complete — data comes from the old system (BEYAN, D-351/D-352). Render stays Free; Starter ($7/month) on department rollout day.
-2. Codex: CIV-167 #321 merged → 21812ec (D-373), not yet on main/live. CIV-165 (2026 PP load, D-372) dispatched 3 Nov ~14:00 → lead reviews its PR.
-3. İç Kontrol (D-358 first to departments): row check CLOSED (D-366). Waits only for Ali: 7 questions + 8 mappings in "CV İç Kontrol Dönüşümü – Ortak Liste" (https://docs.google.com/spreadsheets/d/1O4DmrNnBfcz9HJuxAXxGwMCvukTo2467HobZptmz-XI/edit), 3 monitoring assumptions, which half-year + deadline. Then lead edits workbook, owner uploads on civensa-pilot → maps 8 names → commits draft. Ali also: list of directorate merges/closures since 2024 (D-359 gap b); 70-question list compare (D-336).
-4. Faaliyet Raporu (D-354): 7 AR items PARTIAL, wait for Ali/Mali Hizmetler inputs; checklist "FR Girdileri" https://claude.ai/artifact/5bGm5xrVbPSjM7wfv1qrMA. Needed samples: one current directorate indicator Excel (D-361 FR5), Mali Hizmetler budget template (ML1). Open to Ali: approval steps in Civensa or on paper (PR2).
-5. 2026 PP baseline (D-371/D-372): approved IDML committed; matching rule decided (directorates via Sorumlu İdare + name maps, 2026 names via DepartmentScope.display_name, no automatic indicator identity link, candidate report only). After CIV-165 PR: review → rehearsal → backup → owner live load. Data-entry deadline ~15–20 Jan; ready before 1 Jan 2027.
-6. Watch reactions to the 554 book-check items (D-324, D-352). LOW backlog (D-328). UI: only 002/003 left, waits for Ali (D-345).
-7. One live lead session at a time (D-363). Owner: check Claude Design standalone site before 14 Dec 2026 (D-363).
-8. Quota: weekly reset Sat 00:00. Claude Pro renewal BELİRSİZ (sessions still run 3 Nov).
-Next IDs: task CIV-168, decision D-375.
+2. Codex: CIV-165 #328 merged → a6cdc83 (D-375). CIV-168 (2026 PP backup rehearsal, D-376) dispatched 3 Nov ~16:05 → lead reviews its PR.
+3. 2026 PP load path (D-372/D-376): CIV-168 PR review → merge → lead dispatches db-backup + "2026 PP verified backup rehearsal" → PASS → owner live load from a phase5 checkout (`scripts/first_load_live.py --year 2026`, plan → fresh backup → apply with 1aaa0bb81c3c → resume plan), same as D-327. Ready before 1 Jan 2027; data-entry deadline ~15–20 Jan.
+4. Ask Ali (new, D-375): printed 2026 book inconsistencies — Bilgi İşlem / Çevre Koruma / İmar cost vs economic totals differ (496 / 775 / 989 TL); Ruhsat ve Denetim economic table wrong totals; Zabıta and Veteriner economic tables show the total as "Diğer Bütçe Dışı Kaynak". Loaded as printed; FR 2026 needs the correct figures.
+5. İç Kontrol (D-358 first to departments): row check CLOSED (D-366). Waits only for Ali: 7 questions + 8 mappings in "CV İç Kontrol Dönüşümü – Ortak Liste" (https://docs.google.com/spreadsheets/d/1O4DmrNnBfcz9HJuxAXxGwMCvukTo2467HobZptmz-XI/edit), 3 monitoring assumptions, which half-year + deadline. Then lead edits workbook, owner uploads on civensa-pilot → maps 8 names → commits draft. Ali also: list of directorate merges/closures since 2024 (D-359 gap b); 70-question list compare (D-336).
+6. Faaliyet Raporu (D-354): 7 AR items PARTIAL, wait for Ali/Mali Hizmetler inputs; checklist "FR Girdileri" https://claude.ai/artifact/5bGm5xrVbPSjM7wfv1qrMA. Needed samples: one current directorate indicator Excel (D-361 FR5), Mali Hizmetler budget template (ML1). Open to Ali: approval steps in Civensa or on paper (PR2).
+7. Watch reactions to the 554 book-check items (D-324, D-352). LOW backlog (D-328). UI: only 002/003 left, waits for Ali (D-345).
+8. One live lead session at a time (D-363). Owner: check Claude Design standalone site before 14 Dec 2026 (D-363).
+9. Quota: weekly reset Sat 00:00. Claude Pro renewal BELİRSİZ (sessions still run 3 Nov).
+Next IDs: task CIV-169, decision D-377.
 
 ## Claude quota (BEYAN, owner 27 Oct 16:21)
 - Session 11%, week 67%, weekly reset Saturday 00:00 (D-300). Copilot 96 / 1,500 credits, reset 1 Nov.
@@ -25,10 +26,11 @@ Next IDs: task CIV-168, decision D-375.
 Dispatch format (D-232, D-249): platform + environment ("Bulut → civensa") + exact model (Codex: GPT-6.1 Sol) + effort; title is the first line inside the paste block. Session end: one-line handover (D-253) after this file is rewritten.
 Evidence rule (D-252): one-screen changes → targeted tests + changed-state screenshots + contrast; all-screen capture only when shared files change, committed as a short count summary.
 
-## Open pull requests (DOĞRULANDI 3 Nov ~13:55, D-372)
+## Open pull requests (DOĞRULANDI 3 Nov ~16:05, D-376)
 | PR | Task | State | Next action |
 | --- | --- | --- | --- |
-| — | — | none open at 14:10 (CIV-167 merged, D-373); CIV-165 PR expected | lead reviews CIV-165 PR |
+| — | — | none open at 16:05 (CIV-165 merged, D-375); CIV-168 PR expected | lead reviews CIV-168 PR |
+Merged 3 Nov (D-375): #328 CIV-165 → a6cdc83. (D-373): #321 CIV-167 → 21812ec.
 Merged 31 Oct (D-350): #298 release phase5 → main (owner) → 503e970, deployed · #299 D-349 → 6999a2f.
 Merged 31 Oct (D-349): #296 CIV-162 → 8ff85f9 · #297 D-348 → ac9b7c8.
 Merged 31 Oct (D-346): #292 release phase5 → main (owner) → 80b6ca1, deployed · #293 D-345 → 6d9be83.
