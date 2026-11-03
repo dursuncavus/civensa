@@ -3,7 +3,9 @@ from contextlib import redirect_stderr, redirect_stdout
 from datetime import timezone
 import html
 import os
+from pathlib import Path
 import re
+from tempfile import TemporaryDirectory
 
 from sqlalchemy import CheckConstraint, DateTime, String, and_, case, cast, func, literal, or_, select, text, tuple_
 from sqlalchemy.dialects.postgresql import JSONB
@@ -13,7 +15,7 @@ from ops.preprint_rehearsal import download_verified_run, identify_context, posi
 from scripts import first_load_live as live
 from scripts.first_load_dryrun import environment, local_test_url
 from scripts.rehearse_clear_preprint_2027 import (
-    empty_database, restore, snapshot, source_backup, state,
+    empty_database, fresh_clone_backup, restore, snapshot, source_backup, state,
 )
 
 CONFIRMATION = '1aaa0bb81c3c'
@@ -27,6 +29,9 @@ PHASES = {
     'restore': 'Yedek geri yükleme doğrulanamadı; sorumlu manifest, şema ve PostgreSQL 18 araçlarını kontrol etsin.',
     'inventory': '2026 envanteri okunamadı; sorumlu geri yüklenen yerel kopyanın şemasını kontrol etsin.',
     'context': 'Kurum/aktör seçilemedi; sorumlu tek kurum ve mevcut etkin Strateji/yönetici kimliklerini kontrol etsin.',
+    'clear-plan': '2026 pilot temizleme planı reddedildi; sorumlu D-388 tablo sayımlarını ve dönem durumlarını yerel kopyada incelesin.',
+    'clear-apply': '2026 pilot temizleme tamamlanamadı; sorumlu yeni yerel yedeği, arşiv ve koruma kontrollerini incelesin.',
+    'load-backup': 'Temizleme sonrası yerel yedek doğrulanamadı; sorumlu PostgreSQL yedek/geri yükleme araçlarını kontrol etsin.',
     'plan': '2026 planı reddedildi; sorumlu dönem durumunu, mevcut PP sayımlarını ve tekil müdürlük eşleşmelerini kontrol etsin.',
     'apply': '2026 uygulaması tamamlanamadı; sorumlu başarısız müdürlükleri ve yükleyici korumalarını yerel kopyada incelesin.',
     'resume': 'Devam planı tamamlanamadı; sorumlu ilk yükleme izlerini yerel kopyada incelesin.',
@@ -244,9 +249,9 @@ def inventory_groups(db, name, table):
     return groups, has_human
 
 
-def period_inventory(engine, year=2026):
+def period_audit_table(owned):
+    """Polymorphic audit references for an already discovered ownership graph."""
     from app.db import Base
-    owned = period_inventory_tables(year)
     audit = Base.metadata.tables['audit_log']
     entity_paths = []
     for name, table in owned.items():
@@ -260,7 +265,12 @@ def period_inventory(engine, year=2026):
                 aliases.add(re.sub(r'([a-z0-9])([A-Z])', r'\1_\2', singular).lower())
         entity_paths.append(and_(audit.c.entity_type.in_(sorted(aliases)),
                                  audit.c.entity_id.in_(select(table.c.id))))
-    owned['audit_log'] = select(audit).where(or_(*entity_paths)).cte('inv_audit_log')
+    return select(audit).where(or_(*entity_paths)).cte('inv_audit_log')
+
+
+def period_inventory(engine, year=2026):
+    owned = period_inventory_tables(year)
+    owned['audit_log'] = period_audit_table(owned)
     inventory = dict(counts={}, groups={}, human=False)
     with Session(engine) as db:
         db.execute(text('SET TRANSACTION READ ONLY'))
@@ -353,7 +363,7 @@ def rehearse(backup, record):
         org, actor = identify_context(url, backup, saved, {})
         ids = dict(organization_id=org, actor_id=actor)
         record['phase'] = 'restore'
-        with empty_database(url) as engine:
+        with empty_database(url) as engine, TemporaryDirectory(prefix='civ172_private_') as directory:
             restore(engine, backup)
             check(record, state(engine) == {k: saved[k] for k in ('public_table_row_counts', 'alembic_version')},
                   'Restore sayımları/şeması manifestle uyuşmuyor; sorumlu doğrulanmış kaynak yedeği kontrol etsin.')
@@ -363,9 +373,32 @@ def rehearse(backup, record):
             with Session(engine) as db:
                 db.execute(text('SET TRANSACTION READ ONLY'))
                 record['source_2026'] = period_counts(db, 2026)
+            confirmation = os.environ.get('CIVENSA_REHEARSAL_CLEAR_CONFIRM', '')
+            if confirmation:
+                from scripts import clear_pilot_2026 as clear
+                check(record, confirmation == clear.CONFIRMATION,
+                      '2026 pilot temizleme onayı uyuşmuyor; sorumlu clear_confirmation alanına tam onay cümlesini girsin.')
+                record['phase'] = 'clear-plan'
+                before = snapshot(engine)
+                clear_plan = clear.execute(engine, **ids)
+                check(record, snapshot(engine) == before,
+                      'Temizleme planı satır/sıra değiştirdi; sorumlu temizleme korumasını incelesin.')
+                record['clear-plan'] = dict(counts=clear_plan['counts'], writes=0)
+                record['phase'] = 'clear-apply'
+                proof = fresh_clone_backup(engine, Path(directory), url)
+                cleared = clear.execute(engine, **ids, apply=True, backup=proof, confirmation=confirmation)
+                check(record, cleared['counts'] == clear_plan['counts']
+                      and cleared['protected_2027_before'] == cleared['protected_2027_after']
+                      == record['protected_before']['hash'],
+                      '2026 temizleme sayımları/2027 hash kontrolü geçmedi; sorumlu temizleme planını incelesin.')
+                record['clear-apply'] = dict(counts=cleared['removed_counts'], archive_sha256=cleared['archive_sha256'])
             plan = run_loader(engine, parsed, ids, record, 'plan')
             check(record, not plan['skipped'] and all(plan['counts'][k] == v for k, v in EXPECTED.items()),
                   'Plan 33 müdürlük / 105 kart / 226 gösterge değil veya müdürlük atlandı; sorumlu plan kararlarını incelesin.')
+            if confirmation:
+                record['phase'] = 'load-backup'
+                proof = fresh_clone_backup(engine, Path(directory), url)
+                live.verify_backup(proof)
             applied = run_loader(engine, parsed, ids, record, 'apply', apply=True)
             check(record, not applied['skipped'] and all(applied['counts'][k] == v for k, v in EXPECTED.items())
                   and applied['counts'] == plan['counts'],
@@ -404,6 +437,13 @@ def summary(record):
     """Curated fields only; never dump loader results, exceptions or DB rows."""
     lines = [f"## 2026 PP yedek provası: {record['status']}"]
     lines += inventory_lines(record.get('inventory_2026'))
+    if 'clear-plan' in record:
+        lines += ['', '### 2026 pilot temizleme', '', 'Plan: 0 satır yazıldı.', '',
+                  '| Kayıt | Plan | Silinen |', '| --- | ---: | ---: |']
+        cleared = record.get('clear-apply', {})
+        lines += [f"| {name} | {count} | {cleared.get('counts', {}).get(name, 0)} |"
+                  for name, count in record['clear-plan']['counts'].items() if count]
+        lines += ['', 'Arşiv SHA256: `' + cleared.get('archive_sha256', '—') + '`']
     lines += ['', '| Aşama | Müdürlük | Kart | Gösterge | Ret | Başarısız | Yazılan / atlanan |',
              '| --- | ---: | ---: | ---: | ---: | ---: | --- |']
     for step, label in (('plan', 'Plan'), ('apply', 'Uygulama'), ('resume', 'Devam planı')):
@@ -452,6 +492,9 @@ def main():
               and os.environ.get('GITHUB_EVENT_NAME') == 'workflow_dispatch', PHASES['guards'])
         check(record, os.environ.get('CIVENSA_REHEARSAL_BOOK_CONFIRM') == CONFIRMATION,
               'Kitap onayı uyuşmuyor; indirme başlamadı. Sorumlu book_confirmation alanına 1aaa0bb81c3c yazsın.')
+        from scripts.clear_pilot_2026 import CONFIRMATION as CLEAR_CONFIRMATION
+        check(record, os.environ.get('CIVENSA_REHEARSAL_CLEAR_CONFIRM', '') in {'', CLEAR_CONFIRMATION},
+              '2026 pilot temizleme onayı uyuşmuyor; indirme başlamadı. Sorumlu clear_confirmation alanını boş bıraksın veya 2026 PILOT DONEMINI SIL yazsın.')
         record['phase'] = 'target'
         service_url()  # Refuse remote targets before even downloading a backup.
         record['phase'] = 'backup-id'
