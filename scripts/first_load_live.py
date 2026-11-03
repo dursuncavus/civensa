@@ -2,6 +2,7 @@
 """Basılı PP 2027: varsayılan salt okunur plan; korumalı, müdürlük bazlı ilk yükleme."""
 import argparse
 from collections import Counter
+from contextlib import contextmanager
 from copy import deepcopy
 from datetime import datetime, timezone
 import hashlib
@@ -67,6 +68,14 @@ def read_confirmation(prompt):
 
 def print_progress(index, total, name, action, elapsed):
     print(f'[{index}/{total}] {name} · {action} · {elapsed:.1f} sn', file=sys.stderr, flush=True)
+
+
+@contextmanager
+def phase(name):
+    started = time.monotonic()
+    print(f'Aşama: {name} …', file=sys.stderr, flush=True)
+    yield
+    print(f'Aşama: {name} · tamam · {time.monotonic() - started:.1f} sn', file=sys.stderr, flush=True)
 
 
 def format_summary(result, *, year=2027, apply=False, clear_preprint=False):
@@ -334,8 +343,10 @@ def execute(engine, parsed, *, organization_id, actor_id, apply=False, resume=Fa
                     raise Refusal('Başka ilk yükleme çalışıyor. Bu komut 0 satır yazdı; tamamlanmasını bekleyin.')
             with Session(connection, expire_on_commit=False) as db:
                 db.execute(text('SET TRANSACTION READ ONLY'))
-                actor, period, completed = context(db, organization_id, actor_id, resume, year=year)
-                items = department_plan(db, parsed, completed, year=year)
+                with phase('veritabanı/şema denetimi'):
+                    actor, period, completed = context(db, organization_id, actor_id, resume, year=year)
+                with phase('müdürlük planı'):
+                    items = department_plan(db, parsed, completed, year=year)
                 output['departments'] = [department_action(item) for item in items]
                 period_id = period.id if period else None
                 db.rollback()
@@ -358,7 +369,8 @@ def execute(engine, parsed, *, organization_id, actor_id, apply=False, resume=Fa
                     # the final directorate must undo every 2026 write in this run.
                     db.begin()
                     from app.first_load_service import period_rows_hash
-                    output['protected_2027_before'] = period_rows_hash(db)
+                    with phase('2027 koruma özeti hesabı'):
+                        output['protected_2027_before'] = period_rows_hash(db)
                 for index, item in enumerate(items):
                     started = time.monotonic()
                     source = item['source']
@@ -435,11 +447,13 @@ def execute(engine, parsed, *, organization_id, actor_id, apply=False, resume=Fa
                             db.rollback()
                             totals.clear()
                             totals.update({key: 0 for key in ('departments', 'created_departments', 'cards', 'indicators', 'activities', 'economic_values')})
-                            output['protected_2027_after'] = period_rows_hash(db)
+                            with phase('2027 koruma özeti hesabı'):
+                                output['protected_2027_after'] = period_rows_hash(db)
                             return output
                 if year == 2026:
                     db.flush()
-                    output['protected_2027_after'] = period_rows_hash(db)
+                    with phase('2027 koruma özeti hesabı'):
+                        output['protected_2027_after'] = period_rows_hash(db)
                     if output['protected_2027_before'] != output['protected_2027_after']:
                         db.rollback()
                         raise Refusal('2027 satırları değişecekti; işlem geri alındı, 0 satır yazıldı.')
@@ -475,9 +489,11 @@ def main(argv=None):
                 raise Refusal('--clear-preprint ile --resume birlikte kullanılamaz; 0 satır yazıldı.')
             if args.year == 2026 and args.clear_preprint:
                 raise Refusal('--clear-preprint yalnız 2027 içindir; 0 satır yazıldı.')
-            parsed = verify_book(args.book, **({'year': args.year} if args.year == 2026 else {}))
+            with phase('kitap doğrulama'):
+                parsed = verify_book(args.book, **({'year': args.year} if args.year == 2026 else {}))
             if args.apply:
-                verify_backup(args.backup)
+                with phase('yedek doğrulama'):
+                    verify_backup(args.backup)
                 try:
                     if args.clear_preprint:
                         from scripts.clear_preprint_2027 import CONFIRMATION

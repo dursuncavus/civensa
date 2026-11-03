@@ -29,6 +29,11 @@ def integer(value, label='Kimlik'):
 
 def register(app):
     from .main import require_user, require_strategy, ensure_department_editable, templates, session_period, pp_period, check_pp_access, require_pp_period, log
+    from .book_export import display_code, display_catalogue_keys
+    from .structure_service import department_display_name
+    templates.env.filters['display_code'] = display_code
+    templates.env.filters['display_catalogue_keys'] = display_catalogue_keys
+    templates.env.filters['department_display_name'] = department_display_name
 
     def comparison_context(request, db, user, department_id):
         period = session_period(request, db, require=True)
@@ -486,12 +491,22 @@ def register(app):
     async def catalogue(request:Request,db:Session=Depends(get_db),user:User=Depends(require_strategy)):
         data=await request.form();pid=session_period(request,db,data).id
         if not db.get(ReportingPeriod,pid):raise pp_error(404)
-        fields=['program_code','program_name','subprogram_code','subprogram_name','code','name'];values={f:str(data.get(f,'')).strip() for f in fields}
-        if any(not v for v in values.values()):raise pp_error(422, 'Katalog kod veya adı eksik. Program, alt program ve faaliyet kod/ad alanlarını doldurun.', next(f for f in fields if not values[f]))
-        ids={integer(v) for v in data.getlist('department_ids')}
-        if not ids or any(not db.get(Department,d) for d in ids):raise pp_error(422, 'Katalog sorumlu birimi geçersiz. Listeden en az bir müdürlük seçin.', 'department_ids')
         obj=db.get(OfficialActivity,integer(data['id'])) if data.get('id') else None
         if data.get('id') and not obj:raise pp_error(404)
+        if obj and obj.period_id != pid:raise pp_error(403)
+        fields=['program_code','program_name','subprogram_code','subprogram_name','code','name'];values={f:str(data.get(f,'')).strip() for f in fields}
+        required = fields
+        missing_message = 'Katalog kod veya adı eksik. Program, alt program ve faaliyet kod/ad alanlarını doldurun.'
+        if obj and obj.code.startswith('name:'):
+            # The approved 2026 book has names, without official codes. The
+            # server owns its technical identity, including on form recovery.
+            for field in ('program_code','subprogram_code','code'):
+                values[field] = getattr(obj, field)
+            required = ['program_name','subprogram_name','name']
+            missing_message = 'Katalog adı eksik. Program, alt program ve faaliyet adı alanlarını doldurun.'
+        if any(not values[f] for f in required):raise pp_error(422, missing_message, next(f for f in required if not values[f]))
+        ids={integer(v) for v in data.getlist('department_ids')}
+        if not ids or any(not db.get(Department,d) for d in ids):raise pp_error(422, 'Katalog sorumlu birimi geçersiz. Listeden en az bir müdürlük seçin.', 'department_ids')
         save_catalogue_entry(db,pid,values,ids,user,obj=obj)
         db.commit()
         return RedirectResponse(f'/report-builder?period_id={pid}',303)
@@ -513,6 +528,11 @@ def register(app):
         data=await request.form();pid=session_period(request,db,data).id;period=db.scalar(select(ReportingPeriod).where(ReportingPeriod.id==pid).with_for_update())
         if not period:raise pp_error(404)
         errors=[error for check in publication_checks(db,pid) for error in check['errors']]
+        from .structure_service import period_name
+        names = {d.name:period_name(db,pid,d) for d in period_departments(db,pid)}
+        for system_name, display_name in sorted(names.items(), key=lambda item: -len(item[0])):
+            if system_name != display_name:
+                errors = [error.replace(system_name,display_name) for error in errors]
         if errors:raise pp_error(422, 'Nihai yayın oluşturulamadı: ' + ' '.join(errors) + ' İlgili müdürlük kayıtlarını, kapsamı ve onayları tamamlayıp yeniden deneyin.', 'publish')
         from .activity_contract_service import freeze_program_payload, attach_publication_definitions
         payload, definitions = freeze_program_payload(db, pid, user)
@@ -531,7 +551,12 @@ def register(app):
         if hashlib.sha256(obj.snapshot_json.encode()).hexdigest()!=obj.sha256:raise HTTPException(409,'Yayın içeriğinin bütünlük kontrolü başarısız.')
         from .book_export import export_book
         payload=json.loads(obj.snapshot_json)
-        if format=='json':content=obj.snapshot_json.encode();mime='application/json'
+        if format=='json':
+            from .book_export import publication_display_payload
+            displayed = publication_display_payload(payload)
+            content = (json_dumps(displayed,ensure_ascii=False,sort_keys=True,separators=(',',':'))
+                if displayed != payload else obj.snapshot_json).encode()
+            mime='application/json'
         elif format in {'docx','pdf'}:content,mime=export_book(payload,format)
         else:raise pp_error(404)
         return Response(content,media_type=mime,headers={'Content-Disposition':f'attachment; filename="civensa-{payload["period"]}-v{obj.version}.{format}"'})

@@ -10,6 +10,8 @@ from sqlalchemy import select
 from .internal_control_models import ICPlan, ICCondition, ICAction, COMPONENTS, STANDARD_COMPONENTS
 from .numbers import format_number
 from .structure_service import name_for_year
+from .structure_service import display_name_for_year
+from .models import Department
 from .internal_control_service import require_access, literal_row, export_book
 from . import internal_control_monitoring_service as m
 from .internal_control_monitoring_models import ICMonitoringPeriod as Period, ICMonitoringBatch as Batch, ICMonitoringEvent as Event, ICMonitoringEntry as Entry, ICMonitoringTarget as Target
@@ -18,12 +20,27 @@ HEADERS = ['Bileşen', 'Standart', 'Genel şart', 'Eylem kodu', 'Eylem', 'Soruml
            'Durum', 'Gerçekleşme oranı', 'Açıklama', 'Tamamlanmama nedeni', 'Kanıt']
 
 
+def display_batch(db, period, batch):
+    """Project default labels into the book; retain explicitly frozen labels."""
+    if not batch.department_id:
+        return batch
+    department = db.get(Department, batch.department_id)
+    if batch.label != name_for_year(db, period.year, department):
+        return batch
+    label = display_name_for_year(db, period.year, department)
+    if label == batch.label:
+        return batch
+    from types import SimpleNamespace
+    values = {column.name:getattr(batch,column.name) for column in Batch.__table__.columns}
+    return SimpleNamespace(**dict(values, label=label))
+
+
 def report_row(db, batch, target, entry):
     action = db.get(ICAction, target.action_id)
     condition = db.get(ICCondition, action.condition_id)
     return [COMPONENTS[STANDARD_COMPONENTS[condition.standard_code]],
             condition.standard_code, condition.condition_code_raw, action.action_code_raw,
-            action.text, batch.label, m.STATUSES[entry.status] if entry else 'Giriş eksik',
+            action.text, display_batch(db, db.get(Period,batch.period_id), batch).label, m.STATUSES[entry.status] if entry else 'Giriş eksik',
             entry.percentage if entry else None, entry.explanation if entry else '',
             entry.reason if entry else '', entry.evidence if entry else '']
 
@@ -188,14 +205,14 @@ def official_data(db, actor, period_id, *, draft=False):
     standard_order = {s: i for i, s in enumerate(STANDARD_COMPONENTS)}
     conditions = sorted(db.scalars(select(ICCondition).where(ICCondition.plan_id == period.plan_id)).all(),
                         key=lambda c: (standard_order[c.standard_code], c.sort_order, c.id))
-    frozen_names = {batch.department_id: batch.label for batch in batches if batch.department_id is not None}
+    frozen_names = {batch.department_id: display_batch(db,period,batch).label for batch in batches if batch.department_id is not None}
     parties = {}
     for party in db.scalars(select(ICActionParty).join(ICAction).where(ICAction.plan_id == period.plan_id)
                             .order_by(ICActionParty.sort_order, ICActionParty.id)):
         if party.all_departments:
             name = 'Tüm Müdürlükler'
         elif party.department_id:
-            name = frozen_names[party.department_id] if party.department_id in frozen_names else name_for_year(
+            name = frozen_names[party.department_id] if party.department_id in frozen_names else display_name_for_year(
                 db, period.year, db.get(Department, party.department_id))
         else:
             name = party.body_name
@@ -219,7 +236,7 @@ def official_data(db, actor, period_id, *, draft=False):
             for unit in record['units']:
                 entry = unit['entry']
                 if entry and entry.explanation:
-                    explanation.append(unit['batch'].label + ': ' + entry.explanation)
+                    explanation.append(display_batch(db,period,unit['batch']).label + ': ' + entry.explanation)
             rows.append(prefix + [action.action_code_raw, action.text,
                 '\n'.join(parties.get((action.id, 'responsible'), [])),
                 '\n'.join(parties.get((action.id, 'cooperating'), [])),
