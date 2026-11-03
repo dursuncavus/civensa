@@ -78,6 +78,21 @@ def publish(client, token, pid, reason='Meclis kararı, 16.10.2025'):
         'csrf_token':token, 'period_id':pid, 'approval_reference':reason})
 
 
+def displayed_check_messages(db, pid, checks):
+    from app.program_service import period_departments
+    from app.structure_service import period_name
+    names = {department.name:period_name(db, pid, department)
+             for department in period_departments(db, pid)}
+    messages = {}
+    for check in checks:
+        check_messages = list(check['errors']) + list(check.get('warnings', []))
+        for system_name, display_name in sorted(names.items(), key=lambda item: -len(item[0])):
+            if system_name != display_name:
+                check_messages = [message.replace(system_name, display_name) for message in check_messages]
+        messages.setdefault(check['id'].split(':', 1)[0], []).extend(check_messages)
+    return messages
+
+
 def publication_count(db):
     return db.scalar(select(func.count()).select_from(Publication))
 
@@ -101,16 +116,53 @@ def test_publish_approved_book_seals_warnings_and_provenance(walk, year):
     assert payload['load_reference'] == provenance['load_reference']
     assert payload['approval_reference'] == 'Meclis kararı, 16.10.2025'
     warnings = payload['kaynak_kitap_uyarilari']
-    assert sum(item['count'] for item in warnings) == sum(len(check['errors']) + len(check.get('warnings', [])) for check in before)
-    assert all(item['count'] == len(item['messages']) for item in warnings)
+    assert sum(item['error_count'] + item['warning_count'] for item in warnings) == sum(
+        len(check['errors']) + len(check.get('warnings', [])) for check in before)
+    messages_by_family = displayed_check_messages(db, pid, before)
+    expected = {}
+    for check in before:
+        family = check['id'].split(':', 1)[0]
+        summary = expected.setdefault(family, dict(check_count=0, error_count=0, warning_count=0, messages=set()))
+        summary['check_count'] += 1
+        summary['error_count'] += len(check['errors'])
+        summary['warning_count'] += len(check.get('warnings', []))
+    for family, summary in expected.items():
+        summary['messages'].update(messages_by_family.get(family, []))
+    assert warnings == [dict(check_family=family, check_count=summary['check_count'],
+        error_count=summary['error_count'], warning_count=summary['warning_count'],
+        unique_message_count=len(summary['messages']), examples=sorted(summary['messages'])[:20])
+        for family, summary in sorted(expected.items())]
     assert db.scalar(select(AuditLog.id).where(AuditLog.action == 'publication_approved_book', AuditLog.entity_id == pub.id))
     page = client.get('/report-builder', params={'period_id':pid})
-    assert f"Kaynak kitap uyarıları: {format_number(sum(item['count'] for item in warnings))}" in page.text
+    assert f"Kaynak kitap uyarıları: {format_number(sum(item['error_count'] + item['warning_count'] for item in warnings))}" in page.text
     assert 'action="/report-builder/publish-approved-book"' not in page.text
     # Repeated submission must never produce v2, bindings, definitions or audit.
     before_rows = owned_counts(db)
     assert publish(client, token, pid).status_code == 409
     assert owned_counts(db) == before_rows
+
+
+def test_2026_approved_book_warning_payload_is_compact_and_sealed(walk):
+    db, client, strategy, user, login, token = walk
+    pid = period(db, 2026).id
+    checks = publication_checks(db, pid)
+    messages_by_family = displayed_check_messages(db, pid, checks)
+    messages = sorted(message for family_messages in messages_by_family.values() for message in family_messages)
+    assert len(messages) == 66_409
+    response = publish(client, token, pid)
+    assert response.status_code == 303, response.text[:1200]
+    publication = db.scalar(select(Publication).where(Publication.period_id == pid))
+    payload = json.loads(publication.snapshot_json)
+    warning_payload = json.dumps(payload['kaynak_kitap_uyarilari'], ensure_ascii=False,
+                                  sort_keys=True, separators=(',', ':')).encode()
+    assert len(warning_payload) < 100_000
+    assert hashlib.sha256(json.dumps(messages, ensure_ascii=False, separators=(',', ':')).encode()).hexdigest() == (
+        payload['kaynak_kitap_uyarilari_sha256'])
+    audit = db.scalar(select(AuditLog).where(
+        AuditLog.action == 'publication_approved_book', AuditLog.entity_id == publication.id))
+    assert json.loads(audit.details)['warning_count'] == 66_409
+    assert f'Kaynak kitap uyarıları: {format_number(66_409)}' in client.get(
+        '/report-builder', params={'period_id':pid}).text
 
 
 def owned_counts(db):

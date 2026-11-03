@@ -22,7 +22,7 @@ def publication_history(db, period_id, user, department_names):
             warnings = payload.get('kaynak_kitap_uyarilari', [])
             result['approved_book_publications'][publication.id] = dict(
                 approval_reference=payload.get('approval_reference', ''),
-                warning_count=sum(item['count'] for item in warnings))
+                warning_count=sum(item['error_count'] + item['warning_count'] for item in warnings))
     query = (select(SubmissionEvent, Department.name).join(Department,
         Department.id == SubmissionEvent.department_id)
         .where(SubmissionEvent.period_id == period_id, SubmissionEvent.event_type == 'reopen')
