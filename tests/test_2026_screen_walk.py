@@ -258,6 +258,11 @@ def test_pp_and_activity_report_exports(walk, year):
             for scope in names:
                 expected = scope.display_name if year == 2026 else db.get(Department, scope.department_id).name
                 assert expected in text, (path, expected)
+        for doc in docs:
+            if doc.department_id and path.startswith(f'/activity-sections/reports/{doc.id}/export.'):
+                scope = next(s for s in names if s.department_id == doc.department_id)
+                expected = scope.display_name if year == 2026 else db.get(Department, scope.department_id).name
+                assert expected in text, (path, expected)
     db.refresh(pub)
     assert (pub.snapshot_json, pub.sha256) == frozen
     if year == 2027:
@@ -377,10 +382,17 @@ def test_internal_control_period_names_and_exports(walk, year):
     for scope in names:
         label = scope.display_name if year == 2026 else db.get(Department, scope.department_id).name
         assert label in text
-    for format in ('docx','xlsx'):
-        text = extracted(client.get(f'/internal-control/monitoring/periods/{period.id}/report.{format}?draft=true'), format)
-        clean(text)
-        assert expected in text
+    for report in ('report', 'official-report'):
+        for format in ('docx','xlsx'):
+            text = extracted(client.get(f'/internal-control/monitoring/periods/{period.id}/{report}.{format}?draft=true'), format)
+            clean(text)
+            assert expected in text
+    text = extracted(client.get(f'/internal-control/monitoring/plans/{period.plan_id}/annual.xlsx?year={year}'), 'xlsx')
+    clean(text)
+    assert str(year) in text
+    page = client.get(f'/internal-control/monitoring/periods/{period.id}/narrative')
+    assert page.status_code == 200
+    clean(page.text)
     login(user)
     page = client.get('/internal-control/our-actions', params={'period_id':period.id})
     assert page.status_code == 200
