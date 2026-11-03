@@ -156,9 +156,9 @@ def test_full_2026_rehearsal_beside_full_2027_and_candidate_report(approved2026,
         result = next(r for r in damaged['results'] if r['name'] == 'Etüd Proje Müdürlüğü')
         seen = set()
         for activity in result['stored']['activities']:
-            if activity['name'] in seen:
-                value = next(v for v in activity['costs'] if v['amount'] is not None)
-                value['amount'] = str(Decimal(value['amount']) + 1)
+            if activity['name'] in seen and activity['costs']:
+                value = activity['costs'][0]
+                value['amount'] = str(Decimal(value['amount'] or '0') + 1)
                 break
             seen.add(activity['name'])
         else:
