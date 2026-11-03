@@ -5,11 +5,13 @@ from collections import Counter
 from copy import deepcopy
 from datetime import datetime, timezone
 import hashlib
+import io
 import json
 import os
 from pathlib import Path
 import sys
 from tempfile import TemporaryDirectory
+import time
 from urllib.parse import parse_qsl
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -27,6 +29,75 @@ HEAD = 'c162a1b2c3d4'
 TARGET_ENV = 'CIVENSA_FIRST_LOAD_DATABASE_URL'
 MARKER = 'first_load_department'
 LOCK = 520027
+TTY_REFUSAL = 'Onay için etkileşimli terminal gerekli; komutu tee/grep olmadan doğrudan çalıştırın. 0 satır yazıldı.'
+COUNT_LABELS = {
+    'departments': 'müdürlük',
+    'created_departments': 'oluşturulan müdürlük',
+    'cards': 'kart',
+    'indicators': 'gösterge',
+    'indicator_values': 'gösterge değeri',
+    'activities': 'faaliyet',
+    'activity_cost_values': 'faaliyet maliyeti',
+    'activity_catalogue_links': 'katalog bağlantısı',
+    'economic_values': 'ekonomik değer',
+    'department_cost_values': 'personel/SGK maliyeti',
+    'submissions': 'taslak teslim',
+    'submission_events': 'teslim olayı',
+    'department_scopes': 'müdürlük kapsamı',
+    'subprogram_scopes': 'alt program kapsamı',
+}
+
+
+def open_tty():
+    return io.TextIOWrapper(open('/dev/tty', 'r+b', buffering=0), encoding='utf-8', write_through=True)
+
+
+def read_confirmation(prompt):
+    try:
+        with open_tty() as tty:
+            tty.write(prompt)
+            tty.flush()
+            line = tty.readline()
+    except OSError:
+        raise Refusal(TTY_REFUSAL) from None
+    if not line:
+        raise EOFError
+    return line.rstrip('\r\n')
+
+
+def print_progress(index, total, name, action, elapsed):
+    print(f'[{index}/{total}] {name} · {action} · {elapsed:.1f} sn', file=sys.stderr, flush=True)
+
+
+def format_summary(result, *, year=2027, apply=False, clear_preprint=False):
+    is_clear = clear_preprint or str(result.get('mode', '')).startswith('clear-preprint')
+    mode = 'TEMİZLİK' if is_clear else ('UYGULAMA' if apply or result.get('mode') == 'uygula' else 'PLAN')
+    departments = result.get('departments', [])
+    failed = len(result.get('failed', []))
+    skipped = len(result['skipped']) if 'skipped' in result else sum(d.get('action') == 'skip' for d in departments)
+    if is_clear:
+        matched = len(departments)
+        created = 0
+    else:
+        matched = sum(d.get('action') == 'match' for d in departments)
+        created = sum(d.get('action') == 'create' for d in departments)
+    counts = result.get('counts') if 'counts' in result else result.get('totals', {})
+    totals_text = ' · '.join(f'{COUNT_LABELS.get(k, k)}: {v}' for k, v in counts.items()) or '0'
+    refusals = result.get('refusals', failed)
+    if isinstance(refusals, list):
+        refusals = len(refusals)
+    lines = [
+        'ÖZET',
+        f'Mod: {mode} · Yıl: {year} · Kitap SHA256: {book_config(year)[1][:12]}',
+        f'Müdürlükler: eşleşen: {matched} · oluşturulan: {created} · atlanan: {skipped} · başarısız: {failed}',
+        f'Toplamlar: {totals_text}',
+        f'Reddedilen: {refusals}',
+    ]
+    if year == 2026:
+        protected = (result.get('protected_2027_before') == result.get('protected_2027_after')
+                     and ('protected_2027_before' in result or mode == 'PLAN'))
+        lines.append(f"2027 korunuyor: {'EVET' if protected else 'HAYIR'}")
+    return '\n'.join(lines)
 
 
 class Refusal(ValueError):
@@ -268,13 +339,19 @@ def execute(engine, parsed, *, organization_id, actor_id, apply=False, resume=Fa
                 output['departments'] = [department_action(item) for item in items]
                 period_id = period.id if period else None
                 db.rollback()
+                total_items = len(items)
                 if not apply:
-                    for item in items:
+                    for index, item in enumerate(items, 1):
+                        started = time.monotonic()
+                        source = item['source']
                         if item['skip']:
-                            output['skipped'].append(dict(name=item['source']['name'], reason=item['skip']))
+                            output['skipped'].append(dict(name=source['name'], reason=item['skip']))
+                            action = 'atla'
                         else:
-                            totals.update(planned_counts(item['source']))
+                            totals.update(planned_counts(source))
                             totals['created_departments'] += item['mapping']['action'] == 'create'
+                            action = 'oluştur' if item['mapping']['action'] == 'create' else 'eşleştir'
+                        print_progress(index, total_items, source['name'], action, time.monotonic() - started)
                     return output
                 if year == 2026:
                     # Per-directorate savepoints, one outer commit: a surprise in
@@ -283,9 +360,11 @@ def execute(engine, parsed, *, organization_id, actor_id, apply=False, resume=Fa
                     from app.first_load_service import period_rows_hash
                     output['protected_2027_before'] = period_rows_hash(db)
                 for index, item in enumerate(items):
+                    started = time.monotonic()
                     source = item['source']
                     if item['skip']:
                         output['skipped'].append(dict(name=source['name'], reason=item['skip']))
+                        print_progress(index + 1, total_items, source['name'], 'atla', time.monotonic() - started)
                         continue
                     try:
                         with (db.begin_nested() if year == 2026 else db.begin()):
@@ -341,6 +420,9 @@ def execute(engine, parsed, *, organization_id, actor_id, apply=False, resume=Fa
                         totals.update({key: applied[key] for key in totals})
                         output['validation'].extend(validations)
                         print(f"{'Hazırlandı' if year == 2026 else 'Yüklendi'}: {source['name']} · taslak · {sum(len(v['errors']) for v in validations)} doğrulama hatası", flush=True)
+                        print_progress(index + 1, total_items, source['name'],
+                                       'hazırlandı' if year == 2026 else 'yüklendi',
+                                       time.monotonic() - started)
                     except Exception as exc:
                         # Never expose SQL/driver messages, source payloads or a URL.
                         reason = str(exc) if isinstance(exc, ValueError) else (
@@ -348,6 +430,7 @@ def execute(engine, parsed, *, organization_id, actor_id, apply=False, resume=Fa
                             f'({type(exc).__name__}). Yerel provada sorumluya inceletin.')
                         output['failed'].append(dict(name=source['name'], reason=reason))
                         output['departments'][index] = dict(source_name=source['name'], action='skip', reason=reason)
+                        print_progress(index + 1, total_items, source['name'], 'başarısız', time.monotonic() - started)
                         if year == 2026:
                             db.rollback()
                             totals.clear()
@@ -398,9 +481,9 @@ def main(argv=None):
                 try:
                     if args.clear_preprint:
                         from scripts.clear_preprint_2027 import CONFIRMATION
-                        confirmation = input(f'Temizleme onayı: {CONFIRMATION} yazın: ')
+                        confirmation = read_confirmation(f'Temizleme onayı: {CONFIRMATION} yazın: ')
                     else:
-                        confirmation = input(f'Yazma onayı: kitap SHA256 ilk 12 karakterini yazın ({book_config(args.year)[1][:12]}): ')
+                        confirmation = read_confirmation(f'Yazma onayı: kitap SHA256 ilk 12 karakterini yazın ({book_config(args.year)[1][:12]}): ')
                 except (EOFError, KeyboardInterrupt):
                     raise Refusal('Yazma onayı alınamadı; 0 satır yazıldı.') from None
                 expected = CONFIRMATION if args.clear_preprint else book_config(args.year)[1][:12]
@@ -443,7 +526,10 @@ def main(argv=None):
                     print(f"Oluştur: {source} → {department['name']}")
                 else:
                     print(f"Atla: {source} · {department['reason']}")
+        summary = format_summary(result, year=args.year, apply=args.apply, clear_preprint=args.clear_preprint)
+        print(summary)
         print(json.dumps(result, ensure_ascii=False, indent=2))
+        print(summary, flush=True)
         return 2 if result.get('failed') else 0
     except Refusal as exc:
         print(f'DURDU: {exc}', file=sys.stderr)

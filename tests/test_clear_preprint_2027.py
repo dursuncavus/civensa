@@ -322,16 +322,17 @@ def test_cli_plan_is_read_only_and_secret_free(target, monkeypatch, capsys):
     out = capsys.readouterr().out
     assert 'PLAN: Hedefe 0 satır yazıldı.' in out and 'Temizle:' in out
     assert engine.url.render_as_string(hide_password=False) not in out
-    result = json.loads('{' + out.split('\n{', 1)[1])
+    result = json.loads('{' + out.split('\n{', 1)[1].split('\nÖZET\n', 1)[0])
     assert result['counts']['indicators'] == 33
 
 
 @pytest.mark.parametrize('confirmation', ['', 'yes', live.BOOK_SHA256[:12]])
 def test_clear_requires_separate_confirmation(tmp_path, monkeypatch, capsys, confirmation):
+    from test_first_load_live import TtyStub
     monkeypatch.setenv(live.TARGET_ENV, 'postgresql://unused@localhost/never_connect')
     monkeypatch.setattr(live, 'verify_book', lambda _: {})
     monkeypatch.setattr(live, 'verify_backup', lambda _: None)
-    monkeypatch.setattr('builtins.input', lambda _: confirmation)
+    monkeypatch.setattr(live, 'open_tty', lambda: TtyStub(confirmation + '\n'))
     assert live.main(['--clear-preprint', '--apply', '--backup', str(tmp_path / 'unused.dump'),
                       '--organization-id', '1', '--actor-id', '1']) == 1
     assert 'Temizleme onayı uyuşmuyor' in capsys.readouterr().err
