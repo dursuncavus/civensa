@@ -1010,3 +1010,8 @@ Scoring (fixed now, before either result is seen; 100 points; ties broken by few
 Not scored: speed (different queues), diff size. Owner effort is noted, not scored.
 Delivery: DeepSeek → workspace civ170/ patch, lead pushes branch task/civ-170-deepseek; Jules → its own branch, PR title "CIV-170 — … (Jules)". Each scored separately by the lead with the same checklist, written into this log before the merge decision. Only the winner is merged; the other PR is closed with its score. Result decides the third coding lane in hierarchy v1.6 §2 e (DeepSeek or Jules).
 Next IDs: task CIV-171, decision D-380.
+
+## D-380 (3 Nov 2026 ~16:10 Istanbul, owner + lead, live session CV Lider 52) — Gemini side of CIV-170 runs in Antigravity, not Jules
+BEYAN (owner 16:05, screenshot): Google Antigravity (two app icons) and the Gemini app are installed on the Mac.
+Decision: the Gemini contestant of D-379 runs in Antigravity (local agent, terminal + files on the Mac) with a Gemini model, NOT Claude/GPT inside Antigravity (different-family review + fair comparison). The Gemini chat app is not used (no repo/terminal). Same delivery as DeepSeek: task at ~/development/civ170-gemini/TASK.md, output CIV-170.patch + RESULT.md in that folder; the lead pushes branch task/civ-170-gemini. Both contestants now use the same path → fairer comparison; no GitHub write access is given to either, so branch protection is no longer a precondition for this trial (still recommended, owner decision open). Scoring unchanged (D-379). Antigravity stays outside the chain unless it wins (then hierarchy §2 e names it).
+Next IDs: task CIV-171, decision D-381.
