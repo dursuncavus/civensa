@@ -663,3 +663,178 @@ def validate_department_snapshot(content, period_id, department_id):
             cards,economics,personnel,links_by_activity,officials,set(context['responsible_ids']),subprograms)
     except (KeyError,TypeError,ValueError,AttributeError,InvalidOperation):
         return ['Paketin sabit kapsam / alan bilgisi eksik veya geçersiz. Geçerli kaynakla yeni paket oluşturun; kimlik ve mali alanları kontrol edin.'], []
+
+
+def approved_book_provenance(db, period_id):
+    """Read existing CLI provenance; fail closed without establishing a new baseline.
+
+    ImportBatch.applied_hash predates the first-load catalogue and 2026 scopes.
+    Recreate that hash view only after checking those additions against their
+    durable source/audit records. User membership is unrelated to PP content.
+    """
+    import hashlib
+    from .models import ImportBatch, Publication, SubProgramScope
+    from .import_service import _serialize_department_state, _clean
+    # Docker ships app/ without scripts/. Keep the immutable CLI pins here too;
+    # real-book tests compare the resulting publication against book_config().
+    approved_books = {
+        2026: ('2026-performans-programi_ONAYLI.idml',
+               '1aaa0bb81c3cf4e245edaab42452a972b8a59ffc252814216c7628f6dbaf33d6'),
+        2027: ('2027-performans-programi_ONAYLI.idml',
+               'cbbf9018302d0a1d33d1dde0c4a64a2418d12b55cc29d046205371018673bd71'),
+    }
+
+    period = db.get(ReportingPeriod, period_id)
+    if not period or period.year not in approved_books:
+        return None
+    if db.scalar(select(Publication.id).where(Publication.period_id == period_id)):
+        return None
+    filename, book_sha256 = approved_books[period.year]
+    loads = db.execute(select(AuditLog, ImportBatch).join(ImportBatch,
+        ImportBatch.id == AuditLog.entity_id).where(AuditLog.action == 'first_load_department',
+        AuditLog.entity_type == 'import_batch', ImportBatch.period_id == period_id)
+        .order_by(AuditLog.id)).all()
+    if len(loads) != {2026: 33, 2027: 34}[period.year]:
+        return None
+    try:
+        departments = {}
+        sections = {}
+        expected_programs = set()
+        expected_subprograms = {}
+        for audit, batch in loads:
+            proof = json.loads(audit.details)
+            payload = json.loads(batch.payload_json)
+            snapshot = json.loads(batch.snapshot_json)
+            did = proof['department_id']
+            if (did in departments or proof['year'] != period.year
+                    or proof['book_sha256'] != book_sha256 or batch.filename != filename
+                    or batch.status != 'applied' or not batch.applied_at or not batch.applied_hash
+                    or payload['summary']['source_years'] != [period.year]
+                    or len(payload['departments']) != 1):
+                return None
+            source = payload['departments'][0]
+            current = _serialize_department_state(db, did, period_id)
+            if not current['department_name'] or current['department_name'] != source['name']:
+                return None
+            # The pre-import snapshot records existing users before the CLI ran.
+            previous = next((d for d in snapshot['departments'] if d['department_id'] == did), {})
+            current['user_ids'] = previous.get('user_ids', [])
+            if previous.get('cards') or previous.get('activities') or previous.get('indicators'):
+                return None
+            if period.year == 2026:
+                scope = current['scope']
+                display = payload['book_department_names'][source['name']]
+                expected = dict(period_id=period_id, department_id=did, position=0,
+                    display_name=display if display != current['department_name'] else '',
+                    budget_code=None, active_from=None, active_to=None, status='required', reason='')
+                if len(scope) != 1 or {k:v for k,v in scope[0].items() if k != 'id'} != expected:
+                    return None
+                current['scope'] = previous.get('scope', [])
+            departments[did] = audit.id
+            # Both first-load catalogue implementations add links after applied_hash.
+            current['catalogue_links'] = previous.get('catalogue_links', [])
+            raw = json_dumps([current], ensure_ascii=False, sort_keys=True, separators=(',', ':'))
+            current_hash = hashlib.sha256(raw.encode()).hexdigest()
+            created_sections = snapshot.get('created_sections', [])
+            if 'created_sections' in snapshot:
+                raw = json_dumps([current_hash, created_sections], ensure_ascii=False, sort_keys=True)
+                current_hash = hashlib.sha256(raw.encode()).hexdigest()
+            if current_hash != batch.applied_hash:
+                return None
+            sections.update({row['id']:row for row in created_sections})
+            for block in source['blocks']:
+                program = _clean(block.get('program')) or 'Program adı belirtilmedi'
+                subprogram = _clean(block.get('subprogram')) or 'Alt program adı belirtilmedi'
+                expected_programs.add(program)
+                fields = expected_subprograms.setdefault((program, subprogram), ['', ''])
+                for index, field in enumerate(('rationale', 'goal')):
+                    if not fields[index]:
+                        fields[index] = _clean(block.get(field))
+        if {row.name for row in rows(db, Program, period_id)} != expected_programs:
+            return None
+        programs = {row.id:row.name for row in rows(db, Program, period_id)}
+        actual_subprograms = {(programs[row.program_id], row.name):[row.rationale, row.goal]
+                             for row in rows(db, SubProgram, period_id)}
+        if actual_subprograms != expected_subprograms:
+            return None
+        if {row.id:record(row) for row in rows(db, ReportSection, period_id)} != sections:
+            return None
+        scopes = rows(db, DepartmentScope, period_id)
+        if {s.department_id for s in scopes} != (set(departments) if period.year == 2026 else set()):
+            return None
+        if db.scalar(select(SubProgramScope.scope_id).where(SubProgramScope.scope_id.in_([s.id for s in scopes]))):
+            return None
+        # Last catalogue audit before completion holds the cumulative membership.
+        last_load = loads[-1][0].id
+        catalogue = rows(db, OfficialActivity, period_id)
+        if not catalogue:
+            return None
+        originals = {}
+        links = {}
+        for audit in db.scalars(select(AuditLog).where(AuditLog.id <= last_load,
+                AuditLog.action.in_(['catalogue_create', 'catalogue_link'])).order_by(AuditLog.id)):
+            data = json.loads(audit.details)
+            if audit.action == 'catalogue_create' and data.get('source'):
+                originals[audit.entity_id] = data
+            elif audit.action == 'catalogue_link' and (data.get('source') or {}).get('kind') in {
+                    'first_load_book_membership', 'first_load_2026_exact_name'}:
+                links[audit.entity_id] = data['official_ids']
+        for item in catalogue:
+            original = originals.get(item.id)
+            if not original or any(getattr(item, key) != value for key,value in original['values'].items()):
+                return None
+            ids = set(db.scalars(select(ActivityResponsibility.department_id).where(
+                ActivityResponsibility.official_activity_id == item.id)))
+            if ids != set(original['department_ids']):
+                return None
+        catalogue_ids = {item.id for item in catalogue}
+        # Catch deleted catalogue rows too, including entries with no local link.
+        expected_catalogue_ids = {key for key,value in originals.items()
+                                  if set(value['department_ids']) & departments.keys()
+                                  and db.scalar(select(OfficialActivity.id).where(
+                                      OfficialActivity.id == key, OfficialActivity.period_id != period_id)) is None}
+        if catalogue_ids != expected_catalogue_ids:
+            return None
+        activities = rows(db, Activity, period_id)
+        for activity in activities:
+            actual = set(db.scalars(select(ActivityCatalogueLink.official_activity_id).where(
+                ActivityCatalogueLink.activity_id == activity.id)))
+            if actual != set(links.get(activity.id, [])):
+                return None
+        for model in (ReportCard, Indicator, Activity, DepartmentCostValue, EconomicValue):
+            if any(row.department_id not in departments for row in rows(db, model, period_id)):
+                return None
+        if any(row.code or row.position or row.contract_bound for row in activities):
+            return None
+        # Hashes detect current differences; audit also detects edits later undone.
+        owners = {}
+        for model, singular in ((ReportCard, 'report_card'), (Indicator, 'indicator'),
+                (Activity, 'activity'), (DepartmentCostValue, 'department_cost_value'),
+                (EconomicValue, 'economic_value'), (DepartmentScope, 'department_scope'),
+                (Program, 'program'), (SubProgram, 'subprogram'), (ReportSection, 'report_section'),
+                (OfficialActivity, 'official_activity'), (ImportBatch, 'import_batch')):
+            for row in rows(db, model, period_id):
+                cutoff = departments.get(getattr(row, 'department_id', None), last_load)
+                for name in (model.__tablename__, singular):
+                    owners[(name, row.id)] = cutoff
+        for singular, model in [('indicator_value', IndicatorValue), ('activity_cost_value', ActivityCostValue)]:
+            parent = Indicator if model is IndicatorValue else Activity
+            field = model.indicator_id if model is IndicatorValue else model.activity_id
+            for child, owner in db.execute(select(model, parent).join(parent, field == parent.id)
+                    .where(parent.period_id == period_id)):
+                owners[(singular, child.id)] = departments[owner.department_id]
+                owners[(model.__tablename__, child.id)] = departments[owner.department_id]
+        for audit in db.scalars(select(AuditLog).where(AuditLog.id > min(departments.values()))):
+            if audit.action == 'first_load_department':
+                continue
+            cutoff = owners.get((audit.entity_type, audit.entity_id))
+            if audit.entity_type in {'department', 'departments'} and audit.entity_id in departments:
+                cutoff = departments[audit.entity_id]
+            if audit.entity_type in {'reporting_periods', 'reporting_period'} and audit.entity_id == period_id:
+                cutoff = last_load
+            if cutoff is not None and audit.id > cutoff:
+                return None
+        return dict(basis='approved_book', book_sha256=book_sha256,
+                    load_reference=[dict(audit_id=a.id, batch_id=b.id) for a,b in loads])
+    except (KeyError, TypeError, ValueError, AttributeError):
+        return None

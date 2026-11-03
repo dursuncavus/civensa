@@ -1,5 +1,6 @@
 """Read-only PP publication succession and reasoned reopen trace."""
 from bisect import bisect_left
+import json
 
 from sqlalchemy import select
 from sqlalchemy.orm import joinedload
@@ -12,9 +13,16 @@ def publication_history(db, period_id, user, department_names):
         .options(joinedload(Publication.creator)).order_by(Publication.version.desc())).all()
     history = {publication.id: [] for publication in publications}
     result = dict(publications=publications, publication_reopens=history,
-                  superseded_by={}, stale_departments=[])
+                  superseded_by={}, stale_departments=[], approved_book_publications={})
     if not publications:
         return result
+    for publication in publications:
+        payload = json.loads(publication.snapshot_json)
+        if payload.get('basis') == 'approved_book':
+            warnings = payload.get('kaynak_kitap_uyarilari', [])
+            result['approved_book_publications'][publication.id] = dict(
+                approval_reference=payload.get('approval_reference', ''),
+                warning_count=sum(item['count'] for item in warnings))
     query = (select(SubmissionEvent, Department.name).join(Department,
         Department.id == SubmissionEvent.department_id)
         .where(SubmissionEvent.period_id == period_id, SubmissionEvent.event_type == 'reopen')
