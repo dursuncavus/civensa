@@ -12,6 +12,7 @@ from .internal_control_monitoring_models import ICMonitoringPeriod as Period, IC
 from . import internal_control_monitoring_service as m
 from . import internal_control_monitoring_export as export
 from .pp_errors import payload
+from .structure_service import name_for_year
 
 
 def context():
@@ -68,8 +69,9 @@ def overview_screen(request, db, user, period_id=None):
     return templates.TemplateResponse(request, 'internal_control/monitoring.html', dict(user=user,
         monitoring_period=period, periods=available, details=details, counts=counts,
         official_metrics=m.official_metrics(db, user, period) if period else None,
-        unassigned=db.scalars(select(Department).where(Department.is_active.is_(True),
-            Department.id.not_in([d['batch'].department_id for d in details if d['batch'].department_id])).order_by(Department.name)).all() if period else [],
+        unassigned=[dict(id=department.id, name=name_for_year(db, period.year, department))
+            for department in db.scalars(select(Department).where(Department.is_active.is_(True),
+            Department.id.not_in([d['batch'].department_id for d in details if d['batch'].department_id])).order_by(Department.name))] if period else [],
         plans=db.scalars(select(ICPlan).where(ICPlan.status == 'active')).all(),
         period_events=db.scalars(select(PeriodEvent).where(PeriodEvent.period_id == period.id).order_by(PeriodEvent.id)).all() if period else [],
         **({k: v for k, v in question_context(db, user, period).items() if k not in context()} if period else {}), **context()))

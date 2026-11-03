@@ -15,6 +15,7 @@ from .internal_control_monitoring_models import (ICMonitoringPeriod as Period,
 from .models import Department, Organization, User
 from .pp_errors import pp_error
 from .released_permissions import require_submit, require_strategy_director, SOD_ERROR
+from .structure_service import name_for_year
 
 STATUSES = {'completed': 'Tamamlandı', 'ongoing': 'Devam ediyor',
             'not_started': 'Başlanmadı', 'delayed': 'Gecikmede',
@@ -110,7 +111,8 @@ def open_period(db, actor, plan_id, year, half, deadline):
             key = f'd:{did}' if did else f'b:{party.body_name}'
             if key not in batches:
                 batch = Batch(period_id=period.id, scope_key=key, department_id=did,
-                    body_name=party.body_name if not did else None, label=dep.name if dep else party.body_name)
+                    body_name=party.body_name if not did else None,
+                    label=name_for_year(db, period.year, dep) if dep else party.body_name)
                 db.add(batch)
                 db.flush()
                 batches[key] = batch

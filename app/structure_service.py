@@ -56,9 +56,14 @@ def period_name(db, period_id, department):
     if scope and scope.display_name:
         return scope.display_name
     period = db.get(ReportingPeriod, period_id)
+    return name_for_year(db, period.year, department)
+
+
+def name_for_year(db, year, department):
+    """Resolve a year's name from live structure decisions, without a period scope."""
     for change in live_changes(db):
         old = json.loads(change.snapshot_json)['before']['departments'].get(str(department.id))
-        if old and period.year < change.effective_date.year:
+        if old and year < change.effective_date.year:
             return old['name']
     return department.name
 
