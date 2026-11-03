@@ -1,9 +1,12 @@
 """CIV-168: doğrulanmış gerçek yedekte, yalnız yerel kopyada 2026 PP provası."""
 from contextlib import redirect_stderr, redirect_stdout
+from datetime import timezone
 import html
 import os
+import re
 
-from sqlalchemy import func, select, text
+from sqlalchemy import CheckConstraint, DateTime, String, and_, case, cast, func, literal, or_, select, text, tuple_
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Session
 
 from ops.preprint_rehearsal import download_verified_run, identify_context, positive_id
@@ -22,6 +25,7 @@ PHASES = {
     'done': 'Geçici kopya temizlenemedi; sorumlu Actions temizlik adımını ve yerel PostgreSQL bağlantılarını kontrol etsin.',
     'download': 'Yedek alınamadı; sorumlu varsayılan daldaki yeşil, 48 saatten yeni doğrulanmış yedeği ve Actions okuma/şifre çözme yetkisini kontrol etsin.',
     'restore': 'Yedek geri yükleme doğrulanamadı; sorumlu manifest, şema ve PostgreSQL 18 araçlarını kontrol etsin.',
+    'inventory': '2026 envanteri okunamadı; sorumlu geri yüklenen yerel kopyanın şemasını kontrol etsin.',
     'context': 'Kurum/aktör seçilemedi; sorumlu tek kurum ve mevcut etkin Strateji/yönetici kimliklerini kontrol etsin.',
     'plan': '2026 planı reddedildi; sorumlu dönem durumunu, mevcut PP sayımlarını ve tekil müdürlük eşleşmelerini kontrol etsin.',
     'apply': '2026 uygulaması tamamlanamadı; sorumlu başarısız müdürlükleri ve yükleyici korumalarını yerel kopyada incelesin.',
@@ -66,6 +70,225 @@ def protected_state(engine):
     with Session(engine) as db:
         db.execute(text('SET TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY'))
         return dict(hash=period_rows_hash(db, year=2027), counts=period_counts(db, 2027)['counts'])
+
+
+VALUE_TABLES = {'indicator_values', 'actual_revisions', 'activity_cost_values',
+                'department_cost_values', 'economic_values'}
+# String columns are not DB enums. These are application-defined labels only;
+# an unrecognized label is grouped as "diğer" inside SQL, before it leaves DB.
+APP_AUDIT_ACTIONS = {
+    'indicator_update', 'activity_create', 'activity_update', 'activity_delete',
+    'department_submit', 'submission_approved', 'submission_returned',
+    'actual_revision_create', 'activity_report_revision', 'activity_report_approve',
+    'activity_evidence_upload', 'activity_contract_bound', 'economic_programme_split',
+    'activity_source_total_decision', 'release_manual_confirmation',
+    'import_source_conflict_decision', 'program_create', 'program_update',
+    'subprogram_create', 'subprogram_update', 'scope_save', 'structure_scope_save',
+    'structure_profile', 'subprogram_responsibilities', 'indicator_remove', 'card_remove',
+}
+AUDIT_ACTIONS = APP_AUDIT_ACTIONS | {
+    'data_import_preview', 'data_import_apply', 'data_import_revert',
+    'first_load_department',
+    'catalogue_create', 'catalogue_link', 'activity_mapping',
+    'activity_mapping_csv', 'activity_mapping_csv_revert', 'activity_evidence_download',
+    'template_upload', 'template_verify', 'period_activate',
+}
+
+
+def period_inventory_tables(year):
+    """Discover ownership from metadata, without following shared parents.
+
+    Direct period ownership is authoritative. Children follow every FK path,
+    including composite keys and both sides of links; IN avoids duplicate rows.
+    Descend to a fixed point: ActualRevision is three hops below a period root.
+    Self-history links do not confer ownership of another period's revisions.
+    """
+    from app.db import Base
+    from app.models import ReportingPeriod
+    tables = Base.metadata.tables
+    periods = select(ReportingPeriod.id).where(ReportingPeriod.year == year)
+    owned = {}
+    for name, table in tables.items():
+        direct = ([table.c.period_id.in_(periods)] if 'period_id' in table.c else
+                  [fk.parent.in_(periods) for fk in table.foreign_keys
+                   if fk.column.table.name == 'reporting_periods'])
+        if direct:
+            owned[name] = select(table).where(or_(*direct)).cte('inv_' + name)
+    owned['reporting_periods'] = select(ReportingPeriod.__table__).where(
+        ReportingPeriod.year == year).cte('inv_reporting_periods')
+    pending = set(tables) - owned.keys()
+    # Build a dependency DAG first, so a child includes all parent paths rather
+    # than only the first parent discovered. There are no non-self FK cycles.
+    visiting, unrelated = set(), set()
+
+    def discover(name):
+        if name in owned:
+            return owned[name]
+        if name in visiting or name in unrelated:
+            return None
+        visiting.add(name)
+        table, paths = tables[name], []
+        for fk in sorted(table.foreign_key_constraints, key=lambda fk: tuple(c.name for c in fk.columns)):
+            parent_name = fk.referred_table.name
+            if parent_name == name:
+                continue
+            parent = discover(parent_name)
+            if parent is not None:
+                local = [element.parent for element in fk.elements]
+                remote = [parent.c[element.column.name] for element in fk.elements]
+                left = local[0] if len(local) == 1 else tuple_(*local)
+                paths.append(left.in_(select(*remote)))
+        visiting.remove(name)
+        if paths:
+            owned[name] = select(table).where(or_(*paths)).cte('inv_' + name)
+        else:
+            unrelated.add(name)
+        return owned.get(name)
+
+    for name in sorted(pending):
+        discover(name)
+    return dict(sorted(owned.items()))
+
+
+def inventory_allowed(table_name, column):
+    from app.db import Base
+    from app.program_service import ECONOMIC_CATEGORIES, PROGRAM_GROUPS
+    from app.value_labels import VALUE_KIND_LABELS, FUNDING_LABELS
+    allowed = {
+        'value_kind': set(VALUE_KIND_LABELS), 'funding_type': set(FUNDING_LABELS),
+        'state': {'verified', 'needs_review', 'missing', 'source_conflict'},
+        'category': set(ECONOMIC_CATEGORIES) if table_name == 'economic_values' else {'personnel_sgk'},
+        'program_group': set(PROGRAM_GROUPS),
+    }
+    specific = {
+        ('submissions', 'status'): {'draft', 'submitted', 'approved', 'returned'},
+        ('submission_events', 'event_type'): {'submitted', 'approved', 'returned', 'budget_reallocation'},
+        ('import_batches', 'status'): {'preview', 'applied', 'reverted'},
+        ('audit_log', 'action'): AUDIT_ACTIONS,
+    }
+    table = Base.metadata.tables[table_name]
+    known = set(getattr(table.c[column].type, 'enums', ()))
+    for constraint in table.constraints:
+        if isinstance(constraint, CheckConstraint):
+            match = re.search(r'\b' + re.escape(column) + r"\s+IN\s*\(([^)]+)\)", str(constraint.sqltext), re.I)
+            if match:
+                known.update(re.findall(r"'([^']*)'", match[1]))
+    return known or specific.get((table_name, column), allowed.get(column, set()) if table_name in VALUE_TABLES else set())
+
+
+def inventory_groups(db, name, table):
+    """Return counts, safe dimensions, UTC hours and roles, never row content."""
+    from app.models import User
+    dimensions = []
+    for column in ('year', 'value_kind', 'kind', 'state', 'value_type', 'funding_type',
+                   'category', 'program_group', 'status', 'action', 'event_type'):
+        if column not in table.c:
+            continue
+        field = table.c[column]
+        if column == 'year':
+            safe = case((field.between(1900, 2200), field.cast(String)), else_='diğer')
+        else:
+            safe = case((field.in_(sorted(inventory_allowed(name, column))), field), else_='diğer')
+        dimensions.append(safe.label(column))
+    actor = next((table.c[c] for c in ('created_by', 'actor_user_id', 'actor_id', 'user_id')
+                  if c in table.c and any(fk.column.table.name == 'users'
+                                         for fk in table.c[c].foreign_keys)), None)
+    source = table
+    if actor is not None:
+        source = table.outerjoin(User.__table__, User.id == actor)
+        role = case((User.role.in_(['strategy', 'department', 'admin']), User.role), else_='other')
+    else:
+        role = literal('other')
+    dimensions.append(role.label('rol'))
+    dates = [c for c in table.c if isinstance(c.type, DateTime) and c.name.endswith('_at')]
+    aggregates = [func.count().label('sayı')]
+    for c in dates:
+        aggregates += [func.min(c).label(c.name + '_ilk'), func.max(c).label(c.name + '_son')]
+    rows = db.execute(select(*dimensions, *aggregates).select_from(source).group_by(
+        *dimensions).order_by(*dimensions)).mappings()
+    groups = []
+    for row in rows:
+        public = dict(row)
+        for c in dates:
+            for suffix in ('_ilk', '_son'):
+                key = c.name + suffix
+                stamp = public[key]
+                if stamp is not None:
+                    stamp = stamp.replace(tzinfo=timezone.utc) if stamp.tzinfo is None else stamp
+                public[key] = stamp.astimezone(timezone.utc).strftime('%Y-%m-%d %H:00 UTC') if stamp else '—'
+        groups.append(public)
+    # ImportBatch.created_by records the importer, not application data entry.
+    human = role.in_(['department', 'strategy']) if name not in {
+        'import_batches', 'ar_financial_imports', 'ic_imports'} else literal(False)
+    for column in ('import_batch_id', 'import_id'):
+        if column in table.c:
+            human = and_(human, table.c[column].is_(None))
+    if 'source' in table.c:
+        human = and_(human, table.c.source.in_(['manual', 'administrative', 'ex_officio']))
+    if name == 'audit_log':
+        # Importer catalogue audits may have strategy authors too. Only known
+        # application edit actions are evidence; unknown actions remain counts.
+        payload = cast(case((func.pg_input_is_valid(table.c.details, 'jsonb'), table.c.details),
+                            else_='{}'), JSONB)
+        manual_catalogue = and_(table.c.action.in_(['catalogue_create', 'catalogue_link']),
+                                payload.has_key('source'), payload['source'].astext.is_(None))
+        human = and_(human, or_(table.c.action.in_(sorted(APP_AUDIT_ACTIONS)), manual_catalogue))
+    has_human = bool(db.scalar(select(func.count()).select_from(source).where(human)))
+    return groups, has_human
+
+
+def period_inventory(engine, year=2026):
+    from app.db import Base
+    owned = period_inventory_tables(year)
+    audit = Base.metadata.tables['audit_log']
+    entity_paths = []
+    for name, table in owned.items():
+        if 'id' not in table.c:
+            continue
+        # Both table names and model singular names are used by application logs.
+        aliases = {name}
+        for mapper in Base.registry.mappers:
+            if mapper.local_table.name == name:
+                aliases.add(re.sub(r'(?<!^)(?=[A-Z])', '_', mapper.class_.__name__).lower())
+        entity_paths.append(and_(audit.c.entity_type.in_(sorted(aliases)),
+                                 audit.c.entity_id.in_(select(table.c.id))))
+    owned['audit_log'] = select(audit).where(or_(*entity_paths)).cte('inv_audit_log')
+    inventory = dict(counts={}, groups={}, human=False)
+    with Session(engine) as db:
+        db.execute(text('SET TRANSACTION READ ONLY'))
+        db.execute(text("SET LOCAL TIME ZONE 'UTC'"))
+        for name, table in sorted(owned.items()):
+            count = db.scalar(select(func.count()).select_from(table))
+            inventory['counts'][name] = count
+            # Include all discovered workflow/evidence tables with dimensions,
+            # authors or timestamps, in addition to the five value tables.
+            fields = {'status', 'action', 'event_type', 'created_by', 'actor_user_id',
+                      'actor_id', 'user_id', 'created_at', 'updated_at', 'submitted_at'}
+            if count and (name in VALUE_TABLES or fields.intersection(table.c.keys())):
+                groups, human = inventory_groups(db, name, table)
+                inventory['groups'][name] = groups
+                inventory['human'] |= human
+    return inventory
+
+
+def inventory_lines(inventory):
+    lines = ['', '### 2026 dönemi envanteri', '']
+    if inventory is None:
+        return lines + ['Envanter alınamadı; geri yükleme ve envanter aşamasını kontrol edin.']
+    lines += ['| Kayıt | Sayı |', '| --- | ---: |']
+    lines += [f'| {name} | {count} |' for name, count in inventory['counts'].items() if count]
+    lines += ['', 'Sıfır satırlı tablolar: ' + ', '.join(
+        name for name, count in inventory['counts'].items() if not count) + '.', '']
+    for names, label in ((VALUE_TABLES, 'Değer kayıtları'),
+                         (set(inventory['groups']) - VALUE_TABLES - {'audit_log'}, 'İş akışı kayıtları'),
+                         ({'audit_log'}, 'Denetim kayıtları')):
+        lines += [f'#### {label}', '']
+        for name in sorted(names & inventory['groups'].keys()):
+            for group in inventory['groups'][name]:
+                lines.append('- ' + name + ': ' + '; '.join(f'{key}={value}' for key, value in group.items()))
+    lines += ['', 'Kullanıcı girişi var mı: ' + ('EVET' if inventory['human'] else 'HAYIR'),
+              'Kural: İçe aktarma dışındaki değer/iş akışı kayıtlarında department veya strategy aktörü ya da döneme ait bilinen uygulama düzenleme denetim izi varsa EVET; aktörsüz kayıtlar ve içe aktarma izleri tek başına kullanıcı girişi sayılmaz.']
+    return lines
 
 
 def run_loader(engine, parsed, ids, record, step, **options):
@@ -125,6 +348,8 @@ def rehearse(backup, record):
             restore(engine, backup)
             check(record, state(engine) == {k: saved[k] for k in ('public_table_row_counts', 'alembic_version')},
                   'Restore sayımları/şeması manifestle uyuşmuyor; sorumlu doğrulanmış kaynak yedeği kontrol etsin.')
+            record['phase'] = 'inventory'
+            record['inventory_2026'] = period_inventory(engine)
             record['protected_before'] = protected_state(engine)
             with Session(engine) as db:
                 db.execute(text('SET TRANSACTION READ ONLY'))
@@ -168,8 +393,9 @@ def rehearse(backup, record):
 
 def summary(record):
     """Curated fields only; never dump loader results, exceptions or DB rows."""
-    lines = [f"## 2026 PP yedek provası: {record['status']}", '',
-             '| Aşama | Müdürlük | Kart | Gösterge | Ret | Başarısız | Yazılan / atlanan |',
+    lines = [f"## 2026 PP yedek provası: {record['status']}"]
+    lines += inventory_lines(record.get('inventory_2026'))
+    lines += ['', '| Aşama | Müdürlük | Kart | Gösterge | Ret | Başarısız | Yazılan / atlanan |',
              '| --- | ---: | ---: | ---: | ---: | ---: | --- |']
     for step, label in (('plan', 'Plan'), ('apply', 'Uygulama'), ('resume', 'Devam planı')):
         r = record.get(step, {})
