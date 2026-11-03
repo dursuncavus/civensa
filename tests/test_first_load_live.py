@@ -144,12 +144,12 @@ def test_plan_lists_department_actions_without_writes(target, printed, monkeypat
     monkeypatch.setenv(live.TARGET_ENV, engine.url.set(query={}).render_as_string(hide_password=False))
     assert live.main(['--organization-id', str(ids['organization_id']), '--actor-id', str(ids['actor_id'])]) == 0
     assert state(engine) == before
-    text_output, json_output = capsys.readouterr().out.split('\n{', 1)
-    assert f"Eşleştir: {sources[0]['name']} → {sources[0]['name']} (müdürlük #{exact_ids[0]})" in text_output
-    assert f"Oluştur: {sources[3]['name']} → {sources[3]['name']}" in text_output
-    assert f"Atla: {sources[1]['name']} · " in text_output
-    assert f"Oluştur: {sources[4]['name']} → {sources[4]['name']}" in text_output
-    assert json.loads('{' + json_output)['departments'] == actions
+    output = capsys.readouterr().out
+    assert f"Eşleştir: {sources[0]['name']} → {sources[0]['name']} (müdürlük #{exact_ids[0]})" in output
+    assert f"Oluştur: {sources[3]['name']} → {sources[3]['name']}" in output
+    assert f"Atla: {sources[1]['name']} · " in output
+    assert f"Oluştur: {sources[4]['name']} → {sources[4]['name']}" in output
+    assert json.loads(output[output.index('{'):output.rindex('}') + 1])['departments'] == actions
 
 
 @pytest.mark.postgres
@@ -161,7 +161,7 @@ def test_cli_apply_and_needs_attention_after_real_department_edit(target, printe
     data['departments'] = data['departments'][:1]  # Sağlık: validation errors and review cells.
     monkeypatch.setattr(live, 'verify_book', lambda path: data)
     monkeypatch.setenv(live.TARGET_ENV, engine.url.set(query={}).render_as_string(hide_password=False))
-    monkeypatch.setattr('builtins.input', lambda prompt: live.BOOK_SHA256[:12])
+    monkeypatch.setattr(live, '_read_confirmation', lambda prompt: live.BOOK_SHA256[:12])
     dump, _ = backup_files(tmp_path)
     assert live.main(['--organization-id', str(ids['organization_id']), '--actor-id', str(ids['actor_id']),
                       '--apply', '--backup', str(dump)]) == 0
@@ -355,7 +355,7 @@ def test_neon_channel_binding_other_values_and_extra_keys_are_refused(monkeypatc
 def test_cli_apply_requires_typed_prefix_before_connection(tmp_path, monkeypatch, capsys, confirmation):
     monkeypatch.setenv(live.TARGET_ENV, 'postgresql://unused@localhost/never_connect')
     monkeypatch.setattr(live, 'verify_book', lambda path: {})
-    monkeypatch.setattr('builtins.input', lambda prompt: confirmation)
+    monkeypatch.setattr(live, '_read_confirmation', lambda prompt: confirmation)
     dump, _ = backup_files(tmp_path)
     assert live.main(['--organization-id', '1', '--actor-id', '1', '--apply', '--backup', str(dump)]) == 1
     assert 'SHA256 onayı uyuşmuyor' in capsys.readouterr().err
@@ -402,3 +402,211 @@ def test_cli_refuses_old_book_before_connection(monkeypatch, capsys):
     old_book = live.BOOK.with_name('2027-performans-programi_16102026_duzeltilmis 2.idml')
     assert live.main(['--organization-id', '1', '--actor-id', '1', '--book', str(old_book)]) == 1
     assert 'Kitap SHA256 uyuşmuyor' in capsys.readouterr().err
+
+
+# CIV-170: visible confirmation on /dev/tty, one-screen ÖZET, per-directorate progress.
+
+
+def test_read_confirmation_writes_prompt_to_tty_and_reads_reply(monkeypatch, capsys):
+    written = []
+
+    class Tty:
+        def __init__(self):
+            self.replies = iter(['cbbf9018302d\n'])
+
+        def write(self, text):
+            written.append(text)
+
+        def flush(self):
+            pass
+
+        def readline(self):
+            return next(self.replies, '')
+
+        def close(self):
+            pass
+
+    monkeypatch.setattr(live, '_open_tty', Tty)
+    assert live._read_confirmation('SORU: ') == 'cbbf9018302d'
+    assert ''.join(written) == 'SORU: '
+    assert capsys.readouterr().out == ''  # prompt never crosses stdout
+
+
+def test_read_confirmation_refuses_without_tty(monkeypatch):
+    def no_tty():
+        raise OSError('no controlling terminal')
+    monkeypatch.setattr(live, '_open_tty', no_tty)
+    with pytest.raises(live.Refusal, match='Onay için etkileşimli terminal gerekli'):
+        live._read_confirmation('SORU: ')
+
+
+def test_read_confirmation_refuses_on_eof(monkeypatch):
+    class EofTty:
+        def write(self, text):
+            pass
+
+        def flush(self):
+            pass
+
+        def readline(self):
+            return ''
+
+        def close(self):
+            pass
+
+    monkeypatch.setattr(live, '_open_tty', EofTty)
+    with pytest.raises(live.Refusal, match='Yazma onayı alınamadı'):
+        live._read_confirmation('SORU: ')
+
+
+def test_cli_apply_prompt_goes_to_tty_and_wrong_prefix_refuses(tmp_path, monkeypatch, capsys):
+    monkeypatch.setenv(live.TARGET_ENV, 'postgresql://unused@localhost/never_connect')
+    monkeypatch.setattr(live, 'verify_book', lambda path: {})
+    dump, _ = backup_files(tmp_path)
+    written = []
+
+    class Tty:
+        def write(self, text):
+            written.append(text)
+
+        def flush(self):
+            pass
+
+        def readline(self):
+            return 'wrong\n'
+
+        def close(self):
+            pass
+
+    monkeypatch.setattr(live, '_open_tty', Tty)
+    assert live.main(['--organization-id', '1', '--actor-id', '1', '--apply', '--backup', str(dump)]) == 1
+    captured = capsys.readouterr()
+    assert 'Kitap SHA256 onayı uyuşmuyor' in captured.err
+    assert 'Yazma onayı' not in captured.out
+    assert any('Yazma onayı' in text for text in written)
+
+
+def test_cli_apply_no_tty_refuses_with_zero_rows(tmp_path, monkeypatch, capsys):
+    monkeypatch.setenv(live.TARGET_ENV, 'postgresql://unused@localhost/never_connect')
+    monkeypatch.setattr(live, 'verify_book', lambda path: {})
+    dump, _ = backup_files(tmp_path)
+
+    def no_tty():
+        raise OSError('no controlling terminal')
+    monkeypatch.setattr(live, '_open_tty', no_tty)
+
+    def connection_forbidden(*args, **kwargs):
+        pytest.fail('Refusal must happen before an engine is created')
+    monkeypatch.setattr('sqlalchemy.create_engine', connection_forbidden)
+    assert live.main(['--organization-id', '1', '--actor-id', '1', '--apply', '--backup', str(dump)]) == 1
+    assert 'Onay için etkileşimli terminal gerekli' in capsys.readouterr().err
+
+
+def test_cli_apply_correct_confirmation_proceeds_to_execute(tmp_path, monkeypatch, capsys):
+    monkeypatch.setenv(live.TARGET_ENV, 'postgresql://unused@localhost/never_connect')
+    monkeypatch.setattr(live, 'verify_book', lambda path: {})
+    dump, _ = backup_files(tmp_path)
+
+    class Tty:
+        def write(self, text):
+            pass
+
+        def flush(self):
+            pass
+
+        def readline(self):
+            return live.BOOK_SHA256[:12] + '\n'
+
+        def close(self):
+            pass
+
+    monkeypatch.setattr(live, '_open_tty', Tty)
+    calls = []
+    fake_result = dict(mode='uygula', counts={'departments': 0}, departments=[], skipped=[],
+                       failed=[], validation=[])
+    monkeypatch.setattr(live, 'execute', lambda *a, **k: calls.append('execute') or fake_result)
+
+    class Engine:
+        def dispose(self):
+            pass
+    monkeypatch.setattr('sqlalchemy.create_engine', lambda *a, **k: Engine())
+    assert live.main(['--organization-id', '1', '--actor-id', '1', '--apply', '--backup', str(dump)]) == 0
+    assert calls == ['execute']
+    assert 'Kitap SHA256 onayı uyuşmuyor' not in capsys.readouterr().err
+
+
+def test_ozet_appears_before_and_after_json(monkeypatch, capsys):
+    monkeypatch.setenv(live.TARGET_ENV, 'postgresql://unused@localhost/never_connect')
+    monkeypatch.setattr(live, 'verify_book', lambda path: {})
+    fake_result = dict(
+        mode='plan',
+        counts={'departments': 2, 'created_departments': 1, 'cards': 3, 'indicators': 4,
+                'activities': 5, 'economic_values': 6},
+        departments=[dict(source_name='A Müdürlüğü', action='create', name='A Müdürlüğü'),
+                     dict(source_name='B Müdürlüğü', action='match', department_id=1, name='B Müdürlüğü')],
+        skipped=[], failed=[], validation=[])
+    monkeypatch.setattr(live, 'execute', lambda *a, **k: fake_result)
+
+    class Engine:
+        def dispose(self):
+            pass
+    monkeypatch.setattr('sqlalchemy.create_engine', lambda *a, **k: Engine())
+    assert live.main(['--organization-id', '1', '--actor-id', '1']) == 0
+    out = capsys.readouterr().out
+    first = out.index('ÖZET')
+    json_start = out.index('{')
+    json_end = out.rindex('}') + 1
+    last = out.rindex('ÖZET')
+    assert first < json_start < json_end < last
+    assert out.count('ÖZET') == 2
+    assert 'gösterge=4' in out and 'faaliyet=5' in out
+    assert 'eşleşen 1' in out and 'oluşturulan 1' in out
+    assert 'Reddetme: 0' in out
+
+
+def test_ozet_2026_reports_2027_protection():
+    result = dict(counts={'departments': 33, 'cards': 105, 'indicators': 226},
+                  departments=[{'action': 'match'}], skipped=[], failed=[],
+                  protected_2027_before='abc', protected_2027_after='abc')
+    text = '\n'.join(live._ozet(result, year=2026, sha256='f' * 64, mode='UYGULAMA'))
+    assert 'Mod: UYGULAMA' in text
+    assert 'Yıl: 2026' in text
+    assert '2027 korunuyor: EVET' in text
+    damaged = dict(result, protected_2027_after='xyz')
+    assert '2027 korunuyor: HAYIR' in '\n'.join(live._ozet(damaged, year=2026, sha256='f' * 64, mode='UYGULAMA'))
+
+
+def test_cli_2026_ozet_reports_2027_protection(monkeypatch, capsys):
+    monkeypatch.setenv(live.TARGET_ENV, 'postgresql://unused@localhost/never_connect')
+    monkeypatch.setattr(live, 'verify_book', lambda path, **kw: {'summary': {}})
+    fake_result = dict(mode='uygula', counts={'departments': 33, 'cards': 105, 'indicators': 226},
+                       departments=[dict(source_name='X Müdürlüğü', action='match',
+                                         department_id=1, name='X Müdürlüğü')],
+                       skipped=[], failed=[], validation=[],
+                       protected_2027_before='abc', protected_2027_after='abc')
+    monkeypatch.setattr(live, 'execute', lambda *a, **k: fake_result)
+
+    class Engine:
+        def dispose(self):
+            pass
+    monkeypatch.setattr('sqlalchemy.create_engine', lambda *a, **k: Engine())
+    assert live.main(['--year', '2026', '--organization-id', '1', '--actor-id', '1']) == 0
+    out = capsys.readouterr().out
+    assert 'Yıl: 2026' in out
+    assert '2027 korunuyor: EVET' in out
+    assert out.count('ÖZET') == 2
+
+
+@pytest.mark.postgres
+def test_progress_lines_go_to_stderr_for_plan_and_apply(target, printed, capsys):
+    engine, ids = target
+    data = deepcopy(printed)
+    data['departments'] = data['departments'][:2]
+    live.execute(engine, data, **ids)
+    plan = capsys.readouterr()
+    assert '[1/2]' in plan.err and '[2/2]' in plan.err
+    assert '[1/2]' not in plan.out
+    live.execute(engine, data, apply=True, **ids)
+    applied = capsys.readouterr()
+    assert '[1/2]' in applied.err and '[2/2]' in applied.err
+    assert '[1/2]' not in applied.out

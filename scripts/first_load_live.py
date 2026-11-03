@@ -9,6 +9,7 @@ import json
 import os
 from pathlib import Path
 import sys
+import time
 from tempfile import TemporaryDirectory
 from urllib.parse import parse_qsl
 
@@ -269,12 +270,16 @@ def execute(engine, parsed, *, organization_id, actor_id, apply=False, resume=Fa
                 period_id = period.id if period else None
                 db.rollback()
                 if not apply:
-                    for item in items:
+                    for index, item in enumerate(items):
+                        started = time.perf_counter()
                         if item['skip']:
                             output['skipped'].append(dict(name=item['source']['name'], reason=item['skip']))
+                            _progress(index, len(items), item['source']['name'], 'atlandı', started)
                         else:
                             totals.update(planned_counts(item['source']))
                             totals['created_departments'] += item['mapping']['action'] == 'create'
+                            action = 'oluştur' if item['mapping']['action'] == 'create' else 'eşleştir'
+                            _progress(index, len(items), item['source']['name'], action, started)
                     return output
                 if year == 2026:
                     # Per-directorate savepoints, one outer commit: a surprise in
@@ -284,8 +289,10 @@ def execute(engine, parsed, *, organization_id, actor_id, apply=False, resume=Fa
                     output['protected_2027_before'] = period_rows_hash(db)
                 for index, item in enumerate(items):
                     source = item['source']
+                    started = time.perf_counter()
                     if item['skip']:
                         output['skipped'].append(dict(name=source['name'], reason=item['skip']))
+                        _progress(index, len(items), source['name'], 'atlandı', started)
                         continue
                     try:
                         with (db.begin_nested() if year == 2026 else db.begin()):
@@ -341,6 +348,8 @@ def execute(engine, parsed, *, organization_id, actor_id, apply=False, resume=Fa
                         totals.update({key: applied[key] for key in totals})
                         output['validation'].extend(validations)
                         print(f"{'Hazırlandı' if year == 2026 else 'Yüklendi'}: {source['name']} · taslak · {sum(len(v['errors']) for v in validations)} doğrulama hatası", flush=True)
+                        _progress(index, len(items), source['name'],
+                                  'hazırlandı' if year == 2026 else 'yüklendi', started)
                     except Exception as exc:
                         # Never expose SQL/driver messages, source payloads or a URL.
                         reason = str(exc) if isinstance(exc, ValueError) else (
@@ -348,6 +357,7 @@ def execute(engine, parsed, *, organization_id, actor_id, apply=False, resume=Fa
                             f'({type(exc).__name__}). Yerel provada sorumluya inceletin.')
                         output['failed'].append(dict(name=source['name'], reason=reason))
                         output['departments'][index] = dict(source_name=source['name'], action='skip', reason=reason)
+                        _progress(index, len(items), source['name'], 'başarısız', started)
                         if year == 2026:
                             db.rollback()
                             totals.clear()
@@ -367,6 +377,84 @@ def execute(engine, parsed, *, organization_id, actor_id, apply=False, resume=Fa
             if locked:
                 connection.execute(text('SELECT pg_advisory_unlock(:key)'), {'key': LOCK})
                 connection.commit()
+
+
+_TOTAL_LABELS = {
+    'departments': 'müdürlük',
+    'created_departments': 'oluşturulan müdürlük',
+    'cards': 'kart',
+    'indicators': 'gösterge',
+    'activities': 'faaliyet',
+    'economic_values': 'ekonomik değer',
+    'indicator_values': 'gösterge değeri',
+    'activity_cost_values': 'faaliyet maliyeti',
+    'department_cost_values': 'personel/SGK maliyeti',
+    'submissions': 'taslak teslim',
+    'submission_events': 'teslim olayı',
+    'activity_catalogue_links': 'katalog bağlantısı',
+    'subprogram_scopes': 'alt program kapsamı',
+    'department_scopes': 'müdürlük kapsamı',
+}
+
+
+def _open_tty():
+    """Open the controlling terminal; monkeypatchable in tests."""
+    return open('/dev/tty', 'r+', buffering=1)
+
+
+def _read_confirmation(prompt):
+    """Read a typed confirmation from /dev/tty, never from a piped stdin.
+
+    The prompt is written to the controlling terminal so a `tee`/`grep` pipe on
+    stdout can neither hide it nor swallow the reply. Without an interactive
+    terminal the command refuses instead of silently waiting on a hidden prompt.
+    """
+    try:
+        tty = _open_tty()
+    except OSError:
+        raise Refusal('Onay için etkileşimli terminal gerekli; komutu tee/grep olmadan doğrudan çalıştırın. 0 satır yazıldı.') from None
+    try:
+        try:
+            tty.write(prompt)
+            tty.flush()
+            reply = tty.readline()
+        except (EOFError, KeyboardInterrupt):
+            raise Refusal('Yazma onayı alınamadı; 0 satır yazıldı.') from None
+    finally:
+        tty.close()
+    if reply == '':
+        raise Refusal('Yazma onayı alınamadı; 0 satır yazıldı.') from None
+    return reply.rstrip('\r\n')
+
+
+def _progress(index, total, name, action, started):
+    """One stderr line per directorate, visible even when stdout is piped."""
+    print(f'[{index + 1}/{total}] {name} · {action} · {time.perf_counter() - started:.2f} sn',
+          file=sys.stderr, flush=True)
+
+
+def _ozet(result, *, year, sha256, mode):
+    """One-screen summary computed from execute()'s result; never alters it."""
+    counts = result.get('counts', result.get('totals', {}))
+    departments = result.get('departments', [])
+    matched = sum(1 for d in departments if d.get('action') == 'match')
+    created = sum(1 for d in departments if d.get('action') == 'create')
+    skipped = sum(1 for d in departments if d.get('action') == 'skip')
+    failed = len(result.get('failed', []))
+    lines = [
+        'ÖZET',
+        f'Mod: {mode}',
+        f'Yıl: {year}',
+        f'Kitap SHA256: {sha256[:12]}',
+        f'Müdürlük: eşleşen {matched} · oluşturulan {created} · atlanan {skipped} · başarısız {failed}',
+        'Toplam: ' + ', '.join(f'{_TOTAL_LABELS.get(key, key)}={value}'
+                               for key, value in counts.items()),
+        f'Reddetme: {failed}',
+    ]
+    if year == 2026:
+        protected = result.get('protected_2027_before') == result.get('protected_2027_after')
+        lines.append(f'2027 korunuyor: {"EVET" if protected else "HAYIR"}')
+    return lines
 
 
 def main(argv=None):
@@ -395,14 +483,12 @@ def main(argv=None):
             parsed = verify_book(args.book, **({'year': args.year} if args.year == 2026 else {}))
             if args.apply:
                 verify_backup(args.backup)
-                try:
-                    if args.clear_preprint:
-                        from scripts.clear_preprint_2027 import CONFIRMATION
-                        confirmation = input(f'Temizleme onayı: {CONFIRMATION} yazın: ')
-                    else:
-                        confirmation = input(f'Yazma onayı: kitap SHA256 ilk 12 karakterini yazın ({book_config(args.year)[1][:12]}): ')
-                except (EOFError, KeyboardInterrupt):
-                    raise Refusal('Yazma onayı alınamadı; 0 satır yazıldı.') from None
+                if args.clear_preprint:
+                    from scripts.clear_preprint_2027 import CONFIRMATION
+                    confirmation = _read_confirmation(f'Temizleme onayı: {CONFIRMATION} yazın: ')
+                else:
+                    confirmation = _read_confirmation(
+                        f'Yazma onayı: kitap SHA256 ilk 12 karakterini yazın ({book_config(args.year)[1][:12]}): ')
                 expected = CONFIRMATION if args.clear_preprint else book_config(args.year)[1][:12]
                 if confirmation != expected:
                     raise Refusal('Temizleme onayı uyuşmuyor; 0 satır yazıldı.' if args.clear_preprint else
@@ -443,7 +529,11 @@ def main(argv=None):
                     print(f"Oluştur: {source} → {department['name']}")
                 else:
                     print(f"Atla: {source} · {department['reason']}")
+        mode = 'TEMİZLİK' if args.clear_preprint else ('UYGULAMA' if args.apply else 'PLAN')
+        ozet = _ozet(result, year=args.year, sha256=book_config(args.year)[1], mode=mode)
+        print('\n'.join(ozet))
         print(json.dumps(result, ensure_ascii=False, indent=2))
+        print('\n'.join(ozet))
         return 2 if result.get('failed') else 0
     except Refusal as exc:
         print(f'DURDU: {exc}', file=sys.stderr)
