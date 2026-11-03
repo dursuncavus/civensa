@@ -51,7 +51,7 @@ def period_counts(db, year):
                             OfficialActivity, Program, ReportingPeriod)
     period = db.scalar(select(ReportingPeriod).where(ReportingPeriod.year == year))
     # Status fields are DB content too: expose only known enum labels.
-    status = period.status if period and period.status in {'draft', 'active', 'closed', 'archived'} else 'diğer'
+    status = period.status if period and period.status in {'draft', 'active', 'closed', 'published', 'archived'} else 'diğer'
     template = period.template_status if period and period.template_status in {'verified', 'draft', 'pending', 'unverified'} else 'diğer'
     return dict(existed=period is not None, status=status if period else 'yok',
                 template_status=template if period else 'yok', counts={
@@ -203,7 +203,7 @@ def summary(record):
             lines += ['', 'Başarısız müdürlükler: ' + (', '.join(html.escape(n) for n in record[step]['failed']) or 'yok')]
     if 'display_names_2026' in record:
         lines += ['', '### Yüklemenin atadığı 2026 kapsam adları', '']
-        lines += ['- ' + html.escape(name) for name in record['display_names_2026']]
+        lines += ['- ' + (html.escape(name) if name else '(boş)') for name in record['display_names_2026']]
     with open(os.environ['GITHUB_STEP_SUMMARY'], 'a', encoding='utf-8') as stream:
         stream.write('\n'.join(lines) + '\n')
 
