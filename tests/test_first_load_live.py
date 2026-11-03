@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session
 
 from scripts import first_load_live as live
 from scripts.first_load_dryrun import local_test_url
-from tests.first_load_checkpoint import disposable_first_load_database
+from tests.first_load_checkpoint import TerminalStub, disposable_first_load_database
 from app.models import (Activity, AuditLog, Department, EconomicValue, ImportBatch,
                         Indicator, IndicatorValue, Organization, ReportingPeriod, Submission, User)
 
@@ -161,7 +161,7 @@ def test_cli_apply_and_needs_attention_after_real_department_edit(target, printe
     data['departments'] = data['departments'][:1]  # Sağlık: validation errors and review cells.
     monkeypatch.setattr(live, 'verify_book', lambda path: data)
     monkeypatch.setenv(live.TARGET_ENV, engine.url.set(query={}).render_as_string(hide_password=False))
-    monkeypatch.setattr('builtins.input', lambda prompt: live.BOOK_SHA256[:12])
+    monkeypatch.setattr(live, 'open_terminal', lambda: TerminalStub(live.BOOK_SHA256[:12]))
     dump, _ = backup_files(tmp_path)
     assert live.main(['--organization-id', str(ids['organization_id']), '--actor-id', str(ids['actor_id']),
                       '--apply', '--backup', str(dump)]) == 0
@@ -355,7 +355,7 @@ def test_neon_channel_binding_other_values_and_extra_keys_are_refused(monkeypatc
 def test_cli_apply_requires_typed_prefix_before_connection(tmp_path, monkeypatch, capsys, confirmation):
     monkeypatch.setenv(live.TARGET_ENV, 'postgresql://unused@localhost/never_connect')
     monkeypatch.setattr(live, 'verify_book', lambda path: {})
-    monkeypatch.setattr('builtins.input', lambda prompt: confirmation)
+    monkeypatch.setattr(live, 'open_terminal', lambda: TerminalStub(confirmation))
     dump, _ = backup_files(tmp_path)
     assert live.main(['--organization-id', '1', '--actor-id', '1', '--apply', '--backup', str(dump)]) == 1
     assert 'SHA256 onayı uyuşmuyor' in capsys.readouterr().err

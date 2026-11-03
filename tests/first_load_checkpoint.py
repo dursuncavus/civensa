@@ -19,3 +19,25 @@ def disposable_first_load_database(url):
 
 # Compatibility for the existing cleanup regression module.
 disposable_release50_database = disposable_first_load_database
+
+
+class TerminalStub:
+    """Stand-in controlling terminal for CIV-170: records the prompt, returns one line."""
+
+    def __init__(self, answer='', *, eof=False):
+        self.answer = answer
+        self.eof = eof
+        self.prompt = ''
+        self.closed = False
+
+    def write(self, text):
+        self.prompt += text
+
+    def flush(self):
+        pass
+
+    def readline(self):
+        return '' if self.eof else self.answer + '\n'
+
+    def close(self):
+        self.closed = True

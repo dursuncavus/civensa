@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session
 from scripts import first_load_live as live
 from scripts import clear_preprint_2027 as clear
 from scripts.first_load_dryrun import local_test_url
-from tests.first_load_checkpoint import disposable_release50_database
+from tests.first_load_checkpoint import TerminalStub, disposable_release50_database
 from app import models as m
 
 
@@ -331,7 +331,7 @@ def test_clear_requires_separate_confirmation(tmp_path, monkeypatch, capsys, con
     monkeypatch.setenv(live.TARGET_ENV, 'postgresql://unused@localhost/never_connect')
     monkeypatch.setattr(live, 'verify_book', lambda _: {})
     monkeypatch.setattr(live, 'verify_backup', lambda _: None)
-    monkeypatch.setattr('builtins.input', lambda _: confirmation)
+    monkeypatch.setattr(live, 'open_terminal', lambda: TerminalStub(confirmation))
     assert live.main(['--clear-preprint', '--apply', '--backup', str(tmp_path / 'unused.dump'),
                       '--organization-id', '1', '--actor-id', '1']) == 1
     assert 'Temizleme onayı uyuşmuyor' in capsys.readouterr().err
