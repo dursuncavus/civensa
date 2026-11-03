@@ -15,7 +15,7 @@ from .internal_control_models import (COMPONENTS, STANDARD_COMPONENTS, ICPlan, I
                                       ICAction, ICActionParty, ICImport)
 from .models import Department, User
 from . import internal_control_service as service
-from .structure_service import name_for_year
+from .structure_service import display_name_for_year
 
 XLSX = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
 STATUS_LABELS = {'draft': 'Taslak', 'active': 'Etkin', 'archived': 'Arşiv'}
@@ -49,7 +49,7 @@ def catalogue(db, plan, *, component='', standard='', department_id=None, q='', 
                          .order_by(ICActionParty.sort_order)).all()
     departments = {d.id: d for d in db.scalars(select(Department).order_by(Department.name))}
     year = year if year is not None else plan.start_year
-    department_names = {did: name_for_year(db, year, d) for did, d in departments.items()}
+    department_names = {did: display_name_for_year(db, year, d) for did, d in departments.items()}
     by_action, by_condition = defaultdict(list), defaultdict(list)
     for party in parties:
         label = 'Tüm Müdürlükler' if party.all_departments else (department_names[party.department_id] if party.department_id else party.body_name)

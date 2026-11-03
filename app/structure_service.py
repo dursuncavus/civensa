@@ -66,12 +66,14 @@ def department_display_name(department, period_id):
     return period_name(db, period_id, department) if db is not None and period_id else department.name
 
 
+def display_name_for_year(db, year, department):
+    """Display a reporting book name without changing the structure-history API."""
+    period = db.scalar(select(ReportingPeriod).where(ReportingPeriod.year == year))
+    return period_name(db, period.id, department) if period else name_for_year(db, year, department)
+
+
 def name_for_year(db, year, department):
-    """Use the book's year-specific name before falling back to structure history."""
-    scope = db.scalar(select(DepartmentScope).join(ReportingPeriod).where(
-        ReportingPeriod.year == year, DepartmentScope.department_id == department.id))
-    if scope and scope.display_name:
-        return scope.display_name
+    """Resolve a year's name from live structure decisions, without a period scope."""
     for change in live_changes(db):
         old = json.loads(change.snapshot_json)['before']['departments'].get(str(department.id))
         if old and year < change.effective_date.year:

@@ -14,8 +14,8 @@ from .models import Department
 from . import internal_control_monitoring_service as m
 from . import internal_control_questionnaire_service as q
 from .pp_errors import payload
-from .internal_control_questionnaire_export import batch_label, display_results
-from .structure_service import name_for_year
+from .internal_control_questionnaire_export import display_batch, display_results
+from .structure_service import display_name_for_year
 
 
 def context():
@@ -26,7 +26,7 @@ def context():
 def batch_context(db, user, batch_id):
     user, period, batch, status, revision = q.get_batch(db, user, batch_id)
     rows = q.rows(db, batch)
-    return dict(batch=batch, label=batch_label(db, period, batch), status=status, revision=revision, rows=rows,
+    return dict(batch=display_batch(db,period,batch), status=status, revision=revision, rows=rows,
         list_id=q.attachment(db, period.id).list_id,
         answered=sum(r['answer'] is not None for r in rows),
         editable=user.role == 'department' and not period.closed_at and m.today(db) <= period.deadline and status in ('draft', 'returned'),
@@ -38,10 +38,15 @@ def overview_context(db, user, period):
     attached = q.attachment(db, period.id)
     departments = db.scalars(select(Department).where(Department.is_active.is_(True) |
         Department.id.in_(json.loads(attached.departments_json) if attached else [])).order_by(Department.name)).all()
+    from types import SimpleNamespace
+    choices = []
+    for department in departments:
+        name = display_name_for_year(db,period.year,department)
+        values = {column.name:getattr(department,column.name) for column in Department.__table__.columns}
+        choices.append(department if name == department.name else SimpleNamespace(**dict(values,name=name)))
     return dict(question_attachment=attached,
         question_lists=db.scalars(select(q.QuestionList).order_by(q.QuestionList.id.desc())).all(),
-        question_departments=departments,
-        question_department_names={d.id:name_for_year(db,period.year,d) for d in departments},
+        question_departments=choices,
         question_selected=json.loads(attached.departments_json) if attached else None,
         question_details=[batch_context(db, user, b.id) for b in q.batches(db, period.id)],
         question_results=display_results(db, user, period), **context())

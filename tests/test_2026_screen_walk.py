@@ -265,12 +265,12 @@ def test_pp_and_activity_report_exports(walk, year):
         if path.startswith(('/publications/', '/report-builder/')):
             for scope in names:
                 expected = scope.display_name if year == 2026 else db.get(Department, scope.department_id).name
-                assert expected in text, (path, expected)
+                assert expected in ' '.join(text.split()), (path, expected)
         for doc in docs:
             if doc.department_id and path.startswith(f'/activity-sections/reports/{doc.id}/export.'):
                 scope = next(s for s in names if s.department_id == doc.department_id)
                 expected = scope.display_name if year == 2026 else db.get(Department, scope.department_id).name
-                assert expected in text, (path, expected)
+                assert expected in ' '.join(text.split()), (path, expected)
     db.refresh(pub)
     assert (pub.snapshot_json, pub.sha256) == frozen
     if year == 2027:
@@ -362,6 +362,8 @@ def test_internal_control_period_names_and_exports(walk, year):
     db, client, strategy, user, login, token = walk
     from app.internal_control_monitoring_models import ICMonitoringPeriod, ICMonitoringBatch
     period = db.scalar(select(ICMonitoringPeriod).where(ICMonitoringPeriod.year == year))
+    batch = db.scalar(select(ICMonitoringBatch).where(ICMonitoringBatch.period_id == period.id))
+    stored_label = batch.label
     expected = 'Harita ve Planlama Müdürlüğü' if year == 2026 else 'Plan Proje Müdürlüğü'
     page = client.get('/internal-control/monitoring', params={'period_id':period.id})
     assert page.status_code == 200
@@ -405,11 +407,12 @@ def test_internal_control_period_names_and_exports(walk, year):
     page = client.get('/internal-control/our-actions', params={'period_id':period.id})
     assert page.status_code == 200
     clean(page.text)
-    batch = db.scalar(select(ICMonitoringBatch).where(ICMonitoringBatch.period_id == period.id))
     page = client.get(f'/internal-control/monitoring/batches/{batch.id}')
     assert page.status_code == 200
     clean(page.text)
     assert expected in page.text
+    db.refresh(batch)
+    assert batch.label == stored_label == 'Plan Proje Müdürlüğü'
 
 
 @pytest.mark.parametrize('width', [390, 1280])

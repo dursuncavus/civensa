@@ -4,11 +4,23 @@ from . import internal_control_monitoring_service as m
 from . import internal_control_questionnaire_service as q
 from .internal_control_service import literal_row, export_book
 from .models import Department
-from .structure_service import name_for_year
+from .structure_service import display_name_for_year
 
 
 def batch_label(db, period, batch):
-    return name_for_year(db, period.year, db.get(Department, batch.department_id))
+    department = db.get(Department, batch.department_id)
+    if batch.label != department.name:
+        return batch.label
+    return display_name_for_year(db, period.year, department)
+
+
+def display_batch(db, period, batch):
+    label = batch_label(db,period,batch)
+    if label == batch.label:
+        return batch
+    from types import SimpleNamespace
+    values = {column.name:getattr(batch,column.name) for column in q.Batch.__table__.columns}
+    return SimpleNamespace(**dict(values,label=label))
 
 
 def display_results(db, actor, period):
