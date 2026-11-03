@@ -161,6 +161,8 @@ def inventory_allowed(table_name, column):
         'program_group': set(PROGRAM_GROUPS),
     }
     specific = {
+        ('reporting_periods', 'status'): {'draft', 'active', 'closed', 'published', 'archived'},
+        ('indicators', 'status'): {'draft', 'verified'},
         ('submissions', 'status'): {'draft', 'submitted', 'approved', 'returned'},
         ('submission_events', 'event_type'): {'submitted', 'approved', 'returned', 'budget_reallocation'},
         ('import_batches', 'status'): {'preview', 'applied', 'reverted'},
@@ -249,7 +251,8 @@ def period_inventory(engine, year=2026):
         aliases = {name}
         for mapper in Base.registry.mappers:
             if mapper.local_table.name == name:
-                aliases.add(re.sub(r'(?<!^)(?=[A-Z])', '_', mapper.class_.__name__).lower())
+                singular = re.sub(r'(.)([A-Z][a-z]+)', r'\1_\2', mapper.class_.__name__)
+                aliases.add(re.sub(r'([a-z0-9])([A-Z])', r'\1_\2', singular).lower())
         entity_paths.append(and_(audit.c.entity_type.in_(sorted(aliases)),
                                  audit.c.entity_id.in_(select(table.c.id))))
     owned['audit_log'] = select(audit).where(or_(*entity_paths)).cte('inv_audit_log')
@@ -286,6 +289,7 @@ def inventory_lines(inventory):
         for name in sorted(names & inventory['groups'].keys()):
             for group in inventory['groups'][name]:
                 lines.append('- ' + name + ': ' + '; '.join(f'{key}={value}' for key, value in group.items()))
+        lines.append('')
     lines += ['', 'Kullanıcı girişi var mı: ' + ('EVET' if inventory['human'] else 'HAYIR'),
               'Kural: İçe aktarma dışındaki değer/iş akışı kayıtlarında department veya strategy aktörü ya da döneme ait bilinen uygulama düzenleme denetim izi varsa EVET; aktörsüz kayıtlar ve içe aktarma izleri tek başına kullanıcı girişi sayılmaz.']
     return lines
