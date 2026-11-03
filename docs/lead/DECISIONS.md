@@ -906,3 +906,15 @@ Owner pasted Gemini's answer (23:57). Gemini did not use the attached PDF + work
 Lead verification (DOĞRULANDI, pdftotext -layout of the PDF pages + committed workbook): all 6 differences Gemini reported are false — KOS 1.1.4 (PDF 30 Aralık 2024 – 30 Aralık 2026), KOS 2.1.2 (01 Ocak 2025 – 30 Aralık 2025), RDS 6.2.1 (01 Mart 2023 – 01 Mart 2023, the known open item), KFS 7.1.2 (01 Aralık 2025 – 27 Şubat 2026), KFS 8.1.1 (… – 30 Ekim 2025), BİS 13.4.1 (01 Ocak 2025 – 29 Aralık 2025) all equal the workbook. No change to the workbook.
 Decision: this Gemini run does not count as the independent placement check (rule 18: evidence, here wrong). Gemini is not reliable for reading these rotated tables. Replacement: the lead runs a machine placement check in the next live session — pdftotext -layout puts each action code on the same line as its dates and units; compare code ↔ dates ↔ responsible unit for all 49 actions, plus the pp. 47–48 summary for the 28 dated ones. No owner work.
 Next IDs: task CIV-165, decision D-365.
+
+## D-365 (3 Nov 2026 ~05:45 Istanbul, lead, scheduled run "Civensa gece kontrol") — CIV-163 review; branch updated
+Cheap check: T = 02d5b63 (2 Nov 20:58 UTC). Changed after T: PR #314 (CIV-163) updated 21:28 UTC, its checks completed after T. Gmail: no Ali Abi mail after T (the 2 Nov 18:35 UTC reply is already D-361). No other lead PR after T (no duplicate). Backup log unchanged.
+Review of #314 at head d88d8b3 against docs/lead/tasks/CIV-163.md (DOĞRULANDI):
+- Component rate: own rate = completed eligible / component eligible; new last column 'Genel Orana Katkı (%)' keeps the old value; screen, Excel (width loop now B–H) and Word use COMPONENT_HEADERS / the same rows. Test: Kontrol Ortamı '45,45% (5/11)' + '16,67% (5/30)', 0-action component '— (0/0)', contribution numerators sum to plan completed. Cover lines unchanged.
+- Not-due wording 'Devam eden eylem.' in Word and Excel; tests assert the old phrase appears nowhere. OFFICIAL_PHRASES unchanged.
+- SIMILARITY_THRESHOLD 85 → 50, strict '>' kept; tests 50 → no warning, 51 → warning; no other user text names the threshold.
+- Only allowed files + their tests; historical frozen-template/hash tests patched in memory only (committed historical sources untouched). No migration, no docs/lead/AGENTS.md change.
+- LOW (not blocking): monitoring.html still has its own header list (D-363 point), but the new Playwright assertion pins it to export.COMPONENT_HEADERS, so drift fails CI; no 'Toplam' row (not in the package scope). Screenshot folder of that test moved civ084 → civ163.
+CI on d88d8b3: test (18, 0), test (18, 1), secrets, backup-security success; full-history skipped; guard not triggered (no docs/lead change).
+Not merged: PR was behind phase5 by 3 (lead-docs commits #313/#315/#316). Per the night-check rule: PUT update-branch done → new head 1bf9c72; merge waits for CI green on that head (live session or next run; scheduled-run merges may be refused, D-213/D-255). No @codex comment needed.
+Next IDs: task CIV-165, decision D-366.

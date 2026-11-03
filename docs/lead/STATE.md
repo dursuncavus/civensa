@@ -1,8 +1,8 @@
 # CIVENSA — CURRENT STATE
 
-Updated: 3 Nov 2026 ~00:05 Istanbul (live session CV Lider 49, D-364).
+Updated: 3 Nov 2026 ~05:45 Istanbul (scheduled run "Civensa gece kontrol", D-365).
 Rules: AI_WORKING_CONSTITUTION v1.2 (Drive, global) · `HIERARCHY.md` v1.5 · `PROJECT_RULES.md` v1.4 (D-271: PRIOR ART field mandatory in every package) · `BACKUP_LEAD.md` v2.
-Backup log ("Civensa Yedek Kaydı", Drive): no entries after 31 Oct (DOĞRULANDI 2 Nov 23:05).
+Backup log ("Civensa Yedek Kaydı", Drive): no entries after 31 Oct (DOĞRULANDI 3 Nov 05:45, file unchanged since 23 Oct).
 Tags: DOĞRULANDI (lead checked) · TARİHSEL (past fact) · BEYAN (owner said) · BELİRSİZ (unknown).
 
 ## Next session — start here (D-253)
@@ -15,7 +15,7 @@ Claude's next session: `CV Lider 50 · Claude Opus 5.5 · civensa-lead`. Read th
 4. Watch Ali Abi / owner reactions to the 554 book-check items (D-324, D-352). LOW backlog (D-328). UI: only 002/003 left, waits for Ali (D-345).
 4b. One live lead session at a time (D-363). Owner: check Claude Design standalone site before 14 Dec 2026 (D-363).
 5. Quota: weekly reset Sat 00:00. Claude Pro ends 3 Nov — owner renews on claude.ai web on 3 Nov; otherwise DeepSeek backup lead (BACKUP_LEAD.md).
-Next IDs: task CIV-165, decision D-365.
+Next IDs: task CIV-165, decision D-366.
 
 ## Claude quota (BEYAN, owner 27 Oct 16:21)
 - Session 11%, week 67%, weekly reset Saturday 00:00 (D-300). Copilot 96 / 1,500 credits, reset 1 Nov.
@@ -24,10 +24,10 @@ Next IDs: task CIV-165, decision D-365.
 Dispatch format (D-232, D-249): platform + environment ("Bulut → civensa") + exact model (Codex: GPT-6.1 Sol) + effort; title is the first line inside the paste block. Session end: one-line handover (D-253) after this file is rewritten.
 Evidence rule (D-252): one-screen changes → targeted tests + changed-state screenshots + contrast; all-screen capture only when shared files change, committed as a short count summary.
 
-## Open pull requests (DOĞRULANDI 31 Oct ~14:00, D-350)
+## Open pull requests (DOĞRULANDI 3 Nov ~05:45, D-365)
 | PR | Task | State | Next action |
 | --- | --- | --- | --- |
-| #314 | CIV-163 | Codex working (head 39d0692, opened 2 Nov 23:23) | lead review; check single header source in monitoring.html + Toplam row (D-363) |
+| #314 | CIV-163 | Lead review done at d88d8b3: no HIGH/MEDIUM; CI green (test 18/0, 18/1, secrets, backup-security). Was behind phase5 by 3 (lead docs only) → update-branch run, new head 1bf9c72, CI re-running (D-365) | merge once CI green on the new head (live session or next scheduled run) |
 Merged 31 Oct (D-350): #298 release phase5 → main (owner) → 503e970, deployed · #299 D-349 → 6999a2f.
 Merged 31 Oct (D-349): #296 CIV-162 → 8ff85f9 · #297 D-348 → ac9b7c8.
 Merged 31 Oct (D-346): #292 release phase5 → main (owner) → 80b6ca1, deployed · #293 D-345 → 6d9be83.
@@ -61,6 +61,6 @@ Merged 26 Oct: #163 CIV-113 → 88c9dfb; #154 CIV-109 → 34329a7; #161 CIV-111 
 3. (D-331) D-177 conversion done, import waits for Ali; live first load done (D-327); CIV-085 next — live session only.
 4. Measure scheduled run cost; reduce or stop if costly.
 5. (closed, D-286) D-205 Drive archive and pointer "KAYITLAR GITHUB'DA" done.
-6. DeepSeek mirror GUNCEL-DURUM.md: not reachable in scheduled runs; the lead refreshes it in the next live session with the Mac linked (still pending 31 Oct).
+6. DeepSeek mirror GUNCEL-DURUM.md: not reachable in scheduled runs; the lead refreshes it in the next live session with the Mac linked (still pending 3 Nov).
 7. Codex cloud fixes from PR comments: not set up (D-242); fix rounds move to Copilot (D-246/D-248).
 8. LOW backlog: shell top-right period label repeats the title on Genel Bakış (D-273);  012 date input display format (BELİRSİZ, D-251); 024 summary widens the 2027 column (D-250); 021 progress table at 390 has no scroll hint (D-268) — watch only; 022 home runs the all-department progress overview per load (D-285) — watch on pilot data.
