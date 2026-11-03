@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% block page_title %}Gönderim yetkileri{% endblock %}
-{% block page_subtitle %}{{ department.name }} · Müdür{% endblock %}
+{% block page_subtitle %}{{ department|department_display_name(period.id if period else none) }} · Müdür{% endblock %}
 {% block content %}
 <link rel="stylesheet" href="/static/design/submit-authorizations.css">
 <section class="submit-authorizations-page">

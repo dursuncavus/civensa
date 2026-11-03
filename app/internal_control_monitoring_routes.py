@@ -12,7 +12,7 @@ from .internal_control_monitoring_models import ICMonitoringPeriod as Period, IC
 from . import internal_control_monitoring_service as m
 from . import internal_control_monitoring_export as export
 from .pp_errors import payload
-from .structure_service import name_for_year
+from .structure_service import display_name_for_year
 
 
 def context():
@@ -52,7 +52,7 @@ def our_screen(request, db, user, period_id=None):
 
 def batch_context(db, user, batch_id):
     user, period, batch, status, revision = m.get_batch(db, user, batch_id)
-    return dict(batch=batch, rows=m.rows(db, batch), status=status, revision=revision,
+    return dict(batch=export.display_batch(db,period,batch), rows=m.rows(db, batch), status=status, revision=revision,
         submission_open=m.today(db) <= period.deadline,
         editable=not period.closed_at and m.today(db) <= period.deadline and status in ('draft', 'returned') and (
             user.role == 'department' and batch.department_id == user.department_id or user.role == 'strategy' and batch.body_name is not None),
@@ -65,11 +65,13 @@ def overview_screen(request, db, user, period_id=None):
     available = periods(db)
     period = m.get_period(db, user, m.number(period_id, 'period_id')) if period_id else (available[0] if available else None)
     details, counts = m.overview(db, user, period) if period else ([], {})
+    if period:
+        details = [dict(item,batch=export.display_batch(db,period,item['batch'])) for item in details]
     from .internal_control_questionnaire_routes import overview_context as question_context
     return templates.TemplateResponse(request, 'internal_control/monitoring.html', dict(user=user,
         monitoring_period=period, periods=available, details=details, counts=counts,
         official_metrics=m.official_metrics(db, user, period) if period else None,
-        unassigned=[dict(id=department.id, name=name_for_year(db, period.year, department))
+        unassigned=[dict(id=department.id, name=display_name_for_year(db, period.year, department))
             for department in db.scalars(select(Department).where(Department.is_active.is_(True),
             Department.id.not_in([d['batch'].department_id for d in details if d['batch'].department_id])).order_by(Department.name))] if period else [],
         plans=db.scalars(select(ICPlan).where(ICPlan.status == 'active')).all(),
