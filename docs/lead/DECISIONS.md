@@ -918,3 +918,13 @@ Review of #314 at head d88d8b3 against docs/lead/tasks/CIV-163.md (DOĞRULANDI):
 CI on d88d8b3: test (18, 0), test (18, 1), secrets, backup-security success; full-history skipped; guard not triggered (no docs/lead change).
 Not merged: PR was behind phase5 by 3 (lead-docs commits #313/#315/#316). Per the night-check rule: PUT update-branch done → new head 1bf9c72; merge waits for CI green on that head (live session or next run; scheduled-run merges may be refused, D-213/D-255). No @codex comment needed.
 Next IDs: task CIV-165, decision D-366.
+
+## D-366 (3 Nov 2026 ~10:40 Istanbul, lead, live session CV Lider 50) — İç Kontrol machine placement check: 0 differences
+Session start: #314 (CIV-163, CI green on 1bf9c72, behind 0) merged → b2a500f; #317 (D-365 night record) branch updated, guard green, merged → aab72de. Gmail: no Ali Abi mail after 2 Nov 21:35. Shared sheet tab 1 still unanswered. Backup log: nothing after 1 Nov.
+Placement check (replaces D-364 Gemini run; method in docs/internal-control/CONVERSION.md): PDF cells rebuilt from table rulings + word boxes; all 49 actions × 7 columns (eylem, sorumlu, işbirliği, çıktı, başlangıç, bitiş, açıklama) equal to the committed workbook (DOĞRULANDI). The 49-row check of D-362 is closed. İç Kontrol import now waits only for Ali's answers (7 questions + 8 mappings) and the half-year/deadline answer.
+Next IDs: task CIV-166, decision D-367.
+
+## D-367 (3 Nov 2026 ~10:50 Istanbul, lead, live session CV Lider 50) — ML2: Mali Hizmetler data does not block a directorate's unit report → CIV-166
+Read the financial gate code (DOĞRULANDI on aab72de): a directorate's unit Faaliyet Raporu reads Mali Hizmetler's budget rows for that directorate; blank fields, missing rows, empty tables and consistency checks (yıl sonu tutarsız, negative, economic-code ≠ programme total) are added to section III.A.1 'missing', and unit submit refuses while any exist — although the directorate cannot edit those amounts. No directorate-entered budget total exists today, so "directorate total that differs" (D-361 direction) has nothing to compare; the real gap is this block.
+Decision: in unit reports those Mali Hizmetler-owned items become visible warnings ("gönderimi engellemez, Mali Hizmetler'e bildirin"); the deviation explanation stays blocking (directorate's own work); the İdare report keeps blocking freeze (Mali Hizmetler fixes its own data before the institution report is frozen). Reason: Ali's answer (Mali Hizmetler authoritative, kesin hesap in May) + data-entry deadline 15–20 Jan — directorates must not wait for Mali Hizmetler to submit. Reversible, no migration, no owner approval needed. Package CIV-166 dispatched (CIV-165 stays reserved for the 2026 loader).
+Next IDs: task CIV-167, decision D-368.

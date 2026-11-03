@@ -1,21 +1,22 @@
 # CIVENSA — CURRENT STATE
 
-Updated: 3 Nov 2026 ~05:45 Istanbul (scheduled run "Civensa gece kontrol", D-365).
+Updated: 3 Nov 2026 ~10:55 Istanbul (live session CV Lider 50, D-367).
 Rules: AI_WORKING_CONSTITUTION v1.2 (Drive, global) · `HIERARCHY.md` v1.5 · `PROJECT_RULES.md` v1.4 (D-271: PRIOR ART field mandatory in every package) · `BACKUP_LEAD.md` v2.
 Backup log ("Civensa Yedek Kaydı", Drive): no entries after 31 Oct (DOĞRULANDI 3 Nov 05:45, file unchanged since 23 Oct).
 Tags: DOĞRULANDI (lead checked) · TARİHSEL (past fact) · BEYAN (owner said) · BELİRSİZ (unknown).
 
 ## Next session — start here (D-253)
-Claude live (CV Lider 49, 2 Nov ~23:00). Release #298 live; /health ready=true, migration c162 (D-350). İç Kontrol import still waits for Ali Abi (sheet tab 1 empty at 2 Nov 23:05).
-Claude's next session: `CV Lider 50 · Claude Opus 5.5 · civensa-lead`. Read this section and the last decision in DECISIONS.md first. Session start also checks Gmail for Ali Abi's mails (D-361).
-1. Releases live (D-346/D-350). Only Ali Abi uses the system; departments are not opened until the infrastructure is complete — data comes from the old system, uploaded by the owner or Ali Abi (BEYAN, D-351/D-352). This year departments fill Civensa-generated forms (D-353); lead proposes an Excel form round-trip — open question: which report(s) and when forms go out. Render stays Free; move to Starter ($7/month) on department rollout day.
-1b. (closed, D-350) CIV-162 live. Render service page: https://dashboard.render.com/web/srv-dagop8vqj5pc73cvlgcg . Memory restart seen once (21 Sep) — watch.
-2. Order (D-358): İç Kontrol Eylem Planı goes to departments first — blockers: Ali 7 questions + 8 mappings + 3 monitoring assumptions, row check: machine word check done + 1 cell fixed (D-362), Gemini check failed (6/6 false, D-364) → lead machine placement check next session, then import/activation/period; open: which half-year + deadline (answer Monday). Monday also: Ali's list of directorate renames/merges/closures since 2024 → record on Kurum yapısı before the 2026 load; İç Kontrol merge/close gap → task only if needed (D-359). Then Faaliyet Raporu (D-354): 7 AR items PARTIAL, all wait for Ali/Mali Hizmetler inputs. Faaliyet Raporu checklist page done (D-360): "FR Girdileri" https://claude.ai/artifact/5bGm5xrVbPSjM7wfv1qrMA — owner goes through it with Ali Abi. 2026 PP baseline: owner attaches the approved 2026 IDML (promised Mon 2 Nov, not yet received at 23:05) → lead dry-run + PDF compare → CIV-165 year-parameterised loader (D-357; renumbered D-363, CIV-164 burned). Entry mode: Ali Abi wants indicator actuals by Excel per directorate (D-361) → owner approves the Excel import direction; package after one current directorate Excel arrives. Data-entry deadline ~15–20 Jan. Ali answered 13 e-mail questions 2 Nov (D-361); CIV-163 (rate/wording/50 % similarity) dispatched. Next: read the financial gate code → package "Mali Hizmetler total authoritative, warning not block" (ML2).
-3. İç Kontrol import (D-331): waits for Ali Abi's answers in "CV İç Kontrol Dönüşümü – Ortak Liste" (https://docs.google.com/spreadsheets/d/1O4DmrNnBfcz9HJuxAXxGwMCvukTo2467HobZptmz-XI/edit) — empty at 31 Oct 00:30. Then the lead edits the committed workbook, owner uploads on civensa-pilot → maps 8 names → commits draft; activation with the lead. Row check: D-362 (machine + Gemini, not the owner). Ali Abi also compares the 70-question list (D-336).
-4. Watch Ali Abi / owner reactions to the 554 book-check items (D-324, D-352). LOW backlog (D-328). UI: only 002/003 left, waits for Ali (D-345).
-4b. One live lead session at a time (D-363). Owner: check Claude Design standalone site before 14 Dec 2026 (D-363).
-5. Quota: weekly reset Sat 00:00. Claude Pro ends 3 Nov — owner renews on claude.ai web on 3 Nov; otherwise DeepSeek backup lead (BACKUP_LEAD.md).
-Next IDs: task CIV-165, decision D-366.
+Claude live (CV Lider 50, 3 Nov ~10:10). Release #298 live; /health ready=true, migration c162 (D-350). CIV-163 merged to phase5 (b2a500f, D-366) — not yet on main/live.
+Claude's next session: `CV Lider 51 · Claude Opus 5.5 · civensa-lead`. Read this section and the last decision in DECISIONS.md first. Session start also checks Gmail for Ali Abi's mails (D-361).
+1. Releases live (D-346/D-350). Only Ali Abi uses the system; departments are not opened until the infrastructure is complete — data comes from the old system (BEYAN, D-351/D-352). This year departments fill Civensa-generated forms (D-353); open question: which report(s) and when forms go out. Render stays Free; Starter ($7/month) on department rollout day.
+2. Codex: CIV-166 (D-367, Mali Hizmetler data → warning in unit reports) dispatched 3 Nov ~10:55 → lead reviews its PR, merges when CI green.
+3. İç Kontrol (D-358 first to departments): row check CLOSED (D-366, 0 differences). Waits only for Ali: 7 questions + 8 mappings in "CV İç Kontrol Dönüşümü – Ortak Liste" (https://docs.google.com/spreadsheets/d/1O4DmrNnBfcz9HJuxAXxGwMCvukTo2467HobZptmz-XI/edit, tab 1 empty at 3 Nov 10:20), 3 monitoring assumptions, which half-year + deadline. Then lead edits workbook, owner uploads on civensa-pilot → maps 8 names → commits draft; activation with the lead. Ali also: list of directorate renames/merges/closures since 2024 → Kurum yapısı before the 2026 load (D-359); 70-question list compare (D-336).
+4. Faaliyet Raporu (D-354): 7 AR items PARTIAL, wait for Ali/Mali Hizmetler inputs; checklist "FR Girdileri" https://claude.ai/artifact/5bGm5xrVbPSjM7wfv1qrMA (owner + Ali). Needed samples: one current directorate indicator Excel (→ Excel import package, owner approves direction, D-361 FR5), Mali Hizmetler budget template (ML1). Open to Ali: Başkan Yardımcısı / Üst Yönetici approval steps in Civensa or on paper (PR2).
+5. 2026 PP baseline: owner attaches the approved 2026 IDML (promised 2 Nov, not received by 3 Nov 10:55) → lead dry-run + PDF compare → CIV-165 year-parameterised loader (reserved, D-363). Data-entry deadline ~15–20 Jan; ready before 1 Jan 2027.
+6. Watch reactions to the 554 book-check items (D-324, D-352). LOW backlog (D-328). UI: only 002/003 left, waits for Ali (D-345).
+7. One live lead session at a time (D-363). Owner: check Claude Design standalone site before 14 Dec 2026 (D-363).
+8. Quota: weekly reset Sat 00:00. Claude Pro ended 3 Nov per BEYAN; this session runs (owner renewal not confirmed — BELİRSİZ).
+Next IDs: task CIV-167, decision D-368.
 
 ## Claude quota (BEYAN, owner 27 Oct 16:21)
 - Session 11%, week 67%, weekly reset Saturday 00:00 (D-300). Copilot 96 / 1,500 credits, reset 1 Nov.
