@@ -111,9 +111,10 @@ def period_inventory_tables(year):
     periods = select(ReportingPeriod.id).where(ReportingPeriod.year == year)
     owned = {}
     for name, table in tables.items():
-        direct = ([table.c.period_id.in_(periods)] if 'period_id' in table.c else
-                  [fk.parent.in_(periods) for fk in table.foreign_keys
-                   if fk.column.table.name == 'reporting_periods'])
+        # Other domains also call their own keys period_id (IC monitoring).
+        # Column names alone must never join unrelated numeric identifiers.
+        direct = [fk.parent.in_(periods) for fk in table.foreign_keys
+                  if fk.column.table.name == 'reporting_periods']
         if direct:
             owned[name] = select(table).where(or_(*direct)).cte('inv_' + name)
     owned['reporting_periods'] = select(ReportingPeriod.__table__).where(

@@ -270,3 +270,28 @@ def test_audit_attribution_is_independent_of_private_action_label(db, sample, ac
     output = '\n'.join(rehearsal.inventory_lines(inventory))
     assert 'CIV171-private-action' not in output
     assert PRIVATE not in output
+
+
+@pytest.mark.postgres
+def test_other_domains_period_ids_do_not_match_reporting_period_by_accident(db, sample):
+    from app.internal_control_monitoring_models import ICMonitoringPeriod, ICMonitoringPeriodEvent
+    sample['period'].year = 2026
+    source = m.ICImport(source_filename=PRIVATE, source_sha256='d' * 64, source_json=PRIVATE,
+                         created_by=sample['strategy'].id)
+    db.add(source)
+    db.flush()
+    plan = m.ICPlan(title=PRIVATE, status='active', start_year=2030, end_year=2031, version_label=PRIVATE,
+        source_filename=PRIVATE, source_sha256='d' * 64, import_id=source.id,
+        created_by=sample['strategy'].id)
+    db.add(plan)
+    db.flush()
+    unrelated = ICMonitoringPeriod(id=sample['period'].id, plan_id=plan.id,
+                                   year=2030, half=1, deadline=FIRST.date())
+    db.add(unrelated)
+    db.flush()
+    db.add(ICMonitoringPeriodEvent(period_id=unrelated.id, action='open',
+        actor_id=sample['strategy'].id, actor_name=PRIVATE, reason=PRIVATE, created_at=FIRST))
+    db.commit()
+    inventory = rehearsal.period_inventory(db.get_bind())
+    assert not any(name.startswith('ic_') for name in inventory['counts'])
+    assert inventory['human'] is False
