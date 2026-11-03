@@ -52,6 +52,12 @@ def frozen(response):
     expected = env.get_template(response.template.name).render(response.context)
     expected = narrative_deltas(response.template.name, response.context, expected)
     if response.template.name == 'internal_control/monitoring.html':
+        # CIV-163 adds one heading; retain the frozen template bytes and all
+        # other visible-content contracts. Both renders use current metrics.
+        heading = '<th>Gerçekleşme Oranı (%)</th>'
+        if response.context.get('monitoring_period'):
+            assert expected.count(heading) == 1
+            expected = expected.replace(heading, heading + '<th>Genel Orana Katkı (%)</th>', 1)
         # Owner-approved display-only change in the standard column.
         for component, standard in response.context['counts']:
             before = f'<td>{escape(component)}</td><td>{escape(standard)}</td>'

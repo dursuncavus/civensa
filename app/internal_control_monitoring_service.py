@@ -401,9 +401,11 @@ def official_metrics(db, actor, period, *, records=None):
         realised = sum(r['status'] == 'completed' for r in period_selected)
         ongoing = sum(r['status'] == 'ongoing' for r in period_selected)
         completed_total = sum(r['status'] == 'completed' for r in selected)
-        rate_completed = sum(r['status'] == 'completed' and r['due'] is not None for r in selected)
+        component_eligible = [r for r in selected if r['due'] is not None]
+        rate_completed = sum(r['status'] == 'completed' for r in component_eligible)
         components.append([label, len(selected), realised, len(period_selected) - realised - ongoing,
-                           ongoing, completed_total, rate_text(rate_completed, len(eligible))])
+                           ongoing, completed_total, rate_text(rate_completed, len(component_eligible)),
+                           rate_text(rate_completed, len(eligible))])
     unreadable = [r['action'].action_code_raw for r in records if r['due'] is None]
     return dict(plan_total=len(records), eligible_total=len(eligible), due_total=len(due),
                 completed=completed, due_completed=due_completed,
