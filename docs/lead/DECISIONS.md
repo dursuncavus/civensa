@@ -1056,3 +1056,8 @@ Tab 2 (mappings): rows 5–8 confirmed by name in the notes column — Rehberlik
 Consequence (lead analysis): D-358 put the İç Kontrol Eylem Planı before the Faaliyet Raporu for departments. With the 2024–2026 plan ended on 1 Nov and its result report written by Ali himself, opening that plan to departments now has little value. Value moves to (a) the 2026 Faaliyet Raporu (data entry by 15–20 Jan) and (b) entering the NEW 2026–2028 İç Kontrol plan into Civensa from its start.
 Proposal to the owner (priority change → owner approves): reverse D-358 order — Faaliyet Raporu 2026 first; import the old plan only as an archive for Ali's result report (no department tasks); prepare the İç Kontrol module for the new 2026–2028 plan (Ali drafts it in the same workbook layout after his leave). Lead's lead claude notes written into tab 1 column H.
 Next IDs: task CIV-174, decision D-387.
+
+## D-387 (3 Nov 2026 18:13 Istanbul, owner + lead, live session CV Lider 52) — priority change approved: Faaliyet Raporu 2026 first
+BEYAN (owner 18:13, "Öncelik Onay"): approves the D-386 proposal. Supersedes D-358's order.
+Order now: (1) 2026 Faaliyet Raporu path — 2026 PP baseline load (CIV-171 inventory → CIV-172 pilot clear → rehearsal → owner live run), CIV-169 screen walk, then indicator-actuals Excel import once a directorate Excel sample arrives (D-361 FR5), data entry by 15–20 Jan 2027; (2) old 2024–2026 İç Kontrol plan imported only as an archive for Ali's result report, no department tasks (after the remaining 3 council mappings + approval date); (3) İç Kontrol module readied for the new 2026–2028 plan (Ali drafts it in the same workbook layout after his leave).
+Next IDs: task CIV-174, decision D-388.
