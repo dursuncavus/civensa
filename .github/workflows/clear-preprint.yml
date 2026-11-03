@@ -4,6 +4,8 @@ on:
   pull_request:
     paths:
       - 'scripts/clear_preprint_2027.py'
+      - 'scripts/clear_pilot_2026.py'
+      - 'tests/test_clear_pilot_2026.py'
       - 'scripts/first_load_live.py'
       - 'scripts/rehearse_clear_preprint_2027.py'
       - 'tests/test_clear_preprint_2027.py'

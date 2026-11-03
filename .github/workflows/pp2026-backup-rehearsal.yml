@@ -14,6 +14,9 @@ on:
       organization_id:
         description: 'İsteğe bağlı kurum kimliği; boşsa yedekteki tek kurum'
         type: string
+      clear_confirmation:
+        description: 'İsteğe bağlı; yalnız geçici kopyada D-388 pilotunu temizlemek için: 2026 PILOT DONEMINI SIL'
+        type: string
       actor_id:
         description: 'İsteğe bağlı etkin Strateji/yönetici kimliği; boşsa mevcut etkin hesap'
         type: string
@@ -86,6 +89,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           CIVENSA_REHEARSAL_BACKUP_RUN: ${{ inputs.backup_run_id }}
           CIVENSA_REHEARSAL_BOOK_CONFIRM: ${{ inputs.book_confirmation }}
+          CIVENSA_REHEARSAL_CLEAR_CONFIRM: ${{ inputs.clear_confirmation }}
           CIVENSA_REHEARSAL_ORG_ID: ${{ inputs.organization_id }}
           CIVENSA_REHEARSAL_ACTOR_ID: ${{ inputs.actor_id }}
         run: python -m ops.pp2026_rehearsal
