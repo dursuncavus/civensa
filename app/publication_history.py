@@ -1,20 +1,30 @@
 """Read-only PP publication succession and reasoned reopen trace."""
 from bisect import bisect_left
+from json import loads
 
 from sqlalchemy import select
-from sqlalchemy.orm import joinedload
+from sqlalchemy.orm import defer, joinedload
 
-from .models import Department, Publication, SubmissionEvent
+from .models import AuditLog, Department, Publication, SubmissionEvent
 
 
 def publication_history(db, period_id, user, department_names):
     publications = db.scalars(select(Publication).where(Publication.period_id == period_id)
-        .options(joinedload(Publication.creator)).order_by(Publication.version.desc())).all()
+        .options(joinedload(Publication.creator), defer(Publication.snapshot_json))
+        .order_by(Publication.version.desc())).all()
     history = {publication.id: [] for publication in publications}
     result = dict(publications=publications, publication_reopens=history,
-                  superseded_by={}, stale_departments=[])
+                  superseded_by={}, stale_departments=[], approved_book_publications={})
     if not publications:
         return result
+    audit_rows = db.execute(select(AuditLog.entity_id, AuditLog.details).where(
+        AuditLog.action == 'publication_approved_book', AuditLog.entity_type == 'publication',
+        AuditLog.entity_id.in_(history))).all()
+    for publication_id, details in audit_rows:
+        audit_details = loads(details)
+        result['approved_book_publications'][publication_id] = dict(
+            approval_reference=audit_details.get('approval_reference', ''),
+            warning_count=audit_details.get('warning_count', 0))
     query = (select(SubmissionEvent, Department.name).join(Department,
         Department.id == SubmissionEvent.department_id)
         .where(SubmissionEvent.period_id == period_id, SubmissionEvent.event_type == 'reopen')

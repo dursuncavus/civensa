@@ -31,6 +31,9 @@ def register(app):
     from .main import require_user, require_strategy, ensure_department_editable, templates, session_period, pp_period, check_pp_access, require_pp_period, log
     from .book_export import display_code, display_catalogue_keys
     from .structure_service import department_display_name
+    from .audit_display import ACTION_LABELS
+    # Register this route's event without changing the shared audit module.
+    ACTION_LABELS['publication_approved_book'] = 'Onaylı kitaptan yayın oluşturuldu'
     templates.env.filters['display_code'] = display_code
     templates.env.filters['display_catalogue_keys'] = display_catalogue_keys
     templates.env.filters['department_display_name'] = department_display_name
@@ -376,7 +379,7 @@ def register(app):
             source_periods=db.scalars(select(ReportingPeriod).where(ReportingPeriod.id != period.id).order_by(ReportingPeriod.year.desc())).all(),
             section_copy_result=getattr(request.state, 'section_copy_result', None) or (json.loads(section_copy_audit.details)['new'] if section_copy_audit else None),
             departments=period_departments(db,period.id),scopes=scopes,reconciliation=cost_reconciliation(db,period.id),
-            department_names=department_names,
+            department_names=department_names, approved_book=approved_book_provenance(db, period.id),
             sections=rows(db,ReportSection,period.id),catalogue=rows(db,OfficialActivity,period.id),responsibilities={i.id:[r.department_id for r in db.scalars(select(ActivityResponsibility).where(ActivityResponsibility.official_activity_id==i.id)).all()] for i in rows(db,OfficialActivity,period.id)},
             **publication_history(db, period.id, user, department_names)))
 
@@ -543,6 +546,65 @@ def register(app):
         attach_publication_definitions(db, obj, definitions, user)
         db.commit();log(db,user,'publication_freeze','publication',obj.id)
         return RedirectResponse(f'/report-builder?period_id={pid}',303)
+
+    @app.post('/report-builder/publish-approved-book', dependencies=[Depends(require_pp_period)])
+    @recover_form(form_screen)
+    async def publish_approved_book(request:Request, db:Session=Depends(get_db), user:User=Depends(require_strategy)):
+        data = await request.form()
+        pid = session_period(request, db, data).id
+        period = db.scalar(select(ReportingPeriod).where(ReportingPeriod.id == pid).with_for_update())
+        if not period:
+            raise pp_error(404)
+        provenance = approved_book_provenance(db, pid)
+        if provenance is None:
+            raise pp_error(409, f'{period.year} onaylı kitap yayını oluşturulamadı: ilk yükleme kaynağı doğrulanamadı, '
+                'yüklemeden sonra içerik değişti veya dönem zaten yayımlandı. Kaynak ve yükleme geçmişini kontrol edin; '
+                'değişen içerik ve sonraki sürümler için normal yayın yolunu kullanın.', 'publish')
+        reason = str(data.get('approval_reference', '')).strip()
+        if not reason or len(reason) > 2000:
+            raise pp_error(422, f'{period.year} yayını için Onay dayanağı eksik veya çok uzun. '
+                'Onaylayan makamı, karar tarihini ve varsa karar numarasını en fazla 2.000 karakterle girin.', 'approval_reference')
+        checks = publication_checks(db, pid)
+        from .structure_service import period_name
+        names = {d.name:period_name(db, pid, d) for d in period_departments(db, pid)}
+        warning_families = {}
+        all_messages = []
+        for check in checks:
+            messages = list(check['errors']) + list(check.get('warnings', []))
+            for system_name, display_name in sorted(names.items(), key=lambda item: -len(item[0])):
+                if system_name != display_name:
+                    messages = [message.replace(system_name, display_name) for message in messages]
+            family = check['id'].split(':', 1)[0]
+            summary = warning_families.setdefault(family, dict(
+                check_count=0, error_count=0, warning_count=0, messages=set()))
+            summary['check_count'] += 1
+            summary['error_count'] += len(check['errors'])
+            summary['warning_count'] += len(check.get('warnings', []))
+            summary['messages'].update(messages)
+            all_messages.extend(messages)
+        warnings = [dict(check_family=family, check_count=summary['check_count'],
+            error_count=summary['error_count'], warning_count=summary['warning_count'],
+            unique_message_count=len(summary['messages']),
+            examples=sorted(summary['messages'])[:20])
+            for family, summary in sorted(warning_families.items())]
+        warnings_sha256 = hashlib.sha256(json_dumps(sorted(all_messages), ensure_ascii=False,
+            separators=(',', ':')).encode()).hexdigest()
+        from .activity_contract_service import freeze_program_payload, attach_publication_definitions
+        payload, definitions = freeze_program_payload(db, pid, user)
+        payload.update(provenance, approval_reference=reason, kaynak_kitap_uyarilari=warnings,
+                       kaynak_kitap_uyarilari_sha256=warnings_sha256)
+        raw = json_dumps(payload, ensure_ascii=False, sort_keys=True, separators=(',', ':'))
+        obj = Publication(period_id=pid, version=1, snapshot_json=raw,
+                          sha256=hashlib.sha256(raw.encode()).hexdigest(), created_by=user.id)
+        db.add(obj)
+        db.flush()
+        attach_publication_definitions(db, obj, definitions, user)
+        db.add(AuditLog(user_id=user.id, action='publication_approved_book', entity_type='publication',
+                       entity_id=obj.id, details=json_dumps(dict(provenance, approval_reference=reason,
+                           warning_count=sum(item['error_count'] + item['warning_count']
+                               for item in warnings)), ensure_ascii=False)))
+        db.commit()
+        return RedirectResponse(f'/report-builder?period_id={pid}', 303)
 
     @app.get('/publications/{publication_id}.{format}')
     def publication_export(publication_id:int,format:str,db:Session=Depends(get_db),user:User=Depends(require_strategy)):
