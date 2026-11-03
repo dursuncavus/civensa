@@ -392,10 +392,15 @@ def test_disposable_backup_rehearsal_chain(pilot, books, pg18_clients, tmp_path,
     before = snapshot(engine)
     proof = dump_backup(engine, tmp_path)
     dispatch(monkeypatch, tmp_path)
+    # The workflow shares its private TMPDIR with containerized PG clients.
+    # Pytest may have cached another tempfile directory before this dispatch.
+    monkeypatch.setenv('TMPDIR', str(tmp_path))
+    monkeypatch.setattr('tempfile.tempdir', None)
     monkeypatch.setenv('CIVENSA_REHEARSAL_CLEAR_CONFIRM', clear.CONFIRMATION if enabled else '')
     monkeypatch.setattr(rehearsal, 'download_verified_run', lambda _: (proof, {}))
-    assert rehearsal.main() == (0 if enabled else 1)
+    result = rehearsal.main()
     report = assert_private_summary(tmp_path, capsys)
+    assert result == (0 if enabled else 1), report
     assert snapshot(engine) == before
     if enabled:
         assert 'PASS' in report and 'Arşiv SHA256:' in report and '| indicators | 220 | 220 |' in report
