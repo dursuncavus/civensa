@@ -967,3 +967,7 @@ Next IDs: task CIV-168, decision D-373.
 ## D-373 (3 Nov 2026 ~14:10 Istanbul, lead, live session CV Lider 51) — CIV-167 merged
 #321 (CIV-167) updated to phase5 (head 1738d35), CI green (test 18/0, 18/1, secrets, backup-security), behind 0 → merged → 21812ec. Not on main/live yet. CIV-165 dispatched to the owner for Codex (D-372); no Codex PR yet at 14:10.
 Next IDs: task CIV-168, decision D-374.
+
+## D-374 (3 Nov 2026 14:22 Istanbul, lead, live session CV Lider 51) — CIV-165: two more 2026 spelling variants
+Codex (CIV-165) asked via the owner: description tables also spell "ETÜT VE PROJE MÜDÜRLÜĞÜ" (p. 225) and "Afet İşleri ve Risk Yönetim Müdürlüğü" (pp. 228–229) (DOĞRULANDI on the committed IDML). Decision: add both to name_map_2026.json → "Etüd Proje Müdürlüğü" and "Afet İşleri ve Risk Yönetimi Müdürlüğü". 2026 display names still come from the cards' "Sorumlu İdare" row (D-372 rule 3).
+Next IDs: task CIV-168, decision D-375.
