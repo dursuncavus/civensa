@@ -1033,3 +1033,14 @@ Next IDs: task CIV-172, decision D-383.
 BEYAN (owner 16:56): neither he nor Ali entered anything by hand into the 2026 period ("Hayır"). To be confirmed by the CIV-171 inventory ("Kullanıcı girişi var mı").
 Lead direction (proposal, owner approves before any live run): if CIV-171 shows HAYIR, package CIV-172 — a guarded "2026 pilot dönemini boşalt" step modelled on CIV-058 (fingerprint of the exact rows at plan time, archive snapshot, typed confirmation, fresh verified backup, fail closed on any user-created row or count change, period reset to draft/verified), rehearsed in the backup rehearsal chain clear → 2026 load → resume, then the owner runs clear + load live. CIV-172 is dispatched only after CIV-171 merges (both change ops/pp2026_rehearsal.py).
 Next IDs: task CIV-172, decision D-384.
+
+## D-384 (3 Nov 2026 ~17:50 Istanbul, lead, live session CV Lider 52) — CIV-170 head-to-head result: Gemini (Antigravity) wins; merged; hierarchy v1.7
+Entries (patches applied unchanged by the lead on phase5; CI judged each): #337 DeepSeek V4.1 Flash (unequal model, info only, D-381), #343 DeepSeek V4 Pro High, #342 Gemini 4 Argon High (Antigravity). CI: all three green on the first pushed commit (test 18/0 + 18/1, guards, secrets, backup-security).
+Scoring per D-379 (DOĞRULANDI by the lead):
+| Entry | Scope 20 | CI 25 | Acceptance 25 | Review 20 | Honest 10 | Total |
+| Gemini 4 Argon High | 20 | 25 | 25 | 15 | 10 | 95 |
+| DeepSeek V4 Pro High | 20 | 25 | 25 | 5 | 10 | 85 |
+| DeepSeek V4.1 Flash (info) | 20 | 25 | 25 | 5 | 10 | 85 |
+Review findings: HIGH (both DeepSeek entries) — `open('/dev/tty', 'r+')` text read/write needs a seekable file; /dev/tty is not seekable → io.UnsupportedOperation on every real terminal (lead reproduced under a pty: Flash and Pro forms FAIL, Gemini's raw `r+b, buffering=0` + TextIOWrapper OK; Gemini's RESULT.md names the same macOS behaviour). The error is caught as "no terminal", so the owner could never confirm a live apply; the stubbed tests could not see it. MEDIUM (all three) — plan-mode progress lines come after the slow planning work in one burst, D-327 lesson (c) not met for plan → follow-up later (phase lines during verify_book/plan), not blocking. Acceptance 5: all three touched existing tests only mechanically (confirmation stub; Gemini/Pro also the JSON split because the second ÖZET is on stdout) — no assertion weakened → full points. Reports: all three honest about what was not run.
+Decision: #342 merged → 3f7dec1 (Gemini code, Claude review = different family). #337 and #343 closed unmerged with their scores. Hierarchy v1.7: third coding lane = Gemini in Antigravity; DeepSeek back to backup lead + optional first-pass reviewer. Owner effort noted: Antigravity asks permission per new command (owner answers; allow clone/install/test, refuse git push).
+Next IDs: task CIV-172, decision D-385.
