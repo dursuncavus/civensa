@@ -144,7 +144,6 @@ def register(app):
 
     def split_screen(request, db, user, department_id, period_id, data=None, error=None, status=200, saved=0):
         from .economic_split_service import unallocated_cells, split_fingerprint, SPLIT_GROUPS
-        from .structure_service import period_name
         context(db,user,department_id,period_id)
         cells = unallocated_cells(db,period_id,department_id)
         cards = rows(db,ReportCard,period_id,department_id)
@@ -164,7 +163,6 @@ def register(app):
             pages[cell.id] = ', '.join(dict.fromkeys(page for page in source_pages if page))
         return templates.TemplateResponse(request,'economic_split.html',dict(user=user,
             department=db.get(Department,department_id),period=period,cells=cells,cards=cards,pages=pages,
-            department_label=period_name(db,period_id,db.get(Department,department_id)),
             groups=SPLIT_GROUPS,categories=ECONOMIC_CATEGORIES,fingerprint=split_fingerprint,
             data=data or {},error=error,blocked=blocked,saved=saved),status_code=status)
 
