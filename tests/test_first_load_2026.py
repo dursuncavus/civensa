@@ -1,5 +1,6 @@
 """CIV-165: approved 2026 book beside protected 2027 PP, local PostgreSQL only."""
 from copy import deepcopy
+from decimal import Decimal
 import json
 
 import pytest
@@ -157,7 +158,7 @@ def test_full_2026_rehearsal_beside_full_2027_and_candidate_report(approved2026,
         for activity in result['stored']['activities']:
             if activity['name'] in seen:
                 value = next(v for v in activity['costs'] if v['amount'] is not None)
-                value['amount'] += 1
+                value['amount'] = str(Decimal(value['amount']) + 1)
                 break
             seen.add(activity['name'])
         else:
