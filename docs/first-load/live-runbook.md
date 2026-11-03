@@ -369,3 +369,33 @@ parmak izlerinin değişmemesini kanıtlar. **Sentetik veri gerçek üretim yede
 provası değildir.** Gerçek artifact ve bağlantı/rol, giriş molası ve canlı sonuç
 ayrı operasyon sırasında doğrulanır; 2. adımın gerçek yedek PASS kaydı olmadan
 canlı adıma geçilmez.
+
+## 2026 yükleme
+
+2026 için CIV-165 yükleyicisini, **c162a1b2c3d4** şemasını ve onaylı kitap
+SHA256 öneki **1aaa0bb81c3c** kullanın. Sıra: **plan → doğrulanmış yedek →
+2026 PP verified backup rehearsal → apply → resume plan**. Canlı adımları yalnız
+sahibi yürütür; sorumlu provayı birleştirmeden sonra elle başlatır.
+
+Önce `scripts/first_load_live.py --year 2026 --organization-id … --actor-id …`
+ile salt okunur plan alın; bağlantıyı yukarıdaki gizli ortam değişkeni yöntemiyle
+verin. Sonra yeni **Daily verified database backup** alın. Actions'ta
+**2026 PP verified backup rehearsal** için varsayılan daldaki en yeni yeşil
+çalışmanın `backup_run_id` numarasını ve `book_confirmation=1aaa0bb81c3c`
+girin. Boş kurum/aktör alanları mevcut 2027 provasıyla aynı seçimi yapar.
+Prova yalnız şifresi çözülmüş yedeğin geçici yerel PostgreSQL 18 kopyasını kullanır.
+
+Summary'de **PASS**, **33 müdürlük / 105 kart / 226 gösterge**, sıfır ret ve
+başarısız müdürlük, iki 2027 hash koruma kontrolü, kalıcı gösterge kimliği
+atanan **0** ve devam planında **0 yazma / 33 atlanan** görülmelidir.
+“**2026 dönemi dolu**” sonucu varsa mevcut sayımları inceleyin; veriyi silerek
+veya `--resume` ile ilk yükleme korumasını aşmayın.
+
+PASS sonrasında sahibi veri girişini kapalı tutarak aynı 2026 komutuna
+`--apply --backup …` ekler ve **1aaa0bb81c3c** onayını verir. Sonra `--apply`
+olmadan `--resume` planı alır; bütün sayımlar 0, atlanan müdürlükler 33 olmalıdır.
+Kaynak prova yedeği 48 saatten yeni olabilir; canlı uygulamanın doğrulanmış
+yedeği ise **60 dakikadan yeni** olmalıdır. Prova ve onay 60 dakikalık pencereyi
+sıkıştırıyorsa **iki yedek** alın: prova için birincisi, canlı uygulamadan hemen
+önce ikincisi. Hash/sayım farkı veya herhangi bir FAIL varsa canlı uygulamaya
+geçmeyin; sorumlu Summary'de belirtilen ilk başarısız kontrolü incelesin.
