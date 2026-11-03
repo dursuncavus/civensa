@@ -1,4 +1,4 @@
-# CIVENSA AI HIERARCHY — v1.5
+# CIVENSA AI HIERARCHY — v1.6
 
 Status: ACTIVE — canonical for all Civensa work
 Date: 2026-10-24
@@ -6,6 +6,7 @@ Decided by: Dursun Çavuş (owner), designed by Claude
 Global rules: AI_WORKING_CONSTITUTION v1.2 (Google Drive, global rules folder; rules 36–38 apply).
 Overrides for Civensa: AI_ROUTING_MATRIX v1.0 sections 1, 2 and 6 (already marked invalid for Civensa).
 
+Change note (v1.6, D-378, owner 3 Nov 2026 15:52 "Deepseek tarafını da kodlama için kullanabilirsin"): DeepSeek may also implement small, self-contained tasks (§2 e). Gap: a third coding lane when both Codex lanes are busy. Acceptance check: trial CIV-170 — patch applies, CI green, Claude review passes with at most one fix round. Delivery via workspace patch (no GitHub account); Claude pushes, CI tests, Claude reviews. DeepSeek code is never reviewed or merged by DeepSeek acting as backup lead.
 Change note (v1.5, D-292, owner "kural onay" 27 Oct 2026): MERGE no longer needs behind 0 when the PR's files do not overlap the newer phase5 commits; full suite runs on every phase5 push; red phase5 → revert the last merge.
 Change note (v1.4, D-205, owner approved 24 Oct 03:24): canonical Civensa records move from Drive into the repository folder `docs/lead/` (this file, PROJECT_RULES, BACKUP_LEAD, STATE, DECISIONS, tasks). Drive keeps the global constitution and the read-only archive. §1 lead duties, §3 step 2/8, §6 and §7 updated; CI guard on `docs/lead/**`.
 Change note (v1.3, D-202): lead may merge reviewed PRs into the Phase 5 branch; "@codex" PR-comment follow-ups; scheduled lead runs (twice a night, early exit). DeepSeek access via local workspace mirror (D-201). Staging/main merges, deploys and live actions stay with the owner.
@@ -15,7 +16,7 @@ Change note (v1.0): Civensa decision authority moved from ChatGPT/Nexa to Claude
 
 ## Türkçe özet (kullanıcı için)
 - Civensa'da kararı Claude verir. Claude yokken DeepSeek sınırlı yetkiyle yedek liderdir; Claude dönünce onun kararlarını kontrol eder.
-- Kod yazan: Codex. Kodu, yazan model ailesinden farklı biri inceler (Claude; yedekte DeepSeek).
+- Kod yazan: Codex; küçük, kendi içinde kapalı işlerde DeepSeek de (v1.6, deneme CIV-170). Kodu, yazan model ailesinden farklı biri inceler (Claude; yedekte DeepSeek).
 - Claude, incelediği ve CI'ı yeşil olan PR'ları phase5 geliştirme dalına kendisi birleştirir; düzeltmeleri Codex'e PR yorumuyla gönderir; gecede iki kez kendiliğinden kontrol yapar. Ana dal, yayın ve canlı sistem yine Dursun'da.
 - YENİ (v1.4): Kurallar, güncel durum, kararlar ve görev paketleri GitHub deposundaki `docs/lead/` klasöründe. Drive'da sadece genel anayasa ve eski kayıt arşivi kalır.
 - Yeni Codex görevini Dursun başlatır. Görev metinleri İngilizce, Dursun ile konuşma Türkçe.
@@ -46,6 +47,7 @@ LEVEL 2 — WORKERS
 a) Codex (ChatGPT Pro) — implementation and tests. Receives only packages written by the lead (or backup lead within its limits) and lead follow-ups. Branch + pull request. Never merges, deploys, touches the live database, deletes data, or edits `docs/lead/**` / `AGENTS.md`.
 b) Gemini (Google AI Pro, notebook "Civensa – AI Kurumsal Raporlama Sistemi") — research gate and independent review of CRITICAL decisions. Output is evidence, not a decision.
 c) DeepSeek — optional first-pass reviewer for large PRs (D-191) while Claude is lead.
+e) DeepSeek — coder for small, self-contained tasks (v1.6, D-378). Package in English, saved as docs/lead/tasks/CIV-###.md and copied to the DeepSeek workspace civ###/TASK.md. Output: civ###/CIV-###.patch (git format-patch, one commit) + civ###/RESULT.md. Claude (Mac linked) applies it on branch task/civ-###-…, pushes, opens the PR, CI judges, Claude reviews (different model family). Same hard rules as Codex (AGENTS.md); never pushes, merges, deploys or touches the live database. A task touching migrations, auth or the live load path's write logic stays with Codex.
 d) GitHub Actions CI — test judge. TESTED = CI green on that exact commit.
 
 OUTSIDE THE CIVENSA CHAIN
