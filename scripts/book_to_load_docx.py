@@ -19,6 +19,10 @@ from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
 from docx.shared import Pt
 
+FIRST_LOAD_BOOKS = {
+    2026: ('2026-performans-programi_ONAYLI.idml', '1aaa0bb81c3cf4e245edaab42452a972b8a59ffc252814216c7628f6dbaf33d6'),
+    2027: ('2027-performans-programi_ONAYLI.idml', 'cbbf9018302d0a1d33d1dde0c4a64a2418d12b55cc29d046205371018673bd71'),
+}
 
 def norm(text):
     text = (text or '').replace('İ', 'i').replace('I', 'ı').lower()
@@ -34,7 +38,7 @@ def table_type(table):
     return 'other'
 
 
-def extract_tables(path, *, excluded=None):
+def extract_tables(path, *, excluded=None, reading_order=False):
     """Read the ZIP directly; retain the legacy span grid and print spread order."""
     with ZipFile(path) as archive:
         def xml(src):
@@ -43,6 +47,7 @@ def extract_tables(path, *, excluded=None):
         design = xml('designmap.xml')
         from scripts.idml_printed import story_locations
         stories, story_pages, spread_pages = story_locations(archive, design)
+        positions = _story_positions(archive, design, story_pages) if reading_order else {}
         tables = []
         for story in stories:
             sid = story.get('Self')
@@ -62,6 +67,10 @@ def extract_tables(path, *, excluded=None):
                             if (r, c) != (row, col):
                                 rows[r][c] = '→' if r == row else '↓'
                 table = dict(id=node.get('Self'), story=sid, spread=spread_index, page=page, rows=rows)
+                if reading_order and sid in story_pages:
+                    if sid not in positions:
+                        raise ValueError(f's.{page}: tablo okuma sırası belirlenemedi; yerleşimi kontrol edin.')
+                    table['position'] = (*positions[sid], len(tables))
                 if sid in story_pages:
                     tables.append(table)
                 elif excluded is not None:
@@ -70,19 +79,131 @@ def extract_tables(path, *, excluded=None):
         return tables
 
 
-def generate_docx(idml, name_map, output):
+def _story_positions(archive, design, story_pages):
+    """Printed frame geometry, rather than export IDs, defines 2026 section order."""
+    from scripts.idml_printed import IDENTITY, compose, transform, rectangle, intersects
+    positions = {}
+    for index, entry in enumerate(e for e in design if e.tag.endswith('Spread')
+                                 and e.get('src', '').startswith('Spreads/')):
+        pages, frames = {}, []
+        def walk(node, parent=IDENTITY):
+            matrix = compose(parent, transform(node))
+            if node.tag == 'Page':
+                top, left, bottom, right = map(float, node.get('GeometricBounds').split())
+                pages[node.get('Name')] = rectangle([(left, top), (right, bottom)], matrix)
+            if node.tag == 'TextFrame' and node.get('ParentStory'):
+                points = [tuple(map(float, p.get('Anchor').split()))
+                          for p in node.findall('./Properties//PathPointArray/PathPointType')]
+                if points:
+                    frames.append((node.get('ParentStory'), rectangle(points, matrix)))
+            for child in node:
+                walk(child, matrix)
+        walk(ET.fromstring(archive.read(entry.get('src'))))
+        for sid, bounds in frames:
+            spread, page = story_pages.get(sid, (None, None))
+            if spread == index and page in pages and intersects(bounds, pages[page]):
+                position = (bounds[1], bounds[0])
+                positions[sid] = min(positions.get(sid, position), position)
+    return positions
+
+
+GUIDANCE_2026 = {
+    '*Alt program kapsamında ilgili mevzuata göre idareye verilen hangi görevlerin yürütüldüğü ve Kalkınma Planı, Stratejik Plan gibi üst politika belgelerinde yer alan hedeflerden hangilerine ulaşılmasına katkı sağlandığına ilişkin açıklamalara yer verilecektir.',
+    '*Alt program hedefine ilişkin kısa ve öz bilgilere yer verilecektir.',
+}
+
+
+def prepare_2026_tables(extracted, names):
+    """Associate named book sections before moving economic tables next to cards."""
+    grouped, book_names, descriptions, dropped = {}, {}, [], []
+    current = description_department = None
+    unmapped = []
+    for source in extracted:
+        raw_names = ([r[1] for r in source['rows'] if norm(r[0]) == 'sorumluidare']
+                     if table_type(source) == 'card' else
+                     [source['rows'][0][1]] if norm(source['rows'][0][0]) == 'idarebirimadı' else [])
+        unmapped.extend(f"s.{source['page']}: {(raw or '').split('/')[-1].strip()}" for raw in raw_names
+                        if norm((raw or '').split('/')[-1]) not in names)
+    if unmapped:
+        raise ValueError('2026 müdürlük eşleşmesi yok: ' + '; '.join(sorted(set(unmapped)))
+                         + '. Ad eşleme dosyasını sorumluya doğrulatın.')
+    def mapped(raw, page):
+        base = (raw or '').split('/')[-1].strip()
+        if norm(base) not in names:
+            raise ValueError(f's.{page}: müdürlük eşleşmesi yok: {base}. Ad eşleme dosyasını sorumluya doğrulatın.')
+        return names[norm(base)]
+    for source in sorted(extracted, key=lambda t: (int(t['page']), t['position'])):
+        kind = table_type(source)
+        rows = source['rows']
+        if kind == 'card':
+            responsible = [r[1] for r in rows if norm(r[0]) == 'sorumluidare']
+            if len(responsible) != 1 or not responsible[0]:
+                raise ValueError(f"s.{source['page']}: tek Sorumlu İdare gerekli; kartı kontrol edin.")
+            current = mapped(responsible[0], source['page'])
+            canonical = responsible[0].strip()
+            if current in book_names and book_names[current] != canonical:
+                raise ValueError(f'{current}: Sorumlu İdare adları çelişiyor; kitabı kontrol edin.')
+            book_names[current] = canonical
+            kept, source_rows = [], []
+            for number, row in enumerate(rows, 1):
+                full = row[1:] and all(c == '→' for c in row[1:])
+                if full and row[0] in GUIDANCE_2026:
+                    dropped.append(dict(page=source['page'], id=source['id'], row=number, text=row[0]))
+                    continue
+                if full and norm(row[0]) != 'performansgöstergeleri':
+                    raise ValueError(f"s.{source['page']}: bilinmeyen tam satır: {row[0]}. Kaynağı sorumluya inceletin.")
+                kept.append(row)
+                source_rows.append(number)
+            source = dict(source, rows=kept, source_rows=source_rows)
+        elif norm(rows[0][0]) == 'idarebirimadı':
+            fields = {norm(r[0]): r[1] for r in rows}
+            description_department = mapped(fields['idarebirimadı'], source['page'])
+            required = ('programadı', 'altprogramadı', 'faaliyetadı', 'açıklama')
+            if any(not fields.get(k) for k in required):
+                raise ValueError(f"s.{source['page']}: faaliyet açıklama tablosu eksik; kaynağı kontrol edin.")
+            descriptions.append(dict(department=description_department, program=fields['programadı'],
+                subprogram=fields['altprogramadı'], name=fields['faaliyetadı'], explanation=fields['açıklama'],
+                page=source['page'], id=source['id']))
+            continue
+        elif kind == 'economic':
+            if not description_department:
+                raise ValueError(f"s.{source['page']}: ekonomik tablonun müdürlük başlığı yok.")
+        elif kind != 'cost':
+            continue
+        department = description_department if kind == 'economic' else current
+        if not department:
+            raise ValueError(f"s.{source['page']}: {kind} tablosunun müdürlüğü yok.")
+        grouped.setdefault(department, []).append(dict(source, department=department))
+        if kind in {'card', 'cost', 'economic'}:
+            from app.data_importer import _indicator_header_spec
+            header = next((r for r in source['rows'] if norm(r[0]) == 'performansgöstergesi'), None) if kind == 'card' else rows[0]
+            start = 3 if kind == 'card' else (2 if kind == 'economic' else 1)
+            specs = [_indicator_header_spec(h or '') for h in header[start:]] if header else []
+            if not specs or None in specs or len(set(specs)) != len(specs):
+                raise ValueError(f"s.{source['page']}: başlık yıl/değer türü tekil değil; sütunları kontrol edin.")
+    if set(grouped) != set(book_names) or any(d['department'] not in book_names for d in descriptions):
+        raise ValueError('Kart, açıklama ve ekonomik tablo müdürlük kapsamları uyuşmuyor; kitabı kontrol edin.')
+    return [t for group in grouped.values() for t in sorted(group, key=lambda t: {'card': 0, 'cost': 1, 'economic': 2}[table_type(t)])], book_names, descriptions, dropped
+
+
+def generate_docx(idml, name_map, output, *, year=2027):
     mapping = json.loads(Path(name_map).read_text(encoding='utf-8'))
     names = {norm(k): v for k, v in mapping['map'].items()}
     names.update({norm(v): v for v in mapping['map'].values()})
+    if year == 2026:
+        extra = json.loads((Path(__file__).resolve().parents[1] / 'tests/fixtures/first_load/name_map_2026.json').read_text(encoding='utf-8'))
+        names.update({norm(k): v for k, v in extra['map'].items()})
+        names.update({norm(v): v for v in extra['map'].values()})
+        names[norm('Yapı Kontrol Müdürlüğü')] = 'Yapı Kontrol Müdürlüğü'
     excluded = []
-    extracted = extract_tables(idml, excluded=excluded)
+    extracted = extract_tables(idml, excluded=excluded, reading_order=year == 2026)
     kinds = {'card': 0, 'membership': 1, 'cost': 2, 'economic': 3}
     tables = [t for t in extracted if table_type(t) in kinds and t['page'] != '?']
     tables.sort(key=lambda t: (int(t['page']) if t['page'].isdigit() else 10**6,
                                t['spread'], kinds[table_type(t)], t['id']))
     card_pages = Counter(t['page'] for t in tables if table_type(t) == 'card')
     ambiguous = sorted(page for page, count in card_pages.items() if count > 1)
-    if ambiguous:
+    if ambiguous and year == 2027:
         raise ValueError('Aynı sayfada birden fazla kart bulundu; faaliyet üyeliği sırası belirsiz. '
                          'Kitap kart yerleşimini kontrol edin: ' + ', '.join(ambiguous))
     report = dict(departments=[], unmapped=[], tables=[],
@@ -91,6 +212,10 @@ def generate_docx(idml, name_map, output):
                   non_printed=[dict(id=t['id'], story=t['story'], spread_pages=t['spread_pages'],
                                     header=t['rows'][0][:4] if t['rows'] else [], reason=t['reason'])
                                for t in excluded])
+    if year == 2026:
+        tables, book_names, descriptions, dropped = prepare_2026_tables(extracted, names)
+        report.update(book_department_names=book_names, catalogue_descriptions=descriptions,
+                      dropped_guidance=dropped)
     doc = Document()
     doc.styles['Normal'].font.name = 'Arial'
     doc.styles['Normal'].font.size = Pt(9)
@@ -109,17 +234,21 @@ def generate_docx(idml, name_map, output):
         if kind == 'card':
             for row in rows:
                 if norm(row[0]).startswith(('idarebirim', 'sorumluidare')):
-                    row[1] = system_name(row[1])
+                    if year == 2027 or norm(row[0]).startswith('idarebirim'):
+                        row[1] = source['department'] if year == 2026 else system_name(row[1])
             dept = next(row[1] for row in rows if norm(row[0]).startswith('idarebirim'))
             if dept != current:
                 doc.add_heading(dept, level=2)
                 current = dept
                 report['departments'].append(dept)
-            start = next(i for i, row in enumerate(rows) if (row[0] or '').startswith('Performans Göstergesi'))
+            start = next(i for i, row in enumerate(rows) if (norm(row[0]) == 'performansgöstergesi'
+                         if year == 2026 else (row[0] or '').startswith('Performans Göstergesi')))
             end = next((i for i, row in enumerate(rows) if norm(row[0]).startswith('göstergeyeilişkin')), len(rows))
             indicator_rows = set(range(start, end))
         provenance = dict(table_number=len(report['tables']) + 1, page=source['page'],
                           id=source['id'], type=kind, department=current)
+        if year == 2026 and 'source_rows' in source:
+            provenance['source_rows'] = source['source_rows']
         report['tables'].append(provenance)
         table = doc.add_table(rows=len(rows), cols=max(map(len, rows)))
         ncols = len(table.columns)
