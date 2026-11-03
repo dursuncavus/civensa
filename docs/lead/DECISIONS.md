@@ -1068,3 +1068,8 @@ Rehearsal run 41662709108 (backup 41647341988) — FAIL by design ("2026 dönemi
 Reading: all user activity is 17–21 Sep 2026 pilot setup/test on PP plan values of an older 2026 book (220 vs approved 226 indicators); no Faaliyet Raporu work, no actuals, no evidence. Consistent with the owner's "no manual entry" (D-383) for real 2026 work; the department-role edits were pilot test accounts (BELİRSİZ who, roles only).
 Proposal (deleting live data → owner decides): CIV-172 = guarded replacement of this pilot period — exact fingerprint of today's counts above (any difference → refuse), full JSON archive of the removed rows inside the run's audit record + fresh verified backup, typed confirmation, then the approved 2026 book loads into the same period (reset to draft/verified). Rehearsed end-to-end on the backup chain before any live run.
 Next IDs: task CIV-174 (CIV-172 reserved), decision D-389.
+
+## D-389 (3 Nov 2026 18:26 Istanbul, owner + lead, live session CV Lider 52) — CIV-172 approved and dispatched
+BEYAN (owner 18:26, "CIV-172 onay"): approves building and rehearsing the guarded replacement of the 2026 pilot period (D-388). The live run needs a separate owner approval later (deleting live data).
+Package docs/lead/tasks/CIV-172.md dispatched to Codex (GPT-6.1 Sol, yüksek): new scripts/clear_pilot_2026.py (pinned fingerprint = D-388 counts, hard refusals for any FR/actual/evidence/publication row, gzip+base64 archive in an audit record with sha256, typed sentence "2026 PILOT DONEMINI SIL" via /dev/tty, fresh backup, 2027 hash unchanged, period reset to draft/verified), rehearsal chain clear → load in the backup workflow. Does not edit scripts/first_load_live.py (CIV-173 in progress there).
+Next IDs: task CIV-174, decision D-390.
