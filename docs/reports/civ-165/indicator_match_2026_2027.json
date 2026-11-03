@@ -1,0 +1,4423 @@
+[
+  {
+    "department": "Sağlık İşleri Müdürlüğü",
+    "name": "Yıl içinde sunulan sağlık hizmeti sayısı",
+    "page": "96",
+    "unit": "Adet",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 9,
+      "column_number": 6,
+      "value": null,
+      "raw_text": "*13.500",
+      "state": "needs_review"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Sağlık İşleri Müdürlüğü",
+    "name": "Toplum sağlığı eğitimleri ve danışmanlık hizmetleri sayısı",
+    "page": "96",
+    "unit": "Adet",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 9,
+      "column_number": 6,
+      "value": null,
+      "raw_text": "*7",
+      "state": "needs_review"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Sağlık İşleri Müdürlüğü",
+    "name": "İlçe genelinde vektör ile mücadele edilen yer sayısı",
+    "page": "97",
+    "unit": "Adet",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 9,
+      "column_number": 6,
+      "value": "900",
+      "raw_text": "900",
+      "state": "verified"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Sağlık İşleri Müdürlüğü",
+    "name": "İlçe genelinde dezenfekte edilen yer sayısı",
+    "page": "97",
+    "unit": "Adet",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 10,
+      "column_number": 6,
+      "value": "130",
+      "raw_text": "130",
+      "state": "verified"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Sağlık İşleri Müdürlüğü",
+    "name": "Kırılgan gruplara (Engellilere) yönelik farkındalığı artırmak amaçlı yapılan etkinlik sayısı",
+    "page": "97",
+    "unit": "Adet",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 9,
+      "column_number": 6,
+      "value": "25",
+      "raw_text": "25",
+      "state": "verified"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Ruhsat ve Denetim Müdürlüğü",
+    "name": "Denetimi yapılan iş yeri sayısı",
+    "page": "99",
+    "unit": "Oran (%)",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 9,
+      "column_number": 6,
+      "value": null,
+      "raw_text": "*1.340",
+      "state": "needs_review"
+    },
+    "candidates": [
+      {
+        "name": "SH05.PG01. Denetimi yapılan işyeri sayısı",
+        "page": "100",
+        "unit": "Adet",
+        "planned_2026": {
+          "year": 2026,
+          "kind": "planned",
+          "row_number": 9,
+          "column_number": 5,
+          "value": "1340",
+          "raw_text": "1340",
+          "state": "verified"
+        },
+        "unit_equal": false,
+        "target_equal": false
+      }
+    ]
+  },
+  {
+    "department": "Ruhsat ve Denetim Müdürlüğü",
+    "name": "Verilen gayri sıhhi işyeri ruhsatı sayısı",
+    "page": "99",
+    "unit": "Adet",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 9,
+      "column_number": 6,
+      "value": null,
+      "raw_text": "*510",
+      "state": "needs_review"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Ruhsat ve Denetim Müdürlüğü",
+    "name": "Verilen sıhhi işyeri ruhsatı sayısı",
+    "page": "99",
+    "unit": "Adet",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 10,
+      "column_number": 6,
+      "value": null,
+      "raw_text": "*42",
+      "state": "needs_review"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Ruhsat ve Denetim Müdürlüğü",
+    "name": "Verilen umuma açık işyeri ruhsatı sayısı",
+    "page": "99",
+    "unit": "Adet",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 11,
+      "column_number": 6,
+      "value": null,
+      "raw_text": "*100",
+      "state": "needs_review"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Ruhsat ve Denetim Müdürlüğü",
+    "name": "Toplum düzenine yönelik gelen şikâyetlerin süresinde çözülme oranı",
+    "page": "100",
+    "unit": "Oran (%)",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 9,
+      "column_number": 6,
+      "value": null,
+      "raw_text": "*100",
+      "state": "needs_review"
+    },
+    "candidates": [
+      {
+        "name": "SH05.PG05. Toplum düzenine yönelik gelen şikâyetlerin süresinde çözülme oranı",
+        "page": "100",
+        "unit": "Yüzde (%)",
+        "planned_2026": {
+          "year": 2026,
+          "kind": "planned",
+          "row_number": 13,
+          "column_number": 5,
+          "value": "100",
+          "raw_text": "100",
+          "state": "verified"
+        },
+        "unit_equal": false,
+        "target_equal": false
+      }
+    ]
+  },
+  {
+    "department": "Zabıta Müdürlüğü",
+    "name": "Mühürleme İşlemleri ve Mühür Fekki İşlemi sayısı",
+    "page": "101",
+    "unit": "Adet",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 9,
+      "column_number": 6,
+      "value": null,
+      "raw_text": "*650",
+      "state": "needs_review"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Zabıta Müdürlüğü",
+    "name": "Yakalanan seyyar satıcı ve dilenci sayısı",
+    "page": "101",
+    "unit": "Adet",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 9,
+      "column_number": 6,
+      "value": null,
+      "raw_text": "*2500",
+      "state": "needs_review"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Zabıta Müdürlüğü",
+    "name": "İş yerlerinde yapılan fiyat ve etiket denetim sayısı",
+    "page": "102",
+    "unit": "Adet",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 9,
+      "column_number": 6,
+      "value": null,
+      "raw_text": "*500",
+      "state": "needs_review"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Zabıta Müdürlüğü",
+    "name": "Yıl içerisinde başta kabahatler kanunu olmak üzere kesilen tüm para cezalarının sayısı.",
+    "page": "102",
+    "unit": "Adet",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 9,
+      "column_number": 6,
+      "value": null,
+      "raw_text": "*7800",
+      "state": "needs_review"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Zabıta Müdürlüğü",
+    "name": "Denetimler sonucunda ruhsatsız faaliyet gösterdiği tespit edilen iş yeri sayısı",
+    "page": "103",
+    "unit": "Adet",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 9,
+      "column_number": 6,
+      "value": null,
+      "raw_text": "*95",
+      "state": "needs_review"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Zabıta Müdürlüğü",
+    "name": "Çevre Kirliliğinin önlenmesine dair yapılan işlem sayısı.",
+    "page": "103",
+    "unit": "Adet",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 9,
+      "column_number": 6,
+      "value": null,
+      "raw_text": "*110",
+      "state": "needs_review"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Zabıta Müdürlüğü",
+    "name": "Vatandaşlardan gelen istek ve şikâyetlerin cevaplandırılma süresi",
+    "page": "104",
+    "unit": "Gün",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 9,
+      "column_number": 6,
+      "value": null,
+      "raw_text": "*2",
+      "state": "needs_review"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Zabıta Müdürlüğü",
+    "name": "Vatandaşlardan gelen İstek ve Şikâyetlerin zamanında Cevaplanma oranı",
+    "page": "104",
+    "unit": "Oran (%)",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 10,
+      "column_number": 6,
+      "value": null,
+      "raw_text": "*100",
+      "state": "needs_review"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Zabıta Müdürlüğü",
+    "name": "Vatandaşların sunulan hizmetlerden memnuniyet oranı",
+    "page": "104",
+    "unit": "Oran (%)",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 11,
+      "column_number": 6,
+      "value": null,
+      "raw_text": "*96",
+      "state": "needs_review"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Veteriner İşleri Müdürlüğü",
+    "name": "2026 yılı sonuna kadar hayvan barınağı inşaatının tamamlanması",
+    "page": "106",
+    "unit": "Adet",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 9,
+      "column_number": 6,
+      "value": null,
+      "raw_text": "*1",
+      "state": "needs_review"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Veteriner İşleri Müdürlüğü",
+    "name": "Toplanan, rehabilite edilen ve alındığı yere bırakılan sokak hayvanı sayısı",
+    "page": "106",
+    "unit": "Adet",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 9,
+      "column_number": 6,
+      "value": "5500",
+      "raw_text": "5500",
+      "state": "verified"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Veteriner İşleri Müdürlüğü",
+    "name": "Kısırlaştırma işlemi yapılan hayvan sayısı",
+    "page": "107",
+    "unit": "Adet",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 9,
+      "column_number": 6,
+      "value": "2500",
+      "raw_text": "2500",
+      "state": "verified"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Veteriner İşleri Müdürlüğü",
+    "name": "Muayene edilen hayvan sayısı",
+    "page": "107",
+    "unit": "Adet",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 9,
+      "column_number": 6,
+      "value": "6500",
+      "raw_text": "6500",
+      "state": "verified"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Veteriner İşleri Müdürlüğü",
+    "name": "Veterinerlik hizmetlerinden duyulan memnuniyet oranı",
+    "page": "108",
+    "unit": "Oran (%)",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 9,
+      "column_number": 6,
+      "value": "95",
+      "raw_text": "95",
+      "state": "verified"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Veteriner İşleri Müdürlüğü",
+    "name": "4 Ekim dünya hayvanlar gününde çeşitli etkinlikler düzenlemek",
+    "page": "108",
+    "unit": "Adet",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 9,
+      "column_number": 6,
+      "value": "1",
+      "raw_text": "1",
+      "state": "verified"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Emlak İstimlak Müdürlüğü",
+    "name": "2942 sayılı Kanun kapsamında haksız el atma nedeniyle başlatılan davaların takibi ve sonuçlandırılması oranı",
+    "page": "112",
+    "unit": "Oran (%)",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 9,
+      "column_number": 6,
+      "value": null,
+      "raw_text": "*100",
+      "state": "needs_review"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Emlak İstimlak Müdürlüğü",
+    "name": "Yatırım Müdürlükleri tarafından talep edilen kamusal alan işgallerine ilişkin kamulaştırma işlemlerinin tamamlanma sayısı",
+    "page": "112",
+    "unit": "Adet",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 9,
+      "column_number": 6,
+      "value": "3",
+      "raw_text": "3",
+      "state": "verified"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Emlak İstimlak Müdürlüğü",
+    "name": "Belediyenin taşınmaz varlıklarının hukuki durumu belirlenerek, tapu kayıtlarının mevzuata uygun hale getirilme sayısı",
+    "page": "112",
+    "unit": "Adet",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 10,
+      "column_number": 6,
+      "value": "3",
+      "raw_text": "3",
+      "state": "verified"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Emlak İstimlak Müdürlüğü",
+    "name": "Tespit edilen işgallere ait ecrimisil işlemlerinin başlatılması oranı",
+    "page": "113",
+    "unit": "Oran (%)",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 9,
+      "column_number": 6,
+      "value": null,
+      "raw_text": "*97",
+      "state": "needs_review"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Emlak İstimlak Müdürlüğü",
+    "name": "Belediye kiracılarına ait kira borçlarının tahsilinin sağlanması oranı",
+    "page": "113",
+    "unit": "Oran",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 9,
+      "column_number": 6,
+      "value": null,
+      "raw_text": "*78",
+      "state": "needs_review"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Emlak İstimlak Müdürlüğü",
+    "name": "Kira sözleşmesi sona eren taşınmazların yeniden kiralama ihalelerinin yapılması sayısı",
+    "page": "113",
+    "unit": "Adet",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 10,
+      "column_number": 6,
+      "value": null,
+      "raw_text": "*18",
+      "state": "needs_review"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Emlak İstimlak Müdürlüğü",
+    "name": "Diğer Kurum ve Kuruluşları ile Belediyemiz arasında irtifak ve intifa hakkı tesisi, tahsis, kiralama ve devir işlemleriyle ilgili taleplerin karşılanması sayısı",
+    "page": "114",
+    "unit": "Adet",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 9,
+      "column_number": 6,
+      "value": "12",
+      "raw_text": "12",
+      "state": "verified"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Fen İşleri Müdürlüğü",
+    "name": "Kent genelinde farklı ihtiyaçlar için yapılacak olan kamu binası sayısı",
+    "page": "116",
+    "unit": "Adet",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 9,
+      "column_number": 6,
+      "value": null,
+      "raw_text": "*1",
+      "state": "needs_review"
+    },
+    "candidates": [
+      {
+        "name": "SH11.PG01. Kent Genelinde Farklı İhtiyaçlar İçin Yapılacak Olan Kamu Binası Sayısı",
+        "page": "115",
+        "unit": "Adet",
+        "planned_2026": {
+          "year": 2026,
+          "kind": "planned",
+          "row_number": 9,
+          "column_number": 5,
+          "value": "5",
+          "raw_text": "5",
+          "state": "verified"
+        },
+        "unit_equal": true,
+        "target_equal": false
+      }
+    ]
+  },
+  {
+    "department": "Fen İşleri Müdürlüğü",
+    "name": "Diğer kamu binalarının yenileme ve tadilat yapım işi sayısı",
+    "page": "116",
+    "unit": "Adet",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 10,
+      "column_number": 6,
+      "value": null,
+      "raw_text": "*60",
+      "state": "needs_review"
+    },
+    "candidates": [
+      {
+        "name": "SH11.PG02. Diğer Kamu Binalarının Yenileme Ve Tadilat Yapım İşi Sayısı",
+        "page": "115",
+        "unit": "Adet",
+        "planned_2026": {
+          "year": 2026,
+          "kind": "planned",
+          "row_number": 10,
+          "column_number": 5,
+          "value": "150",
+          "raw_text": "150",
+          "state": "verified"
+        },
+        "unit_equal": true,
+        "target_equal": false
+      }
+    ]
+  },
+  {
+    "department": "Fen İşleri Müdürlüğü",
+    "name": "Kent genelinde yapılan parke taş ile yol yapım bakım ve onarım işi ile asfaltlama yapım, bakım, onarım işi",
+    "page": "116",
+    "unit": "M2",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 9,
+      "column_number": 6,
+      "value": "70000",
+      "raw_text": "70000",
+      "state": "verified"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Fen İşleri Müdürlüğü",
+    "name": "Kent genelinde yapılacak olan alt yapı bakım ve onarım işi",
+    "page": "117",
+    "unit": "Ton",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 9,
+      "column_number": 6,
+      "value": "60000",
+      "raw_text": "60000",
+      "state": "verified"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Fen İşleri Müdürlüğü",
+    "name": "Kent genelinde yapılacak olan alt yapı bakım ve onarım işi",
+    "page": "117",
+    "unit": "Mahal/Adet",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 9,
+      "column_number": 6,
+      "value": "60",
+      "raw_text": "60",
+      "state": "verified"
+    },
+    "candidates": []
+  },
+  {
+    "department": "İmar ve Şehircilik Müdürlüğü",
+    "name": "Meri mevzuat kapsamında yıllık olarak alınan yapı ruhsatı başvuru sayısı",
+    "page": "119",
+    "unit": "Adet",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 9,
+      "column_number": 6,
+      "value": "1250",
+      "raw_text": "1250",
+      "state": "verified"
+    },
+    "candidates": []
+  },
+  {
+    "department": "İmar ve Şehircilik Müdürlüğü",
+    "name": "Şikâyetleri çözüme kavuşturulan vatandaşların memnuniyet oranı",
+    "page": "119",
+    "unit": "Oran (%)",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 10,
+      "column_number": 6,
+      "value": "94",
+      "raw_text": "94",
+      "state": "verified"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Park ve Bahçeler Müdürlüğü",
+    "name": "Bitkisel ve yapısal peyzaj düzenlemelerinin yapımı",
+    "page": "120",
+    "unit": "M2",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 9,
+      "column_number": 6,
+      "value": "50000",
+      "raw_text": "50.000",
+      "state": "verified"
+    },
+    "candidates": [
+      {
+        "name": "SH16.PG01. Bitkisel ve yapısal peyzaj düzenlemelerinin yapımı",
+        "page": "125",
+        "unit": "m2",
+        "planned_2026": {
+          "year": 2026,
+          "kind": "planned",
+          "row_number": 9,
+          "column_number": 5,
+          "value": null,
+          "raw_text": "50,000",
+          "state": "needs_review"
+        },
+        "unit_equal": true,
+        "target_equal": false
+      }
+    ]
+  },
+  {
+    "department": "Park ve Bahçeler Müdürlüğü",
+    "name": "Bölge geneli bitkisel ve yapısal peyzaj alanlarının bakımı ve onarımı",
+    "page": "120",
+    "unit": "M2",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 10,
+      "column_number": 6,
+      "value": "12000000",
+      "raw_text": "12.000.000",
+      "state": "verified"
+    },
+    "candidates": [
+      {
+        "name": "SH16/PG03. Bölge geneli bitkisel ve yapısal peyzaj alanlarının bakımı ve onarımı",
+        "page": "125",
+        "unit": "m2",
+        "planned_2026": {
+          "year": 2026,
+          "kind": "planned",
+          "row_number": 10,
+          "column_number": 5,
+          "value": "12000000",
+          "raw_text": "12.000.000",
+          "state": "verified"
+        },
+        "unit_equal": true,
+        "target_equal": true
+      }
+    ]
+  },
+  {
+    "department": "Park ve Bahçeler Müdürlüğü",
+    "name": "Kullanıma sunulan ve bakım onarımı yapılan kent mobilyası sayısı (Bank, spor, çocuk oyun elemanı, heykel vb.)",
+    "page": "120",
+    "unit": "Adet",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 11,
+      "column_number": 6,
+      "value": "2000",
+      "raw_text": "2.000",
+      "state": "verified"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Park ve Bahçeler Müdürlüğü",
+    "name": "Bitkisel peyzaj elemanlarının dikim ve bakım sayısı",
+    "page": "120",
+    "unit": "Adet",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 12,
+      "column_number": 6,
+      "value": "250000",
+      "raw_text": "250.000",
+      "state": "verified"
+    },
+    "candidates": [
+      {
+        "name": "SH016/PG03. Bitkisel peyzaj elemanlarının dikim ve bakım sayısı",
+        "page": "125",
+        "unit": "Adet",
+        "planned_2026": {
+          "year": 2026,
+          "kind": "planned",
+          "row_number": 11,
+          "column_number": 5,
+          "value": null,
+          "raw_text": "250,000",
+          "state": "needs_review"
+        },
+        "unit_equal": true,
+        "target_equal": false
+      }
+    ]
+  },
+  {
+    "department": "Park ve Bahçeler Müdürlüğü",
+    "name": "Onaylanan Peyzaj Proje ve İskân Sayısı",
+    "page": "120",
+    "unit": "Adet",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 13,
+      "column_number": 6,
+      "value": "650",
+      "raw_text": "650",
+      "state": "verified"
+    },
+    "candidates": [
+      {
+        "name": "SH016/PG05. Onaylanan Peyzaj Proje ve İskân Sayısı",
+        "page": "125",
+        "unit": "Adet",
+        "planned_2026": {
+          "year": 2026,
+          "kind": "planned",
+          "row_number": 13,
+          "column_number": 5,
+          "value": "650",
+          "raw_text": "650",
+          "state": "verified"
+        },
+        "unit_equal": true,
+        "target_equal": true
+      }
+    ]
+  },
+  {
+    "department": "Park ve Bahçeler Müdürlüğü",
+    "name": "İklime uygun, dayanıklı ve az su tüketen bitki dikim ve bakım sayısı",
+    "page": "121",
+    "unit": "Adet",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 9,
+      "column_number": 6,
+      "value": "3000",
+      "raw_text": "3000",
+      "state": "verified"
+    },
+    "candidates": [
+      {
+        "name": "SH016/PG04. İklime uygun, dayanıklı ve az su tüketen bitki dikim ve bakım sayısı",
+        "page": "125",
+        "unit": "Adet",
+        "planned_2026": {
+          "year": 2026,
+          "kind": "planned",
+          "row_number": 12,
+          "column_number": 5,
+          "value": "3000",
+          "raw_text": "3000",
+          "state": "verified"
+        },
+        "unit_equal": true,
+        "target_equal": true
+      }
+    ]
+  },
+  {
+    "department": "Etüd Proje Müdürlüğü",
+    "name": "Tamamlanan kamu yapıları projelerinin sayısı",
+    "page": "123",
+    "unit": "Adet",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 9,
+      "column_number": 6,
+      "value": null,
+      "raw_text": "*2",
+      "state": "needs_review"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Etüd Proje Müdürlüğü",
+    "name": "Kamu yapıları projelerinde görevlendirilen personel sayısı",
+    "page": "123",
+    "unit": "Kişi",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 10,
+      "column_number": 6,
+      "value": null,
+      "raw_text": "*4",
+      "state": "needs_review"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Etüd Proje Müdürlüğü",
+    "name": "Tamamlanan kamu yapıları projelerinin toplam proje sayısına oranı:",
+    "page": "123",
+    "unit": "Oran (%)",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 11,
+      "column_number": 6,
+      "value": null,
+      "raw_text": "*33",
+      "state": "needs_review"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Etüd Proje Müdürlüğü",
+    "name": "Kamu yapıları projelerinde halktan gelen öneri ve geri bildirim sayısı",
+    "page": "123",
+    "unit": "Adet",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 12,
+      "column_number": 6,
+      "value": null,
+      "raw_text": "*1",
+      "state": "needs_review"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Etüd Proje Müdürlüğü",
+    "name": "Yıllık olarak değerlendirilen sigara içme alanı talep sayısı",
+    "page": "123",
+    "unit": "Adet",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 13,
+      "column_number": 6,
+      "value": null,
+      "raw_text": "*8",
+      "state": "needs_review"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Etüd Proje Müdürlüğü",
+    "name": "Yıllık olarak denetlenen tabela sayısı",
+    "page": "123",
+    "unit": "Adet",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 14,
+      "column_number": 6,
+      "value": null,
+      "raw_text": "*390",
+      "state": "needs_review"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Etüd Proje Müdürlüğü",
+    "name": "İlan, reklam panosu, cephe ve sigara içme alanı düzenlemelerinde görevli personel sayısı",
+    "page": "123",
+    "unit": "Adet",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 15,
+      "column_number": 6,
+      "value": null,
+      "raw_text": "*3",
+      "state": "needs_review"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Etüd Proje Müdürlüğü",
+    "name": "İlan, reklam panosu, cephe ve sigara içme alanı düzenleme taleplerinin sonuçlanma oranı",
+    "page": "123",
+    "unit": "Oran (%)",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 16,
+      "column_number": 6,
+      "value": null,
+      "raw_text": "*45",
+      "state": "needs_review"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Etüd Proje Müdürlüğü",
+    "name": "2029 yılı sonuna kadar Büyükçekmece'nin kentsel estetik iyileştirme çalışmalarına yönelik memnuniyet düzeyini, %95'e çıkarmak",
+    "page": "123",
+    "unit": "Oran (%)",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 17,
+      "column_number": 6,
+      "value": null,
+      "raw_text": "*92",
+      "state": "needs_review"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Etüd Proje Müdürlüğü",
+    "name": "Erişilebilirlik odaklı plan/proje sayısı",
+    "page": "124",
+    "unit": "Adet",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 9,
+      "column_number": 6,
+      "value": "1",
+      "raw_text": "1",
+      "state": "verified"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Plan Proje Müdürlüğü",
+    "name": "Çalışması Yürütülen Plan sayısı",
+    "page": "126",
+    "unit": "Adet",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 9,
+      "column_number": 6,
+      "value": null,
+      "raw_text": "*6",
+      "state": "needs_review"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Plan Proje Müdürlüğü",
+    "name": "Çalışması Yürütülen Plan Değişikliği sayısı",
+    "page": "126",
+    "unit": "Adet",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 10,
+      "column_number": 6,
+      "value": null,
+      "raw_text": "*10",
+      "state": "needs_review"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Plan Proje Müdürlüğü",
+    "name": "Çalışması Yürütülen Parselasyon Çalışmaları sayısı",
+    "page": "126",
+    "unit": "Adet",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 11,
+      "column_number": 6,
+      "value": null,
+      "raw_text": "*7",
+      "state": "needs_review"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Plan Proje Müdürlüğü",
+    "name": "Plana ilişkin hazırlanan imar durum belgesi, inşaat istikamet belgesi ve kot kesit belgesi sayısı",
+    "page": "126",
+    "unit": "Adet",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 12,
+      "column_number": 6,
+      "value": null,
+      "raw_text": "*5000",
+      "state": "needs_review"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Plan Proje Müdürlüğü",
+    "name": "Vatandaşların memnuniyet oranı",
+    "page": "126",
+    "unit": "Oran (%)",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 13,
+      "column_number": 6,
+      "value": null,
+      "raw_text": "*95",
+      "state": "needs_review"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Yapı Kontrol Müdürlüğü",
+    "name": "Yıllık olarak tespit edilen ve yasal işlem başlatılan kaçak yapı sayısı",
+    "page": "128",
+    "unit": "Adet",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 9,
+      "column_number": 6,
+      "value": "400",
+      "raw_text": "400",
+      "state": "verified"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Yapı Kontrol Müdürlüğü",
+    "name": "Yıllık olarak denetlenen ruhsatlı inşaat sayısı",
+    "page": "128",
+    "unit": "Adet",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 10,
+      "column_number": 6,
+      "value": "2500",
+      "raw_text": "2500",
+      "state": "verified"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Yapı Kontrol Müdürlüğü",
+    "name": "Şikâyetleri çözüme kavuşturulan vatandaşların memnuniyet oranı",
+    "page": "128",
+    "unit": "Oran (%)",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 11,
+      "column_number": 6,
+      "value": "94",
+      "raw_text": "94",
+      "state": "verified"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Kentsel Dönüşüm Müdürlüğü",
+    "name": "2029 yılı sonuna kadar yeni yapılan binalarda yağmur suyu hasadı sisteminin kurulması oranı",
+    "page": "132",
+    "unit": "Oran (%)",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 9,
+      "column_number": 6,
+      "value": "100",
+      "raw_text": "100",
+      "state": "verified"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Kentsel Dönüşüm Müdürlüğü",
+    "name": "Roman vatandaşların yaşadığı bölgede kültürel dokuya uygun mimariyle tamamlanan kentsel dönüşüm projelerinin tamamlanma oranı",
+    "page": "132",
+    "unit": "Oran (%)",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 10,
+      "column_number": 6,
+      "value": "20",
+      "raw_text": "20",
+      "state": "verified"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Kentsel Dönüşüm Müdürlüğü",
+    "name": "Vatandaş Katılımıyla Başlatılan Kentsel Dönüşüm Projesi Sayısı",
+    "page": "132",
+    "unit": "Adet",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 11,
+      "column_number": 6,
+      "value": "210",
+      "raw_text": "210",
+      "state": "verified"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Kentsel Dönüşüm Müdürlüğü",
+    "name": "Kentsel Dönüşüm Strateji Eylem Planı'nın Uygulama Oranı",
+    "page": "132",
+    "unit": "Oran (%)",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 12,
+      "column_number": 6,
+      "value": "100",
+      "raw_text": "100",
+      "state": "verified"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Kentsel Dönüşüm Müdürlüğü",
+    "name": "Büyükçekmece'de sürdürülebilir bina uygulamalarının yaygınlaşma oranı (%) (yeni binalar üzerinden)",
+    "page": "132",
+    "unit": "Oran (%)",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 13,
+      "column_number": 6,
+      "value": "10",
+      "raw_text": "10",
+      "state": "verified"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Afet İşleri ve Risk Yönetimi Müdürlüğü",
+    "name": "Afet sonrasın için modernize edilen mevcut toplanma alanlarının sayısı",
+    "page": "134",
+    "unit": "Adet",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 9,
+      "column_number": 6,
+      "value": "4",
+      "raw_text": "4",
+      "state": "verified"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Afet İşleri ve Risk Yönetimi Müdürlüğü",
+    "name": "Afet bilgilendirme konusunda dağıtılan broşür sayısı",
+    "page": "134",
+    "unit": "Adet",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 10,
+      "column_number": 6,
+      "value": "12000",
+      "raw_text": "12000",
+      "state": "verified"
+    },
+    "candidates": [
+      {
+        "name": "SH01/PG01. Afet bilgilendirme konusunda dağıtılan broşür sayısı",
+        "page": "141",
+        "unit": "Adet",
+        "planned_2026": {
+          "year": 2026,
+          "kind": "planned",
+          "row_number": 9,
+          "column_number": 5,
+          "value": "12000",
+          "raw_text": "12000",
+          "state": "verified"
+        },
+        "unit_equal": true,
+        "target_equal": true
+      },
+      {
+        "name": "SH01/PG01. Afet bilgilendirme konusunda dağıtılan broşür sayısı",
+        "page": "143",
+        "unit": "Adet",
+        "planned_2026": {
+          "year": 2026,
+          "kind": "planned",
+          "row_number": 9,
+          "column_number": 5,
+          "value": "12000",
+          "raw_text": "12000",
+          "state": "verified"
+        },
+        "unit_equal": true,
+        "target_equal": true
+      }
+    ]
+  },
+  {
+    "department": "Afet İşleri ve Risk Yönetimi Müdürlüğü",
+    "name": "Afet gönüllülerine verilen eğitim sayısı",
+    "page": "134",
+    "unit": "Adet",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 9,
+      "column_number": 6,
+      "value": "200",
+      "raw_text": "200",
+      "state": "verified"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Afet İşleri ve Risk Yönetimi Müdürlüğü",
+    "name": "Yıl içinde yapılan afet tatbikatı sayısı",
+    "page": "135",
+    "unit": "Adet",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 9,
+      "column_number": 6,
+      "value": "13",
+      "raw_text": "13",
+      "state": "verified"
+    },
+    "candidates": [
+      {
+        "name": "SH01/PG02.Yıl içinde yapılan afet tatbikatı sayısı",
+        "page": "141",
+        "unit": "Adet",
+        "planned_2026": {
+          "year": 2026,
+          "kind": "planned",
+          "row_number": 10,
+          "column_number": 5,
+          "value": "13",
+          "raw_text": "13",
+          "state": "verified"
+        },
+        "unit_equal": true,
+        "target_equal": true
+      },
+      {
+        "name": "SH01/PG02.Yıl içinde yapılan afet tatbikatı sayısı",
+        "page": "143",
+        "unit": "Adet",
+        "planned_2026": {
+          "year": 2026,
+          "kind": "planned",
+          "row_number": 10,
+          "column_number": 5,
+          "value": "13",
+          "raw_text": "13",
+          "state": "verified"
+        },
+        "unit_equal": true,
+        "target_equal": true
+      }
+    ]
+  },
+  {
+    "department": "Afet İşleri ve Risk Yönetimi Müdürlüğü",
+    "name": "Afet konusunda eğitim aldırılan personel sayısı",
+    "page": "135",
+    "unit": "Kişi",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 10,
+      "column_number": 6,
+      "value": "200",
+      "raw_text": "200",
+      "state": "verified"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Afet İşleri ve Risk Yönetimi Müdürlüğü",
+    "name": "2029 Yılı sonuna kadar afet risk değerlendirme raporu hazırlanma oranı",
+    "page": "135",
+    "unit": "Oran (%)",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 9,
+      "column_number": 6,
+      "value": "100",
+      "raw_text": "100",
+      "state": "verified"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Afet İşleri ve Risk Yönetimi Müdürlüğü",
+    "name": "Afet temelli 24 mahalleyi kapsayacak şekilde 2029 yılı sonuna kadar detaylı risk azaltma çalışmaları analizi oranı",
+    "page": "135",
+    "unit": "Oran (%)",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 10,
+      "column_number": 6,
+      "value": "100",
+      "raw_text": "100",
+      "state": "verified"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Afet İşleri ve Risk Yönetimi Müdürlüğü",
+    "name": "İlçe 2026 yılı sonuna kadar genelinde ortak bir haberleşme ağı kurulması oranı",
+    "page": "135",
+    "unit": "Oran (%)",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 11,
+      "column_number": 6,
+      "value": "100",
+      "raw_text": "100",
+      "state": "verified"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Afet İşleri ve Risk Yönetimi Müdürlüğü",
+    "name": "İlçe 2026 yılı sonuna kadar genelinde ortak bir haberleşme ağı kurulması oranı",
+    "page": "136",
+    "unit": "Oran (%)",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 9,
+      "column_number": 6,
+      "value": "50",
+      "raw_text": "50",
+      "state": "verified"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Afet İşleri ve Risk Yönetimi Müdürlüğü",
+    "name": "Afet risk değerlendirme sonuçlarının ilgili kurum ve kuruluşlarla paylaşma oranı",
+    "page": "136",
+    "unit": "Oran (%)",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 10,
+      "column_number": 6,
+      "value": "100",
+      "raw_text": "100",
+      "state": "verified"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Temizlik İşleri Müdürlüğü",
+    "name": "Transfer istasyonuna nakledilen evsel atık (çöp) miktarı",
+    "page": "140",
+    "unit": "Ton",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 9,
+      "column_number": 6,
+      "value": "110000",
+      "raw_text": "110.000",
+      "state": "verified"
+    },
+    "candidates": [
+      {
+        "name": "SH24/PG01. Transfer istasyonuna nakledilen evsel atık (çöp) miktarı",
+        "page": "148",
+        "unit": "Ton",
+        "planned_2026": {
+          "year": 2026,
+          "kind": "planned",
+          "row_number": 9,
+          "column_number": 5,
+          "value": "110000",
+          "raw_text": "110.000",
+          "state": "verified"
+        },
+        "unit_equal": true,
+        "target_equal": true
+      }
+    ]
+  },
+  {
+    "department": "Temizlik İşleri Müdürlüğü",
+    "name": "Ortak alanlara yerleştirilen çöp konteyneri ve çöp kutusu sayısı",
+    "page": "140",
+    "unit": "Adet",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 10,
+      "column_number": 6,
+      "value": "750",
+      "raw_text": "750",
+      "state": "verified"
+    },
+    "candidates": [
+      {
+        "name": "SH24/PG02. Ortak alanlara yerleştirilen çöp konteyneri ve çöp kutusu sayısı",
+        "page": "148",
+        "unit": "Adet",
+        "planned_2026": {
+          "year": 2026,
+          "kind": "planned",
+          "row_number": 10,
+          "column_number": 5,
+          "value": "750",
+          "raw_text": "750",
+          "state": "verified"
+        },
+        "unit_equal": true,
+        "target_equal": true
+      }
+    ]
+  },
+  {
+    "department": "Temizlik İşleri Müdürlüğü",
+    "name": "2029 yılı sonuna kadar projelendirilmiş ve hayata geçirilmiş faaliyetlerin toplam sayısı",
+    "page": "140",
+    "unit": "Adet",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 11,
+      "column_number": 6,
+      "value": "2",
+      "raw_text": "2",
+      "state": "verified"
+    },
+    "candidates": [
+      {
+        "name": "SH24/PG03. 2029 yılı sonuna kadar projelendirilmiş ve hayata geçirilmiş faaliyetlerin toplam sayısı",
+        "page": "148",
+        "unit": "Adet",
+        "planned_2026": {
+          "year": 2026,
+          "kind": "planned",
+          "row_number": 11,
+          "column_number": 5,
+          "value": "2",
+          "raw_text": "2",
+          "state": "verified"
+        },
+        "unit_equal": true,
+        "target_equal": true
+      }
+    ]
+  },
+  {
+    "department": "Temizlik İşleri Müdürlüğü",
+    "name": "Belirlenen hizmet standartları doğrultusunda, gelen talep ve şikâyetlerin hedeflenen süre içinde çözümlenme oranı",
+    "page": "140",
+    "unit": "Oran (%)",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 12,
+      "column_number": 6,
+      "value": "100",
+      "raw_text": "100",
+      "state": "verified"
+    },
+    "candidates": [
+      {
+        "name": "SH24/PG04. Belirlenen hizmet standartları doğrultusunda, gelen talep ve şikâyetlerin hedeflenen süre içinde çözümlenme oranı",
+        "page": "148",
+        "unit": "Yüzde",
+        "planned_2026": {
+          "year": 2026,
+          "kind": "planned",
+          "row_number": 12,
+          "column_number": 5,
+          "value": "100",
+          "raw_text": "100",
+          "state": "verified"
+        },
+        "unit_equal": false,
+        "target_equal": true
+      }
+    ]
+  },
+  {
+    "department": "Çevre Koruma ve Kontrol Müdürlüğü",
+    "name": "Büyükçekmece Sürdürülebilir Enerji ve İklim Eylem Planı kapsamında uygulanacak ve desteklenecek projelerin artırılması",
+    "page": "142",
+    "unit": "Adet",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 9,
+      "column_number": 6,
+      "value": "12",
+      "raw_text": "12",
+      "state": "verified"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Çevre Koruma ve Kontrol Müdürlüğü",
+    "name": "İlçe genelinde Sıfır Atık uygulamalarının artırılması.",
+    "page": "142",
+    "unit": "Oran (%)",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 9,
+      "column_number": 6,
+      "value": "10",
+      "raw_text": "10",
+      "state": "verified"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Çevre Koruma ve Kontrol Müdürlüğü",
+    "name": "Toplanan Geri Kazanılabilir Atık Miktarı (Plastik, Kâğıt, Cam, Metal, Tekstil, Bitkisel Atık Yağ, Atık Pil, Elektronik Atık)",
+    "page": "142",
+    "unit": "Ton",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 10,
+      "column_number": 6,
+      "value": "3858",
+      "raw_text": "3858",
+      "state": "verified"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Çevre Koruma ve Kontrol Müdürlüğü",
+    "name": "Meri mevzuatlar kapsamında ilçe genelinde kontrol ve denetimlerin artırılması.",
+    "page": "143",
+    "unit": "Oran %",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 9,
+      "column_number": 6,
+      "value": "10",
+      "raw_text": "10",
+      "state": "verified"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Çevre Koruma ve Kontrol Müdürlüğü",
+    "name": "Marmara Denizi ve Büyükçekmece Gölü'nün ekolojik dengesi için farkındalık kampanyaları düzenlemek.",
+    "page": "143",
+    "unit": "Adet",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 9,
+      "column_number": 6,
+      "value": "7",
+      "raw_text": "7",
+      "state": "verified"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Çevre Koruma ve Kontrol Müdürlüğü",
+    "name": "İklim değişikliği farkındalığı yaratmak için paydaşlara yönelik bilgilendirme etkinlikleri düzenlemek.",
+    "page": "143",
+    "unit": "Adet",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 10,
+      "column_number": 6,
+      "value": "14",
+      "raw_text": "14",
+      "state": "verified"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Tarımsal Hizmetler Müdürlüğü",
+    "name": "Kentsel yeşil alanlarda yerel üretim ve sorumlu tüketimi teşvik etmek amacıyla oluşturulan kent bostanları sayısı",
+    "page": "145",
+    "unit": "Adet",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 9,
+      "column_number": 6,
+      "value": null,
+      "raw_text": "*18",
+      "state": "needs_review"
+    },
+    "candidates": [
+      {
+        "name": "SH26/PG01. Kentsel yeşil alanlarda yerel üretim ve sorumlu tüketimi teşvik etmek amacıyla oluşturulan kent bostanları sayısı",
+        "page": "154",
+        "unit": "Adet",
+        "planned_2026": {
+          "year": 2026,
+          "kind": "planned",
+          "row_number": 9,
+          "column_number": 5,
+          "value": "13",
+          "raw_text": "13",
+          "state": "verified"
+        },
+        "unit_equal": true,
+        "target_equal": false
+      }
+    ]
+  },
+  {
+    "department": "Tarımsal Hizmetler Müdürlüğü",
+    "name": "Sürdürülebilir tarım ilkeleri doğrultusunda kişi başına düşen tarımsal üretimde kullanılan alan kapasitesini artırmak",
+    "page": "145",
+    "unit": "Da/Dekar",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 9,
+      "column_number": 6,
+      "value": "160",
+      "raw_text": "160",
+      "state": "verified"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Tarımsal Hizmetler Müdürlüğü",
+    "name": "*Akıllı tarım sistemlerine geçiş ve doğa dostu tarım uygulamaları konularında destek verilen proje/uygulama sayısı.",
+    "page": "146",
+    "unit": "Adet",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 9,
+      "column_number": 6,
+      "value": null,
+      "raw_text": "*1",
+      "state": "needs_review"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Tarımsal Hizmetler Müdürlüğü",
+    "name": "2029 yılı sonuna kadar Tarım ve gıda sektörüne ilişkin değer zinciri raporu hazırlama oranı",
+    "page": "146",
+    "unit": "Oran (%)",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 9,
+      "column_number": 6,
+      "value": "20",
+      "raw_text": "20",
+      "state": "verified"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Tarımsal Hizmetler Müdürlüğü",
+    "name": "Tarımsal ürünlere coğrafi işaret almak için yapılan müracaat sayısı",
+    "page": "147",
+    "unit": "Adet",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 9,
+      "column_number": 6,
+      "value": "0",
+      "raw_text": "0",
+      "state": "verified"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Tarımsal Hizmetler Müdürlüğü",
+    "name": "Tarımsal üretimde istihdam edilen kadın sayısı",
+    "page": "147",
+    "unit": "Kişi",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 9,
+      "column_number": 6,
+      "value": "8",
+      "raw_text": "8",
+      "state": "verified"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Tarımsal Hizmetler Müdürlüğü",
+    "name": "Üretim ve satış yapılmak amaçlı kurulan ve desteklenen kooperatif sayısı",
+    "page": "148",
+    "unit": "Adet",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 9,
+      "column_number": 6,
+      "value": "1",
+      "raw_text": "1",
+      "state": "verified"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Tarımsal Hizmetler Müdürlüğü",
+    "name": "Tarımda sulama sistemlerinin modernizasyonu ile su ve enerji verimliliğinin artırılmasına yönelik yapılan proje sayısı",
+    "page": "148",
+    "unit": "Adet",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 9,
+      "column_number": 6,
+      "value": "1",
+      "raw_text": "1",
+      "state": "verified"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Tarımsal Hizmetler Müdürlüğü",
+    "name": "Dikey ve topraksız tarım yöntemleriyle yapılan çalışma sayısı",
+    "page": "149",
+    "unit": "Adet",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 9,
+      "column_number": 6,
+      "value": "1",
+      "raw_text": "1",
+      "state": "verified"
+    },
+    "candidates": [
+      {
+        "name": "SH27/PG03. Dikey ve topraksız tarım yöntemleriyle yapılan çalışma sayısı",
+        "page": "155",
+        "unit": "Adet",
+        "planned_2026": {
+          "year": 2026,
+          "kind": "planned",
+          "row_number": 11,
+          "column_number": 5,
+          "value": null,
+          "raw_text": "-",
+          "state": "needs_review"
+        },
+        "unit_equal": true,
+        "target_equal": false
+      }
+    ]
+  },
+  {
+    "department": "İklim Değişikliği ve Sıfır Atık Müdürlüğü",
+    "name": "İklim değişikliği ve sürdürülebilirlik hedefleri için sürdürülebilir Enerji ve İklim Eylem Planını takip etmek.",
+    "page": "151",
+    "unit": "Adet",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 9,
+      "column_number": 6,
+      "value": "12",
+      "raw_text": "12",
+      "state": "verified"
+    },
+    "candidates": []
+  },
+  {
+    "department": "İklim Değişikliği ve Sıfır Atık Müdürlüğü",
+    "name": "İlçe genelinde Sıfır Atık uygulamalarının artırılması",
+    "page": "151",
+    "unit": "Oran (%)",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 9,
+      "column_number": 6,
+      "value": "10",
+      "raw_text": "10",
+      "state": "verified"
+    },
+    "candidates": [
+      {
+        "name": "SH28/PG02. İlçe genelinde Sıfır Atık uygulamalarının artırılması",
+        "page": "158",
+        "unit": "Oran (%)",
+        "planned_2026": {
+          "year": 2026,
+          "kind": "planned",
+          "row_number": 10,
+          "column_number": 5,
+          "value": "10",
+          "raw_text": "10",
+          "state": "verified"
+        },
+        "unit_equal": true,
+        "target_equal": true
+      }
+    ]
+  },
+  {
+    "department": "İklim Değişikliği ve Sıfır Atık Müdürlüğü",
+    "name": "Toplanan Geri Kazanılabilir Atık Miktarı (Plastik, Kâğıt, Cam, Metal, Tekstil, Bitkisel Atık Yağ, Atık Pil, Elektronik Atık)",
+    "page": "152",
+    "unit": "Ton",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 9,
+      "column_number": 6,
+      "value": "3858",
+      "raw_text": "3858",
+      "state": "verified"
+    },
+    "candidates": [
+      {
+        "name": "SH28/PG03. Toplanan Geri Kazanılabilir Atık Miktarı (Plastik, Kâğıt, Cam, Metal, Tekstil, Bitkisel Atık Yağ, Atık Pil, Elektronik Atık)",
+        "page": "158",
+        "unit": "Ton",
+        "planned_2026": {
+          "year": 2026,
+          "kind": "planned",
+          "row_number": 11,
+          "column_number": 5,
+          "value": "1785",
+          "raw_text": "1785",
+          "state": "verified"
+        },
+        "unit_equal": true,
+        "target_equal": false
+      }
+    ]
+  },
+  {
+    "department": "İklim Değişikliği ve Sıfır Atık Müdürlüğü",
+    "name": "İlçe genelinde Sıfır Atık Uygulamalarının Artırlması",
+    "page": "152",
+    "unit": "Oran (%)",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 10,
+      "column_number": 6,
+      "value": "10",
+      "raw_text": "10",
+      "state": "verified"
+    },
+    "candidates": []
+  },
+  {
+    "department": "İklim Değişikliği ve Sıfır Atık Müdürlüğü",
+    "name": "Meri mevzuatlar kapsamında ilçe genelinde kontrol ve denetimlerin artırılması",
+    "page": "152",
+    "unit": "Oran (%)",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 9,
+      "column_number": 6,
+      "value": "10",
+      "raw_text": "10",
+      "state": "verified"
+    },
+    "candidates": []
+  },
+  {
+    "department": "İklim Değişikliği ve Sıfır Atık Müdürlüğü",
+    "name": "İlçemiz sınırları içerisinde Marmara Denizi ve Büyükçekmece Gölünün korunması için farkındalık çalışmalarının artırılması",
+    "page": "153",
+    "unit": "Adet",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 9,
+      "column_number": 6,
+      "value": "7",
+      "raw_text": "7",
+      "state": "verified"
+    },
+    "candidates": []
+  },
+  {
+    "department": "İklim Değişikliği ve Sıfır Atık Müdürlüğü",
+    "name": "Çevre ile ilgili bilgilendirme ve etkinlik sayılarının artırılması",
+    "page": "153",
+    "unit": "Adet",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 9,
+      "column_number": 6,
+      "value": "14",
+      "raw_text": "14",
+      "state": "verified"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Kültür, Sanat ve Sosyal İşler Müdürlüğü",
+    "name": "Uluslararası İstanbul Büyükçekmece Kültür ve Sanat Festivalini geniş kapsamlı olarak sürdürmek.",
+    "page": "156",
+    "unit": "Adet",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 9,
+      "column_number": 6,
+      "value": "1",
+      "raw_text": "1",
+      "state": "verified"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Kültür, Sanat ve Sosyal İşler Müdürlüğü",
+    "name": "Kentlilerin ücretsiz olarak faydalanabileceği el sanatları atölyeleri açmak",
+    "page": "156",
+    "unit": "Adet",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 9,
+      "column_number": 6,
+      "value": "45",
+      "raw_text": "45",
+      "state": "verified"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Kültür, Sanat ve Sosyal İşler Müdürlüğü",
+    "name": "Tematik sokaklar (Yeşilçam Sokağı” ile “Şairler ve Yazarlar Sokağı) oluşturmak.",
+    "page": "157",
+    "unit": "Adet",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 9,
+      "column_number": 6,
+      "value": "0",
+      "raw_text": "0",
+      "state": "verified"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Kültür, Sanat ve Sosyal İşler Müdürlüğü",
+    "name": "Müze, festival, şenlik, sergi, konser sayısını artırarak bunları çeşitlendirmek.",
+    "page": "157",
+    "unit": "Adet",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 10,
+      "column_number": 6,
+      "value": "34",
+      "raw_text": "34",
+      "state": "verified"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Kültür, Sanat ve Sosyal İşler Müdürlüğü",
+    "name": "Marmara denizi kıyısında olan Büyükçekmece yat limanı; çevresini kültür ve sanat faaliyetleri için cazibe merkezi haline getirmek için yapılan etkinlik sayısı (Adet) (Konser, sergi, söyleyiş vs…)",
+    "page": "157",
+    "unit": "Adet",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 11,
+      "column_number": 6,
+      "value": "16",
+      "raw_text": "16",
+      "state": "verified"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Kültür, Sanat ve Sosyal İşler Müdürlüğü",
+    "name": "Halkın bilimsel okuryazarlığını artırma konusunda yapılan çalışma sayısı",
+    "page": "158",
+    "unit": "Adet",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 9,
+      "column_number": 6,
+      "value": null,
+      "raw_text": "*8",
+      "state": "needs_review"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Kültür, Sanat ve Sosyal İşler Müdürlüğü",
+    "name": "Yapay zekâ, Metaverse, yazılım ve kodlama alanlarında düzenlenen eğitim sayısı",
+    "page": "158",
+    "unit": "Adet",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 10,
+      "column_number": 6,
+      "value": null,
+      "raw_text": "*7",
+      "state": "needs_review"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Kültür, Sanat ve Sosyal İşler Müdürlüğü",
+    "name": "Düzenlenen Web sayfası ve grafik tasarım kursları sayısı:",
+    "page": "158",
+    "unit": "Adet",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 11,
+      "column_number": 6,
+      "value": null,
+      "raw_text": "*6",
+      "state": "needs_review"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Kültür, Sanat ve Sosyal İşler Müdürlüğü",
+    "name": "Üniversiteler ve teknoloji transfer ofisleriyle yapılan işbirliği sayısı",
+    "page": "158",
+    "unit": "Adet",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 9,
+      "column_number": 6,
+      "value": "5",
+      "raw_text": "5",
+      "state": "verified"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Kültür, Sanat ve Sosyal İşler Müdürlüğü",
+    "name": "Kitap okumayı teşvik edecek faaliyetlerin düzenleme ve destek verilmesi sayısı",
+    "page": "159",
+    "unit": "Adet",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 9,
+      "column_number": 6,
+      "value": "60",
+      "raw_text": "60",
+      "state": "verified"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Gençlik ve Spor İşleri Müdürlüğü",
+    "name": "Kano, SUP, bisiklet ve diğer spor branşlarına kayıt olan genç sayısı",
+    "page": "161",
+    "unit": "Adet",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 9,
+      "column_number": 6,
+      "value": "3761",
+      "raw_text": "3.761",
+      "state": "verified"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Gençlik ve Spor İşleri Müdürlüğü",
+    "name": "Gençlerin sporla ilgili sosyal medya hesaplarını takip etme sayısı",
+    "page": "161",
+    "unit": "Adet",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 10,
+      "column_number": 6,
+      "value": "1914",
+      "raw_text": "1.914",
+      "state": "verified"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Gençlik ve Spor İşleri Müdürlüğü",
+    "name": "Gençler tarafından spor tesislerinin kullanım oranı",
+    "page": "161",
+    "unit": "Oran (%)",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 11,
+      "column_number": 6,
+      "value": "100",
+      "raw_text": "100",
+      "state": "verified"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Gençlik ve Spor İşleri Müdürlüğü",
+    "name": "Spor tesislerinden faydalanan gençlerin memnuniyet oranı",
+    "page": "161",
+    "unit": "Oran (%)",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 12,
+      "column_number": 6,
+      "value": "100",
+      "raw_text": "100",
+      "state": "verified"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Gençlik ve Spor İşleri Müdürlüğü",
+    "name": "Gençlerin düzenlenen spor etkinliklerine (yarışmalar, turnuvalar, kamplar vb.) katılım oranı",
+    "page": "162",
+    "unit": "Oran (%)",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 9,
+      "column_number": 6,
+      "value": "100",
+      "raw_text": "100",
+      "state": "verified"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Gençlik ve Spor İşleri Müdürlüğü",
+    "name": "Spor tesislerinden faydalanan toplumun farklı kesimlerinin, farklı mahalleler ve bölgelerdeki tesislerin toplam kapasitesine oranı",
+    "page": "162",
+    "unit": "Oran (%)",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 10,
+      "column_number": 6,
+      "value": "100",
+      "raw_text": "100",
+      "state": "verified"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Gençlik ve Spor İşleri Müdürlüğü",
+    "name": "Yaş gruplarına göre (çocuk, genç, yetişkin, yaşlı ve kırılgan gruplar) spor etkinliklerine katılan kursiyer sayısı",
+    "page": "163",
+    "unit": "Adet",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 9,
+      "column_number": 6,
+      "value": null,
+      "raw_text": "*17.786",
+      "state": "needs_review"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Gençlik ve Spor İşleri Müdürlüğü",
+    "name": "Belediye spor tesislerinde eğitim verilen (çocuk, genç, yetişkin, yaşlı ve kırılgan gruplar) spor branşı sayısı",
+    "page": "163",
+    "unit": "Adet",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 10,
+      "column_number": 6,
+      "value": "31",
+      "raw_text": "31",
+      "state": "verified"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Gençlik ve Spor İşleri Müdürlüğü",
+    "name": "Kırılgan gruplara yönelik (otizm, down sendromu, fiziksel engelliler vb.) spor etkinliklerine katılım sayısı",
+    "page": "164",
+    "unit": "Adet",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 9,
+      "column_number": 6,
+      "value": "28",
+      "raw_text": "28",
+      "state": "verified"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Gençlik ve Spor İşleri Müdürlüğü",
+    "name": "Geri bildirimlere göre etkinlikleri geliştirmek ve memnuniyeti artırmak.",
+    "page": "164",
+    "unit": "Oran (%)",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 10,
+      "column_number": 6,
+      "value": "100",
+      "raw_text": "100",
+      "state": "verified"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Sosyal Destek Müdürlüğü",
+    "name": "Gıda, giyim gibi temel ihtiyaçları ayni olarak karşılanan hane sayısı",
+    "page": "166",
+    "unit": "Adet",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 9,
+      "column_number": 6,
+      "value": "37000",
+      "raw_text": "37.000",
+      "state": "verified"
+    },
+    "candidates": [
+      {
+        "name": "SH36/PG01. Gıda, giyim gibi temel ihtiyaçları ayni olarak karşılanan hane sayısı",
+        "page": "175",
+        "unit": "Adet",
+        "planned_2026": {
+          "year": 2026,
+          "kind": "planned",
+          "row_number": 9,
+          "column_number": 5,
+          "value": "37000",
+          "raw_text": "37.000",
+          "state": "verified"
+        },
+        "unit_equal": true,
+        "target_equal": true
+      },
+      {
+        "name": "SH37/PG01. Gıda, giyim gibi temel ihtiyaçları ayni olarak karşılanan hane sayısı",
+        "page": "176",
+        "unit": "Adet",
+        "planned_2026": {
+          "year": 2026,
+          "kind": "planned",
+          "row_number": 9,
+          "column_number": 5,
+          "value": "37000",
+          "raw_text": "37.000",
+          "state": "verified"
+        },
+        "unit_equal": true,
+        "target_equal": true
+      },
+      {
+        "name": "SH38/PG01. Gıda, giyim gibi temel ihtiyaçları ayni olarak karşılanan hane sayısı",
+        "page": "177",
+        "unit": "Adet",
+        "planned_2026": {
+          "year": 2026,
+          "kind": "planned",
+          "row_number": 9,
+          "column_number": 5,
+          "value": "37000",
+          "raw_text": "37.000",
+          "state": "verified"
+        },
+        "unit_equal": true,
+        "target_equal": true
+      }
+    ]
+  },
+  {
+    "department": "Sosyal Destek Müdürlüğü",
+    "name": "Nakdi destek hizmetlerinden yararlanan aile sayısı",
+    "page": "166",
+    "unit": "Adet",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 10,
+      "column_number": 6,
+      "value": "3200",
+      "raw_text": "3.200",
+      "state": "verified"
+    },
+    "candidates": [
+      {
+        "name": "SH36/PG02. Nakdi destek hizmetlerinden yararlanan aile sayısı",
+        "page": "175",
+        "unit": "Adet",
+        "planned_2026": {
+          "year": 2026,
+          "kind": "planned",
+          "row_number": 10,
+          "column_number": 5,
+          "value": "3200",
+          "raw_text": "3.200",
+          "state": "verified"
+        },
+        "unit_equal": true,
+        "target_equal": true
+      },
+      {
+        "name": "SH37/PG02. Nakdi destek hizmetlerinden yararlanan aile sayısı",
+        "page": "176",
+        "unit": "Adet",
+        "planned_2026": {
+          "year": 2026,
+          "kind": "planned",
+          "row_number": 10,
+          "column_number": 5,
+          "value": "3200",
+          "raw_text": "3.200",
+          "state": "verified"
+        },
+        "unit_equal": true,
+        "target_equal": true
+      },
+      {
+        "name": "SH38/PG02. Nakdi destek hizmetlerinden yararlanan aile sayısı",
+        "page": "177",
+        "unit": "Adet",
+        "planned_2026": {
+          "year": 2026,
+          "kind": "planned",
+          "row_number": 10,
+          "column_number": 5,
+          "value": "3200",
+          "raw_text": "3.200",
+          "state": "verified"
+        },
+        "unit_equal": true,
+        "target_equal": true
+      }
+    ]
+  },
+  {
+    "department": "Sosyal Destek Müdürlüğü",
+    "name": "Sosyal tespit çalışması kapsamında değerlendirilen hane sayısı",
+    "page": "166",
+    "unit": "Adet",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 11,
+      "column_number": 6,
+      "value": "32720",
+      "raw_text": "32.720",
+      "state": "verified"
+    },
+    "candidates": [
+      {
+        "name": "SH36/PG03. Sosyal tespit çalışması kapsamında değerlendirilen hane sayısı",
+        "page": "175",
+        "unit": "Adet",
+        "planned_2026": {
+          "year": 2026,
+          "kind": "planned",
+          "row_number": 11,
+          "column_number": 5,
+          "value": "32720",
+          "raw_text": "32.720",
+          "state": "verified"
+        },
+        "unit_equal": true,
+        "target_equal": true
+      },
+      {
+        "name": "SH37/PG03. Sosyal tespit çalışması kapsamında değerlendirilen hane sayısı",
+        "page": "176",
+        "unit": "Adet",
+        "planned_2026": {
+          "year": 2026,
+          "kind": "planned",
+          "row_number": 11,
+          "column_number": 5,
+          "value": "32720",
+          "raw_text": "32.720",
+          "state": "verified"
+        },
+        "unit_equal": true,
+        "target_equal": true
+      },
+      {
+        "name": "SH38/PG03. Sosyal tespit çalışması kapsamında değerlendirilen hane sayısı",
+        "page": "177",
+        "unit": "Adet",
+        "planned_2026": {
+          "year": 2026,
+          "kind": "planned",
+          "row_number": 11,
+          "column_number": 5,
+          "value": "32720",
+          "raw_text": "32.720",
+          "state": "verified"
+        },
+        "unit_equal": true,
+        "target_equal": true
+      }
+    ]
+  },
+  {
+    "department": "Sosyal Destek Müdürlüğü",
+    "name": "Vatandaş şikâyet ve önerilerinin değerlendirilme oranı",
+    "page": "166",
+    "unit": "Oran (%)",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 12,
+      "column_number": 6,
+      "value": "90",
+      "raw_text": "90",
+      "state": "verified"
+    },
+    "candidates": [
+      {
+        "name": "SH36/PG05. Vatandaş şikâyet ve önerilerinin değerlendirilme oranı",
+        "page": "175",
+        "unit": "Oran (%)",
+        "planned_2026": {
+          "year": 2026,
+          "kind": "planned",
+          "row_number": 13,
+          "column_number": 5,
+          "value": "90",
+          "raw_text": "90",
+          "state": "verified"
+        },
+        "unit_equal": true,
+        "target_equal": true
+      },
+      {
+        "name": "SH37/PG05. Vatandaş şikâyet ve önerilerinin değerlendirilme oranı",
+        "page": "176",
+        "unit": "Oran (%)",
+        "planned_2026": {
+          "year": 2026,
+          "kind": "planned",
+          "row_number": 13,
+          "column_number": 5,
+          "value": "90",
+          "raw_text": "90",
+          "state": "verified"
+        },
+        "unit_equal": true,
+        "target_equal": true
+      }
+    ]
+  },
+  {
+    "department": "Sosyal Destek Müdürlüğü",
+    "name": "2029 yılı sonuna kadar sosyal doku çalışmasının yapılması oranı",
+    "page": "166",
+    "unit": "Oran (%)",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 9,
+      "column_number": 6,
+      "value": null,
+      "raw_text": "%20",
+      "state": "needs_review"
+    },
+    "candidates": [
+      {
+        "name": "SH36/PG04. 2029 yılı sonuna kadar sosyal doku çalışmasının yapılması oranı",
+        "page": "175",
+        "unit": "Oran (%)",
+        "planned_2026": {
+          "year": 2026,
+          "kind": "planned",
+          "row_number": 12,
+          "column_number": 5,
+          "value": "20",
+          "raw_text": "20",
+          "state": "verified"
+        },
+        "unit_equal": true,
+        "target_equal": false
+      },
+      {
+        "name": "SH37/PG04. 2029 yılı sonuna kadar sosyal doku çalışmasının yapılması oranı",
+        "page": "176",
+        "unit": "Oran (%)",
+        "planned_2026": {
+          "year": 2026,
+          "kind": "planned",
+          "row_number": 12,
+          "column_number": 5,
+          "value": "20",
+          "raw_text": "20",
+          "state": "verified"
+        },
+        "unit_equal": true,
+        "target_equal": false
+      },
+      {
+        "name": "SH38/PG04. 2029 yılı sonuna kadar sosyal doku çalışmasının yapılması oranı",
+        "page": "177",
+        "unit": "Oran (%)",
+        "planned_2026": {
+          "year": 2026,
+          "kind": "planned",
+          "row_number": 12,
+          "column_number": 5,
+          "value": "20",
+          "raw_text": "20",
+          "state": "verified"
+        },
+        "unit_equal": true,
+        "target_equal": false
+      }
+    ]
+  },
+  {
+    "department": "Sosyal Destek Müdürlüğü",
+    "name": "2026 yılı sonuna kadar kentte yaşayan mülteci, sığınmacı ve göçmelere ait hazırlanan veri seti sayısı",
+    "page": "167",
+    "unit": "Adet",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 9,
+      "column_number": 6,
+      "value": "1",
+      "raw_text": "1",
+      "state": "verified"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Sosyal Destek Müdürlüğü",
+    "name": "Veri setlerinin güncelleme sıklığı",
+    "page": "167",
+    "unit": "Zaman",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 10,
+      "column_number": 6,
+      "value": null,
+      "raw_text": "6 Ay",
+      "state": "needs_review"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Sosyal Destek Müdürlüğü",
+    "name": "Veri setlerinin analiz edilerek raporlama yapma sıklığı",
+    "page": "167",
+    "unit": "Zaman",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 11,
+      "column_number": 6,
+      "value": null,
+      "raw_text": "6 Ay",
+      "state": "needs_review"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Sosyal Destek Müdürlüğü",
+    "name": "Mülteci, sığınmacı ve göçmenler ile yüz yüze yapılan görüşme oranı",
+    "page": "167",
+    "unit": "Oran (%)",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 12,
+      "column_number": 6,
+      "value": "50",
+      "raw_text": "50",
+      "state": "verified"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Sosyal Destek Müdürlüğü",
+    "name": "Gerçekleştirilen görüşmelerden duyulan memnuniyet oranı",
+    "page": "167",
+    "unit": "Oran (%)",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 13,
+      "column_number": 6,
+      "value": "86",
+      "raw_text": "86",
+      "state": "verified"
+    },
+    "candidates": [
+      {
+        "name": "SH39/PG05. Gerçekleştirilen görüşmelerden duyulan memnuniyet oranı",
+        "page": "178",
+        "unit": "Oran (%)",
+        "planned_2026": {
+          "year": 2026,
+          "kind": "planned",
+          "row_number": 13,
+          "column_number": 5,
+          "value": "86",
+          "raw_text": "86",
+          "state": "verified"
+        },
+        "unit_equal": true,
+        "target_equal": true
+      }
+    ]
+  },
+  {
+    "department": "Sosyal Destek Müdürlüğü",
+    "name": "İlköğretim çağındaki öğrenciler için beslenme projesinin devam ettirilmesi ve öğrencilere okul çantası, okul kıyafeti ve diğer ihtiyaçların sağlanması",
+    "page": "168",
+    "unit": "Kişi",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 9,
+      "column_number": 6,
+      "value": "1100",
+      "raw_text": "1100",
+      "state": "verified"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Dış İlişkiler Müdürlüğü",
+    "name": "Düzenlenen ve/veya katılım sağlanan etkinlikler ile vatandaşı bilinçlendirmeye yönelik faaliyet sayısı",
+    "page": "172",
+    "unit": "Adet",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 9,
+      "column_number": 6,
+      "value": "30",
+      "raw_text": "30",
+      "state": "verified"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Dış İlişkiler Müdürlüğü",
+    "name": "Ulusal ve/veya uluslararası hibe, ödül ve proje başvurular ile bu kapsamda düzenlenen çalıştay ve seminerlere katılım sayısı",
+    "page": "172",
+    "unit": "Adet",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 9,
+      "column_number": 6,
+      "value": "30",
+      "raw_text": "30",
+      "state": "verified"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Dış İlişkiler Müdürlüğü",
+    "name": "İmzalanan iş birliği protokolü ve anlaşmalar sayısı",
+    "page": "173",
+    "unit": "Adet",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 9,
+      "column_number": 6,
+      "value": "6",
+      "raw_text": "6",
+      "state": "verified"
+    },
+    "candidates": [
+      {
+        "name": "SH40/PG03. İmzalanan iş birliği protokolü ve anlaşmalar sayısı",
+        "page": "184",
+        "unit": "Sayı",
+        "planned_2026": {
+          "year": 2026,
+          "kind": "planned",
+          "row_number": 11,
+          "column_number": 5,
+          "value": "5",
+          "raw_text": "5",
+          "state": "verified"
+        },
+        "unit_equal": false,
+        "target_equal": false
+      }
+    ]
+  },
+  {
+    "department": "Dış İlişkiler Müdürlüğü",
+    "name": "Büyükçekmece'de düzenlenen uluslararası etkinliklere katılan yabancı ziyaretçi sayısı",
+    "page": "173",
+    "unit": "Adet",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 10,
+      "column_number": 6,
+      "value": "230",
+      "raw_text": "230",
+      "state": "verified"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Dış İlişkiler Müdürlüğü",
+    "name": "Düzenlenen faaliyet ve etkinliklerden memnuniyet oranı",
+    "page": "173",
+    "unit": "Oran (%)",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 11,
+      "column_number": 6,
+      "value": "100",
+      "raw_text": "100",
+      "state": "verified"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Halkla İlişkiler Müdürlüğü",
+    "name": "CİMER’den Gelen Talep, Şikâyet ve Öneri Sayısı",
+    "page": "175",
+    "unit": "Adet",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 9,
+      "column_number": 6,
+      "value": "4240",
+      "raw_text": "4.240",
+      "state": "verified"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Halkla İlişkiler Müdürlüğü",
+    "name": "Çözüm masasının hizmet kalitesini değerlendirmek için yapılan vatandaş memnuniyeti anketine katılım sayısı",
+    "page": "175",
+    "unit": "Adet",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 10,
+      "column_number": 6,
+      "value": "88263",
+      "raw_text": "88.263",
+      "state": "verified"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Halkla İlişkiler Müdürlüğü",
+    "name": "Çözüm masası personelinin performansını düzenli olarak değerlendirmek için yapılan eğitim sayısı",
+    "page": "175",
+    "unit": "Adet",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 11,
+      "column_number": 6,
+      "value": "5",
+      "raw_text": "5",
+      "state": "verified"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Halkla İlişkiler Müdürlüğü",
+    "name": "Çözüm masasından hizmet alan vatandaşların memnuniyet oranını %95'in üzerine çıkarmak",
+    "page": "175",
+    "unit": "Oran (%)",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 12,
+      "column_number": 6,
+      "value": "87",
+      "raw_text": "87",
+      "state": "verified"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Halkla İlişkiler Müdürlüğü",
+    "name": "Ulak. bel sistemine gelen ve karşılanan istek, talep ve şikayetlerin memnuniyet oranı",
+    "page": "175",
+    "unit": "Oran (%)",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 13,
+      "column_number": 6,
+      "value": "85.4",
+      "raw_text": "85,4",
+      "state": "verified"
+    },
+    "candidates": [
+      {
+        "name": "SH42/PG03. ULAKBEL sistemine gelen ve karşılanan istek, talep ve şikâyetlerin memnuniyet oranı",
+        "page": "189",
+        "unit": "Oran (%)",
+        "planned_2026": {
+          "year": 2026,
+          "kind": "planned",
+          "row_number": 11,
+          "column_number": 5,
+          "value": "84",
+          "raw_text": "84",
+          "state": "verified"
+        },
+        "unit_equal": true,
+        "target_equal": false
+      }
+    ]
+  },
+  {
+    "department": "Halkla İlişkiler Müdürlüğü",
+    "name": "Belediye hizmetlerinin tanıtımı için kullanılan farklı dış mekan reklam mecralarının (billboard, raket, megalight vb.) sayısı",
+    "page": "176",
+    "unit": "Adet",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 9,
+      "column_number": 6,
+      "value": "22950",
+      "raw_text": "22.950",
+      "state": "verified"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Halkla İlişkiler Müdürlüğü",
+    "name": "Tanıtım ve duyuru amaçlı üretilen toplam materyal sayısı (Poster, El İlanı vb…):",
+    "page": "176",
+    "unit": "Adet",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 10,
+      "column_number": 6,
+      "value": "6470",
+      "raw_text": "6.470",
+      "state": "verified"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Halkla İlişkiler Müdürlüğü",
+    "name": "Desteklenen kurum içi ve kurum dışı organizasyon sayısı",
+    "page": "176",
+    "unit": "Adet",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 11,
+      "column_number": 6,
+      "value": "56",
+      "raw_text": "56",
+      "state": "verified"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Halkla İlişkiler Müdürlüğü",
+    "name": "Yıl içinde bilgilendirme amaçlı atılan SMS Sayısı",
+    "page": "176",
+    "unit": "Adet",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 12,
+      "column_number": 6,
+      "value": "4221514",
+      "raw_text": "4.221.514",
+      "state": "verified"
+    },
+    "candidates": [
+      {
+        "name": "SH41/PG04. Yıl İçinde Bilgilendirme Amaçlı Atılan SMS Sayısı",
+        "page": "188",
+        "unit": "Adet",
+        "planned_2026": {
+          "year": 2026,
+          "kind": "planned",
+          "row_number": 12,
+          "column_number": 5,
+          "value": "25000000",
+          "raw_text": "25.000.000",
+          "state": "verified"
+        },
+        "unit_equal": true,
+        "target_equal": false
+      }
+    ]
+  },
+  {
+    "department": "Halkla İlişkiler Müdürlüğü",
+    "name": "Yapılan hizmetlerden vatandaş memnuniyeti oranı",
+    "page": "176",
+    "unit": "Oran (%)",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 13,
+      "column_number": 6,
+      "value": "85",
+      "raw_text": "85",
+      "state": "verified"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Halkla İlişkiler Müdürlüğü",
+    "name": "Yıl boyunca yerel medyada çıkan haber sayısı",
+    "page": "177",
+    "unit": "Toplam",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 9,
+      "column_number": 6,
+      "value": "5550",
+      "raw_text": "5.550",
+      "state": "verified"
+    },
+    "candidates": [
+      {
+        "name": "SH44/PG04. Yıl boyunca yerel medyada çıkan haber sayısı",
+        "page": "191",
+        "unit": "Adet",
+        "planned_2026": {
+          "year": 2026,
+          "kind": "planned",
+          "row_number": 12,
+          "column_number": 5,
+          "value": "2400",
+          "raw_text": "2.400",
+          "state": "verified"
+        },
+        "unit_equal": false,
+        "target_equal": false
+      }
+    ]
+  },
+  {
+    "department": "Halkla İlişkiler Müdürlüğü",
+    "name": "Yıl boyunca Ulusal –yazılı basında çıkan haber sayısı",
+    "page": "177",
+    "unit": "Toplam",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 10,
+      "column_number": 6,
+      "value": "2450",
+      "raw_text": "2.450",
+      "state": "verified"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Halkla İlişkiler Müdürlüğü",
+    "name": "Yıl boyunca Ulusal-Görsel basında çıkan haber sayısı",
+    "page": "177",
+    "unit": "Toplam",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 11,
+      "column_number": 6,
+      "value": "3200",
+      "raw_text": "3.200",
+      "state": "verified"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Halkla İlişkiler Müdürlüğü",
+    "name": "Belediye sosyal medya hesaplarında yapılan canlı yayınların izlenme sayısı",
+    "page": "177",
+    "unit": "Toplam",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 12,
+      "column_number": 6,
+      "value": "830462",
+      "raw_text": "830.462",
+      "state": "verified"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Halkla İlişkiler Müdürlüğü",
+    "name": "Sosyal medya paylaşımlarının erişim ve etkileşim oranları",
+    "page": "177",
+    "unit": "Oran (%)",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 13,
+      "column_number": 6,
+      "value": "93",
+      "raw_text": "93",
+      "state": "verified"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Halkla İlişkiler Müdürlüğü",
+    "name": "Belediyemizin hizmetlerini Ulusal (görsel – yazılı) basın ve yerel basında aylık yayınlanma sayısı",
+    "page": "178",
+    "unit": "Adet",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 9,
+      "column_number": 6,
+      "value": "908666",
+      "raw_text": "908.666",
+      "state": "verified"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Halkla İlişkiler Müdürlüğü",
+    "name": "Ulusal-Görsel ve Yerel basında çıkan haberlerin olumlu, nötr veya olumsuz olma oranı",
+    "page": "178",
+    "unit": "Oran (%)",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 10,
+      "column_number": 6,
+      "value": null,
+      "raw_text": "%8",
+      "state": "needs_review"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Halkla İlişkiler Müdürlüğü",
+    "name": "Belediyenin birimlerinin hizmet ve projelerini içeren, kurumsal kimliğe uygun ve yayınlanabilir nitelikte video içerik üretmek.",
+    "page": "178",
+    "unit": "Adet",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 11,
+      "column_number": 6,
+      "value": "4600",
+      "raw_text": "4.600",
+      "state": "verified"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Halkla İlişkiler Müdürlüğü",
+    "name": "Yıl içinde düzenlenen basın toplantısı sayısı",
+    "page": "178",
+    "unit": "Adet",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 12,
+      "column_number": 6,
+      "value": "10",
+      "raw_text": "10",
+      "state": "verified"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Halkla İlişkiler Müdürlüğü",
+    "name": "Basın mensuplarına yönelik düzenlenen etkinliklere (kahvaltı, gezi, bilgilendirme toplantısı vb.) katılım oranı.",
+    "page": "178",
+    "unit": "Oran (%)",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 13,
+      "column_number": 6,
+      "value": null,
+      "raw_text": "%95",
+      "state": "needs_review"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Halkla İlişkiler Müdürlüğü",
+    "name": "İlçe Muhtarları ve STK’lar ile yapılan çalıştay ve toplantı sayısı",
+    "page": "179",
+    "unit": "Adet",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 9,
+      "column_number": 6,
+      "value": "4",
+      "raw_text": "4",
+      "state": "verified"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Halkla İlişkiler Müdürlüğü",
+    "name": "İlçe Muhtarları ve STK’lar ile ortak programlar ve işbirlikleri yapılması",
+    "page": "179",
+    "unit": "Adet",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 10,
+      "column_number": 6,
+      "value": "4",
+      "raw_text": "4",
+      "state": "verified"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Halkla İlişkiler Müdürlüğü",
+    "name": "İlçe Muhtarları ve STK’ların talep ve şikayetlerinin alınması",
+    "page": "179",
+    "unit": "Adet",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 11,
+      "column_number": 6,
+      "value": "1700",
+      "raw_text": "1700",
+      "state": "verified"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Halkla İlişkiler Müdürlüğü",
+    "name": "Mahalle Temsilciliklerinin kurulması",
+    "page": "179",
+    "unit": "Adet",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 12,
+      "column_number": 6,
+      "value": "0",
+      "raw_text": "0",
+      "state": "verified"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Özel Kalem Müdürlüğü",
+    "name": "Yıl içinde yapılan koordinasyon toplantısı sayısı",
+    "page": "184",
+    "unit": "Adet",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 9,
+      "column_number": 6,
+      "value": "30",
+      "raw_text": "30",
+      "state": "verified"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Özel Kalem Müdürlüğü",
+    "name": "Vatandaşlar tarafından yıl içinde gerçekleştirilen ziyaret sayısı",
+    "page": "184",
+    "unit": "Adet",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 10,
+      "column_number": 6,
+      "value": "490",
+      "raw_text": "490",
+      "state": "verified"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Özel Kalem Müdürlüğü",
+    "name": "Yıl gerçekleştirilen organizasyon sayısı",
+    "page": "184",
+    "unit": "Adet",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 11,
+      "column_number": 6,
+      "value": "25",
+      "raw_text": "25",
+      "state": "verified"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Özel Kalem Müdürlüğü",
+    "name": "Gerçekleştirilen paydaş (STK, Okul, Esnaf vb.) ziyaret Sayısı",
+    "page": "184",
+    "unit": "Adet",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 12,
+      "column_number": 6,
+      "value": "300",
+      "raw_text": "300",
+      "state": "verified"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Özel Kalem Müdürlüğü",
+    "name": "Randevu taleplerinin karşılanma oranı",
+    "page": "184",
+    "unit": "Oran (%)",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 13,
+      "column_number": 6,
+      "value": "94",
+      "raw_text": "94",
+      "state": "verified"
+    },
+    "candidates": []
+  },
+  {
+    "department": "İnsan Kaynakları ve Eğitim Müdürlüğü",
+    "name": "Eğitici personel sayısının artırılması için düzenlenecek sertifika ve eğitim sayısı",
+    "page": "186",
+    "unit": "Adet",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 9,
+      "column_number": 6,
+      "value": "2",
+      "raw_text": "2",
+      "state": "verified"
+    },
+    "candidates": [
+      {
+        "name": "SH48/PG02. Eğitici personel sayısının artırılması için düzenlenecek sertifika ve eğitim sayısı",
+        "page": "202",
+        "unit": "Adet",
+        "planned_2026": {
+          "year": 2026,
+          "kind": "planned",
+          "row_number": 10,
+          "column_number": 5,
+          "value": "2",
+          "raw_text": "2",
+          "state": "verified"
+        },
+        "unit_equal": true,
+        "target_equal": true
+      }
+    ]
+  },
+  {
+    "department": "İnsan Kaynakları ve Eğitim Müdürlüğü",
+    "name": "Çalışanların moral ve motivasyonlarını yükseltmek için düzenlenen programlara katılım sayısı",
+    "page": "186",
+    "unit": "Kişi",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 10,
+      "column_number": 6,
+      "value": "3990",
+      "raw_text": "3.990",
+      "state": "verified"
+    },
+    "candidates": [
+      {
+        "name": "SH48/PG03. Çalışanların moral ve motivasyonlarını yükseltmek için düzenlenen programlara katılım sayısı",
+        "page": "202",
+        "unit": "Adet",
+        "planned_2026": {
+          "year": 2026,
+          "kind": "planned",
+          "row_number": 11,
+          "column_number": 5,
+          "value": "3990",
+          "raw_text": "3990",
+          "state": "verified"
+        },
+        "unit_equal": false,
+        "target_equal": true
+      }
+    ]
+  },
+  {
+    "department": "İnsan Kaynakları ve Eğitim Müdürlüğü",
+    "name": "Çalışanların eğitim düzeylerinin yükseltilmesi için desteklenen programların sayısı",
+    "page": "187",
+    "unit": "Adet",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 9,
+      "column_number": 6,
+      "value": "3",
+      "raw_text": "3",
+      "state": "verified"
+    },
+    "candidates": [
+      {
+        "name": "SH47/PG01. Çalışanların eğitim düzeylerinin yükseltilmesi için desteklenen programların sayısı",
+        "page": "201",
+        "unit": "Adet",
+        "planned_2026": {
+          "year": 2026,
+          "kind": "planned",
+          "row_number": 9,
+          "column_number": 5,
+          "value": "3",
+          "raw_text": "3",
+          "state": "verified"
+        },
+        "unit_equal": true,
+        "target_equal": true
+      }
+    ]
+  },
+  {
+    "department": "İnsan Kaynakları ve Eğitim Müdürlüğü",
+    "name": "İşe başlayan çalışanların oryantasyon programına katılım oranı",
+    "page": "187",
+    "unit": "Oran (%)",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 10,
+      "column_number": 6,
+      "value": "10",
+      "raw_text": "10",
+      "state": "verified"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Bilgi İşlem Müdürlüğü",
+    "name": "Kurumsal veri merkezinin modernizasyonu ve kapasite artışı oranı",
+    "page": "189",
+    "unit": "Oran (%)",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 9,
+      "column_number": 6,
+      "value": "20",
+      "raw_text": "20",
+      "state": "verified"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Bilgi İşlem Müdürlüğü",
+    "name": "Birimlerden gelen bilişim teknolojileri ve cihaz talepleri ile bakım ve onarım taleplerinin karşılanması oranı",
+    "page": "189",
+    "unit": "Oran (%)",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 10,
+      "column_number": 6,
+      "value": "100",
+      "raw_text": "100",
+      "state": "verified"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Bilgi İşlem Müdürlüğü",
+    "name": "Kurumsal online hizmetlerinin modernizasyonu ve kapasite artışı oranı",
+    "page": "189",
+    "unit": "Oran (%)",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 11,
+      "column_number": 6,
+      "value": "20",
+      "raw_text": "20",
+      "state": "verified"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Bilgi İşlem Müdürlüğü",
+    "name": "Belediye hizmetlerine yönelik geliştirilen mobil uygulamalar sayısı",
+    "page": "189",
+    "unit": "Adet",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 12,
+      "column_number": 6,
+      "value": "1",
+      "raw_text": "1",
+      "state": "verified"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Bilgi İşlem Müdürlüğü",
+    "name": "Kurumsal dijital dönüşüm süreç sayısı",
+    "page": "189",
+    "unit": "Adet",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 13,
+      "column_number": 6,
+      "value": "1",
+      "raw_text": "1",
+      "state": "verified"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Bilgi İşlem Müdürlüğü",
+    "name": "İnsansız hava aracıyla kent görüntüsü sayısallaştırma sayısı",
+    "page": "189",
+    "unit": "Sayısal",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 14,
+      "column_number": 6,
+      "value": "1",
+      "raw_text": "1",
+      "state": "verified"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Bilgi İşlem Müdürlüğü",
+    "name": "Kurumsal veri paylaşım platformuna duyulan memnuniyet",
+    "page": "189",
+    "unit": "Oran (%)",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 15,
+      "column_number": 6,
+      "value": "100",
+      "raw_text": "100",
+      "state": "verified"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Bilgi İşlem Müdürlüğü",
+    "name": "Belediyenin vatandaş odaklı başvuru ve hizmet süreçlerinin dijital platformlar üzerinden gerçekleştirilme oranı",
+    "page": "190",
+    "unit": "Oran (%)",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 9,
+      "column_number": 6,
+      "value": null,
+      "raw_text": "%5",
+      "state": "needs_review"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Bilgi İşlem Müdürlüğü",
+    "name": "Şehir Yönetimini İyileştirmek İçin Veri Platformunun Yönetimi ve Geliştirilmesi.",
+    "page": "190",
+    "unit": "Oran (%)",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 10,
+      "column_number": 6,
+      "value": "20",
+      "raw_text": "20",
+      "state": "verified"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Bilgi İşlem Müdürlüğü",
+    "name": "E-devlet, e-belediyecilik ve m-belediyecilik hizmetleri diğer kurumlarla entegre edilme oranı",
+    "page": "190",
+    "unit": "Oran (%)",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 11,
+      "column_number": 6,
+      "value": null,
+      "raw_text": "%10",
+      "state": "needs_review"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Rehberlik ve Teftiş Kurulu Müdürlüğü",
+    "name": "Devlet memurlarına yönelik yapılan ön inceleme dosyası sayısı",
+    "page": "193",
+    "unit": "Adet",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 9,
+      "column_number": 6,
+      "value": "3",
+      "raw_text": "3",
+      "state": "verified"
+    },
+    "candidates": [
+      {
+        "name": "SH50/PG01.Devlet memurlarına yönelik yapılan ön inceleme dosyası sayısı",
+        "page": "209",
+        "unit": "Adet",
+        "planned_2026": {
+          "year": 2026,
+          "kind": "planned",
+          "row_number": 9,
+          "column_number": 5,
+          "value": "3",
+          "raw_text": "3",
+          "state": "verified"
+        },
+        "unit_equal": true,
+        "target_equal": true
+      }
+    ]
+  },
+  {
+    "department": "Rehberlik ve Teftiş Kurulu Müdürlüğü",
+    "name": "Devlet Memurlarına Yönelik yapılan inceleme, soruşturma Raporu sayısı",
+    "page": "193",
+    "unit": "Adet",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 10,
+      "column_number": 6,
+      "value": "3",
+      "raw_text": "3",
+      "state": "verified"
+    },
+    "candidates": [
+      {
+        "name": "SH50/PG02. Devlet Memurlarına yönelik yapılan inceleme, soruşturma Raporu sayısı",
+        "page": "209",
+        "unit": "Adet",
+        "planned_2026": {
+          "year": 2026,
+          "kind": "planned",
+          "row_number": 10,
+          "column_number": 5,
+          "value": "3",
+          "raw_text": "3",
+          "state": "verified"
+        },
+        "unit_equal": true,
+        "target_equal": true
+      }
+    ]
+  },
+  {
+    "department": "Rehberlik ve Teftiş Kurulu Müdürlüğü",
+    "name": "Devlet memurlarına yönelik yapılan disiplin soruşturması sayısı",
+    "page": "193",
+    "unit": "Adet",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 11,
+      "column_number": 6,
+      "value": "5",
+      "raw_text": "5",
+      "state": "verified"
+    },
+    "candidates": [
+      {
+        "name": "SH50/PG03.Devlet memurlarına yönelik yapılan disiplin soruşturması Sayısı",
+        "page": "209",
+        "unit": "Adet",
+        "planned_2026": {
+          "year": 2026,
+          "kind": "planned",
+          "row_number": 11,
+          "column_number": 5,
+          "value": "5",
+          "raw_text": "5",
+          "state": "verified"
+        },
+        "unit_equal": true,
+        "target_equal": true
+      }
+    ]
+  },
+  {
+    "department": "Rehberlik ve Teftiş Kurulu Müdürlüğü",
+    "name": "Denetim raporlarının zamanında tamamlanma oranı",
+    "page": "193",
+    "unit": "Oran (%)",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 12,
+      "column_number": 6,
+      "value": "100",
+      "raw_text": "100",
+      "state": "verified"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Hukuk İşleri Müdürlüğü",
+    "name": "Kurum alacakları için başlatılan icra takibi oranı",
+    "page": "195",
+    "unit": "Oran (%)",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 9,
+      "column_number": 6,
+      "value": "100",
+      "raw_text": "100",
+      "state": "verified"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Hukuk İşleri Müdürlüğü",
+    "name": "Kamu zararına yol açabilecek sözleşme maddelerinin tespit ve düzeltilme oranı",
+    "page": "195",
+    "unit": "Oran (%)",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 10,
+      "column_number": 6,
+      "value": "100",
+      "raw_text": "100",
+      "state": "verified"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Hukuk İşleri Müdürlüğü",
+    "name": "Belediyemizin yargılama gideri kalemlerinin azaltılması oranı",
+    "page": "195",
+    "unit": "Oran (%)",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 11,
+      "column_number": 6,
+      "value": "20",
+      "raw_text": "20",
+      "state": "verified"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Hukuk İşleri Müdürlüğü",
+    "name": "Birimlerden gelen Hukuki danışmanlık hizmetlerinden memnuniyet oranı",
+    "page": "195",
+    "unit": "Oran (%)",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 12,
+      "column_number": 6,
+      "value": "100",
+      "raw_text": "100",
+      "state": "verified"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Hukuk İşleri Müdürlüğü",
+    "name": "Vatandaş şikâyet ve önerilerinin değerlendirilme oranı",
+    "page": "195",
+    "unit": "Oran (%)",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 13,
+      "column_number": 6,
+      "value": "90",
+      "raw_text": "90",
+      "state": "verified"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Strateji Geliştirme Müdürlüğü",
+    "name": "Stratejik plan ve bütçe çalışmalarına vatandaşların katılım oranı",
+    "page": "197",
+    "unit": "Oran (%)",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 9,
+      "column_number": 6,
+      "value": "100",
+      "raw_text": "100",
+      "state": "verified"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Strateji Geliştirme Müdürlüğü",
+    "name": "Planlama ve bütçe çalışmalarında vatandaş görüşlerinin dijital katılım yoluyla alınması oranı",
+    "page": "197",
+    "unit": "Oran (%)",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 10,
+      "column_number": 6,
+      "value": "100",
+      "raw_text": "100",
+      "state": "verified"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Strateji Geliştirme Müdürlüğü",
+    "name": "2029 yılına kadar hayata geçirilen stratejik planlardaki hedeflere ulaşma oranı",
+    "page": "197",
+    "unit": "Oran (%)",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 11,
+      "column_number": 6,
+      "value": "85",
+      "raw_text": "85",
+      "state": "verified"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Strateji Geliştirme Müdürlüğü",
+    "name": "İç Kontrol sistemi değerlendirme raporunda alınan düzeltme eylem sayısı ve tamamlanma oranı",
+    "page": "198",
+    "unit": "Oran (%)",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 9,
+      "column_number": 6,
+      "value": "100",
+      "raw_text": "100",
+      "state": "verified"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Strateji Geliştirme Müdürlüğü",
+    "name": "Hazırlanan planlardan vatandaşların memnuniyet oranı",
+    "page": "198",
+    "unit": "Oran (%)",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 10,
+      "column_number": 6,
+      "value": "100",
+      "raw_text": "100",
+      "state": "verified"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Destek Hizmetleri Müdürlüğü",
+    "name": "Kiralanan araç sayısı",
+    "page": "200",
+    "unit": "Adet",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 9,
+      "column_number": 6,
+      "value": "257",
+      "raw_text": "257",
+      "state": "verified"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Destek Hizmetleri Müdürlüğü",
+    "name": "Toplam akaryakıt tüketimi",
+    "page": "200",
+    "unit": "LT",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 10,
+      "column_number": 6,
+      "value": "2200000",
+      "raw_text": "2.200.000",
+      "state": "verified"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Destek Hizmetleri Müdürlüğü",
+    "name": "Görsel tasarımlar için kullanılan ham madde miktarı",
+    "page": "200",
+    "unit": "Adet",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 11,
+      "column_number": 6,
+      "value": "100000",
+      "raw_text": "100.000",
+      "state": "verified"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Destek Hizmetleri Müdürlüğü",
+    "name": "Hizmet binalarının Temizliğinden duyulan memnuniyet oranı",
+    "page": "200",
+    "unit": "Oran (%)",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 12,
+      "column_number": 6,
+      "value": "92",
+      "raw_text": "92",
+      "state": "verified"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Destek Hizmetleri Müdürlüğü",
+    "name": "Hizmet binalarında verilen güvenlik hizmetlerinden duyulan memnuniyet oranı",
+    "page": "200",
+    "unit": "Oran (%)",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 13,
+      "column_number": 6,
+      "value": "93",
+      "raw_text": "93",
+      "state": "verified"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Destek Hizmetleri Müdürlüğü",
+    "name": "Hizmetin İcra edilmesi gerekli olan araç/iş makinası ihtiyacının zamanında gerçekleşme oranı (%)",
+    "page": "201",
+    "unit": "Oran (%)",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 9,
+      "column_number": 6,
+      "value": "100",
+      "raw_text": "100",
+      "state": "verified"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Destek Hizmetleri Müdürlüğü",
+    "name": "Araç ve İş makinelerinin akaryakıt ihtiyaçlarının karşılanma oranı (%)",
+    "page": "201",
+    "unit": "Oran (%)",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 10,
+      "column_number": 6,
+      "value": "100",
+      "raw_text": "100",
+      "state": "verified"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Destek Hizmetleri Müdürlüğü",
+    "name": "Satın alma iş ve işlemlerinin gerçekleştirilme oranı (%):",
+    "page": "201",
+    "unit": "Oran (%)",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 11,
+      "column_number": 6,
+      "value": "93",
+      "raw_text": "93",
+      "state": "verified"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Destek Hizmetleri Müdürlüğü",
+    "name": "Dış paydaşlardan gelen taleplerin (masa, sandalye vs.) memnuniyet oranı (%)",
+    "page": "201",
+    "unit": "Oran (%)",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 12,
+      "column_number": 6,
+      "value": "94",
+      "raw_text": "94",
+      "state": "verified"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Mali Hizmetler Müdürlüğü",
+    "name": "Mali Tabloların Yayınlanması",
+    "page": "203",
+    "unit": "Oran(%)",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 9,
+      "column_number": 6,
+      "value": "100",
+      "raw_text": "100",
+      "state": "verified"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Mali Hizmetler Müdürlüğü",
+    "name": "Mali tabloların zamanında hazırlanması",
+    "page": "203",
+    "unit": "Oran(%)",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 10,
+      "column_number": 6,
+      "value": "100",
+      "raw_text": "100",
+      "state": "verified"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Yazı İşleri Müdürlüğü",
+    "name": "Alınan tüm encümen ve meclis kararlarının belirlenen kalite standartlarına uygun olarak ve belirlenen süre içinde resmi kayıtlara geçirilme oranı.",
+    "page": "205",
+    "unit": "Oran (%)",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 9,
+      "column_number": 6,
+      "value": "100",
+      "raw_text": "100",
+      "state": "verified"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Yazı İşleri Müdürlüğü",
+    "name": "Encümen Kararlarının Süresi İçinde Müdürlüklere Ulaştırılma Oranı",
+    "page": "205",
+    "unit": "Gün",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 10,
+      "column_number": 6,
+      "value": null,
+      "raw_text": "1 İş Günü",
+      "state": "needs_review"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Yazı İşleri Müdürlüğü",
+    "name": "Gelen bir evrakın sisteme girişi ile ilgili birimin evrakı almasına kadar geçen toplam süre",
+    "page": "205",
+    "unit": "Oran (%)",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 11,
+      "column_number": 6,
+      "value": "100",
+      "raw_text": "100",
+      "state": "verified"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Yazı İşleri Müdürlüğü",
+    "name": "Nikâh işlemlerinin sonuçlandırılma süresi",
+    "page": "206",
+    "unit": "Gün",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 9,
+      "column_number": 6,
+      "value": null,
+      "raw_text": "1 İş Günü",
+      "state": "needs_review"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Yazı İşleri Müdürlüğü",
+    "name": "4109 sayılı Kanun kapsamında asker ailelerinden muhtaç olanlara yapılan yardım işlemlerinin sonuçlandırılma süresi",
+    "page": "206",
+    "unit": "Gün",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 9,
+      "column_number": 6,
+      "value": null,
+      "raw_text": "5 İş Günü",
+      "state": "needs_review"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Gelirler Müdürlüğü",
+    "name": "Faaliyetteki işyerlerinin yıl içerisinde yerinde yoklamasının yapılması",
+    "page": "208",
+    "unit": "Oran (%)",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 9,
+      "column_number": 6,
+      "value": "60",
+      "raw_text": "60",
+      "state": "verified"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Gelirler Müdürlüğü",
+    "name": "İdarece yapılan beyanların toplam beyanlara oranı Tahakkuklara oranı?",
+    "page": "208",
+    "unit": "Oran (%) kümülatif azalan)",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 10,
+      "column_number": 6,
+      "value": "65",
+      "raw_text": "65",
+      "state": "verified"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Gelirler Müdürlüğü",
+    "name": "Takipli alacaklardaki tahsilat oranlarının arttırılması",
+    "page": "208",
+    "unit": "Oran (%) kümülatif azalan)",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 11,
+      "column_number": 6,
+      "value": "90",
+      "raw_text": "90",
+      "state": "verified"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Gelirler Müdürlüğü",
+    "name": "Toplam tahsilatın toplam tahakkuka oranı",
+    "page": "208",
+    "unit": "Oran (%)",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 12,
+      "column_number": 6,
+      "value": "90",
+      "raw_text": "90",
+      "state": "verified"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Gelirler Müdürlüğü",
+    "name": "Tarım Market Sayısının artması",
+    "page": "209",
+    "unit": "Adet (kümülatif, sayı)",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 9,
+      "column_number": 6,
+      "value": "2",
+      "raw_text": "2",
+      "state": "verified"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Gelirler Müdürlüğü",
+    "name": "Tarım Marketlerde satışa sunulan kadın kooperatif ve kadın üretici sayısının arttırılması",
+    "page": "209",
+    "unit": "Adet (kümülatif, sayı)",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 9,
+      "column_number": 6,
+      "value": "25",
+      "raw_text": "25",
+      "state": "verified"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Gelirler Müdürlüğü",
+    "name": "Çocuk kreş ve eğitim merkez sayısının arttırılması",
+    "page": "210",
+    "unit": "Adet (kümülatif, sayı)",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 9,
+      "column_number": 6,
+      "value": "7",
+      "raw_text": "7",
+      "state": "verified"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Gelirler Müdürlüğü",
+    "name": "Çocuk kreş ve eğitim merkezlerinden yararlanan çocukların velilerinin memnuniyet oranı",
+    "page": "210",
+    "unit": "Oran (%)",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 10,
+      "column_number": 6,
+      "value": "92",
+      "raw_text": "92",
+      "state": "verified"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Makine İkmal Bakım ve Onarım Müdürlüğü",
+    "name": "Hizmet araçlarının çevre dostu araçlara dönüştürülme sayısı",
+    "page": "212",
+    "unit": "Adet",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 9,
+      "column_number": 6,
+      "value": "1",
+      "raw_text": "1",
+      "state": "verified"
+    },
+    "candidates": [
+      {
+        "name": "SH64/PG01. Hizmet araçlarının çevre dostu araçlara dönüştürülme sayısı",
+        "page": "235",
+        "unit": "Adet",
+        "planned_2026": {
+          "year": 2026,
+          "kind": "planned",
+          "row_number": 9,
+          "column_number": 5,
+          "value": "1",
+          "raw_text": "1",
+          "state": "verified"
+        },
+        "unit_equal": true,
+        "target_equal": true
+      }
+    ]
+  },
+  {
+    "department": "Makine İkmal Bakım ve Onarım Müdürlüğü",
+    "name": "Birimlerden gelen araç taleplerinin karşılanma oranı",
+    "page": "213",
+    "unit": "Oran (%)",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 9,
+      "column_number": 6,
+      "value": "70",
+      "raw_text": "70",
+      "state": "verified"
+    },
+    "candidates": [
+      {
+        "name": "SH64/PG02. Birimlerden gelen araç taleplerinin karşılanma oranı",
+        "page": "235",
+        "unit": "Oran (%)",
+        "planned_2026": {
+          "year": 2026,
+          "kind": "planned",
+          "row_number": 10,
+          "column_number": 5,
+          "value": "70",
+          "raw_text": "70",
+          "state": "verified"
+        },
+        "unit_equal": true,
+        "target_equal": true
+      }
+    ]
+  },
+  {
+    "department": "Makine İkmal Bakım ve Onarım Müdürlüğü",
+    "name": "Hizmet araçlarının bakım-onarım işlemlerinin gerçekleşme oranı",
+    "page": "213",
+    "unit": "Oran (%)",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 10,
+      "column_number": 6,
+      "value": "100",
+      "raw_text": "100",
+      "state": "verified"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Makine İkmal Bakım ve Onarım Müdürlüğü",
+    "name": "Dış paydaşlardan gelen taleplerinin karşılanma oranı",
+    "page": "213",
+    "unit": "Oran (%)",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 11,
+      "column_number": 6,
+      "value": "72",
+      "raw_text": "72",
+      "state": "verified"
+    },
+    "candidates": []
+  },
+  {
+    "department": "Makine İkmal Bakım ve Onarım Müdürlüğü",
+    "name": "Dış paydaşlardan gelen hizmetlerde memnuniyet oranı",
+    "page": "213",
+    "unit": "Oran (%)",
+    "target_2026": {
+      "year": 2026,
+      "kind": "target",
+      "row_number": 12,
+      "column_number": 6,
+      "value": "70",
+      "raw_text": "70",
+      "state": "verified"
+    },
+    "candidates": []
+  }
+]

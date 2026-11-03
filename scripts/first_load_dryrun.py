@@ -168,7 +168,9 @@ def disposable_database(url):
                 admin.dispose()
 
 
-def inspect_import(db, parsed, filename):
+def inspect_import(db, parsed, filename, *, year=2027):
+    if year == 2026:
+        return inspect_2026_import(db, parsed, filename)
     from sqlalchemy import select
     from sqlalchemy.exc import SQLAlchemyError
     from app.import_service import (DISPLAY_OVERRIDES,
@@ -226,6 +228,195 @@ def inspect_import(db, parsed, filename):
     return {'plan': plan, 'errors': errors, 'unresolved': unresolved, 'applied': applied,
             'apply_error': apply_error, 'results': results, 'pending': names.get('pending_ali', []),
             'catalogue': catalogue}
+
+
+def inspect_2026_import(db, parsed, filename):
+    """Rehearse the operational path beside a complete approved 2027 load."""
+    from sqlalchemy import select, func
+    from app.models import (Organization, User, Department, ReportingPeriod, Activity,
+                            ActivityCostValue, Indicator, OfficialActivity,
+                            ActivityResponsibility, ActivityCatalogueLink, ImportBatch)
+    from app.import_service import build_department_plan, import_validation_errors
+    from app.first_load_service import period_rows_hash
+    from app.program_service import department_snapshot, validate_department
+    from scripts.first_load_live import execute, verify_book, BOOK
+    organization = Organization(name='İlk yükleme denemesi Belediyesi')
+    strategy = User(email='dryrun@example.invalid', full_name='Strateji deneme kullanıcısı',
+                    role='strategy', password_hash='unused')
+    db.add_all([organization, strategy])
+    db.flush()
+    # Existing structure, including Yapı Kontrol (not present in the 2027 book).
+    names = set(json.loads(NAME_MAP.read_text(encoding='utf-8'))['map'].values())
+    names.add('Yapı Kontrol Müdürlüğü')
+    db.add_all(Department(organization_id=organization.id, name=n) for n in sorted(names))
+    db.commit()
+    baseline = verify_book(BOOK)
+    ids = dict(organization_id=organization.id, actor_id=strategy.id)
+    loaded = execute(db.get_bind(), deepcopy(baseline), **ids, apply=True)
+    if loaded['failed'] or loaded['skipped']:
+        raise ValueError('Yerel 2027 hazırlık yüklemesi tamamlanamadı; 2026 provası durdu.')
+    before = period_rows_hash(db)
+    db.rollback()
+    applied = execute(db.get_bind(), deepcopy(parsed), **ids, apply=True, year=2026)
+    db.expire_all()
+    after = period_rows_hash(db)
+    period = db.scalar(select(ReportingPeriod).where(ReportingPeriod.year == 2026))
+    plan = build_department_plan(db, parsed)
+    results = []
+    for source in parsed['departments']:
+        department = db.scalar(select(Department).where(Department.name == source['name']))
+        errors, warnings = validate_department(db, period.id, department.id) if period else ([], [])
+        binding = None
+        if period:
+            for batch in db.scalars(select(ImportBatch).where(ImportBatch.period_id == period.id,
+                                                             ImportBatch.status == 'applied')):
+                bindings = json.loads(batch.snapshot_json)['source_comparison']['departments']
+                binding = next((b for b in bindings if b['department_id'] == department.id), binding)
+        results.append(dict(name=source['name'], ready=period is not None and not errors,
+            errors=errors, warnings=warnings,
+            stored=department_snapshot(db, period.id, department.id) if period else {},
+            activity_source_ids=binding['activity_ids'] if binding else []))
+    catalogue_ids = select(OfficialActivity.id).where(OfficialActivity.period_id == period.id) if period else select(OfficialActivity.id).where(False)
+    activity_ids = select(Activity.id).where(Activity.period_id == period.id) if period else select(Activity.id).where(False)
+    count = lambda model, condition: db.scalar(select(func.count()).select_from(model).where(condition))
+    unlinked = []
+    for activity in db.scalars(select(Activity).where(Activity.id.in_(activity_ids))):
+        if not db.scalar(select(ActivityCatalogueLink.activity_id).where(ActivityCatalogueLink.activity_id == activity.id)):
+            source = next(d for d in parsed['departments'] if d['name'] == db.get(Department, activity.department_id).name)
+            item = next(a for a in source['activities'] if a['name'] == activity.name)
+            pages = sorted({parsed['source_tables'][str(v['table_number'])]['page'] for v in item['costs']})
+            unlinked.append(dict(department=source['name'], name=activity.name, pages=pages))
+    catalogue = dict(entries=count(OfficialActivity, OfficialActivity.id.in_(catalogue_ids)),
+        responsibilities=count(ActivityResponsibility, ActivityResponsibility.official_activity_id.in_(catalogue_ids)),
+        links=count(ActivityCatalogueLink, ActivityCatalogueLink.activity_id.in_(activity_ids)), unlinked=unlinked)
+    return dict(plan=plan, errors=import_validation_errors(parsed),
+        unresolved=[m for m in plan['mappings'] if m['action'] != 'match'],
+        applied=applied['counts'], apply_error=applied['failed'], results=results, pending=[], catalogue=catalogue,
+        protected_2027_before=before, protected_2027_after=after,
+        cost_rows=count(ActivityCostValue, ActivityCostValue.activity_id.in_(activity_ids)),
+        identity_links=count(Indicator, Indicator.persistent_indicator_id.is_not(None)),
+        baseline_summary=loaded['counts'], baseline_parsed=baseline)
+
+
+def summary_2026(parsed, inspection):
+    from scripts.first_load_audit import BookAudit, storage_issues
+    audit = BookAudit(parsed)
+    differences = []
+    for source, result in zip(parsed['departments'], inspection['results']):
+        if not result['stored']:
+            continue
+        # 2026 repeats some cost activity names within one directorate. Use the
+        # importer's saved source-row→ID binding so every physical row is checked;
+        # looking up the first equal name would falsely compare later duplicates.
+        issues = storage_issues(dict(source, activities=[]), result['stored'])
+        indexed = {a['id']: a for a in result['stored']['activities']}
+        if len(source['activities']) != len(result['activity_source_ids']):
+            issues.append('Faaliyet kaynak satırı / kayıt kimliği sayısı farklı.')
+        for activity, aid in zip(source['activities'], result['activity_source_ids']):
+            minimal = dict(activities=[activity], blocks=[], personnel=[], economic_tables=[])
+            snapshot = dict(activities=[indexed[aid]] if aid in indexed else [], department_costs=[], economics=[])
+            issues.extend(activity['name'] + ': ' + issue for issue in storage_issues(minimal, snapshot))
+        issues += audit.book_transfer_issues(source)
+        differences.extend(dict(department=source['name'], issue=issue) for issue in issues)
+    catalogue = inspection['catalogue']
+    return dict(**inspection['applied'], cost_rows=inspection['cost_rows'],
+        source_cost_cells=sum(len(a['costs']) for d in parsed['departments'] for a in d['activities']),
+        catalogue_entries=catalogue['entries'], catalogue_responsibilities=catalogue['responsibilities'],
+        catalogue_links=catalogue['links'], unlinked_catalogue_activities=len(catalogue['unlinked']),
+        dropped_guidance_rows=len(parsed['dropped_guidance']),
+        refusals=len(inspection['apply_error']) + len(inspection['errors']) + len(inspection['unresolved']),
+        amount_differences=len(differences), differences=differences,
+        protected_2027_before=inspection['protected_2027_before'],
+        protected_2027_after=inspection['protected_2027_after'],
+        protected_2027_unchanged=inspection['protected_2027_before'] == inspection['protected_2027_after'],
+        persistent_indicator_links=inspection['identity_links'])
+
+
+def report_2026(parsed, inspection, path, digest):
+    summary = summary_2026(parsed, inspection)
+    lines = ['# CIV-165 — 2026 PP ilk yükleme provası', '',
+        f'Kaynak: `{path.name}`; SHA256: `{digest}`.', '',
+        'Yalnız yerel, geçici PostgreSQL: önce onaylı 2027 kitabı, sonra 2026 kitabı aynı veritabanına yüklendi. '
+        'Canlı veritabanına bağlanılmadı. Doğrulama uyarıları kaynak bilgisi olarak korundu; yükleme reddi değildir.', '',
+        '| Ölçüm | Sonuç |', '| --- | ---: |']
+    for key in ('departments', 'cards', 'indicators', 'activities', 'cost_rows', 'source_cost_cells',
+                'economic_values', 'catalogue_entries', 'catalogue_responsibilities', 'catalogue_links',
+                'unlinked_catalogue_activities', 'dropped_guidance_rows', 'refusals', 'amount_differences',
+                'persistent_indicator_links'):
+        lines.append(f'| {key} | {summary[key]} |')
+    lines += ['', f"2027 satır hash önce: `{summary['protected_2027_before']}`.", '',
+              f"2027 satır hash sonra: `{summary['protected_2027_after']}`.", '',
+              'Tutar kontrolü mevcut BookAudit kitap→Word ve storage_issues ayrıştırma→saklama karşılaştırmalarını kullanır. '
+              'Bütün kart, faaliyet, personel ve ekonomik kaynak hücreleri karşılaştırıldı. '
+              'Boş hücreler mevcut importer kuralıyla satır oluşturmayabilir; çizgi ve sıfır ayrı tutulur. '
+              'Ekonomik tablolarda mevcut 2027 akışı gibi önceki yıl sonu sütunu saklama modelinin kapsamı dışındadır.', '',
+              '## Dönem adları', '', '| Sistem müdürlüğü | 2026 Sorumlu İdare adı |', '| --- | --- |']
+    lines += [f'| {cell(system)} | {cell(book)} |' for system, book in sorted(parsed['book_department_names'].items()) if system != book]
+    lines += ['', '## Kataloğa bağlanmayan maliyet faaliyetleri', '',
+              'Ad yalnız aynı müdürlükte tekil ve normalleştirilmiş olarak eşitse bağlandı. Benzer adlar seçilmedi.', '',
+              '| Müdürlük | Faaliyet | Kitap sayfası |', '| --- | --- | --- |']
+    for item in inspection['catalogue']['unlinked']:
+        lines.append(f"| {cell(item['department'])} | {cell(item['name'])} | {', '.join(item['pages'])} |")
+    lines += ['', '## Düşürülen Bakanlık yönergeleri', '']
+    counts = Counter(item['text'] for item in parsed['dropped_guidance'])
+    lines += [f'- {count} satır: {text}' for text, count in sorted(counts.items())]
+    lines += ['', '## Sınırlar ve varsayımlar', '',
+              '- PDF ayrıca açılmadı; kitap-PDF eşitliği görev paketindeki D-371 teyididir.',
+              '- InDesign dizgi motoru kullanılmadı; sayfalar hikâyenin ilk basılı sayfasıdır.',
+              '- Açıklama tablolarının program, alt program, ad, açıklama dörtlüsü katalog kimliğidir. '
+              'Açıklama mevcut katalog denetim kaydında korunur; `name:` SHA256 teknik anahtarı resmî faaliyet kodu değildir.',
+              '- 2026 yazımı müdürlük başına savepoint ile yapılır; 2027 değişiklik reddinin tüm çalışmayı geri alabilmesi için tek dış işlem sonunda commit edilir.',
+              '- Kalıcı gösterge kimliği atanmadı. Aday raporu yalnız Strateji incelemesi içindir.',
+              '- `--resume` aynı kitap SHA256 ve yıl makbuzu bulunan tamamlanmış müdürlükleri atlar; mevcut düzeltmeleri korur.', '',
+              f"Paket doğrulama hata sayısı (kaynaktaki eksikler/dağılımlar dahil): {sum(len(r['errors']) for r in inspection['results'])}.", '']
+    if inspection['apply_error'] or summary['differences']:
+        lines += ['```json', json.dumps(dict(refusals=inspection['apply_error'], differences=summary['differences']), ensure_ascii=False, indent=2), '```', '']
+    return '\n'.join(lines)
+
+
+def indicator_match_report(parsed, baseline, output):
+    """Read-only candidates; never calls the cross-period identity service."""
+    from app.data_importer import _label_key
+    def name_key(name):
+        return _label_key(re.sub(r'^(?:\s*(?:SH|PG)\s*\d+[.\s:/()\-]*)+', '', name, flags=re.I))
+    def indicators(payload):
+        for department in payload['departments']:
+            for block in department['blocks']:
+                page = payload['source_tables'][str(block['table_number'])]['page']
+                for indicator in block['indicators']:
+                    yield department['name'], page, indicator
+    candidates = defaultdict(list)
+    for department, page, indicator in indicators(baseline):
+        candidates[(department, name_key(indicator['name']))].append((page, indicator))
+    rows = []
+    for department, page, indicator in indicators(parsed):
+        target = next(v for v in indicator['values'] if (v['year'], v['kind']) == (2026, 'target'))
+        matches = []
+        for other_page, other in candidates[(department, name_key(indicator['name']))]:
+            planned = next((v for v in other['values'] if (v['year'], v['kind']) == (2026, 'planned')), None)
+            matches.append(dict(name=other['name'], page=other_page, unit=other['unit'], planned_2026=planned,
+                unit_equal=_label_key(indicator['unit']) == _label_key(other['unit']),
+                target_equal=planned is not None and target['value'] is not None and planned['value'] is not None
+                    and Decimal(target['value']) == Decimal(planned['value'])))
+        rows.append(dict(department=department, name=indicator['name'], page=page,
+                         unit=indicator['unit'], target_2026=target, candidates=matches))
+    output = Path(output)
+    output.parent.mkdir(parents=True, exist_ok=True)
+    output.with_suffix('.json').write_text(json.dumps(rows, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
+    lines = ['# CIV-165 — 2026 / 2027 gösterge adayları', '',
+        'Salt okunur rapor. Aynı sistem müdürlüğünde SH/PG öneki çıkarılmış normalleştirilmiş ad tam eşitliği aranır. '
+        'Birim ve 2026 Hedef / 2026 Planlanan değerleri inceleme için gösterilir; hiçbir kalıcı kimlik bağlanmaz. '
+        'Boş veya çizgi değer eşitliği kanıtlanmış sayılmaz. Her 2026 gösterge ayrı satırdır; aday yokluğu da görünür.', '',
+        '| Müdürlük | 2026 gösterge (sayfa) | Birim / 2026 Hedef | 2027 aday (sayfa) | Birim / 2026 Planlanan | Birim eşit / değer eşit |',
+        '| --- | --- | --- | --- | --- | --- |']
+    for row in rows:
+        match_text = '; '.join(f"{m['name']} (s.{m['page']})" for m in row['candidates']) or 'Aday yok'
+        values = '; '.join(f"{m['unit']} / {(m['planned_2026'] or {}).get('raw_text', 'YOK')}" for m in row['candidates']) or '—'
+        equality = '; '.join(f"{m['unit_equal']} / {m['target_equal']}" for m in row['candidates']) or '—'
+        lines.append('| ' + ' | '.join(cell(v) for v in (row['department'], f"{row['name']} (s.{row['page']})",
+            f"{row['unit']} / {row['target_2026']['raw_text']}", match_text, values, equality)) + ' |')
+    output.with_suffix('.md').write_text('\n'.join(lines) + '\n', encoding='utf-8')
+    return rows
 
 
 def budget_sum(rows, expected):
@@ -427,6 +618,8 @@ def institution_report(audit):
 
 
 def report(parsed, inspection, path, digest, output_path=None):
+    if parsed.get('first_load_year') == 2026:
+        return report_2026(parsed, inspection, path, digest)
     from scripts.first_load_audit import audit_results, checklist, GROUPS, BookAudit, money
     audit = audit_results(parsed, inspection['results'])
     institution = audit.get('institution', dict(findings=[], tables=[]))
@@ -617,14 +810,24 @@ def report(parsed, inspection, path, digest, output_path=None):
     return '\n'.join(lines)
 
 
-def parse_book(path, name_map=NAME_MAP, exclude_source_tables=()):
+def parse_book(path, name_map=NAME_MAP, exclude_source_tables=(), *, year=2027):
     """Keep generated Word and mapping report temporary during a rehearsal."""
     from app.data_importer import parse_performance_docx
     with TemporaryDirectory(prefix='civensa_first_load_word_') as directory:
         word = Path(directory) / 'book.docx'
+        if year == 2026:
+            from scripts.book_to_load_docx import FIRST_LOAD_BOOKS
+            data = path.read_bytes()
+            if hashlib.sha256(data).hexdigest() != FIRST_LOAD_BOOKS[2026][1]:
+                raise ValueError('Kitap SHA256 uyuşmuyor; 2026 onaylı IDML gerekli. 0 satır yazıldı.')
+            if exclude_source_tables:
+                raise ValueError('2026 onaylı yüklemede kaynak tablosu dışlanamaz; 0 satır yazıldı.')
+            snapshot = Path(directory) / FIRST_LOAD_BOOKS[2026][0]
+            snapshot.write_bytes(data)
+            path = snapshot
         if path.suffix.lower() == '.idml':
             from scripts.book_to_load_docx import generate_docx
-            conversion = generate_docx(path, name_map, word)
+            conversion = generate_docx(path, name_map, word, **({'year': year} if year == 2026 else {}))
         else:
             word.write_bytes(path.read_bytes())
             conversion = None
@@ -645,6 +848,9 @@ def parse_book(path, name_map=NAME_MAP, exclude_source_tables=()):
             table._tbl.getparent().remove(table._tbl)
         doc.save(word)
         parsed = parse_performance_docx(word.read_bytes())
+        if year == 2026:
+            parsed.update(first_load_year=2026, **{key: conversion[key] for key in (
+                'book_department_names', 'catalogue_descriptions', 'dropped_guidance')})
         parsed['excluded_source_tables'] = excluded
         book_tables = {}
         if path.suffix.lower() == '.idml':
@@ -661,9 +867,12 @@ def parse_book(path, name_map=NAME_MAP, exclude_source_tables=()):
         parsed['rehearsal_tables'] = {}
         for index, table in enumerate(doc.tables, 1):
             source = parsed.get('source_tables', {}).get(str(index), {})
+            original = book_tables.get(source.get('id'))
+            if original and source.get('source_rows'):
+                original = [original[n-1] for n in source['source_rows']]
             parsed['rehearsal_tables'][str(index)] = dict(
                 page=source.get('page', '?'), original_number=source.get('table_number', index),
-                book=book_tables.get(source.get('id')), word=[[c.text for c in row.cells] for row in table.rows])
+                book=original, word=[[c.text for c in row.cells] for row in table.rows])
         return parsed, conversion
 
 
@@ -885,13 +1094,19 @@ def difference_report(old_path, new_path, old_parsed, new_parsed, old_inspection
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('book', type=Path)
+    parser.add_argument('book', type=Path, nargs='?')
+    parser.add_argument('--year', type=int, choices=(2026, 2027), default=2027)
     parser.add_argument('--exclude-source-table', type=int, action='append', default=[],
                         help='Yalnızca provada çıkarılacak Word tablo numarası; tekrarlanabilir')
     parser.add_argument('--out', type=Path, help='Markdown çıktı dosyası; verilmezse stdout')
     parser.add_argument('--compare-source', type=Path, help='Eski IDML kaynağını aynı kurallarla karşılaştır')
     parser.add_argument('--diff-out', type=Path, help='Türkçe kaynak fark raporu; --compare-source ile birlikte')
     args = parser.parse_args()
+    sys.path.insert(0, str(ROOT))
+    from scripts.book_to_load_docx import FIRST_LOAD_BOOKS
+    args.book = args.book or ROOT / 'tests/fixtures/first_load/source' / FIRST_LOAD_BOOKS[args.year][0]
+    if args.year == 2026 and (args.compare_source or args.exclude_source_table):
+        parser.error('2026 onaylı prova kaynak karşılaştırması veya tablo dışlaması kabul etmez')
     if bool(args.compare_source) != bool(args.diff_out):
         parser.error('--compare-source ve --diff-out birlikte gerekli')
     if args.compare_source and (args.exclude_source_table or args.book.suffix.lower() != '.idml'
@@ -903,12 +1118,18 @@ def main():
         data = args.book.read_bytes()
         from sqlalchemy.orm import Session
 
-        parsed, conversion = parse_book(args.book, exclude_source_tables=args.exclude_source_table)
+        parsed, conversion = parse_book(args.book, exclude_source_tables=args.exclude_source_table, year=args.year)
         with disposable_database(url) as engine:
             with Session(engine, expire_on_commit=False) as db:
-                inspection = inspect_import(db, deepcopy(parsed), args.book.name)
+                inspection = inspect_import(db, deepcopy(parsed), args.book.name, year=args.year)
         inspection['conversion'] = conversion
         content = report(parsed, inspection, args.book, hashlib.sha256(data).hexdigest(), args.out)
+        if args.year == 2026:
+            destination = args.out.parent if args.out else ROOT / 'docs/reports/civ-165'
+            destination.mkdir(parents=True, exist_ok=True)
+            indicator_match_report(parsed, inspection['baseline_parsed'], destination / 'indicator_match_2026_2027.md')
+            summary = summary_2026(parsed, inspection)
+            (destination / 'dryrun_summary.json').write_text(json.dumps(summary, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
         if args.out:
             args.out.parent.mkdir(parents=True, exist_ok=True)
             args.out.write_text(content, encoding='utf-8')
@@ -932,6 +1153,9 @@ def main():
         # DB exceptions can include connection details; never print them/tracebacks.
         print(f'Kuru deneme çalıştırılamadı ({type(exc).__name__}); yerel PostgreSQL, '
               'dosya ve CREATE DATABASE yetkisini kontrol edin.', file=sys.stderr)
+        return 1
+    if args.year == 2026 and (summary['refusals'] or summary['amount_differences']
+                             or not summary['protected_2027_unchanged']):
         return 1
     return 0
 
