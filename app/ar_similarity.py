@@ -11,7 +11,7 @@ from .activity_contract_service import digest
 from .models import ARDocument, ARDocumentFreeze, ARUnitWorkflowEvent, ReportingPeriod
 
 # Strateji policy defaults live here, independently of copy/review provenance.
-SIMILARITY_THRESHOLD = 85
+SIMILARITY_THRESHOLD = 50
 MINIMUM_WORDS = 30
 PREVIOUS_YEAR_OFFSET = 1
 NUMBER_TOKEN = '#'

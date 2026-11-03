@@ -165,7 +165,7 @@ OFFICIAL_HEADERS = ['Standart Kod No', 'Kamu İç Kontrol Standardı ve Genel Ş
     'Sorumlu Birim veya Çalışma grubu üyeleri', 'İşbirliği Yapılacak Birim',
     'Çıktı/Sonuç', 'Başlangıç Tarihi', 'Bitiş Tarihi', 'Açıklama']
 COMPONENT_HEADERS = ['Bileşenler', 'Eylem Sayısı', 'Gerçekleşen', 'Gerçekleşmeyen',
-                     'Devam Eden', 'Tamamlanan Toplam', 'Gerçekleşme Oranı (%)']
+                     'Devam Eden', 'Tamamlanan Toplam', 'Gerçekleşme Oranı (%)', 'Genel Orana Katkı (%)']
 OFFICIAL_PHRASES = {'completed': '(TAMAMLANDI)', 'ongoing': 'Eylem Devam Etmektedir.',
     'partial': '(KISMEN TAMAMLANDI (DEVAM EDİYOR))', 'delayed': 'Eylem Devam Etmektedir.',
     'not_started': '(GERÇEKLEŞMEDİ)', 'not_approved': 'Eylem Uygun Görülmemiştir.'}
@@ -205,7 +205,7 @@ def official_data(db, actor, period_id, *, draft=False):
             if status == 'ongoing' and any(e and e.status == 'partial' for e in entries):
                 status = 'partial'
             if record['due'] is False and not any(u['approved_entry'] for u in record['units']):
-                explanation = ['Eylem süresi bu dönemde dolmamaktadır.']
+                explanation = ['Devam eden eylem.']
             else:
                 explanation = [OFFICIAL_PHRASES[status]]
             for unit in record['units']:
@@ -249,7 +249,7 @@ def official_export(db, actor, period_id, format, *, draft=False):
         for row in metrics['components']:
             literal_row(sheet, row)
         sheet.column_dimensions['A'].width = 70
-        for col in 'BCDEFG':
+        for col in 'BCDEFGH':
             sheet.column_dimensions[col].width = 25
         sheet = book.create_sheet('Resmî İzleme')
         literal_row(sheet, OFFICIAL_HEADERS)
