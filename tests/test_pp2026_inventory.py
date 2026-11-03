@@ -253,3 +253,20 @@ def test_inventory_failure_is_reported_without_private_exception(tmp_path, monke
     assert rehearsal.PHASES['inventory'] in report
     assert '### 2026 dönemi envanteri' in report
     assert 'Envanter alınamadı' in report
+
+
+@pytest.mark.postgres
+@pytest.mark.parametrize('action,answer', [
+    ('CIV171-private-action', True), ('first_load_department', False),
+    ('data_import_apply', False), ('activity_mapping_csv', False),
+])
+def test_audit_attribution_is_independent_of_private_action_label(db, sample, action, answer):
+    sample['period'].year = 2026
+    db.add(m.AuditLog(user_id=sample['user'].id, action=action,
+        entity_type='indicator', entity_id=sample['indicator'].id, details=PRIVATE, created_at=FIRST))
+    db.commit()
+    inventory = rehearsal.period_inventory(db.get_bind())
+    assert inventory['human'] is answer
+    output = '\n'.join(rehearsal.inventory_lines(inventory))
+    assert 'CIV171-private-action' not in output
+    assert PRIVATE not in output

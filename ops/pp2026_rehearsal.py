@@ -93,6 +93,8 @@ AUDIT_ACTIONS = APP_AUDIT_ACTIONS | {
     'activity_mapping_csv', 'activity_mapping_csv_revert', 'activity_evidence_download',
     'template_upload', 'template_verify', 'period_activate',
 }
+IMPORT_AUDIT_ACTIONS = {'data_import_preview', 'data_import_apply', 'data_import_revert',
+                      'first_load_department', 'activity_mapping_csv', 'activity_mapping_csv_revert'}
 
 
 def period_inventory_tables(year):
@@ -228,13 +230,15 @@ def inventory_groups(db, name, table):
     if 'source' in table.c:
         human = and_(human, table.c.source.in_(['manual', 'administrative', 'ex_officio']))
     if name == 'audit_log':
-        # Importer catalogue audits may have strategy authors too. Only known
-        # application edit actions are evidence; unknown actions remain counts.
+        # Actor attribution is independent of the display allowlist: a new or
+        # unknown application action still proves user activity, while its text
+        # is reported as "diğer". Exclude the existing importer audit paths.
         payload = cast(case((func.pg_input_is_valid(table.c.details, 'jsonb'), table.c.details),
                             else_='{}'), JSONB)
         manual_catalogue = and_(table.c.action.in_(['catalogue_create', 'catalogue_link']),
                                 payload.has_key('source'), payload['source'].astext.is_(None))
-        human = and_(human, or_(table.c.action.in_(sorted(APP_AUDIT_ACTIONS)), manual_catalogue))
+        human = and_(human, table.c.action.not_in(sorted(IMPORT_AUDIT_ACTIONS)),
+                     or_(table.c.action.not_in(['catalogue_create', 'catalogue_link']), manual_catalogue))
     has_human = bool(db.scalar(select(func.count()).select_from(source).where(human)))
     return groups, has_human
 
@@ -291,7 +295,7 @@ def inventory_lines(inventory):
                 lines.append('- ' + name + ': ' + '; '.join(f'{key}={value}' for key, value in group.items()))
         lines.append('')
     lines += ['', 'Kullanıcı girişi var mı: ' + ('EVET' if inventory['human'] else 'HAYIR'),
-              'Kural: İçe aktarma dışındaki değer/iş akışı kayıtlarında department veya strategy aktörü ya da döneme ait bilinen uygulama düzenleme denetim izi varsa EVET; aktörsüz kayıtlar ve içe aktarma izleri tek başına kullanıcı girişi sayılmaz.']
+              'Kural: İçe aktarma dışındaki değer/iş akışı veya döneme bağlı denetim kayıtlarında department ya da strategy aktörü varsa EVET; aktörsüz kayıtlar, içe aktarma işlemleri ve kaynaklı katalog izleri tek başına kullanıcı girişi sayılmaz.']
     return lines
 
 
