@@ -41,3 +41,9 @@ Yerel PostgreSQL URL değişkeni ayarlı olarak:
 Chromium 151.0.7922.173 kullanıldı. Standart Playwright tarayıcı indirme alanı ortamın ağ kuralıyla engellendiği için mevcut `/usr/bin/chromium` seçildi. Tarayıcı adaptörü 303 zincirini TestClient içinde çözer; sahte `testserver` adresine dış ağ isteği çıkarmaz. Test kümesinde hız için `fsync`, `full_page_writes` ve `synchronous_commit` kapatıldı; çökme kurtarma/disk dayanıklılığı sınanmadı.
 
 Önceki geliştirme koşularındaki test hazırlığı/yönlendirme hataları düzeltilip yeni dosyanın tamamı yukarıdaki 24 testle yeniden çalıştırıldı. Tek uyarı mevcut Starlette/httpx kullanımının deprecation uyarısıdır.
+
+## Tam CI'da bulunan denetim etiketi
+
+İlk tam CI koşusunun bir parçası 1.908 test geçerken iki hata verdi: yeni `publication_approved_book` olayı için Türkçe etiket eksikti; mevcut `approve-submit` eşzamanlılık testinde ilk okuma 5 saniyede gözlenmedi. Etiket `program_routes.register` içinde kaydedildi; izinli dosya listesi dışına çıkılmadı ve mevcut testler değiştirilmedi. Yerel PostgreSQL 18.6 üzerinde `python -m pytest -q --require-postgres tests/test_audit_display.py tests/test_workflow_concurrency.py`: **13 geçti**, 12,34 sn. Bu PG18 kümesinde fsync/full_page_writes/synchronous_commit varsayılan `on` durumunda kaldı. Tam CI son commit için yeniden izlenir.
+
+CI'da 5 saniyelik beklemede takılan `tests/test_workflow_concurrency.py::test_concurrent_transition_applied_once[approve-submit]` değiştirilmeden beş ayrı pytest sürecinde PostgreSQL 18.6 üzerinde tekrarlandı: **5/5 geçti** (3,98 / 2,86 / 2,71 / 2,91 / 2,68 sn). Bu, ilk CI zamanlama hatasının tekrar üretilemediğini gösterir; önceki başarısız tam CI koşusunu başarılı saymaz.
