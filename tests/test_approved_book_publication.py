@@ -17,6 +17,7 @@ from app.models import (AuditLog, Department, ImportBatch,
                         Indicator, OfficialActivity, Publication, ReportingPeriod, User)
 from app.program_service import approved_book_provenance, publication_checks
 from app.security import hash_password
+from app.numbers import format_number
 from scripts import first_load_live as live
 from scripts.first_load_dryrun import disposable_database, inspect_import, local_test_url
 from test_sidebar_ui import browser
@@ -104,7 +105,7 @@ def test_publish_approved_book_seals_warnings_and_provenance(walk, year):
     assert all(item['count'] == len(item['messages']) for item in warnings)
     assert db.scalar(select(AuditLog.id).where(AuditLog.action == 'publication_approved_book', AuditLog.entity_id == pub.id))
     page = client.get('/report-builder', params={'period_id':pid})
-    assert f"Kaynak kitap uyarıları: {sum(item['count'] for item in warnings)}" in page.text
+    assert f"Kaynak kitap uyarıları: {format_number(sum(item['count'] for item in warnings))}" in page.text
     assert 'action="/report-builder/publish-approved-book"' not in page.text
     # Repeated submission must never produce v2, bindings, definitions or audit.
     before_rows = owned_counts(db)
@@ -264,7 +265,7 @@ def test_approved_book_button_and_history_screens(walk, browser, width):
         history = page.locator('#publication-history')
         history.scroll_into_view_if_needed()
         expect(history).to_contain_text('Onaylı kitaptan yayın')
-        expect(history).to_contain_text(re.compile(r'Kaynak kitap uyarıları: \d+'))
+        expect(history).to_contain_text('Kaynak kitap uyarıları: 66.409')
         assert page.evaluate('document.documentElement.scrollWidth <= innerWidth')
         if folder:
             page.screenshot(path=str(Path(folder) / f'history-{width}.png'))

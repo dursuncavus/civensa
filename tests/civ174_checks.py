@@ -11,6 +11,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.models import ReportingPeriod
+from app.numbers import format_number
 from app.program_service import publication_checks
 from scripts import first_load_live as live
 from scripts.first_load_dryrun import disposable_database, inspect_import, local_test_url
@@ -41,7 +42,7 @@ def main():
                 entry['errors'].extend(check['errors'])
             for family, entry in families.items():
                 example = entry['errors'][0].replace('|', '/') if entry['errors'] else '—'
-                lines.append(f"| {year} | `{family}` | {entry['checks']} | {len(entry['errors'])} | {example} |")
+                lines.append(f"| {year} | `{family}` | {format_number(entry['checks'])} | {format_number(len(entry['errors']))} | {example} |")
             details += ['', f'## {year}: tüm hatalar', '']
             for check in checks:
                 details.extend(f"- `{check['id']}`: {error}" for error in check['errors'])

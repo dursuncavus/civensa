@@ -223,7 +223,7 @@
           <p>{{ publication.created_at|turkey_time }} · {{ publication.creator|actor_label }}</p>
           {% if publication.id in approved_book_publications %}
             {% set book = approved_book_publications[publication.id] %}
-            <p>Onaylı kitaptan yayın · Onay dayanağı: {{ book.approval_reference }} · Kaynak kitap uyarıları: {{ book.warning_count }}</p>
+            <p>Onaylı kitaptan yayın · Onay dayanağı: {{ book.approval_reference }} · Kaynak kitap uyarıları: {{ book.warning_count|trnum }}</p>
           {% endif %}
           <p class="publication-links">
             <a href="/publications/{{ publication.id }}.docx">Word</a>
