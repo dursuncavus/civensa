@@ -1085,3 +1085,8 @@ Decision (lead): a first-loaded approved book (2026, and 2027 later) is register
 Package docs/lead/tasks/CIV-174.md → Codex (GPT-6.1 Sol, yüksek), after #336 merge.
 Gemini CIV-173: at 18:35 the work folder has uncommitted edits in scripts/first_load_live.py + tests, no CIV-173.patch / RESULT.md yet → owner checks Antigravity.
 Next IDs: task CIV-175, decision D-392.
+
+## D-392 (3 Nov 2026 ~19:45 Istanbul, lead, live session CV Lider 53) — CIV-173 (Gemini) merged
+Gemini (Antigravity, "Gemini 4 Argon (High)" per its RESULT.md) delivered CIV-173.patch + RESULT.md (owner 19:03). Lead applied the one commit on phase5 38e5c64 (clean), pushed task/civ-173-plan-progress, PR #356. Review (Claude, different family, DOĞRULANDI): only scripts/first_load_live.py + tests/test_first_load_live.py; phase() context manager prints "Aşama: <ad> …" / "· tamam · X.X sn" on stderr with flush for kitap doğrulama, yedek doğrulama, veritabanı/şema denetimi, müdürlük planı, 2027 koruma özeti hesabı; stdout/JSON/return codes unchanged; 2 CIV-170 stderr assertions adjusted for the extra lines, 2 new tests (call-order stub + 2026/2027 plan/apply). CI green on cf4e307, behind 0 → merged 28a2bd2.
+Notes: Gemini's local timings — book verification ~5.5–5.8 s, every other plan phase < 0.2 s on local PostgreSQL; so the 9–20 min live plan (D-327) is network round-trips, which the new phase lines will now locate on the next live run. RESULT.md mislabels the base commit title (SHA 971b743 correct) — documentation only.
+Next IDs: task CIV-175, decision D-393.
