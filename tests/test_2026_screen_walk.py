@@ -201,6 +201,7 @@ def test_catalogue_edit_keeps_technical_key(walk, year):
     period = selected(db, year)
     item = db.scalar(select(OfficialActivity).where(OfficialActivity.period_id == period.id))
     old_code = item.code
+    old_name = item.name
     page = client.get('/report-builder', params={'period_id':period.id})
     if year == 2026:
         assert old_code not in page.text
@@ -214,6 +215,13 @@ def test_catalogue_edit_keeps_technical_key(walk, year):
         for field in ('code','program_code','subprogram_code'):
             data.pop(field)
     response = client.post('/report-builder/catalogue', data=data)
+    if year == 2027:
+        # Preserve the existing 2027 gate: its imported blank program codes
+        # cannot be saved through the legacy form without official codes.
+        assert response.status_code == 422
+        db.refresh(item)
+        assert (item.code, item.name) == (old_code, old_name)
+        return
     assert response.status_code == 303, response.text[:500]
     db.refresh(item)
     assert item.code == old_code

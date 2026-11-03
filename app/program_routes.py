@@ -495,15 +495,16 @@ def register(app):
         if data.get('id') and not obj:raise pp_error(404)
         if obj and obj.period_id != pid:raise pp_error(403)
         fields=['program_code','program_name','subprogram_code','subprogram_name','code','name'];values={f:str(data.get(f,'')).strip() for f in fields}
-        required = [f for f in fields if f not in {'program_code','subprogram_code'}
-                    or obj is None or getattr(obj, f)]
+        required = fields
+        missing_message = 'Katalog kod veya adı eksik. Program, alt program ve faaliyet kod/ad alanlarını doldurun.'
         if obj and obj.code.startswith('name:'):
             # The approved 2026 book has names, without official codes. The
             # server owns its technical identity, including on form recovery.
             for field in ('program_code','subprogram_code','code'):
                 values[field] = getattr(obj, field)
             required = ['program_name','subprogram_name','name']
-        if any(not values[f] for f in required):raise pp_error(422, 'Katalog kod veya adı eksik. Bu kayıtta gösterilen zorunlu program, alt program ve faaliyet alanlarını doldurun.', next(f for f in required if not values[f]))
+            missing_message = 'Katalog adı eksik. Program, alt program ve faaliyet adı alanlarını doldurun.'
+        if any(not values[f] for f in required):raise pp_error(422, missing_message, next(f for f in required if not values[f]))
         ids={integer(v) for v in data.getlist('department_ids')}
         if not ids or any(not db.get(Department,d) for d in ids):raise pp_error(422, 'Katalog sorumlu birimi geçersiz. Listeden en az bir müdürlük seçin.', 'department_ids')
         save_catalogue_entry(db,pid,values,ids,user,obj=obj)

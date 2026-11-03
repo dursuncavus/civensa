@@ -161,7 +161,7 @@
                 {% if not (item and item.code.startswith('name:') and name in ['program_code','subprogram_code','code']) %}
                 <label>
                   {{ label }}
-                  <input name="{{ name }}" value="{{ item|attr(name) if item else '' }}" {% if not item or name not in ['program_code','subprogram_code'] or item|attr(name) %}required{% endif %}>
+                  <input name="{{ name }}" value="{{ item|attr(name) if item else '' }}" required>
                 </label>
                 {% endif %}
               {% endfor %}
