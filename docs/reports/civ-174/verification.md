@@ -38,6 +38,7 @@ Yerel PostgreSQL URL değişkeni ayarlı olarak:
 - `python -m compileall -q app tests/test_approved_book_publication.py tests/civ174_checks.py` ve `git diff --check`: başarılı.
 - Yerel tam takım `python -m pytest -q --require-postgres -n 4 --dist loadfile --max-worker-restart=0`: odaklı/ekran çalıştırmalarına kaynak ayırmak için durduruldu; o ana kadar **428 geçti**, 339,48 sn. Tam takımın geçtiği iddia edilmiyor; son commit için CI sonucu PR'da izlenir.
 - 2026 onaylı kitap regresyonunda `kaynak_kitap_uyarilari` JSON'u **10.933 bayt**, tüm `Publication.snapshot_json` ise **25.839.532 bayt** ölçüldü. Tam yayın boyutu, onay özeti dışında mühürlenen kitap içeriğini de kapsar.
+- Yayın geçmişi onay dayanağı ve uyarı toplamını `publication_approved_book` audit kaydından toplu sorgular; `/report-builder` yayın sorgusu `snapshot_json` alanını erteleyerek sayfa görüntülemesinde büyük yayın içeriğini okumaz. 2026 regresyonu snapshot'ın JSON olarak ayrıştırılmadığını ve geçmiş metninin korunduğunu doğrular.
 
 Chromium 151.0.7922.173 kullanıldı. Standart Playwright tarayıcı indirme alanı ortamın ağ kuralıyla engellendiği için mevcut `/usr/bin/chromium` seçildi. Tarayıcı adaptörü 303 zincirini TestClient içinde çözer; sahte `testserver` adresine dış ağ isteği çıkarmaz. Test kümesinde hız için `fsync`, `full_page_writes` ve `synchronous_commit` kapatıldı; çökme kurtarma/disk dayanıklılığı sınanmadı.
 

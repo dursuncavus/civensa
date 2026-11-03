@@ -142,7 +142,7 @@ def test_publish_approved_book_seals_warnings_and_provenance(walk, year):
     assert owned_counts(db) == before_rows
 
 
-def test_2026_approved_book_warning_payload_is_compact_and_sealed(walk):
+def test_2026_approved_book_warning_payload_is_compact_and_sealed(walk, monkeypatch):
     db, client, strategy, user, login, token = walk
     pid = period(db, 2026).id
     checks = publication_checks(db, pid)
@@ -161,8 +161,18 @@ def test_2026_approved_book_warning_payload_is_compact_and_sealed(walk):
     audit = db.scalar(select(AuditLog).where(
         AuditLog.action == 'publication_approved_book', AuditLog.entity_id == publication.id))
     assert json.loads(audit.details)['warning_count'] == 66_409
-    assert f'Kaynak kitap uyarıları: {format_number(66_409)}' in client.get(
-        '/report-builder', params={'period_id':pid}).text
+    snapshot = publication.snapshot_json
+    db.expire(publication, ['snapshot_json'])
+    from app import publication_history as history_module
+    loads = history_module.loads
+    def reject_snapshot_load(value, *args, **kwargs):
+        assert value != snapshot, 'report builder parsed Publication.snapshot_json'
+        return loads(value, *args, **kwargs)
+    monkeypatch.setattr(history_module, 'loads', reject_snapshot_load)
+    page = client.get('/report-builder', params={'period_id':pid})
+    assert page.status_code == 200
+    assert 'Onay dayanağı: Meclis kararı, 16.10.2025' in page.text
+    assert f'Kaynak kitap uyarıları: {format_number(66_409)}' in page.text
 
 
 def owned_counts(db):
