@@ -364,6 +364,9 @@ def test_internal_control_period_names_and_exports(walk, year):
     clean(page.text)
     assert expected in page.text
     from app import internal_control_questionnaire_service as q
+    for invalid in ('geçersiz', '2025'):
+        response = client.get(f'/internal-control/plans/{period.plan_id}?year={invalid}')
+        assert response.status_code == 422 and 'Plan yılı geçersiz' in response.text
     question = next(b for b in q.batches(db, period.id) if b.department_id == user.department_id)
     page = client.get(f'/internal-control/questionnaires/batches/{question.id}')
     assert page.status_code == 200

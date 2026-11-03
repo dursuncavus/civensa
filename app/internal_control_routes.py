@@ -180,13 +180,16 @@ def register(app):
 
     @app.get('/internal-control/plans/{plan_id}')
     def view(plan_id: int, request: Request, component: str = '', standard: str = '', department_id: str = '',
-             q: str = '', year: int | None = None, db: Session = Depends(get_db), user=Depends(strategy)):
+             q: str = '', year: str = '', db: Session = Depends(get_db), user=Depends(strategy)):
         if department_id and not department_id.isdecimal():
             raise HTTPException(422, 'Müdürlük seçimi geçersiz. Listeden seçin.')
         department_id = int(department_id) if department_id else None
         plan = db.get(ICPlan, plan_id)
         if not plan:
             raise HTTPException(404, 'Plan bulunamadı. Plan listesini yenileyin.')
+        if year and not year.isdecimal():
+            raise HTTPException(422, 'Plan yılı geçersiz. Planın başlangıç ve bitiş yılları arasından bir yıl seçin.')
+        year = int(year) if year else None
         if year is not None and not plan.start_year <= year <= plan.end_year:
             raise HTTPException(422, 'Plan yılı geçersiz. Planın başlangıç ve bitiş yılları arasından bir yıl seçin.')
         return templates.TemplateResponse(request, 'internal_control/plan.html', dict(user=user, plan=plan,
