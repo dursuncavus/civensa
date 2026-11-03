@@ -15,6 +15,7 @@ from .internal_control_models import (COMPONENTS, STANDARD_COMPONENTS, ICPlan, I
                                       ICAction, ICActionParty, ICImport)
 from .models import Department, User
 from . import internal_control_service as service
+from .structure_service import name_for_year
 
 XLSX = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
 STATUS_LABELS = {'draft': 'Taslak', 'active': 'Etkin', 'archived': 'Arşiv'}
@@ -40,16 +41,18 @@ def commit(db):
         raise HTTPException(409, 'İşlem başka bir kullanıcı tarafından değiştirildi. Listeyi yenileyip yeniden deneyin.') from None
 
 
-def catalogue(db, plan, *, component='', standard='', department_id=None, q=''):
+def catalogue(db, plan, *, component='', standard='', department_id=None, q='', year=None):
     conditions = db.scalars(select(ICCondition).where(ICCondition.plan_id == plan.id)
                            .order_by(ICCondition.sort_order)).all()
     actions = db.scalars(select(ICAction).where(ICAction.plan_id == plan.id).order_by(ICAction.sort_order)).all()
     parties = db.scalars(select(ICActionParty).join(ICAction).where(ICAction.plan_id == plan.id)
                          .order_by(ICActionParty.sort_order)).all()
     departments = {d.id: d for d in db.scalars(select(Department).order_by(Department.name))}
+    year = year if year is not None else plan.start_year
+    department_names = {did: name_for_year(db, year, d) for did, d in departments.items()}
     by_action, by_condition = defaultdict(list), defaultdict(list)
     for party in parties:
-        label = 'Tüm Müdürlükler' if party.all_departments else (departments[party.department_id].name if party.department_id else party.body_name)
+        label = 'Tüm Müdürlükler' if party.all_departments else (department_names[party.department_id] if party.department_id else party.body_name)
         by_action[party.action_id].append({'role': party.role, 'label': label})
     responsible = defaultdict(set)
     for party in parties:
@@ -66,7 +69,7 @@ def catalogue(db, plan, *, component='', standard='', department_id=None, q=''):
         counts[c]['actions'] += 1
         for did, ids in responsible.items():
             if action.id in ids:
-                counts[c]['departments'][departments[did].name].add(action.id)
+                counts[c]['departments'][department_names[did]].add(action.id)
         by_condition[action.condition_id].append(action)
     groups = {}
     key = service.department_key(q)
@@ -89,7 +92,8 @@ def catalogue(db, plan, *, component='', standard='', department_id=None, q=''):
         group = groups.setdefault(comp, {}).setdefault(condition.standard_code,
                     {'title': condition.standard_title, 'conditions': []})
         group['conditions'].append({'condition': condition, 'actions': candidates})
-    return dict(groups=groups, counts=counts, parties=by_action, departments=list(departments.values()))
+    return dict(groups=groups, counts=counts, parties=by_action, departments=list(departments.values()),
+                department_names=department_names, selected_year=year)
 
 
 def register(app):
@@ -176,18 +180,20 @@ def register(app):
 
     @app.get('/internal-control/plans/{plan_id}')
     def view(plan_id: int, request: Request, component: str = '', standard: str = '', department_id: str = '',
-             q: str = '', db: Session = Depends(get_db), user=Depends(strategy)):
+             q: str = '', year: int | None = None, db: Session = Depends(get_db), user=Depends(strategy)):
         if department_id and not department_id.isdecimal():
             raise HTTPException(422, 'Müdürlük seçimi geçersiz. Listeden seçin.')
         department_id = int(department_id) if department_id else None
         plan = db.get(ICPlan, plan_id)
         if not plan:
             raise HTTPException(404, 'Plan bulunamadı. Plan listesini yenileyin.')
+        if year is not None and not plan.start_year <= year <= plan.end_year:
+            raise HTTPException(422, 'Plan yılı geçersiz. Planın başlangıç ve bitiş yılları arasından bir yıl seçin.')
         return templates.TemplateResponse(request, 'internal_control/plan.html', dict(user=user, plan=plan,
             components=COMPONENTS, standards=STANDARD_COMPONENTS, status_labels=STATUS_LABELS,
             creator=db.get(User, plan.created_by),
             component=component, standard=standard, department_id=department_id, q=q,
-            **catalogue(db, plan, component=component, standard=standard, department_id=department_id, q=q)))
+            **catalogue(db, plan, component=component, standard=standard, department_id=department_id, q=q, year=year)))
 
     @app.get('/internal-control/our-actions')
     def ours(request: Request, period_id: str = '', db: Session = Depends(get_db), user=Depends(require_user)):

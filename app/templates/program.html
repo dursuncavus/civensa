@@ -320,7 +320,7 @@ Resmî faaliyetler
 <select multiple name="official_ids" size="5">
 {% for item in catalogue %}
 <option value="{{ item.id }}" {{ 'selected' if item.id in activity.official_ids else '' }}>
-{{ item.code }} {{ item.name }}
+{% if item.code|display_code %}{{ item.code|display_code }} {% endif %}{{ item.name }}
 </option>
 {% endfor %}
 </select>

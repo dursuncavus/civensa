@@ -28,7 +28,7 @@
           <ul class="missing-departments">
             {% for d in missing_departments %}
               <li>
-                <b>{{ d.name }}</b>
+                <b>{{ d|department_display_name(period.id if period else none) }}</b>
                 <button class="button small create-department-user" data-create-department="{{ d.id }}">Kullanıcı oluştur</button>
               </li>
             {% endfor %}
@@ -60,7 +60,7 @@
       <label id="departmentLabel">Müdürlük
         <select id="userDepartment">
           {% for d in departments if d.is_active %}
-            <option value="{{ d.id }}">{{ d.name }}</option>
+            <option value="{{ d.id }}">{{ d|department_display_name(period.id if period else none) }}</option>
           {% endfor %}
         </select>
       </label>
@@ -110,7 +110,7 @@
                   {% if u.department_id %}
                     {% for d in departments %}
                       {% if d.id==u.department_id %}
-                        {{ d.name }}
+                        {{ d|department_display_name(period.id if period else none) }}
                       {% endif %}
                     {% endfor %}
                   {% else %}

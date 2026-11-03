@@ -158,10 +158,12 @@
                 <input type="hidden" name="id" value="{{ item.id }}">
               {% endif %}
               {% for name,label in [('program_code','Program Kodu'),('program_name','Program Adı'),('subprogram_code','Alt Program Kodu'),('subprogram_name','Alt Program Adı'),('code','Faaliyet Kodu'),('name','Faaliyet Adı')] %}
+                {% if not (item and item.code.startswith('name:') and name in ['program_code','subprogram_code','code']) %}
                 <label>
                   {{ label }}
-                  <input name="{{ name }}" value="{{ item|attr(name) if item else '' }}" required>
+                  <input name="{{ name }}" value="{{ item|attr(name) if item else '' }}" {% if not item or name not in ['program_code','subprogram_code'] or item|attr(name) %}required{% endif %}>
                 </label>
+                {% endif %}
               {% endfor %}
               <label>
                 Sorumlu Harcama Birimleri
