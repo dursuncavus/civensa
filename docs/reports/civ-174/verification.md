@@ -32,11 +32,12 @@ Gerçek HTTP/CSRF işleyicilerine yönlendirilen Chromium; 390×900 ve 1280×900
 Yerel PostgreSQL URL değişkeni ayarlı olarak:
 
 - `python -m tests.civ174_checks`: çıkış 0; 2026 için 63.541, 2027 için 1.750 hata yeniden üretildi. Sıkıştırılmış ayrıntı dosyasının satır sayıları ayrıca doğrulandı.
-- `CIVENSA_CHROMIUM_PATH=/usr/bin/chromium CIVENSA_UI_SCREENSHOTS=docs/reports/civ-174/screenshots python -m pytest -q --require-postgres tests/test_approved_book_publication.py -x`: **24 geçti**, 236,09 sn. Türkçe uyarı sayısı (66.409), iki yılın mühürlü yayını ve normal 422 metni; yan etkisiz retler; geri çevrilen değişiklikler; gerçekleşme–gönderim–onay–Word akışı; dört ekran görüntüsü.
+- `python -m pytest -q --require-postgres tests/test_approved_book_publication.py -x`: **25 geçti**, 221,84 sn. Türkçe uyarı sayısı (66.409), iki yılın mühürlü yayını ve normal 422 metni; yan etkisiz retler; geri çevrilen değişiklikler; gerçekleşme–gönderim–onay–Word akışı.
 - `CIVENSA_CHROMIUM_PATH=/usr/bin/chromium python -m pytest -q --require-postgres tests/test_publication_gates.py tests/test_publication_history.py tests/test_first_load_2026.py tests/test_2026_screen_walk.py`: **43 geçti**, 663,15 sn. Mevcut test dosyaları değiştirilmedi.
 - `python -m alembic heads`: tek head, `c162a1b2c3d4`.
 - `python -m compileall -q app tests/test_approved_book_publication.py tests/civ174_checks.py` ve `git diff --check`: başarılı.
 - Yerel tam takım `python -m pytest -q --require-postgres -n 4 --dist loadfile --max-worker-restart=0`: odaklı/ekran çalıştırmalarına kaynak ayırmak için durduruldu; o ana kadar **428 geçti**, 339,48 sn. Tam takımın geçtiği iddia edilmiyor; son commit için CI sonucu PR'da izlenir.
+- 2026 onaylı kitap regresyonunda `kaynak_kitap_uyarilari` JSON'u **10.933 bayt**, tüm `Publication.snapshot_json` ise **25.839.532 bayt** ölçüldü. Tam yayın boyutu, onay özeti dışında mühürlenen kitap içeriğini de kapsar.
 
 Chromium 151.0.7922.173 kullanıldı. Standart Playwright tarayıcı indirme alanı ortamın ağ kuralıyla engellendiği için mevcut `/usr/bin/chromium` seçildi. Tarayıcı adaptörü 303 zincirini TestClient içinde çözer; sahte `testserver` adresine dış ağ isteği çıkarmaz. Test kümesinde hız için `fsync`, `full_page_writes` ve `synchronous_commit` kapatıldı; çökme kurtarma/disk dayanıklılığı sınanmadı.
 
