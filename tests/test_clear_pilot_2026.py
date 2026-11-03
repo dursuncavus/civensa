@@ -415,3 +415,14 @@ def test_workflow_passes_clear_input_as_environment():
     workflow = Path('.github/workflows/pp2026-backup-rehearsal.yml').read_text()
     assert 'clear_confirmation:' in workflow
     assert 'CIVENSA_REHEARSAL_CLEAR_CONFIRM: ${{ inputs.clear_confirmation }}' in workflow
+
+
+def test_loader_refusal_after_clear_does_not_use_old_occupied_counts(monkeypatch):
+    record = {'source_2026': {'counts': {'programs': 24}}, 'clear-apply': {}}
+    monkeypatch.setattr(rehearsal, 'snapshot', lambda _: 'unchanged')
+    def refuse(*args, **kwargs):
+        raise live.Refusal('Plan reddedildi')
+    monkeypatch.setattr(live, 'execute', refuse)
+    with pytest.raises(live.Refusal, match='Plan reddedildi'):
+        rehearsal.run_loader(None, {'departments': []}, {}, record, 'plan')
+    assert 'message' not in record

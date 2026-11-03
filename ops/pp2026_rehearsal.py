@@ -320,7 +320,7 @@ def run_loader(engine, parsed, ids, record, step, **options):
             result = live.execute(engine, parsed, year=2026, **ids, **options)
     except live.Refusal:
         record[step] = dict(refusals=1, failed=[], counts={}, departments=[])
-        if step == 'plan' and any(value for key, value in record['source_2026']['counts'].items()
+        if step == 'plan' and 'clear-apply' not in record and any(value for key, value in record['source_2026']['counts'].items()
                                   if key != 'department_scopes'):
             check(record, snapshot(engine) == before,
                   'Reddedilen plan satır/sıra değiştirdi; sorumlu yükleyiciyi incelesin.')
