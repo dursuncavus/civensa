@@ -531,6 +531,7 @@ def report_data(db,user,document_id,use_freeze=True,version=None,include_typeset
         if content.status!='not_applicable' or has_slot_data(result['financial'],definition.code):
             missing+=result['financial']['missing'].get(definition.code,[])
         row['missing']=missing
+        row['warnings']=list(result['financial']['warnings'].get(definition.code,[]))
         row['editor_name']=db.get(User,content.edited_by).full_name if content.edited_by else '—'
         if definition.code == 'EKLER':
             from .assurance_service import slot
