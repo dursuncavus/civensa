@@ -9,6 +9,7 @@ from openpyxl import Workbook
 from sqlalchemy import select
 from .internal_control_models import ICPlan, ICCondition, ICAction, COMPONENTS, STANDARD_COMPONENTS
 from .numbers import format_number
+from .structure_service import name_for_year
 from .internal_control_service import require_access, literal_row, export_book
 from . import internal_control_monitoring_service as m
 from .internal_control_monitoring_models import ICMonitoringPeriod as Period, ICMonitoringBatch as Batch, ICMonitoringEvent as Event, ICMonitoringEntry as Entry, ICMonitoringTarget as Target
@@ -187,10 +188,17 @@ def official_data(db, actor, period_id, *, draft=False):
     standard_order = {s: i for i, s in enumerate(STANDARD_COMPONENTS)}
     conditions = sorted(db.scalars(select(ICCondition).where(ICCondition.plan_id == period.plan_id)).all(),
                         key=lambda c: (standard_order[c.standard_code], c.sort_order, c.id))
+    frozen_names = {batch.department_id: batch.label for batch in batches if batch.department_id is not None}
     parties = {}
     for party in db.scalars(select(ICActionParty).join(ICAction).where(ICAction.plan_id == period.plan_id)
                             .order_by(ICActionParty.sort_order, ICActionParty.id)):
-        name = 'Tüm Müdürlükler' if party.all_departments else db.get(Department, party.department_id).name if party.department_id else party.body_name
+        if party.all_departments:
+            name = 'Tüm Müdürlükler'
+        elif party.department_id:
+            name = frozen_names[party.department_id] if party.department_id in frozen_names else name_for_year(
+                db, period.year, db.get(Department, party.department_id))
+        else:
+            name = party.body_name
         parties.setdefault((party.action_id, party.role), []).append(name)
     rows = []
     for condition in conditions:
