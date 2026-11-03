@@ -396,7 +396,10 @@ def financial_data(db,doc):
     source=idare_document(db,doc)
     policy=db.scalar(select(ARFinancialPolicy).where(ARFinancialPolicy.document_id==source.id))
     result={'source_document_id':source.id,'source_revision':source.revision,'policy':{'lower_rate':policy.lower_rate if policy else None,'upper_rate':policy.upper_rate if policy else None},
-        'tables':{},'checks':[],'missing':{k:[] for k in ('III.A.1','III.A.2','III.A.3','III.A.4')},'statements':[],'entries':{},'imports':[]}
+        'tables':{},'checks':[],'missing':{k:[] for k in ('III.A.1','III.A.2','III.A.3','III.A.4')},
+        'warnings':{k:[] for k in ('III.A.1','III.A.2','III.A.3','III.A.4')},'statements':[],'entries':{},'imports':[]}
+    # Amounts belong to central finance; the unit still owns deviation explanations.
+    budget_issues=result['warnings' if doc.department_id else 'missing']['III.A.1']
     refs,pub_id=pp_references(db,doc)
     units=db.scalars(select(ARDocument).where(ARDocument.organization_id==doc.organization_id,ARDocument.period_id==doc.period_id,ARDocument.department_id.is_not(None))).all()
     approved=[]
@@ -428,7 +431,7 @@ def financial_data(db,doc):
                 result['missing']['III.A.1'].append(f"Sapma açıklaması gerekli: {label}, gerçekleşme %{format_number(rate)}. Satırın sapma açıklamasını doldurun.")
             required=[k for k,_ in (REVENUE_FIELDS if kind=='revenue' else EXPENSE_FIELDS) if k!='entered_final']
             blanks=[label for key,label in (REVENUE_FIELDS if kind=='revenue' else EXPENSE_FIELDS) if key in required and item[key] is None]
-            if blanks:result['missing']['III.A.1'].append(f"{label}: {', '.join(blanks)} boş; bilinmiyorsa boş kalır, sıfırsa 0 girin.")
+            if blanks:budget_issues.append(f"{label}: {', '.join(blanks)} boş; bilinmiyorsa boş kalır, sıfırsa 0 girin.")
             if kind!='revenue' and item['entered_final'] is not None and item['final'] is not None and item['entered_final']!=item['final']:
                 result['checks'].append(f"{label}: Yıl Sonu Ödeneği tutarsız; hesaplanan {format_number(item['final'])}, bildirilen {format_number(item['entered_final'])}, fark {format_number(item['entered_final']-item['final'])}. Başlangıç, eklenen ve düşülen ödeneği kontrol edin.")
             if kind!='revenue' and item['final'] is not None and item['final']<0:result['checks'].append(f"{label}: Yıl sonu ödeneği {format_number(item['final'])} negatif. Düşülen ödeneği kontrol edin.")
@@ -438,13 +441,13 @@ def financial_data(db,doc):
         missing_deps=[dep for dep in expected if dep not in groups]
         for dep in missing_deps:
             name=period_name(db,doc.period_id,db.get(Department,dep))
-            result['missing']['III.A.1'].append(f"{name}: {'Ekonomik kod' if kind=='expenditure' else 'Program / alt program'} gider satırları eksik. Mali Hizmetler ilgili müdürlüğün tutarlarını girmeli; gerçek tutar sıfırsa 0 kullanılmalı.")
+            budget_issues.append(f"{name}: {'Ekonomik kod' if kind=='expenditure' else 'Program / alt program'} gider satırları eksik. Mali Hizmetler ilgili müdürlüğün tutarlarını girmeli; gerçek tutar sıfırsa 0 kullanılmalı.")
             groups[dep]=[]
         result['tables'][kind]={'rows':rows,'totals':totals(rows,kind,len(missing_deps)),'by_department':[
             {'department_id':dep,'department':group[0]['department'] if group else period_name(db,doc.period_id,db.get(Department,dep)),
              'totals':totals(group,kind,int(not group))} for dep,group in groups.items()]}
     for kind in ('expenditure','programme'):
-        if not result['tables'][kind]['rows']:result['missing']['III.A.1'].append(f"{'Ekonomik kod' if kind=='expenditure' else 'Program / alt program'} gider tablosu boş. Mali Hizmetler verileri geldiğinde giriş veya XLSX içe aktarma yapın.")
+        if not result['tables'][kind]['rows']:budget_issues.append(f"{'Ekonomik kod' if kind=='expenditure' else 'Program / alt program'} gider tablosu boş. Mali Hizmetler verileri geldiğinde giriş veya XLSX içe aktarma yapın.")
     if not doc.department_id and not result['tables']['revenue']['rows']:result['missing']['III.A.1'].append('Gelir tablosu boş. Gelir ekonomik kodlarına göre tahmin ve tahsilatı girin.')
     exp=result['tables']['expenditure']['rows'];prog=result['tables']['programme']['rows']
     dep_ids=sorted({r['department_id'] for r in exp+prog})
@@ -459,7 +462,10 @@ def financial_data(db,doc):
                 result['checks'].append(f"{label}, {dict(EXPENSE_FIELDS).get(field,'Yıl Sonu Ödeneği')}: ekonomik kod toplamı {format_number(a['value'])}, program toplamı {format_number(b['value'])}. Boş değerler nedeniyle karşılaştırma tamamlanamadı; eksik tutarları girin.")
             elif a['value']!=b['value']:
                 result['checks'].append(f"{label}, {dict(EXPENSE_FIELDS).get(field,'Yıl Sonu Ödeneği')}: ekonomik kod toplamı {format_number(a['value'])}, program toplamı {format_number(b['value'])}, fark {format_number(a['value']-b['value'])}. İki sınıflandırmanın satırlarını kontrol edin.")
-    result['missing']['III.A.1']+=result['checks']
+    budget_issues+=result['checks']
+    if doc.department_id:
+        suffix=" Bu tutarlar Mali Hizmetler Müdürlüğü'ne aittir; birim raporunun gönderimini engellemez, Mali Hizmetler'e bildirin."
+        budget_issues[:]=[message+suffix for message in budget_issues]
     for kind in ('assets','aid','audit','explanations'):
         result['entries'][kind]=entries(db,doc,kind)
         if not doc.department_id and kind in {'aid','audit'}:
