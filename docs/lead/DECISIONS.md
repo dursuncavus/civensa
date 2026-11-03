@@ -963,3 +963,7 @@ Decision (2026↔2027 matching rule):
 4. Activities: description tables become the 2026 official catalogue; cost activities link to it only on a unique exact name match, the rest listed, not guessed.
 Reason: reversible, uses existing mechanisms, keeps 2027 untouched; no owner/Ali input needed. Package docs/lead/tasks/CIV-165.md dispatched to Codex (GPT-6.1 Sol). After its PR: lead review → rehearsal on a disposable DB → backup → owner live load (D-357).
 Next IDs: task CIV-168, decision D-373.
+
+## D-373 (3 Nov 2026 ~14:10 Istanbul, lead, live session CV Lider 51) — CIV-167 merged
+#321 (CIV-167) updated to phase5 (head 1738d35), CI green (test 18/0, 18/1, secrets, backup-security), behind 0 → merged → 21812ec. Not on main/live yet. CIV-165 dispatched to the owner for Codex (D-372); no Codex PR yet at 14:10.
+Next IDs: task CIV-168, decision D-374.
