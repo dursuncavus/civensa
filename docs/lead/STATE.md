@@ -17,7 +17,7 @@ Claude's next session: `CV Lider 53 · Claude Opus 5.5 · civensa-lead`. First j
 7. Watch reactions to the 554 book-check items (D-324, D-352). LOW backlog (D-328). UI: only 002/003 left, waits for Ali (D-345).
 8. One live lead session at a time (D-363). Owner: check Claude Design standalone site before 14 Dec 2026 (D-363).
 9. Quota: weekly reset Sat 00:00. Claude Pro renewal BELİRSİZ (sessions still run 3 Nov).
-Next IDs: task CIV-171, decision D-381.
+Next IDs: task CIV-171, decision D-382.
 
 ## Claude quota (BEYAN, owner 27 Oct 16:21)
 - Session 11%, week 67%, weekly reset Saturday 00:00 (D-300). Copilot 96 / 1,500 credits, reset 1 Nov.
