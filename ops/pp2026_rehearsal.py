@@ -112,7 +112,9 @@ def period_inventory_tables(year):
     Self-history links do not confer ownership of another period's revisions.
     """
     from app.db import Base
+    from app.first_load_service import load_all_models
     from app.models import ReportingPeriod
+    load_all_models()  # D-397: discovery must see every model table.
     tables = Base.metadata.tables
     periods = select(ReportingPeriod.id).where(ReportingPeriod.year == year)
     owned = {}
