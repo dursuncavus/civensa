@@ -1112,3 +1112,18 @@ CI green on 5e3f2a9 (all jobs), behind 0 → merged ac17369 (DOĞRULANDI ~21:40)
 Lead dispatched "2026 PP verified backup rehearsal" run 41691208708 on phase5 38eb017 with backup 41647341988 (same backup as the D-388 inventory), book_confirmation 1aaa0bb81c3c, clear_confirmation "2026 PILOT DONEMINI SIL" → failure in the rehearsal step (disposable copy only, nothing live). The job log shows no text (output goes to the Summary only; BELİRSİZ which phase failed). Owner asked for a screenshot of the Summary (phone). Next: read the failing phase, fix via Codex/Copilot if it is a tool defect; the live clear still needs a PASS rehearsal + owner approval.
 Owner left at 20:31 ("Direksiyon sende"); lead works unattended, owner reachable on the phone.
 Next IDs: task CIV-176, decision D-396.
+
+## D-396 (4 Nov 2026 ~11:40–12:40 Istanbul, lead, live session CV Lider 55) — rehearsal failure made visible
+Owner: Claude account now on Max (BEYAN 11:12; Anthropic mail "Max subscription confirmed" 4 Nov, next charge 4 Dec).
+Lead read the Summary of run 41691208708 in the built-in browser (owner's GitHub sign-in): clear PASS (2,802 rows, archive sha256 c2764249…), plan 33/105/226, apply failed on the first directorate (Sağlık İşleri) with no reason shown; loader end hash ≠ before.
+Lead diagnostics (Claude-written, "@codex review" each, CI green, merged): #360 → 429c304 — loader failure `detail` (exception class, SQLSTATE, schema table/constraint/column names, project code location; never driver text) published only when it matches that grammar (Codex P1 on the first version: free-text ValueError reasons could leak → fixed); #361 → 04e1d57 — per-table 2027 hash parts, changed tables named in the guard error and the Summary.
+Rehearsals 41803269245 / 41806876085 (backup 41788569854): `ValueError, tablo ic_narrative_events, konum app/first_load_service.py:73`, 0 rows before and after.
+Next IDs: task CIV-176, decision D-397.
+
+## D-397 (4 Nov 2026 ~13:20 Istanbul, lead, live session CV Lider 55) — root cause fixed; clear + load rehearsal PASS
+Root cause (DOĞRULANDI): period_rows_hash and ownership discovery read Base.metadata; a CLI process registers fewer model modules than the web app, and the 2026 apply imported the İç Kontrol narrative model mid-run, adding the empty table ic_narrative_events to the 2027 hash → guard fired with no row change. Tests never saw it (conftest imports every model).
+Fix #362 → 0aee945 (Claude-written, "@codex review" no issues, CI green): `load_all_models()` (app.models + every app/*_models.py) before period_rows_hash and period_inventory_tables; subprocess test.
+Rehearsal 41809710770 on 0aee945, backup 41788569854 (4 Nov 06:53Z), clear_confirmation → **PASS**: clear plan 0 writes, cleared 2,802 rows (archive sha256 c2764249a029a985…), load 33 directorates / 105 cards / 226 indicators, 0 failed, persistent ids 0, resume 0 writes / 33 skipped; 2027 hash b5122588… identical at restore, loader before/after and independent end (the old 9bcf… value was the partial-metadata hash). The pinned D-388 fingerprint still matched with all tables discovered.
+LOW: period_rows_hash selects tables by a column named period_id (IC tables use ic_monitoring_periods ids) — over-inclusive, harmless.
+Next: owner approval for the live run (deletes the live 2026 pilot rows) — escalated 4 Nov.
+Next IDs: task CIV-176, decision D-398.
