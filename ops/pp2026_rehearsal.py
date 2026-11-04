@@ -310,6 +310,16 @@ def inventory_lines(inventory):
     return lines
 
 
+DETAIL = re.compile(r'[A-Za-z_][A-Za-z0-9_]{0,62}'
+                    r'(, (SQLSTATE [0-9A-Z]{5}|(tablo|kısıt|sütun) [a-z_][a-z0-9_]{0,62}'
+                    r'|konum (app|scripts|ops)/[A-Za-z0-9_/]{1,120}\.py:[0-9]{1,6}))*')
+
+
+def public_detail(detail):
+    """Publish a loader failure detail only if it matches failure_detail()'s grammar."""
+    return detail if isinstance(detail, str) and DETAIL.fullmatch(detail) else 'ayrıntı gizlendi'
+
+
 def run_loader(engine, parsed, ids, record, step, **options):
     record['phase'] = step
     before = snapshot(engine) if step != 'apply' else None
@@ -334,11 +344,22 @@ def run_loader(engine, parsed, ids, record, step, **options):
     record[step] = dict(
         counts={key: int(value) for key, value in result['counts'].items()}, refusals=0,
         failed=[d['name'] for d in result['failed'] if d['name'] in names],
+        # D-396: never the free-text reason (ValueError text may carry payload
+        # or private values); only a detail matching the structured grammar.
+        failed_details=[dict(name=d['name'], detail=public_detail(d.get('detail')))
+                        for d in result['failed'] if d['name'] in names],
         failed_count=len(result['failed']), skipped=len(result['skipped']),
         departments=[dict(name=d['source_name'], action=d['action']) for d in result['departments']])
     for key in ('protected_2027_before', 'protected_2027_after'):
         if key in result:
             record[step][key] = result[key]
+    if step == 'apply' and result['failed']:
+        # Independent committed-state view: tells a real 2027 change apart from
+        # a loader-session artefact when a failed run reports a different hash.
+        try:
+            record['protected_after'] = protected_state(engine)
+        except Exception:
+            record.pop('protected_after', None)
     if before is not None:
         check(record, snapshot(engine) == before,
               'Salt okunur plan satır/sıra değiştirdi; sorumlu yükleyiciyi incelesin.')
@@ -477,6 +498,8 @@ def summary(record):
             for d in record[step]['departments']:
                 lines.append(f"| {html.escape(d['name'])} | {actions[d['action']]} |")
             lines += ['', 'Başarısız müdürlükler: ' + (', '.join(html.escape(n) for n in record[step]['failed']) or 'yok')]
+            lines += [f"- {html.escape(d['name'])}: `{d['detail']}`"
+                      for d in record[step].get('failed_details', [])]
     if 'display_names_2026' in record:
         lines += ['', '### Yüklemenin atadığı 2026 kapsam adları', '']
         lines += ['- ' + (html.escape(name) if name else '(boş)') for name in record['display_names_2026']]

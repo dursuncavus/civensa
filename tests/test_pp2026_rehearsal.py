@@ -271,3 +271,25 @@ def test_failed_loader_result_keeps_only_public_names_and_counts(monkeypatch):
     assert record['apply']['failed_count'] == 1
     assert record['apply']['failed'] == ['Test Müdürlüğü']
     assert not re.search('private|secret-fixture', json.dumps(record))
+
+
+def test_failed_loader_detail_publishes_only_structured_grammar(monkeypatch):
+    """D-396: structured detail is published; free text never is."""
+    parsed = dict(departments=[dict(name='A Müdürlüğü'), dict(name='B Müdürlüğü')])
+    result = dict(counts={'departments': 0}, skipped=[], validation=[],
+                  departments=[dict(source_name='A Müdürlüğü', action='skip'),
+                               dict(source_name='B Müdürlüğü', action='skip')],
+                  failed=[dict(name='A Müdürlüğü', reason='private secret-fixture',
+                               detail='IntegrityError, SQLSTATE 23505, tablo official_activities, '
+                                      'kısıt uq_entry, konum app/first_load_service.py:120'),
+                          dict(name='B Müdürlüğü', reason='x',
+                               detail='ValueError, konum app/x.py:1 postgresql://private@example.invalid secret-fixture')])
+    monkeypatch.setattr(live, 'execute', lambda *a, **kw: result)
+    record = {}
+    with pytest.raises(live.Refusal, match='başarısız müdürlük'):
+        rehearsal.run_loader(None, parsed, {}, record, 'apply', apply=True)
+    assert record['apply']['failed_details'] == [
+        dict(name='A Müdürlüğü', detail='IntegrityError, SQLSTATE 23505, tablo official_activities, '
+                                        'kısıt uq_entry, konum app/first_load_service.py:120'),
+        dict(name='B Müdürlüğü', detail='ayrıntı gizlendi')]
+    assert not re.search('private|secret-fixture', json.dumps(record))
