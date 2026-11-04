@@ -74,8 +74,8 @@ class Writer:
     def para(self, style, text):
         self.parts.append(f'<ParaStyle:{escape(style)}>{escape(text)}\r\n')
 
-    def table(self, title, header, body, total=None):
-        if not body:
+    def table(self, title, header, body, total=None, keep_header_only=False):
+        if not body and not keep_header_only:
             return
         self.table_number += 1
         self.para(STYLE['caption'], f'Tablo {self.table_number}: {title}')
@@ -109,7 +109,8 @@ class Writer:
             if rows:
                 width = max(len(r) for r in rows)
                 rows = [r + [''] * (width - len(r)) for r in rows]
-                self.table(title, rows[0], rows[1:])
+                # A one-row free table is still saved content (validate_blocks accepts it).
+                self.table(title, rows[0], rows[1:], keep_header_only=True)
             return
         if kind == 'indicators':
             year = self.contract['document'].get('year')

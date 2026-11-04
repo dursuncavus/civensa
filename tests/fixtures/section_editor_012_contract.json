@@ -612,6 +612,15 @@
       [
         "button",
         []
+      ],
+      [
+        "a",
+        [
+          [
+            "href",
+            "/activity-sections/reports/2/indesign.txt"
+          ]
+        ]
       ]
     ],
     [
@@ -1823,6 +1832,15 @@
       [
         "button",
         []
+      ],
+      [
+        "a",
+        [
+          [
+            "href",
+            "/activity-sections/reports/2/indesign.txt"
+          ]
+        ]
       ]
     ],
     [
@@ -2442,6 +2460,15 @@
       [
         "button",
         []
+      ],
+      [
+        "a",
+        [
+          [
+            "href",
+            "/activity-sections/reports/2/indesign.txt"
+          ]
+        ]
       ]
     ],
     [
@@ -2933,6 +2960,15 @@
       [
         "button",
         []
+      ],
+      [
+        "a",
+        [
+          [
+            "href",
+            "/activity-sections/reports/2/indesign.txt"
+          ]
+        ]
       ]
     ],
     [
@@ -3317,6 +3353,15 @@
             "/activity-reports"
           ]
         ]
+      ],
+      [
+        "a",
+        [
+          [
+            "href",
+            "/activity-sections/reports/2/indesign.txt"
+          ]
+        ]
       ]
     ],
     [
@@ -3699,6 +3744,15 @@
           [
             "href",
             "/activity-sections/reports/2/assurances/EK-2"
+          ]
+        ]
+      ],
+      [
+        "a",
+        [
+          [
+            "href",
+            "/activity-sections/reports/2/indesign.txt"
           ]
         ]
       ]
@@ -4235,6 +4289,15 @@
       [
         "button",
         []
+      ],
+      [
+        "a",
+        [
+          [
+            "href",
+            "/activity-sections/reports/2/indesign.txt"
+          ]
+        ]
       ]
     ],
     [
@@ -5489,6 +5552,15 @@
       [
         "button",
         []
+      ],
+      [
+        "a",
+        [
+          [
+            "href",
+            "/activity-sections/reports/2/indesign.txt"
+          ]
+        ]
       ]
     ],
     [
@@ -6151,6 +6223,15 @@
       [
         "button",
         []
+      ],
+      [
+        "a",
+        [
+          [
+            "href",
+            "/activity-sections/reports/2/indesign.txt"
+          ]
+        ]
       ]
     ],
     [
@@ -6685,6 +6766,15 @@
       [
         "button",
         []
+      ],
+      [
+        "a",
+        [
+          [
+            "href",
+            "/activity-sections/reports/2/indesign.txt"
+          ]
+        ]
       ]
     ],
     [
@@ -7112,6 +7202,15 @@
             "/activity-reports"
           ]
         ]
+      ],
+      [
+        "a",
+        [
+          [
+            "href",
+            "/activity-sections/reports/2/indesign.txt"
+          ]
+        ]
       ]
     ],
     [
@@ -7537,6 +7636,15 @@
           [
             "href",
             "/activity-sections/reports/2/assurances/EK-2"
+          ]
+        ]
+      ],
+      [
+        "a",
+        [
+          [
+            "href",
+            "/activity-sections/reports/2/indesign.txt"
           ]
         ]
       ]
@@ -8274,6 +8382,15 @@
       [
         "button",
         []
+      ],
+      [
+        "a",
+        [
+          [
+            "href",
+            "/activity-sections/reports/2/indesign.txt"
+          ]
+        ]
       ]
     ],
     [
@@ -8769,6 +8886,15 @@
       [
         "summary",
         []
+      ],
+      [
+        "a",
+        [
+          [
+            "href",
+            "/activity-sections/reports/2/indesign.txt"
+          ]
+        ]
       ]
     ],
     [
@@ -9307,6 +9433,15 @@
       [
         "summary",
         []
+      ],
+      [
+        "a",
+        [
+          [
+            "href",
+            "/activity-sections/reports/2/indesign.txt"
+          ]
+        ]
       ]
     ],
     [
@@ -9686,6 +9821,15 @@
       [
         "summary",
         []
+      ],
+      [
+        "a",
+        [
+          [
+            "href",
+            "/activity-sections/reports/2/indesign.txt"
+          ]
+        ]
       ]
     ],
     [
@@ -10059,6 +10203,15 @@
           [
             "href",
             "?code=EKLER"
+          ]
+        ]
+      ],
+      [
+        "a",
+        [
+          [
+            "href",
+            "/activity-sections/reports/2/indesign.txt"
           ]
         ]
       ]
@@ -10449,6 +10602,24 @@
       [
         "summary",
         []
+      ],
+      [
+        "a",
+        [
+          [
+            "href",
+            "/activity-sections/reports/2/indesign.txt"
+          ]
+        ]
+      ],
+      [
+        "a",
+        [
+          [
+            "href",
+            "/activity-sections/reports/2/indesign.txt?approval_id=2"
+          ]
+        ]
       ]
     ],
     [
@@ -10831,6 +11002,24 @@
           [
             "href",
             "?code=EKLER"
+          ]
+        ]
+      ],
+      [
+        "a",
+        [
+          [
+            "href",
+            "/activity-sections/reports/2/indesign.txt"
+          ]
+        ]
+      ],
+      [
+        "a",
+        [
+          [
+            "href",
+            "/activity-sections/reports/2/indesign.txt?approval_id=2"
           ]
         ]
       ]
@@ -11226,6 +11415,24 @@
             "/activity-reports"
           ]
         ]
+      ],
+      [
+        "a",
+        [
+          [
+            "href",
+            "/activity-sections/reports/2/indesign.txt"
+          ]
+        ]
+      ],
+      [
+        "a",
+        [
+          [
+            "href",
+            "/activity-sections/reports/2/indesign.txt?approval_id=2"
+          ]
+        ]
       ]
     ],
     [
@@ -11617,6 +11824,24 @@
           [
             "href",
             "/activity-sections/reports/2/assurances/EK-2"
+          ]
+        ]
+      ],
+      [
+        "a",
+        [
+          [
+            "href",
+            "/activity-sections/reports/2/indesign.txt"
+          ]
+        ]
+      ],
+      [
+        "a",
+        [
+          [
+            "href",
+            "/activity-sections/reports/2/indesign.txt?approval_id=2"
           ]
         ]
       ]
@@ -12397,6 +12622,15 @@
       [
         "button",
         []
+      ],
+      [
+        "a",
+        [
+          [
+            "href",
+            "/activity-sections/reports/2/indesign.txt"
+          ]
+        ]
       ]
     ],
     [
@@ -12883,6 +13117,15 @@
       [
         "summary",
         []
+      ],
+      [
+        "a",
+        [
+          [
+            "href",
+            "/activity-sections/reports/2/indesign.txt"
+          ]
+        ]
       ]
     ],
     [
@@ -13363,6 +13606,15 @@
           [
             "href",
             "?code=EKLER"
+          ]
+        ]
+      ],
+      [
+        "a",
+        [
+          [
+            "href",
+            "/activity-sections/reports/2/indesign.txt"
           ]
         ]
       ]
@@ -13856,6 +14108,15 @@
             "/activity-reports"
           ]
         ]
+      ],
+      [
+        "a",
+        [
+          [
+            "href",
+            "/activity-sections/reports/2/indesign.txt"
+          ]
+        ]
       ]
     ],
     [
@@ -14347,6 +14608,15 @@
             "/activity-sections/reports/2/assurances/EK-2"
           ]
         ]
+      ],
+      [
+        "a",
+        [
+          [
+            "href",
+            "/activity-sections/reports/2/indesign.txt"
+          ]
+        ]
       ]
     ],
     [
@@ -14799,6 +15069,24 @@
       [
         "summary",
         []
+      ],
+      [
+        "a",
+        [
+          [
+            "href",
+            "/activity-sections/reports/2/indesign.txt"
+          ]
+        ]
+      ],
+      [
+        "a",
+        [
+          [
+            "href",
+            "/activity-sections/reports/2/indesign.txt?approval_id=2"
+          ]
+        ]
       ]
     ],
     [
@@ -15245,6 +15533,24 @@
           [
             "href",
             "?code=EKLER"
+          ]
+        ]
+      ],
+      [
+        "a",
+        [
+          [
+            "href",
+            "/activity-sections/reports/2/indesign.txt"
+          ]
+        ]
+      ],
+      [
+        "a",
+        [
+          [
+            "href",
+            "/activity-sections/reports/2/indesign.txt?approval_id=2"
           ]
         ]
       ]
@@ -15704,6 +16010,24 @@
             "/activity-reports"
           ]
         ]
+      ],
+      [
+        "a",
+        [
+          [
+            "href",
+            "/activity-sections/reports/2/indesign.txt"
+          ]
+        ]
+      ],
+      [
+        "a",
+        [
+          [
+            "href",
+            "/activity-sections/reports/2/indesign.txt?approval_id=2"
+          ]
+        ]
       ]
     ],
     [
@@ -16159,6 +16483,24 @@
           [
             "href",
             "/activity-sections/reports/2/assurances/EK-2"
+          ]
+        ]
+      ],
+      [
+        "a",
+        [
+          [
+            "href",
+            "/activity-sections/reports/2/indesign.txt"
+          ]
+        ]
+      ],
+      [
+        "a",
+        [
+          [
+            "href",
+            "/activity-sections/reports/2/indesign.txt?approval_id=2"
           ]
         ]
       ]

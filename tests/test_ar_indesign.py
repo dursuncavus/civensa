@@ -84,6 +84,14 @@ def test_indicator_blank_actual_is_not_zero():
     assert 'Kayıt yok' not in text(data)
 
 
+def test_single_row_free_table_is_kept():
+    data = contract()
+    table = next(t for t in data['tables'] if t['kind'] == 'section')
+    table['row_ids'] = table['row_ids'][:1]
+    body = text(data)
+    assert '<TableStart:1,2:1:0' in body and '>Hizmet<CellEnd:>' in body
+
+
 def test_unknown_schema_refused():
     data = contract()
     data['schema_version'] = 'ar-typeset/2'
