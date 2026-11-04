@@ -4,6 +4,7 @@ from datetime import UTC
 
 from fastapi import HTTPException
 from sqlalchemy import select
+from sqlalchemy.orm import defer
 
 from .models import AuditLog, Publication, ReleaseConfirmation, Submission, User
 from .program_service import book_snapshot, publication_checks, record
@@ -65,7 +66,8 @@ def context_digest(db, period, technical, version, migration):
         submissions=[record(s) for s in db.scalars(select(Submission).where(
             Submission.period_id == period.id).order_by(Submission.id))],
         publications=[dict(id=p.id, version=p.version, sha256=p.sha256) for p in db.scalars(
-            select(Publication).where(Publication.period_id == period.id).order_by(Publication.id))])
+            select(Publication).options(defer(Publication.snapshot_json))
+            .where(Publication.period_id == period.id).order_by(Publication.id))])
     return hashlib.sha256(canonical(context).encode()).hexdigest()
 
 
