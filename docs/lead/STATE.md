@@ -6,8 +6,8 @@ Backup log ("Civensa Yedek Kaydı", Drive): no entries after 31 Oct (DOĞRULANDI
 Tags: DOĞRULANDI (lead checked) · TARİHSEL (past fact) · BEYAN (owner said) · BELİRSİZ (unknown).
 
 ## Next session — start here (D-253)
-Claude live (CV Lider 60, 4 Nov ~18:35). Release #364 live (main 7437119; D-399). Merged into phase5, not on main yet: CIV-175 #369, CIV-176 #372, CIV-177 #374 (D-403/D-405). CIV-178 #381 reviewed and accepted (D-409): 2026 snapshot after mapping 6.0 MB → no codec; full PP PDF 105 s of 120 s → K4 watch. CIV-179 #382 (lead-coded InDesign tagged text, AR-13) waits for Codex review + CI + the owner's InDesign probe test (saglik-deneme.txt).
-First job next session: merge #381 when CI green + behind 0; process the Codex review on #382 and the owner's InDesign test result; then prepare the release PR phase5 → main for the owner (CIV-175..178; D-406). Then Gmail check (D-361) → Ali Abi's answers (thread "Civensa – 2026 Faaliyet Raporu soruları", D-404); after his mapping upload, re-measure the 2026 snapshot and K4 (full PP PDF). 9 Nov page for Ali: https://claude.ai/artifact/1TNVQZsZG9aWfmFNAPibZn (D-403).
+Claude live (CV Lider 60, 4 Nov ~18:35). Release #364 live (main 7437119; D-399). Merged into phase5, not on main yet: CIV-175 #369, CIV-176 #372, CIV-177 #374, CIV-178 #381 (D-403/D-405/D-409). CIV-178 #381 reviewed and merged → 7656624 (D-409): 2026 snapshot after mapping 6.0 MB → no codec; full PP PDF 105 s of 120 s → K4 watch. CIV-179 #382 (lead-coded InDesign tagged text, AR-13) waits for Codex review + CI + the owner's InDesign probe test (saglik-deneme.txt).
+First job next session: process the Codex review on #382 and the owner's InDesign test result; then prepare the release PR phase5 → main for the owner (CIV-175..178; D-406). Then Gmail check (D-361) → Ali Abi's answers (thread "Civensa – 2026 Faaliyet Raporu soruları", D-404); after his mapping upload, re-measure the 2026 snapshot and K4 (full PP PDF). 9 Nov page for Ali: https://claude.ai/artifact/1TNVQZsZG9aWfmFNAPibZn (D-403).
 1. Releases live (D-346/D-350). Only Ali Abi uses the system; departments are not opened until the infrastructure is complete — data comes from the old system (BEYAN, D-351/D-352). Render stays Free; Starter ($7/month) on department rollout day.
 2. Codex: CIV-172 #354 merged (D-393); CIV-174 #358 merged after two Copilot rounds (D-394): warnings stored compactly (10.9 KB), builder no longer parses snapshots. CIV-175 #369 reviewed (D-401): 2026 snapshot 25.8 MB, 21.2 MB of it repeated cost_reconciliation errors from the 128 unmapped activities; no codec now. CIV-176 #372 merged (D-403): metadata loads no longer read snapshot_json. CIV-177 #374 merged (D-405): dashboard progress state and "Son işlem" period-bound. Copilot-bot commits need a lead update-branch to run CI (action_required).
 3. 2026 PP (D-398/D-399): loaded live 4 Nov (33/105/226, 2027 protected); release #364 live; UI check passed (D-399). Next (D-401/D-406): CIV-178 merged first (else the mapping blocks the approved-book publish) → Ali applies the 2026 mapping (9 Nov) → lead re-measures the 2026 snapshot locally (CIV-175 script; >10 MB → codec task) → Strategy publishes 2026 via "Onaylı kitaptan yayınla" (needs the "Onay dayanağı" council decision text from Ali). 2026 dashboard status/last action 21.09 on 4 directorates → fixed by CIV-177 on phase5, live after the next release (D-405).
@@ -30,8 +30,8 @@ Evidence rule (D-252): one-screen changes → targeted tests + changed-state scr
 ## Open pull requests (DOĞRULANDI 4 Nov ~19:00, D-409)
 | PR | Task | State | Next action |
 | --- | --- | --- | --- |
-| #381 | CIV-178 | reviewed OK (D-409), CI running after update-branch | lead merges when green, behind 0 |
-| #382 | CIV-179 | lead-coded, CI running | Codex review + owner InDesign test, then lead merges |
+| #382 | CIV-179 | lead-coded; Codex P2 (one-row tables) fixed + frozen UI contracts updated, re-review requested, CI running | Codex review + owner InDesign test, then lead merges |
+Merged 4 Nov (D-409): #381 CIV-178 → 7656624.
 Merged 4 Nov (D-405): #374 CIV-177 → 92c644e.
 Merged 4 Nov (D-403): #372 CIV-176 → 8828250 · #369 CIV-175 → 385a6fb · #371 D-402 → 40309a8.
 Merged 4 Nov (D-399): #364 release phase5 → main (owner) → 7437119, deployed · #365 D-398 → e43f9a8 · #360/#361/#362 lead fixes.
