@@ -1,8 +1,8 @@
 const PRINT = location.hash === '#pdf';
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
 if (PRINT) document.documentElement.classList.add('pdf');
-const fmt = (value, money = false) => new Intl.NumberFormat('tr-TR', {
-  minimumFractionDigits: money ? 2 : 0, maximumFractionDigits: money ? 2 : 6
+const fmt = (value, decimals) => new Intl.NumberFormat('tr-TR', {
+  minimumFractionDigits: decimals ?? 0, maximumFractionDigits: decimals ?? 6
 }).format(value);
 const deck = new Reveal({width:1920, height:1080, margin:0, minScale:.1, maxScale:2,
   hash:false, history:false, center:false, controls:!PRINT, progress:!PRINT,
@@ -20,7 +20,8 @@ function draw(el, animate) {
   const category = {type:'category', data:data.categories,
     axisTick:{show:false}, axisLine:{show:!horizontal,lineStyle:{color:'#1f2328'}},
     axisLabel:{fontSize:horizontal ? 24 : 26, color:'#1f2328', interval:0, width:horizontal ? 410 : 420, overflow:'break'}};
-  const value = {type:'value', axisLabel:{fontSize:20,color:'#545b64',formatter:v=>fmt(v)},
+  const value = {type:'value', name:data.unit, nameTextStyle:{fontSize:20,color:'#545b64'},
+    axisLabel:{fontSize:20,color:'#545b64',formatter:v=>fmt(v)},
     splitLine:{lineStyle:{color:'#e3e1dc'}}, show:!horizontal};
   chart.setOption({textStyle:{fontFamily:'Fira Sans'}, animation:animate,
     animationDuration:800, animationEasing:'cubicOut', animationDelay:i=>Math.min(i*40,150),
@@ -45,7 +46,7 @@ function countUp(el) {
   const target = Number(el.dataset.count), start = performance.now();
   function step(now) {
     const progress = Math.min(1,(now-start)/900);
-    el.textContent = progress===1 ? finalText : fmt(target*(1-Math.pow(1-progress,3)),el.dataset.money==='true');
+    el.textContent = progress===1 ? finalText : fmt(target*(1-Math.pow(1-progress,3)),Number(el.dataset.decimals));
     if (progress<1) counters.set(el,requestAnimationFrame(step));
   }
   counters.set(el,requestAnimationFrame(step));

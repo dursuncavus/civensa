@@ -75,7 +75,7 @@ def activity_report(payload):
         else:
             missing('en az iki personel rakamı')
         for batch in pages(known, 10):
-            content.append(dict(type='chart', title='İstihdam türüne göre personel', variant='horizontal',
+            content.append(dict(type='chart', title='İstihdam türüne göre personel', variant='horizontal', unit='kişi',
                 categories=[text(row.get('category')) for row in batch],
                 series=[dict(name='Kişi sayısı', values=[float(number(row['count'])) for row in batch])], source=source('I.C.4')))
     else:
@@ -120,7 +120,7 @@ def activity_report(payload):
             values.append(float(initial / scale))
         labels.extend(['Kesinleşen ödenek', 'Yıl sonu harcama'])
         values.extend([float(final / scale), float(actual / scale)])
-        content.append(dict(type='chart', title='Ödenekten harcamaya', variant='bar', money=True,
+        content.append(dict(type='chart', title='Ödenekten harcamaya', variant='bar', money=True, unit=unit,
             categories=labels, series=[dict(name=unit, values=values)], source=source('III.A.1')))
     else:
         missing('eksiksiz bütçe')

@@ -71,6 +71,12 @@ def test_recipe_all_types_formatting_and_no_manual_values(presentation_payload):
     assert 'Altıncı görev' not in body
     figures = next(s['figures'] for s in slides if s.get('title') == 'Bütçe bir bakışta')
     assert figures[0]['value'] == Decimal('75.60')
+    prepared = prepare_slides(slides)
+    staff = next(s for s in prepared if s.get('title') == 'Ekibimiz')
+    assert [f['decimals'] for f in staff['figures']] == [0, 0, 0, 0]
+    budget = next(s for s in prepared if s.get('title') == 'Bütçe bir bakışta')
+    assert [f['decimals'] for f in budget['figures']] == [2, 2, 2]
+    assert next(s for s in prepared if s.get('title') == 'Ödenekten harcamaya')['unit'] == 'milyon TL'
 
 
 @pytest.mark.parametrize('budget', [{}, {'rows': []}, {'rows': [{'final': None, 'actual': 0}]}])

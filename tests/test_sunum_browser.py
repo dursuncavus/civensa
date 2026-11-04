@@ -82,6 +82,9 @@ def test_real_report_offline_motion_all_slide_types_and_pdf(section_client, db, 
         assert page.evaluate('document.fonts.check(\'400 34px "Fira Sans"\')')
         for kind in ['cover', 'map', 'separator', 'kpi', 'chart', 'table', 'bullets', 'quote', 'closing']:
             page.evaluate('(kind)=>deck.slide(deck.getIndices(document.querySelector("section[data-type="+kind+"]")).h,0,-1)', kind)
+            if kind == 'kpi':
+                page.wait_for_timeout(150)
+                assert ',' not in page.locator('section.present [data-count]').first.inner_text()
             page.wait_for_timeout(1000)
             if kind == 'bullets':
                 assert page.locator('section.present .fragment.visible').count() == 0
@@ -120,6 +123,7 @@ def test_real_report_offline_motion_all_slide_types_and_pdf(section_client, db, 
         assert page.locator('.fragment').evaluate_all('(els)=>els.every(e=>getComputedStyle(e).opacity==="1")')
         assert page.locator('[data-count]').evaluate_all('(els)=>els.every(e=>e.textContent!=="0" || Number(e.dataset.count)===0)')
         assert page.evaluate('[...document.querySelectorAll("[data-chart]")].every(e=>echarts.getInstanceByDom(e).getOption().animation===false)')
+        assert page.evaluate('echarts.getInstanceByDom(document.querySelector("section[data-sec=t2] [data-chart]")).getOption().yAxis[0].name') == 'milyon TL'
         first_page = page.locator('.pdf-page').first
         first_page.screenshot(path=str(folder / 'pdf.png'))
         pdf = page.pdf(prefer_css_page_size=True, print_background=True)

@@ -65,8 +65,11 @@ def prepare_slides(slides):
                 item['bullets'] = [text(value) for value in group]
                 item['continuation'] = f'{index}/{len(groups)}' if len(groups) > 1 else ''
             elif kind == 'kpi':
-                item['figures'] = [dict(figure, display=format_number(
-                    figure['value'], money=figure.get('money', False))) for figure in slide['figures']]
+                item['figures'] = [dict(figure,
+                    decimals=2 if figure.get('money') else min(6, max(0, -Decimal(str(figure['value'])).as_tuple().exponent))
+                    if figure['value'] is not None else 0,
+                    display=format_number(figure['value'], money=figure.get('money', False)))
+                    for figure in slide['figures']]
             elif kind == 'chart':
                 item['series'] = [dict(series,
                     values=[float(value) if value is not None else None for value in series['values']],

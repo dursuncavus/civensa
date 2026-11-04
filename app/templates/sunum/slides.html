@@ -22,13 +22,13 @@
 
 {% macro kpi(s) -%}
 <div class="kpis{% if s.figures|length>4 %} small{% endif %}" style="grid-template-columns:repeat({{ 4 if s.figures|length>4 else s.figures|length }},1fr)">
-{% for figure in s.figures %}<div class="kpi{% if loop.first %} hero{% endif %}"><div><span class="v"{% if figure.value is not none %} data-count="{{ figure.value }}" data-money="{{ 'true' if figure.money else 'false' }}"{% endif %}>{{ figure.display }}</span><span class="u">{{ figure.unit }}</span></div><div class="l">{{ figure.label }}</div></div>{% endfor %}
+{% for figure in s.figures %}<div class="kpi{% if loop.first %} hero{% endif %}"><div><span class="v"{% if figure.value is not none %} data-count="{{ figure.value }}" data-decimals="{{ figure.decimals }}"{% endif %}>{{ figure.display }}</span><span class="u">{{ figure.unit }}</span></div><div class="l">{{ figure.label }}</div></div>{% endfor %}
 </div>
 {%- endmacro %}
 
 {% macro chart(s) -%}
 <div class="chart" data-chart role="img" aria-label="{{ s.title }}"></div>
-<script type="application/json" class="chart-data">{{ {'variant':s.variant, 'categories':s.categories, 'series':s.series, 'money':s.money|default(false)}|tojson }}</script>
+<script type="application/json" class="chart-data">{{ {'variant':s.variant, 'categories':s.categories, 'series':s.series, 'unit':s.unit|default('')}|tojson }}</script>
 {%- endmacro %}
 
 {% macro table(s) -%}
