@@ -1,5 +1,6 @@
 """CIV-179 / AR-13: InDesign Tagged Text in the 2025 Faaliyet Raporu book styles."""
 import copy
+import re
 import json
 from pathlib import Path
 
@@ -100,6 +101,22 @@ def test_numbers_right_aligned_and_total_row_style():
     assert '<ParaStyle:tablo yazı>Örnek hizmet<CellEnd:>' in body
     assert '<CellStyle:tablo sonuç><StylePriority:1><CellStart:1,1><ParaStyle:tablo sonuç>Toplam<CellEnd:>' in body
     assert table['title']
+
+
+def test_column_widths_fit_book_frame_and_indicator_scale_trimmed():
+    body = text(contract())
+    widths = [float(w) for w in re.findall(r'<tColAttrWidth:([0-9.]+)>', body)]
+    assert widths and all(w > 0 for w in widths)
+    tables = re.findall(r'<TableStart:\d+,(\d+):[^>]*>>((?:<ColStart:<tColAttrWidth:[0-9.]+>>)+)', body)
+    for cols, spec in tables:
+        total = sum(float(w) for w in re.findall(r'([0-9.]+)>>', spec))
+        assert abs(total - (222.52 if int(cols) <= 4 else 467.72)) < 0.05
+    assert '12.500,230000' not in body and '12.500,23' in body
+
+
+def test_hidden_unit_heading_prints_when_it_has_text():
+    body = text(unit(contract()))
+    assert '<ParaStyle:arabaslik stun 2>GENEL BİLGİLER\r\n<ParaStyle:Metin>Sentetik örnek: I- GENEL BİLGİLER' in body
 
 
 def test_unknown_schema_refused():

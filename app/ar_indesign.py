@@ -22,6 +22,10 @@ STYLE = {
 }
 # Presentation only: cells that read as Turkish numbers are right-aligned like the
 # 2025 book's count/amount columns. Stored values and their types are unchanged.
+# 2025 book frame: two text columns of 222.52 pt with a 22.68 pt gutter. Narrow
+# tables fill one column; wide ones (more than four columns) take both, as in the book.
+COLUMN_WIDTH = 222.52
+WIDE_WIDTH = 467.72
 NUMBER_TEXT = re.compile(r'^[-+]?\d{1,3}(?:\.\d{3})*(?:,\d+)?\s*%?$|^[-+]?\d+(?:,\d+)?\s*%?$')
 # Unit chapters follow the 2025 book's department chapter headings.
 UNIT_TITLES = {
@@ -49,6 +53,13 @@ def tr_upper(text):
 
 def plain_title(title):
     return NUMBERING.sub('', title or '').strip()
+
+
+def trimmed(text):
+    """Print-only: drop storage-scale trailing zeros (12.500,230000 → 12.500,23)."""
+    if ',' in text and NUMBER_TEXT.match(text):
+        text = text.rstrip('0').rstrip(',')
+    return text
 
 
 def cell_text(value):
@@ -83,11 +94,16 @@ class Writer:
             return
         self.table_number += 1
         self.para(STYLE['caption'], f'Tablo {self.table_number}: {title}')
-        rows = [header] + body + ([total] if total else [])
         cols = len(header)
+        body = [(list(r) + [''] * cols)[:cols] for r in body]
+        rows = [header] + body + ([total] if total else [])
         out = [f'<ParaStyle:{escape(STYLE["body"])}><TableStyle:{escape(STYLE["table"])}>'
                f'<TableStart:{len(rows)},{cols}:1:0<tCellDefaultCellType:Text>>']
-        out += ['<ColStart:>'] * cols
+        numeric = [bool(body) and all(NUMBER_TEXT.match(str(r[i]).strip()) or not str(r[i]).strip()
+                                     for r in body) for i in range(cols)]
+        weights = [1 if n else 2 for n in numeric]
+        total_width = COLUMN_WIDTH if cols <= 4 else WIDE_WIDTH
+        out += [f'<ColStart:<tColAttrWidth:{total_width * w / sum(weights):.2f}>>' for w in weights]
         for index, row in enumerate(rows):
             cell = STYLE['head_cell'] if index == 0 else (
                 STYLE['total_cell'] if total and index == len(rows) - 1 else STYLE['body_cell'])
@@ -126,8 +142,8 @@ class Writer:
                 target = next((t for t in v.get('targets', []) if t.get('year') == year), None)
                 actual = cell_text(v.get('actual')) or 'Kayıt yok'
                 rate = cell_text((v.get('deviation') or {}).get('achievement_percent'))
-                body.append([v.get('name', ''), v.get('unit', ''), cell_text(target['value']) if target else '',
-                             actual, rate, v.get('explanation') or ''])
+                body.append([v.get('name', ''), v.get('unit', ''), trimmed(cell_text(target['value'])) if target else '',
+                             trimmed(actual), trimmed(rate), v.get('explanation') or ''])
             self.table(table['title'], ['Performans Göstergesi', 'Birim', f'{year} Hedef', 'Gerçekleşme',
                                         'Gerçekleşme Oranı (%)', 'Açıklama'], body)
             return
@@ -184,7 +200,7 @@ def tagged_text(contract):
         if not printable(section, sections, writer):
             continue
         if unit:
-            if code in UNIT_HIDDEN:
+            if code in UNIT_HIDDEN and not own_content(section, writer):
                 pass
             elif code in UNIT_TITLES:
                 writer.para(STYLE['heading'], UNIT_TITLES[code])
