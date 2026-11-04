@@ -192,6 +192,18 @@ def register(app):
             'Content-Disposition':f'attachment; filename="faaliyet-raporu-{doc.id}-dizgi.json"',
             'Cache-Control':'private, no-store','X-Content-Type-Options':'nosniff'})
 
+    @router.get('/activity-sections/reports/{document_id}/indesign.txt')
+    def export_indesign(document_id:int,version:int|None=None,approval_id:int|None=None,db:Session=Depends(get_db),user=Depends(require_user)):
+        # CIV-179: same source, access and version selection as typeset.json.
+        import json
+        from .ar_typeset_download import download
+        from .ar_indesign import tagged_text, filename
+        doc=export_document(document_id,db,user)
+        contract=json.loads(download(db,user,doc,version,approval_id))
+        return Response(tagged_text(contract),media_type='text/plain; charset=utf-16',headers={
+            'Content-Disposition':f'attachment; filename="{filename(contract)}"',
+            'Cache-Control':'private, no-store','X-Content-Type-Options':'nosniff'})
+
     @router.get('/activity-sections/reports/{document_id}/approvals/{approval_id}.json')
     def approved_copy(document_id:int,approval_id:int,db:Session=Depends(get_db),user=Depends(require_user)):
         from .models import ARUnitWorkflowEvent
