@@ -1301,3 +1301,10 @@ Book inconsistencies found (ask Ali; shown in slide notes, not silently fixed):
 4. Fees: 86.181.784,63 + 134.720.581,92 = 220.902.366,55; book says 220.902.366,60 → book value used.
 Rule for CIV-180 recipes: the müdürlük writes short summary texts (duties in ≤5 bullets); counts per mahalle and ratios are computed by Civensa from FR rows; photos are a later slide type (FR photos are linked files, not in the IDML).
 Next IDs: task CIV-180, decision D-416.
+
+## D-416 (4 Nov 2026 ~22:45–22:50 Istanbul, lead, live session CV Lider 61) — CIV-180 dispatched by the lead
+BEYAN (owner 22:43/22:44): "continue tomorrow; give out night work"; "the computer is on, you drive, I have to leave".
+Decision (lead): CIV-180 (package docs/lead/tasks/CIV-180.md, merged #392 → 1b0ae4e; prototype reference docs/design/sunum/) is the only Codex work not blocked by Ali (the FR presentation is part of the FR module scope). Design remarks from the owner's review tomorrow are CSS/recipe changes on top.
+DOĞRULANDI: the lead started it itself in the owner's built-in browser (chatgpt.com/codex, owner already signed in; site approval given): Bulut → civensa, GPT-6.1 Sol, Yüksek; prompt = title + pointer to the package file (package is the scope authority). Thread "CIV-180 Faaliyet Raporu sunumu", started ~22:50.
+Lead check scheduled (in-session reminder ~00:19): review the PR, @codex follow-ups, merge if reviewed + CI green + behind 0.
+Next IDs: task CIV-181, decision D-417.
