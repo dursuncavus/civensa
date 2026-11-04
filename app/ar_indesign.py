@@ -119,8 +119,8 @@ class Writer:
         self.parts.append(''.join(out))
 
     def columns(self, table):
-        return [(c[0], c[1]) for c in table.get('columns') or []
-                if not (c[0].endswith('_id') or c[0] == 'id')]
+        # Programme / department number columns identify budget rows; keep them.
+        return [(c[0], c[1]) for c in table.get('columns') or [] if c[0] != 'id']
 
     def render_table(self, table, title):
         kind = table['kind']

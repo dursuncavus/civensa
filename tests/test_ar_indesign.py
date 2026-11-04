@@ -119,6 +119,14 @@ def test_hidden_unit_heading_prints_when_it_has_text():
     assert '<ParaStyle:arabaslik stun 2>GENEL BİLGİLER\r\n<ParaStyle:Metin>Sentetik örnek: I- GENEL BİLGİLER' in body
 
 
+def test_budget_tables_keep_identifying_number_columns():
+    data = contract()
+    table = next(t for t in data['tables'] if t['kind'] == 'budget' and any(c[0] == 'program_id' for c in t.get('columns', [])))
+    body = text(data)
+    labels = dict(table['columns'])
+    assert f">{labels['program_id']}<CellEnd:>" in body and f">{labels['subprogram_id']}<CellEnd:>" in body
+
+
 def test_unknown_schema_refused():
     data = contract()
     data['schema_version'] = 'ar-typeset/2'
