@@ -1190,3 +1190,10 @@ DOĞRULANDI:
 New book finding (DOĞRULANDI, IDML text): Fen İşleri economic table p.223 prints 2027 total "1.290.738.000" (no decimals) and 2028 "1.677.960,440" (misplaced comma). Added to the Ask-Ali items; 2028 only affects outer-year columns. BELİRSİZ: how the CIV-165 loader stored that 2028 value — check when Ali answers.
 CIV-177 (package tasks/CIV-177.md, Codex GPT-6.1 Sol, orta): dashboard progress state and "Son işlem" become period-bound (D-399 LOW: 2026 showed 21.09 edits from 2027). DOĞRULANDI cause: app/main.py department_progress_overview counts indicator_update / personnel_cost_update / department_submit audit rows of any period and loads every audit row of department users.
 Next IDs: task CIV-178, decision D-404.
+
+## D-404 (4 Nov 2026 ~17:10 Istanbul, owner + lead, live session CV Lider 58) — 9 Nov questions e-mailed to Ali Abi
+BEYAN (owner 17:02): send the questions to Ali Abi directly.
+DOĞRULANDI: lead sent from the owner's Gmail to alikaya136@gmail.com, subject "Civensa – 2026 Faaliyet Raporu soruları" (message 1a1a6e279cbc6c77, 4 Nov ~17:10), "Cevap:" format: A mapping review (128 rows: 79/34/15) · K1–K6 book inconsistencies with pages (K6 = Fen İşleri p.223, D-403) · V1 directorate indicator Excel · V2 Mali Hizmetler template · O1 Onay dayanağı 2026/2027 · O2 PR2 approval steps · İ1–İ3 İç Kontrol.
+The claude.ai pages are private to the owner, so Ali gets the files as public GitHub download links: docs/lead/data/2026-faaliyet-eslestirme-inceleme.xlsx (new, #375 → e7ab814; same 128 rows with confidence and book evidence, Düşük first, note column) and the D-402 upload CSV (unchanged, sha256 22ac2e45…). Both blobs verified equal to the local files via the GitHub API (raw download not reachable from the lead sandbox).
+Rule: Ali's answers arrive by mail; every session start keeps the Gmail check (D-361). If he edits the workbook, the lead rebuilds the CSV and re-runs import-preview before sending it back.
+Next IDs: task CIV-178, decision D-405.
