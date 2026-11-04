@@ -227,11 +227,13 @@ def failure_detail(exc):
         value = getattr(diag, attr, None)
         if isinstance(value, str) and SCHEMA_NAME.fullmatch(value):
             parts.append(f'{label} {value}')
-    frames = [frame for frame in traceback.extract_tb(exc.__traceback__)
+    # Only project code (a virtualenv may live inside the checkout).
+    frames = [(Path(frame.filename).resolve().relative_to(ROOT).as_posix(), frame.lineno)
+              for frame in traceback.extract_tb(exc.__traceback__)
               if Path(frame.filename).resolve().is_relative_to(ROOT)]
+    frames = [(name, line) for name, line in frames if name.split('/')[0] in {'app', 'scripts', 'ops', 'tests'}]
     if frames:
-        last = frames[-1]
-        parts.append(f'konum {Path(last.filename).resolve().relative_to(ROOT).as_posix()}:{last.lineno}')
+        parts.append(f'konum {frames[-1][0]}:{frames[-1][1]}')
     return ', '.join(parts)
 
 
@@ -470,7 +472,9 @@ def execute(engine, parsed, *, organization_id, actor_id, apply=False, resume=Fa
                         reason = str(exc) if isinstance(exc, ValueError) else (
                             'Mevcut içe aktarma/katalog hizmeti paketi kabul etmedi; müdürlük işlemi geri alındı '
                             f'({failure_detail(exc)}). Yerel provada sorumluya inceletin.')
-                        output['failed'].append(dict(name=source['name'], reason=reason))
+                        # detail: class/SQLSTATE/schema names/code location only (D-396).
+                        output['failed'].append(dict(name=source['name'], reason=reason,
+                                                     detail=failure_detail(exc)))
                         output['departments'][index] = dict(source_name=source['name'], action='skip', reason=reason)
                         print_progress(index + 1, total_items, source['name'], 'başarısız', time.monotonic() - started)
                         if year == 2026:
