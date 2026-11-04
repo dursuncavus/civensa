@@ -1155,3 +1155,10 @@ Decision: the 2026 activity → alt program/card mapping (128/148) is Strategy w
 Next: owner starts CIV-175 in Codex (package tasks/CIV-175.md, unchanged); lead reviews the PR. Then the 2026 publication decision.
 Next IDs: task CIV-176, decision D-400.
 Addendum (15:05, DOĞRULANDI with ~/civensa-yedek connected): no decrypted (cozulmus) folder is left under ~/civensa-yedek; the four backup folders hold only their sifreli copies. Owner item closed.
+
+## D-400 (4 Nov 2026 ~15:20 Istanbul, owner + lead, live session CV Lider 56) — CIV-175 started; Max capacity used for lead work; 2026 mapping draft
+BEYAN (owner 15:04): CIV-175 given to Codex; Claude account now on Max ("we can do more work with you").
+Lead use of the extra capacity (no new AI added, rule 17): the lead itself does analysis and preparation that otherwise lands on Ali or the owner. Codex stays the only code writer; Claude Code specialist waves still need owner approval.
+Finding (DOĞRULANDI on the committed 2026 IDML 1aaa0bb8… + live mapping CSV export, read-only): the 2026 book has no activity-membership tables; its 111 "İdare Birim Adı / Program Adı / Alt Program Adı / Faaliyet Adı / Açıklama" description tables use different activity names than the cost tables (exact equal names: 8, as the CIV-165 loader found). So the book cannot link the 128 activities without an alt program deterministically; it is a judgment per activity.
+Decision: the lead drafts the "Seçilecek Program / Alt Program" column of the live mapping CSV (export /api/activity-mappings/export.csv?period_id=1) for the open rows, each with its evidence (the same department's description table text + page, the department's card subprograms) and a confidence label; nothing is uploaded by the lead. Ali reviews it on 9 Nov and uploads it himself through Faaliyet Eşleştirme (CSV preview → apply, revertible batch). Drafting runs in the next lead session (this conversation is long).
+Next IDs: task CIV-176, decision D-401.
