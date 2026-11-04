@@ -50,9 +50,10 @@
 <div class="report-tools">
 <p><a class="button" href="/activity-sections">{{ icon("m12 19-7-7 7-7M5 12h14") }} Tamamlanma görünümü</a></p>
 {% if user.role=='strategy' or (report.department_id and report.department_id==user.department_id) %}
-<details class="section-export" data-section-export><summary>{{ icon("m9 18 6-6-6-6", true) }} Dışa aktar</summary><p class="export-items"><a class="button" href="/activity-sections/reports/{{ report.id }}/export.docx">Word olarak indir</a> <a class="button" href="/activity-sections/reports/{{ report.id }}/export.pdf">PDF olarak indir</a> <a class="button" href="/activity-sections/reports/{{ report.id }}/typeset.json">Dizgi verisi (JSON)</a></p></details>
+<details class="section-export" data-section-export><summary>{{ icon("m9 18 6-6-6-6", true) }} Dışa aktar</summary><p class="export-items"><a class="button" href="/activity-sections/reports/{{ report.id }}/export.docx">Word olarak indir</a> <a class="button" href="/activity-sections/reports/{{ report.id }}/export.pdf">PDF olarak indir</a> <a class="button" href="/activity-sections/reports/{{ report.id }}/sunum" target="_blank" rel="noopener">Sunumu aç</a> <a class="button" href="/activity-sections/reports/{{ report.id }}/sunum.html">Sunumu indir</a> <a class="button" href="/activity-sections/reports/{{ report.id }}/typeset.json">Dizgi verisi (JSON)</a></p></details>
 {% endif %}
 </div>
+<p data-sunum-verification>{% if sunum_code=='TASLAK' %}<span class="ar-status">TASLAK</span>{% else %}Doğrulama kodu <strong>{{ sunum_code }}</strong>{% endif %}</p>
 {% for approval in typeset_approvals %}<p>Birim onayı {{ approval.revision }} · <a href="/activity-sections/reports/{{ report.id }}/typeset.json?approval_id={{ approval.id }}">Dizgi verisi (JSON)</a></p>{% endfor %}
 {% if form_error %}<div class="ar-error" role="alert">{{ form_error }} Girdiğiniz alanlar aşağıda korunmuştur.</div>{% endif %}
 {% include 'ar_unit_workflow.html' %}

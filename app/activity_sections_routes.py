@@ -144,6 +144,36 @@ def register(app):
         filename=f"{payload['year']}-faaliyet-raporu-{slug}-{state}"
         return payload,filename
 
+    def sunum_code(db,doc,payload,version=None):
+        from .sunum import verification_code
+        # Match export.json exactly. Approved unit exports include workflow
+        # metadata, whereas historical idare exports use stored release bytes.
+        release=service.latest_release(db,doc,version) if version is not None else service.frozen(db,doc)
+        canonical=release.payload_json if release else service.numeric_canonical(payload)
+        return verification_code(payload,canonical)
+
+    @router.get('/activity-sections/reports/{document_id}/sunum')
+    @router.get('/activity-sections/reports/{document_id}/sunum.html')
+    def sunum(document_id:int,request:Request,version:int|None=None,db:Session=Depends(get_db),user=Depends(require_user)):
+        from .sunum import activity_report, render_deck
+        from .sunum.engine import DeckTooLarge
+        payload,filename=export_payload(document_id,db,user,version)
+        doc=service.document(db,user,document_id)
+        try:
+            content=render_deck(activity_report(payload),
+                title=f"{payload['department']} · {payload['year']} Faaliyet Raporu sunumu",
+                code=sunum_code(db,doc,payload,version))
+        except DeckTooLarge:
+            service.fail(f'{payload["year"]} {payload["department"]} faaliyet raporunun sunumu 3 MB sınırını aşıyor. '
+                'Strateji ile rapordaki uzun tablo ve metinleri gözden geçirip yeniden deneyin.',422)
+        except OSError:
+            service.fail(f'{payload["year"]} {payload["department"]} faaliyet raporunun sunum dosyaları açılamadı. '
+                'Sistem sorumlusundan sunum kütüphanelerini, logo ve yazı tiplerini kontrol etmesini isteyin.',503)
+        disposition='attachment' if request.url.path.endswith('.html') else 'inline'
+        return Response(content,media_type='text/html',headers={
+            'Content-Disposition':f'{disposition}; filename="{filename}-sunum.html"',
+            'Cache-Control':'private, no-store','X-Content-Type-Options':'nosniff'})
+
     @router.get('/activity-sections/reports/{document_id}/export.docx')
     def export_docx(document_id:int,version:int|None=None,db:Session=Depends(get_db),user=Depends(require_user)):
         from .ar_export import build_activity_report_docx, TEMPLATE_PATH
@@ -307,6 +337,7 @@ def register(app):
         actor_ids={event.actor_id for event in events}
         event_actor_names=dict(db.execute(select(User.id,User.full_name).where(User.id.in_(actor_ids))).all()) if actor_ids else {}
         return {**financial_context(db,user,doc,report), 'event_actor_names':event_actor_names, 'section_table_keys_json':json.dumps(keys),
+            'sunum_code':sunum_code(db,doc,report),
             'resource_key_map':resource_keys, 'typeset_approvals':approvals, 'user':user,'report':report,'section':section,'statuses':service.STATUSES,
             'reopen_allowed':reopen_allowed,'similarities':ar_similarity.for_report(db,user,report),
             'editable':not report['frozen'] and service.can_edit(db,user,doc,definition),
