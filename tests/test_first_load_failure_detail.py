@@ -34,3 +34,13 @@ def test_failure_detail_rejects_non_identifier_diag_values():
     exc.orig = orig
     detail = live.failure_detail(exc)
     assert detail == 'KeyError, sütun name'
+
+
+def test_failure_detail_lists_changed_2027_tables_by_schema_name_only():
+    from app.first_load_service import changed_tables
+    names = changed_tables({'departments': (34, 'a'), 'indicators': (263, 'b')},
+                           {'departments': (34, 'c'), 'indicators': (263, 'b'), 'audit_log': (1, 'd')})
+    assert names == ['audit_log', 'departments']
+    exc = ValueError('2027 satırları değişecekti')
+    exc.changed_tables = names + ['Bad Name; x']
+    assert live.failure_detail(exc) == 'ValueError, tablo audit_log, tablo departments'

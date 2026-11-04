@@ -74,7 +74,8 @@ def protected_state(engine):
     from app.first_load_service import period_rows_hash
     with Session(engine) as db:
         db.execute(text('SET TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY'))
-        return dict(hash=period_rows_hash(db, year=2027), counts=period_counts(db, 2027)['counts'])
+        return dict(hash=period_rows_hash(db, year=2027), counts=period_counts(db, 2027)['counts'],
+                    parts=period_rows_hash(db, year=2027, parts=True))
 
 
 VALUE_TABLES = {'indicator_values', 'actual_revisions', 'activity_cost_values',
@@ -487,6 +488,11 @@ def summary(record):
         lines.append(f"| {key} | {before.get('counts', {}).get(key, '—')} | {after.get('counts', {}).get(key, '—')} |")
     lines += ['', f"Restore sonrası hash: `{before.get('hash', '—')}`",
               f"Bağımsız son hash: `{after.get('hash', '—')}`"]
+    if before.get('parts') and after.get('parts') and before['hash'] != after.get('hash'):
+        from app.first_load_service import changed_tables
+        lines += ['', '| Değişen 2027 tablosu | Satır önce | Satır sonra |', '| --- | ---: | ---: |']
+        for name in changed_tables(before['parts'], after['parts']):
+            lines.append(f"| {name} | {before['parts'].get(name, (0,))[0]} | {after['parts'].get(name, (0,))[0]} |")
     for key in ('protected_2027_before', 'protected_2027_after'):
         lines.append(f"Yükleyici {key}: `{record.get('apply', {}).get(key, '—')}`")
     for step, label in (('plan', 'Plan'), ('apply', 'Uygulama'), ('resume', 'Devam planı')):

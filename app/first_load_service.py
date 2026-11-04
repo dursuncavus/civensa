@@ -12,7 +12,7 @@ from .models import (Activity, ActivityCatalogueLink, ActivityResponsibility, De
 from .program_service import save_activity_catalogue_links, save_catalogue_entry
 
 
-def period_rows_hash(db, year=2027):
+def period_rows_hash(db, year=2027, parts=False):
     """Hash period ownership, including historical values owned by 2027 rows.
 
     Core reads observe flushed SQL/trigger changes rather than the identity map.
@@ -44,8 +44,17 @@ def period_rows_hash(db, year=2027):
         table = tables[name]
         rows = db.execute(select(table).where(condition).order_by(*table.primary_key.columns)).mappings()
         snapshot[name] = [dict(row) for row in rows]
+    if parts:
+        # D-396 diagnostics: per-table row count + digest; names are schema only.
+        return {name: (len(rows), hashlib.sha256(json.dumps(rows, sort_keys=True, default=str,
+                ensure_ascii=False).encode()).hexdigest()) for name, rows in snapshot.items()}
     return hashlib.sha256(json.dumps(snapshot, sort_keys=True, default=str,
                                      ensure_ascii=False).encode()).hexdigest()
+
+
+def changed_tables(before, after):
+    """Names of tables whose per-table digest differs (both from parts=True)."""
+    return sorted(name for name in set(before) | set(after) if before.get(name) != after.get(name))
 
 
 def apply_first_load_batch(db, batch, actor):
@@ -54,11 +63,14 @@ def apply_first_load_batch(db, batch, actor):
         return _apply_first_load_batch(db, batch, actor)
     # Savepoint makes refusal atomic even if the caller catches it and commits.
     with db.begin_nested():
-        before = period_rows_hash(db)
+        before = period_rows_hash(db, parts=True)
         result = _apply_first_load_batch(db, batch, actor)
         db.flush()
-        if period_rows_hash(db) != before:
-            raise ValueError('2027 satırları değişecekti; 0 satır yazıldı. 2026 yüklemesi geri alındı; sorumluya bildirin.')
+        after = period_rows_hash(db, parts=True)
+        if after != before:
+            error = ValueError('2027 satırları değişecekti; 0 satır yazıldı. 2026 yüklemesi geri alındı; sorumluya bildirin.')
+            error.changed_tables = changed_tables(before, after)
+            raise error
         return result
 
 
