@@ -161,6 +161,8 @@ def _parse_indicator_table(table):
     subprogram = label_value("altprogramadi")
     rationale = label_value("gerekceveaciklamalar")
     goal = label_value("altprograminhedefi")
+    if budget_year == 2026:
+        goal = goal or label_value("altprogramhedefi")
     headers=[_clean(c.text) for c in rows[header_idx].cells]
     header_cells = rows[header_idx].cells
     data_start = header_idx + 1

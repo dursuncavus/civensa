@@ -15,6 +15,7 @@ from .internal_control_monitoring_models import (ICMonitoringPeriod as Period,
 from .models import Department, Organization, User
 from .pp_errors import pp_error
 from .released_permissions import require_submit, require_strategy_director, SOD_ERROR
+from .structure_service import name_for_year
 
 STATUSES = {'completed': 'Tamamlandı', 'ongoing': 'Devam ediyor',
             'not_started': 'Başlanmadı', 'delayed': 'Gecikmede',
@@ -110,7 +111,8 @@ def open_period(db, actor, plan_id, year, half, deadline):
             key = f'd:{did}' if did else f'b:{party.body_name}'
             if key not in batches:
                 batch = Batch(period_id=period.id, scope_key=key, department_id=did,
-                    body_name=party.body_name if not did else None, label=dep.name if dep else party.body_name)
+                    body_name=party.body_name if not did else None,
+                    label=name_for_year(db, period.year, dep) if dep else party.body_name)
                 db.add(batch)
                 db.flush()
                 batches[key] = batch
@@ -401,9 +403,11 @@ def official_metrics(db, actor, period, *, records=None):
         realised = sum(r['status'] == 'completed' for r in period_selected)
         ongoing = sum(r['status'] == 'ongoing' for r in period_selected)
         completed_total = sum(r['status'] == 'completed' for r in selected)
-        rate_completed = sum(r['status'] == 'completed' and r['due'] is not None for r in selected)
+        component_eligible = [r for r in selected if r['due'] is not None]
+        rate_completed = sum(r['status'] == 'completed' for r in component_eligible)
         components.append([label, len(selected), realised, len(period_selected) - realised - ongoing,
-                           ongoing, completed_total, rate_text(rate_completed, len(eligible))])
+                           ongoing, completed_total, rate_text(rate_completed, len(component_eligible)),
+                           rate_text(rate_completed, len(eligible))])
     unreadable = [r['action'].action_code_raw for r in records if r['due'] is None]
     return dict(plan_total=len(records), eligible_total=len(eligible), due_total=len(due),
                 completed=completed, due_completed=due_completed,

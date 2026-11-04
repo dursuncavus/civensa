@@ -2,11 +2,38 @@
 import base64
 import io
 import json
+import re
 from decimal import Decimal
 from pathlib import Path
 from xml.sax.saxutils import escape
 from .numbers import format_number
 from .program_service import cost_columns, economic_columns, ECONOMIC_CATEGORIES, PROGRAM_GROUPS
+
+
+def display_code(code):
+    """Catalogue name hashes identify storage rows; they are not official codes."""
+    return '' if not code or str(code).startswith('name:') else code
+
+
+def display_catalogue_keys(text):
+    """Hide technical catalogue identities in read-only audit detail text."""
+    return re.sub(r'name:[0-9a-f]+', 'Kod belirtilmedi', str(text or ''))
+
+
+def publication_display_payload(payload):
+    """Make an export copy without changing a publication's sealed source bytes."""
+    from copy import deepcopy
+    result = deepcopy(payload)
+    for item in result.get('catalogue', []):
+        item['code'] = display_code(item.get('code'))
+    return result
+
+
+def complete_amount_sum(rows):
+    """An absent amount makes the displayed total unknown, including source dashes."""
+    if not rows or any(row.get('amount') is None for row in rows):
+        return None
+    return sum((Decimal(row['amount']) for row in rows), Decimal(0))
 
 LABELS = {'actual':'Gerçekleşme','planned':'Planlanan','year_end_estimate':'Yıl Sonu Tahmini',
           'target':'Hedef','forecast':'Tahmin','budget':'Bütçe','midyear_spend':'Haziran Sonu Harcama'}
@@ -118,7 +145,13 @@ def blocks(payload):
         names={d['department_id']:d['department'] for d in payload['departments']}
         table=[['Program','Alt Program','Faaliyet','Sorumlu Harcama Birimleri']]
         for a in payload['catalogue']:
-            table.append([f'{a["program_code"]} {a["program_name"]}',f'{a["subprogram_code"]} {a["subprogram_name"]}',f'{a["code"]} {a["name"]}','\n'.join(names.get(d,str(d)) for d in a['departments'])])
+            if str(a.get('code') or '').startswith('name:'):
+                labels = [' '.join(filter(None, [a.get('program_code'), a['program_name']])),
+                    ' '.join(filter(None, [a.get('subprogram_code'), a['subprogram_name']])), a['name']]
+            else:
+                labels = [f'{a["program_code"]} {a["program_name"]}',
+                    f'{a["subprogram_code"]} {a["subprogram_name"]}',f'{a["code"]} {a["name"]}']
+            table.append(labels + ['\n'.join(names.get(d,str(d)) for d in a['departments'])])
         out.append(('table',table))
     included=[d for d in payload.get('departments',[]) if not d.get('scope') or d['scope']['status']!='excluded']
     if any(d['economics'] for d in included):
@@ -127,8 +160,9 @@ def blocks(payload):
         for d in included:
             vals=[]
             for y in range(year,year+3):
-                values=[Decimal(v['amount']) for v in d['economics'] if v['year']==y and v['value_kind']==('budget' if y==year else 'forecast')]
-                total=sum(values,Decimal(0)) if values or (d.get('scope') and d['scope']['status']=='zero') else None
+                values=[v for v in d['economics'] if v['year']==y and v['value_kind']==('budget' if y==year else 'forecast')]
+                total=complete_amount_sum(values)
+                if not values and d.get('scope') and d['scope']['status']=='zero':total=Decimal(0)
                 vals.append(total)
             table.append([d['department']]+[format_number(v,True) for v in vals])
             if vals[0] is not None:chart_values.append((d['department'],vals[0]))
@@ -136,8 +170,9 @@ def blocks(payload):
         if chart_values:out.extend(chart_blocks(chart_values,f'{year} Bütçesinin Müdürlüklere Dağılımı'))
         economic_values=[]
         for cat,label in ECONOMIC_CATEGORIES.items():
-            vals=[Decimal(v['amount']) for d in included for v in d['economics'] if v['category']==cat and v['year']==year and v['value_kind']=='budget']
-            if vals:economic_values.append((label,sum(vals,Decimal(0))))
+            vals=[v for d in included for v in d['economics'] if v['category']==cat and v['year']==year and v['value_kind']=='budget']
+            total=complete_amount_sum(vals)
+            if total is not None:economic_values.append((label,total))
         if economic_values:out.extend(chart_blocks(economic_values,f'{year} Bütçesinin Ekonomik Dağılımı'))
     for s in payload.get('sections',[]):
         c=json.loads(s['content_json'])

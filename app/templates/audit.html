@@ -53,7 +53,7 @@
                   {% if details.technical %}
                     <details>
                       <summary>Teknik ayrıntı</summary>
-                      <code>{{ details.technical }}</code>
+                      <code>{{ details.technical|display_catalogue_keys }}</code>
                     </details>
                   {% endif %}
                 </td>

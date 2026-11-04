@@ -81,10 +81,14 @@ def test_above_threshold_year_percent_and_exact_threshold():
     assert result['message'] == ('Bu bölüm 2026 yılı onaylı raporundaki aynı bölümle %88 benzer. '
                                  'Metni bu yılın gelişmelerine göre güncelleyin.')
     assert result['source_url'] == '/approved.json'
-    exact = similarity.compare_section(narrative(' '.join(WORDS[:34] + ['yeni'] * 6)), baseline())
-    assert exact['percent'] == 85 and exact['message'] == ''
-    # Rounding to 85 must not suppress a ratio that is strictly greater than 85.
-    almost = ' '.join(WORDS + ['farklı'] * 14)
+    exact = similarity.compare_section(narrative(' '.join(WORDS[:20] + ['yeni'] * 20)), baseline())
+    assert exact['percent'] == 50 and exact['message'] == ''
+    hundred = WORDS * 2 + WORDS[:20]
+    fifty_one = similarity.compare_section(narrative(' '.join(hundred[:51] + ['yeni'] * 49)),
+                                          baseline(narrative(' '.join(hundred))))
+    assert fifty_one['percent'] == 51 and fifty_one['message']
+    # Rounding to 50 must not suppress a ratio that is strictly greater than 50.
+    almost = ' '.join(WORDS + ['farklı'] * 79)
     assert similarity.compare_section(narrative(almost), baseline())['message']
 
 
@@ -229,11 +233,11 @@ def test_below_threshold_overview_percentage_is_not_a_warning(section_client, db
     doc = own_report(docs, sample)
     store_baseline(db, sample, doc)
     token = login(client, 'strategy@example.invalid')
-    assert save(client, token, doc, blocks=narrative(' '.join(WORDS[:34] + ['yeni'] * 6))['blocks']).status_code == 200
+    assert save(client, token, doc, blocks=narrative(' '.join(WORDS[:20] + ['yeni'] * 20))['blocks']).status_code == 200
     editor = client.get(f'/activity-sections/reports/{doc.id}').text
     assert not html.fromstring(editor).xpath('//*[@data-ar-similarity]')
     overview = client.get(f"/activity-sections?period_id={sample['period'].id}&section=I.A").text
-    assert 'Önceki yıl benzerliği: %85' in overview
+    assert 'Önceki yıl benzerliği: %50' in overview
     assert not html.fromstring(overview).xpath('//*[@data-ar-similarity]')
 
 

@@ -1,6 +1,10 @@
 {% if report.department_id and report.workflow %}
 <section class="panel ar-panel" aria-label="Birim raporu iş akışı">
 <h2>Birim raporu · <span data-ar-workflow-status>{{ report.workflow.label }}</span></h2>
+{% if report.workflow.status=='submitted' %}
+{% set warning_count=report.financial.get('warnings',{}).values()|sum(start=[])|length %}
+{% if warning_count %}<p role="status">Birim faaliyet raporu gönderildi. Mali Hizmetler verisinde {{ warning_count }} uyarı var; Strateji ve Mali Hizmetler bilgilendirilmelidir.</p>{% endif %}
+{% endif %}
 {% if report.workflow.reason %}<p><strong>Gerekçe:</strong> {{ report.workflow.reason }}</p>{% endif %}
 {% if report.workflow.status in ['draft','returned'] and user.department_id==report.department_id and (user.position=='director' or user.can_submit) %}
 <form method="post" action="/activity-sections/reports/{{ report.id }}/workflow/submit">

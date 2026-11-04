@@ -158,10 +158,12 @@
                 <input type="hidden" name="id" value="{{ item.id }}">
               {% endif %}
               {% for name,label in [('program_code','Program Kodu'),('program_name','Program Adı'),('subprogram_code','Alt Program Kodu'),('subprogram_name','Alt Program Adı'),('code','Faaliyet Kodu'),('name','Faaliyet Adı')] %}
+                {% if not (item and item.code.startswith('name:') and name in ['program_code','subprogram_code','code']) %}
                 <label>
                   {{ label }}
                   <input name="{{ name }}" value="{{ item|attr(name) if item else '' }}" required>
                 </label>
+                {% endif %}
               {% endfor %}
               <label>
                 Sorumlu Harcama Birimleri
@@ -177,6 +179,20 @@
         </details>
       {% endfor %}
     </section>
+    {% if approved_book %}
+      <section class="report-panel" id="approved-book-publication">
+        <h2>Onaylı kitaptan yayınla</h2>
+        <p>{{ period.year }} onaylı kitabı ilk yüklemeden sonra değiştirilmedi. Kaynak kitaptaki kontrol uyarıları yayın arşivinde saklanır.</p>
+        {% filter pp_form(request) %}
+          <form class="report-fields" method="post" action="/report-builder/publish-approved-book">
+            {{ token() }}
+            <label for="approval-reference">Onay dayanağı</label>
+            <input id="approval-reference" name="approval_reference" required maxlength="2000" placeholder="Meclis kararı, 16.10.2025">
+            <button class="button primary">Onaylı kitaptan yayınla</button>
+          </form>
+        {% endfilter %}
+      </section>
+    {% endif %}
     <section class="report-panel report-publish">
       <h2>Nihai Sürüm</h2>
       <p>Yayın öncesinde bütün müdürlük onayları, kapsam ve mali mutabakat yeniden kontrol edilir. Oluşturulan sürüm sonraki düzenlemelerden etkilenmez.</p>
@@ -205,6 +221,10 @@
             {% endif %}
           </h3>
           <p>{{ publication.created_at|turkey_time }} · {{ publication.creator|actor_label }}</p>
+          {% if publication.id in approved_book_publications %}
+            {% set book = approved_book_publications[publication.id] %}
+            <p>Onaylı kitaptan yayın · Onay dayanağı: {{ book.approval_reference }} · Kaynak kitap uyarıları: {{ book.warning_count|trnum }}</p>
+          {% endif %}
           <p class="publication-links">
             <a href="/publications/{{ publication.id }}.docx">Word</a>
             ·

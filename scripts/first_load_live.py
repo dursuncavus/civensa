@@ -2,14 +2,19 @@
 """Basılı PP 2027: varsayılan salt okunur plan; korumalı, müdürlük bazlı ilk yükleme."""
 import argparse
 from collections import Counter
+from contextlib import contextmanager
 from copy import deepcopy
 from datetime import datetime, timezone
 import hashlib
+import io
 import json
 import os
 from pathlib import Path
+import re
 import sys
 from tempfile import TemporaryDirectory
+import time
+import traceback
 from urllib.parse import parse_qsl
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -27,6 +32,83 @@ HEAD = 'c162a1b2c3d4'
 TARGET_ENV = 'CIVENSA_FIRST_LOAD_DATABASE_URL'
 MARKER = 'first_load_department'
 LOCK = 520027
+TTY_REFUSAL = 'Onay için etkileşimli terminal gerekli; komutu tee/grep olmadan doğrudan çalıştırın. 0 satır yazıldı.'
+COUNT_LABELS = {
+    'departments': 'müdürlük',
+    'created_departments': 'oluşturulan müdürlük',
+    'cards': 'kart',
+    'indicators': 'gösterge',
+    'indicator_values': 'gösterge değeri',
+    'activities': 'faaliyet',
+    'activity_cost_values': 'faaliyet maliyeti',
+    'activity_catalogue_links': 'katalog bağlantısı',
+    'economic_values': 'ekonomik değer',
+    'department_cost_values': 'personel/SGK maliyeti',
+    'submissions': 'taslak teslim',
+    'submission_events': 'teslim olayı',
+    'department_scopes': 'müdürlük kapsamı',
+    'subprogram_scopes': 'alt program kapsamı',
+}
+
+
+def open_tty():
+    return io.TextIOWrapper(open('/dev/tty', 'r+b', buffering=0), encoding='utf-8', write_through=True)
+
+
+def read_confirmation(prompt):
+    try:
+        with open_tty() as tty:
+            tty.write(prompt)
+            tty.flush()
+            line = tty.readline()
+    except OSError:
+        raise Refusal(TTY_REFUSAL) from None
+    if not line:
+        raise EOFError
+    return line.rstrip('\r\n')
+
+
+def print_progress(index, total, name, action, elapsed):
+    print(f'[{index}/{total}] {name} · {action} · {elapsed:.1f} sn', file=sys.stderr, flush=True)
+
+
+@contextmanager
+def phase(name):
+    started = time.monotonic()
+    print(f'Aşama: {name} …', file=sys.stderr, flush=True)
+    yield
+    print(f'Aşama: {name} · tamam · {time.monotonic() - started:.1f} sn', file=sys.stderr, flush=True)
+
+
+def format_summary(result, *, year=2027, apply=False, clear_preprint=False):
+    is_clear = clear_preprint or str(result.get('mode', '')).startswith('clear-preprint')
+    mode = 'TEMİZLİK' if is_clear else ('UYGULAMA' if apply or result.get('mode') == 'uygula' else 'PLAN')
+    departments = result.get('departments', [])
+    failed = len(result.get('failed', []))
+    skipped = len(result['skipped']) if 'skipped' in result else sum(d.get('action') == 'skip' for d in departments)
+    if is_clear:
+        matched = len(departments)
+        created = 0
+    else:
+        matched = sum(d.get('action') == 'match' for d in departments)
+        created = sum(d.get('action') == 'create' for d in departments)
+    counts = result.get('counts') if 'counts' in result else result.get('totals', {})
+    totals_text = ' · '.join(f'{COUNT_LABELS.get(k, k)}: {v}' for k, v in counts.items()) or '0'
+    refusals = result.get('refusals', failed)
+    if isinstance(refusals, list):
+        refusals = len(refusals)
+    lines = [
+        'ÖZET',
+        f'Mod: {mode} · Yıl: {year} · Kitap SHA256: {book_config(year)[1][:12]}',
+        f'Müdürlükler: eşleşen: {matched} · oluşturulan: {created} · atlanan: {skipped} · başarısız: {failed}',
+        f'Toplamlar: {totals_text}',
+        f'Reddedilen: {refusals}',
+    ]
+    if year == 2026:
+        protected = (result.get('protected_2027_before') == result.get('protected_2027_after')
+                     and ('protected_2027_before' in result or mode == 'PLAN'))
+        lines.append(f"2027 korunuyor: {'EVET' if protected else 'HAYIR'}")
+    return '\n'.join(lines)
 
 
 class Refusal(ValueError):
@@ -39,16 +121,24 @@ class SafeParser(argparse.ArgumentParser):
         self.exit(2, 'DURDU: Komut seçenekleri geçersiz. --help çıktısını kullanın; bağlantıyı yalnız gizli ortam değişkeninde girin.\n')
 
 
-def verify_book(path):
+def book_config(year=2027):
+    if year == 2027:
+        return BOOK, BOOK_SHA256
+    from scripts.book_to_load_docx import FIRST_LOAD_BOOKS
+    name, digest = FIRST_LOAD_BOOKS[year]
+    return BOOK.with_name(name), digest
+
+
+def verify_book(path, *, year=2027):
     data = path.read_bytes()
     digest = hashlib.sha256(data).hexdigest()
-    if digest != BOOK_SHA256:
+    if digest != book_config(year)[1]:
         raise Refusal('Kitap SHA256 uyuşmuyor. Onaylı basılı IDML dosyasını kullanın; yükleme durdu.')
     # Parse exactly the verified bytes, even if the original file is replaced.
     with TemporaryDirectory(prefix='civensa_verified_book_') as directory:
-        snapshot = Path(directory) / BOOK.name
+        snapshot = Path(directory) / book_config(year)[0].name
         snapshot.write_bytes(data)
-        parsed, _ = parse_book(snapshot)
+        parsed, _ = parse_book(snapshot, **({'year': year} if year == 2026 else {}))
     return parsed
 
 
@@ -117,6 +207,39 @@ def require_head(db):
         raise Refusal(f'Hedef şema uyuşmuyor; yalnız {HEAD} kabul edilir. Migrasyon çalıştırmayın; sorumluya bildirin.')
 
 
+SCHEMA_NAME = re.compile(r'[a-z_][a-z0-9_]{0,62}')
+SQLSTATE = re.compile(r'[0-9A-Z]{5}')
+
+
+def failure_detail(exc):
+    """Exception class plus schema identifiers and code location only (D-396).
+
+    Driver messages can quote row values, so message text never leaves; table,
+    constraint and column names come from the schema, frame locations from code.
+    """
+    parts = [type(exc).__name__]
+    orig = getattr(exc, 'orig', None)
+    code = getattr(orig, 'sqlstate', None) or getattr(orig, 'pgcode', None)
+    if isinstance(code, str) and SQLSTATE.fullmatch(code):
+        parts.append('SQLSTATE ' + code)
+    diag = getattr(orig, 'diag', None)
+    for label, attr in (('tablo', 'table_name'), ('kısıt', 'constraint_name'), ('sütun', 'column_name')):
+        value = getattr(diag, attr, None)
+        if isinstance(value, str) and SCHEMA_NAME.fullmatch(value):
+            parts.append(f'{label} {value}')
+    # Only project code (a virtualenv may live inside the checkout).
+    for name in getattr(exc, 'changed_tables', None) or []:
+        if isinstance(name, str) and SCHEMA_NAME.fullmatch(name):
+            parts.append(f'tablo {name}')
+    frames = [(Path(frame.filename).resolve().relative_to(ROOT).as_posix(), frame.lineno)
+              for frame in traceback.extract_tb(exc.__traceback__)
+              if Path(frame.filename).resolve().is_relative_to(ROOT)]
+    frames = [(name, line) for name, line in frames if name.split('/')[0] in {'app', 'scripts', 'ops', 'tests'}]
+    if frames:
+        parts.append(f'konum {frames[-1][0]}:{frames[-1][1]}')
+    return ', '.join(parts)
+
+
 def content_departments(db, period_id):
     from sqlalchemy import select
     from app.models import Activity, DepartmentCostValue, EconomicValue, Indicator, ReportCard
@@ -126,7 +249,7 @@ def content_departments(db, period_id):
     return ids
 
 
-def completed_departments(db, period_id):
+def completed_departments(db, period_id, *, year=2027):
     from sqlalchemy import select
     from app.models import AuditLog, ImportBatch
     completed = set()
@@ -136,8 +259,8 @@ def completed_departments(db, period_id):
             ImportBatch.period_id == period_id)):
         try:
             details = json.loads(audit.details)
-            if (batch.status != 'applied' or details['book_sha256'] != BOOK_SHA256
-                    or details['year'] != 2027):
+            if (batch.status != 'applied' or details['book_sha256'] != book_config(year)[1]
+                    or details['year'] != year):
                 raise ValueError
             completed.add(int(details['department_id']))
         except (ValueError, KeyError, TypeError):
@@ -145,7 +268,7 @@ def completed_departments(db, period_id):
     return completed
 
 
-def context(db, organization_id, actor_id, resume):
+def context(db, organization_id, actor_id, resume, *, year=2027):
     from sqlalchemy import select
     from app.models import Organization, User, ReportingPeriod, Program, OfficialActivity, ImportBatch
     require_head(db)
@@ -155,32 +278,39 @@ def context(db, organization_id, actor_id, resume):
     actor = db.get(User, actor_id)
     if not actor or not actor.is_active or actor.role not in {'strategy', 'admin'}:
         raise Refusal('--actor-id etkin Strateji/yönetici kullanıcısı olmalıdır. Kullanıcı numarasını doğrulatın.')
-    period = db.scalar(select(ReportingPeriod).where(ReportingPeriod.year == 2027))
+    period = db.scalar(select(ReportingPeriod).where(ReportingPeriod.year == year))
     if period and (period.status not in {'draft', 'active'} or period.template_status != 'verified'):
-        raise Refusal('2027 dönemi açık ve şablonu doğrulanmış olmalıdır. Dönem durumunu sorumluya bildirin.')
-    completed = completed_departments(db, period.id) if period else set()
+        raise Refusal(f'{year} dönemi açık ve şablonu doğrulanmış olmalıdır. Dönem durumunu sorumluya bildirin.')
+    completed = completed_departments(db, period.id, year=year) if period else set()
     if period:
         existing = content_departments(db, period.id)
         other = any(db.scalar(select(model.id).where(model.period_id == period.id).limit(1))
                     for model in (Program, OfficialActivity, ImportBatch))
         # CIV-058 keeps approved import history/catalogue. Only the exact,
         # unchanged clearance receipt permits an otherwise empty first load.
-        if other and not existing and not completed:
+        if year == 2027 and other and not existing and not completed:
             from scripts.clear_preprint_2027 import clearance
             if clearance(db, period.id):
                 other = False
         if (existing or other or completed) and not resume:
-            raise Refusal('2027 PP verisi zaten var; 0 satır yazıldı. Yalnız belgelenmiş --resume ile devam edin.')
+            raise Refusal(f'{year} PP verisi zaten var; 0 satır yazıldı. Yalnız belgelenmiş --resume ile devam edin.')
         if resume and ((existing - completed) or (other and not completed)):
-            raise Refusal('2027 PP verisinde bu yüklemeye ait olmayan kayıt var; 0 satır yazıldı. Devam engellendi.')
+            raise Refusal(f'{year} PP verisinde bu yüklemeye ait olmayan kayıt var; 0 satır yazıldı. Devam engellendi.')
     return actor, period, completed
 
 
 def department_payload(parsed, source):
     # Structural parser errors remain blocking. Institution findings are never data.
-    return dict(departments=[deepcopy(source)], summary=parsed['summary'],
+    payload = dict(departments=[deepcopy(source)], summary=parsed['summary'],
                 errors=parsed.get('errors', []),
-                rejected_economic_tables=parsed.get('rejected_economic_tables', []))
+                rejected_economic_tables=parsed.get('rejected_economic_tables', []),
+                **({key: parsed[key] for key in ('first_load_year', 'book_department_names',
+                    'catalogue_descriptions') if key in parsed} if parsed.get('first_load_year') == 2026 else {}))
+
+    if parsed.get('first_load_year') == 2026:
+        payload['catalogue_descriptions'] = [d for d in parsed.get('catalogue_descriptions', [])
+                                             if d['department'] == source['name']]
+    return payload
 
 
 def planned_counts(source):
@@ -191,10 +321,15 @@ def planned_counts(source):
                                      for t in source.get('economic_tables', []) for v in t['values']}))
 
 
-def department_plan(db, parsed, completed):
+def department_plan(db, parsed, completed, *, year=2027):
     from app.import_service import build_department_plan, department_key
     plan = build_department_plan(db, parsed)
     mapping = {department_key(m['source_name']): m for m in plan['mappings']}
+    if year == 2026:
+        bad = [m['source_name'] for m in plan['mappings']
+               if m['action'] != 'match' or m['confidence'] != 1]
+        if bad:
+            raise Refusal('2026 için tekil mevcut müdürlük eşleşmesi gerekli; 0 satır yazıldı: ' + ', '.join(bad))
     items = []
     for source in plan['parsed']['departments']:
         m = mapping[department_key(source['name'])]
@@ -218,11 +353,12 @@ def department_action(item):
     return result
 
 
-def execute(engine, parsed, *, organization_id, actor_id, apply=False, resume=False):
+def execute(engine, parsed, *, organization_id, actor_id, apply=False, resume=False, year=2027):
     """Plan never invokes a write service, including rollback-only trial writes.
 
-    Apply uses one committed transaction per department. A session advisory lock
-    serializes loaders across those commits; owners must pause application edits.
+    2027 commits each department; 2026 uses per-department savepoints and one outer
+    commit so a 2027 hash surprise rolls back the entire run. A session advisory
+    lock serializes loaders; owners must pause application edits.
     """
     from sqlalchemy import text, select
     from sqlalchemy.orm import Session
@@ -242,30 +378,47 @@ def execute(engine, parsed, *, organization_id, actor_id, apply=False, resume=Fa
                     raise Refusal('Başka ilk yükleme çalışıyor. Bu komut 0 satır yazdı; tamamlanmasını bekleyin.')
             with Session(connection, expire_on_commit=False) as db:
                 db.execute(text('SET TRANSACTION READ ONLY'))
-                actor, period, completed = context(db, organization_id, actor_id, resume)
-                items = department_plan(db, parsed, completed)
+                with phase('veritabanı/şema denetimi'):
+                    actor, period, completed = context(db, organization_id, actor_id, resume, year=year)
+                with phase('müdürlük planı'):
+                    items = department_plan(db, parsed, completed, year=year)
                 output['departments'] = [department_action(item) for item in items]
                 period_id = period.id if period else None
                 db.rollback()
+                total_items = len(items)
                 if not apply:
-                    for item in items:
+                    for index, item in enumerate(items, 1):
+                        started = time.monotonic()
+                        source = item['source']
                         if item['skip']:
-                            output['skipped'].append(dict(name=item['source']['name'], reason=item['skip']))
+                            output['skipped'].append(dict(name=source['name'], reason=item['skip']))
+                            action = 'atla'
                         else:
-                            totals.update(planned_counts(item['source']))
+                            totals.update(planned_counts(source))
                             totals['created_departments'] += item['mapping']['action'] == 'create'
+                            action = 'oluştur' if item['mapping']['action'] == 'create' else 'eşleştir'
+                        print_progress(index, total_items, source['name'], action, time.monotonic() - started)
                     return output
+                if year == 2026:
+                    # Per-directorate savepoints, one outer commit: a surprise in
+                    # the final directorate must undo every 2026 write in this run.
+                    db.begin()
+                    from app.first_load_service import period_rows_hash
+                    with phase('2027 koruma özeti hesabı'):
+                        output['protected_2027_before'] = period_rows_hash(db)
                 for index, item in enumerate(items):
+                    started = time.monotonic()
                     source = item['source']
                     if item['skip']:
                         output['skipped'].append(dict(name=source['name'], reason=item['skip']))
+                        print_progress(index + 1, total_items, source['name'], 'atla', time.monotonic() - started)
                         continue
                     try:
-                        with db.begin():
+                        with (db.begin_nested() if year == 2026 else db.begin()):
                             # Repeat guards after each commit; no migration is ever run.
-                            actor, period, completed = context(db, organization_id, actor_id, True)
+                            actor, period, completed = context(db, organization_id, actor_id, True, year=year)
                             if not period:
-                                period = ReportingPeriod(year=2027, status='draft', template_status='verified')
+                                period = ReportingPeriod(year=year, status='draft', template_status='verified')
                                 db.add(period)
                                 db.flush()
                             period_id = period.id
@@ -287,7 +440,7 @@ def execute(engine, parsed, *, organization_id, actor_id, apply=False, resume=Fa
                                                       name=item['mapping']['target_name']))
                                     db.flush()
                                     created_department = 1
-                            fresh = department_plan(db, department_payload(parsed, source), completed)[0]
+                            fresh = department_plan(db, department_payload(parsed, source), completed, year=year)[0]
                             if fresh['skip']:
                                 raise Refusal('Müdürlük eşleşmesi/geçmişi değişti; yeniden plan alın.')
                             did = fresh['mapping'].get('department_id')
@@ -297,7 +450,7 @@ def execute(engine, parsed, *, organization_id, actor_id, apply=False, resume=Fa
                                                                     Submission.department_id == did)) if did else None
                             if sub and sub.status not in {'draft', 'returned'}:
                                 raise Refusal('Müdürlük paketi taslak/iade durumunda değil; paket atlandı.')
-                            batch = ImportBatch(period_id=period_id, filename=BOOK.name, status='preview',
+                            batch = ImportBatch(period_id=period_id, filename=book_config(year)[0].name, status='preview',
                                 payload_json=json.dumps(department_payload(parsed, source), ensure_ascii=False), created_by=actor.id)
                             db.add(batch)
                             db.flush()
@@ -309,18 +462,39 @@ def execute(engine, parsed, *, organization_id, actor_id, apply=False, resume=Fa
                                                                             Submission.department_id == department.id))
                             submission.status = 'draft'
                             db.add(AuditLog(user_id=actor.id, action=MARKER, entity_type='import_batch', entity_id=batch.id,
-                                details=json.dumps(dict(book_sha256=BOOK_SHA256, year=2027, department_id=department.id,
+                                details=json.dumps(dict(book_sha256=book_config(year)[1], year=year, department_id=department.id,
                                                         validation_errors=validations), ensure_ascii=False)))
                         totals.update({key: applied[key] for key in totals})
                         output['validation'].extend(validations)
-                        print(f"Yüklendi: {source['name']} · taslak · {sum(len(v['errors']) for v in validations)} doğrulama hatası", flush=True)
+                        print(f"{'Hazırlandı' if year == 2026 else 'Yüklendi'}: {source['name']} · taslak · {sum(len(v['errors']) for v in validations)} doğrulama hatası", flush=True)
+                        print_progress(index + 1, total_items, source['name'],
+                                       'hazırlandı' if year == 2026 else 'yüklendi',
+                                       time.monotonic() - started)
                     except Exception as exc:
                         # Never expose SQL/driver messages, source payloads or a URL.
                         reason = str(exc) if isinstance(exc, ValueError) else (
                             'Mevcut içe aktarma/katalog hizmeti paketi kabul etmedi; müdürlük işlemi geri alındı '
-                            f'({type(exc).__name__}). Yerel provada sorumluya inceletin.')
-                        output['failed'].append(dict(name=source['name'], reason=reason))
+                            f'({failure_detail(exc)}). Yerel provada sorumluya inceletin.')
+                        # detail: class/SQLSTATE/schema names/code location only (D-396).
+                        output['failed'].append(dict(name=source['name'], reason=reason,
+                                                     detail=failure_detail(exc)))
                         output['departments'][index] = dict(source_name=source['name'], action='skip', reason=reason)
+                        print_progress(index + 1, total_items, source['name'], 'başarısız', time.monotonic() - started)
+                        if year == 2026:
+                            db.rollback()
+                            totals.clear()
+                            totals.update({key: 0 for key in ('departments', 'created_departments', 'cards', 'indicators', 'activities', 'economic_values')})
+                            with phase('2027 koruma özeti hesabı'):
+                                output['protected_2027_after'] = period_rows_hash(db)
+                            return output
+                if year == 2026:
+                    db.flush()
+                    with phase('2027 koruma özeti hesabı'):
+                        output['protected_2027_after'] = period_rows_hash(db)
+                    if output['protected_2027_before'] != output['protected_2027_after']:
+                        db.rollback()
+                        raise Refusal('2027 satırları değişecekti; işlem geri alındı, 0 satır yazıldı.')
+                    db.commit()
                 return output
         finally:
             connection.rollback()
@@ -331,7 +505,8 @@ def execute(engine, parsed, *, organization_id, actor_id, apply=False, resume=Fa
 
 def main(argv=None):
     parser = SafeParser(description=__doc__)
-    parser.add_argument('--book', type=Path, default=BOOK)
+    parser.add_argument('--year', type=int, choices=(2026, 2027), default=2027)
+    parser.add_argument('--book', type=Path)
     parser.add_argument('--organization-id', type=int, required=True)
     parser.add_argument('--actor-id', type=int, required=True)
     parser.add_argument('--apply', action='store_true', help='Sahibin yazma onayı; diğer korumalar da zorunlu')
@@ -340,6 +515,7 @@ def main(argv=None):
     parser.add_argument('--clear-preprint', action='store_true',
                         help='D-131 / D-135 ön baskı temizleme planı; yalnız --apply ile yazar')
     args = parser.parse_args(argv)
+    args.book = args.book or book_config(args.year)[0]
     try:
         # The app.db module creates a default engine on import. It must only see
         # this inert URL, never application/migration environment credentials.
@@ -348,18 +524,22 @@ def main(argv=None):
             url = target_url()
             if args.clear_preprint and args.resume:
                 raise Refusal('--clear-preprint ile --resume birlikte kullanılamaz; 0 satır yazıldı.')
-            parsed = verify_book(args.book)
+            if args.year == 2026 and args.clear_preprint:
+                raise Refusal('--clear-preprint yalnız 2027 içindir; 0 satır yazıldı.')
+            with phase('kitap doğrulama'):
+                parsed = verify_book(args.book, **({'year': args.year} if args.year == 2026 else {}))
             if args.apply:
-                verify_backup(args.backup)
+                with phase('yedek doğrulama'):
+                    verify_backup(args.backup)
                 try:
                     if args.clear_preprint:
                         from scripts.clear_preprint_2027 import CONFIRMATION
-                        confirmation = input(f'Temizleme onayı: {CONFIRMATION} yazın: ')
+                        confirmation = read_confirmation(f'Temizleme onayı: {CONFIRMATION} yazın: ')
                     else:
-                        confirmation = input(f'Yazma onayı: kitap SHA256 ilk 12 karakterini yazın ({BOOK_SHA256[:12]}): ')
+                        confirmation = read_confirmation(f'Yazma onayı: kitap SHA256 ilk 12 karakterini yazın ({book_config(args.year)[1][:12]}): ')
                 except (EOFError, KeyboardInterrupt):
                     raise Refusal('Yazma onayı alınamadı; 0 satır yazıldı.') from None
-                expected = CONFIRMATION if args.clear_preprint else BOOK_SHA256[:12]
+                expected = CONFIRMATION if args.clear_preprint else book_config(args.year)[1][:12]
                 if confirmation != expected:
                     raise Refusal('Temizleme onayı uyuşmuyor; 0 satır yazıldı.' if args.clear_preprint else
                                   'Kitap SHA256 onayı uyuşmuyor; 0 satır yazıldı.')
@@ -376,7 +556,7 @@ def main(argv=None):
                                            before_write=(lambda: verify_backup(args.backup)) if args.apply else None)
                 else:
                     result = execute(engine, parsed, organization_id=args.organization_id, actor_id=args.actor_id,
-                                     apply=args.apply, resume=args.resume)
+                                     apply=args.apply, resume=args.resume, year=args.year)
             finally:
                 engine.dispose()
         print('PLAN: Hedefe 0 satır yazıldı.' if not args.apply else 'UYGULAMA SONUCU:')
@@ -399,7 +579,10 @@ def main(argv=None):
                     print(f"Oluştur: {source} → {department['name']}")
                 else:
                     print(f"Atla: {source} · {department['reason']}")
+        summary = format_summary(result, year=args.year, apply=args.apply, clear_preprint=args.clear_preprint)
+        print(summary)
         print(json.dumps(result, ensure_ascii=False, indent=2))
+        print(summary, flush=True)
         return 2 if result.get('failed') else 0
     except Refusal as exc:
         print(f'DURDU: {exc}', file=sys.stderr)

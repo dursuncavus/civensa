@@ -28,7 +28,7 @@ from test_internal_control_monitoring import monitoring, values, approve, fill
 
 pytestmark = pytest.mark.postgres
 ROOT = Path(__file__).resolve().parents[1]
-ARTIFACTS = ROOT / 'tests/artifacts/civ084'
+ARTIFACTS = ROOT / 'tests/artifacts/civ163'
 
 
 @pytest.fixture
@@ -76,18 +76,23 @@ def test_synthetic_rates_official_columns_and_assurance(db, official_plan):
     assert (metrics['plan_total'], metrics['due_total'], metrics['completed']) == (30, 25, 9)
     assert metrics['period_rate'] == '36,00% (9/25)'
     assert metrics['plan_rate'] == '30,00% (9/30)'
-    assert metrics['components'][0] == ['Kontrol Ortamı', 11, 5, 0, 6, 5, '16,67% (5/30)']
+    assert metrics['components'][0] == ['Kontrol Ortamı', 11, 5, 0, 6, 5, '45,45% (5/11)', '16,67% (5/30)']
     assert metrics['components'][-1][1:6] == [0, 0, 0, 0, 0]
+    assert metrics['components'][-1][6:] == ['— (0/0)', '0,00% (0/30)']
+    assert sum(int(row[-1].split('(')[1].split('/')[0]) for row in metrics['components']) == metrics['completed']
     assert [sum(row[column] for row in metrics['components']) for column in range(1, 6)] == [30, 9, 0, 16, 9]
     book = load_workbook(BytesIO(export.official_export(db, d['strategy'], d['period'].id, 'xlsx')))
     rows = list(book['Resmî İzleme'].values)
     assert list(rows[0]) == export.OFFICIAL_HEADERS and len(rows) == 32
     assert rows[1][3] is None and rows[1][2].startswith('Mevcut durumda makul güvence')
     assert rows[2][3] == 'KOS1.1.1' and rows[2][-1].startswith('(TAMAMLANDI)')
+    assert export.COMPONENT_HEADERS[-2:] == ['Gerçekleşme Oranı (%)', 'Genel Orana Katkı (%)']
     assert any(row == tuple(export.COMPONENT_HEADERS) for row in book['Özet'].values)
+    assert tuple(metrics['components'][0]) in list(book['Özet'].values)
     assert any('36,00% (9/25)' in str(row) for row in book['Özet'].values)
     doc = Document(BytesIO(export.official_export(db, d['strategy'], d['period'].id, 'docx')))
     assert [c.text for c in doc.tables[0].rows[0].cells] == export.COMPONENT_HEADERS
+    assert [c.text for c in doc.tables[0].rows[1].cells][-2:] == metrics['components'][0][-2:]
     assert [c.text for c in doc.tables[1].rows[0].cells] == export.OFFICIAL_HEADERS
     assert doc.tables[1].rows[1].cells[3].text == ''
     assert '30,00% (9/30)' in '\n'.join(p.text for p in doc.paragraphs)
@@ -97,13 +102,16 @@ def test_synthetic_rates_official_columns_and_assurance(db, official_plan):
     db.commit()
     not_due_codes = {r['action'].action_code_raw for r in m.action_records(db, d['period']) if r['due'] is False}
     assert len(not_due_codes) == 5
-    phrase = 'Eylem süresi bu dönemde dolmamaktadır.'
+    phrase = 'Devam eden eylem.'
     draft_book = load_workbook(BytesIO(export.official_export(db, d['strategy'], d['period'].id, 'xlsx', draft=True)))
     not_due_rows = [row for row in list(draft_book['Resmî İzleme'].values)[1:] if row[3] in not_due_codes]
     assert len(not_due_rows) == 5 and all(row[-1].startswith(phrase) for row in not_due_rows)
+    assert 'Eylem süresi bu dönemde dolmamaktadır.' not in str(list(draft_book['Resmî İzleme'].values))
     draft_doc = Document(BytesIO(export.official_export(db, d['strategy'], d['period'].id, 'docx', draft=True)))
     not_due_rows = [row for row in draft_doc.tables[1].rows[1:] if row.cells[3].text in not_due_codes]
     assert len(not_due_rows) == 5 and all(row.cells[-1].text.startswith(phrase) for row in not_due_rows)
+    assert all('Eylem süresi bu dönemde dolmamaktadır.' not in cell.text
+               for table in draft_doc.tables for row in table.rows for cell in row.cells)
 
 
 @pytest.mark.parametrize('half,due,start,continuous,expected', [
@@ -196,7 +204,7 @@ def test_warning_exclusion_cover_and_responsive_screens(db, official_plan, clien
         if fmt == 'docx':
             assert warning in [p.text for p in Document(BytesIO(content)).paragraphs]
         else:
-            assert (warning, None, None, None, None, None, None) in list(load_workbook(BytesIO(content))['Özet'].values)
+            assert (warning, None, None, None, None, None, None, None) in list(load_workbook(BytesIO(content))['Özet'].values)
     app.dependency_overrides[require_user] = lambda: d['strategy']
     ARTIFACTS.mkdir(parents=True, exist_ok=True)
     with sync_playwright() as p:
@@ -221,7 +229,16 @@ def test_warning_exclusion_cover_and_responsive_screens(db, official_plan, clien
                     expect(page.get_by_text('30,00% (9/30)', exact=True)).to_be_visible()
                 expect(page.get_by_text('36,00% (9/25)', exact=True)).to_be_visible()
                 expect(page.get_by_role('link', name='Resmî format · Onaylı Word indir')).to_be_visible()
+                table = page.locator('.ic-result-table-scores')
+                expect(table.locator('th')).to_have_text(export.COMPONENT_HEADERS)
+                expect(table.locator('tbody tr').first.locator('td')).to_have_text([str(v) for v in metrics['components'][0]])
                 assert page.evaluate('document.documentElement.scrollWidth <= window.innerWidth')
+                table.scroll_into_view_if_needed()
+                if not has_warning:
+                    section = table.locator('xpath=ancestor::section')
+                    section.screenshot(path=str(ARTIFACTS / f'components-{width}.png'))
+                    table.locator('xpath=..').evaluate('(el) => { el.scrollLeft = el.scrollWidth; }')
+                    section.screenshot(path=str(ARTIFACTS / f'components-{width}-rates.png'))
                 page.screenshot(path=str(ARTIFACTS / f"strateji-{'uyari-' if has_warning else ''}{width}.png"), full_page=True)
         finally:
             browser.close()
@@ -388,5 +405,7 @@ def test_component_period_counts_preserve_all_completed_total_and_rates(db, offi
     metrics = m.official_metrics(db, d['strategy'], d['period'], records=records)
     completed_total = 14 if future_status == 'completed' else 9
     assert [sum(row[column] for row in metrics['components']) for column in range(1, 6)] == [30, 8, 0, 16, completed_total]
+    assert metrics['components'][0][-2:] == ['40,00% (4/10)', '13,79% (4/29)']
+    assert metrics['components'][2][-2:] == (['33,33% (3/9)', '10,34% (3/29)'] if future_status == 'completed' else ['0,00% (0/9)', '0,00% (0/29)'])
     assert metrics['period_rate'] == '33,33% (8/24)'
     assert metrics['plan_rate'] == ('44,83% (13/29)' if future_status == 'completed' else '27,59% (8/29)')

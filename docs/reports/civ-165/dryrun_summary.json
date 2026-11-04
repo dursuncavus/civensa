@@ -1,0 +1,22 @@
+{
+  "departments": 33,
+  "created_departments": 0,
+  "cards": 105,
+  "indicators": 226,
+  "activities": 182,
+  "economic_values": 1270,
+  "cost_rows": 2884,
+  "source_cost_cells": 3276,
+  "catalogue_entries": 106,
+  "catalogue_responsibilities": 106,
+  "catalogue_links": 8,
+  "unlinked_catalogue_activities": 174,
+  "dropped_guidance_rows": 210,
+  "refusals": 0,
+  "amount_differences": 0,
+  "differences": [],
+  "protected_2027_before": "e917e7e3f4f911a8cc56c01de872c2a321a1fb96e771b63d7718254b5d4758f0",
+  "protected_2027_after": "e917e7e3f4f911a8cc56c01de872c2a321a1fb96e771b63d7718254b5d4758f0",
+  "protected_2027_unchanged": true,
+  "persistent_indicator_links": 0
+}

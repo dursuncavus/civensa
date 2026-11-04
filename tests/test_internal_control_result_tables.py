@@ -29,6 +29,12 @@ def original_source(name):
                  '{{ monitoring_period.id }}/narrative">Rapor anlatı bölümleri</a></p>\n')
         assert source.count(delta) == 1
         source = source.replace(delta, '', 1)
+        # CIV-163: remove only the new heading/column width to verify the
+        # historical hash, then restore the heading for current-cell comparison.
+        contribution = ",'Genel Orana Katkı (%)'"
+        first_width = '<th{% if loop.first %} style="width: 18%"{% endif %}>'
+        assert source.count(contribution) == source.count(first_width) == 1
+        source = source.replace(contribution, '', 1).replace(first_width, '<th>', 1)
     source = source.replace('class="card ic-results-card"', 'class="card"')
     source = re.sub(r' class="ic-result-table ic-result-table-(?:scores|summary)"', '', source)
     source = source.replace(' class="{{ \'ic-total-row\' if row == question_results.total else \'\' }}"', '')
@@ -40,6 +46,9 @@ def original_source(name):
         marker = '{% if question_lists %}'
         assert source.count(marker) == 1
         source = source.replace(marker, delta + marker, 1)
+        heading = "'Gerçekleşme Oranı (%)'"
+        assert source.count(heading) == 1
+        source = source.replace(heading, heading + contribution, 1)
     return source
 
 

@@ -369,3 +369,76 @@ parmak izlerinin değişmemesini kanıtlar. **Sentetik veri gerçek üretim yede
 provası değildir.** Gerçek artifact ve bağlantı/rol, giriş molası ve canlı sonuç
 ayrı operasyon sırasında doğrulanır; 2. adımın gerçek yedek PASS kaydı olmadan
 canlı adıma geçilmez.
+
+## 2026 yükleme
+
+2026 için CIV-165 yükleyicisini, **c162a1b2c3d4** şemasını ve onaylı kitap
+SHA256 öneki **1aaa0bb81c3c** kullanın. Sıra: **plan → doğrulanmış yedek →
+2026 PP verified backup rehearsal → apply → resume plan**. Canlı adımları yalnız
+sahibi yürütür; sorumlu provayı birleştirmeden sonra elle başlatır.
+
+Önce `scripts/first_load_live.py --year 2026 --organization-id … --actor-id …`
+ile salt okunur plan alın; bağlantıyı yukarıdaki gizli ortam değişkeni yöntemiyle
+verin. Sonra yeni **Daily verified database backup** alın. Actions'ta
+**2026 PP verified backup rehearsal** için varsayılan daldaki en yeni yeşil
+çalışmanın `backup_run_id` numarasını ve `book_confirmation=1aaa0bb81c3c`
+girin. Boş kurum/aktör alanları mevcut 2027 provasıyla aynı seçimi yapar.
+Prova yalnız şifresi çözülmüş yedeğin geçici yerel PostgreSQL 18 kopyasını kullanır.
+
+Summary'de **PASS**, **33 müdürlük / 105 kart / 226 gösterge**, sıfır ret ve
+başarısız müdürlük, iki 2027 hash koruma kontrolü, kalıcı gösterge kimliği
+atanan **0** ve devam planında **0 yazma / 33 atlanan** görülmelidir.
+“**2026 dönemi dolu**” sonucu varsa mevcut sayımları inceleyin; `--resume` ile
+ilk yükleme korumasını aşmayın. D-388 envanteriyle eşleşen onaylı pilot için
+aşağıdaki **2026 pilot dönemini değiştirme** bölümünü izleyin; diğer dolu
+dönemlerde durun.
+
+PASS sonrasında sahibi veri girişini kapalı tutarak aynı 2026 komutuna
+`--apply --backup …` ekler ve **1aaa0bb81c3c** onayını verir. Sonra `--apply`
+olmadan `--resume` planı alır; bütün sayımlar 0, atlanan müdürlükler 33 olmalıdır.
+Kaynak prova yedeği 48 saatten yeni olabilir; canlı uygulamanın doğrulanmış
+yedeği ise **60 dakikadan yeni** olmalıdır. Prova ve onay 60 dakikalık pencereyi
+sıkıştırıyorsa **iki yedek** alın: prova için birincisi, canlı uygulamadan hemen
+önce ikincisi. Hash/sayım farkı veya herhangi bir FAIL varsa canlı uygulamaya
+geçmeyin; sorumlu Summary'de belirtilen ilk başarısız kontrolü incelesin.
+
+## 2026 pilot dönemini değiştirme
+
+CIV-172 / D-389 yalnız D-388'deki eski pilot envanterini kabul eder. Bu bölüm
+canlı çalıştırma yetkisi vermez: sahibi ayrıca onayladıktan sonra, veri girişini
+kapalı tutarak yürütür. Araç şema migrasyonu yapmaz; hedef **c162a1b2c3d4**.
+Bağlantıyı önceki bölümlerdeki gizli terminal yöntemiyle yalnız
+`CIVENSA_FIRST_LOAD_DATABASE_URL` üzerinden verin; komuta veya günlüğe yazmayın.
+
+1. Önce salt okunur plan alın:
+   `python scripts/clear_pilot_2026.py --organization-id … --actor-id …`.
+   Beklenen: dönem **closed/verified**; 24 program, 40 alt program, 220 taslak
+   gösterge, 1090 gösterge değeri, 174 faaliyet, 1119 faaliyet maliyeti,
+   99 müdürlük maliyeti, 34 teslim (3 approved / 31 draft), 2 paket
+   (1 applied / 1 preview), 136 ilişkili denetim kaydı. Diğer dönem tabloları
+   sıfır olmalıdır. Fark varsa araç 0 yazmayla durur; sayımları sorumluya iletin.
+2. Yeni **Daily verified database backup** alın. Önceki 2026 prova bölümündeki
+   workflow'u `book_confirmation=1aaa0bb81c3c` ve isteğe bağlı
+   `clear_confirmation=2026 PILOT DONEMINI SIL` ile çalıştırın. Bu açık onay,
+   yalnız geçici kopyada temizleme planı → temizleme → 2026 yükleme planı →
+   yükleme → devam planı zincirini açar. Boş bırakılırsa önceki davranış sürer;
+   dolu 2026 dönemi reddedilir. **PASS**, temizleme sayımları, arşiv SHA256 ve
+   zincirin başından sonuna değişmeyen 2027 hash kanıtını inceleyin.
+3. Canlı temizleme için **60 dakikadan yeni**, doğrulanmış `.dump` ve manifest
+   hazır olsun; gerekiyorsa provadan sonra yeniden yedek alın. Sahibi doğrudan
+   etkileşimli terminalde çalıştırır (tee/grep veya boru kullanmayın):
+   `python scripts/clear_pilot_2026.py --organization-id … --actor-id … --apply --backup …`.
+   İstenen tam cümle: **2026 PILOT DONEMINI SIL**. Tek işlemde 2.802 pilot
+   içerik satırı arşivlenip silinir; dönem kimliği, kullanıcılar, müdürlükler ve
+   mevcut bütün denetim kayıtları korunur. Dönem **draft/verified** olur.
+   `pilot_2026_cleared` denetim kaydında bütün silinen sütunları içeren gzip+base64
+   JSON, açılmış JSON baytlarının SHA256'sı ve tablo sayımları saklanır.
+   ÖZET yalnız sayımlar ve hash gösterir; arşivi açık günlüğe çıkarmayın.
+4. Temizleme sonrasında **yeni doğrulanmış yedek** alın. Yukarıdaki **2026 yükleme**
+   bölümünü izleyin: `--year 2026` planı → yeni yedeği kullanan yükleme uygulaması
+   → `--resume` planı. Beklenen yükleme **33/105/226**, devam planı **0 yazma / 33 atlanan**.
+   Temizleme komutunu yeniden uygulamayın; boş dönem artık pilot parmak iziyle
+   eşleşmez. Kesinti veya ret varsa yeniden salt okunur plan alın ve sorumluya
+   bildirin. Başarısız temizleme bütünüyle geri alınır; kaydedilmiş temizleme
+   için 10. bölümdeki yedekten dönüş prosedürünü izleyin. Yükleme ayrı işlemdir;
+   mevcut devam/kurtarma prosedürü geçerlidir.

@@ -4,6 +4,8 @@ on:
   pull_request:
     paths:
       - 'scripts/clear_preprint_2027.py'
+      - 'scripts/clear_pilot_2026.py'
+      - 'tests/test_clear_pilot_2026.py'
       - 'scripts/first_load_live.py'
       - 'scripts/rehearse_clear_preprint_2027.py'
       - 'tests/test_clear_preprint_2027.py'
@@ -12,6 +14,9 @@ on:
       - '.github/actions/setup-age/**'
       - 'ops/backup_crypto.py'
       - 'ops/preprint_rehearsal.py'
+      - 'ops/pp2026_rehearsal.py'
+      - 'tests/test_pp2026_rehearsal.py'
+      - '.github/workflows/pp2026-backup-rehearsal.yml'
       - 'ops/release_rehearsal.py'
       - '.github/workflows/db-backup.yml'
       - '.github/workflows/preprint-backup-rehearsal.yml'

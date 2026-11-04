@@ -6,7 +6,7 @@ import json
 from datetime import date
 
 from fastapi import HTTPException
-from sqlalchemy import event, select
+from sqlalchemy import event, select, inspect
 from sqlalchemy.orm import Session
 
 from .models import (Activity, ActivityCatalogueLink, ActivityResponsibility, AuditLog,
@@ -56,9 +56,27 @@ def period_name(db, period_id, department):
     if scope and scope.display_name:
         return scope.display_name
     period = db.get(ReportingPeriod, period_id)
+    return name_for_year(db, period.year, department)
+
+
+def department_display_name(department, period_id):
+    """Template adapter for period screens that already receive an attached row."""
+    state = inspect(department, raiseerr=False)
+    db = state.session if state is not None else None
+    return period_name(db, period_id, department) if db is not None and period_id else department.name
+
+
+def display_name_for_year(db, year, department):
+    """Display a reporting book name without changing the structure-history API."""
+    period = db.scalar(select(ReportingPeriod).where(ReportingPeriod.year == year))
+    return period_name(db, period.id, department) if period else name_for_year(db, year, department)
+
+
+def name_for_year(db, year, department):
+    """Resolve a year's name from live structure decisions, without a period scope."""
     for change in live_changes(db):
         old = json.loads(change.snapshot_json)['before']['departments'].get(str(department.id))
-        if old and period.year < change.effective_date.year:
+        if old and year < change.effective_date.year:
             return old['name']
     return department.name
 

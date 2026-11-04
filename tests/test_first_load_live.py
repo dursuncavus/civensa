@@ -2,6 +2,7 @@
 from copy import deepcopy
 from datetime import datetime, timedelta, timezone
 import hashlib
+import io
 import json
 import os
 
@@ -43,6 +44,27 @@ def backup_files(tmp_path, *, age=0):
                     alembic_version={'version_num': [live.HEAD]}, public_table_row_counts={'organizations': 1})
     dump.with_suffix('.manifest.json').write_text(json.dumps(manifest))
     return dump, manifest
+
+
+class TtyStub:
+    def __init__(self, response=''):
+        self.input = io.StringIO(response)
+        self.output = io.StringIO()
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *exc):
+        pass
+
+    def write(self, text):
+        return self.output.write(text)
+
+    def flush(self):
+        self.output.flush()
+
+    def readline(self):
+        return self.input.readline()
 
 
 def state(engine):
@@ -149,7 +171,7 @@ def test_plan_lists_department_actions_without_writes(target, printed, monkeypat
     assert f"Oluştur: {sources[3]['name']} → {sources[3]['name']}" in text_output
     assert f"Atla: {sources[1]['name']} · " in text_output
     assert f"Oluştur: {sources[4]['name']} → {sources[4]['name']}" in text_output
-    assert json.loads('{' + json_output)['departments'] == actions
+    assert json.loads('{' + json_output.split('\nÖZET\n', 1)[0])['departments'] == actions
 
 
 @pytest.mark.postgres
@@ -161,7 +183,7 @@ def test_cli_apply_and_needs_attention_after_real_department_edit(target, printe
     data['departments'] = data['departments'][:1]  # Sağlık: validation errors and review cells.
     monkeypatch.setattr(live, 'verify_book', lambda path: data)
     monkeypatch.setenv(live.TARGET_ENV, engine.url.set(query={}).render_as_string(hide_password=False))
-    monkeypatch.setattr('builtins.input', lambda prompt: live.BOOK_SHA256[:12])
+    monkeypatch.setattr(live, 'open_tty', lambda: TtyStub(live.BOOK_SHA256[:12] + '\n'))
     dump, _ = backup_files(tmp_path)
     assert live.main(['--organization-id', str(ids['organization_id']), '--actor-id', str(ids['actor_id']),
                       '--apply', '--backup', str(dump)]) == 0
@@ -355,7 +377,7 @@ def test_neon_channel_binding_other_values_and_extra_keys_are_refused(monkeypatc
 def test_cli_apply_requires_typed_prefix_before_connection(tmp_path, monkeypatch, capsys, confirmation):
     monkeypatch.setenv(live.TARGET_ENV, 'postgresql://unused@localhost/never_connect')
     monkeypatch.setattr(live, 'verify_book', lambda path: {})
-    monkeypatch.setattr('builtins.input', lambda prompt: confirmation)
+    monkeypatch.setattr(live, 'open_tty', lambda: TtyStub(confirmation + '\n'))
     dump, _ = backup_files(tmp_path)
     assert live.main(['--organization-id', '1', '--actor-id', '1', '--apply', '--backup', str(dump)]) == 1
     assert 'SHA256 onayı uyuşmuyor' in capsys.readouterr().err
@@ -402,3 +424,370 @@ def test_cli_refuses_old_book_before_connection(monkeypatch, capsys):
     old_book = live.BOOK.with_name('2027-performans-programi_16102026_duzeltilmis 2.idml')
     assert live.main(['--organization-id', '1', '--actor-id', '1', '--book', str(old_book)]) == 1
     assert 'Kitap SHA256 uyuşmuyor' in capsys.readouterr().err
+
+
+@pytest.mark.postgres
+def test_tty_confirmation_prompt_not_on_stdout_and_wrong_refuses_zero_rows(target, printed, tmp_path, monkeypatch, capsys):
+    import sys
+    engine, ids = target
+    data = deepcopy(printed)
+    data['departments'] = data['departments'][:1]
+    monkeypatch.setattr(live, 'verify_book', lambda path, **kw: data)
+    monkeypatch.setenv(live.TARGET_ENV, engine.url.set(query={}).render_as_string(hide_password=False))
+    monkeypatch.setattr(sys, 'stdin', io.StringIO(live.BOOK_SHA256[:12] + '\n'))
+    dump, _ = backup_files(tmp_path)
+    before = state(engine)
+
+    wrong_tty = TtyStub('yanlis-onay\n')
+    monkeypatch.setattr(live, 'open_tty', lambda: wrong_tty)
+    assert live.main(['--organization-id', str(ids['organization_id']), '--actor-id', str(ids['actor_id']),
+                      '--apply', '--backup', str(dump)]) == 1
+    assert state(engine) == before
+    captured = capsys.readouterr()
+    assert f'Yazma onayı: kitap SHA256 ilk 12 karakterini yazın ({live.BOOK_SHA256[:12]}): ' == wrong_tty.output.getvalue()
+    assert 'Yazma onayı:' not in captured.out
+    assert captured.out == ''
+    assert 'Kitap SHA256 onayı uyuşmuyor; 0 satır yazıldı.' in captured.err
+
+    eof_tty = TtyStub('')
+    monkeypatch.setattr(live, 'open_tty', lambda: eof_tty)
+    assert live.main(['--organization-id', str(ids['organization_id']), '--actor-id', str(ids['actor_id']),
+                      '--apply', '--backup', str(dump)]) == 1
+    assert state(engine) == before
+    captured = capsys.readouterr()
+    assert 'Yazma onayı: ' in eof_tty.output.getvalue()
+    assert 'Yazma onayı alınamadı; 0 satır yazıldı.' in captured.err
+
+    ok_tty = TtyStub(live.BOOK_SHA256[:12] + '\n')
+    monkeypatch.setattr(live, 'open_tty', lambda: ok_tty)
+    assert live.main(['--organization-id', str(ids['organization_id']), '--actor-id', str(ids['actor_id']),
+                      '--apply', '--backup', str(dump)]) == 0
+    captured = capsys.readouterr()
+    assert f'Yazma onayı: kitap SHA256 ilk 12 karakterini yazın ({live.BOOK_SHA256[:12]}): ' == ok_tty.output.getvalue()
+    assert 'Yazma onayı:' not in captured.out
+    assert 'UYGULAMA SONUCU:' in captured.out
+
+
+@pytest.mark.postgres
+def test_no_tty_available_refuses_with_turkish_message_and_zero_rows(target, printed, tmp_path, monkeypatch, capsys):
+    import sys
+    engine, ids = target
+    monkeypatch.setattr(live, 'verify_book', lambda path, **kw: printed)
+    monkeypatch.setenv(live.TARGET_ENV, engine.url.set(query={}).render_as_string(hide_password=False))
+    monkeypatch.setattr(sys, 'stdin', io.StringIO(live.BOOK_SHA256[:12] + '\n'))
+    def raise_no_tty():
+        raise OSError('no controlling terminal')
+    monkeypatch.setattr(live, 'open_tty', raise_no_tty)
+    dump, _ = backup_files(tmp_path)
+    before = state(engine)
+    assert live.main(['--organization-id', str(ids['organization_id']), '--actor-id', str(ids['actor_id']),
+                      '--apply', '--backup', str(dump)]) == 1
+    assert state(engine) == before
+    captured = capsys.readouterr()
+    assert captured.out == ''
+    assert captured.err.strip().splitlines()[-1] == (
+        'DURDU: Onay için etkileşimli terminal gerekli; komutu tee/grep olmadan doğrudan çalıştırın. 0 satır yazıldı.'
+    )
+
+
+def test_no_tty_refuses_before_connection_and_never_reads_stdin(tmp_path, monkeypatch, capsys):
+    import sys
+    monkeypatch.setenv(live.TARGET_ENV, 'postgresql://unused@localhost/never_connect')
+    monkeypatch.setattr(live, 'verify_book', lambda path, **kw: {})
+    monkeypatch.setattr(sys, 'stdin', io.StringIO(live.BOOK_SHA256[:12] + '\n'))
+    monkeypatch.setattr('sqlalchemy.create_engine', lambda *a, **k: pytest.fail('must not connect without tty'))
+    def raise_no_tty():
+        raise OSError('no controlling terminal')
+    monkeypatch.setattr(live, 'open_tty', raise_no_tty)
+    dump, _ = backup_files(tmp_path)
+    assert live.main(['--organization-id', '1', '--actor-id', '1', '--apply', '--backup', str(dump)]) == 1
+    captured = capsys.readouterr()
+    assert captured.out == ''
+    assert 'Onay için etkileşimli terminal gerekli; komutu tee/grep olmadan doğrudan çalıştırın. 0 satır yazıldı.' in captured.err
+
+
+def test_summary_block_before_and_after_json_for_2027_and_2026(tmp_path, monkeypatch, capsys):
+    from types import SimpleNamespace
+    monkeypatch.setenv(live.TARGET_ENV, 'postgresql://unused@localhost/never_connect')
+    monkeypatch.setattr(live, 'verify_book', lambda path, **kw: {})
+    monkeypatch.setattr('sqlalchemy.create_engine', lambda *a, **k: SimpleNamespace(dispose=lambda: None))
+    fake_2026 = dict(
+        mode='uygula',
+        counts=dict(departments=33, created_departments=0, cards=105, indicators=226, activities=182, economic_values=1155),
+        departments=[dict(source_name=f'Müdürlük {i}', action='match', department_id=i, name=f'Müdürlük {i}') for i in range(1, 34)],
+        skipped=[],
+        failed=[],
+        validation=[],
+        protected_2027_before='same-hash',
+        protected_2027_after='same-hash',
+    )
+    monkeypatch.setattr(live, 'execute', lambda *a, **k: fake_2026)
+    tty = TtyStub(live.book_config(2026)[1][:12] + '\n')
+    monkeypatch.setattr(live, 'open_tty', lambda: tty)
+    dump, _ = backup_files(tmp_path)
+    assert live.main(['--year', '2026', '--organization-id', '1', '--actor-id', '1',
+                      '--apply', '--backup', str(dump)]) == 0
+    captured = capsys.readouterr()
+    assert f"Yazma onayı: kitap SHA256 ilk 12 karakterini yazın ({live.book_config(2026)[1][:12]}): " == tty.output.getvalue()
+    assert 'Yazma onayı:' not in captured.out
+    before_json, rest = captured.out.split('\n{\n', 1)
+    json_body, after_json = rest.split('\n}\n', 1)
+    parsed_result = json.loads('{\n' + json_body + '\n}')
+    assert parsed_result['counts'] == fake_2026['counts']
+    summary_before = 'ÖZET\n' + before_json.split('ÖZET\n', 1)[1]
+    summary_after = after_json.strip()
+    assert summary_before == summary_after
+    assert len(summary_before.splitlines()) <= 15
+    assert 'Mod: UYGULAMA' in summary_before
+    assert 'Yıl: 2026' in summary_before
+    assert live.book_config(2026)[1][:12] in summary_before
+    assert 'eşleşen: 33' in summary_before and 'oluşturulan: 0' in summary_before
+    for total_val in ('33', '105', '226', '182', '1155'):
+        assert total_val in summary_before
+    assert 'Reddedilen: 0' in summary_before
+    assert '2027 korunuyor: EVET' in summary_before
+
+
+@pytest.mark.postgres
+def test_progress_lines_and_summary_on_real_plan_and_apply(target, printed, tmp_path, monkeypatch, capsys):
+    import re
+    engine, ids = target
+    data = deepcopy(printed)
+    data['departments'] = data['departments'][:2]
+    names = [d['name'] for d in data['departments']]
+    monkeypatch.setattr(live, 'verify_book', lambda path, **kw: data)
+    monkeypatch.setenv(live.TARGET_ENV, engine.url.set(query={}).render_as_string(hide_password=False))
+
+    assert live.main(['--organization-id', str(ids['organization_id']), '--actor-id', str(ids['actor_id'])]) == 0
+    plan_captured = capsys.readouterr()
+    plan_err_lines = [line for line in plan_captured.err.strip().splitlines() if line.strip()]
+    assert len(plan_err_lines) == 8
+    assert re.fullmatch(rf'\[1/2\] {re.escape(names[0])} · oluştur · \d+\.\d sn', plan_err_lines[-2])
+    assert re.fullmatch(rf'\[2/2\] {re.escape(names[1])} · oluştur · \d+\.\d sn', plan_err_lines[-1])
+    assert '[1/2]' not in plan_captured.out and 'Aşama:' not in plan_captured.out
+    before_json, rest = plan_captured.out.split('\n{\n', 1)
+    json_body, after_json = rest.split('\n}\n', 1)
+    plan_result = json.loads('{\n' + json_body + '\n}')
+    plan_summary = after_json.strip()
+    assert before_json.endswith(plan_summary)
+    assert plan_summary.startswith('ÖZET\n')
+    assert 'Mod: PLAN' in plan_summary and str(plan_result['counts']['indicators']) in plan_summary
+
+    tty = TtyStub(live.BOOK_SHA256[:12] + '\n')
+    monkeypatch.setattr(live, 'open_tty', lambda: tty)
+    dump, _ = backup_files(tmp_path)
+    assert live.main(['--organization-id', str(ids['organization_id']), '--actor-id', str(ids['actor_id']),
+                      '--apply', '--backup', str(dump)]) == 0
+    apply_captured = capsys.readouterr()
+    apply_err_lines = [line for line in apply_captured.err.strip().splitlines() if line.strip()]
+    assert len(apply_err_lines) == 10
+    assert re.fullmatch(rf'\[1/2\] {re.escape(names[0])} · yüklendi · \d+\.\d sn', apply_err_lines[-2])
+    assert re.fullmatch(rf'\[2/2\] {re.escape(names[1])} · yüklendi · \d+\.\d sn', apply_err_lines[-1])
+    assert '[1/2]' not in apply_captured.out and 'Aşama:' not in apply_captured.out
+    before_json, rest = apply_captured.out.split('\n{\n', 1)
+    _, after_json = rest.split('\n}\n', 1)
+    apply_summary = after_json.strip()
+    assert before_json.endswith(apply_summary)
+    assert 'Mod: UYGULAMA' in apply_summary
+
+
+def _assert_matched_phase_lines(err_lines, expected_phases):
+    import re
+    phase_lines = [line for line in err_lines if line.startswith('Aşama: ')]
+    assert len(phase_lines) == 2 * len(expected_phases)
+    for index, name in enumerate(expected_phases):
+        start_line = phase_lines[2 * index]
+        end_line = phase_lines[2 * index + 1]
+        assert start_line == f'Aşama: {name} …'
+        assert start_line.endswith('…')
+        assert re.fullmatch(rf'Aşama: {re.escape(name)} · tamam · \d+\.\d sn', end_line)
+
+
+@pytest.mark.postgres
+def test_plan_phase_start_lines_appear_before_work_returns_and_match_end_lines(target, printed, monkeypatch):
+    import sys
+    engine, ids = target
+    data = deepcopy(printed)
+    data['departments'] = data['departments'][:2]
+    monkeypatch.setenv(live.TARGET_ENV, engine.url.set(query={}).render_as_string(hide_password=False))
+
+    events = []
+    real_stderr = sys.stderr
+
+    class RecordingStderr:
+        def __init__(self):
+            self.buffer = ''
+            self.flushed_lines = []
+
+        def write(self, text):
+            self.buffer += text
+            return real_stderr.write(text)
+
+        def flush(self):
+            while '\n' in self.buffer:
+                line, self.buffer = self.buffer.split('\n', 1)
+                if line:
+                    self.flushed_lines.append(line)
+                    events.append(('stderr', line))
+            real_stderr.flush()
+
+    recorder = RecordingStderr()
+    monkeypatch.setattr(sys, 'stderr', recorder)
+    stdout_buf = io.StringIO()
+    monkeypatch.setattr(sys, 'stdout', stdout_buf)
+
+    real_context = live.context
+    real_department_plan = live.department_plan
+
+    def stub_verify_book(path, **kwargs):
+        # At the time verify_book runs, the start line must already be flushed on stderr,
+        # and the completion line must not yet exist.
+        assert recorder.flushed_lines[-1] == 'Aşama: kitap doğrulama …'
+        assert not any('kitap doğrulama · tamam' in line for line in recorder.flushed_lines)
+        events.append(('call', 'verify_book'))
+        return data
+
+    def stub_context(db, organization_id, actor_id, resume, **kwargs):
+        assert recorder.flushed_lines[-1] == 'Aşama: veritabanı/şema denetimi …'
+        assert any(line.startswith('Aşama: kitap doğrulama · tamam · ') for line in recorder.flushed_lines)
+        assert not any('veritabanı/şema denetimi · tamam' in line for line in recorder.flushed_lines)
+        events.append(('call', 'context'))
+        return real_context(db, organization_id, actor_id, resume, **kwargs)
+
+    def stub_department_plan(db, parsed, completed, **kwargs):
+        assert recorder.flushed_lines[-1] == 'Aşama: müdürlük planı …'
+        assert any(line.startswith('Aşama: veritabanı/şema denetimi · tamam · ') for line in recorder.flushed_lines)
+        assert not any('müdürlük planı · tamam' in line for line in recorder.flushed_lines)
+        assert not any(line.startswith('[1/') for line in recorder.flushed_lines)
+        events.append(('call', 'department_plan'))
+        return real_department_plan(db, parsed, completed, **kwargs)
+
+    monkeypatch.setattr(live, 'verify_book', stub_verify_book)
+    monkeypatch.setattr(live, 'context', stub_context)
+    monkeypatch.setattr(live, 'department_plan', stub_department_plan)
+
+    assert live.main(['--organization-id', str(ids['organization_id']), '--actor-id', str(ids['actor_id'])]) == 0
+    assert 'Aşama:' not in stdout_buf.getvalue()
+    _assert_matched_phase_lines(
+        recorder.flushed_lines,
+        ['kitap doğrulama', 'veritabanı/şema denetimi', 'müdürlük planı'],
+    )
+    kinds_and_names = [
+        (kind, val if kind == 'call' else ('start:' + val.split('Aşama: ')[1].split(' …')[0]
+         if val.endswith('…') else ('end:' + val.split('Aşama: ')[1].split(' · tamam')[0]
+         if ' · tamam · ' in val else 'progress')))
+        for kind, val in events
+    ]
+    assert kinds_and_names == [
+        ('stderr', 'start:kitap doğrulama'),
+        ('call', 'verify_book'),
+        ('stderr', 'end:kitap doğrulama'),
+        ('stderr', 'start:veritabanı/şema denetimi'),
+        ('call', 'context'),
+        ('stderr', 'end:veritabanı/şema denetimi'),
+        ('stderr', 'start:müdürlük planı'),
+        ('call', 'department_plan'),
+        ('stderr', 'end:müdürlük planı'),
+        ('stderr', 'progress'),
+        ('stderr', 'progress'),
+    ]
+
+
+@pytest.mark.postgres
+def test_plan_and_apply_2027_and_2026_phase_lines_and_unchanged_stdout(target, printed, tmp_path, monkeypatch, capsys):
+    from scripts.first_load_dryrun import NAME_MAP
+    engine, ids = target
+    names = set(json.loads(NAME_MAP.read_text())['map'].values()) | {'Yapı Kontrol Müdürlüğü'}
+    with Session(engine) as db:
+        db.add_all(Department(organization_id=ids['organization_id'], name=n) for n in sorted(names))
+        db.commit()
+    monkeypatch.setenv(live.TARGET_ENV, engine.url.set(query={}).render_as_string(hide_password=False))
+
+    # 1. Full 2027 plan (all 34 directorates from the committed book)
+    real_verify_book = live.verify_book
+    monkeypatch.setattr(live, 'verify_book', lambda path, **kw: deepcopy(printed))
+    expected_2027_plan = live.execute(engine, deepcopy(printed), **ids, year=2027)
+    assert dict(expected_2027_plan['counts']) == dict(
+        departments=34, created_departments=1, cards=64, indicators=263, activities=291, economic_values=1340
+    )
+    capsys.readouterr()
+
+    assert live.main(['--organization-id', str(ids['organization_id']), '--actor-id', str(ids['actor_id'])]) == 0
+    cap_2027_plan = capsys.readouterr()
+    assert 'Aşama:' not in cap_2027_plan.out
+    _assert_matched_phase_lines(
+        cap_2027_plan.err.strip().splitlines(),
+        ['kitap doğrulama', 'veritabanı/şema denetimi', 'müdürlük planı'],
+    )
+    before_json, rest = cap_2027_plan.out.split('\n{\n', 1)
+    json_body, after_json = rest.split('\n}\n', 1)
+    assert json.loads('{\n' + json_body + '\n}') == expected_2027_plan
+    expected_2027_summary = live.format_summary(expected_2027_plan, year=2027, apply=False)
+    assert after_json.strip() == expected_2027_summary
+    assert before_json.endswith(expected_2027_summary)
+
+    # 2. Load 1 department of 2027, then test full 2026 plan (33 directorates) and 2026 apply
+    data_2027 = deepcopy(printed)
+    data_2027['departments'] = data_2027['departments'][:1]
+    monkeypatch.setattr(live, 'verify_book', lambda path, **kw: deepcopy(data_2027))
+    tty_2027 = TtyStub(live.BOOK_SHA256[:12] + '\n')
+    monkeypatch.setattr(live, 'open_tty', lambda: tty_2027)
+    dump, _ = backup_files(tmp_path)
+    assert live.main(['--organization-id', str(ids['organization_id']), '--actor-id', str(ids['actor_id']),
+                      '--apply', '--backup', str(dump)]) == 0
+    cap_2027_apply = capsys.readouterr()
+    assert 'Aşama:' not in cap_2027_apply.out
+    _assert_matched_phase_lines(
+        cap_2027_apply.err.strip().splitlines(),
+        ['kitap doğrulama', 'yedek doğrulama', 'veritabanı/şema denetimi', 'müdürlük planı'],
+    )
+
+    book_2026_parsed = real_verify_book(live.book_config(2026)[0], year=2026)
+    monkeypatch.setattr(live, 'verify_book', lambda path, **kw: deepcopy(book_2026_parsed))
+    expected_2026_plan = live.execute(engine, deepcopy(book_2026_parsed), **ids, year=2026)
+    assert dict(expected_2026_plan['counts']) == dict(
+        departments=33, created_departments=0, cards=105, indicators=226, activities=182, economic_values=1270
+    )
+    capsys.readouterr()
+
+    assert live.main(['--year', '2026', '--organization-id', str(ids['organization_id']),
+                      '--actor-id', str(ids['actor_id'])]) == 0
+    cap_2026_plan = capsys.readouterr()
+    assert 'Aşama:' not in cap_2026_plan.out
+    _assert_matched_phase_lines(
+        cap_2026_plan.err.strip().splitlines(),
+        ['kitap doğrulama', 'veritabanı/şema denetimi', 'müdürlük planı'],
+    )
+    before_json, rest = cap_2026_plan.out.split('\n{\n', 1)
+    json_body, after_json = rest.split('\n}\n', 1)
+    assert json.loads('{\n' + json_body + '\n}') == expected_2026_plan
+    expected_2026_summary = live.format_summary(expected_2026_plan, year=2026, apply=False)
+    assert after_json.strip() == expected_2026_summary
+    assert before_json.endswith(expected_2026_summary)
+    assert '2027 korunuyor: EVET' in expected_2026_summary
+
+    data_2026 = deepcopy(book_2026_parsed)
+    data_2026['departments'] = data_2026['departments'][:2]
+    data_2026['catalogue_descriptions'] = [
+        d for d in data_2026['catalogue_descriptions']
+        if d['department'] in {dept['name'] for dept in data_2026['departments']}
+    ]
+    monkeypatch.setattr(live, 'verify_book', lambda path, **kw: deepcopy(data_2026))
+    tty_2026 = TtyStub(live.book_config(2026)[1][:12] + '\n')
+    monkeypatch.setattr(live, 'open_tty', lambda: tty_2026)
+    dump_2026, _ = backup_files(tmp_path)
+    assert live.main(['--year', '2026', '--organization-id', str(ids['organization_id']),
+                      '--actor-id', str(ids['actor_id']), '--apply', '--backup', str(dump_2026)]) == 0
+    cap_2026_apply = capsys.readouterr()
+    assert 'Aşama:' not in cap_2026_apply.out
+    _assert_matched_phase_lines(
+        cap_2026_apply.err.strip().splitlines(),
+        [
+            'kitap doğrulama',
+            'yedek doğrulama',
+            'veritabanı/şema denetimi',
+            'müdürlük planı',
+            '2027 koruma özeti hesabı',
+            '2027 koruma özeti hesabı',
+        ],
+    )
