@@ -1,6 +1,6 @@
 # CIVENSA — CURRENT STATE
 
-Updated: 4 Nov 2026 ~21:25 Istanbul (live session CV Lider 61, D-411).
+Updated: 4 Nov 2026 ~21:25 Istanbul (live session CV Lider 61, D-412).
 Rules: AI_WORKING_CONSTITUTION v1.2 (Drive, global) · `HIERARCHY.md` v1.8 (D-408: the lead also codes; Codex reviews its PRs) · `PROJECT_RULES.md` v1.4 (D-271: PRIOR ART field mandatory in every package) · `BACKUP_LEAD.md` v2.
 Backup log ("Civensa Yedek Kaydı", Drive): no entries after 31 Oct (DOĞRULANDI 3 Nov 05:45, file unchanged since 23 Oct).
 Tags: DOĞRULANDI (lead checked) · TARİHSEL (past fact) · BEYAN (owner said) · BELİRSİZ (unknown).
@@ -18,8 +18,8 @@ CV Lider 61 (4 Nov ~21:25, DOĞRULANDI): no mail from Ali Abi; only open PR #382
 7. LOW (D-390/D-394/D-405): CIV-169 K2–K6 (K6 held until 2027 is published from the approved book; K4 re-measured after the 2026 mapping) + publication JSON hash note; ACTION_LABELS registered from program_routes. Watch reactions to the 554 book-check items (D-324, D-352). LOW backlog (D-328). UI: only 002/003 left, waits for Ali (D-345).
 8. One live lead session at a time (D-363). Owner: check Claude Design standalone site before 14 Dec 2026 (D-363).
 9. Claude account on Max from 4 Nov 2026 (BEYAN; next charge 4 Dec). Extra capacity goes to lead analysis/preparation work (D-400). The "Claude quota" block below is TARİHSEL (Pro era).
-10. Sunum module (D-411): one shared 16:9 PDF engine (ReportLab); waits for the owner's master design (7 slide types) → CIV-180 (engine + FR müdürlük presentation). Future report modules proposed in D-411 (not accepted; after 1 Jan 2027).
-Next IDs: task CIV-180, decision D-412.
+10. Sunum module (D-411/D-412): one shared engine → self-contained animated HTML (reveal.js, offline) + 16:9 PDF from the same file; waits for the owner's master design (7 slide types) → CIV-180 (engine + FR müdürlük presentation). Future report modules proposed in D-411 (not accepted; after 1 Jan 2027).
+Next IDs: task CIV-180, decision D-413.
 
 ## Claude quota (BEYAN, owner 27 Oct 16:21)
 - Session 11%, week 67%, weekly reset Saturday 00:00 (D-300). Copilot 96 / 1,500 credits, reset 1 Nov.
@@ -61,8 +61,8 @@ Merged 27 Oct: #211 CIV-135 → 43f4de6 · #192 CIV-127 → 97f2225 · #201 CIV-
 Merged 26 Oct: #163 CIV-113 → 88c9dfb; #154 CIV-109 → 34329a7; #161 CIV-111 → 31b00e4 (D-283); #160 CIV-110 → 0b4b333 (D-282); #156 CIV-108 prototype → 633ac07 (D-277); #150 CIV-105 → 7cb58d9 (D-278; all jobs green, D-280); #148 CIV-106 → 1ed8620 (D-273); #145 CIV-104 → e0df9ce (D-268); #140 CIV-103 → 6efbe25 (D-265); #138 copilot-setup-steps → cbed4d8 (D-264); #136 production environment → d02b7cc; #132 CIV-102 → 873d361.
 
 ## Open — owner
-- Sunum master design (D-411): one 16:9 master with 7 slide types (kapak, bölüm, özet rakamlar, tablo, grafik, madde metni, kapanış) → send as PDF → lead writes CIV-180.
-- Ask Ali 9 Nov (D-411): when müdürlükler present the FR to the mayor; who prepares Kurumsal Mali Durum, SP monitoring, Kamu Hizmet Envanteri and how long each takes.
+- Sunum master design (D-411): one 16:9 master with 7 slide types (kapak, bölüm, özet rakamlar, tablo, grafik, madde metni, kapanış) + a note per slide type on what moves (D-412) → send as PDF → lead writes CIV-180.
+- Ask Ali 9 Nov (D-411/D-412): when müdürlükler present the FR to the mayor; is the presentation run from an internet-connected computer; is a verification code on the slides enough against hand-edited numbers; who prepares Kurumsal Mali Durum, SP monitoring, Kamu Hizmet Envanteri and how long each takes.
 - New Faaliyet Raporu template (D-410): keep the 2025 style names; add paragraph style "tablo sonuç" (tablo yazı + bold); send the template when ready → CIV-179 resumes.
 - Look approvals D-303: CIV-127/128/129/131/132/133/135/136/137/138/139 approved; 017 → CIV-141, 047 users → CIV-142; CIV-140 pending.
 - Look approvals done for CIV-109/111/112/113/114/118/119/120/121 (D-295), CIV-122/123 (D-297). CIV-124 (D-300). Pending: CIV-127, CIV-129, CIV-133, CIV-135 (merged), CIV-134/136/137 (open).

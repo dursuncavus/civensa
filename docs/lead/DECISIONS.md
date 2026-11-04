@@ -1261,3 +1261,13 @@ Decision (lead): one shared Sunum engine for all report modules, not one per rep
 - Order: (1) FR müdürlük presentation (part of the FR module scope), (2) FR council presentation, (3) PP, then the new report modules as they arrive.
 - Next: owner sends the master design → lead writes CIV-180 (engine + FR müdürlük recipe) for Codex. Ask Ali on 9 Nov: when do müdürlükler present the FR to the mayor (sets the CIV-180 deadline).
 Next IDs: task CIV-180, decision D-412.
+
+## D-412 (4 Nov 2026 ~21:40 Istanbul, owner + lead, live session CV Lider 61) — Sunum: animated HTML (reveal.js) + PDF from the same source; supersedes the D-411 engine line
+BEYAN (owner 21:34, Ali Abi's request): small animations in presentations, Prezi-style if possible.
+Checked: Prezi itself is commercial and manual (numbers typed by hand) → rejected (no commercial software; numbers only from Civensa). reveal.js is MIT open source with Auto-Animate (morph between slides), fragments (step-by-step reveal), overview mode and PDF printing (DOĞRULANDI, project README).
+Decision (lead), replaces D-411 "Engine: ReportLab": Civensa generates ONE self-contained HTML presentation file (reveal.js bundled inside, works offline, no internet in the hall needed). The same file prints to the 16:9 PDF in the browser (print-pdf mode) → no Chromium on the Render server. ReportLab is not used for presentations.
+- "Prezi feel" without Prezi: an overview map slide (sections as tiles) → zoom/morph into a section → back to the map; numbers count up, bars grow, rows appear step by step. Motion is short (≤1 s) and calm; full Prezi-style spinning/zooming canvas is NOT built (distracting for a council audience, hard to lay out automatically from data).
+- Every animation degrades to a still slide in the PDF; the PDF stays the official copy (archive, e-mail, council file).
+- Numbers: HTML is text and could be edited by hand → each presentation carries a short verification code (snapshot hash) on the closing slide and in the footer; Civensa can show the code for any approved report. Risk lowered, not zero (BELİRSİZ whether that is enough for Ali → ask 9 Nov).
+- D-411 slide types, recipes, scope filter, order and the owner's master design are unchanged; the owner's master design adds where motion goes (one note per slide type).
+Next IDs: task CIV-180, decision D-413.
