@@ -12,6 +12,22 @@ from .models import (Activity, ActivityCatalogueLink, ActivityResponsibility, De
 from .program_service import save_activity_catalogue_links, save_catalogue_entry
 
 
+def load_all_models():
+    """Register every app model module on Base.metadata (D-397).
+
+    Metadata-driven hashes and ownership discovery must see the same table set
+    for the whole run. A CLI imports fewer modules than the web app; a model
+    imported lazily mid-run (ic_narrative_events, rehearsal 41806876085) added
+    a table to the hash and tripped the 2027 guard without any row change.
+    """
+    import importlib
+    import pkgutil
+    from . import __name__ as package_name, __path__ as package_path
+    for info in sorted(pkgutil.iter_modules(package_path), key=lambda item: item.name):
+        if info.name == 'models' or info.name.endswith('_models'):
+            importlib.import_module(f'{package_name}.{info.name}')
+
+
 def period_rows_hash(db, year=2027, parts=False):
     """Hash period ownership, including historical values owned by 2027 rows.
 
@@ -21,6 +37,7 @@ def period_rows_hash(db, year=2027, parts=False):
     """
     from sqlalchemy import or_
     from .db import Base
+    load_all_models()
     tables = Base.metadata.tables
     periods = select(ReportingPeriod.id).where(ReportingPeriod.year == year)
     conditions = {name: table.c.period_id.in_(periods) for name, table in tables.items()
