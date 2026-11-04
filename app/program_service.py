@@ -665,6 +665,85 @@ def validate_department_snapshot(content, period_id, department_id):
         return ['Paketin sabit kapsam / alan bilgisi eksik veya geçersiz. Geçerli kaynakla yeni paket oluşturun; kimlik ve mali alanları kontrol edin.'], []
 
 
+def _approved_book_mapping_view(current, source, audits, load_id, subprogram_ids):
+    """Replay only recorded mappings, then restore the loader's hash view.
+
+    This mutates the serialized copy, never Activity rows. The sealed applied_hash
+    remains the final proof of the reconstructed baseline, including row IDs.
+    """
+    from types import SimpleNamespace
+    from .import_service import _link_subprograms, _membership_block_index
+
+    cards = current['cards']  # loader creates cards/activities in source order
+    items = source['activities']
+    if len(current['activities']) != len(items) or len(cards) != len(source['blocks']):
+        raise ValueError('load shape')
+    loaded_links = _link_subprograms(
+        [SimpleNamespace(id=c['subprogram_id']) for c in cards], len(items), items, source['blocks'])
+    states = {}
+    for row, item, link in zip(current['activities'], items, loaded_links):
+        if link is not None:
+            continue  # Book memberships must never acquire a mapping exception.
+        index = _membership_block_index(item, source['blocks'])
+        card_id = (cards[index]['id'] if index is not None else
+                   cards[0]['id'] if len(cards) == 1 and 'source_memberships' not in item else None)
+        states[row['id']] = dict(row=row, load_card=card_id, card=card_id,
+                                 subprogram=None, batch=None, touched=False)
+    allowed_audits = set()
+    batches = {}
+    for audit in audits:
+        if audit.id <= load_id:
+            continue
+        if audit.action in {'activity_mapping', 'activity_mapping_csv'}:
+            if audit.entity_type != 'activity' or audit.entity_id not in states:
+                continue
+            state = states[audit.entity_id]
+            parts = [part.split('=') for part in audit.details.split(';')]
+            details = dict(parts)
+            csv = audit.action == 'activity_mapping_csv'
+            if len(parts) != len(details) or set(details) != ({'batch', 'subprogram_id'} if csv else {'subprogram_id'}):
+                raise ValueError('mapping audit')
+            subprogram = int(details['subprogram_id'])
+            if subprogram not in subprogram_ids:
+                raise ValueError('mapping period')
+            batch = details.get('batch')
+            if csv:
+                if (len(batch) != 16 or any(c not in '0123456789abcdef' for c in batch)
+                        or state['subprogram'] is not None):
+                    raise ValueError('mapping batch')
+                batches.setdefault(batch, []).append((audit.entity_id, subprogram))
+            card = next((c for c in cards if c['id'] == state['card']), None)
+            if card and card['subprogram_id'] != subprogram:
+                state['card'] = None
+            state.update(subprogram=subprogram, batch=batch, touched=True)
+            allowed_audits.add(audit.id)
+        elif audit.action == 'activity_mapping_csv_revert' and audit.entity_type == 'mapping_batch':
+            details = dict(part.split('=', 1) for part in audit.details.split(';'))
+            reverted = batches.pop(details['batch'], [])
+            for activity_id, target in reverted:
+                state = states[activity_id]
+                if state['subprogram'] != target:
+                    raise ValueError('revert target')
+                # The revert route clears both fields, even a retained load card.
+                state.update(subprogram=None, card=None, batch=None)
+            if reverted:
+                allowed_audits.add(audit.id)
+    mapped_count = 0
+    active_batches = set()
+    for state in states.values():
+        if not state['touched']:
+            continue
+        row = state['row']
+        if (row['subprogram_id'], row['card_id']) != (state['subprogram'], state['card']):
+            raise ValueError('unrecorded mapping change')
+        if state['subprogram'] is not None:
+            mapped_count += 1
+            if state['batch']:
+                active_batches.add(state['batch'])
+        row.update(subprogram_id=None, card_id=state['load_card'])
+    return allowed_audits, mapped_count, active_batches
+
+
 def approved_book_provenance(db, period_id):
     """Read existing CLI provenance; fail closed without establishing a new baseline.
 
@@ -701,6 +780,14 @@ def approved_book_provenance(db, period_id):
         sections = {}
         expected_programs = set()
         expected_subprograms = {}
+        mapping_audits = db.scalars(select(AuditLog).where(AuditLog.id > loads[0][0].id,
+            AuditLog.action.in_(['activity_mapping', 'activity_mapping_csv', 'activity_mapping_csv_revert']))
+            .order_by(AuditLog.id)).all()
+        subprogram_ids = set(db.scalars(select(SubProgram.id).where(SubProgram.period_id == period_id)))
+        allowed_mapping_audits = set()
+        mapping_departments = defaultdict(set)
+        mapped_count = 0
+        mapping_batches = set()
         for audit, batch in loads:
             proof = json.loads(audit.details)
             payload = json.loads(batch.payload_json)
@@ -733,6 +820,13 @@ def approved_book_provenance(db, period_id):
             departments[did] = audit.id
             # Both first-load catalogue implementations add links after applied_hash.
             current['catalogue_links'] = previous.get('catalogue_links', [])
+            allowed, count, batches = _approved_book_mapping_view(
+                current, source, mapping_audits, audit.id, subprogram_ids)
+            allowed_mapping_audits.update(allowed)
+            for mapping_id in allowed:
+                mapping_departments[mapping_id].add(did)
+            mapped_count += count
+            mapping_batches.update(batches)
             raw = json_dumps([current], ensure_ascii=False, sort_keys=True, separators=(',', ':'))
             current_hash = hashlib.sha256(raw.encode()).hexdigest()
             created_sections = snapshot.get('created_sections', [])
@@ -824,8 +918,44 @@ def approved_book_provenance(db, period_id):
                     .where(parent.period_id == period_id)):
                 owners[(singular, child.id)] = departments[owner.department_id]
                 owners[(model.__tablename__, child.id)] = departments[owner.department_id]
+        # The mapping routes also trigger CIV-025's department authorship hook.
+        # Audit timestamps/adjacency cannot prove which write caused that row.
+        # PostgreSQL xmin ties it to the recorded mapping's inserting transaction;
+        # scope and actor must match too. Other databases fail closed here.
+        authorship_transactions = set()
+        audit_transactions = {}
+        if allowed_mapping_audits and db.get_bind().dialect.name == 'postgresql':
+            from sqlalchemy import literal_column
+            audit_transactions = {aid: (actor, transaction) for aid, actor, transaction in db.execute(
+                select(AuditLog.id, AuditLog.user_id, literal_column('xmin::text')).where(
+                    AuditLog.id.in_(allowed_mapping_audits) | (
+                        (AuditLog.action == 'pp_data_change') &
+                        (AuditLog.entity_type == 'department') &
+                        AuditLog.entity_id.in_(departments) &
+                        (AuditLog.details == f'period_id={period_id}'))))}
+            # A dump/restore can reinsert unrelated audit rows in one transaction.
+            # Such a transaction cannot establish mapping-only authorship proof.
+            mapping_transactions = {audit_transactions[aid][1] for aid in allowed_mapping_audits}
+            ambiguous_transactions = set()
+            for event, transaction in db.execute(select(AuditLog, literal_column('xmin::text')).where(
+                    literal_column('xmin::text').in_(mapping_transactions))):
+                if event.id not in allowed_mapping_audits and not (
+                        event.action == 'pp_data_change' and event.entity_type == 'department'
+                        and event.entity_id in departments and event.details == f'period_id={period_id}'):
+                    ambiguous_transactions.add(transaction)
+            for mapping_id, dids in mapping_departments.items():
+                actor, transaction = audit_transactions[mapping_id]
+                if actor is not None and transaction not in ambiguous_transactions:
+                    authorship_transactions.update((did, actor, transaction) for did in dids)
         for audit in db.scalars(select(AuditLog).where(AuditLog.id > min(departments.values()))):
             if audit.action == 'first_load_department':
+                continue
+            if audit.id in allowed_mapping_audits:
+                continue
+            if (audit.action == 'pp_data_change' and audit.entity_type == 'department'
+                    and audit.details == f'period_id={period_id}'
+                    and (audit.entity_id, *audit_transactions.get(audit.id, (None, None)))
+                        in authorship_transactions):
                 continue
             cutoff = owners.get((audit.entity_type, audit.entity_id))
             if audit.entity_type in {'department', 'departments'} and audit.entity_id in departments:
@@ -835,6 +965,7 @@ def approved_book_provenance(db, period_id):
             if cutoff is not None and audit.id > cutoff:
                 return None
         return dict(basis='approved_book', book_sha256=book_sha256,
-                    load_reference=[dict(audit_id=a.id, batch_id=b.id) for a,b in loads])
+                    load_reference=[dict(audit_id=a.id, batch_id=b.id) for a,b in loads],
+                    activity_mapping=dict(count=mapped_count, batch_ids=sorted(mapping_batches)))
     except (KeyError, TypeError, ValueError, AttributeError):
         return None
