@@ -16,7 +16,7 @@ Taslak: `docs/lead/data/2026-faaliyet-eslestirme-taslagi.csv`; SHA-256: `22ac2e4
 | Tam PP PDF duvar süresi | Ölçülmedi | 105,25 sn |
 | Tam PP PDF boyutu, bayt | Ölçülmedi | 2.303.399 |
 
-Snapshot 19.827.380 bayt (%76.73) küçüldü. Ölçüm sıkıştırma veya alan silme uygulamaz. Eşleştirme, belirsiz faaliyetlerin bütün alt programlara hata taşımasını azaltır; özgün mutabakat ve uyarı üretimi korunur. Kart eksiği 148, katalog eksiği 174, alt program eksiği 0; eşleştirme bütün kaynak sorunlarını çözmüş sayılmaz.
+Snapshot 19.827.380 bayt (%76,73) küçüldü. Ölçüm sıkıştırma veya alan silme uygulamaz. Eşleştirme, belirsiz faaliyetlerin bütün alt programlara hata taşımasını azaltır; özgün mutabakat ve uyarı üretimi korunur. Kart eksiği 148, katalog eksiği 174, alt program eksiği 0; eşleştirme bütün kaynak sorunlarını çözmüş sayılmaz.
 
 Üst düzey anahtarların bayt dökümü (değer; anahtar adı ve iki nokta dahil üye):
 
@@ -42,7 +42,7 @@ Snapshot 19.827.380 bayt (%76.73) küçüldü. Ölçüm sıkıştırma veya alan
 
 Üye baytlarının toplamına 18 bayt nesne ayıracı eklenince 6.012.152 bayt elde edilir. Saklanan metnin SHA-256 değeri ve kanonik UTF-8 serileştirmesi doğrulandı.
 
-`json.loads` girdisi bellekte hazır bir `str`: 11.559.466 bayt. Tracemalloc açık ayrıştırma 0.144 sn; ek bellek tepesi süreç RSS'i veya bütün PDF belleği değildir. Tam `export_book(published_payload, 'pdf')` çağrısı **105,25 sn** sürdü; **120 sn** sınırı uygulanmıştı, timeout olmadı. Süreler bu yerel çalışmanın gözlemidir.
+`json.loads` girdisi bellekte hazır bir `str`: 11.559.466 bayt. Tracemalloc açık ayrıştırma 0,144 sn; ek bellek tepesi süreç RSS'i veya bütün PDF belleği değildir. Tam `export_book(published_payload, 'pdf')` çağrısı **105,25 sn** sürdü; **120 sn** sınırı uygulanmıştı, timeout olmadı. Süreler bu yerel çalışmanın gözlemidir.
 
 Tekrar üretme: yalnız yerel, geçici PostgreSQL 16+ için `CIVENSA_TEST_POSTGRES_URL` ayarlayıp depo kökünde `python -m tests.civ178_mapped_size` çalıştırın. Uygulama URL değişkenleri maskelenir; test istemcisi startup/lifespan çalıştırmaz; oluşturulan veritabanı sonunda kaldırılır. Canlı veritabanı, dağıtım veya birleştirme işlemi yapılmadı.
 
