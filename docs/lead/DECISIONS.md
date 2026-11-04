@@ -1127,3 +1127,18 @@ Rehearsal 41809710770 on 0aee945, backup 41788569854 (4 Nov 06:53Z), clear_confi
 LOW: period_rows_hash selects tables by a column named period_id (IC tables use ic_monitoring_periods ids) — over-inclusive, harmless.
 Next: owner approval for the live run (deletes the live 2026 pilot rows) — escalated 4 Nov.
 Next IDs: task CIV-176, decision D-398.
+
+## D-398 (4 Nov 2026 ~13:50 Istanbul, owner + lead, live session CV Lider 55) — live 2026 pilot clear + approved 2026 book load done
+Owner approval (AskUserQuestion, ~13:00): "Onaylıyorum, bugün yapalım" for the live clear + load (D-397). Data entry closed (Ali Abi on leave until 9 Nov).
+DOĞRULANDI (owner terminal output, lead read every step; Mac repo ~/civensa-ilkyukleme on phase5 ≥0aee945, organization 1, actor 1):
+1 Source: head c162a1b2c3d4, 2026 book sha256 1aaa0bb8… OK, clear tool importable.
+2 Clear plan: total 2,802, 2027 protected, 0 rows written.
+3 Backup: lead dispatched db-backup 41811764871 → civensa-db-backup-20261104-1005Z; owner downloaded, decrypted, verify_backup OK.
+4 Clear apply (sentence typed): 2,802 rows removed, 2027 protected, archive sha256 c2764249a029a9853c624f19e86a2392aedbdf0cc0bbadf8fef56a1bf67d544a — identical to rehearsal 41809710770.
+5 Load plan: matched 33, created 0, skipped 0, failed 0; 33 / 105 cards / 226 indicators / 182 activities / 1,270 economic values; refused 0; 2027 protected.
+6 Backup 41813257374 → civensa-db-backup-20261104-1018Z (post-clear rollback point); load apply (1aaa0bb81c3c): refused 0, 2027 protected, 182 activities / 1,270 economic values (first summary lines not in the owner's screenshot; step 7 confirms).
+7 Resume plan: matched 0, skipped 33, failed 0, all totals 0, refused 0, 2027 protected.
+Connection string entered only in the hidden /dev/tty prompt (never in chat or shell history).
+Release PR #364 phase5 → main opened (no migration, head c162); release migration rehearsal dispatched. Owner: merge #364 when green → lead pre-deploy backup → Render "Deploy latest commit" → /health. Owner: delete the two decrypted dump folders (~/civensa-yedek/20261104-*/cozulmus); encrypted copies stay.
+Not checked yet: UI look of the 2026 period (after the release, since CIV-165/169 display code is not live yet).
+Next IDs: task CIV-176, decision D-399.
