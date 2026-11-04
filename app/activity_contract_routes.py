@@ -4,9 +4,9 @@ from typing import Any
 from fastapi import APIRouter, Depends, HTTPException, Request, UploadFile, File, Form
 from fastapi.responses import RedirectResponse, Response
 from pydantic import BaseModel, Field, StrictInt, StrictStr
-from sqlalchemy import select
+from sqlalchemy import select, func
 from sqlalchemy.exc import IntegrityError, OperationalError
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, defer
 from .db import get_db
 from .models import (ActivityReport, ActivityReportRevision, Publication, ReportingPeriod,
                      Department, Organization, AuditLog, IndicatorIdentity, PublicationIndicatorBinding)
@@ -131,18 +131,25 @@ def register(app):
         revisions = []
         for report in reports:
             for rev in db.scalars(select(ActivityReportRevision).where(ActivityReportRevision.report_id == report.id).order_by(ActivityReportRevision.revision.desc())):
-                pub = db.get(Publication, rev.publication_id)
+                publication_version = db.scalar(select(Publication.version).where(Publication.id == rev.publication_id))
                 revisions.append({'id': rev.id, 'year': db.get(ReportingPeriod, report.period_id).year,
-                    'revision': rev.revision, 'publication_version': pub.version,
+                    'revision': rev.revision, 'publication_version': publication_version,
                     'revision_reason': rev.revision_reason,
                     'status_badges': service.revision_status_badges(db, report, rev),
                     'organization': db.get(Organization, report.organization_id).name})
         publications = []
         if user.role == 'strategy':
-            for pub in db.scalars(select(Publication).order_by(Publication.period_id, Publication.version.desc())):
+            postgres = db.get_bind().dialect.name == 'postgresql'
+            # Match service.digest's UTF-8 SHA-256 without transferring the Text
+            # payload. SQLite development databases retain the Python check.
+            integrity = (func.encode(func.sha256(func.convert_to(Publication.snapshot_json, 'UTF8')), 'hex')
+                         == Publication.sha256) if postgres else Publication.snapshot_json
+            query = select(Publication.id, Publication.period_id, Publication.version,
+                Publication.created_at, Publication.sha256, integrity.label('integrity'))
+            for pub in db.execute(query.order_by(Publication.period_id, Publication.version.desc())):
                 publications.append({'id': pub.id, 'year': db.get(ReportingPeriod, pub.period_id).year,
                     'version': pub.version, 'created_at': pub.created_at,
-                    'valid': service.digest(pub.snapshot_json) == pub.sha256})
+                    'valid': pub.integrity if postgres else service.digest(pub.integrity) == pub.sha256})
         return templates.TemplateResponse(request, 'activity_contract_index.html', {'user': user,
             'revisions': revisions, 'publications': publications,
             'organizations': db.scalars(select(Organization).order_by(Organization.name)).all() if user.role == 'strategy' else []})
@@ -163,7 +170,7 @@ def register(app):
     def detail(revision_id: int, request: Request, db: Session = Depends(get_db), user=Depends(require_user)):
         try:
             report = service.report_data(db, user, revision_id)
-            pubs = db.scalars(select(Publication).where(Publication.period_id == db.get(ActivityReport, report['report_id']).period_id).order_by(Publication.version.desc())).all() if user.role == 'strategy' else []
+            pubs = db.scalars(select(Publication).options(defer(Publication.snapshot_json)).where(Publication.period_id == db.get(ActivityReport, report['report_id']).period_id).order_by(Publication.version.desc())).all() if user.role == 'strategy' else []
             return templates.TemplateResponse(request, 'activity_contract_detail.html',
                 {'user': user, 'report': report, 'publications': pubs,
                  'comparison': service.newer_publication_comparison(db, user, revision_id)
@@ -258,7 +265,7 @@ def register(app):
                     source['files'] = previous_sources.get(source.get('source_id'), {}).get('files', [])
                     if index in uploads:
                         source['attempted_filename'] = uploads[index][1]
-                pubs = db.scalars(select(Publication).where(Publication.period_id == db.get(ActivityReport, report['report_id']).period_id).order_by(Publication.version.desc())).all() if user.role == 'strategy' else []
+                pubs = db.scalars(select(Publication).options(defer(Publication.snapshot_json)).where(Publication.period_id == db.get(ActivityReport, report['report_id']).period_id).order_by(Publication.version.desc())).all() if user.role == 'strategy' else []
                 normalized = error_detail(error)
                 detail = normalized if isinstance(normalized, dict) else {'message': normalized}
                 message = detail['message']
