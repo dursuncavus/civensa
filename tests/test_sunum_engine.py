@@ -59,6 +59,60 @@ def test_table_23_rows_and_bullets_paginate_without_mutation():
     assert all(len(s.xpath('.//tbody/tr')) <= 10 for s in document.xpath('//section[@data-type="table"]'))
 
 
+@pytest.mark.parametrize('code', ['TASLAK', 'ABCD-1234'])
+def test_separator_has_no_source_or_verification_footer(presentation_payload, code):
+    document = html.fromstring(render_deck(activity_report(presentation_payload), title='Test', code=code))
+    separators = document.xpath('//section[@data-type="separator"]')
+    assert separators
+    for section in separators:
+        assert not section.xpath('.//div[@class="foot"]')
+        assert 'Kaynak:' not in section.text_content()
+        assert 'Doğrulama kodu' not in section.text_content()
+        assert section.xpath('.//img[@class="sep-logo"]')
+        assert section.xpath('.//div[@class="tile"]')
+    assert all(section.xpath('.//div[@class="foot"]') for section in
+               document.xpath('//section[@data-type!="separator"]'))
+
+
+def test_numeric_columns_align_headers_and_blanks_across_all_pages():
+    # Classification uses the entire source table, including a last-page value
+    # and a last-page text cell; blank pages keep the column's alignment.
+    rows = [[f'Bina {i}', None, '12.500,23', 0, '75,6', '12', ''] for i in range(23)]
+    rows[-1][1] = Decimal('12500.23')
+    rows[-1][5] = 'Kontrol gerekli'
+    rows[0][2] = '—'
+    rows[0][4] = ''
+    slide = dict(type='table', title='Test', source='Rapor',
+        headers=['Adı', 'Alan (m²)', 'Tutar', 'Adet', 'Oran', 'Karma', 'Boş'], rows=rows)
+    document = html.fromstring(render_deck([slide], title='Test', code='TASLAK'))
+    for table in document.xpath('//table'):
+        assert [cell.get('class') == 'n' for cell in table.xpath('./thead/tr/th')] == [False, True, True, True, True, False, False]
+        for row in table.xpath('./tbody/tr'):
+            assert [cell.get('class') == 'n' for cell in row] == [False, True, True, True, True, False, False]
+    assert document.xpath('//td[@class="n" and text()="—"]')
+
+
+@pytest.mark.parametrize('variant', ['horizontal', 'stacked'])
+def test_horizontal_chart_descending_order_preserves_labels_and_values(variant):
+    slide = dict(type='chart', title='Test', variant=variant,
+        categories=['Küçük', 'Büyük', 'Boş', 'Orta'],
+        series=[dict(name='Adet', values=[3, 15, None, 8])])
+    before = deepcopy(slide)
+    prepared = prepare_slides([slide])[0]
+    assert prepared['categories'] == ['Büyük', 'Orta', 'Küçük', 'Boş']
+    assert prepared['series'][0]['values'] == [15, 8, 3, None]
+    assert prepared['series'][0]['display'] == ['15', '8', '3', '—']
+    assert prepared['height'] == 256
+    assert slide == before
+
+
+@pytest.mark.parametrize('count, height', [(1, 240), (3, 240), (8, 512), (20, 640)])
+def test_horizontal_chart_height_tracks_category_count(count, height):
+    slide = dict(type='chart', title='Test', variant='horizontal', categories=list(range(count)),
+        series=[dict(name='Adet', values=list(range(count)))])
+    assert prepare_slides([slide])[0]['height'] == height
+
+
 def test_recipe_all_types_formatting_and_no_manual_values(presentation_payload):
     original = deepcopy(presentation_payload)
     slides = activity_report(presentation_payload)

@@ -119,9 +119,21 @@ def test_real_report_offline_motion_all_slide_types_and_pdf(section_client, db, 
                 page.wait_for_timeout(300)
             if kind == 'chart':
                 expect(page.locator('section.present [data-chart] svg')).to_be_visible()
+                chart = page.locator('section.present [data-chart]')
+                assert chart.evaluate('(el)=>getComputedStyle(el).height') == '240px'
+                option = chart.evaluate('(el)=>echarts.getInstanceByDom(el).getOption()')
+                assert option['yAxis'][0]['inverse'] is True
+                assert option['series'][0]['data'] == [110, 18, 4]
+                assert chart.evaluate('(el)=>echarts.getInstanceByDom(el).getHeight()') == 240
+            if kind == 'separator':
+                assert page.locator('section.present .foot').count() == 0
             if kind == 'table':
                 page.wait_for_timeout(500)
                 assert page.locator('section.present tr.row').evaluate_all('(rows)=>rows.every(r=>getComputedStyle(r).opacity==="1")')
+                cells = page.locator('section.present th.n, section.present td.n')
+                assert cells.count() == 3
+                assert cells.evaluate_all('(els)=>els.every(el=>getComputedStyle(el).textAlign==="right" && getComputedStyle(el).fontVariantNumeric.includes("tabular-nums"))')
+                assert page.locator('section.present td.n').last.inner_text() == '—'
             if kind == 'kpi':
                 assert page.locator('section.present [data-count]').first.inner_text() == '132'
             page.screenshot(path=str(folder / f'{kind}.png'))
@@ -143,6 +155,7 @@ def test_real_report_offline_motion_all_slide_types_and_pdf(section_client, db, 
         expect(page.locator('.pdf-help')).to_contain_text('Yazdır → PDF olarak kaydet')
         assert page.locator('.tools').is_hidden()
         assert page.locator('.note:visible').count() == 0
+        assert page.locator('section[data-type=separator] .foot').count() == 0
         assert page.locator('.fragment').evaluate_all('(els)=>els.every(e=>getComputedStyle(e).opacity==="1")')
         assert page.locator('[data-count]').evaluate_all('(els)=>els.every(e=>e.textContent!=="0" || Number(e.dataset.count)===0)')
         assert page.evaluate('[...document.querySelectorAll("[data-chart]")].every(e=>echarts.getInstanceByDom(e).getOption().animation===false)')

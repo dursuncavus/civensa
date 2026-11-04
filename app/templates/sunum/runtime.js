@@ -15,9 +15,9 @@ const charts = new Map();
 function draw(el, animate) {
   const data = JSON.parse(el.parentElement.querySelector('.chart-data').textContent);
   const horizontal = data.variant === 'horizontal' || data.variant === 'stacked';
-  const chart = charts.get(el) || echarts.init(el, null, {renderer:'svg', width:1680, height:640});
+  const chart = charts.get(el) || echarts.init(el, null, {renderer:'svg', width:1680, height:data.height});
   const colors = ['#1e6b65','#c9ded9','#17554f','#545b64'];
-  const category = {type:'category', data:data.categories,
+  const category = {type:'category', data:data.categories, inverse:horizontal,
     axisTick:{show:false}, axisLine:{show:!horizontal,lineStyle:{color:'#1f2328'}},
     axisLabel:{fontSize:horizontal ? 24 : 26, color:'#1f2328', interval:0, width:horizontal ? 410 : 420, overflow:'break'}};
   const value = {type:'value', name:data.unit, nameTextStyle:{fontSize:20,color:'#545b64'},
@@ -26,10 +26,10 @@ function draw(el, animate) {
   chart.setOption({textStyle:{fontFamily:'Fira Sans'}, animation:animate,
     animationDuration:800, animationEasing:'cubicOut', animationDelay:i=>Math.min(i*40,150),
     legend:{show:data.series.length>1,top:0,right:0,textStyle:{fontSize:24,color:'#545b64'}},
-    grid:{left:horizontal?440:140,right:160,top:60,bottom:80},
+    grid:{left:horizontal?440:140,right:160,top:horizontal?(data.series.length>1?50:10):60,bottom:horizontal?10:80},
     xAxis:horizontal?value:category,yAxis:horizontal?category:value,
     series:data.series.map((series,i)=>({name:series.name,type:'bar',
-      stack:data.variant==='stacked'?'total':undefined,barMaxWidth:horizontal?48:200,
+      stack:data.variant==='stacked'?'total':undefined,barMaxWidth:horizontal?30:200,
       data:series.values,itemStyle:{color:colors[i%colors.length],borderRadius:4},
       label:{show:true,position:data.variant==='stacked'?'inside':horizontal?'right':'top',
         fontSize:26,color:data.variant==='stacked'&&i===0?'#fff':'#1f2328',

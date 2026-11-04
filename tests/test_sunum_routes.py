@@ -49,6 +49,18 @@ def test_draft_links_and_bad_report(section_client, sample):
     assert 'Rapor listesinden' in missing.json()['detail']
 
 
+def test_draft_editor_does_not_canonicalize_payload(section_client, sample, monkeypatch):
+    from app import activity_sections_service
+    client, docs, _, _ = section_client
+    own = docs[f"birim:{sample['department'].id}"]
+    def unexpected_serialization(*args, **kwargs):
+        raise AssertionError('Draft editor must not canonicalize the report')
+    monkeypatch.setattr(activity_sections_service, 'numeric_canonical', unexpected_serialization)
+    response = client.get(f'/activity-sections/reports/{own.id}')
+    assert response.status_code == 200
+    assert re.search(r'data-sunum-verification>.*TASLAK', response.text)
+
+
 @pytest.mark.parametrize('legacy', [False, True])
 @pytest.mark.parametrize('scope', ['birim', 'idare'])
 def test_frozen_code_matches_export_bytes_and_report_page(section_client, sample, legacy, scope):

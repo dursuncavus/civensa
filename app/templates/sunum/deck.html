@@ -25,8 +25,6 @@
 .kpis.small{row-gap:24px}
 .foot>span:first-child{max-width:76%}
 .reveal .foot .sample{color:var(--warn)}
-.section-open .foot{color:#cfe5e2;border-top-color:rgba(255,255,255,.25)}
-.section-open .foot b{color:#fff}
 .pdf-help{display:none;position:fixed;left:16px;top:12px;z-index:40;padding:12px 20px;background:#fff4d6;color:#5c4400;font:20px "Fira Sans",sans-serif;border:1px solid #e3e1dc;border-radius:6px}
 html.pdf .pdf-help{display:block}
 html.pdf .fragment{opacity:1!important;visibility:visible!important;transform:none!important}
@@ -52,7 +50,7 @@ html.pdf .note,html.pdf .tools{display:none!important}
 {% elif s.type=='bullets' %}{{ types.bullets(s) }}
 {% elif s.type=='quote' %}{{ types.quote(s) }}
 {% elif s.type=='closing' %}{{ types.closing(s,logo,code) }}{% endif %}
-{{ types.footer(s,code) }}
+{% if s.type!='separator' %}{{ types.footer(s,code) }}{% endif %}
 {% if s.note %}<aside class="note">{{ s.note }}</aside>{% endif %}
 </section>
 {% endfor %}

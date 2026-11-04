@@ -147,6 +147,8 @@ def register(app):
         return payload,filename
 
     def sunum_code(db,doc,payload,version=None):
+        if not payload.get('frozen'):
+            return 'TASLAK'
         from .sunum import verification_code
         # Match export.json exactly. Approved unit exports include workflow
         # metadata, whereas historical idare exports use stored release bytes.

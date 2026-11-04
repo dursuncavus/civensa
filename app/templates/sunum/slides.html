@@ -27,13 +27,13 @@
 {%- endmacro %}
 
 {% macro chart(s) -%}
-<div class="chart" data-chart role="img" aria-label="{{ s.title }}"></div>
-<script type="application/json" class="chart-data">{{ {'variant':s.variant, 'categories':s.categories, 'series':s.series, 'unit':s.unit|default('')}|tojson }}</script>
+<div class="chart" data-chart role="img" aria-label="{{ s.title }}" style="height:{{ s.height }}px"></div>
+<script type="application/json" class="chart-data">{{ {'variant':s.variant, 'categories':s.categories, 'series':s.series, 'unit':s.unit|default(''), 'height':s.height}|tojson }}</script>
 {%- endmacro %}
 
 {% macro table(s) -%}
-<table class="t"><thead><tr>{% for header in s.headers %}<th scope="col">{{ header }}</th>{% endfor %}</tr></thead>
-<tbody>{% for row in s.rows %}<tr class="row" style="--d:{{ s.row_delays[loop.index0] }}ms">{% for cell in row %}<td>{{ cell }}</td>{% endfor %}</tr>{% endfor %}</tbody></table>
+<table class="t"><thead><tr>{% for header in s.headers %}<th scope="col"{% if s.numeric_columns[loop.index0] %} class="n"{% endif %}>{{ header }}</th>{% endfor %}</tr></thead>
+<tbody>{% for row in s.rows %}<tr class="row" style="--d:{{ s.row_delays[loop.index0] }}ms">{% for cell in row %}<td{% if s.numeric_columns[loop.index0] %} class="n"{% endif %}>{{ cell }}</td>{% endfor %}</tr>{% endfor %}</tbody></table>
 <p class="cont">{{ s.continuation }}</p>
 {%- endmacro %}
 

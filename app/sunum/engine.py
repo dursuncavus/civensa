@@ -7,7 +7,7 @@ from pathlib import Path
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
-from ..numbers import format_number
+from ..numbers import format_number, parse_number
 from .middleware import DECK_POLICY
 
 APP = Path(__file__).resolve().parents[1]
@@ -39,6 +39,25 @@ def text(value):
     return str(value)
 
 
+def numeric_columns(headers, rows):
+    """Infer alignment from the whole table, so continuation pages agree."""
+    result = []
+    for column in range(len(headers)):
+        known = False
+        valid = True
+        for row in rows:
+            cell = row[column] if column < len(row) else None
+            try:
+                value = parse_number(cell)
+            except ValueError:
+                valid = False
+                break
+            if value is not None:
+                known = True
+        result.append(known and valid)
+    return result
+
+
 def prepare_slides(slides):
     """Pagination and display strings belong to Python, never Jinja macros."""
     result = []
@@ -49,6 +68,7 @@ def prepare_slides(slides):
         groups = [None]
         if kind == 'table':
             groups = pages(slide['rows'], 10)
+            alignment = numeric_columns(slide['headers'], slide['rows'])
         elif kind == 'bullets':
             groups = pages(slide['bullets'], 5)
         if kind == 'kpi' and not 2 <= len(slide['figures']) <= 8:
@@ -58,6 +78,7 @@ def prepare_slides(slides):
             item.setdefault('note', slide.get('source', ''))
             if kind == 'table':
                 item['rows'] = [[text(cell) for cell in row] for row in group]
+                item['numeric_columns'] = alignment
                 item['continuation'] = f'Tablo {index}/{len(groups)}'
                 # Last row finishes in <= 1.5 s, regardless of row count.
                 step = min(150, 1150 // max(1, len(group) - 1))
@@ -76,6 +97,20 @@ def prepare_slides(slides):
                     values=[float(value) if value is not None else None for value in series['values']],
                     display=[format_number(value, money=slide.get('money', False)) for value in series['values']])
                     for series in slide['series']]
+                horizontal = slide['variant'] in {'horizontal', 'stacked'}
+                item['height'] = max(240, min(640, 64 * len(slide['categories']))) if horizontal else 640
+                if horizontal:
+                    def rank(column):
+                        known = [series['values'][column] for series in item['series']
+                                 if series['values'][column] is not None]
+                        return bool(known), sum(known)
+                    # Multi-series horizontal bars follow their combined value;
+                    # missing observations remain missing, including all-null rows.
+                    order = sorted(range(len(slide['categories'])), key=rank, reverse=True)
+                    item['categories'] = [slide['categories'][column] for column in order]
+                    item['series'] = [dict(series,
+                        values=[series['values'][column] for column in order],
+                        display=[series['display'][column] for column in order]) for series in item['series']]
             item['slide_id'] = item.get('id') or f'slide-{len(result)}'
             result.append(item)
     return result
