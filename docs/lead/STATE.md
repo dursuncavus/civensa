@@ -1,16 +1,16 @@
 # CIVENSA — CURRENT STATE
 
-Updated: 4 Nov 2026 ~13:25 Istanbul (live session CV Lider 55, D-397).
+Updated: 4 Nov 2026 ~13:55 Istanbul (live session CV Lider 55, D-398).
 Rules: AI_WORKING_CONSTITUTION v1.2 (Drive, global) · `HIERARCHY.md` v1.7 · `PROJECT_RULES.md` v1.4 (D-271: PRIOR ART field mandatory in every package) · `BACKUP_LEAD.md` v2.
 Backup log ("Civensa Yedek Kaydı", Drive): no entries after 31 Oct (DOĞRULANDI 3 Nov 05:45, file unchanged since 23 Oct).
 Tags: DOĞRULANDI (lead checked) · TARİHSEL (past fact) · BEYAN (owner said) · BELİRSİZ (unknown).
 
 ## Next session — start here (D-253)
 Claude live (CV Lider 55, 4 Nov ~11:15–13:25). Release #298 live; /health ready=true, migration c162 (D-350). On phase5, not on main/live: CIV-163, 166, 167, 165, 168, 170, 171, 169, 173, CIV-172 (38eb017), CIV-174 (ac17369), lead fixes #360/#361/#362 (0aee945).
-Claude's next session: `CV Lider 56 · Claude Opus 5.5 · civensa-lead`. First job: if the owner approved the live 2026 run (D-397), guide it step by step; review the CIV-175 PR if it exists. Read this section and the last decision in DECISIONS.md first. Session start also checks Gmail for Ali Abi's mails (D-361; none on 4 Nov morning).
+Claude's next session: `CV Lider 56 · Claude Opus 5.5 · civensa-lead`. First job: release #364 (owner merge → pre-deploy backup → deploy → /health), then the 2026 UI check; review the CIV-175 PR if it exists. Read this section and the last decision in DECISIONS.md first. Session start also checks Gmail for Ali Abi's mails (D-361).
 1. Releases live (D-346/D-350). Only Ali Abi uses the system; departments are not opened until the infrastructure is complete — data comes from the old system (BEYAN, D-351/D-352). Render stays Free; Starter ($7/month) on department rollout day.
 2. Codex: CIV-172 #354 merged (D-393); CIV-174 #358 merged after two Copilot rounds (D-394): warnings stored compactly (10.9 KB), builder no longer parses snapshots. CIV-175 "PP yayın boyutu ölçümü" (D-394): the 2026 publication snapshot itself is 25.8 MB on a 512 MB instance → measure + propose before 2026 is published live; package sent to the owner's phone 3 Nov ~21:05 (started: BELİRSİZ). Copilot-bot commits need a lead update-branch to run CI (action_required).
-3. 2026 PP load path (D-389/D-397): rehearsal 41809710770 PASS (clear 2,802 rows → load 33/105/226 → resume 0/33, 2027 hash unchanged). Waiting: owner approval of the live run (deletes the live 2026 pilot rows; archive kept in the audit record + fresh backups). Live order (owner terminal, phase5 checkout ≥0aee945, data entry closed — Ali on leave until 9 Nov): clear plan → fresh verified backup → `scripts/clear_pilot_2026.py --apply --backup …` ("2026 PILOT DONEMINI SIL") → fresh backup → `scripts/first_load_live.py --year 2026` plan → apply with the new backup (1aaa0bb81c3c) → `--resume` plan. Then release with CIV-174 → Strategy publishes 2026 via "Onaylı kitaptan yayınla" (after CIV-175 decision). Ready before 1 Jan 2027.
+3. 2026 PP (D-398): LIVE DONE 4 Nov — pilot cleared (2,802 rows, archive c2764249…), approved book loaded 33/105/226, resume 0 writes / 33 skipped, 2027 protected. Next: release PR #364 (phase5 → main, no migration) → owner merges → lead pre-deploy backup → Render deploy → /health → owner UI check of 2026 → Strategy publishes 2026 via "Onaylı kitaptan yayınla" after the CIV-175 size decision (needs the council decision text for "Onay dayanağı" — ask Ali). Owner: delete ~/civensa-yedek/20261104-*/cozulmus.
 4. Ask Ali (D-375): printed 2026 book inconsistencies — Bilgi İşlem / Çevre Koruma / İmar cost vs economic totals differ (496 / 775 / 989 TL); Ruhsat ve Denetim economic table wrong totals; Zabıta and Veteriner economic tables show the total as "Diğer Bütçe Dışı Kaynak". Loaded as printed; FR 2026 needs the correct figures.
 4b. Ali Abi returns from leave Monday 9 Nov 2026 (BEYAN). Prepare for that day, in D-387 order: (1) one current directorate indicator Excel (FR5); (2) Mali Hizmetler budget-actuals template (ML1); (3) printed 2026 PP book inconsistencies (D-375); (4) PR2 — approval in Civensa or on paper; (5) İç Kontrol: plan approval date + 3 council mappings; timing of the new 2026–2028 plan. Also ask: the "Onay dayanağı" text for 2026 and 2027 (council decision date/number) for the approved-book publication (CIV-174).
 5. İç Kontrol (D-386/D-387): FR 2026 first, old plan archive only, module prepared for the new 2026–2028 plan. Open to Ali: plan approval date, 3 council mappings.
@@ -18,7 +18,7 @@ Claude's next session: `CV Lider 56 · Claude Opus 5.5 · civensa-lead`. First j
 7. LOW (D-390/D-394): CIV-169 K2–K6 + publication JSON hash note; ACTION_LABELS registered from program_routes. Watch reactions to the 554 book-check items (D-324, D-352). LOW backlog (D-328). UI: only 002/003 left, waits for Ali (D-345).
 8. One live lead session at a time (D-363). Owner: check Claude Design standalone site before 14 Dec 2026 (D-363).
 9. Claude account on Max from 4 Nov 2026 (BEYAN; next charge 4 Dec).
-Next IDs: task CIV-176, decision D-398.
+Next IDs: task CIV-176, decision D-399.
 
 ## Claude quota (BEYAN, owner 27 Oct 16:21)
 - Session 11%, week 67%, weekly reset Saturday 00:00 (D-300). Copilot 96 / 1,500 credits, reset 1 Nov.
