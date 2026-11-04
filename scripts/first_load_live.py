@@ -228,6 +228,9 @@ def failure_detail(exc):
         if isinstance(value, str) and SCHEMA_NAME.fullmatch(value):
             parts.append(f'{label} {value}')
     # Only project code (a virtualenv may live inside the checkout).
+    for name in getattr(exc, 'changed_tables', None) or []:
+        if isinstance(name, str) and SCHEMA_NAME.fullmatch(name):
+            parts.append(f'tablo {name}')
     frames = [(Path(frame.filename).resolve().relative_to(ROOT).as_posix(), frame.lineno)
               for frame in traceback.extract_tb(exc.__traceback__)
               if Path(frame.filename).resolve().is_relative_to(ROOT)]
