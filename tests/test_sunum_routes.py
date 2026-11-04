@@ -20,9 +20,12 @@ def test_own_strategy_download_and_cross_department_forbidden(section_client, sa
             response = client.get(f'/activity-sections/reports/{doc.id}/{suffix}')
             assert response.status_code == expected, response.text[:500]
             if expected == 403:
+                assert "script-src 'self'" in response.headers['content-security-policy']
                 assert response.json() == client.get(f'/activity-sections/reports/{doc.id}/export.pdf').json()
                 assert 'Kendi birim raporunuzu açın' in response.json()['detail']
             else:
+                assert "script-src 'unsafe-inline'" in response.headers['content-security-policy']
+                assert "frame-ancestors 'none'" in response.headers['content-security-policy']
                 assert response.headers['content-type'].startswith('text/html')
                 assert response.headers['cache-control'] == 'private, no-store'
                 assert response.headers['x-content-type-options'] == 'nosniff'

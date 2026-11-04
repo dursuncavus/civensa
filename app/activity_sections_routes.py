@@ -106,6 +106,8 @@ class TurkishValidationRoute(APIRoute):
 def register(app):
     router=APIRouter(route_class=TurkishValidationRoute)
     from .main import require_user, templates
+    from .sunum.middleware import SunumSecurityHeaders
+    app.add_middleware(SunumSecurityHeaders)
     templates.env.filters['ar_number']=format_number
     templates.env.filters['ar_time']=turkey_time
     templates.env.filters['ar_text']=blocks_text

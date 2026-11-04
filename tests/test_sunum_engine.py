@@ -121,7 +121,7 @@ def test_offline_assets_size_escaping_and_verification(presentation_payload):
     assert b'data:image/svg+xml;base64,' in content
     assert b'window.bad=true</script>' not in content
     assert b'reveal.js' in content and b'echarts' in content
-    assert b'connect-src &#39;none&#39;' not in content  # CSP is literal, not escaped.
+    assert "connect-src 'none'" in document.xpath('//meta[@http-equiv="Content-Security-Policy"]/@content')[0]
     assert verification_code(presentation_payload, 'draft') == 'TASLAK'
     presentation_payload['frozen'] = True
     canonical = numeric_canonical(presentation_payload)

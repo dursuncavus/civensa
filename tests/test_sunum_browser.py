@@ -32,6 +32,29 @@ def deck_url(page, path):
     return path.as_uri()
 
 
+def test_served_deck_runs_with_actual_security_headers(section_client, sample):
+    client, docs, _, _ = section_client
+    doc = docs[f"birim:{sample['department'].id}"]
+    response = client.get(f'/activity-sections/reports/{doc.id}/sunum')
+    policy = response.headers['content-security-policy']
+    assert "script-src 'unsafe-inline'" in policy
+    assert "connect-src 'none'" in policy
+    assert "script-src 'self'" in client.get('/modules').headers['content-security-policy']
+    with sync_playwright() as playwright:
+        browser = playwright.chromium.launch(**browser_options())
+        page = browser.new_page(viewport={'width': 1920, 'height': 1080}, offline=True)
+        headers = dict(response.headers)
+        headers.pop('set-cookie', None)
+        url = f'http://testserver/activity-sections/reports/{doc.id}/sunum'
+        page.route(url, lambda route: route.fulfill(status=response.status_code,
+            headers=headers, body=response.content))
+        page.goto(url)
+        page.wait_for_function('() => window.sunumRendered === true')
+        assert page.locator('section.present').get_attribute('data-type') == 'cover'
+        expect(page.locator('section.present img.logo')).to_be_visible()
+        browser.close()
+
+
 def test_real_report_offline_motion_all_slide_types_and_pdf(section_client, db, sample, tmp_path):
     client, docs, _, _ = section_client
     doc = docs[f"birim:{sample['department'].id}"]

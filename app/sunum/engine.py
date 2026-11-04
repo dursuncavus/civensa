@@ -8,6 +8,7 @@ from pathlib import Path
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 from ..numbers import format_number
+from .middleware import DECK_POLICY
 
 APP = Path(__file__).resolve().parents[1]
 MAX_BYTES = 3_000_000
@@ -108,7 +109,7 @@ def render_deck(slides, *, title, code):
     env = Environment(loader=FileSystemLoader(APP / 'templates' / 'sunum'),
                       autoescape=select_autoescape(['html']))
     content = env.get_template('deck.html').render(
-        slides=prepare_slides(slides), title=title, code=code, **assets()).encode('utf-8')
+        slides=prepare_slides(slides), title=title, code=code, csp=DECK_POLICY, **assets()).encode('utf-8')
     if len(content) > MAX_BYTES:
         raise DeckTooLarge('Sunum dosyası 3 MB sınırını aşıyor.')
     return content
