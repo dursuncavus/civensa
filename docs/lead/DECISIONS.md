@@ -1154,3 +1154,4 @@ LOW (watch): the 2026 dashboard shows "Eksikleri / hataları var" with last acti
 Decision: the 2026 activity → alt program/card mapping (128/148) is Strategy work for the 2026 FR (cost actuals by programme), not a loader change (system rule: no name matching; only 8 exact links). Add to the Ali list for 9 Nov.
 Next: owner starts CIV-175 in Codex (package tasks/CIV-175.md, unchanged); lead reviews the PR. Then the 2026 publication decision.
 Next IDs: task CIV-176, decision D-400.
+Addendum (15:05, DOĞRULANDI with ~/civensa-yedek connected): no decrypted (cozulmus) folder is left under ~/civensa-yedek; the four backup folders hold only their sifreli copies. Owner item closed.
