@@ -1279,3 +1279,14 @@ Decision (lead): Civensa renders the deck with its existing Jinja templates → 
 Prototype (lead, synthetic data, labelled ÖRNEK VERİ): https://claude.ai/artifact/DMpNp2f68JsogL2eMgJSRD — 11 slides covering all 7 slide types + the map: cover, map (tile → zoom into section), section, KPI count-up, ECharts bar chart, table rows step by step with total last, bullets, closing slide with verification code; design notes per slide (toggle). Checked locally in Chromium: no console errors, all slides rendered.
 Change to D-411 owner item: the owner no longer designs the master from zero; he reviews/corrects the prototype (colours, type, layout, motion) → lead writes CIV-180 from the approved prototype.
 Next IDs: task CIV-180, decision D-414.
+
+## D-414 (4 Nov 2026 ~21:48–22:17 Istanbul, owner + lead, live session CV Lider 61) — Sunum prototype review round 1
+BEYAN (owner): cover needs the municipality logo (owner sent bcb_logo.pdf: 4 variants — square colour, square one-colour, horizontal colour, horizontal one-colour; Illustrator vector); browser print of the prototype came out as A4 web page; how do we hand out the animated version; table rows must come in automatically and long tables must not take long; bullets stay on click (22:17 "bu mantıklı").
+Done in the prototype (https://claude.ai/artifact/DMpNp2f68JsogL2eMgJSRD, checked in Chromium, no console errors):
+- Cover: horizontal one-colour logo recoloured white (vector SVG), top left; the "T.C. Büyükçekmece Belediyesi" text line removed (it is in the logo).
+- PDF view (#pdf → reveal.js print view): 11 pages 16:9, all numbers final, chart drawn, all rows/bullets visible, notes and buttons hidden. Sample PDF sent to the owner.
+- Animated hand-out = ONE self-contained HTML file (reveal.js, ECharts, fonts, logo inlined; ~1.6 MB), opens in Chrome without internet; F11 full screen, arrows/clicker, Esc = overview. Sample file Ornek-Sunum.html sent to the owner.
+- Table rows: appear automatically in sequence when the slide opens, total time ≤1.5 s whatever the row count (per-row delay shrinks), replay on re-entry; max 10 rows per slide, rest continues on the next slide, font never shrinks. Bullets: one per click (unchanged).
+Rules for CIV-180: logo uploaded once to Civensa (institution setting, vector), used on every cover; two buttons — "Sunumu indir" (animated single file) and "PDF indir" (16:9, static).
+Owner: test Ornek-Sunum.html once on the presentation-hall computer (old Chrome/Edge risk).
+Next IDs: task CIV-180, decision D-415.
