@@ -1290,3 +1290,14 @@ Done in the prototype (https://claude.ai/artifact/DMpNp2f68JsogL2eMgJSRD, checke
 Rules for CIV-180: logo uploaded once to Civensa (institution setting, vector), used on every cover; two buttons — "Sunumu indir" (animated single file) and "PDF indir" (16:9, static).
 Owner: test Ornek-Sunum.html once on the presentation-hall computer (old Chrome/Edge risk).
 Next IDs: task CIV-180, decision D-415.
+
+## D-415 (4 Nov 2026 ~22:18–22:30 Istanbul, owner + lead, live session CV Lider 61) — full müdürlük presentation (Fen İşleri 2025) as the CIV-180 reference
+BEYAN (owner 22:18/22:23): bottom buttons next to the arrows, as icons; logo on section separators; "I want a full müdürlük presentation — this one is hard to take to the mayor".
+Done (lead): real data, not sample — Fen İşleri chapter of the printed 2025 Faaliyet Raporu (docs/activity-report/source/2025-faaliyet-raporu.idml, Story_u2a64 + budget table Story_u1034f). 26 slides: cover, map (5 sections), 5 separators with logo, duties, team (132), profession chart, strategic goal quote, budget KPIs (gerçekleşme 75,6 %, kesinleşen 811,78 mn, harcama 613,71 mn, 18,4 % of municipal spending), budget chart, tenders table, road KPIs, neighbourhood chart (59 asphalt + 110 paving rows counted per mahalle; top 10 + "diğer 12"), emergency road maintenance (8 KPIs), İBB/İSKİ joint works table, water/sewer KPIs, lighting chart, buildings bullets, applications KPIs, excavation permits chart (1.784 by company), fees KPIs, traffic bullets, closing. Buttons are icons bottom right (auto-hide). Prototype https://claude.ai/artifact/DMpNp2f68JsogL2eMgJSRD; files Fen-Isleri-2025-Sunum.html (single file) + .pdf (26 pages 16:9) sent to the owner. Checked in Chromium (26 slides, no errors) and PDF pages rendered.
+Book inconsistencies found (ask Ali; shown in slide notes, not silently fixed):
+1. Budget table (Tablo 3, müdürlük bazında) column headers say "2024 YILI" in the 2025 book.
+2. Fen İşleri Tablo 4 tenders: third row "Yapım İşi" = sum of the first two rows (3+2=5; 71.366.420,26+170.590.345,65=241.956.765,91; 53.656.669+118.380.000=172.036.669) → shown as "Toplam".
+3. Text says "toplam 23.008 evrak işlemi", Tablo 3 sums to 29.159 (8.884+19.600+675) → table value used.
+4. Fees: 86.181.784,63 + 134.720.581,92 = 220.902.366,55; book says 220.902.366,60 → book value used.
+Rule for CIV-180 recipes: the müdürlük writes short summary texts (duties in ≤5 bullets); counts per mahalle and ratios are computed by Civensa from FR rows; photos are a later slide type (FR photos are linked files, not in the IDML).
+Next IDs: task CIV-180, decision D-416.
