@@ -1,0 +1,903 @@
+{
+  "alembic_heads": [
+    "c162a1b2c3d4"
+  ],
+  "postgresql": "16.15 (Debian 16.15-1.pgdg13+2)",
+  "python": "3.12.14",
+  "serialization": "UTF-8, ensure_ascii=False, sort_keys=True, separators=comma/colon",
+  "source_books": {
+    "2026": "1aaa0bb81c3cf4e245edaab42452a972b8a59ffc252814216c7628f6dbaf33d6",
+    "2027": "cbbf9018302d0a1d33d1dde0c4a64a2418d12b55cc29d046205371018673bd71"
+  },
+  "years": {
+    "2026": {
+      "attribution": {
+        "activities_without_trustworthy_parent": 128,
+        "programs": 26,
+        "subprograms": 42
+      },
+      "book_snapshot": {
+        "cost_reconciliation": {
+          "activity_id_references": 43272,
+          "errors": 61167,
+          "fields": {
+            "activity_ids": {
+              "member_bytes": 218982,
+              "value_bytes": 175962
+            },
+            "amount": {
+              "member_bytes": 37284,
+              "value_bytes": 11472
+            },
+            "complete": {
+              "member_bytes": 45888,
+              "value_bytes": 14340
+            },
+            "department_id": {
+              "member_bytes": 51243,
+              "value_bytes": 5355
+            },
+            "difference": {
+              "member_bytes": 48756,
+              "value_bytes": 11472
+            },
+            "errors": {
+              "member_bytes": 19045607,
+              "value_bytes": 19019795
+            },
+            "label": {
+              "member_bytes": 209463,
+              "value_bytes": 186519
+            },
+            "level": {
+              "member_bytes": 57756,
+              "value_bytes": 34812
+            },
+            "path": {
+              "member_bytes": 367869,
+              "value_bytes": 347793
+            },
+            "program_id": {
+              "member_bytes": 43230,
+              "value_bytes": 5946
+            },
+            "source_amount": {
+              "member_bytes": 57360,
+              "value_bytes": 11472
+            },
+            "status": {
+              "member_bytes": 68832,
+              "value_bytes": 43020
+            },
+            "subprogram_id": {
+              "member_bytes": 51990,
+              "value_bytes": 6102
+            },
+            "value_kind": {
+              "member_bytes": 64052,
+              "value_bytes": 26768
+            },
+            "warnings": {
+              "member_bytes": 730193,
+              "value_bytes": 698645
+            },
+            "year": {
+              "member_bytes": 31548,
+              "value_bytes": 11472
+            }
+          },
+          "largest_rows": [
+            {
+              "bytes": 66112,
+              "errors": 205,
+              "index": 2559,
+              "level": "subprogram",
+              "path": "ŞEHİRCİLİK VE RİSK ODAKLI BÜTÜNLEŞİK AFET YÖNETİMİ / MEKÂNSAL PLANLAMA VE KENTSEL DÖNÜŞÜM"
+            },
+            {
+              "bytes": 65969,
+              "errors": 205,
+              "index": 2561,
+              "level": "subprogram",
+              "path": "ŞEHİRCİLİK VE RİSK ODAKLI BÜTÜNLEŞİK AFET YÖNETİMİ / MEKÂNSAL PLANLAMA VE KENTSEL DÖNÜŞÜM"
+            },
+            {
+              "bytes": 65963,
+              "errors": 205,
+              "index": 2560,
+              "level": "subprogram",
+              "path": "ŞEHİRCİLİK VE RİSK ODAKLI BÜTÜNLEŞİK AFET YÖNETİMİ / MEKÂNSAL PLANLAMA VE KENTSEL DÖNÜŞÜM"
+            },
+            {
+              "bytes": 65042,
+              "errors": 209,
+              "index": 2367,
+              "level": "program",
+              "path": "ŞEHİRCİLİK VE RİSK ODAKLI BÜTÜNLEŞİK AFET YÖNETİMİ"
+            },
+            {
+              "bytes": 64898,
+              "errors": 209,
+              "index": 2369,
+              "level": "program",
+              "path": "ŞEHİRCİLİK VE RİSK ODAKLI BÜTÜNLEŞİK AFET YÖNETİMİ"
+            }
+          ],
+          "levels": {
+            "department": 2559,
+            "department_total": 105,
+            "program": 78,
+            "subprogram": 126
+          },
+          "punctuation_bytes": 51625,
+          "row_count": 2868,
+          "total_bytes": 21181678,
+          "unique_errors": 11805,
+          "unique_warnings": 2868,
+          "warnings": 2868
+        },
+        "department_counts": {
+          "activities": 182,
+          "cards": 105,
+          "department_costs": 198,
+          "economics": 1270,
+          "indicators": 226
+        },
+        "departments": {
+          "fields": {
+            "activities": {
+              "member_bytes": 716530,
+              "value_bytes": 716075
+            },
+            "cards": {
+              "member_bytes": 201476,
+              "value_bytes": 201196
+            },
+            "department": {
+              "member_bytes": 1743,
+              "value_bytes": 1288
+            },
+            "department_costs": {
+              "member_bytes": 34314,
+              "value_bytes": 33649
+            },
+            "department_id": {
+              "member_bytes": 621,
+              "value_bytes": 61
+            },
+            "economics": {
+              "member_bytes": 2882808,
+              "value_bytes": 2882388
+            },
+            "indicators": {
+              "member_bytes": 455447,
+              "value_bytes": 454992
+            },
+            "period": {
+              "member_bytes": 455,
+              "value_bytes": 140
+            },
+            "scope": {
+              "member_bytes": 5716,
+              "value_bytes": 5436
+            }
+          },
+          "punctuation_bytes": 386,
+          "row_count": 35,
+          "total_bytes": 4299496
+        },
+        "economic_fields": {
+          "fields": {
+            "amount": {
+              "member_bytes": 20761,
+              "value_bytes": 9331
+            },
+            "category": {
+              "member_bytes": 27770,
+              "value_bytes": 13800
+            },
+            "department_id": {
+              "member_bytes": 22550,
+              "value_bytes": 2230
+            },
+            "funding_type": {
+              "member_bytes": 29845,
+              "value_bytes": 10795
+            },
+            "id": {
+              "member_bytes": 11430,
+              "value_bytes": 5080
+            },
+            "issue": {
+              "member_bytes": 607036,
+              "value_bytes": 596876
+            },
+            "period_id": {
+              "member_bytes": 16510,
+              "value_bytes": 1270
+            },
+            "program_group": {
+              "member_bytes": 33820,
+              "value_bytes": 13500
+            },
+            "raw_text": {
+              "member_bytes": 24413,
+              "value_bytes": 10443
+            },
+            "source_card_id": {
+              "member_bytes": 25000,
+              "value_bytes": 3410
+            },
+            "source_context_json": {
+              "member_bytes": 1939520,
+              "value_bytes": 1911580
+            },
+            "source_table_number": {
+              "member_bytes": 31060,
+              "value_bytes": 3120
+            },
+            "state": {
+              "member_bytes": 27612,
+              "value_bytes": 17452
+            },
+            "value_kind": {
+              "member_bytes": 29464,
+              "value_bytes": 12954
+            },
+            "year": {
+              "member_bytes": 13970,
+              "value_bytes": 5080
+            }
+          },
+          "punctuation_bytes": 21591,
+          "row_count": 1270,
+          "total_bytes": 2882352
+        },
+        "largest_departments": [
+          {
+            "bytes": 213492,
+            "department": "Basın Yayın ve Halkla İlişkiler Müdürlüğü"
+          },
+          {
+            "bytes": 199041,
+            "department": "Veteriner İşleri Müdürlüğü"
+          },
+          {
+            "bytes": 175339,
+            "department": "Mali Hizmetler Müdürlüğü"
+          },
+          {
+            "bytes": 175001,
+            "department": "Fen İşleri Müdürlüğü"
+          },
+          {
+            "bytes": 168561,
+            "department": "Bilgi İşlem Müdürlüğü"
+          }
+        ],
+        "populated_departments": 33,
+        "top_level": {
+          "members": {
+            "catalogue": {
+              "member_bytes": 36851,
+              "value_bytes": 36839
+            },
+            "cost_reconciliation": {
+              "member_bytes": 21181700,
+              "value_bytes": 21181678
+            },
+            "departments": {
+              "member_bytes": 4299510,
+              "value_bytes": 4299496
+            },
+            "economics": {
+              "member_bytes": 11925,
+              "value_bytes": 11913
+            },
+            "period": {
+              "member_bytes": 13,
+              "value_bytes": 4
+            },
+            "program_costs": {
+              "member_bytes": 270830,
+              "value_bytes": 270814
+            },
+            "schema_version": {
+              "member_bytes": 22,
+              "value_bytes": 5
+            },
+            "sections": {
+              "member_bytes": 13,
+              "value_bytes": 2
+            }
+          },
+          "punctuation_bytes": 9,
+          "total_bytes": 25800873
+        }
+      },
+      "book_snapshot_seconds": 0.9170074490000388,
+      "candidates": {
+        "codecs": {
+          "bzip2": {
+            "compressed_bytes": 464705,
+            "compression_peak_bytes": 9365797,
+            "compression_seconds": 2.6898813880000034,
+            "decompression_peak_bytes": 56609276,
+            "decompression_seconds": 0.3176223410000034,
+            "envelope_bytes": 619789,
+            "lossless_roundtrip": true,
+            "saved_bytes": 25219743
+          },
+          "gzip": {
+            "compressed_bytes": 1612792,
+            "compression_peak_bytes": 7216462,
+            "compression_seconds": 0.29591770399997586,
+            "decompression_peak_bytes": 58262539,
+            "decompression_seconds": 0.02504902900000161,
+            "envelope_bytes": 2150572,
+            "lossless_roundtrip": true,
+            "saved_bytes": 23688960
+          },
+          "xz": {
+            "compressed_bytes": 252876,
+            "compression_peak_bytes": 33173776,
+            "compression_seconds": 0.21858941499999673,
+            "decompression_peak_bytes": 60839332,
+            "decompression_seconds": 0.013484796999989612,
+            "envelope_bytes": 337346,
+            "lossless_roundtrip": true,
+            "saved_bytes": 25502186
+          }
+        },
+        "lossless_pool_roundtrip": true,
+        "sizes": {
+          "drop_cost_reconciliation": {
+            "bytes": 4657831,
+            "saved_bytes": 21181701,
+            "under_2000000": false
+          },
+          "drop_errors_warnings": {
+            "bytes": 6057996,
+            "saved_bytes": 19781536,
+            "under_2000000": false
+          },
+          "pool_errors_warnings": {
+            "bytes": 10962815,
+            "saved_bytes": 14876717,
+            "under_2000000": false
+          }
+        }
+      },
+      "checks": {
+        "count": 2971,
+        "errors": 63541,
+        "warnings": 2868
+      },
+      "freeze_program_payload_seconds": 1.8142773460000399,
+      "frozen_payload_bytes": 25827277,
+      "json_loads": {
+        "input_str_bytes": 47619022,
+        "peak_bytes": 54810994,
+        "retained_bytes": 54807834,
+        "seconds": 0.22788244000003033
+      },
+      "publication_checks_seconds": 1.600673904999951,
+      "publication_snapshot": {
+        "members": {
+          "activity_contract_version": {
+            "member_bytes": 33,
+            "value_bytes": 5
+          },
+          "approval_reference": {
+            "member_bytes": 49,
+            "value_bytes": 28
+          },
+          "basis": {
+            "member_bytes": 23,
+            "value_bytes": 15
+          },
+          "book_sha256": {
+            "member_bytes": 80,
+            "value_bytes": 66
+          },
+          "catalogue": {
+            "member_bytes": 36851,
+            "value_bytes": 36839
+          },
+          "cost_reconciliation": {
+            "member_bytes": 21181700,
+            "value_bytes": 21181678
+          },
+          "definition_contract_version": {
+            "member_bytes": 35,
+            "value_bytes": 5
+          },
+          "departments": {
+            "member_bytes": 4325844,
+            "value_bytes": 4325830
+          },
+          "economics": {
+            "member_bytes": 11925,
+            "value_bytes": 11913
+          },
+          "kaynak_kitap_uyarilari": {
+            "member_bytes": 10958,
+            "value_bytes": 10933
+          },
+          "kaynak_kitap_uyarilari_sha256": {
+            "member_bytes": 98,
+            "value_bytes": 66
+          },
+          "load_reference": {
+            "member_bytes": 1041,
+            "value_bytes": 1024
+          },
+          "period": {
+            "member_bytes": 13,
+            "value_bytes": 4
+          },
+          "program_costs": {
+            "member_bytes": 270830,
+            "value_bytes": 270814
+          },
+          "schema_version": {
+            "member_bytes": 22,
+            "value_bytes": 5
+          },
+          "sections": {
+            "member_bytes": 13,
+            "value_bytes": 2
+          }
+        },
+        "punctuation_bytes": 17,
+        "total_bytes": 25839532
+      },
+      "publications_before": 0
+    },
+    "2027": {
+      "attribution": {
+        "activities_without_trustworthy_parent": 5,
+        "programs": 28,
+        "subprograms": 38
+      },
+      "book_snapshot": {
+        "cost_reconciliation": {
+          "activity_id_references": 5007,
+          "errors": 1714,
+          "fields": {
+            "activity_ids": {
+              "member_bytes": 27855,
+              "value_bytes": 19305
+            },
+            "amount": {
+              "member_bytes": 9351,
+              "value_bytes": 4221
+            },
+            "complete": {
+              "member_bytes": 8896,
+              "value_bytes": 2626
+            },
+            "department_id": {
+              "member_bytes": 10593,
+              "value_bytes": 1473
+            },
+            "difference": {
+              "member_bytes": 10138,
+              "value_bytes": 2728
+            },
+            "errors": {
+              "member_bytes": 663165,
+              "value_bytes": 658035
+            },
+            "label": {
+              "member_bytes": 42501,
+              "value_bytes": 37941
+            },
+            "level": {
+              "member_bytes": 11778,
+              "value_bytes": 7218
+            },
+            "path": {
+              "member_bytes": 53472,
+              "value_bytes": 49482
+            },
+            "program_id": {
+              "member_bytes": 8556,
+              "value_bytes": 1146
+            },
+            "source_amount": {
+              "member_bytes": 13594,
+              "value_bytes": 4474
+            },
+            "status": {
+              "member_bytes": 12560,
+              "value_bytes": 7430
+            },
+            "subprogram_id": {
+              "member_bytes": 10545,
+              "value_bytes": 1425
+            },
+            "value_kind": {
+              "member_bytes": 12730,
+              "value_bytes": 5320
+            },
+            "warnings": {
+              "member_bytes": 73237,
+              "value_bytes": 66967
+            },
+            "year": {
+              "member_bytes": 6270,
+              "value_bytes": 2280
+            }
+          },
+          "largest_rows": [
+            {
+              "bytes": 4039,
+              "errors": 9,
+              "index": 420,
+              "level": "program",
+              "path": "Şehircilik ve Risk Odaklı Bütünleşik Afet Yönetimi"
+            },
+            {
+              "bytes": 4036,
+              "errors": 9,
+              "index": 422,
+              "level": "program",
+              "path": "Şehircilik ve Risk Odaklı Bütünleşik Afet Yönetimi"
+            },
+            {
+              "bytes": 4036,
+              "errors": 9,
+              "index": 421,
+              "level": "program",
+              "path": "Şehircilik ve Risk Odaklı Bütünleşik Afet Yönetimi"
+            },
+            {
+              "bytes": 4027,
+              "errors": 9,
+              "index": 243,
+              "level": "subprogram",
+              "path": "Tarım Programı / Tarımsal Araştırma ve Geliştirme"
+            },
+            {
+              "bytes": 4024,
+              "errors": 9,
+              "index": 245,
+              "level": "subprogram",
+              "path": "Tarım Programı / Tarımsal Araştırma ve Geliştirme"
+            }
+          ],
+          "levels": {
+            "department": 267,
+            "department_total": 105,
+            "program": 84,
+            "subprogram": 114
+          },
+          "punctuation_bytes": 10261,
+          "row_count": 570,
+          "total_bytes": 985502,
+          "unique_errors": 93,
+          "unique_warnings": 318,
+          "warnings": 318
+        },
+        "department_counts": {
+          "activities": 291,
+          "cards": 64,
+          "department_costs": 204,
+          "economics": 1340,
+          "indicators": 263
+        },
+        "departments": {
+          "fields": {
+            "activities": {
+              "member_bytes": 1408671,
+              "value_bytes": 1408216
+            },
+            "cards": {
+              "member_bytes": 221197,
+              "value_bytes": 220917
+            },
+            "department": {
+              "member_bytes": 1710,
+              "value_bytes": 1255
+            },
+            "department_costs": {
+              "member_bytes": 35211,
+              "value_bytes": 34546
+            },
+            "department_id": {
+              "member_bytes": 621,
+              "value_bytes": 61
+            },
+            "economics": {
+              "member_bytes": 3254409,
+              "value_bytes": 3253989
+            },
+            "indicators": {
+              "member_bytes": 715198,
+              "value_bytes": 714743
+            },
+            "period": {
+              "member_bytes": 455,
+              "value_bytes": 140
+            },
+            "scope": {
+              "member_bytes": 420,
+              "value_bytes": 140
+            }
+          },
+          "punctuation_bytes": 386,
+          "row_count": 35,
+          "total_bytes": 5638278
+        },
+        "economic_fields": {
+          "fields": {
+            "amount": {
+              "member_bytes": 23998,
+              "value_bytes": 11938
+            },
+            "category": {
+              "member_bytes": 30110,
+              "value_bytes": 15370
+            },
+            "department_id": {
+              "member_bytes": 23770,
+              "value_bytes": 2330
+            },
+            "funding_type": {
+              "member_bytes": 31490,
+              "value_bytes": 11390
+            },
+            "id": {
+              "member_bytes": 10953,
+              "value_bytes": 4253
+            },
+            "issue": {
+              "member_bytes": 101686,
+              "value_bytes": 90966
+            },
+            "period_id": {
+              "member_bytes": 17420,
+              "value_bytes": 1340
+            },
+            "program_group": {
+              "member_bytes": 35350,
+              "value_bytes": 13910
+            },
+            "raw_text": {
+              "member_bytes": 27832,
+              "value_bytes": 13092
+            },
+            "source_card_id": {
+              "member_bytes": 25290,
+              "value_bytes": 2510
+            },
+            "source_context_json": {
+              "member_bytes": 2798890,
+              "value_bytes": 2769410
+            },
+            "source_table_number": {
+              "member_bytes": 32900,
+              "value_bytes": 3420
+            },
+            "state": {
+              "member_bytes": 25656,
+              "value_bytes": 14936
+            },
+            "value_kind": {
+              "member_bytes": 31088,
+              "value_bytes": 13668
+            },
+            "year": {
+              "member_bytes": 14740,
+              "value_bytes": 5360
+            }
+          },
+          "punctuation_bytes": 22781,
+          "row_count": 1340,
+          "total_bytes": 3253954
+        },
+        "largest_departments": [
+          {
+            "bytes": 281427,
+            "department": "Sosyal Destek Müdürlüğü"
+          },
+          {
+            "bytes": 266069,
+            "department": "Mali Hizmetler Müdürlüğü"
+          },
+          {
+            "bytes": 244060,
+            "department": "Yazı İşleri Müdürlüğü"
+          },
+          {
+            "bytes": 232667,
+            "department": "Kültür, Sanat ve Sosyal İşler Müdürlüğü"
+          },
+          {
+            "bytes": 220097,
+            "department": "Fen İşleri Müdürlüğü"
+          }
+        ],
+        "populated_departments": 34,
+        "top_level": {
+          "members": {
+            "catalogue": {
+              "member_bytes": 94909,
+              "value_bytes": 94897
+            },
+            "cost_reconciliation": {
+              "member_bytes": 985524,
+              "value_bytes": 985502
+            },
+            "departments": {
+              "member_bytes": 5638292,
+              "value_bytes": 5638278
+            },
+            "economics": {
+              "member_bytes": 12613,
+              "value_bytes": 12601
+            },
+            "period": {
+              "member_bytes": 13,
+              "value_bytes": 4
+            },
+            "program_costs": {
+              "member_bytes": 763652,
+              "value_bytes": 763636
+            },
+            "schema_version": {
+              "member_bytes": 22,
+              "value_bytes": 5
+            },
+            "sections": {
+              "member_bytes": 13,
+              "value_bytes": 2
+            }
+          },
+          "punctuation_bytes": 9,
+          "total_bytes": 7495047
+        }
+      },
+      "book_snapshot_seconds": 1.1136214989999758,
+      "candidates": {
+        "codecs": {
+          "bzip2": {
+            "compressed_bytes": 266440,
+            "compression_peak_bytes": 8133658,
+            "compression_seconds": 0.7814070739999579,
+            "decompression_peak_bytes": 21529025,
+            "decompression_seconds": 0.07885877900002924,
+            "envelope_bytes": 355436,
+            "lossless_roundtrip": true,
+            "saved_bytes": 7181094
+          },
+          "gzip": {
+            "compressed_bytes": 389949,
+            "compression_peak_bytes": 1799282,
+            "compression_seconds": 0.06552355299999135,
+            "decompression_peak_bytes": 21959174,
+            "decompression_seconds": 0.006743883000012829,
+            "envelope_bytes": 520111,
+            "lossless_roundtrip": true,
+            "saved_bytes": 7016419
+          },
+          "xz": {
+            "compressed_bytes": 237512,
+            "compression_peak_bytes": 33122643,
+            "compression_seconds": 0.13935419699998874,
+            "decompression_peak_bytes": 25759081,
+            "decompression_seconds": 0.008271337999985917,
+            "envelope_bytes": 316861,
+            "lossless_roundtrip": true,
+            "saved_bytes": 7219669
+          }
+        },
+        "lossless_pool_roundtrip": true,
+        "sizes": {
+          "drop_cost_reconciliation": {
+            "bytes": 6551005,
+            "saved_bytes": 985525,
+            "under_2000000": false
+          },
+          "drop_errors_warnings": {
+            "bytes": 6798988,
+            "saved_bytes": 737542,
+            "under_2000000": false
+          },
+          "pool_errors_warnings": {
+            "bytes": 6916028,
+            "saved_bytes": 620502,
+            "under_2000000": false
+          }
+        }
+      },
+      "checks": {
+        "count": 607,
+        "errors": 1750,
+        "warnings": 318
+      },
+      "freeze_program_payload_seconds": 1.8502229550000493,
+      "frozen_payload_bytes": 7525888,
+      "json_loads": {
+        "input_str_bytes": 14675752,
+        "peak_bytes": 16176845,
+        "retained_bytes": 16173661,
+        "seconds": 0.14793012899997393
+      },
+      "publication_checks_seconds": 1.1335742080000273,
+      "publication_snapshot": {
+        "members": {
+          "activity_contract_version": {
+            "member_bytes": 33,
+            "value_bytes": 5
+          },
+          "approval_reference": {
+            "member_bytes": 49,
+            "value_bytes": 28
+          },
+          "basis": {
+            "member_bytes": 23,
+            "value_bytes": 15
+          },
+          "book_sha256": {
+            "member_bytes": 80,
+            "value_bytes": 66
+          },
+          "catalogue": {
+            "member_bytes": 94909,
+            "value_bytes": 94897
+          },
+          "cost_reconciliation": {
+            "member_bytes": 985524,
+            "value_bytes": 985502
+          },
+          "definition_contract_version": {
+            "member_bytes": 35,
+            "value_bytes": 5
+          },
+          "departments": {
+            "member_bytes": 5669063,
+            "value_bytes": 5669049
+          },
+          "economics": {
+            "member_bytes": 12613,
+            "value_bytes": 12601
+          },
+          "kaynak_kitap_uyarilari": {
+            "member_bytes": 9328,
+            "value_bytes": 9303
+          },
+          "kaynak_kitap_uyarilari_sha256": {
+            "member_bytes": 98,
+            "value_bytes": 66
+          },
+          "load_reference": {
+            "member_bytes": 1058,
+            "value_bytes": 1041
+          },
+          "period": {
+            "member_bytes": 13,
+            "value_bytes": 4
+          },
+          "program_costs": {
+            "member_bytes": 763652,
+            "value_bytes": 763636
+          },
+          "schema_version": {
+            "member_bytes": 22,
+            "value_bytes": 5
+          },
+          "sections": {
+            "member_bytes": 13,
+            "value_bytes": 2
+          }
+        },
+        "punctuation_bytes": 17,
+        "total_bytes": 7536530
+      },
+      "publications_before": 0
+    }
+  },
+  "zlib": "1.3.2"
+}
