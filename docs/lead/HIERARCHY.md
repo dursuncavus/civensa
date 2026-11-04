@@ -1,11 +1,12 @@
-# CIVENSA AI HIERARCHY — v1.7
+# CIVENSA AI HIERARCHY — v1.8
 
 Status: ACTIVE — canonical for all Civensa work
-Date: 2026-10-24
+Date: 2026-11-04 (v1.8)
 Decided by: Dursun Çavuş (owner), designed by Claude
 Global rules: AI_WORKING_CONSTITUTION v1.2 (Google Drive, global rules folder; rules 36–38 apply).
 Overrides for Civensa: AI_ROUTING_MATRIX v1.0 sections 1, 2 and 6 (already marked invalid for Civensa).
 
+Change note (v1.8, D-408, owner 4 Nov 2026 18:19 "Artık sen de aktif olabilirsin. Denetimden fazlası olabilirsin."): the lead (Claude) may also implement tasks itself (§1 LEVEL 2 f). Gap: Codex is one serial lane and the Max plan leaves lead capacity unused (D-400); tasks that need deep lead context (book IDML analysis, data verification) lose detail when handed over. Review stays with a different model family: Codex ("@codex review" on the PR) + CI. Acceptance check: the first lead-coded task merges with CI green and a Codex review with at most one fix round. Limitation: the lead sandbox cannot install Python packages (pypi blocked) → CI is the only test run until the owner allows pypi.org and files.pythonhosted.org.
 Change note (v1.7, D-384, result of the owner-approved head-to-head D-379/D-381): third coding lane = Gemini in Google Antigravity (Gemini 4 Argon, High) — 95/100 vs DeepSeek V4 Pro 85 and V4.1 Flash 85. DeepSeek returns to backup lead + optional first-pass reviewer only. Antigravity delivery: task in ~/development/civ###-gemini/TASK.md, output CIV-###.patch + RESULT.md, lead applies/pushes/reviews; no GitHub credential in Antigravity.
 Change note (v1.6, D-378, owner 3 Nov 2026 15:52 "Deepseek tarafını da kodlama için kullanabilirsin"): DeepSeek may also implement small, self-contained tasks (§2 e). Gap: a third coding lane when both Codex lanes are busy. Acceptance check: trial CIV-170 — patch applies, CI green, Claude review passes with at most one fix round. Delivery via workspace patch (no GitHub account); Claude pushes, CI tests, Claude reviews. DeepSeek code is never reviewed or merged by DeepSeek acting as backup lead.
 Change note (v1.5, D-292, owner "kural onay" 27 Oct 2026): MERGE no longer needs behind 0 when the PR's files do not overlap the newer phase5 commits; full suite runs on every phase5 push; red phase5 → revert the last merge.
@@ -17,7 +18,7 @@ Change note (v1.0): Civensa decision authority moved from ChatGPT/Nexa to Claude
 
 ## Türkçe özet (kullanıcı için)
 - Civensa'da kararı Claude verir. Claude yokken DeepSeek sınırlı yetkiyle yedek liderdir; Claude dönünce onun kararlarını kontrol eder.
-- Kod yazan: Codex; küçük, kendi içinde kapalı işlerde Antigravity'deki Gemini de (v1.7, CIV-170 karşılaştırmasının kazananı). Kodu, yazan model ailesinden farklı biri inceler (Claude; yedekte DeepSeek).
+- Kod yazan: Codex; küçük, kendi içinde kapalı işlerde Antigravity'deki Gemini de (v1.7). YENİ (v1.8): Claude da kendi görevlerini kodlar; onun kodunu Codex inceler, CI test eder. Kodu, yazan model ailesinden farklı biri inceler.
 - Claude, incelediği ve CI'ı yeşil olan PR'ları phase5 geliştirme dalına kendisi birleştirir; düzeltmeleri Codex'e PR yorumuyla gönderir; gecede iki kez kendiliğinden kontrol yapar. Ana dal, yayın ve canlı sistem yine Dursun'da.
 - YENİ (v1.4): Kurallar, güncel durum, kararlar ve görev paketleri GitHub deposundaki `docs/lead/` klasöründe. Drive'da sadece genel anayasa ve eski kayıt arşivi kalır.
 - Yeni Codex görevini Dursun başlatır. Görev metinleri İngilizce, Dursun ile konuşma Türkçe.
@@ -49,6 +50,7 @@ a) Codex (ChatGPT Pro) — implementation and tests. Receives only packages writ
 b) Gemini (Google AI Pro, notebook "Civensa – AI Kurumsal Raporlama Sistemi") — research gate and independent review of CRITICAL decisions. Output is evidence, not a decision.
 c) DeepSeek — optional first-pass reviewer for large PRs (D-191) while Claude is lead.
 e) Gemini in Google Antigravity (Gemini 4 Argon, High) — coder for small, self-contained tasks (v1.7, D-384; replaces the v1.6 DeepSeek coding trial). Package in English, saved as docs/lead/tasks/CIV-###.md and copied to ~/development/civ###-gemini/TASK.md on the owner's Mac. Output: CIV-###.patch (git format-patch, one commit) + RESULT.md. Claude (Mac linked) applies it on branch task/civ-###-gemini, pushes, opens the PR, CI judges, Claude reviews (different model family). Same hard rules as Codex (AGENTS.md); no push, merge, deploy or live database; the owner answers its permission prompts (allow clone/install/test, refuse git push). Migrations, auth and live-write logic stay with Codex.
+f) Claude, the lead, as coder (v1.8, D-408) — takes a task itself when it is not waiting on the owner's dispatch and needs lead context. Same package (docs/lead/tasks/CIV-###.md, header "Coder: Claude"), same AGENTS.md hard rules. Branch task/civ-###-claude from phase5, PR titled with the task ID, description lists files, CI results and what was not verified. Review: comment "@codex review" on the PR; MERGE (§1) applies with the Codex review in place of the lead review (no open HIGH/MEDIUM finding from Codex; the lead answers or fixes each Codex finding and records it). The lead never reviews its own code as the only reviewer. Escalation list (§4) unchanged.
 d) GitHub Actions CI — test judge. TESTED = CI green on that exact commit.
 
 OUTSIDE THE CIVENSA CHAIN
