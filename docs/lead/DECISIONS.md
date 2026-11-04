@@ -1172,3 +1172,10 @@ Decision:
 3. Cheap, independent memory fix now: CIV-176 — metadata-only Publication loads (release_service, audit_display, activity-reports index/detail) stop loading snapshot_json; integrity digest computed in PostgreSQL.
 4. #369 merged after update-branch and CI green on the new head.
 Next IDs: task CIV-177, decision D-402.
+
+## D-402 (4 Nov 2026 ~15:45–16:00 Istanbul, lead, live session CV Lider 57) — 2026 activity mapping draft ready for Ali
+Done per D-400. Inputs (read-only): live queue export + Faaliyet Eşleştirme choices for period 2026 (built-in browser, owner's Strategy session; session period restored to 2027 afterwards), and the 111 activity description tables of the approved 2026 IDML (1aaa0bb8…).
+Draft: all 128 activities without an alt program get one choice from their own department's indicator subprograms, with evidence and a confidence label: Yüksek 79 · Orta 34 · Düşük 15. Duplicate activity names inside a department (e.g. 1178/1181, 1060/1062, 1065/1067, 1122/1124, 1141/1143) are split across the two subprograms. 1134 (göçmen veri seti): the book has GÖÇ YÖNETİMİ but it is not among Sosyal Hizmetler's indicator subprograms → Düşük. 1205 (Tarım Marketi) appears under two subprograms in the book → Düşük.
+DOĞRULANDI: the same CSV, rebuilt in the browser from the live export, passed POST /api/activity-mappings/import-preview (validation only, no write): ok, 128/128; sha256 22ac2e45def6bd01… identical to docs/lead/data/2026-faaliyet-eslestirme-taslagi.csv.
+Review page for Ali: https://claude.ai/artifact/HyMpQkTioe2VtC1tfGZYxg . Nothing applied by the lead. 9 Nov: Ali reviews (Düşük first), then uploads via Faaliyet Eşleştirme (preview → apply, revertible batch). The 46 activities that already have an alt program but no card are not in this draft.
+Next IDs: task CIV-177, decision D-403.
