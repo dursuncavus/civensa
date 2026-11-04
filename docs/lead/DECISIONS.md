@@ -1214,3 +1214,11 @@ Decision (lead): CIV-178 (package tasks/CIV-178.md, Codex GPT-6.1 Sol, yüksek):
 Owner action (not Ali-blocked): export the 2025 Faaliyet Raporu InDesign book as IDML and attach it — AR-13 official FR look; acceptance is "Ali Abi + grafik tasarımcı" (CIV-062), the designer is the owner.
 Release of CIV-175/176/177 (+178 when merged) is prepared for the owner before 9 Nov so Ali sees the period-bound dashboard.
 Next IDs: task CIV-179, decision D-407.
+
+## D-407 (4 Nov 2026 ~18:50 Istanbul, owner + lead, live session CV Lider 59) — 2025 Faaliyet Raporu IDML in the repo (AR-13 source)
+BEYAN (owner 18:12): attached the 2025 Faaliyet Raporu InDesign book as IDML (D-406 owner action).
+DOĞRULANDI: committed as docs/activity-report/source/2025-faaliyet-raporu.idml, sha256 d426743f42271b0cb7518790f2c4cc135e0bbd661c4777116adb27b47241cefb, 4,607,233 B, 145 spreads (~290 pages), 494 stories with text, 230 tables. Structure: cover "2025 FAALİYET RAPORU", Başkanın Mesajı, 2050 vizyonu, general sections (Gurur Tablomuz, ilçe tarihi/coğrafya, Kurumsal Yapı, Yönetim ve İç Kontrol Sistemi, müdürler, 2025–2029 stratejik amaç/hedefler), department chapters grouped under policy separators (Kurumsal Yönetim, İnsan Odaklı Hizmetler, Sürdürülebilir Gelecek ve İklim, Kentsel Dönüşüm ve Afet, Kamusal Mekân ve Kıyı, Bütüncül Kent, Uluslararası İlişkiler), then Mali Değerlendirme and Performans Değerlendirmesi ve Kurumsal Kapasite. Main styles: "tablo yazı" (4,352), "hizmet noktaları taplo yazı", "Metin", "BOLUM BASLİK", "SEPERATÖR BAŞLIK".
+BELİRSİZ: the file holds two İÇİNDEKİLER stories with different page numbers (likely a leftover draft TOC); whether this is the printed final → confirm with the owner when the AR-13 spec is written.
+Public municipal document → in the repo, same reasoning as the approved PP IDMLs (D-320).
+Next (lead, after CIV-178 review): map the 2025 book's sections/tables to Civensa Faaliyet Raporu data (ar_* tables, activity sections export) and write the AR-13 package (official FR look: export or IDML round-trip).
+Next IDs: task CIV-179, decision D-408.
