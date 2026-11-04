@@ -39,12 +39,12 @@
 <section class="index-panel"><h2>Word ve PDF çıktıları</h2>
 {% for item in reports %}{% if user.role=='strategy' or (item.report.department_id and item.report.department_id==user.department_id) %}
 <article class="export-report"><h3>{{ item.report.year }} · {{ item.report.department }}</h3>
-<details class="section-export"><summary>Dışa aktar</summary><div class="export-items"><a class="button" href="/activity-sections/reports/{{ item.report.id }}/export.docx">Word olarak indir</a> <a class="button" href="/activity-sections/reports/{{ item.report.id }}/export.pdf">PDF olarak indir</a> <a class="button" href="/activity-sections/reports/{{ item.report.id }}/typeset.json">Dizgi verisi (JSON)</a></div></details>
+<details class="section-export"><summary>Dışa aktar</summary><div class="export-items"><a class="button" href="/activity-sections/reports/{{ item.report.id }}/export.docx">Word olarak indir</a> <a class="button" href="/activity-sections/reports/{{ item.report.id }}/export.pdf">PDF olarak indir</a> <a class="button" href="/activity-sections/reports/{{ item.report.id }}/typeset.json">Dizgi verisi (JSON)</a> <a class="button" href="/activity-sections/reports/{{ item.report.id }}/indesign.txt">InDesign metni</a></div></details>
 {% if not item.report.department_id %}
 {% if item.report.reopened %}<p class="ar-warning" role="alert">Güncel sürüm gerekçeyle açıldı; düzeltmeden sonra yeni sürüm oluşturun.</p>{% endif %}
 {% for release in item.report.releases %}
 <p><strong>{% if not loop.last %}Sürüm {{ release.version }} · {% endif %}{{ release.label }}</strong>
-{% for format,label in [('docx','Word'),('pdf','PDF'),('json','JSON')] %} · <a href="/activity-sections/reports/{{ item.report.id }}/export.{{ format }}?version={{ release.version }}">Sürüm {{ release.version }} {{ label }} indir</a>{% endfor %} · <a href="/activity-sections/reports/{{ item.report.id }}/typeset.json?version={{ release.version }}">Dizgi verisi (JSON)</a></p>
+{% for format,label in [('docx','Word'),('pdf','PDF'),('json','JSON')] %} · <a href="/activity-sections/reports/{{ item.report.id }}/export.{{ format }}?version={{ release.version }}">Sürüm {{ release.version }} {{ label }} indir</a>{% endfor %} · <a href="/activity-sections/reports/{{ item.report.id }}/typeset.json?version={{ release.version }}">Dizgi verisi (JSON)</a> · <a href="/activity-sections/reports/{{ item.report.id }}/indesign.txt?version={{ release.version }}">InDesign metni</a></p>
 {% if release.reopen %}<p>Gerekçeyle açıldı · {{ release.reopen.actor_name or ("Kullanıcı " ~ release.reopen.actor_id) }} · {{ release.reopen.created_at|ar_time }}</p><p class="ar-paragraph">{{ release.reopen.reason }}</p>{% endif %}
 {% endfor %}{% endif %}
 </article>{% endif %}{% endfor %}</section>
