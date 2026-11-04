@@ -1142,3 +1142,15 @@ Connection string entered only in the hidden /dev/tty prompt (never in chat or s
 Release PR #364 phase5 → main opened (no migration, head c162); release migration rehearsal dispatched. Owner: merge #364 when green → lead pre-deploy backup → Render "Deploy latest commit" → /health. Owner: delete the two decrypted dump folders (~/civensa-yedek/20261104-*/cozulmus); encrypted copies stay.
 Not checked yet: UI look of the 2026 period (after the release, since CIV-165/169 display code is not live yet).
 Next IDs: task CIV-176, decision D-399.
+
+## D-399 (4 Nov 2026 ~14:30–15:10 Istanbul, owner + lead, live session CV Lider 56) — release #364 live; 2026 UI check passed
+Session start: Gmail — no mail from or to Ali Abi since 3 Nov. Open PRs: none. CIV-175: no branch or PR → not started (DOĞRULANDI).
+DOĞRULANDI: owner merged #364 (11:29Z) → main 7437119. Lead dispatched pre-deploy backup run 41822123609 → success (civensa-db-backup-20261104-1135Z). Owner Render civensa-pilot "Deploy latest commit"; lead read the Render deploy page in the built-in browser: "Deploy succeeded | Live", source 7437119, 14:43 GMT+3. /health (owner + lead): status ok, production, database ok, ready true, migration current = head = c162a1b2c3d4. CIV-163/165–174 and lead fixes #360–#362 are live.
+2026 UI check (lead, built-in browser, owner signed in as Strategy; read-only, nothing saved), DOĞRULANDI:
+- 2026 period is "Taslak", 2027 stays "Etkin". Dashboard 2026: 36 directorates; per-directorate counts add up to 226 indicators / 182 activities (= D-398 load); Ar-Ge, Koordinasyon, İşletme ve İştirakler empty (as in the book). The 4 period names show (Afet İşleri ve Risk Değerlendirme, Basın Yayın ve Halkla İlişkiler, Harita ve Planlama, Sosyal Hizmetler).
+- Sağlık İşleri 2026 page: 5 indicators, read-only in Strategy view; starred book values shown as blank with "kaynak değeri doğrulanmalı (*13.500)"; blanks show blank/"—", not 0; no technical "name:" keys visible; Genel Bütçe Toplamı 2026 30.970.987,00 = book; 2025 columns "Eksik veri" (BELİRSİZ whether the 2026 book has 2025 cost columns; low).
+- Faaliyet Eşleştirme 2026: 174 activities wait for mapping (alt program missing 128, card 148, catalogue 174; 94 text suggestions, 16 strong). Nihai Rapor 2026: 2,871 rows with publication blockers — expected (D-390 K1); 2026 is published through "Onaylı kitaptan yayınla" (CIV-174), not the authoring gates.
+LOW (watch): the 2026 dashboard shows "Eksikleri / hataları var" with last action 21.09.2026 for Dış İlişkiler, Hukuk, Sağlık, İmar although the 2026 rows were cleared and reloaded on 4 Nov — the status/last-action source is probably not period-bound. Check in the next Codex UI task; not blocking.
+Decision: the 2026 activity → alt program/card mapping (128/148) is Strategy work for the 2026 FR (cost actuals by programme), not a loader change (system rule: no name matching; only 8 exact links). Add to the Ali list for 9 Nov.
+Next: owner starts CIV-175 in Codex (package tasks/CIV-175.md, unchanged); lead reviews the PR. Then the 2026 publication decision.
+Next IDs: task CIV-176, decision D-400.
