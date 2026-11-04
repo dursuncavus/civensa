@@ -4,6 +4,7 @@ from collections import defaultdict
 from decimal import Decimal, InvalidOperation
 
 from sqlalchemy import select
+from sqlalchemy.orm import defer
 
 from .budget_models import BudgetOperation
 from .models import (
@@ -272,8 +273,11 @@ def audit_lookups(db, rows, safe_details):
 
     objects_by_model = {}
     for model, identifiers in ids_by_model.items():
+        query = select(model).where(model.id.in_(identifiers))
+        if model is Publication:
+            query = query.options(defer(Publication.snapshot_json))
         objects_by_model[model] = {
-            item.id: item for item in db.scalars(select(model).where(model.id.in_(identifiers))).all()
+            item.id: item for item in db.scalars(query).all()
         }
 
     entity_names = {}
