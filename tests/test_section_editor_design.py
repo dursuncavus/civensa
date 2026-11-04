@@ -94,7 +94,12 @@ def test_012_preserves_all_fields_and_action_targets(section_client, db, sample,
         key = f'{actor}/{state}/{code}'
         parsed = Controls(response.text)
         actual = parsed.controls
-        expected = frozen['contracts'][frozen['cases'][key]]
+        # CIV-180 intentionally adds exactly two export links. Keep the frozen
+        # baseline intact and continue checking every pre-existing control.
+        expected = [*frozen['contracts'][frozen['cases'][key]],
+            ['a', [['href', f'/activity-sections/reports/{doc.id}/sunum'],
+                   ['rel', 'noopener'], ['target', '_blank']]],
+            ['a', [['href', f'/activity-sections/reports/{doc.id}/sunum.html']]]]
         assert Counter(json.dumps(c, sort_keys=True) for c in actual) == Counter(json.dumps(c, sort_keys=True) for c in expected), key
         # In the frozen output all field/button controls belong to the preceding
         # form record. Also verify actual nesting, so moving an unchanged field

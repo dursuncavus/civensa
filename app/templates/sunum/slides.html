@@ -1,0 +1,53 @@
+{% macro footer(s, code) -%}
+<div class="foot"><span>Kaynak: <b>{{ s.source }}</b></span><span>{% if code=='TASLAK' %}<b class="sample">TASLAK</b>{% else %}Doğrulama kodu <b>{{ code }}</b>{% endif %}</span></div>
+{%- endmacro %}
+
+{% macro cover(s, logo) -%}
+<div class="band"><span>{{ s.year }}</span></div>
+<img class="logo" src="{{ logo }}" alt="{{ s.organization }} logosu">
+<div class="cover-title"><h1>{{ s.department }}<br>{{ s.year }} Faaliyet Raporu</h1><p class="lead">{{ s.subtitle }}</p></div>
+{%- endmacro %}
+
+{% macro map(s) -%}
+<div class="eyebrow">Sunum haritası</div><h2>{{ s.title }}</h2>
+<div class="map" style="grid-template-columns:repeat({{ s.tiles|length }},1fr)">
+{% for tile in s.tiles %}<button type="button" class="tile" data-id="{{ tile.tile_id }}" data-go="{{ tile.id }}"><span class="no">{{ tile.number }}</span><span><span class="t">{{ tile.title }}</span><span class="s">{{ tile.subtitle }}</span></span></button>{% endfor %}
+</div>
+{%- endmacro %}
+
+{% macro separator(s, logo) -%}
+<img class="sep-logo" src="{{ logo }}" alt="Belediye logosu">
+<div class="tile" data-id="{{ s.tile_id }}"><div class="no">{{ s.number }}</div><div><div class="t">{{ s.title }}</div><div class="s">{{ s.subtitle }}</div></div></div>
+{%- endmacro %}
+
+{% macro kpi(s) -%}
+<div class="kpis{% if s.figures|length>4 %} small{% endif %}" style="grid-template-columns:repeat({{ 4 if s.figures|length>4 else s.figures|length }},1fr)">
+{% for figure in s.figures %}<div class="kpi{% if loop.first %} hero{% endif %}"><div><span class="v"{% if figure.value is not none %} data-count="{{ figure.value }}" data-decimals="{{ figure.decimals }}"{% endif %}>{{ figure.display }}</span><span class="u">{{ figure.unit }}</span></div><div class="l">{{ figure.label }}</div></div>{% endfor %}
+</div>
+{%- endmacro %}
+
+{% macro chart(s) -%}
+<div class="chart" data-chart role="img" aria-label="{{ s.title }}" style="height:{{ s.height }}px"></div>
+<script type="application/json" class="chart-data">{{ {'variant':s.variant, 'categories':s.categories, 'series':s.series, 'unit':s.unit|default(''), 'height':s.height}|tojson }}</script>
+{%- endmacro %}
+
+{% macro table(s) -%}
+<table class="t"><thead><tr>{% for header in s.headers %}<th scope="col"{% if s.numeric_columns[loop.index0] %} class="n"{% endif %}>{{ header }}</th>{% endfor %}</tr></thead>
+<tbody>{% for row in s.rows %}<tr class="row" style="--d:{{ s.row_delays[loop.index0] }}ms">{% for cell in row %}<td{% if s.numeric_columns[loop.index0] %} class="n"{% endif %}>{{ cell }}</td>{% endfor %}</tr>{% endfor %}</tbody></table>
+<p class="cont">{{ s.continuation }}</p>
+{%- endmacro %}
+
+{% macro bullets(s) -%}
+<ul class="b">{% for bullet in s.bullets %}<li class="fragment fade-up">{{ bullet }}</li>{% endfor %}</ul>
+{% if s.continuation %}<p class="cont">{{ s.continuation }}</p>{% endif %}
+{%- endmacro %}
+
+{% macro quote(s) -%}
+<div class="quote">{% for value in s.quotes %}<p>{{ value }}</p>{% endfor %}</div>
+{%- endmacro %}
+
+{% macro closing(s, logo, code) -%}
+<img class="logo" src="{{ logo }}" alt="Belediye logosu">
+<div class="closing-title"><h1>{{ s.title }}</h1><p class="lead">{{ s.subtitle }}</p>
+<div class="verify"><div class="code">{{ code }}</div><div class="txt">{% if code=='TASLAK' %}Bu sunum taslak Faaliyet Raporu'ndan otomatik üretilmiştir. Onaylı sunum için raporun onayını tamamlayın.{% else %}Bu sunumdaki rakamlar Civensa'daki onaylı Faaliyet Raporu'ndan otomatik üretilir. Doğrulama kodunu rapor sayfasındaki kodla karşılaştırın.{% endif %}</div></div></div>
+{%- endmacro %}
