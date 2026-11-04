@@ -122,7 +122,12 @@ def test_hidden_unit_heading_prints_when_it_has_text():
 def test_budget_tables_keep_identifying_number_columns():
     data = contract()
     table = next(t for t in data['tables'] if t['kind'] == 'budget' and any(c[0] == 'program_id' for c in t.get('columns', [])))
+    row_id = table['id'] + ':row:test'
+    table['row_ids'] = [row_id]
+    data['rows'].append({'id': row_id, 'table_id': table['id'], 'values': {'program_id': 7, 'subprogram_id': 9,
+        'department_id': 2, 'actual': {'display': '1.000,00', 'exact': '1000.00'}}})
     body = text(data)
+    assert '>7<CellEnd:>' in body and '>9<CellEnd:>' in body
     labels = dict(table['columns'])
     assert f">{labels['program_id']}<CellEnd:>" in body and f">{labels['subprogram_id']}<CellEnd:>" in body
 
