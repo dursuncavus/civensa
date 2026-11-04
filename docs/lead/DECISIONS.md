@@ -1308,3 +1308,10 @@ Decision (lead): CIV-180 (package docs/lead/tasks/CIV-180.md, merged #392 → 1b
 DOĞRULANDI: the lead started it itself in the owner's built-in browser (chatgpt.com/codex, owner already signed in; site approval given): Bulut → civensa, GPT-6.1 Sol, Yüksek; prompt = title + pointer to the package file (package is the scope authority). Thread "CIV-180 Faaliyet Raporu sunumu", started ~22:50.
 Lead check scheduled (in-session reminder ~00:19): review the PR, @codex follow-ups, merge if reviewed + CI green + behind 0.
 Next IDs: task CIV-181, decision D-417.
+
+## D-417 (5 Nov 2026 ~00:10–01:25 Istanbul, lead, scheduled in-session night checks of CV Lider 61) — CIV-180 reviewed and merged
+DOĞRULANDI: Codex opened #394 "CIV-180 — Faaliyet Raporu sunumu" (engine app/sunum/, templates app/templates/sunum/, vendored reveal.js 6.0.1 + ECharts 6.1.0 with licences, routes /sunum and /sunum.html with the export.pdf authorization, deck-only CSP via SunumSecurityHeaders for 200 text/html deck responses, verification code = sha256 of the export.json bytes, links "Sunumu aç"/"Sunumu indir" + code on the FR editor page; single file 1,82 MB; no migration).
+Lead review (Claude, other model family) on dc18c63 → 4 fixes requested (PR comment 6642403797 + Codex thread follow-up): separator slides without footer; horizontal bars sorted by value with height from row count; numeric table columns right-aligned; editor page returns TASLAK before serialising the payload. Codex fixed all four with tests on 6d64e87; CI green (test 18/0, 18/1, secrets, backup-security), behind 0, non-draft → lead squash-merged → ab7551a.
+Not live yet: goes live with the next release (owner merge to main + deploy).
+Open for the owner: review the generated deck on the real 2025/2026 FR data once FR data exist in Civensa; owner's design remarks (D-415 Fen İşleri deck) become small follow-up tasks.
+Next IDs: task CIV-181, decision D-418.
