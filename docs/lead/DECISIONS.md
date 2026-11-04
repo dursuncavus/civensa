@@ -1222,3 +1222,11 @@ BELİRSİZ: the file holds two İÇİNDEKİLER stories with different page numbe
 Public municipal document → in the repo, same reasoning as the approved PP IDMLs (D-320).
 Next (lead, after CIV-178 review): map the 2025 book's sections/tables to Civensa Faaliyet Raporu data (ar_* tables, activity sections export) and write the AR-13 package (official FR look: export or IDML round-trip).
 Next IDs: task CIV-179, decision D-408.
+
+## D-408 (4 Nov 2026 ~18:20–18:35 Istanbul, owner + lead, live session CV Lider 59) — HIERARCHY v1.8: the lead also codes
+BEYAN (owner 18:19): "Artık sen de aktif olabilirsin. Denetimden fazlası olabilirsin." — a hierarchy change approved by the owner (§4).
+Decision: HIERARCHY.md v1.8 adds LEVEL 2 f (Claude as coder): own tasks on task/civ-###-claude branches, reviewed by Codex ("@codex review") + CI, merged by the lead under the §1 MERGE rule with the Codex review in place of the lead review. Gap, acceptance check and limitation in the v1.8 change note. Constitution rules 17/18 hold (gap stated; different model family reviews).
+Limitation (DOĞRULANDI 18:00): the lead sandbox gets "connect_rejected" for pypi.org → no local pytest; owner can allow pypi.org + files.pythonhosted.org on claude.ai (Settings → Capabilities, per the proxy notice). Until then CI is the only test run (slower loop, ~20 min per run).
+Split now: Codex → CIV-178 (provenance + mapped size). Lead → AR-13 (official Faaliyet Raporu look from the 2025 IDML, D-407): analysis + package CIV-179, coded by the lead.
+Sync (rule 35): DeepSeek mirror GUNCEL-DURUM.md to be refreshed at the next Mac-linked session; BACKUP_LEAD.md unchanged (backup lead does not code).
+Next IDs: task CIV-179, decision D-409.
