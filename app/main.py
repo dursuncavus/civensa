@@ -19,7 +19,7 @@ from fastapi import FastAPI, Request, Response, Depends, Form, HTTPException, Up
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from sqlalchemy import select, inspect, func, exists, false, update, or_
+from sqlalchemy import select, inspect, func, exists, false, update, or_, and_
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, selectinload
 from starlette.middleware.sessions import SessionMiddleware
@@ -871,7 +871,7 @@ async def save_personnel_costs(department_id: int, request: Request, db: Session
             row.raw_text = row.raw_text or str(data[key])
         else:
             db.add(DepartmentCostValue(department_id=department_id, period_id=period.id, year=col["year"], value_kind=col["kind"], category="personnel_sgk", amount=amount))
-    db.commit(); log(db, user, "personnel_cost_update", "department", department_id)
+    db.commit(); log(db, user, "personnel_cost_update", "department", department_id, f"period_id={period.id}")
     return pp_write_result(period, department_id)
 
 
@@ -2333,27 +2333,49 @@ def department_progress_overview(db: Session, period: ReportingPeriod):
     for activity in activities:
         activities_by_department.setdefault(activity.department_id, []).append(activity)
 
-    department_users = db.scalars(select(User).where(User.role == "department", User.is_active.is_(True))).all()
+    department_users = db.scalars(select(User).where(
+        User.role == "department", User.is_active.is_(True), User.department_id.is_not(None)
+    )).all()
     user_department = {item.id: item.department_id for item in department_users if item.department_id}
     departments_with_users = {item.department_id for item in department_users if item.department_id}
     last_activity = {}
-    # Only count edits that still point to real period data. This deliberately
-    # ignores deleted activities, including release persistence probes, so
-    # operational tests cannot make a department look as if it started work.
+    # Only count edits that still point to real data in this period. Personnel
+    # audits reference a department, so require explicit period details instead;
+    # legacy events without those details cannot start any period.
+    indicator_department = {item.id: item.department_id for item in indicators}
+    submission_department = {item.id: item.department_id for item in submissions}
     activity_department = {item.id: item.department_id for item in activities}
-    direct_actions = {"indicator_update", "personnel_cost_update", "department_submit"}
+    progress_actions = {"indicator_update", "personnel_cost_update", "department_submit", "activity_create", "activity_update"}
     if user_department:
         audit_rows = db.scalars(
             select(AuditLog)
-            .where(AuditLog.user_id.in_(list(user_department)))
+            .where(
+                AuditLog.user_id.in_(list(user_department)),
+                AuditLog.action.in_(progress_actions),
+                or_(
+                    and_(AuditLog.action == "indicator_update", AuditLog.entity_type == "indicator",
+                         AuditLog.entity_id.in_(indicator_department)),
+                    and_(AuditLog.action == "department_submit", AuditLog.entity_type == "submission",
+                         AuditLog.entity_id.in_(submission_department)),
+                    and_(AuditLog.action.in_({"activity_create", "activity_update"}),
+                         AuditLog.entity_type == "activity", AuditLog.entity_id.in_(activity_department)),
+                    and_(AuditLog.action == "personnel_cost_update", AuditLog.entity_type == "department",
+                         AuditLog.entity_id.in_(departments_with_users), AuditLog.details == f"period_id={period.id}"),
+                ),
+            )
             .order_by(AuditLog.created_at)
         ).all()
         for audit in audit_rows:
             department_id = user_department.get(audit.user_id)
-            counts_as_progress = audit.action in direct_actions
-            if audit.action in {"activity_create", "activity_update"}:
-                counts_as_progress = activity_department.get(audit.entity_id) == department_id
-            if department_id and counts_as_progress:
+            if audit.action == "indicator_update":
+                entity_department_id = indicator_department.get(audit.entity_id)
+            elif audit.action == "department_submit":
+                entity_department_id = submission_department.get(audit.entity_id)
+            elif audit.action == "personnel_cost_update":
+                entity_department_id = audit.entity_id
+            else:
+                entity_department_id = activity_department.get(audit.entity_id)
+            if department_id and entity_department_id == department_id:
                 last_activity[department_id] = audit.created_at
 
     rows = []
