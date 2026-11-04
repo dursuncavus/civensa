@@ -1179,3 +1179,14 @@ Draft: all 128 activities without an alt program get one choice from their own d
 DOĞRULANDI: the same CSV, rebuilt in the browser from the live export, passed POST /api/activity-mappings/import-preview (validation only, no write): ok, 128/128; sha256 22ac2e45def6bd01… identical to docs/lead/data/2026-faaliyet-eslestirme-taslagi.csv.
 Review page for Ali: https://claude.ai/artifact/HyMpQkTioe2VtC1tfGZYxg . Nothing applied by the lead. 9 Nov: Ali reviews (Düşük first), then uploads via Faaliyet Eşleştirme (preview → apply, revertible batch). The 46 activities that already have an alt program but no card are not in this draft.
 Next IDs: task CIV-177, decision D-403.
+
+## D-403 (4 Nov 2026 ~16:00–16:45 Istanbul, lead, live session CV Lider 58) — CIV-176 and CIV-175 merged; 9 Nov Ali page; CIV-177
+Session start: Gmail — no mail from or to Ali Abi since 3 Nov (DOĞRULANDI). Open PRs: #369 CIV-175, #371 D-402 (CV Lider 57 records, guard green), #372 CIV-176. Backup log not re-read (no lead gap since 31 Oct).
+DOĞRULANDI:
+- #371 merged → 40309a8 (Markdown/CSV only, guard green).
+- #372 CIV-176 (Codex) reviewed against tasks/CIV-176.md: load table covers every Publication path; metadata paths defer snapshot_json or select columns; activity-reports index computes encode(sha256(convert_to(snapshot_json,'UTF8')),'hex') = sha256 in PostgreSQL (service.digest is plain UTF-8 sha256 hex → equal; SQLite keeps the Python check); templates read only id/version/created_at/valid; 8 PostgreSQL tests with an >8 MB non-ASCII snapshot, a tampered copy and statement capture. Content readers unchanged, no migration. Update-branch → CI green on a963e76, behind 0 → merged → 8828250.
+- #369 CIV-175 (measurement only) update-branch twice → CI green on ffc8dc4, behind 0 → merged → 385a6fb.
+9 Nov preparation (D-387 order + D-402): checklist page "Ali Abi 9 Kasım" https://claude.ai/artifact/1TNVQZsZG9aWfmFNAPibZn (owner / together / ask Ali; book page numbers). Page numbers of the D-375 items, DOĞRULANDI from the 2026 IDML print placement (scripts/idml_printed.py): Bilgi İşlem cost p.191 / economic p.243; Çevre Koruma p.144 / p.230; İmar p.119 / p.224; Ruhsat ve Denetim economic p.218; Zabıta p.220; Veteriner p.221.
+New book finding (DOĞRULANDI, IDML text): Fen İşleri economic table p.223 prints 2027 total "1.290.738.000" (no decimals) and 2028 "1.677.960,440" (misplaced comma). Added to the Ask-Ali items; 2028 only affects outer-year columns. BELİRSİZ: how the CIV-165 loader stored that 2028 value — check when Ali answers.
+CIV-177 (package tasks/CIV-177.md, Codex GPT-6.1 Sol, orta): dashboard progress state and "Son işlem" become period-bound (D-399 LOW: 2026 showed 21.09 edits from 2027). DOĞRULANDI cause: app/main.py department_progress_overview counts indicator_update / personnel_cost_update / department_submit audit rows of any period and loads every audit row of department users.
+Next IDs: task CIV-178, decision D-404.

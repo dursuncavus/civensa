@@ -1,24 +1,24 @@
 # CIVENSA — CURRENT STATE
 
-Updated: 4 Nov 2026 ~16:00 Istanbul (live session CV Lider 57, D-402).
+Updated: 4 Nov 2026 ~16:45 Istanbul (live session CV Lider 58, D-403).
 Rules: AI_WORKING_CONSTITUTION v1.2 (Drive, global) · `HIERARCHY.md` v1.7 · `PROJECT_RULES.md` v1.4 (D-271: PRIOR ART field mandatory in every package) · `BACKUP_LEAD.md` v2.
 Backup log ("Civensa Yedek Kaydı", Drive): no entries after 31 Oct (DOĞRULANDI 3 Nov 05:45, file unchanged since 23 Oct).
 Tags: DOĞRULANDI (lead checked) · TARİHSEL (past fact) · BEYAN (owner said) · BELİRSİZ (unknown).
 
 ## Next session — start here (D-253)
-Claude live (CV Lider 57, 4 Nov ~15:40). Release #364 live (main 7437119; D-399). CIV-175 reviewed: 2026 snapshot bloat comes from the 128 unmapped activities; no codec now; 2026 publishes after Ali's mapping (D-401). 2026 mapping draft ready: docs/lead/data/2026-faaliyet-eslestirme-taslagi.csv, review page https://claude.ai/artifact/HyMpQkTioe2VtC1tfGZYxg (D-402).
-Claude's next session: `CV Lider 58 · Claude Opus 5.5 · civensa-lead`. First job: review the CIV-176 PR. Second job: prepare the 9 Nov Ali meeting (D-387 list + the 2026 mapping draft, D-402). Read this section and the last decision in DECISIONS.md first. Session start also checks Gmail for Ali Abi's mails (D-361).
+Claude live (CV Lider 58, 4 Nov ~16:45). Release #364 live (main 7437119; D-399). CIV-176 #372 and CIV-175 #369 merged into phase5 (D-403; not on main yet — no release needed before 2026 publication). 2026 mapping draft ready (D-402). 9 Nov page for Ali: https://claude.ai/artifact/1TNVQZsZG9aWfmFNAPibZn (D-403).
+Claude's next session: `CV Lider 59 · Claude Opus 5.5 · civensa-lead`. First job: review the CIV-177 PR. Second job (9 Nov): process Ali Abi's answers from the 9 Nov page; after his mapping upload, re-measure the 2026 snapshot (CIV-175 script). Read this section and the last decision in DECISIONS.md first. Session start also checks Gmail for Ali Abi's mails (D-361).
 1. Releases live (D-346/D-350). Only Ali Abi uses the system; departments are not opened until the infrastructure is complete — data comes from the old system (BEYAN, D-351/D-352). Render stays Free; Starter ($7/month) on department rollout day.
-2. Codex: CIV-172 #354 merged (D-393); CIV-174 #358 merged after two Copilot rounds (D-394): warnings stored compactly (10.9 KB), builder no longer parses snapshots. CIV-175 #369 reviewed (D-401): 2026 snapshot 25.8 MB, 21.2 MB of it repeated cost_reconciliation errors from the 128 unmapped activities; no codec now. CIV-176 (metadata loads defer snapshot_json) dispatched 4 Nov. Copilot-bot commits need a lead update-branch to run CI (action_required).
-3. 2026 PP (D-398/D-399): loaded live 4 Nov (33/105/226, 2027 protected); release #364 live; UI check passed (D-399). Next (D-401): Ali applies the 2026 mapping (9 Nov) → lead re-measures the 2026 snapshot locally (CIV-175 script; >10 MB → codec task) → Strategy publishes 2026 via "Onaylı kitaptan yayınla" (needs the "Onay dayanağı" council decision text from Ali). LOW: 2026 dashboard status/last action 21.09 on 4 directorates (D-399).
-4. Ask Ali (D-375): printed 2026 book inconsistencies — Bilgi İşlem / Çevre Koruma / İmar cost vs economic totals differ (496 / 775 / 989 TL); Ruhsat ve Denetim economic table wrong totals; Zabıta and Veteriner economic tables show the total as "Diğer Bütçe Dışı Kaynak". Loaded as printed; FR 2026 needs the correct figures.
+2. Codex: CIV-172 #354 merged (D-393); CIV-174 #358 merged after two Copilot rounds (D-394): warnings stored compactly (10.9 KB), builder no longer parses snapshots. CIV-175 #369 reviewed (D-401): 2026 snapshot 25.8 MB, 21.2 MB of it repeated cost_reconciliation errors from the 128 unmapped activities; no codec now. CIV-176 #372 merged (D-403): metadata loads no longer read snapshot_json. CIV-177 (period-bound dashboard progress) dispatched 4 Nov. Copilot-bot commits need a lead update-branch to run CI (action_required).
+3. 2026 PP (D-398/D-399): loaded live 4 Nov (33/105/226, 2027 protected); release #364 live; UI check passed (D-399). Next (D-401): Ali applies the 2026 mapping (9 Nov) → lead re-measures the 2026 snapshot locally (CIV-175 script; >10 MB → codec task) → Strategy publishes 2026 via "Onaylı kitaptan yayınla" (needs the "Onay dayanağı" council decision text from Ali). 2026 dashboard status/last action 21.09 on 4 directorates → CIV-177 (D-403).
+4. Ask Ali (D-375): printed 2026 book inconsistencies — Bilgi İşlem / Çevre Koruma / İmar cost vs economic totals differ (496 / 775 / 989 TL); Ruhsat ve Denetim economic table wrong totals; Zabıta and Veteriner economic tables show the total as "Diğer Bütçe Dışı Kaynak"; Fen İşleri p.223 2027/2028 totals malformed (D-403). Pages on the 9 Nov page. Loaded as printed; FR 2026 needs the correct figures.
 4b. Ali Abi returns from leave Monday 9 Nov 2026 (BEYAN). Prepare for that day, in D-387 order: (1) one current directorate indicator Excel (FR5); (2) Mali Hizmetler budget-actuals template (ML1); (3) printed 2026 PP book inconsistencies (D-375); (4) PR2 — approval in Civensa or on paper; (5) İç Kontrol: plan approval date + 3 council mappings; timing of the new 2026–2028 plan. Also: review + upload the 2026 mapping draft (D-402; Düşük rows first); the "Onay dayanağı" text for 2026 and 2027 (council decision date/number) for the approved-book publication (CIV-174).
 5. İç Kontrol (D-386/D-387): FR 2026 first, old plan archive only, module prepared for the new 2026–2028 plan. Open to Ali: plan approval date, 3 council mappings.
 6. Faaliyet Raporu (D-354): 7 AR items PARTIAL; checklist "FR Girdileri" https://claude.ai/artifact/5bGm5xrVbPSjM7wfv1qrMA.
 7. LOW (D-390/D-394): CIV-169 K2–K6 + publication JSON hash note; ACTION_LABELS registered from program_routes. Watch reactions to the 554 book-check items (D-324, D-352). LOW backlog (D-328). UI: only 002/003 left, waits for Ali (D-345).
 8. One live lead session at a time (D-363). Owner: check Claude Design standalone site before 14 Dec 2026 (D-363).
 9. Claude account on Max from 4 Nov 2026 (BEYAN; next charge 4 Dec). Extra capacity goes to lead analysis/preparation work (D-400). The "Claude quota" block below is TARİHSEL (Pro era).
-Next IDs: task CIV-177, decision D-403.
+Next IDs: task CIV-178, decision D-404.
 
 ## Claude quota (BEYAN, owner 27 Oct 16:21)
 - Session 11%, week 67%, weekly reset Saturday 00:00 (D-300). Copilot 96 / 1,500 credits, reset 1 Nov.
@@ -27,11 +27,11 @@ Next IDs: task CIV-177, decision D-403.
 Dispatch format (D-232, D-249): platform + environment ("Bulut → civensa") + exact model (Codex: GPT-6.1 Sol) + effort; title is the first line inside the paste block. Session end: one-line handover (D-253) after this file is rewritten.
 Evidence rule (D-252): one-screen changes → targeted tests + changed-state screenshots + contrast; all-screen capture only when shared files change, committed as a short count summary.
 
-## Open pull requests (DOĞRULANDI 4 Nov ~15:50, D-401)
+## Open pull requests (DOĞRULANDI 4 Nov ~16:45, D-403)
 | PR | Task | State | Next action |
 | --- | --- | --- | --- |
-| #369 | CIV-175 | reviewed, update-branch → CI | lead merges when green (D-401) |
-| — | CIV-176 | dispatched 4 Nov | lead reviews |
+| — | CIV-177 | dispatched 4 Nov | lead reviews |
+Merged 4 Nov (D-403): #372 CIV-176 → 8828250 · #369 CIV-175 → 385a6fb · #371 D-402 → 40309a8.
 Merged 4 Nov (D-399): #364 release phase5 → main (owner) → 7437119, deployed · #365 D-398 → e43f9a8 · #360/#361/#362 lead fixes.
 Merged 3 Nov (D-393/D-394): #354 CIV-172 → 38eb017 · #358 CIV-174 → ac17369.
 Merged 3 Nov: #356 CIV-173 Gemini → 28a2bd2 (D-392) · #336 CIV-169 → e5aa923 (D-390) · #333 CIV-168 → a5cfeee (D-382) · #342 CIV-170 Gemini → 3f7dec1 (D-384); closed #337/#343 (DeepSeek, D-384).
