@@ -10,9 +10,11 @@ import io
 import json
 import os
 from pathlib import Path
+import re
 import sys
 from tempfile import TemporaryDirectory
 import time
+import traceback
 from urllib.parse import parse_qsl
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -203,6 +205,34 @@ def require_head(db):
     versions = list(db.scalars(text('SELECT version_num FROM public.alembic_version ORDER BY version_num')))
     if versions != [HEAD]:
         raise Refusal(f'Hedef şema uyuşmuyor; yalnız {HEAD} kabul edilir. Migrasyon çalıştırmayın; sorumluya bildirin.')
+
+
+SCHEMA_NAME = re.compile(r'[a-z_][a-z0-9_]{0,62}')
+SQLSTATE = re.compile(r'[0-9A-Z]{5}')
+
+
+def failure_detail(exc):
+    """Exception class plus schema identifiers and code location only (D-396).
+
+    Driver messages can quote row values, so message text never leaves; table,
+    constraint and column names come from the schema, frame locations from code.
+    """
+    parts = [type(exc).__name__]
+    orig = getattr(exc, 'orig', None)
+    code = getattr(orig, 'sqlstate', None) or getattr(orig, 'pgcode', None)
+    if isinstance(code, str) and SQLSTATE.fullmatch(code):
+        parts.append('SQLSTATE ' + code)
+    diag = getattr(orig, 'diag', None)
+    for label, attr in (('tablo', 'table_name'), ('kısıt', 'constraint_name'), ('sütun', 'column_name')):
+        value = getattr(diag, attr, None)
+        if isinstance(value, str) and SCHEMA_NAME.fullmatch(value):
+            parts.append(f'{label} {value}')
+    frames = [frame for frame in traceback.extract_tb(exc.__traceback__)
+              if Path(frame.filename).resolve().is_relative_to(ROOT)]
+    if frames:
+        last = frames[-1]
+        parts.append(f'konum {Path(last.filename).resolve().relative_to(ROOT).as_posix()}:{last.lineno}')
+    return ', '.join(parts)
 
 
 def content_departments(db, period_id):
@@ -439,7 +469,7 @@ def execute(engine, parsed, *, organization_id, actor_id, apply=False, resume=Fa
                         # Never expose SQL/driver messages, source payloads or a URL.
                         reason = str(exc) if isinstance(exc, ValueError) else (
                             'Mevcut içe aktarma/katalog hizmeti paketi kabul etmedi; müdürlük işlemi geri alındı '
-                            f'({type(exc).__name__}). Yerel provada sorumluya inceletin.')
+                            f'({failure_detail(exc)}). Yerel provada sorumluya inceletin.')
                         output['failed'].append(dict(name=source['name'], reason=reason))
                         output['departments'][index] = dict(source_name=source['name'], action='skip', reason=reason)
                         print_progress(index + 1, total_items, source['name'], 'başarısız', time.monotonic() - started)

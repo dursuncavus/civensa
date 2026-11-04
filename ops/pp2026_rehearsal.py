@@ -334,11 +334,19 @@ def run_loader(engine, parsed, ids, record, step, **options):
     record[step] = dict(
         counts={key: int(value) for key, value in result['counts'].items()}, refusals=0,
         failed=[d['name'] for d in result['failed'] if d['name'] in names],
+        # D-396: loader reasons are its own controlled Turkish refusals or a
+        # failure_detail() of class/SQLSTATE/schema names/code location only.
+        failed_reasons=[dict(name=d['name'], reason=str(d['reason'])[:400])
+                        for d in result['failed'] if d['name'] in names],
         failed_count=len(result['failed']), skipped=len(result['skipped']),
         departments=[dict(name=d['source_name'], action=d['action']) for d in result['departments']])
     for key in ('protected_2027_before', 'protected_2027_after'):
         if key in result:
             record[step][key] = result[key]
+    if step == 'apply' and result['failed']:
+        # Independent committed-state view: tells a real 2027 change apart from
+        # a loader-session artefact when a failed run reports a different hash.
+        record['protected_after'] = protected_state(engine)
     if before is not None:
         check(record, snapshot(engine) == before,
               'Salt okunur plan satır/sıra değiştirdi; sorumlu yükleyiciyi incelesin.')
@@ -477,6 +485,8 @@ def summary(record):
             for d in record[step]['departments']:
                 lines.append(f"| {html.escape(d['name'])} | {actions[d['action']]} |")
             lines += ['', 'Başarısız müdürlükler: ' + (', '.join(html.escape(n) for n in record[step]['failed']) or 'yok')]
+            lines += [f"- {html.escape(d['name'])}: {html.escape(d['reason'])}"
+                      for d in record[step].get('failed_reasons', [])]
     if 'display_names_2026' in record:
         lines += ['', '### Yüklemenin atadığı 2026 kapsam adları', '']
         lines += ['- ' + (html.escape(name) if name else '(boş)') for name in record['display_names_2026']]
