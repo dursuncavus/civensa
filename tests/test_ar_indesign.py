@@ -92,6 +92,16 @@ def test_single_row_free_table_is_kept():
     assert '<TableStart:1,2:1:0' in body and '>Hizmet<CellEnd:>' in body
 
 
+def test_numbers_right_aligned_and_total_row_style():
+    data = contract()
+    table = next(t for t in data['tables'] if t['kind'] == 'section')
+    body = text(data)
+    assert '<ParaStyle:tablo yazı><pTextAlignment:Right>5<CellEnd:>' in body
+    assert '<ParaStyle:tablo yazı>Örnek hizmet<CellEnd:>' in body
+    assert '<CellStyle:tablo sonuç><StylePriority:1><CellStart:1,1><ParaStyle:tablo sonuç>Toplam<CellEnd:>' in body
+    assert table['title']
+
+
 def test_unknown_schema_refused():
     data = contract()
     data['schema_version'] = 'ar-typeset/2'

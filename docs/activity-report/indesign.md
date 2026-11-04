@@ -20,7 +20,10 @@ Rapor düzenleyicisi ve rapor listesi → **Dışa aktar** → **InDesign metni*
 | Daha alt başlık | `Arabaslik stun` |
 | Metin, madde (• ile) | `Metin` |
 | Tablo başlığı "Tablo N: …" | `TABLO` |
-| Tablo | tablo stili `TABLO 1`; başlık satırı hücre/paragraf `tablo başlık`, gövde `tablo yazı`, toplam satırı hücre `tablo sonuç` |
+| Tablo | tablo stili `TABLO 1`; başlık satırı hücre/paragraf `tablo başlık`, gövde `tablo yazı`, toplam satırı hücre ve paragraf `tablo sonuç` |
+| Sayı hücresi (Türkçe sayı biçimindeki hücre) | ilgili paragraf stili + sağa hizalama (yerel `pTextAlignment:Right`) |
+
+2025 kitabında `tablo sonuç` yalnız **hücre** stili olarak vardır; toplam satırının kalın yazısı için şablona aynı adla bir **paragraf** stili (tablo yazı + kalın) eklenmelidir. Eklenmezse InDesign bu adla biçimsiz bir stil oluşturur.
 
 Birim bölümünde EK-1 kodları kitabın başlıklarına çevrilir: I.B → "Yetki, Görev ve Sorumluluklar", I.C → "Müdürlüğe İlişkin Bilgiler", II.B → "Müdürlüğün Amaç ve Hedefleri", III → "Faaliyetlere İlişkin Bilgi ve Değerlendirmeler". Başlıklardaki EK-1 numaraları ("A- ", "1- ") yazılmaz.
 

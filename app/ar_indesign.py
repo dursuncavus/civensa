@@ -18,7 +18,11 @@ STYLE = {
     'head_cell': 'tablo başlık',
     'body_cell': 'tablo yazı',
     'total_cell': 'tablo sonuç',
+    'total_text': 'tablo sonuç',
 }
+# Presentation only: cells that read as Turkish numbers are right-aligned like the
+# 2025 book's count/amount columns. Stored values and their types are unchanged.
+NUMBER_TEXT = re.compile(r'^[-+]?\d{1,3}(?:\.\d{3})*(?:,\d+)?\s*%?$|^[-+]?\d+(?:,\d+)?\s*%?$')
 # Unit chapters follow the 2025 book's department chapter headings.
 UNIT_TITLES = {
     'I.B': 'Yetki, Görev ve Sorumluluklar',
@@ -87,11 +91,13 @@ class Writer:
         for index, row in enumerate(rows):
             cell = STYLE['head_cell'] if index == 0 else (
                 STYLE['total_cell'] if total and index == len(rows) - 1 else STYLE['body_cell'])
-            paragraph = STYLE['head_cell'] if index == 0 else STYLE['body_cell']
+            paragraph = STYLE['head_cell'] if index == 0 else (
+                STYLE['total_text'] if total and index == len(rows) - 1 else STYLE['body_cell'])
             out.append('<RowStart:>')
             for value in (list(row) + [''] * cols)[:cols]:
+                align = '<pTextAlignment:Right>' if index and NUMBER_TEXT.match(str(value).strip()) else ''
                 out.append(f'<CellStyle:{escape(cell)}><StylePriority:1><CellStart:1,1>'
-                           f'<ParaStyle:{escape(paragraph)}>{escape(value)}<CellEnd:>')
+                           f'<ParaStyle:{escape(paragraph)}>{align}{escape(value)}<CellEnd:>')
             out.append('<RowEnd:>')
         out.append('<TableEnd:>\r\n')
         self.parts.append(''.join(out))
