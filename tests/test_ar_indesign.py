@@ -132,6 +132,15 @@ def test_budget_tables_keep_identifying_number_columns():
     assert f">{labels['program_id']}<CellEnd:>" in body and f">{labels['subprogram_id']}<CellEnd:>" in body
 
 
+def test_consolidated_rows_show_their_directorate():
+    data = contract()
+    table = next(t for t in data['tables'] if t['id'].endswith(':resource:hardware'))
+    row = next(r for r in data['rows'] if r['id'] == table['row_ids'][0])
+    row['values']['department'] = 'Sağlık İşleri Müdürlüğü'
+    body = text(data)
+    assert '>Müdürlük<CellEnd:>' in body and '>Sağlık İşleri Müdürlüğü<CellEnd:>' in body
+
+
 def test_unknown_schema_refused():
     data = contract()
     data['schema_version'] = 'ar-typeset/2'

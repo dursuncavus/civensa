@@ -157,6 +157,11 @@ class Writer:
         columns = self.columns(table)
         if not columns:
             return
+        # Consolidated (idare) rows carry their owning directorate; show it like the Word export.
+        if (not any(key == 'department' for key, _ in columns)
+                and any(isinstance(self.rows[r]['values'], dict) and self.rows[r]['values'].get('department')
+                        for r in table['row_ids'])):
+            columns = [('department', 'Müdürlük')] + columns
         body = [[cell_text(self.rows[r]['values'].get(key)) for key, _ in columns] for r in table['row_ids']]
         total = None
         totals = table.get('totals') or {}
