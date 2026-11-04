@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fen İşleri Müdürlüğü · 2025 Faaliyet Raporu sunumu</title>
+<link rel="stylesheet" href="reset.css">
+<link rel="stylesheet" href="reveal.css">
+<style>
+@font-face{font-family:"Fira Sans";font-weight:400;src:url(fonts/fira-sans-latin-ext-400-normal.woff2) format("woff2");unicode-range:U+0100-02AF,U+0304,U+0308,U+0329,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
+@font-face{font-family:"Fira Sans";font-weight:400;src:url(fonts/fira-sans-latin-400-normal.woff2) format("woff2");unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:"Fira Sans";font-weight:500;src:url(fonts/fira-sans-latin-ext-500-normal.woff2) format("woff2");unicode-range:U+0100-02AF,U+1E00-1EFF,U+20A0-20C0,U+2C60-2C7F,U+A720-A7FF}
+@font-face{font-family:"Fira Sans";font-weight:500;src:url(fonts/fira-sans-latin-500-normal.woff2) format("woff2");unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+2000-206F,U+20AC,U+2122,U+2212}
+@font-face{font-family:"Fira Sans";font-weight:600;src:url(fonts/fira-sans-latin-ext-600-normal.woff2) format("woff2");unicode-range:U+0100-02AF,U+1E00-1EFF,U+20A0-20C0,U+2C60-2C7F,U+A720-A7FF}
+@font-face{font-family:"Fira Sans";font-weight:600;src:url(fonts/fira-sans-latin-600-normal.woff2) format("woff2");unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+2000-206F,U+20AC,U+2122,U+2212}
+
+:root{
+  --bg:#f6f5f2;--surface:#fff;--muted:#efede8;--border:#e3e1dc;
+  --text:#1f2328;--text2:#545b64;--accent:#1e6b65;--accent-dark:#17554f;--accent-soft:#e3f0ee;
+  --warn:#8a5a00;--warn-bg:#fff4d6;--ok:#1e7a46;
+}
+html,body{background:var(--bg)}
+.reveal *,.reveal *:before,.reveal *:after{box-sizing:border-box}
+.reveal{font-family:"Fira Sans",system-ui,sans-serif;color:var(--text);font-size:34px}
+.reveal .slides{text-align:left}
+.reveal .slides section{height:1080px;width:1920px;padding:96px 120px 120px;box-sizing:border-box}
+.reveal h1,.reveal h2,.reveal h3{font-family:inherit;color:var(--text);text-transform:none;letter-spacing:0;margin:0}
+.reveal h1{font-size:96px;font-weight:600;line-height:1.1}
+.reveal h2{font-size:64px;font-weight:600;line-height:1.15}
+.reveal h3{font-size:40px;font-weight:500}
+.eyebrow{font-size:28px;font-weight:500;color:var(--accent);letter-spacing:.06em;text-transform:uppercase;margin-bottom:24px}
+.lead{font-size:38px;color:var(--text2);margin-top:28px;max-width:1400px}
+
+/* alt bilgi: her slaytta kaynak + doğrulama kodu */
+.foot{position:absolute;left:120px;right:120px;bottom:72px;display:flex;justify-content:space-between;font-size:20px;color:var(--text2);border-top:1px solid var(--border);padding-top:16px}
+.foot b{font-weight:500;color:var(--text)}
+.sample{color:var(--warn);background:var(--warn-bg);padding:2px 10px;border-radius:4px;font-weight:500}
+
+/* kapak */
+.cover{background:var(--accent);}
+.cover h1,.cover .lead,.cover .eyebrow{color:#fff}
+.cover .lead{color:#d6ebe8}
+.cover .band{position:absolute;right:0;top:0;bottom:0;width:560px;background:var(--accent-dark)}
+.cover .band span{position:absolute;bottom:120px;left:64px;font-size:220px;font-weight:600;color:rgba(255,255,255,.12);line-height:1}
+.cover .logo{position:absolute;left:120px;top:96px;height:110px;width:auto;margin:0}
+.cover .foot{border-top-color:rgba(255,255,255,.25);color:#cfe5e2}
+.cover .foot b{color:#fff}
+
+/* harita (Prezi hissi) */
+.map{display:grid;grid-template-columns:repeat(4,1fr);gap:32px;margin-top:64px}
+.tile{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:40px;min-height:420px;cursor:pointer;display:flex;flex-direction:column;justify-content:space-between;transition:transform .2s,box-shadow .2s}
+.tile:hover{transform:translateY(-6px);box-shadow:0 12px 32px rgba(31,35,40,.08)}
+.tile .no{font-size:88px;font-weight:600;color:var(--accent);line-height:1}
+.tile .t{font-size:40px;font-weight:600}
+.tile .s{font-size:24px;color:var(--text2);margin-top:8px}
+.tile.done{background:var(--accent-soft)}
+
+/* bölüm açılışı: haritadaki kutu büyüyerek gelir */
+.section-open .tile{position:absolute;left:0;top:0;width:1920px;height:1080px;border-radius:0;border:none;background:var(--accent);padding:120px;justify-content:flex-end;cursor:default}
+.section-open .tile .no{color:rgba(255,255,255,.35);font-size:240px}
+.section-open .tile .t{color:#fff;font-size:110px}
+.section-open .tile .s{color:#d6ebe8;font-size:40px}
+
+/* özet rakamlar */
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:32px;margin-top:140px}
+.kpi{min-height:330px;display:flex;flex-direction:column;justify-content:space-between}
+.kpi{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:44px 40px}
+.kpi .v{font-size:76px;font-weight:600;color:var(--accent);line-height:1.05;white-space:nowrap}
+.kpi .u{display:block;font-size:30px;font-weight:500;color:var(--text2);margin-top:6px}
+.kpi .l{font-size:26px;color:var(--text2);margin-top:18px;line-height:1.35}
+.kpi.hero{background:var(--accent)}
+.kpi.hero .v{color:#fff}
+.kpi.hero .u,.kpi.hero .l{color:#d6ebe8}
+
+/* grafik */
+.chart{width:1680px;height:640px;margin-top:40px}
+
+/* tablo */
+table.t{width:100%;border-collapse:collapse;margin-top:48px;font-size:28px}
+table.t th{text-align:left;font-weight:500;color:var(--text2);font-size:22px;text-transform:uppercase;letter-spacing:.04em;padding:14px 20px;border-bottom:2px solid var(--text)}
+table.t td{padding:20px;border-bottom:1px solid var(--border);background:var(--surface)}
+table.t td.n,table.t th.n{text-align:right;font-variant-numeric:tabular-nums}
+table.t tr.total td{font-weight:600;background:var(--accent-soft);border-bottom:2px solid var(--accent)}
+.pill{display:inline-block;font-size:20px;font-weight:500;padding:4px 14px;border-radius:999px}
+.pill.ok{background:#e6f4ea;color:var(--ok)}
+.pill.w{background:var(--warn-bg);color:var(--warn)}
+.cont{font-size:22px;color:var(--text2);margin-top:16px;text-align:right}
+
+tr.row{opacity:0;transform:translateY(16px)}
+section.present tr.row.in{animation:rowin .35s cubic-bezier(.2,.7,.3,1) forwards;animation-delay:var(--d,0ms)}
+@keyframes rowin{to{opacity:1;transform:none}}
+html.pdf tr.row{opacity:1;transform:none}
+/* madde metni */
+ul.b{list-style:none;margin:56px 0 0;padding:0;max-width:1500px}
+ul.b li{position:relative;padding-left:56px;margin:0 0 36px;font-size:40px;line-height:1.35}
+ul.b li:before{content:"";position:absolute;left:0;top:18px;width:24px;height:24px;border-radius:6px;background:var(--accent)}
+ul.b li small{display:block;font-size:28px;color:var(--text2);margin-top:6px}
+
+/* kapanış */
+.close{background:var(--text)}
+.close h1{color:#fff}
+.close .lead{color:#c9ced4}
+.verify{margin-top:80px;display:inline-flex;gap:40px;align-items:center;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.18);border-radius:12px;padding:32px 44px}
+.verify .code{font-size:64px;font-weight:600;color:#fff;letter-spacing:.08em;font-variant-numeric:tabular-nums}
+.verify .txt{font-size:26px;color:#c9ced4;max-width:760px;line-height:1.4}
+.close .foot{border-top-color:rgba(255,255,255,.2);color:#9aa1a9}
+.close .foot b{color:#fff}
+
+.map.five{grid-template-columns:repeat(5,1fr);gap:24px}
+.map.five .tile{min-height:440px;padding:32px}
+.map.five .t{font-size:34px}
+.sep-logo{position:absolute;left:120px;top:96px;height:96px;width:auto;margin:0;z-index:2}
+.sub{font-size:26px;color:var(--text2);margin-top:40px;max-width:1600px;line-height:1.4}
+.kpis.small{grid-template-columns:repeat(4,1fr);gap:24px;margin-top:56px}
+.kpis.small .kpi{min-height:230px;padding:32px}
+.kpis.small .v{font-size:60px}
+.kpis.small .u{font-size:24px}
+.kpis.small .l{font-size:22px;margin-top:10px}
+.chart.short{height:560px}
+.quote{margin-top:64px;max-width:1500px;border-left:8px solid var(--accent);padding:8px 0 8px 48px}
+.quote .qk{font-size:24px;font-weight:500;color:var(--accent);letter-spacing:.04em;text-transform:uppercase;margin-top:36px}
+.quote .qk:first-child{margin-top:0}
+.quote p{font-size:40px;line-height:1.4;margin:12px 0 0}
+.close .logo{position:absolute;left:120px;top:96px;height:110px;width:auto;margin:0}
+/* gezinme: haritaya dön */
+.tools{position:fixed;right:110px;bottom:14px;z-index:30;display:flex;gap:8px;opacity:1;transition:opacity .4s}
+.tools.hide{opacity:0;pointer-events:none}
+.ic{width:40px;height:40px;display:inline-flex;align-items:center;justify-content:center;background:rgba(255,255,255,.92);border:1px solid var(--accent);border-radius:8px;cursor:pointer;padding:0}
+.ic svg{width:22px;height:22px;fill:none;stroke:var(--accent);stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.ic:hover{background:var(--accent-soft)}
+.reveal .slide-number{right:auto;left:16px;bottom:14px;background:none;color:var(--text2);font:500 14px "Fira Sans",system-ui}
+/* tasarım notları (yalnız inceleme için; gerçek sunumda yok) */
+.note{position:absolute;top:28px;right:32px;max-width:640px;font-size:20px;line-height:1.4;background:#fffbe6;color:#5c4400;border:1px solid #f0d78c;border-radius:8px;padding:12px 16px;display:none;z-index:5}
+.shownotes .note{display:block}
+.reveal .progress{color:var(--accent);height:6px}
+@media print{.tools{display:none}}
+html.pdf .tools{display:none}
+html,body{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+html.pdf .reveal .slides section{padding:96px 120px 120px !important;box-sizing:border-box !important;width:1920px !important;height:1080px !important}
+</style>
+</head>
+<body>
+<div class="reveal"><div class="slides">
+<!-- 1 KAPAK -->
+<section class="cover" data-background-color="#1e6b65" data-src="2025 Faaliyet Raporu · Fen İşleri Müdürlüğü bölümü">
+  <div class="note">Kapak. Hareket yok. Logo, müdürlük, rapor, yıl, sunum yeri ve tarih Civensa'dan gelir.</div>
+  <div class="band"><span>2025</span></div>
+  <img class="logo" src="logo-beyaz.svg" alt="T.C. Büyükçekmece Belediyesi">
+  <div style="position:relative;max-width:1150px;margin-top:300px">
+    <h1>Fen İşleri Müdürlüğü<br>2025 Faaliyet Raporu</h1>
+    <p class="lead">Başkanlık sunumu</p>
+  </div>
+</section>
+
+<!-- 2 HARİTA -->
+<section data-auto-animate id="harita" data-src="2025 Faaliyet Raporu · Fen İşleri Müdürlüğü bölümü">
+  <div class="note">Harita. Kutuya tıklayınca bölüm büyüyerek açılır; sağ alttaki harita simgesi her yerden buraya döner. Biten bölüm açık yeşil olur.</div>
+  <div class="eyebrow">Sunum haritası</div>
+  <h2>Beş başlıkta 2025 yılı</h2>
+  <div class="map five">
+    <div class="tile" data-id="t1" data-go="b1"><div class="no">1</div><div><div class="t">Müdürlüğümüz</div><div class="s">Görev, ekip, hedef</div></div></div>
+    <div class="tile" data-id="t2" data-go="b2"><div class="no">2</div><div><div class="t">Bütçe ve ihaleler</div><div class="s">Ödenek, harcama</div></div></div>
+    <div class="tile" data-id="t3" data-go="b3"><div class="no">3</div><div><div class="t">Yol çalışmaları</div><div class="s">Asfalt, parke, bakım</div></div></div>
+    <div class="tile" data-id="t4" data-go="b4"><div class="no">4</div><div><div class="t">Altyapı ve yapılar</div><div class="s">Su, aydınlatma, bina</div></div></div>
+    <div class="tile" data-id="t5" data-go="b5"><div class="no">5</div><div><div class="t">Vatandaş ve koordinasyon</div><div class="s">Başvuru, ruhsat, trafik</div></div></div>
+  </div>
+</section>
+
+<!-- ===== BÖLÜM 1 ===== -->
+<section data-auto-animate class="section-open" id="b1" data-sec="t1">
+  <div class="note">Bölüm. Haritadaki kutu büyüyerek gelir; logo sol üstte.</div>
+  <img class="sep-logo" src="logo-beyaz.svg" alt="">
+  <div class="tile" data-id="t1"><div class="no">1</div><div><div class="t">Müdürlüğümüz</div><div class="s">Görev, ekip, hedef</div></div></div>
+</section>
+
+<section data-sec="t1" data-src="2025 Faaliyet Raporu · Fen İşleri · Yetki, Görev ve Sorumluluklar">
+  <div class="note">Madde metni. Maddeler tıklamayla gelir. Kitaptaki 13 görev maddesi 5 başlıkta özetlendi (özet metni müdürlük yazar).</div>
+  <div class="eyebrow">1 · Müdürlüğümüz</div>
+  <h2>Görev alanımız</h2>
+  <ul class="b">
+    <li class="fragment fade-up">Yol yapımı, asfalt ve parke kaplama, bakım onarım<small>Yolları her durumda ulaşıma açık tutmak</small></li>
+    <li class="fragment fade-up">Altyapı, yağmur suyu ve atık su çalışmaları<small>İSKİ ve İBB ile koordinasyon</small></li>
+    <li class="fragment fade-up">Kent aydınlatması<small>Cadde, sokak, park, meydan ve tarihi alanlar</small></li>
+    <li class="fragment fade-up">Kazı ruhsatı, harç tahakkuku ve yapım işi kontrolörlüğü</li>
+    <li class="fragment fade-up">Trafik güvenliği ve işaretleme<small>İBB Ulaşım Daire Başkanlığı ile birlikte</small></li>
+  </ul>
+</section>
+
+<section data-sec="t1" data-src="2025 Faaliyet Raporu · Fen İşleri · Müdürlüğe İlişkin Bilgiler">
+  <div class="note">Özet rakamlar. Rakamlar sayarak gelir.</div>
+  <div class="eyebrow">1 · Müdürlüğümüz</div>
+  <h2>132 kişilik ekibimiz</h2>
+  <div class="kpis">
+    <div class="kpi hero"><div><span class="v" data-count="132">0</span><span class="u">personel</span></div><div class="l">Toplam</div></div>
+    <div class="kpi"><div><span class="v" data-count="110">0</span><span class="u">kişi</span></div><div class="l">B.İ.T. personeli</div></div>
+    <div class="kpi"><div><span class="v" data-count="18">0</span><span class="u">kişi</span></div><div class="l">Memur</div></div>
+    <div class="kpi"><div><span class="v" data-count="4">0</span><span class="u">kişi</span></div><div class="l">İşçi</div></div>
+  </div>
+  <p class="sub">3 müdür yardımcısı · 5 şef · 13 amir. Hizmet binaları: Fen İşleri Müdürlüğü (250 m²), Saha Mühendisleri Ofisi (120 m²).</p>
+</section>
+
+<section data-sec="t1" data-src="2025 Faaliyet Raporu · Fen İşleri · Müdürlüğe İlişkin Bilgiler">
+  <div class="note">Grafik (yatay çubuk). Çubuklar sırayla büyür.</div>
+  <div class="eyebrow">1 · Müdürlüğümüz</div>
+  <h2>Ekibin meslek dağılımı</h2>
+  <div class="chart" data-chart="meslek"></div>
+</section>
+
+<section data-sec="t1" data-src="2025 Faaliyet Raporu · Fen İşleri · Müdürlüğün Amaç ve Hedefleri">
+  <div class="note">Alıntı. Stratejik Plan 2025–2029'dan amaç ve hedef; Civensa'da plan kayıtlarından gelir.</div>
+  <div class="eyebrow">1 · Müdürlüğümüz</div>
+  <h2>Stratejik planda yerimiz</h2>
+  <div class="quote">
+    <div class="qk">Stratejik amaç · S.A.02</div>
+    <p>Büyükçekmece'yi, gelecek nesillere yaşanabilir bir miras bırakmak amacıyla, evrensel tasarım ilkelerine uygun, sosyal ve ekolojik dengeleri koruyan, vatandaş katılımını destekleyen ve yenilikçi çözümler üreten bir kent haline getirmek.</p>
+    <div class="qk">Stratejik hedef · SA02.FİM/SH08</div>
+    <p>Erişilebilir, sürdürülebilir kamusal alanlar oluşturmak ve inşa etmek.</p>
+  </div>
+</section>
+
+<!-- ===== BÖLÜM 2 ===== -->
+<section data-auto-animate class="section-open" id="b2" data-sec="t2">
+  <img class="sep-logo" src="logo-beyaz.svg" alt="">
+  <div class="tile" data-id="t2"><div class="no">2</div><div><div class="t">Bütçe ve ihaleler</div><div class="s">Ödenek, harcama</div></div></div>
+</section>
+
+<section data-sec="t2" data-src="2025 Faaliyet Raporu · Mali Bilgiler, Tablo 3 (müdürlük bazında bütçe)">
+  <div class="note">Özet rakamlar. Gerçekleşme oranı ve belediye içindeki pay Civensa'da hesaplanır (613.713.763,78 / 811.776.000,00 ve / 3.341.634.262,32). Kitaptaki tablo başlığında “2024 yılı” yazıyor — Ali Abi'ye sorulacak.</div>
+  <div class="eyebrow">2 · Bütçe ve ihaleler</div>
+  <h2>2025 bütçesi bir bakışta</h2>
+  <div class="kpis">
+    <div class="kpi hero"><div><span class="v" data-count="75.6" data-dec="1">0</span><span class="u">yüzde</span></div><div class="l">Bütçe gerçekleşme oranı</div></div>
+    <div class="kpi"><div><span class="v" data-count="811.78" data-dec="2">0</span><span class="u">milyon TL</span></div><div class="l">Kesinleşen ödenek<br>(başlangıç 710,00 milyon)</div></div>
+    <div class="kpi"><div><span class="v" data-count="613.71" data-dec="2">0</span><span class="u">milyon TL</span></div><div class="l">Yıl sonu harcama</div></div>
+    <div class="kpi"><div><span class="v" data-count="18.4" data-dec="1">0</span><span class="u">yüzde</span></div><div class="l">Belediyenin toplam harcaması içindeki payı</div></div>
+  </div>
+</section>
+
+<section data-sec="t2" data-src="2025 Faaliyet Raporu · Mali Bilgiler, Tablo 3">
+  <div class="note">Grafik (dikey çubuk). Başlangıç → kesinleşen → harcama.</div>
+  <div class="eyebrow">2 · Bütçe ve ihaleler</div>
+  <h2>Ödenekten harcamaya</h2>
+  <div class="chart" data-chart="butce"></div>
+</section>
+
+<section data-sec="t2" data-src="2025 Faaliyet Raporu · Fen İşleri · Tablo 4 Yapılan İhaleler">
+  <div class="note">Tablo. KONTROL: kitapta 3. satır “Yapım İşi” yazıyor ama sayıları ilk iki satırın toplamı (3+2=5; 71,37+170,59=241,96 mn). Burada “Toplam” olarak gösterildi; Ali Abi'ye sorulacak. Bir ihale iptal edildi (kitap dipnotu).</div>
+  <div class="eyebrow">2 · Bütçe ve ihaleler</div>
+  <h2>2025 yılı ihaleleri</h2>
+  <table class="t">
+    <thead><tr><th>İhale türü</th><th class="n">İhale sayısı</th><th class="n">Yaklaşık maliyet (TL)</th><th class="n">İhale bedeli (TL)</th><th class="n">Fark</th></tr></thead>
+    <tbody>
+      <tr class="row"><td>Hizmet alımı</td><td class="n">3</td><td class="n">71.366.420,26</td><td class="n">53.656.669,00</td><td class="n"><span class="pill ok">−%24,8</span></td></tr>
+      <tr class="row"><td>Mal alımı</td><td class="n">2</td><td class="n">170.590.345,65</td><td class="n">118.380.000,00</td><td class="n"><span class="pill ok">−%30,6</span></td></tr>
+      <tr class="row total"><td>Toplam</td><td class="n">5</td><td class="n">241.956.765,91</td><td class="n">172.036.669,00</td><td class="n">−%28,9</td></tr>
+    </tbody>
+  </table>
+  <p class="sub">1 ihale iptal kararıyla sonuçlandı.</p>
+</section>
+
+<!-- ===== BÖLÜM 3 ===== -->
+<section data-auto-animate class="section-open" id="b3" data-sec="t3">
+  <img class="sep-logo" src="logo-beyaz.svg" alt="">
+  <div class="tile" data-id="t3"><div class="no">3</div><div><div class="t">Yol çalışmaları</div><div class="s">Asfalt, parke, bakım</div></div></div>
+</section>
+
+<section data-sec="t3" data-src="2025 Faaliyet Raporu · Fen İşleri · Yol ve Altyapı Çalışmaları">
+  <div class="note">Özet rakamlar.</div>
+  <div class="eyebrow">3 · Yol çalışmaları</div>
+  <h2>Yollarda 2025</h2>
+  <div class="kpis">
+    <div class="kpi hero"><div><span class="v" data-count="61">0</span><span class="u">bin ton üzeri</span></div><div class="l">Asfalt (İBB ekipleriyle birlikte)</div></div>
+    <div class="kpi"><div><span class="v" data-count="59">0</span><span class="u">cadde ve sokak</span></div><div class="l">Asfalt kaplama</div></div>
+    <div class="kpi"><div><span class="v" data-count="83">0</span><span class="u">bin m²</span></div><div class="l">Parke taş kaplama<br>(110 cadde ve sokak)</div></div>
+    <div class="kpi"><div><span class="v" data-count="20">0</span><span class="u">km üzeri</span></div><div class="l">Yeni açılan yol</div></div>
+  </div>
+</section>
+
+<section data-sec="t3" data-src="2025 Faaliyet Raporu · Fen İşleri · Tablo 5 ve Tablo 6 (cadde/sokak listeleri)">
+  <div class="note">Grafik (yatay, iki seri). Kitaptaki 59 asfalt ve 110 parke satırı Civensa'da mahalleye göre sayılır; en çok iş yapılan 10 mahalle, kalan 12 mahalle “Diğer”.</div>
+  <div class="eyebrow">3 · Yol çalışmaları</div>
+  <h2>Mahallelere göre kaplama yapılan cadde ve sokak</h2>
+  <div class="chart" data-chart="mahalle"></div>
+</section>
+
+<section data-sec="t3" data-src="2025 Faaliyet Raporu · Fen İşleri · Acil Yol Bakım Ekipleri">
+  <div class="note">Özet rakamlar, küçük ızgara (8 rakam).</div>
+  <div class="eyebrow">3 · Yol çalışmaları</div>
+  <h2>Acil yol bakım ekipleri</h2>
+  <div class="kpis small">
+    <div class="kpi"><div><span class="v" data-count="12848">0</span><span class="u">m² parke tamiri</span></div><div class="l">730 noktada</div></div>
+    <div class="kpi"><div><span class="v" data-count="5127">0</span><span class="u">ton asfalt tamiratı</span></div><div class="l">391 noktada</div></div>
+    <div class="kpi"><div><span class="v" data-count="4875">0</span><span class="u">yol sınır elemanı</span></div><div class="l">719 noktada</div></div>
+    <div class="kpi"><div><span class="v" data-count="3000">0</span><span class="u">m üzeri bordür tamiri</span></div><div class="l">&nbsp;</div></div>
+    <div class="kpi"><div><span class="v" data-count="1164">0</span><span class="u">m³ beton</span></div><div class="l">95 noktada</div></div>
+    <div class="kpi"><div><span class="v" data-count="158">0</span><span class="u">nokta</span></div><div class="l">Yaya geçidi ve set boyaması</div></div>
+    <div class="kpi"><div><span class="v" data-count="194">0</span><span class="u">m plastik kasis</span></div><div class="l">26 noktada</div></div>
+    <div class="kpi"><div><span class="v" data-count="23">0</span><span class="u">okul</span></div><div class="l">Oyun ve saha boya çizimi</div></div>
+  </div>
+</section>
+
+<section data-sec="t3" data-src="2025 Faaliyet Raporu · Fen İşleri · İBB ile Paydaş Olunan Çalışmalar">
+  <div class="note">Tablo. Satırlar kendiliğinden sırayla gelir.</div>
+  <div class="eyebrow">3 · Yol çalışmaları</div>
+  <h2>İBB ve İSKİ ile birlikte yürüttüğümüz büyük işler</h2>
+  <table class="t">
+    <thead><tr><th>Çalışma</th><th>Yer</th><th>Yapılan</th></tr></thead>
+    <tbody>
+      <tr class="row"><td>Trakya Caddesi yol yapımı</td><td>Güzelce</td><td>Mezarlığa ulaşım; yol iyileştirme ve asfalt</td></tr>
+      <tr class="row"><td>Eski Hadımköy Yolu Caddesi genişletme</td><td>Çakmaklı</td><td>İşgal yıkımları; yol ve tretuvar tamamlandı</td></tr>
+      <tr class="row"><td>100. Yıl Caddesi yol yapımı</td><td>Karaağaç</td><td>Altyapı, asfalt ve beton tretuvar tamamlandı</td></tr>
+      <tr class="row"><td>Atatürk Caddesi asfalt yenileme</td><td>Hürriyet, Türkoba</td><td>Kazıma, zemin iyileştirme, asfalt</td></tr>
+      <tr class="row"><td>Kirazlı Sokak dere ıslahı</td><td>Güzelce</td><td>3,0 × 3,0 m kutu kesit yağmur suyu hattı</td></tr>
+      <tr class="row"><td>Tepecik 900'lük içme suyu isale hattı</td><td>Hürriyet</td><td>3.243 m imalat, ardından asfalt</td></tr>
+      <tr class="row"><td>Varyant içme suyu tüneli</td><td>Büyükçekmece</td><td>2,5 km TBM tüneli, Ø3000 mm çelik boru</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ===== BÖLÜM 4 ===== -->
+<section data-auto-animate class="section-open" id="b4" data-sec="t4">
+  <img class="sep-logo" src="logo-beyaz.svg" alt="">
+  <div class="tile" data-id="t4"><div class="no">4</div><div><div class="t">Altyapı ve yapılar</div><div class="s">Su, aydınlatma, bina</div></div></div>
+</section>
+
+<section data-sec="t4" data-src="2025 Faaliyet Raporu · Fen İşleri · Altyapı Şefliği">
+  <div class="note">Özet rakamlar.</div>
+  <div class="eyebrow">4 · Altyapı ve yapılar</div>
+  <h2>Yağmur suyu ve atık su</h2>
+  <div class="kpis">
+    <div class="kpi hero"><div><span class="v" data-count="400">0</span><span class="u">arıza</span></div><div class="l">Atık su arızasına müdahale</div></div>
+    <div class="kpi"><div><span class="v" data-count="187">0</span><span class="u">su baskını</span></div><div class="l">Ekiplerimizce müdahale</div></div>
+    <div class="kpi"><div><span class="v" data-count="1130">0</span><span class="u">metre</span></div><div class="l">Betonarme boru döşendi</div></div>
+    <div class="kpi"><div><span class="v" data-count="17">0</span><span class="u">nokta</span></div><div class="l">Yağmur suyu kanalı imalat ve tamiratı</div></div>
+  </div>
+  <p class="sub">Süren altyapı yatırımlarıyla atık su arızası ve su baskını sayısında belirgin azalma görüldü.</p>
+</section>
+
+<section data-sec="t4" data-src="2025 Faaliyet Raporu · Fen İşleri · Elektrik ve Aydınlatma Şefliği">
+  <div class="note">Grafik (dikey çubuk).</div>
+  <div class="eyebrow">4 · Altyapı ve yapılar</div>
+  <h2>Aydınlatma ve bakım yapılan alanlar</h2>
+  <div class="chart short" data-chart="aydinlatma"></div>
+  <p class="sub">5.000 metre yer altı kablosu döşendi · 12 mahallede yeni aydınlatma projesi · 39 cadde ve 49 sokakta ayrıca bakım onarım.</p>
+</section>
+
+<section data-sec="t4" data-src="2025 Faaliyet Raporu · Fen İşleri · Üst Yapı Çalışmaları">
+  <div class="note">Madde metni. Maddeler tıklamayla gelir.</div>
+  <div class="eyebrow">4 · Altyapı ve yapılar</div>
+  <h2>Binalar ve tesisler</h2>
+  <ul class="b">
+    <li class="fragment fade-up">Çakmaklı Atatürk Camii<small>Depreme dayanıksız eski cami yıkıldı; 1.350 m², 1.100 kişilik yeni caminin kaba inşaatı tamamlandı</small></li>
+    <li class="fragment fade-up">Kuba Camii ek binası<small>540 m² lojman, abdesthane ve 7 eğitim sınıfı; kaba inşaat tamam, ince işler sürüyor</small></li>
+    <li class="fragment fade-up">19 eğitim kurumunda bakım onarım<small>Alçı, boya, seramik, sıhhi ve elektrik tesisatı</small></li>
+    <li class="fragment fade-up">9 spor alanında bakım onarım<small>Stadlar, tenis kortları, spor salonu</small></li>
+    <li class="fragment fade-up">Yat Limanı<small>Saraybosna etabı faaliyette; diğer kısımlarda inşaat sürüyor</small></li>
+  </ul>
+</section>
+
+<!-- ===== BÖLÜM 5 ===== -->
+<section data-auto-animate class="section-open" id="b5" data-sec="t5">
+  <img class="sep-logo" src="logo-beyaz.svg" alt="">
+  <div class="tile" data-id="t5"><div class="no">5</div><div><div class="t">Vatandaş ve koordinasyon</div><div class="s">Başvuru, ruhsat, trafik</div></div></div>
+</section>
+
+<section data-sec="t5" data-src="2025 Faaliyet Raporu · Fen İşleri · Faaliyetlere İlişkin Bilgiler, Tablo 3">
+  <div class="note">Özet rakamlar. KONTROL: kitap metni “toplam 23.008 evrak” diyor, tablo 29.159 (8.884 + 19.600 + 675). Burada tablo değeri kullanıldı; Ali Abi'ye sorulacak.</div>
+  <div class="eyebrow">5 · Vatandaş ve koordinasyon</div>
+  <h2>Başvurular ve yazışmalar</h2>
+  <div class="kpis">
+    <div class="kpi hero"><div><span class="v" data-count="96.38" data-dec="2">0</span><span class="u">yüzde</span></div><div class="l">Çözüm Masası başvurularının cevaplanma oranı (11.488 başvuru)</div></div>
+    <div class="kpi"><div><span class="v" data-count="11488">0</span><span class="u">başvuru</span></div><div class="l">Çözüm Masası</div></div>
+    <div class="kpi"><div><span class="v" data-count="196">0</span><span class="u">başvuru</span></div><div class="l">CİMER — tamamı cevaplandı</div></div>
+    <div class="kpi"><div><span class="v" data-count="29159">0</span><span class="u">evrak</span></div><div class="l">Gelen, giden ve üretilen</div></div>
+  </div>
+</section>
+
+<section data-sec="t5" data-src="2025 Faaliyet Raporu · Fen İşleri · Kazı Ruhsat Şefliği">
+  <div class="note">Grafik (yatay çubuk). Kurumlara göre kazı ruhsatı.</div>
+  <div class="eyebrow">5 · Vatandaş ve koordinasyon</div>
+  <h2>1.784 kazı ruhsatı, 69.769 metre güzergâh</h2>
+  <div class="chart short" data-chart="kazi"></div>
+</section>
+
+<section data-sec="t5" data-src="2025 Faaliyet Raporu · Fen İşleri · Harçlar ve Kazı Ruhsat Şefliği">
+  <div class="note">Özet rakamlar. KONTROL: 86.181.784,63 + 134.720.581,92 = 220.902.366,55; kitapta 220.902.366,60 yazıyor (5 kuruş fark). Burada kitap değeri kullanıldı; Ali Abi'ye sorulacak.</div>
+  <div class="eyebrow">5 · Vatandaş ve koordinasyon</div>
+  <h2>Harç tahakkuku</h2>
+  <div class="kpis">
+    <div class="kpi hero"><div><span class="v" data-count="220.90" data-dec="2">0</span><span class="u">milyon TL</span></div><div class="l">Toplam harç tahakkuku</div></div>
+    <div class="kpi"><div><span class="v" data-count="86.18" data-dec="2">0</span><span class="u">milyon TL</span></div><div class="l">İmar Kanunu 23. madde harçları</div></div>
+    <div class="kpi"><div><span class="v" data-count="105.90" data-dec="2">0</span><span class="u">milyon TL</span></div><div class="l">Kazı ruhsatı: imalat, zayiat, geçiş, kontrollük</div></div>
+    <div class="kpi"><div><span class="v" data-count="28.82" data-dec="2">0</span><span class="u">milyon TL</span></div><div class="l">Kazı ruhsatı teminatı</div></div>
+  </div>
+</section>
+
+<section data-sec="t5" data-src="2025 Faaliyet Raporu · Fen İşleri · Ulaşım ve Trafik Şefliği">
+  <div class="note">Madde metni. Maddeler tıklamayla gelir.</div>
+  <div class="eyebrow">5 · Vatandaş ve koordinasyon</div>
+  <h2>Ulaşım ve trafik</h2>
+  <ul class="b">
+    <li class="fragment fade-up">80'in üzerinde adreste Ulaşım ve Trafik Komisyonu kararı<small>İBB Ulaşım Daire Başkanlığı ile birlikte</small></li>
+    <li class="fragment fade-up">Okul bölgelerinde eksik işaretlemeler tamamlandı</li>
+    <li class="fragment fade-up">Bisiklet yolu ve cadde düzenleme projeleri hazırlandı</li>
+    <li class="fragment fade-up">Afet planı (TAMP) kapsamında acil intikal güzergâhları</li>
+    <li class="fragment fade-up">D100 güney yan yol Mimaroba–Mimarsinan kavşakları arası trafik projesi</li>
+  </ul>
+</section>
+
+<!-- KAPANIŞ -->
+<section class="close" data-background-color="#1f2328" data-src="2025 Faaliyet Raporu · Fen İşleri Müdürlüğü bölümü">
+  <div class="note">Kapanış. Doğrulama kodu Civensa'daki onaylı raporun koduyla karşılaştırılır (bu taslakta örnek kod).</div>
+  <img class="logo" src="logo-beyaz.svg" alt="T.C. Büyükçekmece Belediyesi">
+  <div style="margin-top:300px">
+    <h1>Teşekkür ederiz</h1>
+    <p class="lead">Fen İşleri Müdürlüğü · 2025 Faaliyet Raporu</p>
+    <div class="verify"><div class="code">7F3A-91C2</div><div class="txt">Bu sunumdaki rakamlar Civensa'daki onaylı Faaliyet Raporu'ndan otomatik üretilir. Kod Civensa'daki kodla aynı değilse sunum değiştirilmiştir.</div></div>
+  </div>
+</section>
+
+</div></div>
+
+<div class="tools" id="tools">
+  <button class="ic" id="goMap" type="button" title="Haritaya dön" aria-label="Haritaya dön"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></button>
+  <button class="ic" id="toggleNotes" type="button" title="Tasarım notlarını gizle/göster" aria-label="Tasarım notları"><svg viewBox="0 0 24 24"><path d="M5 3h10l4 4v14H5z"/><path d="M15 3v4h4"/><path d="M8 12h8M8 16h6"/></svg></button>
+  <a class="ic" id="goPdf" href="#pdf" title="PDF görünümü" aria-label="PDF görünümü"><svg viewBox="0 0 24 24"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M4 19h16"/></svg></a>
+</div>
+
+<script src="reveal.js"></script>
+<script src="echarts.min.js"></script>
+<script>
+const fmt=(v,d=0)=>new Intl.NumberFormat('tr-TR',{minimumFractionDigits:d,maximumFractionDigits:d}).format(v);
+const PRINT=location.hash==='#pdf';
+if(PRINT) document.documentElement.classList.add('pdf'); else document.body.classList.add('shownotes');
+
+// her slayta alt bilgi: kaynak + doğrulama kodu
+document.querySelectorAll('.slides>section').forEach(sec=>{
+  if(sec.classList.contains('section-open')) return;
+  const f=document.createElement('div'); f.className='foot';
+  f.innerHTML='<span>Kaynak: <b>'+(sec.dataset.src||'')+'</b></span><span>Doğrulama kodu <b>7F3A-91C2</b> <span class="sample">TASLAK</span></span>';
+  sec.appendChild(f);
+});
+
+const deck=new Reveal({width:1920,height:1080,margin:0,minScale:0.1,maxScale:2,hash:false,history:false,center:false,
+  controls:true,progress:true,transition:'fade',backgroundTransition:'fade',autoAnimateDuration:0.8,
+  autoAnimateEasing:'cubic-bezier(.65,0,.35,1)',slideNumber:'c/t',view:PRINT?'print':null,pdfSeparateFragments:false,pdfMaxPagesPerSlide:1});
+window.deck=deck;
+
+const C={ink:'#1f2328',mut:'#545b64',grid:'#e3e1dc',acc:'#1e6b65',soft:'#c9ded9'};
+const base=anim=>({textStyle:{fontFamily:'Fira Sans'},animation:anim,animationDuration:1100,animationEasing:'cubicOut',animationDelay:i=>i*90});
+const lab=(d=0,pos='top')=>({show:true,position:pos,fontFamily:'Fira Sans',fontSize:22,color:C.ink,valueAnimation:true,formatter:p=>fmt(p.value,d)});
+const CHARTS={
+  meslek:anim=>{const d=[['İşçi',51],['Şoför',23],['Operatör',18],['Elektrik teknisyeni',9],['Büro elemanı',9],['İnşaat mühendisi',7],['İnşaat teknikeri',5],['Mobilya dekorasyon teknikeri',3],['Harita mühendisi',2],['Harita teknikeri',2],['Mimar',1],['Elektrik mühendisi',1],['Şehir bölge plancısı',1]].reverse();
+    return {...base(anim),grid:{left:360,right:80,top:10,bottom:10},xAxis:{type:'value',show:false},
+    yAxis:{type:'category',data:d.map(x=>x[0]),axisTick:{show:false},axisLine:{show:false},axisLabel:{fontSize:22,color:C.ink}},
+    series:[{type:'bar',data:d.map(x=>x[1]),barWidth:30,itemStyle:{color:C.acc,borderRadius:[0,4,4,0]},label:lab(0,'right')}]}},
+  butce:anim=>({...base(anim),grid:{left:120,right:40,top:60,bottom:60},
+    xAxis:{type:'category',data:['Başlangıç ödeneği','Kesinleşen ödenek','Yıl sonu harcama'],axisTick:{show:false},axisLine:{lineStyle:{color:C.ink}},axisLabel:{fontSize:26,color:C.ink}},
+    yAxis:{type:'value',name:'milyon TL',nameTextStyle:{fontSize:20,color:C.mut},axisLabel:{fontSize:20,color:C.mut,formatter:v=>fmt(v)},splitLine:{lineStyle:{color:C.grid}}},
+    series:[{type:'bar',barWidth:200,data:[{value:710.00,itemStyle:{color:C.soft}},{value:811.78,itemStyle:{color:C.soft}},{value:613.71,itemStyle:{color:C.acc}}],label:{...lab(2),fontSize:28}}]}),
+  mahalle:anim=>{const d=[['Hürriyet',14,7],['Güzelce',9,10],['Celaliye',9,8],['Atatürk',2,15],['Pınartepe',1,14],['Ulus',2,9],['Muratçeşme',2,8],['Bahçelievler',8,2],['Fatih',1,9],['Mimarsinan',4,3],['Diğer 12 mahalle',7,25]].reverse();
+    return {...base(anim),legend:{top:0,right:0,itemWidth:22,itemHeight:22,textStyle:{fontSize:24,color:C.mut}},grid:{left:260,right:60,top:50,bottom:10},
+    xAxis:{type:'value',show:false},yAxis:{type:'category',data:d.map(x=>x[0]),axisTick:{show:false},axisLine:{show:false},axisLabel:{fontSize:22,color:C.ink}},
+    series:[{name:'Asfalt (59)',type:'bar',stack:'s',data:d.map(x=>x[1]),barWidth:34,itemStyle:{color:C.acc},label:{show:true,position:'inside',color:'#fff',fontSize:18,formatter:p=>p.value||''}},
+            {name:'Parke taş (110)',type:'bar',stack:'s',data:d.map(x=>x[2]),itemStyle:{color:C.soft,borderRadius:[0,4,4,0]},label:{show:true,position:'inside',color:C.ink,fontSize:18,formatter:p=>p.value||''}}]}},
+  aydinlatma:anim=>({...base(anim),grid:{left:80,right:40,top:50,bottom:60},
+    xAxis:{type:'category',data:['Bulvar','Cadde','Sokak','Park','Kavşak','Meydan'],axisTick:{show:false},axisLine:{lineStyle:{color:C.ink}},axisLabel:{fontSize:26,color:C.ink}},
+    yAxis:{type:'value',axisLabel:{fontSize:20,color:C.mut},splitLine:{lineStyle:{color:C.grid}}},
+    series:[{type:'bar',barWidth:120,data:[3,43,56,55,8,7],itemStyle:{color:C.acc,borderRadius:[4,4,0,0]},label:{...lab(0),fontSize:28}}]}),
+  kazi:anim=>{const d=[['BEDAŞ',1003],['İGDAŞ',552],['Türk Telekom',194],['Superonline',18],['Vodafone ve diğerleri',17]].reverse();
+    return {...base(anim),grid:{left:300,right:120,top:10,bottom:10},xAxis:{type:'value',show:false},
+    yAxis:{type:'category',data:d.map(x=>x[0]),axisTick:{show:false},axisLine:{show:false},axisLabel:{fontSize:26,color:C.ink}},
+    series:[{type:'bar',data:d.map(x=>x[1]),barWidth:56,itemStyle:{color:C.acc,borderRadius:[0,4,4,0]},label:{...lab(0,'right'),fontSize:26}}]}}
+};
+const inst=new Map();
+function draw(el,anim){ if(!window.echarts){el.textContent='Grafik yüklenemedi.';return;}
+  if(inst.has(el)) inst.get(el).dispose();
+  const c=echarts.init(el,null,{renderer:'svg'}); c.setOption(CHARTS[el.dataset.chart](anim)); inst.set(el,c);}
+function countUp(el){const t=parseFloat(el.dataset.count),d=parseInt(el.dataset.dec||'0',10),t0=performance.now();
+  (function st(n){const p=Math.min(1,(n-t0)/1200),e=1-Math.pow(1-p,3);el.textContent=fmt(t*e,d);if(p<1)requestAnimationFrame(st);})(t0);}
+function rowsIn(s){const rows=[...s.querySelectorAll('tr.row')];if(!rows.length)return;
+  const step=Math.min(150,Math.floor(1150/Math.max(1,rows.length-1)));
+  rows.forEach((r,i)=>{r.classList.remove('in');void r.offsetWidth;r.style.setProperty('--d',(i*step)+'ms');r.classList.add('in');});}
+// bir bölümün son slaytı görülünce haritada "bitti"
+const lastOf={};document.querySelectorAll('.slides>section[data-sec]').forEach(s=>lastOf[s.dataset.sec]=s);
+function onShow(s){if(!s)return;rowsIn(s);s.querySelectorAll('[data-count]').forEach(countUp);s.querySelectorAll('[data-chart]').forEach(el=>draw(el,true));
+  const k=s.dataset.sec; if(k&&lastOf[k]===s) document.querySelector('#harita .tile[data-id="'+k+'"]').classList.add('done');}
+deck.initialize().then(()=>{
+  if(PRINT){document.querySelectorAll('[data-count]').forEach(el=>el.textContent=fmt(parseFloat(el.dataset.count),parseInt(el.dataset.dec||'0',10)));
+    document.querySelectorAll('[data-chart]').forEach(el=>draw(el,false));}
+  else onShow(deck.getCurrentSlide());});
+deck.on('slidechanged',e=>onShow(e.currentSlide));
+
+const idx=id=>deck.getIndices(document.getElementById(id));
+document.querySelectorAll('#harita .tile').forEach(t=>t.addEventListener('click',()=>{const i=idx(t.dataset.go);deck.slide(i.h,i.v);}));
+document.getElementById('goMap').addEventListener('click',()=>{const i=idx('harita');deck.slide(i.h,i.v);});
+document.getElementById('toggleNotes').addEventListener('click',()=>document.body.classList.toggle('shownotes'));
+document.getElementById('goPdf').addEventListener('click',()=>setTimeout(()=>location.reload(),50));
+const tools=document.getElementById('tools');let tt=null;
+function wake(){tools.classList.remove('hide');clearTimeout(tt);tt=setTimeout(()=>{if(!tools.matches(':hover'))tools.classList.add('hide');},2500);}
+document.addEventListener('mousemove',wake);wake();
+</script>
+</body>
+</html>
