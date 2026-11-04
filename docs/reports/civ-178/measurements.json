@@ -1,0 +1,128 @@
+{
+  "activity_mapping": {
+    "batch_ids": [
+      "497468dddac8aeed"
+    ],
+    "count": 128
+  },
+  "alembic_heads": [
+    "c162a1b2c3d4"
+  ],
+  "cost_reconciliation_bytes": 1266684,
+  "json_loads": {
+    "input_str_bytes": 11559466,
+    "peak_bytes": 12912854,
+    "retained_bytes": 12909694,
+    "seconds": 0.14352128299992728
+  },
+  "mapping": {
+    "identity": "exact department name, activity name, ordinal ordered by id",
+    "response": {
+      "batch_id": "497468dddac8aeed",
+      "mapping_gaps": {
+        "card": 148,
+        "catalogue": 174,
+        "subprogram": 0,
+        "total": 174
+      },
+      "ok": true,
+      "remaining": 174,
+      "updated": 128
+    },
+    "rows": 128,
+    "source_sha256": "22ac2e45def6bd01c22d3067e6b65605f45c7750abb3fa18e6637527370fe87c"
+  },
+  "pdf": {
+    "bytes": 2303399,
+    "limit_seconds": 120,
+    "seconds": 105.24598641199987,
+    "status": "ok"
+  },
+  "postgresql": "16.15 (Debian 16.15-1.pgdg13+2)",
+  "protected_2027_unchanged": true,
+  "publication_checks": {
+    "count": 607,
+    "errors": 5473,
+    "seconds": 1.79486551399998,
+    "warnings": 504
+  },
+  "publication_snapshot": {
+    "members": {
+      "activity_contract_version": {
+        "member_bytes": 33,
+        "value_bytes": 5
+      },
+      "activity_mapping": {
+        "member_bytes": 65,
+        "value_bytes": 46
+      },
+      "approval_reference": {
+        "member_bytes": 49,
+        "value_bytes": 28
+      },
+      "basis": {
+        "member_bytes": 23,
+        "value_bytes": 15
+      },
+      "book_sha256": {
+        "member_bytes": 80,
+        "value_bytes": 66
+      },
+      "catalogue": {
+        "member_bytes": 36851,
+        "value_bytes": 36839
+      },
+      "cost_reconciliation": {
+        "member_bytes": 1266706,
+        "value_bytes": 1266684
+      },
+      "definition_contract_version": {
+        "member_bytes": 35,
+        "value_bytes": 5
+      },
+      "departments": {
+        "member_bytes": 4336329,
+        "value_bytes": 4336315
+      },
+      "economics": {
+        "member_bytes": 11925,
+        "value_bytes": 11913
+      },
+      "kaynak_kitap_uyarilari": {
+        "member_bytes": 10801,
+        "value_bytes": 10776
+      },
+      "kaynak_kitap_uyarilari_sha256": {
+        "member_bytes": 98,
+        "value_bytes": 66
+      },
+      "load_reference": {
+        "member_bytes": 1041,
+        "value_bytes": 1024
+      },
+      "period": {
+        "member_bytes": 13,
+        "value_bytes": 4
+      },
+      "program_costs": {
+        "member_bytes": 348050,
+        "value_bytes": 348034
+      },
+      "schema_version": {
+        "member_bytes": 22,
+        "value_bytes": 5
+      },
+      "sections": {
+        "member_bytes": 13,
+        "value_bytes": 2
+      }
+    },
+    "punctuation_bytes": 18,
+    "total_bytes": 6012152
+  },
+  "publish_seconds": 4.945278500999962,
+  "python": "3.12.14",
+  "serialization": "UTF-8, ensure_ascii=False, sort_keys=True, separators=comma/colon",
+  "source_book_sha256": "1aaa0bb81c3cf4e245edaab42452a972b8a59ffc252814216c7628f6dbaf33d6",
+  "year": 2026
+}
