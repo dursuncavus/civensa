@@ -1281,7 +1281,7 @@ Change to D-411 owner item: the owner no longer designs the master from zero; he
 Next IDs: task CIV-180, decision D-414.
 
 ## D-414 (4 Nov 2026 ~21:48–22:17 Istanbul, owner + lead, live session CV Lider 61) — Sunum prototype review round 1
-BEYAN (owner): cover needs the municipality logo (owner sent bcb_logo.pdf: 4 variants — square colour, square one-colour, horizontal colour, horizontal one-colour; Illustrator vector); browser print of the prototype came out as A4 web page; how do we hand out the animated version; table rows must come in automatically and long tables must not take long; bullets stay on click (21:17 "bu mantıklı").
+BEYAN (owner): cover needs the municipality logo (owner sent bcb_logo.pdf: 4 variants — square colour, square one-colour, horizontal colour, horizontal one-colour; Illustrator vector); browser print of the prototype came out as A4 web page; how do we hand out the animated version; table rows must come in automatically and long tables must not take long; bullets stay on click (22:17 "bu mantıklı").
 Done in the prototype (https://claude.ai/artifact/DMpNp2f68JsogL2eMgJSRD, checked in Chromium, no console errors):
 - Cover: horizontal one-colour logo recoloured white (vector SVG), top left; the "T.C. Büyükçekmece Belediyesi" text line removed (it is in the logo).
 - PDF view (#pdf → reveal.js print view): 11 pages 16:9, all numbers final, chart drawn, all rows/bullets visible, notes and buttons hidden. Sample PDF sent to the owner.
