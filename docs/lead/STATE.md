@@ -1,11 +1,12 @@
 # CIVENSA — CURRENT STATE
 
-Updated: 5 Nov 2026 ~15:00 Istanbul (CV Lider 64, D-425).
+Updated: 5 Nov 2026 ~17:00 Istanbul (CV Lider 65, D-426/D-427).
 Rules: AI_WORKING_CONSTITUTION v1.2 (Drive, global) · `HIERARCHY.md` v1.8 (D-408: the lead also codes; Codex reviews its PRs) · `PROJECT_RULES.md` v1.4 (D-271: PRIOR ART field mandatory in every package) · `BACKUP_LEAD.md` v2.
 Backup log ("Civensa Yedek Kaydı", Drive): no entries after 31 Oct (DOĞRULANDI 3 Nov 05:45, file unchanged since 23 Oct).
 Tags: DOĞRULANDI (lead checked) · TARİHSEL (past fact) · BEYAN (owner said) · BELİRSİZ (unknown).
 
 ## Next session — start here (D-253)
+CV Lider 65 (5 Nov ~17:00, DOĞRULANDI): no mail from Ali Abi; CIV-185 #408 merged 4eec9a4 (D-426) → all 6 meclis slide types on phase5. Release PR phase5 → main open (migrations c184 + c185, additive); rehearsal run 42041390715. Owner merges → lead dispatches db-backup with ref phase5 → owner Render "Deploy latest commit" → /health head c185a1b2c3d4. Karne not shown to the council before Ali's lower-is-better answer (D-424). Proposal "açılış döngüsü" recorded for after 1 Jan 2027 (D-427). No Codex work unblocked before Ali (9 Nov) and the owner's hall test.
 CV Lider 64 (5 Nov ~15:00, DOĞRULANDI): no mail from Ali Abi; CIV-184 #406 reviewed + lead fix 53f64cb (separate önce/sonra dates), merged 2bd4127 (D-425); CIV-185 (spot + öne çıkan iş) dispatched → review its PR. Next release carries migration c184a1b2c3d4 (owner approves). Future first load needs a pin refresh (D-425).
 CV Lider 63 (5 Nov ~12:25, DOĞRULANDI): no mail from Ali Abi; CIV-183 #404 reviewed + lead fix 3cfe62c, merged 59a4b72 (D-424); photo storage decided: PostgreSQL (D-424); CIV-184 (meclis photos) dispatched → review its PR. Open risk before council use: indicator direction (lower-is-better) — ask Ali 9 Nov.
 Release #384 live (main c46cf4d, 4 Nov 21:11; D-410): CIV-175/176/177/178 are live, /health ok, migration c162a1b2c3d4. 9 Nov page for Ali: https://claude.ai/artifact/1TNVQZsZG9aWfmFNAPibZn (D-403). CIV-179 #382 (InDesign tagged text) PARKED until the owner's new Faaliyet Raporu template exists (D-410); mechanism proven in InDesign.
@@ -23,7 +24,7 @@ CV Lider 61 (4 Nov ~21:25, DOĞRULANDI): no mail from Ali Abi; only open PR #382
 9. Claude account on Max from 4 Nov 2026 (BEYAN; next charge 4 Dec). Extra capacity goes to lead analysis/preparation work (D-400). The "Claude quota" block below is TARİHSEL (Pro era).
 10. Sunum module (D-411/D-412/D-413): reveal.js 6.0.1 + ECharts 6.1.0 via Civensa Jinja templates, Civensa design tokens; animated HTML + 16:9 PDF from the same file. Prototype https://claude.ai/artifact/DMpNp2f68JsogL2eMgJSRD review round 1 done (D-414); full Fen İşleri 2025 presentation with real data = CIV-180 reference (D-415); waits for the owner's hall-computer test + further remarks → CIV-180 (engine + FR müdürlük presentation). Future report modules proposed in D-411 (not accepted; after 1 Jan 2027).
 11. CIV-180 merged into phase5 (#394 → ab7551a, D-417); not live until the next release.
-Next IDs: task CIV-186, decision D-426.
+Next IDs: task CIV-186, decision D-428.
 
 ## Claude quota (BEYAN, owner 27 Oct 16:21)
 - Session 11%, week 67%, weekly reset Saturday 00:00 (D-300). Copilot 96 / 1,500 credits, reset 1 Nov.
@@ -35,8 +36,9 @@ Evidence rule (D-252): one-screen changes → targeted tests + changed-state scr
 ## Open pull requests (DOĞRULANDI 4 Nov ~19:00, D-409)
 | PR | Task | State | Next action |
 | --- | --- | --- | --- |
-| (pending) | CIV-185 | dispatched 5 Nov (D-425) | review when Codex opens the PR |
+| (release) | phase5 → main | opened 5 Nov (D-426) | owner merges, then backup + deploy |
 | #382 | CIV-179 | PARKED (D-410): mechanism proven; open Codex P2s on financial tables | resume with the owner's new template |
+Merged 5 Nov (D-426): #408 CIV-185 → 4eec9a4.
 Merged 5 Nov (D-425): #406 CIV-184 → 2bd4127 (lead fix 53f64cb).
 Merged 5 Nov (D-424): #404 CIV-183 → 59a4b72 (one flaky shard re-run: tests/test_ar_unit_workflow_ui.py, unrelated).
 Merged 5 Nov (D-423): #398 CIV-181 → 94f56df · #401 CIV-182 → caae626. (D-417): #394 CIV-180 → ab7551a.
