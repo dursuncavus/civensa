@@ -50,6 +50,7 @@ def register(app):
                 locked = photos.scope(db, user, document_id, lock=True)
                 return photos.upload(db, locked, user, department_id=form.get('department_id'),
                     caption=str(form.get('caption', '')), taken_on=str(form.get('taken_on', '')),
+                    after_taken_on=str(form.get('after_taken_on', '')),
                     mahalle=str(form.get('mahalle', '')), kind=form.get('kind'),
                     consent=form.get('consent') == 'on', images=images)
             transact(db, operation)

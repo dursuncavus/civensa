@@ -378,3 +378,21 @@ def test_photo_browser_drag_keyboard_pdf_and_screenshots(photo_client, db, sampl
         assert page.evaluate('document.documentElement.scrollWidth <= innerWidth')
         assert not errors
         browser.close()
+
+
+def test_pair_keeps_separate_before_and_after_dates(photo_client, db, sample):
+    client, docs, _ = photo_client
+    assert upload(photo_client, sample, image_bytes(30), second=image_bytes(31), caption='Park yenileme',
+                  after_taken_on='2027-11-02').status_code == 303
+    rows = photos.list_photos(db, docs['idare'])
+    assert {r.kind: r.taken_on for r in rows} == {'before': date(2027, 10, 29), 'after': date(2027, 11, 2)}
+    assert change(photo_client, rows[0], 'toggle', 'on').status_code == 303
+    slide = html.fromstring(client.get(f"/activity-sections/reports/{docs['idare'].id}/sunum").content
+                            ).xpath('//section[@data-type="before_after"]')[0]
+    tags = [' '.join(t.text_content().split()) for t in slide.xpath('.//span[contains(@class,"tag")]')]
+    assert tags == ['Önce · 29.10.2027', 'Sonra · 02.11.2027']
+    assert '2027' not in ''.join(slide.xpath('.//*[@class="ba-meta"]//text()'))
+    # A single photo ignores the after date.
+    assert upload(photo_client, sample, image_bytes(32), caption='Tek', after_taken_on='2027-12-01').status_code == 303
+    single = [r for r in photos.list_photos(db, docs['idare']) if r.kind == 'single'][0]
+    assert single.taken_on == date(2027, 10, 29)

@@ -80,7 +80,7 @@ def process_image(raw, filename=''):
 
 
 def upload(db, doc, user, *, department_id, caption, taken_on='', mahalle='', kind,
-           consent, images):
+           consent, images, after_taken_on=''):
     if not consent:
         fail('Fotoğraf izin onayı eksik. ' + CONSENT)
     caption, mahalle = caption.strip(), mahalle.strip()
@@ -91,6 +91,7 @@ def upload(db, doc, user, *, department_id, caption, taken_on='', mahalle='', ki
     try:
         department_id = int(department_id)
         taken_on = date.fromisoformat(taken_on) if taken_on else None
+        after_taken_on = date.fromisoformat(after_taken_on) if after_taken_on and kind == 'pair' else None
     except (ValueError, TypeError):
         fail('Fotoğrafın müdürlük veya tarih alanı geçersiz. Listeden müdürlük seçin ve tarihi kontrol edin.')
     if department_id not in {d.id for d in departments(db, doc)}:
@@ -110,7 +111,7 @@ def upload(db, doc, user, *, department_id, caption, taken_on='', mahalle='', ki
     order = max((p.sort_order for p in existing), default=-1) + 1
     pair_key = str(uuid4()) if kind == 'pair' else None
     rows = [SunumPhoto(organization_id=doc.organization_id, period_id=doc.period_id, year=year,
-        department_id=department_id, caption=caption, taken_on=taken_on, mahalle=mahalle or None,
+        department_id=department_id, caption=caption, taken_on=after_taken_on if pair_key and i == 1 else taken_on, mahalle=mahalle or None,
         kind=('before' if i == 0 else 'after') if pair_key else 'single', pair_key=pair_key,
         consent_confirmed=True, selected=False, sort_order=order, created_by=user.id, **image)
         for i, image in enumerate(processed)]
@@ -184,8 +185,9 @@ def deck_slides(db, doc):
         return 'data:image/webp;base64,' + base64.b64encode(p.webp_data).decode('ascii')
 
     def meta(p):
+        # Pair dates sit on the Önce/Sonra tags; the band would repeat only one of them.
         return ' · '.join(v for v in (p.mahalle, names.get(p.department_id),
-            p.taken_on.strftime('%d.%m.%Y') if p.taken_on else None) if v)
+            p.taken_on.strftime('%d.%m.%Y') if p.taken_on and p.kind == 'single' else None) if v)
 
     for p in selected:
         if p.pair_key and p.pair_key in seen:

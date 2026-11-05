@@ -16,9 +16,10 @@
 <label>Tür<select name="kind" id="photo-kind"><option value="single">Tek fotoğraf</option><option value="pair" {% if form.get('kind')=='pair' %}selected{% endif %}>Önce/sonra çifti</option></select></label>
 <label>Açıklama<input name="caption" maxlength="140" value="{{ form.get('caption','') }}" required></label>
 <label>Mahalle (isteğe bağlı)<input name="mahalle" maxlength="80" value="{{ form.get('mahalle','') }}"></label>
-<label>Tarih (isteğe bağlı)<input name="taken_on" type="date" value="{{ form.get('taken_on','') }}"></label>
+<label>Tarih / önce tarihi (isteğe bağlı)<input name="taken_on" type="date" value="{{ form.get('taken_on','') }}"></label>
 <label><span id="first-photo-label">Fotoğraf / önce fotoğrafı</span><input type="file" name="file" accept="image/jpeg,image/png,image/webp" required></label>
 <label id="after-photo-label">Sonra fotoğrafı (yalnız önce/sonra çifti için)<input type="file" name="after_file" accept="image/jpeg,image/png,image/webp"></label>
+<label>Sonra tarihi (yalnız önce/sonra çifti için, isteğe bağlı)<input name="after_taken_on" type="date" value="{{ form.get('after_taken_on','') }}"></label>
 </div>
 <label class="consent"><input type="checkbox" name="consent" required> {{ consent_text }}</label>
 <button class="button primary" type="submit">Fotoğrafları yükle</button></form></section>
