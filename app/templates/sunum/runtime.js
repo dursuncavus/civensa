@@ -1,6 +1,19 @@
 const PRINT = location.hash === '#pdf';
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
 if (PRINT) document.documentElement.classList.add('pdf');
+// Expand each row's detail immediately after its own scorecard continuation.
+if (PRINT) document.querySelectorAll('section[data-type="scorecard"]').forEach(host=>{
+  let after=host;
+  host.querySelectorAll('.pop').forEach(pop=>{
+    const section=document.createElement('section');
+    section.className='pdf-detail';section.dataset.type='scorecard-detail';section.dataset.parent=host.id;
+    section.id=pop.id+'-pdf';
+    section.appendChild(pop.querySelector('.popbox'));
+    section.querySelector('.x').remove();section.querySelector('.hint').remove();
+    section.appendChild(host.querySelector('.foot').cloneNode(true));
+    after.after(section);after=section;pop.remove();
+  });
+});
 const fmt = (value, decimals) => new Intl.NumberFormat('tr-TR', {
   minimumFractionDigits: decimals ?? 0, maximumFractionDigits: decimals ?? 6
 }).format(value);
@@ -15,7 +28,32 @@ const charts = new Map();
 function draw(el, animate) {
   const data = JSON.parse(el.parentElement.querySelector('.chart-data').textContent);
   const horizontal = data.variant === 'horizontal' || data.variant === 'stacked';
-  const chart = charts.get(el) || echarts.init(el, null, {renderer:'svg', width:1680, height:data.height});
+  const chart = charts.get(el) || echarts.init(el, null, {renderer:'svg', width:data.variant==='treemap'?1056:1680, height:data.height});
+  if (data.variant==='treemap') {
+    chart.setOption({textStyle:{fontFamily:'Fira Sans'},animation:animate,animationDuration:1200,
+      animationEasing:'cubicOut',series:[{type:'treemap',roam:false,nodeClick:false,
+        breadcrumb:{show:false},squareRatio:1,width:'100%',height:'100%',top:0,left:0,
+        itemStyle:{borderColor:'#f6f5f2',borderWidth:6,gapWidth:6,borderRadius:10},
+        label:{show:true,position:'insideTopLeft',padding:16,lineHeight:34,
+          formatter:p=>{
+            const size=p.data.share<10?18:24;
+            const layout=chart.getModel().getSeriesByIndex(0).getData().getItemLayout(p.dataIndex);
+            const width=Math.max(30,layout.width-44);
+            const measure=document.createElement('canvas').getContext('2d');
+            measure.font=size+'px "Fira Sans"';
+            const lines=[];let line='';
+            for (const word of p.name.split(' ')) {
+              if (line && measure.measureText(line+' '+word).width>width) {lines.push(line);line=word;}
+              else line+=(line?' ':'')+word;
+            }
+            if (line) lines.push(line);
+            return '{v|'+p.data.display+' TL}\n'+lines.map(line=>'{l|'+line+'}').join('\n');
+          },
+          rich:{v:{fontSize:44,fontWeight:600,lineHeight:56},l:{fontSize:24}}},
+        data:data.boxes.map((box,i)=>({...box,itemStyle:{color:box.color},label:{color:i<3?'#fff':'#1f2328',
+          ...(box.share<10?{padding:12,lineHeight:22,rich:{v:{fontSize:24,fontWeight:600,lineHeight:32},l:{fontSize:18,lineHeight:22}}}:{})}}))}]});
+    charts.set(el,chart);return;
+  }
   const colors = ['#1e6b65','#c9ded9','#17554f','#545b64'];
   const category = {type:'category', data:data.categories, inverse:horizontal,
     axisTick:{show:false}, axisLine:{show:!horizontal,lineStyle:{color:'#1f2328'}},
@@ -64,14 +102,49 @@ function onShow(s) {
   }
 }
 // Load embedded fonts before layout and SVG chart measurement, including PDF.
-window.sunumReady = document.fonts.ready.then(()=>deck.initialize()).then(()=>{
+const printReady=PRINT?new Promise(resolve=>deck.on('pdf-ready',resolve)):Promise.resolve();
+window.sunumReady = document.fonts.ready.then(()=>deck.initialize()).then(()=>printReady).then(()=>{
   if (PRINT) {
+    document.querySelectorAll('.pdf-detail .popbox').forEach(box=>{
+      const scale=Math.min(1,840/box.scrollHeight);
+      if (scale<1) box.style.transform='scale('+scale+')';
+    });
     document.querySelectorAll('[data-count]').forEach(countUp);
     document.querySelectorAll('[data-chart]').forEach(el=>draw(el,false));
   } else onShow(deck.getCurrentSlide());
   window.sunumRendered = true;
 });
-deck.on('slidechanged',event=>onShow(event.currentSlide));
+let activePopup=null, popupTrigger=null, previousKeyboard=true;
+function closePopup(restoreFocus=true) {
+  if (!activePopup) return;
+  activePopup.classList.remove('open');
+  popupTrigger.setAttribute('aria-expanded','false');
+  deck.configure({keyboard:previousKeyboard});
+  const trigger=popupTrigger;activePopup=null;popupTrigger=null;
+  if (restoreFocus) trigger.focus();
+}
+document.querySelectorAll('[data-detail]').forEach(trigger=>{
+  const open=()=>{
+    if (PRINT) return;
+    closePopup(false);popupTrigger=trigger;activePopup=document.getElementById(trigger.dataset.detail);
+    previousKeyboard=deck.getConfig().keyboard;deck.configure({keyboard:false});
+    activePopup.classList.add('open');trigger.setAttribute('aria-expanded','true');activePopup.querySelector('.x').focus();
+  };
+  trigger.addEventListener('click',open);
+  trigger.addEventListener('keydown',event=>{if (event.key==='Enter'||event.key===' ') {event.preventDefault();event.stopPropagation();open();}});
+});
+document.querySelectorAll('.pop .x').forEach(button=>button.addEventListener('click',()=>closePopup()));
+document.addEventListener('keydown',event=>{
+  if (!activePopup) return;
+  event.stopImmediatePropagation();
+  if (event.key==='Escape') {event.preventDefault();closePopup();}
+  else if (event.key==='Tab') {
+    const focusable=[...activePopup.querySelectorAll('button,[tabindex="0"]')];
+    const next=(focusable.indexOf(document.activeElement)+(event.shiftKey?-1:1)+focusable.length)%focusable.length;
+    event.preventDefault();focusable[next].focus();
+  } else if (!['ArrowUp','ArrowDown','PageUp','PageDown','Home','End','Enter',' '].includes(event.key)) event.preventDefault();
+},true);
+deck.on('slidechanged',event=>{closePopup(false);onShow(event.currentSlide);});
 function goTo(id) {
   const target = document.getElementById(id);
   if (target) { const index = deck.getIndices(target); deck.slide(index.h,index.v); }
