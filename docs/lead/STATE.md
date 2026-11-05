@@ -6,7 +6,7 @@ Backup log ("Civensa Yedek Kaydı", Drive): no entries after 31 Oct (DOĞRULANDI
 Tags: DOĞRULANDI (lead checked) · TARİHSEL (past fact) · BEYAN (owner said) · BELİRSİZ (unknown).
 
 ## Next session — start here (D-253)
-CV Lider 63 (5 Nov ~12:25, DOĞRULANDI): no mail from Ali Abi; CIV-183 #404 reviewed + lead fix 3cfe62c (D-424) → merge when CI is green; photo storage decided: PostgreSQL (D-424); CIV-184 (meclis photos) dispatched → review its PR. Open risk before council use: indicator direction (lower-is-better) — ask Ali 9 Nov.
+CV Lider 63 (5 Nov ~12:25, DOĞRULANDI): no mail from Ali Abi; CIV-183 #404 reviewed + lead fix 3cfe62c, merged 59a4b72 (D-424); photo storage decided: PostgreSQL (D-424); CIV-184 (meclis photos) dispatched → review its PR. Open risk before council use: indicator direction (lower-is-better) — ask Ali 9 Nov.
 Release #384 live (main c46cf4d, 4 Nov 21:11; D-410): CIV-175/176/177/178 are live, /health ok, migration c162a1b2c3d4. 9 Nov page for Ali: https://claude.ai/artifact/1TNVQZsZG9aWfmFNAPibZn (D-403). CIV-179 #382 (InDesign tagged text) PARKED until the owner's new Faaliyet Raporu template exists (D-410); mechanism proven in InDesign.
 CV Lider 62 (5 Nov ~09:20, DOĞRULANDI): no answer from Ali Abi; CIV-181 merged (94f56df) and CIV-182 İdare meclis recipe merged (caae626) (D-423); CIV-183 (karne + açılım popup + bütçe dağılımı) dispatched → review its PR. Meclis deck target above the previous one (D-420/D-421): 6 new slide types (spot, photo, önce/sonra, öne çıkan iş, scorecard, budget distribution) → designed by the lead (D-422, preview https://claude.ai/artifact/SaUoc6MvFT5ywgpNUUWQPG), karne popup added (D-423); owner look-review pending; lead verifies photo storage (Neon Object Storage preferred, R2 fallback) before the photo task. Owner tests Ornek-Sunum.html on the hall computer.
 CV Lider 61 (4 Nov ~21:25, DOĞRULANDI): no mail from Ali Abi; only open PR #382 (parked); the 18:03Z db-backup failure mail is the refused main dispatch already covered by D-410. Sunum work (D-411–D-415) continues in CV Lider 62 if the owner has remarks on the Fen İşleri presentation; local prototype files are not in the repo (artifact + files sent to the owner). Claude's next session: `CV Lider 62 · Claude Opus 5.5 · civensa-lead`. First job: Gmail check (D-361) → Ali Abi's answers (thread "Civensa – 2026 Faaliyet Raporu soruları", D-404; he returns 9 Nov). After his 2026 mapping upload: re-measure the 2026 snapshot and K4 (full PP PDF, 105 s of 120 s locally, D-409), then Strategy publishes 2026 via "Onaylı kitaptan yayınla". No Codex work is unblocked before Ali's answers.
@@ -34,9 +34,9 @@ Evidence rule (D-252): one-screen changes → targeted tests + changed-state scr
 ## Open pull requests (DOĞRULANDI 4 Nov ~19:00, D-409)
 | PR | Task | State | Next action |
 | --- | --- | --- | --- |
-| #404 | CIV-183 | reviewed, lead fix 3cfe62c, Codex review clean (D-424) | merge when CI green |
 | (pending) | CIV-184 | dispatched 5 Nov (D-424) | review when Codex opens the PR |
 | #382 | CIV-179 | PARKED (D-410): mechanism proven; open Codex P2s on financial tables | resume with the owner's new template |
+Merged 5 Nov (D-424): #404 CIV-183 → 59a4b72 (one flaky shard re-run: tests/test_ar_unit_workflow_ui.py, unrelated).
 Merged 5 Nov (D-423): #398 CIV-181 → 94f56df · #401 CIV-182 → caae626. (D-417): #394 CIV-180 → ab7551a.
 Merged 4 Nov (D-410): #384 release phase5 → main (owner) → c46cf4d, deployed · #383 D-409 records.
 Merged 4 Nov (D-409): #381 CIV-178 → 7656624.
