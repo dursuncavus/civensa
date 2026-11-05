@@ -4,3 +4,4 @@
 - `logo-beyaz.svg` — `bcb_logo.pdf` 4. sayfasından (yatay, tek renk) vektör, beyaza boyanmış.
 - `bcb_logo.pdf` — belediyenin logo dosyası (sahip 4 Kasım 2026): kare renkli, kare tek renk, yatay renkli, yatay tek renk.
 - Canlı önizleme: https://claude.ai/artifact/DMpNp2f68JsogL2eMgJSRD
+- `meclis-prototype.html` — İdare Faaliyet Raporu meclis sunumu için 6 yeni slayt türü (D-421/D-422): spot (yeşil/koyu), tam ekran fotoğraf, önce/sonra (sürüklenebilir ayraç; PDF'te yan yana), öne çıkan iş kartları, stratejik plan karnesi, bütçe dağılımı ("her 100 TL", treemap). Aynı token ve yazı tipleri; yeni token yalnız `--bad`/`--bad-bg` (karnede "Geride"). Görseller temsilî SVG; karne ve bütçe kalem payları ÖRNEK. Canlı önizleme: https://claude.ai/artifact/SaUoc6MvFT5ywgpNUUWQPG
