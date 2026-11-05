@@ -34,7 +34,36 @@
 {% macro table(s) -%}
 <table class="t"><thead><tr>{% for header in s.headers %}<th scope="col"{% if s.numeric_columns[loop.index0] %} class="n"{% endif %}>{{ header }}</th>{% endfor %}</tr></thead>
 <tbody>{% for row in s.rows %}<tr class="row" style="--d:{{ s.row_delays[loop.index0] }}ms">{% for cell in row %}<td{% if s.numeric_columns[loop.index0] %} class="n"{% endif %}>{{ cell }}</td>{% endfor %}</tr>{% endfor %}</tbody></table>
-<p class="cont">{{ s.continuation }}</p>
+{% if s.continuation %}<p class="cont">{{ s.continuation }}</p>{% endif %}
+{%- endmacro %}
+
+{% macro scorecard(s) -%}
+<div class="score-sum">{% for status in s.summary %}<div class="s"><span class="dot {{ status.css }}"></span><b>{{ status.display }}</b> {{ status.label }}</div>{% endfor %}</div>
+<div class="score">
+{% for row in s.rows %}<div class="r" style="--d:{{ loop.index0 * 100 }}ms"{% if row.expandable %} data-detail="{{ row.popup_id }}" role="button" tabindex="0" aria-haspopup="dialog" aria-controls="{{ row.popup_id }}" aria-expanded="false"{% endif %}>
+{% if row.expandable %}<span class="more" aria-hidden="true">+</span>{% endif %}
+<div class="name">{{ row.name }}<small>{{ row.measured_display }} göstergenin {{ row.met_display }}'i hedefte</small></div>
+<div class="bar {{ row.css }}"><i style="--w:{{ row.width }}%"></i></div><div class="pct">{{ row.percentage }}</div>
+{% if row.status %}<span class="pill {{ row.css }}">{{ row.status }}</span>{% else %}<span>—</span>{% endif %}</div>{% endfor %}
+</div>
+{% if s.continuation %}<p class="cont">{{ s.continuation }}</p>{% endif %}
+{% for row in s.rows if row.expandable %}
+<div class="pop" id="{{ row.popup_id }}" role="dialog" aria-modal="true" aria-label="{{ row.name }} açılımı"><div class="popbox">
+<button class="x" type="button" aria-label="Kapat">×</button>
+<div class="eyebrow">Açılım</div>
+<h3>{{ row.name }} — hedefi tutmayan {{ row.missed_display }} gösterge</h3><div class="sub2">{{ row.measured_display }} göstergenin {{ row.met_display }}'i hedefte · {{ row.percentage }}</div>
+<div class="popbody" tabindex="0"><table><thead><tr><th>Gösterge</th><th class="n">Hedef</th><th class="n">Gerçekleşen</th><th class="n">Oran</th><th>Sapmanın nedeni (müdürlüğün raporundan)</th></tr></thead>
+<tbody>{% for indicator in row.missed %}<tr><td>{{ indicator.name }}</td><td class="n">{{ indicator.target }}</td><td class="n">{{ indicator.actual }}</td><td class="n"><span class="pill {{ indicator.css }}">{{ indicator.ratio }}</span></td><td class="why">{{ indicator.reason }}</td></tr>{% endfor %}</tbody></table></div>
+<div class="hint">Kapatmak için × ya da Esc · sunum kaldığı slayttan devam eder</div>
+</div></div>{% endfor %}
+{%- endmacro %}
+
+{% macro budget(s) -%}
+<div class="budget"><div class="side"><div class="hd">{{ s.year }} yılında harcanan her 100 TL'nin</div>
+{% for item in s.top %}<div class="it" style="--c:{{ item.color }}"><div class="v">{{ item.display }}<small>TL</small></div><div class="l">{{ item.name }}</div></div>{% endfor %}
+</div><div class="tm" data-chart role="img" aria-label="Ekonomik sınıflandırmaya göre harcama dağılımı"></div>
+<script type="application/json" class="chart-data">{{ {'variant':'treemap', 'boxes':s.boxes, 'height':660}|tojson }}</script></div>
+<p class="budget-total">Toplam harcama: {{ s.total }} TL</p>
 {%- endmacro %}
 
 {% macro bullets(s) -%}
