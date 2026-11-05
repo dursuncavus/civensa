@@ -16,8 +16,8 @@
 <label>Bölüm<select name="section"><option value="">Tüm bölümler</option>{% for d in definitions %}<option value="{{ d.code }}" {% if selected_section==d.code %}selected{% endif %}>{{ d.code }} · {{ d.title }}</option>{% endfor %}</select></label>
 <label>Durum<select name="status"><option value="">Tümü</option>{% for k,v in statuses.items() %}<option value="{{ k }}" {% if selected_status==k %}selected{% endif %}>{{ v }}</option>{% endfor %}</select></label><button class="button">Filtrele</button></form>
 {% for error in report_errors %}<p class="ar-warning" role="status">{{ error.year }} yılı · Rapor {{ error.document_id }}: {{ error.message }}</p>{% endfor %}
-{# CIV-184: authorized addition to the frozen navigation contract. #}
-{% for item in reports %}{% if user.role=='strategy' and not item.report.department_id %}<p><a class="button" href="/activity-sections/reports/{{ item.report.id }}/photos">Meclis sunumu fotoğrafları</a></p>{% endif %}{% endfor %}
+{# CIV-184/185: authorized additions to the frozen navigation contract. #}
+{% for item in reports %}{% if user.role=='strategy' and not item.report.department_id %}<p><a class="button" href="/activity-sections/reports/{{ item.report.id }}/photos">Meclis sunumu fotoğrafları</a> <a class="button" href="/activity-sections/reports/{{ item.report.id }}/highlights">Meclis sunumu öne çıkanlar</a></p>{% endif %}{% endfor %}
 <div class="ar-scroll"><table class="ar-table"><thead><tr><th>Yıl / Rapor</th><th>Bölüm</th><th>Durum</th><th>Sahibi</th><th>Eksikler</th></tr></thead><tbody>
 {% for item in reports %}{% for s in item.matches %}
 <tr><td>{{ item.report.year }} · {{ item.report.department }}{% if item.report.workflow %}<br><strong>{{ item.report.workflow.label }}</strong>{% endif %}{% if item.report.frozen %}<br><strong>Onaylı kopya</strong>{% endif %}</td>
