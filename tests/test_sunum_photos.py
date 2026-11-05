@@ -336,6 +336,14 @@ def test_photo_browser_drag_keyboard_pdf_and_screenshots(photo_client, db, sampl
         page.keyboard.press('ArrowRight')
         expect(handle).to_have_attribute('aria-valuenow', '65')
         assert page.evaluate('deck.getIndices().h') == index
+        title = page.locator('section.present h2')
+        original_title = title.inner_text()
+        title.evaluate('(el)=>el.textContent=("Tamamlanan altyapı ve yol yenileme çalışmaları ".repeat(4)).slice(0,140)')
+        metadata = page.locator('section.present .ba-meta').bounding_box()
+        footer = page.locator('section.present .foot').bounding_box()
+        assert metadata['y'] + metadata['height'] < footer['y']
+        assert wrap.bounding_box()['height'] > 300
+        title.evaluate('(el,text)=>el.textContent=text', original_title)
         assert not errors
         assert network == ([url] if url.startswith('http:') else [])
         page.goto(url+'#pdf')
@@ -365,6 +373,7 @@ def test_photo_browser_drag_keyboard_pdf_and_screenshots(photo_client, db, sampl
         page.locator('.photo-grid').first.scroll_into_view_if_needed()
         page.screenshot(path=str(folder/'photo-page-1920.png'))
         page.set_viewport_size(dict(width=390, height=844))
+        page.evaluate('scrollTo(0,0)')
         page.screenshot(path=str(folder/'photo-page-390.png'), full_page=True)
         assert page.evaluate('document.documentElement.scrollWidth <= innerWidth')
         assert not errors

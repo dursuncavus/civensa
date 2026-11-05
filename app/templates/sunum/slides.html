@@ -87,10 +87,11 @@
 {%- endmacro %}
 
 {% macro before_after(s) -%}
+<div class="ba-content"><h2>{{ s.title }}</h2>
 <div class="ba-wrap">
 <div class="img" role="img" aria-label="Önce: {{ s.title }}" style="background-image:url('{{ s.before }}')"></div>
 <div class="after-clip"><div class="img" role="img" aria-label="Sonra: {{ s.title }}" style="background-image:url('{{ s.after }}')"></div></div>
 <div class="handle" role="slider" tabindex="0" aria-label="Önce/sonra ayracı" aria-valuemin="0" aria-valuemax="100" aria-valuenow="100"></div>
 <span class="tag b">Önce{% if s.before_date %} · {{ s.before_date }}{% endif %}</span><span class="tag a">Sonra{% if s.after_date %} · {{ s.after_date }}{% endif %}</span>
-</div><div class="ba-meta"><span>{{ s.meta }}</span></div>
+</div><div class="ba-meta"><span>{{ s.meta }}</span></div></div>
 {%- endmacro %}

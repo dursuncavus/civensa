@@ -39,3 +39,7 @@ html.pdf .ba-wrap .tag.a{right:auto;left:calc(50% + 40px)}
 .ba-wrap{--x:100%;touch-action:none}
 .ba-wrap .handle:focus-visible{outline:6px solid var(--accent);outline-offset:6px}
 .ba-meta{gap:24px;overflow-wrap:anywhere}
+.ba-content{position:absolute;top:152px;left:120px;right:120px;bottom:150px;display:flex;flex-direction:column}
+.ba-content h2,.photo .cap h2{overflow-wrap:anywhere}
+.ba-content .ba-wrap{flex:1;min-height:0}
+.ba-content .ba-meta{flex:none}

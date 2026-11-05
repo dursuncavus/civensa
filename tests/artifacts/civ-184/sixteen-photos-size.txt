@@ -1,4 +1,4 @@
-16 selected photos: 1864804 bytes in self-contained deck
+16 selected photos: 1865075 bytes in self-contained deck
 1600x900: WebP 5004 bytes; thumbnail 886 bytes
 1600x900: WebP 5020 bytes; thumbnail 928 bytes
 1600x900: WebP 5136 bytes; thumbnail 914 bytes

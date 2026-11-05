@@ -41,7 +41,7 @@ html.pdf .note,html.pdf .tools{display:none!important}
 {% for s in slides %}
 <section id="{{ s.slide_id }}" data-type="{{ s.type }}"{% if s.section %} data-sec="{{ s.section }}"{% endif %}{% if s.type in ['cover','separator','closing'] %} class="{{ 'section-open' if s.type=='separator' else 'close' if s.type=='closing' else 'cover' }}" data-background-color="{{ '#1f2328' if s.type=='closing' else '#1e6b65' }}"{% endif %}{% if s.type in ['map','separator'] %} data-auto-animate{% endif %}{% if s.type=='photo' %} class="photo" data-background-color="#1f2328"{% endif %}>
 {% if s.eyebrow and s.type!='photo' %}<div class="eyebrow">{{ s.eyebrow }}</div>{% endif %}
-{% if s.type not in ['cover','map','separator','closing','photo'] %}<h2>{{ s.title }}</h2>{% endif %}
+{% if s.type not in ['cover','map','separator','closing','photo','before_after'] %}<h2>{{ s.title }}</h2>{% endif %}
 {% if s.type=='cover' %}{{ types.cover(s,logo) }}
 {% elif s.type=='map' %}{{ types.map(s) }}
 {% elif s.type=='separator' %}{{ types.separator(s,logo) }}
