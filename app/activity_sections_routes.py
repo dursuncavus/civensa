@@ -163,8 +163,28 @@ def register(app):
         from .sunum.engine import DeckTooLarge
         payload,filename=export_payload(document_id,db,user,version)
         doc=service.document(db,user,document_id)
+        slides=activity_report(payload) if doc.department_id is not None else None
+        if doc.department_id is None:
+            from .sunum.recipes_idare import idare_activity_report
+            from .ar_unit_workflow_service import verified_payload
+            from .models import ARUnitWorkflowEvent
+            sources=[]
+            for unit in payload.get('unit_manifest',[]):
+                # Bind summaries to this export/release, never to today's latest
+                # unit report. The flattened İdare indicator list has no unit IDs.
+                approval=db.get(ARUnitWorkflowEvent,unit['approval_id'])
+                if (not approval or approval.action!='approve' or approval.document_id!=unit['document_id']
+                        or approval.sha256!=unit['sha256']):
+                    service.fail('İdare sunumunun onaylı birim kaynağı doğrulanamadı. Strateji ile rapor sürümünü kontrol edin.',409)
+                snapshot=verified_payload(approval)
+                if (snapshot.get('department_id')!=unit['department_id']
+                        or snapshot.get('organization_id')!=payload['organization_id']
+                        or snapshot.get('period_id')!=payload['period_id']):
+                    service.fail('İdare sunumunun onaylı birim kaynağı raporla eşleşmiyor. Strateji ile rapor sürümünü kontrol edin.',409)
+                sources.append(dict(department_id=unit['department_id'],department=unit['department'],core=snapshot.get('core',{})))
+            slides=idare_activity_report(dict(payload,unit_indicator_sources=sources))
         try:
-            content=render_deck(activity_report(payload),
+            content=render_deck(slides,
                 title=f"{payload['department']} · {payload['year']} Faaliyet Raporu sunumu",
                 code=sunum_code(db,doc,payload,version))
         except DeckTooLarge:
