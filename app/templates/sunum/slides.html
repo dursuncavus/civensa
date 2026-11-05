@@ -42,7 +42,7 @@
 <div class="score">
 {% for row in s.rows %}<div class="r" style="--d:{{ loop.index0 * 100 }}ms"{% if row.expandable %} data-detail="{{ row.popup_id }}" role="button" tabindex="0" aria-haspopup="dialog" aria-controls="{{ row.popup_id }}" aria-expanded="false"{% endif %}>
 {% if row.expandable %}<span class="more" aria-hidden="true">+</span>{% endif %}
-<div class="code">{{ row.code }}</div><div class="name">{{ row.name }}<small>{{ row.measured_display }} göstergenin {{ row.met_display }}'i hedefte</small></div>
+<div class="name">{{ row.name }}<small>{{ row.measured_display }} göstergenin {{ row.met_display }}'i hedefte</small></div>
 <div class="bar {{ row.css }}"><i style="--w:{{ row.width }}%"></i></div><div class="pct">{{ row.percentage }}</div>
 {% if row.status %}<span class="pill {{ row.css }}">{{ row.status }}</span>{% else %}<span>—</span>{% endif %}</div>{% endfor %}
 </div>
@@ -50,10 +50,10 @@
 {% for row in s.rows if row.expandable %}
 <div class="pop" id="{{ row.popup_id }}" role="dialog" aria-modal="true" aria-label="{{ row.name }} açılımı"><div class="popbox">
 <button class="x" type="button" aria-label="Kapat">×</button>
-<div class="eyebrow">Açılım · {{ row.code }}</div>
+<div class="eyebrow">Açılım</div>
 <h3>{{ row.name }} — hedefi tutmayan {{ row.missed_display }} gösterge</h3><div class="sub2">{{ row.measured_display }} göstergenin {{ row.met_display }}'i hedefte · {{ row.percentage }}</div>
-<div class="popbody" tabindex="0"><table><thead><tr><th>Gösterge</th><th>Müdürlük</th><th class="n">Hedef</th><th class="n">Gerçekleşen</th><th class="n">Oran</th><th>Sapmanın nedeni (müdürlüğün raporundan)</th></tr></thead>
-<tbody>{% for indicator in row.missed %}<tr><td>{{ indicator.name }}</td><td>{{ indicator.department }}</td><td class="n">{{ indicator.target }}</td><td class="n">{{ indicator.actual }}</td><td class="n"><span class="pill {{ indicator.css }}">{{ indicator.ratio }}</span></td><td class="why">{{ indicator.reason }}</td></tr>{% endfor %}</tbody></table></div>
+<div class="popbody" tabindex="0"><table><thead><tr><th>Gösterge</th><th class="n">Hedef</th><th class="n">Gerçekleşen</th><th class="n">Oran</th><th>Sapmanın nedeni (müdürlüğün raporundan)</th></tr></thead>
+<tbody>{% for indicator in row.missed %}<tr><td>{{ indicator.name }}</td><td class="n">{{ indicator.target }}</td><td class="n">{{ indicator.actual }}</td><td class="n"><span class="pill {{ indicator.css }}">{{ indicator.ratio }}</span></td><td class="why">{{ indicator.reason }}</td></tr>{% endfor %}</tbody></table></div>
 <div class="hint">Kapatmak için × ya da Esc · sunum kaldığı slayttan devam eder</div>
 </div></div>{% endfor %}
 {%- endmacro %}

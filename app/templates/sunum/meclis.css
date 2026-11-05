@@ -56,7 +56,8 @@ section.pdf-detail .x,section.pdf-detail .hint{display:none}
 
 
 :root{--ok-bg:#e6f4ea;--bad:#9b2c1f;--bad-bg:#fbe9e6}
-.score .r{grid-template-columns:100px 1fr 450px 130px 170px}
+/* Unit fallback (no SP goal link): no code column. */
+.score .r{grid-template-columns:1fr 450px 130px 170px}
 .score .name{overflow-wrap:anywhere}
 .score .code{overflow-wrap:anywhere}
 .score .r:focus-visible{outline:3px solid var(--accent);outline-offset:4px}
@@ -64,8 +65,8 @@ section.pdf-detail .x,section.pdf-detail .hint{display:none}
 .popbox h3{padding-right:35px}
 .popbody{max-height:455px;overflow:auto;min-height:0}
 .popbox table{table-layout:fixed}
-.popbox th:nth-child(1){width:23%}.popbox th:nth-child(2){width:17%}
-.popbox th:nth-child(3){width:8%}.popbox th:nth-child(4){width:12%}.popbox th:nth-child(5){width:9%}
+.popbox th:nth-child(1){width:32%}.popbox th:nth-child(2){width:10%}
+.popbox th:nth-child(3){width:13%}.popbox th:nth-child(4){width:10%}
 .popbox td,.popbox th{overflow-wrap:anywhere}
 .popbox td.n,.popbox th.n{white-space:normal}
 .popbox td.why{white-space:pre-line}

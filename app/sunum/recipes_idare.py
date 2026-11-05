@@ -123,7 +123,7 @@ def idare_activity_report(payload):
     content = []
     scores = scorecard(payload.get('unit_indicator_sources', []))
     if scores and any(unit.get('core', {}).get('indicators') for unit in payload.get('unit_indicator_sources', [])):
-        content.append(dict(type='scorecard', title='Amaçlarımıza ne kadar yaklaştık?', rows=scores,
+        content.append(dict(type='scorecard', title='Müdürlükler hedeflerine ne kadar yaklaştı?', rows=scores,
             summary=[dict(css=css, count=sum(row['status'] == label for row in scores), label=description)
                      for label, css, description in [('Hedefte', 'ok', 'müdürlük hedefte'),
                          ('Yakın', 'w', 'müdürlük hedefe yakın'), ('Geride', 'bad', 'müdürlük geride')]],

@@ -56,7 +56,7 @@ def test_approved_fixture_scorecard_distribution_and_group_order(idare_fixture):
     payload = idare_fixture['enriched']
     before = deepcopy(payload)
     slides = prepare_slides(idare_activity_report(payload))
-    score = by_title(slides, 'Amaçlarımıza ne kadar yaklaştık?')
+    score = by_title(slides, 'Müdürlükler hedeflerine ne kadar yaklaştı?')
     assert [(r['met'], r['measured'], r['rate'], r['status']) for r in score['rows']] == [
         (10, 10, 100, 'Hedefte'), (8, 10, 80, 'Yakın'), (6, 10, 60, 'Geride')]
     assert [r['count'] for r in score['summary']] == [1, 1, 1]
@@ -186,7 +186,7 @@ def test_popup_browser_keyboard_pdf_pages_and_screenshots(idare_fixture, tmp_pat
         texts = [page.extract_text() for page in pdf.pages]
         # Chromium positions the Latin-ext glyph runs separately in the PDF.
         card_index = next(i for i, text in enumerate(texts) if
-            'Amaçlarımızanekadaryaklaştık?' in ''.join(text.split()))
+            'Müdürlüklerhedeflerinenekadaryaklaştı?' in ''.join(text.split()))
         assert 'hedefi tutmayan 2 gösterge' in texts[card_index+1]
         assert 'hedefi tutmayan 4 gösterge' in texts[card_index+2]
         assert 'Müdürlüklere göre gösterge özeti' in texts[card_index+3]
