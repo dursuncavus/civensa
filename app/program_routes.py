@@ -31,9 +31,6 @@ def register(app):
     from .main import require_user, require_strategy, ensure_department_editable, templates, session_period, pp_period, check_pp_access, require_pp_period, log
     from .book_export import display_code, display_catalogue_keys
     from .structure_service import department_display_name
-    from .audit_display import ACTION_LABELS
-    # Register this route's event without changing the shared audit module.
-    ACTION_LABELS['publication_approved_book'] = 'Onaylı kitaptan yayın oluşturuldu'
     templates.env.filters['display_code'] = display_code
     templates.env.filters['display_catalogue_keys'] = display_catalogue_keys
     templates.env.filters['department_display_name'] = department_display_name
