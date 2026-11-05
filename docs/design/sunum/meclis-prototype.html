@@ -143,6 +143,30 @@ html.pdf .bar i{width:var(--w);transition:none}
 .budget .side .it .l{font-size:26px;color:var(--text2);margin-top:6px}
 .budget .tm{height:660px}
 
+
+/* ===== KARNE AÇILIMI (açılır pencere) ===== */
+.score .r[data-detail]{cursor:pointer;position:relative}
+.score .r[data-detail]:hover{border-color:var(--accent);box-shadow:0 8px 24px rgba(31,35,40,.08)}
+.score .r .more{position:absolute;right:-14px;top:50%;margin-top:-14px;width:28px;height:28px;border-radius:50%;background:var(--accent);color:#fff;font-size:20px;line-height:28px;text-align:center}
+.pop{position:absolute;inset:0;z-index:20;display:none;align-items:center;justify-content:center;background:rgba(31,35,40,.55);padding:0 !important}
+.pop.open{display:flex;animation:popbg .25s ease-out}
+.popbox{width:1600px;max-height:860px;overflow:auto;background:var(--surface);border-radius:16px;padding:56px 64px 48px;box-shadow:0 30px 80px rgba(0,0,0,.35);position:relative;animation:popin .35s cubic-bezier(.2,.7,.3,1)}
+.popbox .x{position:absolute;top:28px;right:32px;width:56px;height:56px;border-radius:50%;border:1px solid var(--border);background:var(--surface);font-size:30px;line-height:52px;text-align:center;cursor:pointer;color:var(--text2)}
+.popbox .x:hover{background:var(--muted)}
+.popbox h3{font-size:48px;font-weight:600;margin:0}
+.popbox .sub2{font-size:26px;color:var(--text2);margin-top:10px}
+.popbox table{width:100%;border-collapse:collapse;margin-top:36px;font-size:24px}
+.popbox th{text-align:left;font-weight:500;color:var(--text2);font-size:19px;text-transform:uppercase;letter-spacing:.04em;padding:10px 14px;border-bottom:2px solid var(--text)}
+.popbox td{padding:12px 14px;border-bottom:1px solid var(--border);vertical-align:top;line-height:1.35}
+.popbox td.n,.popbox th.n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.popbox td.why{color:var(--text2);font-size:22px;max-width:560px}
+.popbox .hint{font-size:20px;color:var(--text2);margin-top:20px}
+@keyframes popbg{from{background:rgba(31,35,40,0)}}
+@keyframes popin{from{opacity:0;transform:translateY(24px) scale(.98)}}
+/* PDF: açılımlar karneden sonra ayrı sayfa */
+section.pdf-detail .popbox{box-shadow:none;border:1px solid var(--border);margin-top:24px;width:auto;padding:40px 48px;max-height:none;overflow:visible}
+section.pdf-detail .x,section.pdf-detail .hint{display:none}
+
 /* kapanış */
 .close h1{color:#fff}
 .close .lead{color:#c9ced4}
@@ -247,7 +271,7 @@ html.pdf .reveal .slides section.photo{padding:0 !important}
 
 <!-- YENİ 5: KARNE -->
 <section data-src="2025 İdare Faaliyet Raporu · Performans Bilgileri (gösterge gerçekleşmeleri)">
-  <div class="note"><b>5 · Karne.</b> Stratejik Plan 2025–2029 amaçlarına göre hedefe ulaşan göstergelerin oranı. Oran = hedefini tutturan gösterge / gerçekleşmesi girilen gösterge. Durum eşikleri: %90 ve üstü Hedefte, %70–89 Yakın, %70 altı Geride (eşikler Strateji'yle kesinleşecek). Satırlar ve çubuklar sırayla gelir. Bütün değerler ÖRNEK.</div>
+  <div class="note"><b>5 · Karne.</b> Stratejik Plan 2025–2029 amaçlarına göre hedefe ulaşan göstergelerin oranı. Oran = hedefini tutturan gösterge / gerçekleşmesi girilen gösterge. Durum eşikleri: %90 ve üstü Hedefte, %70–89 Yakın, %70 altı Geride (eşikler Strateji'yle kesinleşecek). Satırlar ve çubuklar sırayla gelir. “+” işaretli satıra (Yakın / Geride) tıklayınca açılım penceresi açılır: hedefi tutmayan göstergeler, hedef, gerçekleşen, oran ve müdürlüğün Faaliyet Raporuna yazdığı sapma nedeni. × ya da Esc ile kapanır, sunum aynı slayttan devam eder. PDF’te açılımlar karneden hemen sonra ayrı sayfa olarak basılır. Bütün değerler ÖRNEK.</div>
   <div class="eyebrow">Stratejik plan karnesi <span class="sample">ÖRNEK VERİ</span></div>
   <h2>Amaçlarımıza ne kadar yaklaştık?</h2>
   <div class="score-sum">
@@ -259,9 +283,23 @@ html.pdf .reveal .slides section.photo{padding:0 !important}
     <div class="r"><div class="code">S.A.01</div><div class="name">Katılımcı ve şeffaf yönetim<small>24 göstergenin 23'ü hedefte</small></div><div class="bar"><i style="--w:96%"></i></div><div class="pct">%96</div><span class="pill ok">Hedefte</span></div>
     <div class="r"><div class="code">S.A.02</div><div class="name">Yaşanabilir ve dirençli kent<small>38 göstergenin 35'i hedefte</small></div><div class="bar"><i style="--w:92%"></i></div><div class="pct">%92</div><span class="pill ok">Hedefte</span></div>
     <div class="r"><div class="code">S.A.03</div><div class="name">Sosyal belediyecilik<small>29 göstergenin 27'si hedefte</small></div><div class="bar"><i style="--w:93%"></i></div><div class="pct">%93</div><span class="pill ok">Hedefte</span></div>
-    <div class="r"><div class="code">S.A.04</div><div class="name">Çevre ve iklim<small>17 göstergenin 14'ü hedefte</small></div><div class="bar w"><i style="--w:82%"></i></div><div class="pct">%82</div><span class="pill w">Yakın</span></div>
-    <div class="r"><div class="code">S.A.05</div><div class="name">Kurumsal kapasite<small>15 göstergenin 9'u hedefte</small></div><div class="bar bad"><i style="--w:60%"></i></div><div class="pct">%60</div><span class="pill bad">Geride</span></div>
+    <div class="r" data-detail="pop-sa04"><span class="more">+</span><div class="code">S.A.04</div><div class="name">Çevre ve iklim<small>17 göstergenin 14'ü hedefte</small></div><div class="bar w"><i style="--w:82%"></i></div><div class="pct">%82</div><span class="pill w">Yakın</span></div>
+    <div class="r" data-detail="pop-sa05"><span class="more">+</span><div class="code">S.A.05</div><div class="name">Kurumsal kapasite<small>15 göstergenin 9'u hedefte</small></div><div class="bar bad"><i style="--w:60%"></i></div><div class="pct">%60</div><span class="pill bad">Geride</span></div>
   </div>
+  <div class="pop" id="pop-sa04" role="dialog" aria-modal="true" aria-label="S.A.04 açılımı"><div class="box popbox">
+    <button class="x" type="button" aria-label="Kapat">×</button>
+    <div class="eyebrow">Açılım · S.A.04 <span class="sample">ÖRNEK VERİ</span></div>
+    <h3>Çevre ve iklim — hedefi tutmayan 3 gösterge</h3><div class="sub2">17 göstergenin 14’ü hedefte · %82</div>
+    <table><thead><tr><th>Gösterge</th><th>Müdürlük</th><th class="n">Hedef</th><th class="n">Gerçekleşen</th><th class="n">Oran</th><th>Sapmanın nedeni (müdürlüğün raporundan)</th></tr></thead><tbody><tr><td>Ayrıştırılarak toplanan atık oranı (%)</td><td>Temizlik İşleri</td><td class="n">35</td><td class="n">28</td><td class="n"><span class="pill w">%80</span></td><td class="why">Yeni toplama noktalarının ihalesi Eylül’e kaldı; kurulum 2026’ya sarktı.</td></tr><tr><td>Dikilen ağaç sayısı</td><td>Park ve Bahçeler</td><td class="n">5.000</td><td class="n">3.900</td><td class="n"><span class="pill w">%78</span></td><td class="why">Kurak geçen ilkbahar nedeniyle dikim sezonu kısaldı.</td></tr><tr><td>Enerji tüketiminde azalma (%)</td><td>Destek Hizmetleri</td><td class="n">10</td><td class="n">6</td><td class="n"><span class="pill bad">%60</span></td><td class="why">Güneş paneli projesi onay sürecinde; tasarruf 2026’da başlayacak.</td></tr></tbody></table>
+    <div class="hint">Kapatmak için × ya da Esc · sunum kaldığı slayttan devam eder</div>
+  </div></div>
+  <div class="pop" id="pop-sa05" role="dialog" aria-modal="true" aria-label="S.A.05 açılımı"><div class="box popbox">
+    <button class="x" type="button" aria-label="Kapat">×</button>
+    <div class="eyebrow">Açılım · S.A.05 <span class="sample">ÖRNEK VERİ</span></div>
+    <h3>Kurumsal kapasite — hedefi tutmayan 6 gösterge</h3><div class="sub2">15 göstergenin 9’u hedefte · %60</div>
+    <table><thead><tr><th>Gösterge</th><th>Müdürlük</th><th class="n">Hedef</th><th class="n">Gerçekleşen</th><th class="n">Oran</th><th>Sapmanın nedeni (müdürlüğün raporundan)</th></tr></thead><tbody><tr><td>Hizmet içi eğitim saati / personel</td><td>İnsan Kaynakları ve Eğitim</td><td class="n">24</td><td class="n">14</td><td class="n"><span class="pill bad">%58</span></td><td class="why">Eğitim firması sözleşmesi feshedildi; yeni ihale Kasım’da.</td></tr><tr><td>e-Belediye üzerinden yapılan başvuru oranı (%)</td><td>Bilgi İşlem</td><td class="n">60</td><td class="n">41</td><td class="n"><span class="pill bad">%68</span></td><td class="why">Yeni başvuru modülü Ekim’de yayına alındı; etkisi 2026’da görülecek.</td></tr><tr><td>Ortalama başvuru cevap süresi (gün)</td><td>Basın Yayın ve Halkla İlişkiler</td><td class="n">5</td><td class="n">7</td><td class="n"><span class="pill w">%71</span></td><td class="why">Deprem tatbikatı haftasında başvurular birikti.</td></tr><tr><td>Arşivde dijitale aktarılan belge (%)</td><td>Yazı İşleri</td><td class="n">50</td><td class="n">30</td><td class="n"><span class="pill bad">%60</span></td><td class="why">Tarayıcı alımı bütçe revizyonunu bekledi.</td></tr><tr><td>Memnuniyet anketine katılım (kişi)</td><td>Strateji Geliştirme</td><td class="n">3.000</td><td class="n">1.850</td><td class="n"><span class="pill bad">%62</span></td><td class="why">Anket yalnız çevrim içi yapıldı; yüz yüze ayak 2026’ya alındı.</td></tr><tr><td>Yangın tatbikatı yapılan hizmet binası</td><td>Destek Hizmetleri</td><td class="n">12</td><td class="n">8</td><td class="n"><span class="pill bad">%67</span></td><td class="why">Dört binada tadilat sürdüğü için tatbikat ertelendi.</td></tr></tbody></table>
+    <div class="hint">Kapatmak için × ya da Esc · sunum kaldığı slayttan devam eder</div>
+  </div></div>
 </section>
 
 <!-- YENİ 6: BÜTÇE DAĞILIMI -->
@@ -320,6 +358,11 @@ const PH={
 };
 document.querySelectorAll('[data-ph]').forEach(el=>el.style.backgroundImage=svg(PH[el.dataset.ph]));
 
+/* PDF: açılım pencereleri karneden sonra ayrı sayfa olur */
+if(PRINT){document.querySelectorAll('.pop').forEach(pop=>{const host=pop.closest('section');const sec=document.createElement('section');
+  sec.className='pdf-detail';sec.dataset.src=host.dataset.src;const box=pop.querySelector('.popbox').cloneNode(true);sec.appendChild(box);
+  let after=host;while(after.nextElementSibling&&after.nextElementSibling.classList.contains('pdf-detail'))after=after.nextElementSibling;after.after(sec);pop.remove();});}
+
 /* alt bilgi: kaynak + doğrulama kodu */
 document.querySelectorAll('.slides>section').forEach(sec=>{
   const f=document.createElement('div'); f.className='foot';
@@ -367,6 +410,15 @@ document.querySelectorAll('.ba-wrap').forEach(w=>{
   window.addEventListener('touchmove',e=>{if(w.classList.contains('drag'))set(e);},{passive:true});
   const up=()=>w.classList.remove('drag');window.addEventListener('mouseup',up);window.addEventListener('touchend',up);
 });
+
+/* açılım penceresi: slayt değişmez, kapanınca kaldığı yerden devam */
+let openPop=null;
+function closePop(){if(!openPop)return;openPop.classList.remove('open');openPop=null;deck.configure({keyboard:true});}
+document.querySelectorAll('.score .r[data-detail]').forEach(r=>r.addEventListener('click',e=>{e.stopPropagation();
+  const p=document.getElementById(r.dataset.detail);if(!p)return;openPop=p;p.classList.add('open');deck.configure({keyboard:false});}));
+document.querySelectorAll('.pop').forEach(p=>{p.addEventListener('click',e=>{if(e.target===p)closePop();});p.querySelector('.x').addEventListener('click',closePop);});
+document.addEventListener('keydown',e=>{if(openPop&&(e.key==='Escape'||e.key==='Esc')){e.preventDefault();closePop();}},true);
+deck.on('slidechanged',closePop);
 document.getElementById('toggleNotes').addEventListener('click',()=>document.body.classList.toggle('shownotes'));
 document.getElementById('goPdf').addEventListener('click',()=>setTimeout(()=>location.reload(),50));
 const tools=document.getElementById('tools');let tt=null;
