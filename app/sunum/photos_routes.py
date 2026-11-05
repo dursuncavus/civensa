@@ -8,15 +8,20 @@ from ..db import get_db
 from ..file_security import read_upload_limited
 from ..models import ReportingPeriod
 
+UPLOAD_ROLES = {'strategy'}  # Add department only at its authorized rollout.
+
 
 def register(app):
-    from ..main import require_strategy, templates
+    from ..main import require_strategy, require_user, templates
     from ..activity_sections_routes import TurkishValidationRoute, transact
 
-    # Department rollout changes this single dependency, after authorization.
-    photo_access = require_strategy
     router = APIRouter(route_class=TurkishValidationRoute)
     prefix = '/activity-sections/reports/{document_id}/photos'
+
+    def upload_access(user=Depends(require_user)):
+        if user.role not in UPLOAD_ROLES:
+            require_strategy(user)
+        return user
 
     def page(request, db, user, doc, *, error=None, status=200, form=None):
         rows = photos.list_photos(db, doc)
@@ -26,11 +31,11 @@ def register(app):
             selected_count=sum(p.selected for p in rows), error=error, form=form or {}), status_code=status)
 
     @router.get(prefix)
-    def listing(document_id: int, request: Request, db: Session = Depends(get_db), user=Depends(photo_access)):
+    def listing(document_id: int, request: Request, db: Session = Depends(get_db), user=Depends(require_strategy)):
         return page(request, db, user, photos.scope(db, user, document_id))
 
     @router.post(prefix)
-    async def upload(document_id: int, request: Request, db: Session = Depends(get_db), user=Depends(photo_access)):
+    async def upload(document_id: int, request: Request, db: Session = Depends(get_db), user=Depends(upload_access)):
         doc = photos.scope(db, user, document_id)
         form = await request.form()
         try:
@@ -55,7 +60,7 @@ def register(app):
 
     @router.post(prefix + '/{photo_id}/{action}')
     async def change(document_id: int, photo_id: int, action: str, request: Request,
-                     db: Session = Depends(get_db), user=Depends(photo_access)):
+                     db: Session = Depends(get_db), user=Depends(require_strategy)):
         doc = photos.scope(db, user, document_id)
         form = await request.form()
         try:
@@ -70,7 +75,7 @@ def register(app):
 
     @router.get(prefix + '/{photo_id}/image')
     def image(document_id: int, photo_id: int, thumbnail: bool = False,
-              db: Session = Depends(get_db), user=Depends(photo_access)):
+              db: Session = Depends(get_db), user=Depends(require_strategy)):
         doc = photos.scope(db, user, document_id)
         return Response(photos.image_bytes(db, doc, photo_id, thumbnail), media_type='image/webp',
                         headers={'Cache-Control': 'private, no-store', 'X-Content-Type-Options': 'nosniff'})

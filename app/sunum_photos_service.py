@@ -95,6 +95,8 @@ def upload(db, doc, user, *, department_id, caption, taken_on='', mahalle='', ki
         fail('Fotoğrafın müdürlük veya tarih alanı geçersiz. Listeden müdürlük seçin ve tarihi kontrol edin.')
     if department_id not in {d.id for d in departments(db, doc)}:
         fail('Fotoğrafın müdürlüğü bu kurumun raporlama yılı kapsamında değil. Listeden bir müdürlük seçin.')
+    if user.role != 'strategy' and department_id != user.department_id:
+        fail('Başka müdürlük adına fotoğraf yükleyemezsiniz. Kendi müdürlüğünüzü seçin.', 403)
     if kind not in {'single', 'pair'} or len(images) != (2 if kind == 'pair' else 1):
         fail('Fotoğraf türünü ve dosyalarını kontrol edin. Önce/sonra çifti için iki fotoğraf yükleyin.')
     processed = [process_image(raw, name) for raw, name in images]
