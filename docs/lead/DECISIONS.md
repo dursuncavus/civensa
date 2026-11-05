@@ -1322,3 +1322,8 @@ BEYAN (owner 09:17): asks whether there is other work besides the hall-computer 
 Lead review of the backlog: K2 (catalogue explanation display) is a product/data question; K3 (2026 manifest membership family) is expected to resolve itself once Ali's 2026 mapping gives activities a subprogram — not dispatched; K4/K6 stay held (D-405). K5 (audit CSV leaks name:<hex> keys; legacy department Word filename uses the system name) and the D-394 ACTION_LABELS note are unblocked, small and independent of Ali.
 Decision (lead, preference: idle slot gets the next task): CIV-181 to Codex (GPT-6.1 Sol, orta) — package tasks/CIV-181.md. Value LOW; dispatched because the slot is idle and the cost is one Codex task.
 Next IDs: task CIV-182, decision D-419.
+
+## D-419 (5 Nov 2026 ~09:30 Istanbul, owner + lead, live session CV Lider 62) — second parallel Codex task: CIV-182 İdare meclis sunumu
+BEYAN (owner 09:23): Codex is working on CIV-181; do not stay idle.
+Decision (lead): dispatch D-411 order step 2 now — İdare FR council presentation recipe (CIV-182, Codex GPT-6.1 Sol, yüksek), package tasks/CIV-182.md. Independent of Ali Abi (fixtures only) and of CIV-181 (different files). Risk accepted: the owner's pending design remarks (hall test, D-414/D-417) change the engine look, not the recipe content; CIV-182 is forbidden to touch engine/templates/CSS so remarks stay one separate follow-up task.
+Next IDs: task CIV-183, decision D-420.
