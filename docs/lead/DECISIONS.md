@@ -1315,3 +1315,10 @@ Lead review (Claude, other model family) on dc18c63 → 4 fixes requested (PR co
 Not live yet: goes live with the next release (owner merge to main + deploy).
 Open for the owner: review the generated deck on the real 2025/2026 FR data once FR data exist in Civensa; owner's design remarks (D-415 Fen İşleri deck) become small follow-up tasks.
 Next IDs: task CIV-181, decision D-418.
+
+## D-418 (5 Nov 2026 ~09:20 Istanbul, owner + lead, live session CV Lider 62) — idle Codex slot gets CIV-181 (K5 cleanup)
+Session start (DOĞRULANDI): Gmail — no answer from Ali Abi in thread "Civensa – 2026 Faaliyet Raporu soruları" (only the sent message); open PRs: only #382 (parked); phase5 2c1a8f3, all latest runs green.
+BEYAN (owner 09:17): asks whether there is other work besides the hall-computer Sunum test.
+Lead review of the backlog: K2 (catalogue explanation display) is a product/data question; K3 (2026 manifest membership family) is expected to resolve itself once Ali's 2026 mapping gives activities a subprogram — not dispatched; K4/K6 stay held (D-405). K5 (audit CSV leaks name:<hex> keys; legacy department Word filename uses the system name) and the D-394 ACTION_LABELS note are unblocked, small and independent of Ali.
+Decision (lead, preference: idle slot gets the next task): CIV-181 to Codex (GPT-6.1 Sol, orta) — package tasks/CIV-181.md. Value LOW; dispatched because the slot is idle and the cost is one Codex task.
+Next IDs: task CIV-182, decision D-419.
