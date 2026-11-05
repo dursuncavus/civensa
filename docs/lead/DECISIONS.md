@@ -1327,3 +1327,10 @@ Next IDs: task CIV-182, decision D-419.
 BEYAN (owner 09:23): Codex is working on CIV-181; do not stay idle.
 Decision (lead): dispatch D-411 order step 2 now — İdare FR council presentation recipe (CIV-182, Codex GPT-6.1 Sol, yüksek), package tasks/CIV-182.md. Independent of Ali Abi (fixtures only) and of CIV-181 (different files). Risk accepted: the owner's pending design remarks (hall test, D-414/D-417) change the engine look, not the recipe content; CIV-182 is forbidden to touch engine/templates/CSS so remarks stay one separate follow-up task.
 Next IDs: task CIV-183, decision D-420.
+
+## D-420 (5 Nov 2026 ~09:35 Istanbul, owner + lead, live session CV Lider 62) — meclis presentation needs a content layer; CIV-182 is part 1
+BEYAN (owner 09:28): the meclis presentation must be especially good (important for the mayor's office and for us): detail, striking spotlights in places, photos of completed works.
+Lead check (DOĞRULANDI on phase5 b572815): FR sections hold only paragraph/bullets/table blocks — no photo upload in the Faaliyet Raporu; PP report sections store images base64 inside PostgreSQL (precedent). Live database is Neon; its plan/storage limit is BELİRSİZ — many photos in the database may not fit; object storage is the likely USE option (to be researched, not decided).
+Assessment: not ready. CIV-182 (data backbone: staff, budget, indicators per müdürlük) stays valid and continues. Missing for the meclis deck: (1) photos of works (upload by müdürlükler, resize, storage, photo slide types); (2) spotlight slides — sentence written by Strateji, the number inside it always taken from report data; (3) "öne çıkan işler" detail slides selected by Strateji; (4) richer slide designs for these types from the owner (the D-411 "no special design per presentation" rule still holds: types, not one-off designs).
+Next: owner sends the previous meclis FR presentation as reference; lead researches prior art (municipal council presentations, photo storage) and writes the content-layer spec before any Codex task.
+Next IDs: task CIV-183, decision D-421.
