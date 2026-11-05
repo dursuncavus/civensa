@@ -1,11 +1,12 @@
 # CIVENSA — CURRENT STATE
 
-Updated: 5 Nov 2026 ~11:15 Istanbul (CV Lider 62, D-423).
+Updated: 5 Nov 2026 ~13:10 Istanbul (CV Lider 63, D-424).
 Rules: AI_WORKING_CONSTITUTION v1.2 (Drive, global) · `HIERARCHY.md` v1.8 (D-408: the lead also codes; Codex reviews its PRs) · `PROJECT_RULES.md` v1.4 (D-271: PRIOR ART field mandatory in every package) · `BACKUP_LEAD.md` v2.
 Backup log ("Civensa Yedek Kaydı", Drive): no entries after 31 Oct (DOĞRULANDI 3 Nov 05:45, file unchanged since 23 Oct).
 Tags: DOĞRULANDI (lead checked) · TARİHSEL (past fact) · BEYAN (owner said) · BELİRSİZ (unknown).
 
 ## Next session — start here (D-253)
+CV Lider 63 (5 Nov ~12:25, DOĞRULANDI): no mail from Ali Abi; CIV-183 #404 reviewed + lead fix 3cfe62c, merged 59a4b72 (D-424); photo storage decided: PostgreSQL (D-424); CIV-184 (meclis photos) dispatched → review its PR. Open risk before council use: indicator direction (lower-is-better) — ask Ali 9 Nov.
 Release #384 live (main c46cf4d, 4 Nov 21:11; D-410): CIV-175/176/177/178 are live, /health ok, migration c162a1b2c3d4. 9 Nov page for Ali: https://claude.ai/artifact/1TNVQZsZG9aWfmFNAPibZn (D-403). CIV-179 #382 (InDesign tagged text) PARKED until the owner's new Faaliyet Raporu template exists (D-410); mechanism proven in InDesign.
 CV Lider 62 (5 Nov ~09:20, DOĞRULANDI): no answer from Ali Abi; CIV-181 merged (94f56df) and CIV-182 İdare meclis recipe merged (caae626) (D-423); CIV-183 (karne + açılım popup + bütçe dağılımı) dispatched → review its PR. Meclis deck target above the previous one (D-420/D-421): 6 new slide types (spot, photo, önce/sonra, öne çıkan iş, scorecard, budget distribution) → designed by the lead (D-422, preview https://claude.ai/artifact/SaUoc6MvFT5ywgpNUUWQPG), karne popup added (D-423); owner look-review pending; lead verifies photo storage (Neon Object Storage preferred, R2 fallback) before the photo task. Owner tests Ornek-Sunum.html on the hall computer.
 CV Lider 61 (4 Nov ~21:25, DOĞRULANDI): no mail from Ali Abi; only open PR #382 (parked); the 18:03Z db-backup failure mail is the refused main dispatch already covered by D-410. Sunum work (D-411–D-415) continues in CV Lider 62 if the owner has remarks on the Fen İşleri presentation; local prototype files are not in the repo (artifact + files sent to the owner). Claude's next session: `CV Lider 62 · Claude Opus 5.5 · civensa-lead`. First job: Gmail check (D-361) → Ali Abi's answers (thread "Civensa – 2026 Faaliyet Raporu soruları", D-404; he returns 9 Nov). After his 2026 mapping upload: re-measure the 2026 snapshot and K4 (full PP PDF, 105 s of 120 s locally, D-409), then Strategy publishes 2026 via "Onaylı kitaptan yayınla". No Codex work is unblocked before Ali's answers.
@@ -21,7 +22,7 @@ CV Lider 61 (4 Nov ~21:25, DOĞRULANDI): no mail from Ali Abi; only open PR #382
 9. Claude account on Max from 4 Nov 2026 (BEYAN; next charge 4 Dec). Extra capacity goes to lead analysis/preparation work (D-400). The "Claude quota" block below is TARİHSEL (Pro era).
 10. Sunum module (D-411/D-412/D-413): reveal.js 6.0.1 + ECharts 6.1.0 via Civensa Jinja templates, Civensa design tokens; animated HTML + 16:9 PDF from the same file. Prototype https://claude.ai/artifact/DMpNp2f68JsogL2eMgJSRD review round 1 done (D-414); full Fen İşleri 2025 presentation with real data = CIV-180 reference (D-415); waits for the owner's hall-computer test + further remarks → CIV-180 (engine + FR müdürlük presentation). Future report modules proposed in D-411 (not accepted; after 1 Jan 2027).
 11. CIV-180 merged into phase5 (#394 → ab7551a, D-417); not live until the next release.
-Next IDs: task CIV-184, decision D-424.
+Next IDs: task CIV-185, decision D-425.
 
 ## Claude quota (BEYAN, owner 27 Oct 16:21)
 - Session 11%, week 67%, weekly reset Saturday 00:00 (D-300). Copilot 96 / 1,500 credits, reset 1 Nov.
@@ -33,8 +34,9 @@ Evidence rule (D-252): one-screen changes → targeted tests + changed-state scr
 ## Open pull requests (DOĞRULANDI 4 Nov ~19:00, D-409)
 | PR | Task | State | Next action |
 | --- | --- | --- | --- |
-| (pending) | CIV-183 | dispatched 5 Nov (D-423) | review when Codex opens the PR |
+| (pending) | CIV-184 | dispatched 5 Nov (D-424) | review when Codex opens the PR |
 | #382 | CIV-179 | PARKED (D-410): mechanism proven; open Codex P2s on financial tables | resume with the owner's new template |
+Merged 5 Nov (D-424): #404 CIV-183 → 59a4b72 (one flaky shard re-run: tests/test_ar_unit_workflow_ui.py, unrelated).
 Merged 5 Nov (D-423): #398 CIV-181 → 94f56df · #401 CIV-182 → caae626. (D-417): #394 CIV-180 → ab7551a.
 Merged 4 Nov (D-410): #384 release phase5 → main (owner) → c46cf4d, deployed · #383 D-409 records.
 Merged 4 Nov (D-409): #381 CIV-178 → 7656624.
@@ -66,6 +68,7 @@ Merged 26 Oct: #163 CIV-113 → 88c9dfb; #154 CIV-109 → 34329a7; #161 CIV-111 
 
 ## Open — owner
 - Sunum (D-413/D-414): test Ornek-Sunum.html on the presentation-hall computer; further remarks on https://claude.ai/artifact/DMpNp2f68JsogL2eMgJSRD → lead writes CIV-180.
+- Ask Ali 9 Nov (D-424): which indicators are lower-is-better (needed before the karne goes to the council); who supplies photos of completed works.
 - Ask Ali 9 Nov (D-411/D-415): the 4 inconsistencies in the printed 2025 FR Fen İşleri chapter (D-415); when müdürlükler present the FR to the mayor;  who prepares Kurumsal Mali Durum, SP monitoring, Kamu Hizmet Envanteri and how long each takes.
 - New Faaliyet Raporu template (D-410): keep the 2025 style names; add paragraph style "tablo sonuç" (tablo yazı + bold); send the template when ready → CIV-179 resumes.
 - Look approvals D-303: CIV-127/128/129/131/132/133/135/136/137/138/139 approved; 017 → CIV-141, 047 users → CIV-142; CIV-140 pending.
