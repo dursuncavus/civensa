@@ -10,7 +10,7 @@ from .meclis import budget_distribution, one_decimal, scorecard
 logger = logging.getLogger(__name__)
 
 
-def idare_activity_report(payload):
+def idare_activity_report(payload, *, photos=()):
     """Return the council recipe without changing report facts or the engine.
 
     The route supplies ``unit_indicator_sources`` from the exact approval IDs in
@@ -119,6 +119,8 @@ def idare_activity_report(payload):
     else:
         missing('müdürlüklere göre eksiksiz harcama')
     add_group('Bütçe', 'Ödenek, harcama', content)
+
+    add_group('Tamamlanan işler', 'Fotoğraflarla çalışmalarımız', list(photos))
 
     content = []
     scores = scorecard(payload.get('unit_indicator_sources', []))

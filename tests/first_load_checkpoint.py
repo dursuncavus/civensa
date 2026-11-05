@@ -14,6 +14,11 @@ def disposable_first_load_database(url):
         rendered = engine.url.render_as_string(hide_password=False)
         with environment(DATABASE_URL=rendered, MIGRATION_DATABASE_URL=rendered):
             command.downgrade(Config(str(live.ROOT / 'alembic.ini')), live.HEAD)
+        # These historical CLI tests import today's web application in the same
+        # process. Its metadata-based ownership guards see the new photo model;
+        # provide its empty auxiliary table while preserving the operator pin.
+        from app.sunum.models import SunumPhoto
+        SunumPhoto.__table__.create(engine, checkfirst=True)
         yield engine
 
 

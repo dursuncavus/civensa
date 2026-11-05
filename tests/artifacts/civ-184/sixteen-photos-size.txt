@@ -1,0 +1,17 @@
+16 selected photos: 1854306 bytes in self-contained deck
+1600x900: WebP 5004 bytes; thumbnail 886 bytes
+1600x900: WebP 5020 bytes; thumbnail 928 bytes
+1600x900: WebP 5136 bytes; thumbnail 914 bytes
+1600x900: WebP 4964 bytes; thumbnail 924 bytes
+1600x900: WebP 4998 bytes; thumbnail 906 bytes
+1600x900: WebP 5018 bytes; thumbnail 944 bytes
+1600x900: WebP 5130 bytes; thumbnail 924 bytes
+1600x900: WebP 5126 bytes; thumbnail 918 bytes
+1600x900: WebP 5072 bytes; thumbnail 932 bytes
+1600x900: WebP 5158 bytes; thumbnail 978 bytes
+1600x900: WebP 5366 bytes; thumbnail 988 bytes
+1600x900: WebP 5414 bytes; thumbnail 976 bytes
+1600x900: WebP 5302 bytes; thumbnail 982 bytes
+1600x900: WebP 5294 bytes; thumbnail 1022 bytes
+1600x900: WebP 5400 bytes; thumbnail 1036 bytes
+1600x900: WebP 5452 bytes; thumbnail 994 bytes

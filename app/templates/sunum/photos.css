@@ -1,0 +1,41 @@
+
+.photo{padding:0 !important}
+.photo .img{position:absolute;inset:0;background-size:cover;background-position:center;transform:scale(1.06);transition:transform 6s ease-out}
+section.present.photo .img{transform:scale(1)}
+html.pdf .photo .img{transform:none}
+.photo .shade{position:absolute;inset:0;background:linear-gradient(180deg,rgba(15,20,24,.35) 0%,rgba(15,20,24,0) 22%,rgba(15,20,24,0) 48%,rgba(15,20,24,.82) 100%)}
+.photo .eyebrow{position:absolute;top:96px;left:120px;color:#fff;text-shadow:0 1px 8px rgba(0,0,0,.35)}
+.photo .cap{position:absolute;left:120px;right:120px;bottom:150px;display:flex;justify-content:space-between;align-items:flex-end;gap:64px}
+.photo .cap h2{color:#fff;font-size:72px;max-width:1100px}
+.photo .cap .meta{font-size:30px;color:#dfe7e6;margin-top:20px}
+.photo .chip{background:rgba(255,255,255,.95);border-radius:12px;padding:28px 36px;min-width:360px}
+.photo .chip .v{font-size:72px;font-weight:600;color:var(--accent);line-height:1}
+.photo .chip .l{font-size:24px;color:var(--text2);margin-top:10px}
+.photo .foot{border-top-color:rgba(255,255,255,.3);color:#dfe7e6}
+.photo .foot b{color:#fff}
+
+/* ===== YENİ 3: ÖNCE / SONRA ===== */
+.ba-wrap{position:relative;margin-top:36px;height:620px;border-radius:12px;overflow:hidden;user-select:none;background:var(--muted)}
+.ba-wrap .img{position:absolute;inset:0;background-size:cover;background-position:center}
+.ba-wrap .after-clip{position:absolute;inset:0;clip-path:inset(0 0 0 var(--x,100%));transition:clip-path 1.2s cubic-bezier(.65,0,.35,1)}
+.ba-wrap.drag .after-clip{transition:none}
+.ba-wrap .handle{position:absolute;top:0;bottom:0;left:var(--x,100%);width:4px;margin-left:-2px;background:#fff;box-shadow:0 0 0 1px rgba(0,0,0,.15);transition:left 1.2s cubic-bezier(.65,0,.35,1);cursor:ew-resize}
+.ba-wrap.drag .handle{transition:none}
+.ba-wrap .handle:after{content:"";position:absolute;top:50%;left:50%;width:72px;height:72px;margin:-36px 0 0 -36px;border-radius:50%;background:#fff;box-shadow:0 4px 16px rgba(0,0,0,.25);
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%231e6b65' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 6l-6 6 6 6M15 6l6 6-6 6'/%3E%3C/svg%3E");background-size:36px;background-repeat:no-repeat;background-position:center}
+.ba-wrap .tag{position:absolute;top:28px;font-size:24px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;padding:10px 18px;border-radius:8px;z-index:2}
+.ba-wrap .tag.b{left:28px;background:rgba(31,35,40,.82);color:#fff}
+.ba-wrap .tag.a{right:28px;background:var(--accent);color:#fff}
+.ba-meta{display:flex;justify-content:space-between;font-size:26px;color:var(--text2);margin-top:20px}
+.ba-meta b{color:var(--text);font-weight:500}
+/* PDF: yan yana */
+html.pdf .ba-wrap{display:grid;grid-template-columns:1fr 1fr;gap:24px;background:none;border-radius:0}
+html.pdf .ba-wrap .img,html.pdf .ba-wrap .after-clip{position:relative;inset:auto;border-radius:12px;clip-path:none}
+html.pdf .ba-wrap .after-clip .img{position:absolute;inset:0}
+html.pdf .ba-wrap .handle{display:none}
+html.pdf .ba-wrap .tag.a{right:auto;left:calc(50% + 40px)}
+
+
+.ba-wrap{--x:100%;touch-action:none}
+.ba-wrap .handle:focus-visible{outline:6px solid var(--accent);outline-offset:6px}
+.ba-meta{gap:24px;overflow-wrap:anywhere}

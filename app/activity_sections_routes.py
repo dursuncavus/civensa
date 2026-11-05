@@ -107,6 +107,8 @@ def register(app):
     router=APIRouter(route_class=TurkishValidationRoute)
     from .main import require_user, templates
     from .sunum.middleware import SunumSecurityHeaders
+    from .sunum.photos_routes import register as register_photos
+    register_photos(app)
     app.add_middleware(SunumSecurityHeaders)
     templates.env.filters['ar_number']=format_number
     templates.env.filters['ar_time']=turkey_time
@@ -182,14 +184,20 @@ def register(app):
                         or snapshot.get('period_id')!=payload['period_id']):
                     service.fail('İdare sunumunun onaylı birim kaynağı raporla eşleşmiyor. Strateji ile rapor sürümünü kontrol edin.',409)
                 sources.append(dict(department_id=unit['department_id'],department=unit['department'],core=snapshot.get('core',{})))
-            slides=idare_activity_report(dict(payload,unit_indicator_sources=sources))
+            from .sunum_photos_service import deck_slides
+            slides=idare_activity_report(dict(payload,unit_indicator_sources=sources), photos=deck_slides(db,doc))
         try:
             content=render_deck(slides,
                 title=f"{payload['department']} · {payload['year']} Faaliyet Raporu sunumu",
-                code=sunum_code(db,doc,payload,version))
+                code=sunum_code(db,doc,payload,version),
+                **({'max_bytes':8_000_000} if doc.department_id is None else {}))
         except DeckTooLarge:
-            service.fail(f'{payload["year"]} {payload["department"]} faaliyet raporunun sunumu 3 MB sınırını aşıyor. '
-                'Strateji ile rapordaki uzun tablo ve metinleri gözden geçirip yeniden deneyin.',422)
+            limit=8 if doc.department_id is None else 3
+            advice=('Seçili fotoğraf sayısını azaltın veya Strateji ile rapordaki uzun tablo ve metinleri gözden geçirip yeniden deneyin.'
+                if doc.department_id is None else
+                'Strateji ile rapordaki uzun tablo ve metinleri gözden geçirip yeniden deneyin.')
+            service.fail(f'{payload["year"]} {payload["department"]} faaliyet raporunun sunumu {limit} MB sınırını aşıyor. '
+                +advice,422)
         except OSError:
             service.fail(f'{payload["year"]} {payload["department"]} faaliyet raporunun sunum dosyaları açılamadı. '
                 'Sistem sorumlusundan sunum kütüphanelerini, logo ve yazı tiplerini kontrol etmesini isteyin.',503)
