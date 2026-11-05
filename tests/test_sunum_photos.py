@@ -19,6 +19,7 @@ from app.models import ARDocument, Department, Organization, ReportingPeriod
 from app.sunum.models import SunumPhoto
 from test_activity_sections import section_client, login, ready_and_freeze
 from test_sunum_browser import browser_options, deck_url
+from test_sunum_idare import idare_fixture
 
 pytestmark = pytest.mark.postgres
 
@@ -267,6 +268,24 @@ def test_photos_never_change_approved_payload_or_verification(photo_client, db, 
     assert f'Doğrulama kodu <b>{code}</b>' in after
     assert client.get(f'/activity-sections/reports/{doc.id}/export.json').content == export_before
     assert client.get(f'/activity-sections/reports/{doc.id}/export.json?version=1').content == export_before
+
+
+def test_photo_group_follows_budget_and_preserves_council_scorecard(idare_fixture, db, sample):
+    fixture = idare_fixture
+    client, doc = fixture['client'], fixture['idare']
+    url = f'/activity-sections/reports/{doc.id}/sunum'
+    before = client.get(url).content
+    upload_fixture = client, fixture['docs'], fixture['token']
+    assert upload(upload_fixture, sample, image_bytes(42)).status_code == 303
+    # Unselected assets must not even change the no-photo council HTML.
+    assert client.get(url).content == before
+    row = db.scalar(select(SunumPhoto))
+    assert change(upload_fixture, row, 'toggle', 'on').status_code == 303
+    document = html.fromstring(client.get(url).content)
+    kinds = document.xpath('//section/@data-type')
+    assert kinds.index('budget') < kinds.index('photo') < kinds.index('scorecard')
+    titles = document.xpath('//section[@data-type="separator"]//*[@class="t"]/text()')
+    assert titles == ['Kurumumuz', 'Bütçe', 'Tamamlanan işler', 'Göstergeler']
 
 
 def test_photo_browser_drag_keyboard_pdf_and_screenshots(photo_client, db, sample, tmp_path):

@@ -1,2 +1,2 @@
-Deck: 1756761 bytes
+Deck: 1767259 bytes
 Photos (WebP/thumbnail bytes): [{'webp': 5004, 'thumbnail': 886}, {'webp': 5712, 'thumbnail': 1084}, {'webp': 5020, 'thumbnail': 928}]
