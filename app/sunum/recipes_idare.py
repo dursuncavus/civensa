@@ -4,13 +4,14 @@ import logging
 
 from ..numbers import format_number
 from .engine import pages, text
-from .recipes import complete_sum, lines, number, rate
+from .recipes import lines, number, rate
 from .meclis import budget_distribution, one_decimal, scorecard
+from .facts import staff_values as staff_facts, budget_values, spending_values
 
 logger = logging.getLogger(__name__)
 
 
-def idare_activity_report(payload, *, photos=()):
+def idare_activity_report(payload, *, photos=(), highlights=()):
     """Return the council recipe without changing report facts or the engine.
 
     The route supplies ``unit_indicator_sources`` from the exact approval IDs in
@@ -31,6 +32,10 @@ def idare_activity_report(payload, *, photos=()):
         if content:
             groups.append(dict(title=title, subtitle=subtitle, content=content))
 
+    from .highlights import resolve_highlights
+    spots, features = resolve_highlights(payload, highlights)
+    add_group('Yılın öne çıkanları', 'Yılın ana mesajları', spots)
+
     content = []
     duties = lines(sections.get('I.B', {}))[:5]
     if duties:
@@ -44,20 +49,8 @@ def idare_activity_report(payload, *, photos=()):
     else:
         missing('stratejik amaç ve hedef')
 
-    units = {unit['department_id']: unit for unit in payload.get('unit_manifest', [])}
-    staff = payload.get('resources', {}).get('employment', {}).get('rows', [])
-    staff_groups = {dep: [] for dep in units}
-    staff_names = {dep: unit.get('department') for dep, unit in units.items()}
-    for row in staff:
-        dep = row.get('department_id')
-        if dep is not None:
-            staff_groups.setdefault(dep, []).append(row.get('count'))
-            staff_names.setdefault(dep, row.get('department'))
-    staff_values = [(staff_names[dep], complete_sum(values)) for dep, values in staff_groups.items()]
-    total = complete_sum(value for _, value in staff_values)
-    # Unattributed rows or unapproved units make an institution total incomplete.
-    if any(row.get('department_id') is None for row in staff) or payload.get('missing_units'):
-        total = None
+    total, staff = staff_facts(payload)
+    staff_values = [(name, value) for _, name, value in staff]
     if total is not None:
         content.append(dict(type='kpi', title='Kurumumuzun ekibi', figures=[
             dict(label='Toplam personel', value=total, unit='kişi'),
@@ -75,14 +68,8 @@ def idare_activity_report(payload, *, photos=()):
     add_group('Kurumumuz', 'Görev, ekip, hedef', content)
 
     content = []
-    budget = payload.get('financial', {}).get('tables', {}).get('expenditure', {})
-    rows, totals = budget.get('rows', []), budget.get('totals', {})
-    final = complete_sum(row.get('final') for row in rows)
-    actual = complete_sum(row.get('actual') for row in rows)
-    if any(totals.get(key, {}).get('missing', 0) for key in ('final', 'actual')):
-        final = actual = None
+    final, actual, scale = budget_values(payload)
     if final is not None and actual is not None:
-        scale = Decimal(1_000_000) if max(abs(final), abs(actual)) >= 1_000_000 else Decimal(1)
         unit = 'milyon TL' if scale > 1 else 'TL'
         content.append(dict(type='kpi', title='Bütçe bir bakışta', figures=[
             dict(label='Kesinleşen ödenek', value=final / scale, unit=unit, money=True),
@@ -96,31 +83,19 @@ def idare_activity_report(payload, *, photos=()):
             **distribution, source=source('III.A.1')))
     else:
         missing('ekonomik sınıflandırmaya göre eksiksiz harcama dağılımı')
-    # Use economic rows only; programme rows classify the same expenditure.
-    spending = {}
-    names = {dep: unit.get('department') for dep, unit in units.items()}
-    for row in rows:
-        dep = row.get('department_id')
-        if dep is not None:
-            spending.setdefault(dep, []).append(row.get('actual'))
-            names.setdefault(dep, row.get('department'))
-    expected = set(units) | {unit['department_id'] for unit in payload.get('missing_units', [])}
-    expected.update(unit['department_id'] for unit in budget.get('by_department', []))
-    spending_values = [(dep, complete_sum(values)) for dep, values in spending.items()]
-    if (spending_values and expected <= spending.keys()
-            and all(value is not None for _, value in spending_values)
-            and all(row.get('department_id') is not None for row in rows)
-            and not totals.get('actual', {}).get('missing', 0)):
-        spending_values.sort(key=lambda item: item[1], reverse=True)
-        for batch in pages(spending_values, 10):
+    spending = spending_values(payload)
+    spending_values_list = [(name, value) for _, name, value in spending]
+    if spending_values_list:
+        spending_values_list.sort(key=lambda item: item[1], reverse=True)
+        for batch in pages(spending_values_list, 10):
             content.append(dict(type='chart', title='Müdürlüklere göre harcama', variant='horizontal', unit='TL', money=True,
-                categories=[text(names[dep]) for dep, _ in batch],
+                categories=[text(name) for name, _ in batch],
                 series=[dict(name='Harcama', values=[value for _, value in batch])], source=source('III.A.1')))
     else:
         missing('müdürlüklere göre eksiksiz harcama')
     add_group('Bütçe', 'Ödenek, harcama', content)
 
-    add_group('Tamamlanan işler', 'Fotoğraflarla çalışmalarımız', list(photos))
+    add_group('Tamamlanan işler', 'Fotoğraflarla çalışmalarımız', features + list(photos))
 
     content = []
     scores = scorecard(payload.get('unit_indicator_sources', []))
@@ -166,7 +141,7 @@ def idare_activity_report(payload, *, photos=()):
     for group, tile in zip(groups, tiles):
         slides.append(dict(type='separator', **tile, section=tile['tile_id'], source=report))
         for slide in group['content']:
-            slides.append(dict(slide, section=tile['tile_id'], eyebrow=f"{tile['number']} · {tile['title']}"))
+            slides.append(dict(slide, section=tile['tile_id'], eyebrow=slide.get('eyebrow', f"{tile['number']} · {tile['title']}")))
     if payload.get('missing_units'):
         slides.append(dict(type='bullets', title='Henüz onaylanmamış birimler',
             bullets=[text(unit.get('department')) for unit in payload['missing_units']], source=report))

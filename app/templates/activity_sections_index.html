@@ -21,7 +21,7 @@
 <article class="report-group" aria-labelledby="report-{{ item.report.id }}">
 <header class="report-heading"><div><h3 id="report-{{ item.report.id }}">{{ item.report.year }} · {{ item.report.department }}</h3></div>
 <div class="report-badges">{% if item.report.workflow %}<span class="workflow-badge workflow-{{ item.report.workflow.status }}">{{ item.report.workflow.label }}</span>{% endif %}{% if item.report.frozen %}<span class="approved-badge">Onaylı kopya</span>{% endif %}</div></header>
-{% if user.role=='strategy' and not item.report.department_id %}<p><a class="button" href="/activity-sections/reports/{{ item.report.id }}/photos">Meclis sunumu fotoğrafları</a></p>{% endif %}
+{% if user.role=='strategy' and not item.report.department_id %}<p><a class="button" href="/activity-sections/reports/{{ item.report.id }}/photos">Meclis sunumu fotoğrafları</a> <a class="button" href="/activity-sections/reports/{{ item.report.id }}/highlights">Meclis sunumu öne çıkanlar</a></p>{% endif %}
 <table class="ar-table index-table"><thead><tr><th scope="col">Bölüm</th><th scope="col">Durum</th><th scope="col">Sahibi</th><th scope="col">Eksikler</th></tr></thead><tbody>
 {% for s in item.matches %}
 <tr><td data-label="Bölüm"><a href="/activity-sections/reports/{{ item.report.id }}?code={{ s.code }}">{{ s.code }} · {{ s.title }}</a></td>

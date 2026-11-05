@@ -95,3 +95,15 @@
 <span class="tag b">Önce{% if s.before_date %} · {{ s.before_date }}{% endif %}</span><span class="tag a">Sonra{% if s.after_date %} · {{ s.after_date }}{% endif %}</span>
 </div><div class="ba-meta"><span>{{ s.meta }}</span></div></div>
 {%- endmacro %}
+
+{% macro spot(s) -%}
+<div class="ghost" aria-hidden="true">{{ '%' if s.unit=='yüzde' else s.display }}</div><div class="mid">
+<div class="big{% if s.display|length>7 %} long{% endif %}"><span class="v" data-count="{{ s.value }}" data-decimals="{{ s.decimals }}">{{ s.display }}</span><span class="u">{{ s.label }}</span></div>
+<p class="msg reveal-line">{{ s.sentence }}</p>{% if s.context %}<p class="ctx reveal-line">{{ s.context }}</p>{% endif %}</div>
+{%- endmacro %}
+
+{% macro feature(s) -%}
+<div class="cards">{% for card in s.cards %}<article class="card" style="--d:{{ loop.index0 * 180 }}ms">
+{% if card.image %}<img class="ph" src="{{ card.image }}" alt="{{ card.department }} çalışması">{% endif %}
+<div class="bd"><div class="dep">{{ card.department }}</div><div class="v">{{ card.display }}<small>{{ card.label }}</small></div><div class="t">{{ card.sentence }}</div>{% if card.context %}<div class="loc">{{ card.context }}</div>{% endif %}</div></article>{% endfor %}</div>
+{%- endmacro %}

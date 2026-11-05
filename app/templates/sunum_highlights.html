@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+{% block page_title %}Meclis sunumu öne çıkanlar{% endblock %}
+{% block page_subtitle %}{{ period.year }} Faaliyet Raporu · Yılın mesajları ve işleri{% endblock %}
+{% macro fields(kind, row=none, dep=none, values=none) %}
+{% set values=values or {} %}{% set key=row.fact_key if row else values.get('fact_key','') %}
+<input type="hidden" name="csrf_token" value="{{ request.session.get('csrf_token') }}"><input type="hidden" name="kind" value="{{ kind }}">
+{% if dep %}<input type="hidden" name="department_id" value="{{ dep.id }}">{% endif %}
+<div class="highlight-fields">
+<label>Rapor rakamı<select name="fact_key" required><option value="">Rakam seçin</option>
+{% if row and key not in fact_map %}<option value="{{ key }}" selected>Rakam artık yok — yeniden seçin</option>{% endif %}
+{% if not dep %}<optgroup label="Kurum">{% for fact in catalogue if fact.department_id is none %}<option value="{{ fact.key }}" {% if key==fact.key %}selected{% endif %}>{{ fact.label }} · {{ fact.display }} {{ fact.unit }}</option>{% endfor %}</optgroup>{% endif %}
+{% for group in departments if not dep or dep.id==group.id %}<optgroup label="{{ group.name }}">{% for fact in catalogue if fact.department_id==group.id %}<option value="{{ fact.key }}" {% if key==fact.key %}selected{% endif %}>{{ fact.label }} · {{ fact.display }} {{ fact.unit }}</option>{% endfor %}</optgroup>{% endfor %}</select></label>
+<label>Rakam altı yazısı (isteğe bağlı)<input name="label" maxlength="40" value="{{ (row.label or '') if row else values.get('label','') }}" placeholder="Varsayılan: rakamın birimi"></label>
+<label class="wide">Cümle<textarea name="sentence" maxlength="180" required rows="3">{{ row.sentence if row else values.get('sentence','') }}</textarea></label>
+<label class="wide">Bağlam / mahalle (isteğe bağlı)<input name="context" maxlength="80" value="{{ (row.context or '') if row else values.get('context','') }}"></label>
+</div>
+{% if dep %}<fieldset class="photo-picker"><legend>İşin fotoğrafı (isteğe bağlı)</legend><label><input type="radio" name="photo_id" value="" {% if not row or not row.photo_id %}checked{% endif %}> Fotoğrafsız</label>
+{% for photo in photos if photo.department_id==dep.id %}<label><input type="radio" name="photo_id" value="{{ photo.id }}" {% if row and row.photo_id==photo.id %}checked{% endif %}><img src="/activity-sections/reports/{{ doc.id }}/photos/{{ photo.id }}/image?thumbnail=true" alt="{{ photo.caption }}"><span>{{ photo.caption }}</span></label>{% endfor %}</fieldset>{% endif %}
+<label class="selection"><input type="checkbox" name="selected" {% if (row and row.selected) or (not row and values.get('selected')=='on') %}checked{% endif %}> Sunumda göster</label>
+<button class="button primary" type="submit">{{ 'Değişiklikleri kaydet' if row else 'Ekle' }}</button>
+{% endmacro %}
+{% macro actions(row) %}
+<div class="highlight-actions">{% for value,label in [('up','↑ Yukarı'),('down','↓ Aşağı')] %}<form method="post" action="/activity-sections/reports/{{ doc.id }}/highlights/{{ row.id }}/order"><input type="hidden" name="csrf_token" value="{{ request.session.get('csrf_token') }}"><input type="hidden" name="value" value="{{ value }}"><button class="button" aria-label="{{ row.sentence }}: {{ label }}">{{ label }}</button></form>{% endfor %}
+<details><summary>Sil</summary><form method="post" action="/activity-sections/reports/{{ doc.id }}/highlights/{{ row.id }}/delete"><input type="hidden" name="csrf_token" value="{{ request.session.get('csrf_token') }}"><label><input type="checkbox" name="value" value="yes" required> Silmeyi onaylıyorum</label><button class="button">Sil</button></form></details></div>
+{% endmacro %}
+{% macro preview(row) %}
+{% set fact=fact_map.get(row.fact_key) %}{% if fact %}<p class="current-value"><strong>{{ fact.display }}</strong> {{ row.label or fact.unit }}</p>{% else %}<p class="missing" role="alert">{{ missing_message }}</p>{% endif %}
+<p>{{ row.sentence }}</p>{% if row.context %}<p class="muted">{{ row.context }}</p>{% endif %}<p class="muted">{{ 'Sunumda gösteriliyor' if row.selected else 'Sunumda gösterilmiyor' }} · Sıra {{ row.sort_order+1 }}</p>
+{% endmacro %}
+{% block content %}
+<style>
+.highlight-page{max-width:1200px}.highlight-page .panel{margin-bottom:24px}.highlight-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.highlight-fields label{display:flex;flex-direction:column;gap:6px}.highlight-fields .wide{grid-column:1/-1}.highlight-fields input,.highlight-fields select,.highlight-fields textarea{width:100%;min-width:0;max-width:100%;box-sizing:border-box}.highlight-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:20px}.highlight-card{min-width:0;border:1px solid var(--border);border-radius:8px;padding:20px;background:var(--surface);overflow-wrap:anywhere}.highlight-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}.highlight-actions form{margin:0}.highlight-page summary{cursor:pointer;margin:12px 0}.highlight-page .selection{display:flex;align-items:center;gap:8px;margin:20px 0}.highlight-page input[type=checkbox],.highlight-page input[type=radio]{width:auto}.highlight-page .error,.highlight-page .missing{padding:16px;background:var(--bad-bg,#fdebea);color:var(--bad,#a52424);margin:16px 0}.current-value strong{font-size:32px;color:var(--accent)}.highlight-page .muted{color:var(--text2);font-size:14px}.photo-picker{display:flex;gap:12px;flex-wrap:wrap;border:1px solid var(--border);padding:12px;margin-top:16px}.photo-picker label{display:flex;flex-direction:column;gap:6px;max-width:130px;font-size:13px}.photo-picker img{width:110px;height:75px;object-fit:cover;border-radius:6px}.highlight-page .selection,.photo-picker label,.highlight-actions label{font-size:14px;line-height:1.5;text-transform:none;font-weight:400;letter-spacing:normal;color:var(--text)}@media(max-width:600px){.highlight-fields,.highlight-grid{grid-template-columns:minmax(0,1fr)}.highlight-card{padding:14px}.highlight-page h2{overflow-wrap:anywhere}}
+</style>
+<div class="highlight-page">
+<p><a class="button" href="/activity-sections/reports/{{ doc.id }}">Faaliyet raporuna dön</a> <a class="button" href="/activity-sections/reports/{{ doc.id }}/photos">Meclis sunumu fotoğrafları</a> <a class="button" href="/activity-sections/reports/{{ doc.id }}/sunum" target="_blank" rel="noopener">Sunumu aç</a></p>
+<p><strong>Güncel rapor verisi</strong> · Listede güncel rakamlar gösterilir. Sunum açıldığında rakamlar sunumun rapor sürümünden yeniden alınır.</p><p>Cümleye ve rakam altı yazısına rakam yazmayın; rakamı listeden seçin.</p>
+{% if error %}<div class="error" role="alert">{{ error }}</div>{% endif %}
+<section class="panel"><h2>Spotlar ({{ selected_count }} / 5)</h2><p>Yılın ana mesajlarını seçin. En fazla beş spot sunumda gösterilebilir.</p>
+<div class="highlight-grid">{% for row in highlights if row.kind=='spot' %}<article class="highlight-card" data-highlight-id="{{ row.id }}">{{ preview(row) }}<details><summary>Düzenle</summary><form method="post" action="/activity-sections/reports/{{ doc.id }}/highlights/{{ row.id }}/edit">{{ fields('spot',row) }}</form></details>{{ actions(row) }}</article>{% endfor %}</div>
+<details {% if form.get('kind')=='spot' %}open{% endif %}><summary>Spot ekle</summary><form method="post" action="/activity-sections/reports/{{ doc.id }}/highlights">{{ fields('spot',values=form if form.get('kind')=='spot' else {}) }}</form></details></section>
+<section class="panel"><h2>Öne çıkan işler</h2><p>Her müdürlük için yılın bir işini seçin. Kartlar sunum sırasında üçlü slaytlarda gösterilir.</p><div class="highlight-grid">
+{% for dep in departments %}{% set items=highlights|selectattr('kind','equalto','feature')|selectattr('department_id','equalto',dep.id)|list %}<article class="highlight-card"><h3>{{ dep.name }}</h3>
+{% if items %}{% set row=items[0] %}{{ preview(row) }}<details><summary>Düzenle</summary><form method="post" action="/activity-sections/reports/{{ doc.id }}/highlights/{{ row.id }}/edit">{{ fields('feature',row,dep) }}</form></details>{{ actions(row) }}
+{% else %}<p>Henüz öne çıkan iş seçilmedi.</p><details {% if form.get('kind')=='feature' and form.get('department_id')==dep.id|string %}open{% endif %}><summary>İş ekle</summary><form method="post" action="/activity-sections/reports/{{ doc.id }}/highlights">{{ fields('feature',dep=dep,values=form if form.get('department_id')==dep.id|string else {}) }}</form></details>{% endif %}</article>{% endfor %}
+</div></section></div>
+{% endblock %}
