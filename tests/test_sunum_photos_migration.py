@@ -12,6 +12,14 @@ pytestmark = pytest.mark.postgres
 ROOT = Path(__file__).resolve().parents[1]
 
 
+def test_photo_model_registered_without_importing_routes():
+    result = subprocess.run([sys.executable, '-c',
+        'from app import models; from app.db import Base; '
+        'assert Base.metadata.tables["sunum_photos"] is models.SunumPhoto.__table__'],
+        cwd=ROOT, capture_output=True, text=True)
+    assert result.returncode == 0, result.stderr
+
+
 def test_migration_pairs_and_data_preserving_downgrade(postgres_templates):
     with postgres_templates.clone('c162a1b2c3d4') as engine:
         def migrate(action, revision, ok=True):

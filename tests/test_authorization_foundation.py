@@ -213,9 +213,11 @@ def test_delegation_server_time_boundaries(foundation_db,people,timing):
     if timing=='scheduled':row=grant(db,x,now+timedelta(hours=1),now+timedelta(hours=2))
     elif timing=='active':row=grant(db,x)
     else:
-        row=grant(db,x,now-timedelta(minutes=1),now+timedelta(milliseconds=300))
-        # Database wait; permission clock remains DB time, never a supplied test/client timestamp.
-        db.execute(text('SELECT pg_sleep(0.4)'))
+        # Leave room for real authorization/trigger checks on a busy CI runner.
+        row=grant(db,x,now-timedelta(minutes=1),now+timedelta(seconds=5))
+        # Wait to the stored boundary using PostgreSQL's clock, not client time.
+        db.execute(text('SELECT pg_sleep(GREATEST(0, EXTRACT(EPOCH FROM (:end_at - clock_timestamp()))) + 0.05)'),
+            {'end_at': row.end_at})
     assert eligible(db,x,'user')==(timing=='active')
     assert eligible(db,x,'director')==(timing!='active')
 
