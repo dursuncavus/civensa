@@ -103,7 +103,7 @@
 {%- endmacro %}
 
 {% macro feature(s) -%}
-<div class="cards">{% for card in s.cards %}<article class="card" style="--d:{{ loop.index0 * 180 }}ms">
+<div class="cards{% if s.compact %} compact{% endif %}">{% for card in s.cards %}<article class="card" style="--d:{{ loop.index0 * 180 }}ms">
 {% if card.image %}<img class="ph" src="{{ card.image }}" alt="{{ card.department }} çalışması">{% endif %}
 <div class="bd"><div class="dep">{{ card.department }}</div><div class="v">{{ card.display }}<small>{{ card.label }}</small></div><div class="t">{{ card.sentence }}</div>{% if card.context %}<div class="loc">{{ card.context }}</div>{% endif %}</div></article>{% endfor %}</div>
 {%- endmacro %}

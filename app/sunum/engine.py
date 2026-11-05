@@ -97,6 +97,9 @@ def prepare_slides(slides):
                     if figure['value'] is not None else 0,
                     display=format_number(figure['value'], money=figure.get('money', False)))
                     for figure in slide['figures']]
+            elif kind == 'feature':
+                item['compact'] = any(len(card['sentence']) > 140 or len(card['label']) > 24
+                    or len(card.get('context') or '') > 55 for card in slide['cards'])
             elif kind == 'chart':
                 item['series'] = [dict(series,
                     values=[float(value) if value is not None else None for value in series['values']],

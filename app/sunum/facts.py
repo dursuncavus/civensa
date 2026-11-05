@@ -100,5 +100,9 @@ def facts(payload, unit_sources):
             if not isinstance(name, str) or not name or counts[dep, name] != 1 or indicator.get('actual_state') != 'verified':
                 continue
             key = f'ind:{dep}:{sha256(name.encode("utf-8")).hexdigest()[:16]}:actual'
-            add(key, name, dep, number(indicator.get('actual')), indicator.get('unit') or '', 'III.B.2.i')
+            value = number(indicator.get('actual'))
+            unit = indicator.get('unit') or ''
+            money = unit == 'TL'
+            scale = Decimal(1_000_000) if money and value is not None and abs(value) >= 1_000_000 else Decimal(1)
+            add(key, name, dep, value, 'milyon TL' if scale > 1 else unit, 'III.B.2.i', money=money, scale=scale)
     return result

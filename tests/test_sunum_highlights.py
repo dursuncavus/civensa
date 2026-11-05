@@ -86,6 +86,10 @@ def test_million_money_scale_matches_kpi(idare_fixture):
     assert indexed['org:budget_final']['display'] == '6,00'
     assert indexed['org:budget_actual']['unit'] == 'milyon TL'
     assert indexed['org:budget_final']['value'] == by_title(idare_activity_report(payload), 'Bütçe bir bakışta')['figures'][0]['value']
+    indicator = payload['unit_indicator_sources'][0]['core']['indicators'][0]
+    indicator.update(unit='TL',actual='2000000')
+    money = next(f for f in facts(payload,payload['unit_indicator_sources']) if f['label']==indicator['name'])
+    assert (money['value'],money['display'],money['unit']) == (Decimal(2),'2,00','milyon TL')
 
 
 @pytest.mark.parametrize('field,value', [('sentence','Kentte 12 park açıldı.'),('label','12 park'),('sentence','Kentte ٢ park açıldı.'),('label','m²')])
@@ -373,3 +377,24 @@ def test_concurrent_fifth_spot_is_serialized(idare_fixture, db, sample):
     assert sorted(results)==[303,422]
     db.expire_all()
     assert db.scalar(select(func.count()).select_from(SunumHighlight).where(SunumHighlight.selected))==5
+
+
+def test_maximum_card_text_fits_above_footer(tmp_path):
+    from playwright.sync_api import sync_playwright
+    import base64
+    from app.sunum_photos_service import process_image
+    image='data:image/webp;base64,'+base64.b64encode(process_image(image_bytes())['webp_data']).decode('ascii')
+    card=dict(display='1.250,25',department='Park ve Bahçeler Müdürlüğü',label='a'*40,
+        sentence=('Mahallelerimizde çocukların güvenle oynayabileceği yeşil alanları yenileyerek ailelerin dinlenebileceği erişilebilir sosyal yaşam alanlarını kentimizin bütün mahallelerinde yaygınlaştırdık.')[:180],
+        context=('Cumhuriyet Mahallesi · Yeni Mahalle · Merkez Mahallesi · ' * 2)[:80],image=image)
+    path=tmp_path/'long-cards.html'
+    path.write_bytes(render_deck([dict(type='feature',title='Yılın öne çıkan işleri',eyebrow='Müdürlüklerimizden',source='Müdürlük bölümleri',cards=[card]*3)],title='Uzun metin',code='ABCD-1234'))
+    with sync_playwright() as pw:
+        browser=pw.chromium.launch(**browser_options())
+        page=browser.new_page(viewport=dict(width=1920,height=1080),offline=True)
+        page.goto(deck_url(page,path));page.wait_for_function('()=>window.sunumRendered');page.wait_for_timeout(1000)
+        assert page.locator('.cards.compact').count()==1
+        bounds=page.evaluate('''()=>({footer:document.querySelector('.foot').getBoundingClientRect().top,
+            bottom:Math.max(...[...document.querySelectorAll('.card')].map(c=>c.getBoundingClientRect().bottom))})''')
+        assert bounds['bottom'] < bounds['footer']-16
+        browser.close()
