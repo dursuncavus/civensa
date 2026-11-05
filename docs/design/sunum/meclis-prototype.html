@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Büyükçekmece Belediyesi · 2025 Faaliyet Raporu meclis sunumu · yeni slayt türleri</title>
+<link rel="stylesheet" href="reset.css">
+<link rel="stylesheet" href="reveal.css">
+<style>
+@font-face{font-family:"Fira Sans";font-weight:400;src:url(fonts/fira-sans-latin-ext-400-normal.woff2) format("woff2");unicode-range:U+0100-02AF,U+0304,U+0308,U+0329,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
+@font-face{font-family:"Fira Sans";font-weight:400;src:url(fonts/fira-sans-latin-400-normal.woff2) format("woff2");unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:"Fira Sans";font-weight:500;src:url(fonts/fira-sans-latin-ext-500-normal.woff2) format("woff2");unicode-range:U+0100-02AF,U+1E00-1EFF,U+20A0-20C0,U+2C60-2C7F,U+A720-A7FF}
+@font-face{font-family:"Fira Sans";font-weight:500;src:url(fonts/fira-sans-latin-500-normal.woff2) format("woff2");unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+2000-206F,U+20AC,U+2122,U+2212}
+@font-face{font-family:"Fira Sans";font-weight:600;src:url(fonts/fira-sans-latin-ext-600-normal.woff2) format("woff2");unicode-range:U+0100-02AF,U+1E00-1EFF,U+20A0-20C0,U+2C60-2C7F,U+A720-A7FF}
+@font-face{font-family:"Fira Sans";font-weight:600;src:url(fonts/fira-sans-latin-600-normal.woff2) format("woff2");unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+2000-206F,U+20AC,U+2122,U+2212}
+
+:root{
+  --bg:#f6f5f2;--surface:#fff;--muted:#efede8;--border:#e3e1dc;
+  --text:#1f2328;--text2:#545b64;--accent:#1e6b65;--accent-dark:#17554f;--accent-soft:#e3f0ee;
+  --warn:#8a5a00;--warn-bg:#fff4d6;--ok:#1e7a46;--ok-bg:#e6f4ea;
+  --bad:#9b2c1f;--bad-bg:#fbe9e6; /* yeni: karnede "Geride" durumu */
+}
+html,body{background:var(--bg)}
+.reveal *,.reveal *:before,.reveal *:after{box-sizing:border-box}
+.reveal{font-family:"Fira Sans",system-ui,sans-serif;color:var(--text);font-size:34px}
+.reveal .slides{text-align:left}
+.reveal .slides section{height:1080px;width:1920px;padding:96px 120px 120px;box-sizing:border-box}
+.reveal h1,.reveal h2,.reveal h3{font-family:inherit;color:var(--text);text-transform:none;letter-spacing:0;margin:0}
+.reveal h1{font-size:96px;font-weight:600;line-height:1.1}
+.reveal h2{font-size:64px;font-weight:600;line-height:1.15}
+.eyebrow{font-size:28px;font-weight:500;color:var(--accent);letter-spacing:.06em;text-transform:uppercase;margin-bottom:24px}
+.lead{font-size:38px;color:var(--text2);margin-top:28px;max-width:1400px}
+.foot{position:absolute;left:120px;right:120px;bottom:72px;display:flex;justify-content:space-between;font-size:20px;color:var(--text2);border-top:1px solid var(--border);padding-top:16px;z-index:3}
+.foot b{font-weight:500;color:var(--text)}
+.sample{color:var(--warn);background:var(--warn-bg);padding:2px 10px;border-radius:4px;font-weight:500}
+.on-dark .foot{border-top-color:rgba(255,255,255,.25);color:#cfe5e2}
+.on-dark .foot b{color:#fff}
+
+/* kapak (mevcut tür, meclis alt başlığı) */
+.cover h1,.cover .lead,.cover .eyebrow{color:#fff}
+.cover .lead{color:#d6ebe8}
+.cover .band{position:absolute;right:0;top:0;bottom:0;width:560px;background:var(--accent-dark)}
+.cover .band span{position:absolute;bottom:120px;left:64px;font-size:220px;font-weight:600;color:rgba(255,255,255,.12);line-height:1}
+.logo{position:absolute;left:120px;top:96px;height:110px;width:auto;margin:0}
+
+/* ===== YENİ 1: SPOT ===== */
+.spot .mid{position:absolute;left:120px;right:120px;top:50%;transform:translateY(-46%)}
+.spot .eyebrow{color:#a9d3cd;position:absolute;top:96px;left:120px}
+.spot .big{display:flex;align-items:baseline;gap:32px;line-height:.9}
+.spot .big .v{font-size:300px;font-weight:600;color:#fff;letter-spacing:-.02em;font-variant-numeric:tabular-nums;white-space:nowrap}
+.spot .big .u{font-size:72px;font-weight:500;color:#d6ebe8}
+.spot .msg{font-size:54px;line-height:1.3;color:#fff;max-width:1380px;margin-top:56px;font-weight:400}
+.spot .msg b{font-weight:600;color:#fff;box-shadow:inset 0 -14px 0 rgba(255,255,255,.18)}
+.spot .ctx{font-size:30px;color:#a9d3cd;margin-top:28px}
+.spot .ghost{position:absolute;right:-40px;bottom:120px;font-size:560px;font-weight:600;color:rgba(255,255,255,.05);line-height:.8;pointer-events:none}
+.spot.dark .eyebrow,.spot.dark .ctx{color:#9aa1a9}
+.spot.dark .big .u{color:#c9ced4}
+.spot.dark .msg b{box-shadow:inset 0 -14px 0 rgba(30,107,101,.75)}
+.spot .reveal-line{opacity:0;transform:translateY(24px);transition:opacity .6s .9s,transform .6s .9s}
+section.present .reveal-line{opacity:1;transform:none}
+html.pdf .spot .reveal-line{opacity:1;transform:none}
+
+/* ===== YENİ 2: TAM EKRAN FOTOĞRAF ===== */
+.photo{padding:0 !important}
+.photo .img{position:absolute;inset:0;background-size:cover;background-position:center;transform:scale(1.06);transition:transform 6s ease-out}
+section.present.photo .img{transform:scale(1)}
+html.pdf .photo .img{transform:none}
+.photo .shade{position:absolute;inset:0;background:linear-gradient(180deg,rgba(15,20,24,.35) 0%,rgba(15,20,24,0) 22%,rgba(15,20,24,0) 48%,rgba(15,20,24,.82) 100%)}
+.photo .eyebrow{position:absolute;top:96px;left:120px;color:#fff;text-shadow:0 1px 8px rgba(0,0,0,.35)}
+.photo .cap{position:absolute;left:120px;right:120px;bottom:150px;display:flex;justify-content:space-between;align-items:flex-end;gap:64px}
+.photo .cap h2{color:#fff;font-size:72px;max-width:1100px}
+.photo .cap .meta{font-size:30px;color:#dfe7e6;margin-top:20px}
+.photo .chip{background:rgba(255,255,255,.95);border-radius:12px;padding:28px 36px;min-width:360px}
+.photo .chip .v{font-size:72px;font-weight:600;color:var(--accent);line-height:1}
+.photo .chip .l{font-size:24px;color:var(--text2);margin-top:10px}
+.photo .foot{border-top-color:rgba(255,255,255,.3);color:#dfe7e6}
+.photo .foot b{color:#fff}
+
+/* ===== YENİ 3: ÖNCE / SONRA ===== */
+.ba-wrap{position:relative;margin-top:36px;height:620px;border-radius:12px;overflow:hidden;user-select:none;background:var(--muted)}
+.ba-wrap .img{position:absolute;inset:0;background-size:cover;background-position:center}
+.ba-wrap .after-clip{position:absolute;inset:0;clip-path:inset(0 0 0 var(--x,100%));transition:clip-path 1.2s cubic-bezier(.65,0,.35,1)}
+.ba-wrap.drag .after-clip{transition:none}
+.ba-wrap .handle{position:absolute;top:0;bottom:0;left:var(--x,100%);width:4px;margin-left:-2px;background:#fff;box-shadow:0 0 0 1px rgba(0,0,0,.15);transition:left 1.2s cubic-bezier(.65,0,.35,1);cursor:ew-resize}
+.ba-wrap.drag .handle{transition:none}
+.ba-wrap .handle:after{content:"";position:absolute;top:50%;left:50%;width:72px;height:72px;margin:-36px 0 0 -36px;border-radius:50%;background:#fff;box-shadow:0 4px 16px rgba(0,0,0,.25);
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%231e6b65' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 6l-6 6 6 6M15 6l6 6-6 6'/%3E%3C/svg%3E");background-size:36px;background-repeat:no-repeat;background-position:center}
+.ba-wrap .tag{position:absolute;top:28px;font-size:24px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;padding:10px 18px;border-radius:8px;z-index:2}
+.ba-wrap .tag.b{left:28px;background:rgba(31,35,40,.82);color:#fff}
+.ba-wrap .tag.a{right:28px;background:var(--accent);color:#fff}
+.ba-meta{display:flex;justify-content:space-between;font-size:26px;color:var(--text2);margin-top:20px}
+.ba-meta b{color:var(--text);font-weight:500}
+/* PDF: yan yana */
+html.pdf .ba-wrap{display:grid;grid-template-columns:1fr 1fr;gap:24px;background:none;border-radius:0}
+html.pdf .ba-wrap .img,html.pdf .ba-wrap .after-clip{position:relative;inset:auto;border-radius:12px;clip-path:none}
+html.pdf .ba-wrap .after-clip .img{position:absolute;inset:0}
+html.pdf .ba-wrap .handle{display:none}
+html.pdf .ba-wrap .tag.a{right:auto;left:calc(50% + 40px)}
+
+/* ===== YENİ 4: ÖNE ÇIKAN İŞ KARTLARI ===== */
+.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:36px;margin-top:56px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;display:flex;flex-direction:column;opacity:0;transform:translateY(28px)}
+section.present .card{animation:rowin .6s cubic-bezier(.2,.7,.3,1) forwards;animation-delay:var(--d,0ms)}
+html.pdf .card{opacity:1;transform:none}
+.card .ph{height:300px;background-size:cover;background-position:center}
+.card .bd{padding:32px 36px 36px;display:flex;flex-direction:column;gap:10px;flex:1}
+.card .dep{font-size:22px;font-weight:500;color:var(--accent);letter-spacing:.05em;text-transform:uppercase}
+.card .v{font-size:68px;font-weight:600;color:var(--text);line-height:1.05}
+.card .v small{font-size:30px;font-weight:500;color:var(--text2);margin-left:10px}
+.card .t{font-size:28px;line-height:1.35;color:var(--text2)}
+.card .loc{margin-top:auto;font-size:22px;color:var(--text2);padding-top:14px;border-top:1px solid var(--border)}
+@keyframes rowin{to{opacity:1;transform:none}}
+
+/* ===== YENİ 5: KARNE ===== */
+.score-sum{display:flex;gap:28px;margin-top:40px}
+.score-sum .s{display:flex;align-items:center;gap:14px;font-size:26px;color:var(--text2)}
+.score-sum .s b{font-size:40px;font-weight:600;color:var(--text)}
+.dot{width:18px;height:18px;border-radius:50%;display:inline-block}
+.dot.ok{background:var(--ok)} .dot.w{background:#c58a00} .dot.bad{background:var(--bad)}
+.score{margin-top:32px;display:flex;flex-direction:column;gap:14px}
+.score .r{display:grid;grid-template-columns:150px 1fr 520px 120px 190px;align-items:center;gap:28px;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px 32px;opacity:0;transform:translateY(16px)}
+section.present .score .r{animation:rowin .4s cubic-bezier(.2,.7,.3,1) forwards;animation-delay:var(--d,0ms)}
+html.pdf .score .r{opacity:1;transform:none}
+.score .code{font-size:24px;font-weight:600;color:var(--accent)}
+.score .name{font-size:28px;line-height:1.3}
+.score .name small{display:block;font-size:20px;color:var(--text2);margin-top:4px}
+.bar{height:18px;background:var(--muted);border-radius:999px;overflow:hidden}
+.bar i{display:block;height:100%;width:0;border-radius:999px;background:var(--accent);transition:width 1.1s cubic-bezier(.2,.7,.3,1) .2s}
+section.present .bar i{width:var(--w)}
+html.pdf .bar i{width:var(--w);transition:none}
+.bar.w i{background:#c58a00} .bar.bad i{background:var(--bad)}
+.score .pct{font-size:36px;font-weight:600;text-align:right;font-variant-numeric:tabular-nums}
+.pill{display:inline-block;font-size:22px;font-weight:500;padding:6px 16px;border-radius:999px;text-align:center}
+.pill.ok{background:var(--ok-bg);color:var(--ok)} .pill.w{background:var(--warn-bg);color:var(--warn)} .pill.bad{background:var(--bad-bg);color:var(--bad)}
+
+/* ===== YENİ 6: BÜTÇE DAĞILIMI ===== */
+.budget{display:grid;grid-template-columns:560px 1fr;gap:64px;margin-top:40px;height:660px}
+.budget .side{display:flex;flex-direction:column;gap:30px;justify-content:center}
+.budget .side .hd{font-size:30px;color:var(--text2);line-height:1.35}
+.budget .side .it{border-left:8px solid var(--c);padding:6px 0 6px 28px}
+.budget .side .it .v{font-size:84px;font-weight:600;line-height:1;color:var(--text);font-variant-numeric:tabular-nums}
+.budget .side .it .v small{font-size:36px;font-weight:500;color:var(--text2);margin-left:6px}
+.budget .side .it .l{font-size:26px;color:var(--text2);margin-top:6px}
+.budget .tm{height:660px}
+
+/* kapanış */
+.close h1{color:#fff}
+.close .lead{color:#c9ced4}
+.verify{margin-top:80px;display:inline-flex;gap:40px;align-items:center;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.18);border-radius:12px;padding:32px 44px}
+.verify .code{font-size:64px;font-weight:600;color:#fff;letter-spacing:.08em}
+.verify .txt{font-size:26px;color:#c9ced4;max-width:760px;line-height:1.4}
+.close .foot{border-top-color:rgba(255,255,255,.2);color:#9aa1a9}
+
+/* araçlar + inceleme notları (mevcut prototip ile aynı) */
+.tools{position:fixed;right:110px;bottom:14px;z-index:30;display:flex;gap:8px;transition:opacity .4s}
+.tools.hide{opacity:0;pointer-events:none}
+.ic{width:40px;height:40px;display:inline-flex;align-items:center;justify-content:center;background:rgba(255,255,255,.92);border:1px solid var(--accent);border-radius:8px;cursor:pointer;padding:0}
+.ic svg{width:22px;height:22px;fill:none;stroke:var(--accent);stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.reveal .slide-number{right:auto;left:16px;bottom:14px;background:none;color:var(--text2);font:500 14px "Fira Sans",system-ui}
+.note{position:absolute;top:28px;right:32px;max-width:660px;font-size:20px;line-height:1.4;background:#fffbe6;color:#5c4400;border:1px solid #f0d78c;border-radius:8px;padding:12px 16px;display:none;z-index:6}
+.shownotes .note{display:block}
+.reveal .progress{color:var(--accent);height:6px}
+html.pdf .tools{display:none}
+html,body{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+html.pdf .reveal .slides section{padding:96px 120px 120px !important;box-sizing:border-box !important;width:1920px !important;height:1080px !important}
+html.pdf .reveal .slides section.photo{padding:0 !important}
+</style>
+</head>
+<body>
+<div class="reveal"><div class="slides">
+
+<!-- KAPAK (mevcut tür) -->
+<section class="cover on-dark" data-background-color="#1e6b65" data-src="2025 İdare Faaliyet Raporu">
+  <div class="note">Kapak (mevcut tür). Meclis sunumunda müdürlük adı yerine kurum adı ve "Meclis sunumu" yazar.</div>
+  <div class="band"><span>2025</span></div>
+  <img class="logo" src="logo-beyaz.svg" alt="T.C. Büyükçekmece Belediyesi">
+  <div style="position:relative;max-width:1150px;margin-top:300px">
+    <h1>2025 Yılı<br>Faaliyet Raporu</h1>
+    <p class="lead">Belediye Meclisi sunumu</p>
+  </div>
+</section>
+
+<!-- YENİ 1: SPOT (yeşil) -->
+<section class="spot on-dark" data-background-color="#1e6b65" data-src="2025 Faaliyet Raporu · Fen İşleri · Yol ve Altyapı Çalışmaları">
+  <div class="note"><b>1 · Spot.</b> Ekranda tek büyük rakam. Rakam onaylı rapordan otomatik gelir ve sayarak büyür; cümleyi Strateji yazar, rakamı cümleye elle yazamaz. Yeşil ve koyu olmak üzere iki zemin var; art arda iki spot farklı zeminde gelir. Yılın 3–5 ana mesajı bu türle açılır.</div>
+  <div class="eyebrow">Yılın öne çıkanları · 1 / 4</div>
+  <div class="ghost">61</div>
+  <div class="mid">
+  <div class="big"><span class="v" data-count="61">0</span><span class="u">bin ton asfalt</span></div>
+  <p class="msg reveal-line">Kentin yollarına <b>59 cadde ve sokakta</b> yeni asfalt döşendi; <b>20 km'nin üzerinde</b> yeni yol açıldı.</p>
+  <p class="ctx reveal-line">Fen İşleri Müdürlüğü · İBB ekipleriyle birlikte</p>
+  </div>
+</section>
+
+<!-- YENİ 1b: SPOT (koyu) -->
+<section class="spot dark on-dark" data-background-color="#1f2328" data-src="2025 Faaliyet Raporu · Fen İşleri · Faaliyetlere İlişkin Bilgiler, Tablo 3">
+  <div class="note"><b>1 · Spot, koyu zemin.</b> Yüzde değerleri de aynı türle gösterilir.</div>
+  <div class="eyebrow">Yılın öne çıkanları · 2 / 4</div>
+  <div class="ghost">%</div>
+  <div class="mid">
+  <div class="big"><span class="v" data-count="96.38" data-dec="2" data-prefix="%">0</span></div>
+  <p class="msg reveal-line">Çözüm Masası'na gelen <b>11.488 başvurunun</b> neredeyse tamamı cevaplandı.</p>
+  <p class="ctx reveal-line">Fen İşleri Müdürlüğü · Çözüm Masası ve CİMER</p>
+  </div>
+</section>
+
+<!-- YENİ 2: TAM EKRAN FOTOĞRAF -->
+<section class="photo on-dark" data-background-color="#1f2328" data-src="2025 Faaliyet Raporu · Fen İşleri · İBB ile Paydaş Olunan Çalışmalar">
+  <div class="note"><b>2 · Tam ekran fotoğraf.</b> Fotoğrafı müdürlük yükler; açıklama, mahalle, tarih ve bağlı olduğu faaliyet de girilir. Sağdaki rakam kutusu isteğe bağlıdır ve rakam rapordan gelir. Fotoğraf girişte yavaşça yakınlaşır. Bu örnekteki görsel temsilîdir.</div>
+  <div class="img" data-ph="road-after"></div>
+  <div class="shade"></div>
+  <div class="eyebrow">Yapılan işler · Altyapı</div>
+  <div class="cap">
+    <div>
+      <h2>Tepecik içme suyu isale hattı tamamlandı</h2>
+      <div class="meta">Hürriyet Mahallesi · Fen İşleri Müdürlüğü · İSKİ ile birlikte · 2025</div>
+    </div>
+    <div class="chip"><div class="v" data-count="3243">0</div><div class="l">metre ⌀900 mm hat imalatı</div></div>
+  </div>
+</section>
+
+<!-- YENİ 3: ÖNCE / SONRA -->
+<section data-src="2025 Faaliyet Raporu · Fen İşleri · İBB ile Paydaş Olunan Çalışmalar">
+  <div class="note"><b>3 · Önce / sonra.</b> Aynı yerin iki fotoğrafı. Slayt açılınca ayraç kendiliğinden ortaya kayar; sunan kişi ayracı fareyle sürükleyebilir. PDF'te iki fotoğraf yan yana durur. Fotoğrafları müdürlük yükler (önce/sonra çifti olarak). Bu örnekteki görseller temsilîdir.</div>
+  <div class="eyebrow">Yapılan işler · Yol</div>
+  <h2>100. Yıl Caddesi</h2>
+  <div class="ba-wrap" id="ba1">
+    <div class="img" data-ph="road-before"></div>
+    <div class="after-clip"><div class="img" data-ph="road-after2"></div></div>
+    <div class="handle"></div>
+    <span class="tag b">Önce · 2024</span><span class="tag a">Sonra · 2025</span>
+  </div>
+  <div class="ba-meta"><span><b>Karaağaç Mahallesi</b> · altyapı, asfalt ve beton tretuvar tamamlandı</span><span>Fen İşleri Müdürlüğü · İBB ile birlikte</span></div>
+</section>
+
+<!-- YENİ 4: ÖNE ÇIKAN İŞ KARTLARI -->
+<section data-src="2025 İdare Faaliyet Raporu · müdürlük bölümleri">
+  <div class="note"><b>4 · Öne çıkan iş kartları.</b> Her müdürlükten Strateji'nin seçtiği bir iş: fotoğraf, bir rakam (rapordan), bir cümle, mahalle. Bir slaytta 3 kart; kartlar sırayla gelir. Müdürlük sayısı kadar kart sonraki slaytlara devam eder. Rakamlar Fen İşleri prototipinden; diğer iki kart ÖRNEK.</div>
+  <div class="eyebrow">Müdürlüklerimizden</div>
+  <h2>Yılın öne çıkan işleri</h2>
+  <div class="cards">
+    <div class="card"><div class="ph" data-ph="mosque"></div><div class="bd"><div class="dep">Fen İşleri</div><div class="v">1.100<small>kişilik</small></div><div class="t">Depreme dayanıksız eski caminin yerine yeni Çakmaklı Atatürk Camii'nin kaba inşaatı tamamlandı.</div><div class="loc">Çakmaklı Mahallesi</div></div></div>
+    <div class="card"><div class="ph" data-ph="park"></div><div class="bd"><div class="dep">Park ve Bahçeler <span class="sample">ÖRNEK</span></div><div class="v">12<small>yeni park</small></div><div class="t">Mahallelerde çocuk oyun alanlarıyla birlikte yeni parklar halkın kullanımına açıldı.</div><div class="loc">8 mahallede</div></div></div>
+    <div class="card"><div class="ph" data-ph="social"></div><div class="bd"><div class="dep">Sosyal Destek <span class="sample">ÖRNEK</span></div><div class="v">4.250<small>hane</small></div><div class="t">İhtiyaç sahibi ailelere düzenli gıda ve eğitim desteği ulaştırıldı.</div><div class="loc">Tüm ilçe</div></div></div>
+  </div>
+</section>
+
+<!-- YENİ 5: KARNE -->
+<section data-src="2025 İdare Faaliyet Raporu · Performans Bilgileri (gösterge gerçekleşmeleri)">
+  <div class="note"><b>5 · Karne.</b> Stratejik Plan 2025–2029 amaçlarına göre hedefe ulaşan göstergelerin oranı. Oran = hedefini tutturan gösterge / gerçekleşmesi girilen gösterge. Durum eşikleri: %90 ve üstü Hedefte, %70–89 Yakın, %70 altı Geride (eşikler Strateji'yle kesinleşecek). Satırlar ve çubuklar sırayla gelir. Bütün değerler ÖRNEK.</div>
+  <div class="eyebrow">Stratejik plan karnesi <span class="sample">ÖRNEK VERİ</span></div>
+  <h2>Amaçlarımıza ne kadar yaklaştık?</h2>
+  <div class="score-sum">
+    <div class="s"><span class="dot ok"></span><b>3</b> amaç hedefte</div>
+    <div class="s"><span class="dot w"></span><b>1</b> amaç hedefe yakın</div>
+    <div class="s"><span class="dot bad"></span><b>1</b> amaç geride</div>
+  </div>
+  <div class="score">
+    <div class="r"><div class="code">S.A.01</div><div class="name">Katılımcı ve şeffaf yönetim<small>24 göstergenin 23'ü hedefte</small></div><div class="bar"><i style="--w:96%"></i></div><div class="pct">%96</div><span class="pill ok">Hedefte</span></div>
+    <div class="r"><div class="code">S.A.02</div><div class="name">Yaşanabilir ve dirençli kent<small>38 göstergenin 35'i hedefte</small></div><div class="bar"><i style="--w:92%"></i></div><div class="pct">%92</div><span class="pill ok">Hedefte</span></div>
+    <div class="r"><div class="code">S.A.03</div><div class="name">Sosyal belediyecilik<small>29 göstergenin 27'si hedefte</small></div><div class="bar"><i style="--w:93%"></i></div><div class="pct">%93</div><span class="pill ok">Hedefte</span></div>
+    <div class="r"><div class="code">S.A.04</div><div class="name">Çevre ve iklim<small>17 göstergenin 14'ü hedefte</small></div><div class="bar w"><i style="--w:82%"></i></div><div class="pct">%82</div><span class="pill w">Yakın</span></div>
+    <div class="r"><div class="code">S.A.05</div><div class="name">Kurumsal kapasite<small>15 göstergenin 9'u hedefte</small></div><div class="bar bad"><i style="--w:60%"></i></div><div class="pct">%60</div><span class="pill bad">Geride</span></div>
+  </div>
+</section>
+
+<!-- YENİ 6: BÜTÇE DAĞILIMI -->
+<section data-src="2025 İdare Faaliyet Raporu · Mali Bilgiler (ekonomik sınıflandırma)">
+  <div class="note"><b>6 · Bütçe dağılımı.</b> "Her 100 TL" dili: ekonomik sınıflandırmaya göre harcama payları. Toplam harcama Fen İşleri prototipindeki kurum toplamıdır (3,34 milyar TL); kalem payları ÖRNEK. Kutular sırayla büyür; en büyük üç kalem solda yazılır; %5'in altındaki kalemler "Diğer" kutusunda birleşir. Eksik veri varsa slayt hiç oluşmaz.</div>
+  <div class="eyebrow">Bütçe · 3,34 milyar TL harcama</div>
+  <h2>Her 100 TL nereye harcandı? <span class="sample">ÖRNEK VERİ</span></h2>
+  <div class="budget">
+    <div class="side">
+      <div class="hd">2025 yılında harcanan her 100 TL'nin</div>
+      <div class="it" style="--c:#1e6b65"><div class="v" data-count="34">0<small>TL</small></div><div class="l">Mal ve hizmet alımına</div></div>
+      <div class="it" style="--c:#4f8f88"><div class="v" data-count="27">0<small>TL</small></div><div class="l">Yatırımlara (sermaye giderleri)</div></div>
+      <div class="it" style="--c:#86b3ad"><div class="v" data-count="22">0<small>TL</small></div><div class="l">Personel giderlerine</div></div>
+    </div>
+    <div class="tm" data-chart="butce"></div>
+  </div>
+</section>
+
+<!-- KAPANIŞ (mevcut tür) -->
+<section class="close on-dark" data-background-color="#1f2328" data-src="2025 İdare Faaliyet Raporu">
+  <div class="note">Kapanış (mevcut tür).</div>
+  <img class="logo" src="logo-beyaz.svg" alt="T.C. Büyükçekmece Belediyesi">
+  <div style="margin-top:300px">
+    <h1>Teşekkür ederiz</h1>
+    <p class="lead">Büyükçekmece Belediyesi · 2025 Yılı Faaliyet Raporu</p>
+    <div class="verify"><div class="code">7F3A-91C2</div><div class="txt">Bu sunumdaki rakamlar Civensa'daki onaylı Faaliyet Raporu'ndan otomatik üretilir. Kod Civensa'daki kodla aynı değilse sunum değiştirilmiştir.</div></div>
+  </div>
+</section>
+
+</div></div>
+
+<div class="tools" id="tools">
+  <button class="ic" id="toggleNotes" type="button" title="Tasarım notlarını gizle/göster" aria-label="Tasarım notları"><svg viewBox="0 0 24 24"><path d="M5 3h10l4 4v14H5z"/><path d="M15 3v4h4"/><path d="M8 12h8M8 16h6"/></svg></button>
+  <a class="ic" id="goPdf" href="#pdf" title="PDF görünümü" aria-label="PDF görünümü"><svg viewBox="0 0 24 24"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M4 19h16"/></svg></a>
+</div>
+
+<script src="reveal.js"></script>
+<script src="echarts.min.js"></script>
+<script>
+const fmt=(v,d=0)=>new Intl.NumberFormat('tr-TR',{minimumFractionDigits:d,maximumFractionDigits:d}).format(v);
+const PRINT=location.hash==='#pdf';
+if(PRINT) document.documentElement.classList.add('pdf'); else document.body.classList.add('shownotes');
+
+/* Temsilî görseller (gerçek sunumda müdürlüğün yüklediği fotoğraflar gelir) */
+const svg=s=>'url("data:image/svg+xml;utf8,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice">'+s+'</svg>')+'")';
+const sky=(a,b)=>'<defs><linearGradient id="s" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="'+a+'"/><stop offset="1" stop-color="'+b+'"/></linearGradient></defs><rect width="1600" height="900" fill="url(#s)"/>';
+const blds=c=>'<g fill="'+c+'"><rect x="40" y="250" width="180" height="300"/><rect x="250" y="180" width="140" height="370"/><rect x="420" y="290" width="220" height="260"/><rect x="1000" y="220" width="200" height="330"/><rect x="1230" y="160" width="150" height="390"/><rect x="1410" y="270" width="190" height="280"/></g>';
+const wins=c=>{let w='';for(let i=0;i<6;i++)for(let j=0;j<5;j++){w+='<rect x="'+(70+j*30)+'" y="'+(280+i*40)+'" width="14" height="22" fill="'+c+'"/><rect x="'+(1030+j*32)+'" y="'+(250+i*44)+'" width="14" height="22" fill="'+c+'"/>';}return w;};
+const PH={
+  'road-after':sky('#9cc6d8','#e9f1f2')+blds('#b9c2c4')+wins('#9aa6a8')+'<polygon points="0,900 1600,900 1000,520 600,520" fill="#2b2f33"/><polygon points="0,900 600,520 560,520 0,820" fill="#8b9a7c"/><polygon points="1600,900 1000,520 1040,520 1600,820" fill="#8b9a7c"/><g fill="#f4f1e8"><polygon points="790,900 810,900 803,520 797,520"/></g><g fill="#e9e3d2"><rect x="0" y="540" width="1600" height="6" opacity=".4"/></g><g fill="#3a7d5a"><circle cx="300" cy="520" r="70"/><circle cx="1320" cy="510" r="80"/></g>',
+  'road-before':sky('#b8c2c6','#e4e6e3')+blds('#a9aeae')+wins('#8f9696')+'<polygon points="0,900 1600,900 1000,520 600,520" fill="#77716a"/><g stroke="#4c4741" stroke-width="5" fill="none" opacity=".7"><path d="M650 640 l60 40 l-30 60 l70 50"/><path d="M980 600 l-50 70 l40 50 l-60 90"/><path d="M820 760 l90 30 l40 70"/><path d="M560 820 l80 -40"/></g><g fill="#5e5953"><ellipse cx="760" cy="700" rx="70" ry="18"/><ellipse cx="930" cy="820" rx="90" ry="22"/></g><polygon points="0,900 600,520 560,520 0,820" fill="#a39d86"/><polygon points="1600,900 1000,520 1040,520 1600,820" fill="#a39d86"/>',
+  'road-after2':sky('#9cc6d8','#eef4f4')+blds('#b4bec0')+wins('#97a3a5')+'<polygon points="0,900 1600,900 1000,520 600,520" fill="#2b2f33"/><polygon points="0,900 600,520 560,520 0,820" fill="#cfcac0"/><polygon points="1600,900 1000,520 1040,520 1600,820" fill="#cfcac0"/><g fill="#f4f1e8"><polygon points="560,900 600,900 760,520 752,520"/><polygon points="1000,900 1040,900 848,520 840,520"/><polygon points="790,900 810,900 803,520 797,520" opacity=".9"/></g><g fill="#3a7d5a"><circle cx="220" cy="560" r="60"/><circle cx="1380" cy="560" r="70"/></g>',
+  'mosque':sky('#a8cfe0','#f1f4f2')+'<rect x="0" y="640" width="1600" height="260" fill="#c9c1ad"/><g fill="#e8e3d6"><rect x="560" y="420" width="480" height="240"/><path d="M600 420 Q800 220 1000 420Z"/><rect x="470" y="260" width="34" height="400"/><rect x="1096" y="260" width="34" height="400"/><polygon points="470,260 487,190 504,260"/><polygon points="1096,260 1113,190 1130,260"/></g><g fill="#9aa6a8"><rect x="700" y="520" width="40" height="80"/><rect x="780" y="500" width="40" height="100"/><rect x="860" y="520" width="40" height="80"/></g><g stroke="#8a7f68" stroke-width="6"><line x1="300" y1="640" x2="300" y2="300"/><line x1="300" y1="300" x2="470" y2="300"/></g>',
+  'park':sky('#a8d4e6','#eef6f0')+'<rect x="0" y="560" width="1600" height="340" fill="#7fae6d"/><path d="M0 700 Q800 600 1600 720 L1600 900 L0 900Z" fill="#d9cfb4"/><g fill="#3f7d4f"><circle cx="220" cy="450" r="120"/><circle cx="1360" cy="430" r="140"/><circle cx="1180" cy="500" r="90"/></g><g fill="#6b4f3a"><rect x="210" y="540" width="20" height="80"/><rect x="1350" y="540" width="20" height="90"/></g><g fill="#1e6b65"><rect x="640" y="520" width="12" height="160"/><rect x="900" y="520" width="12" height="160"/><rect x="640" y="520" width="272" height="12"/></g><g stroke="#f2b84b" stroke-width="8"><line x1="720" y1="532" x2="720" y2="640"/><line x1="820" y1="532" x2="820" y2="640"/></g><rect x="700" y="640" width="40" height="10" fill="#f2b84b"/><rect x="800" y="640" width="40" height="10" fill="#f2b84b"/>',
+  'social':sky('#f0e6d6','#f7f3ec')+'<rect x="0" y="620" width="1600" height="280" fill="#d8cdb8"/><g fill="#1e6b65"><rect x="520" y="430" width="560" height="220" rx="12"/></g><g fill="#e3f0ee"><rect x="560" y="470" width="140" height="110" rx="6"/><rect x="730" y="470" width="140" height="110" rx="6"/><rect x="900" y="470" width="140" height="110" rx="6"/></g><g fill="#c58a00"><rect x="580" y="500" width="100" height="70" rx="4"/></g><g fill="#a3472f"><rect x="750" y="510" width="100" height="60" rx="4"/></g><g fill="#5f8f4a"><rect x="920" y="495" width="100" height="75" rx="4"/></g>'
+};
+document.querySelectorAll('[data-ph]').forEach(el=>el.style.backgroundImage=svg(PH[el.dataset.ph]));
+
+/* alt bilgi: kaynak + doğrulama kodu */
+document.querySelectorAll('.slides>section').forEach(sec=>{
+  const f=document.createElement('div'); f.className='foot';
+  f.innerHTML='<span>Kaynak: <b>'+(sec.dataset.src||'')+'</b></span><span>Doğrulama kodu <b>7F3A-91C2</b> <span class="sample">TASLAK</span></span>';
+  sec.appendChild(f);
+});
+
+const deck=new Reveal({width:1920,height:1080,margin:0,minScale:0.1,maxScale:2,hash:false,history:false,center:false,
+  controls:true,progress:true,transition:'fade',backgroundTransition:'fade',slideNumber:'c/t',view:PRINT?'print':null,pdfSeparateFragments:false,pdfMaxPagesPerSlide:1});
+
+const C={ink:'#1f2328',mut:'#545b64'};
+const BUDGET=[['Mal ve hizmet alımı',34,'#1e6b65'],['Sermaye giderleri',27,'#4f8f88'],['Personel giderleri',22,'#86b3ad'],['Sosyal güvenlik primleri',6,'#b7d3cf'],['Cari transferler',6,'#c9ded9'],['Diğer (faiz, sermaye transferi)',5,'#dfe9e7']];
+const CHARTS={
+  butce:anim=>({textStyle:{fontFamily:'Fira Sans'},animation:anim,animationDuration:1200,animationEasing:'cubicOut',
+    series:[{type:'treemap',roam:false,nodeClick:false,breadcrumb:{show:false},width:'100%',height:'100%',top:0,left:0,
+      itemStyle:{borderColor:'#f6f5f2',borderWidth:6,gapWidth:6,borderRadius:10},
+      label:{show:true,position:'insideTopLeft',padding:22,fontFamily:'Fira Sans',lineHeight:34,
+        formatter:p=>'{v|'+fmt(p.value)+' TL}\n{l|'+p.name+'}',
+        rich:{v:{fontSize:44,fontWeight:600,lineHeight:56},l:{fontSize:24}}},
+      data:BUDGET.map(([n,v,c],i)=>({name:n,value:v,itemStyle:{color:c},label:{color:i<3?'#fff':C.ink}}))}]})
+};
+const inst=new Map();
+function draw(el,anim){if(!window.echarts)return;if(inst.has(el))inst.get(el).dispose();
+  const c=echarts.init(el,null,{renderer:'svg'});c.setOption(CHARTS[el.dataset.chart](anim));inst.set(el,c);}
+function setNum(el,v){const d=parseInt(el.dataset.dec||'0',10),pre=el.dataset.prefix||'';const small=el.querySelector('small');
+  const txt=pre+fmt(v,d);if(small){el.firstChild.nodeValue=txt;}else el.textContent=txt;}
+function countUp(el){const t=parseFloat(el.dataset.count),t0=performance.now();
+  (function st(n){const p=Math.min(1,(n-t0)/1300),e=1-Math.pow(1-p,3);setNum(el,t*e);if(p<1)requestAnimationFrame(st);})(t0);}
+function stagger(s,sel,step){s.querySelectorAll(sel).forEach((el,i)=>{el.style.animation='none';void el.offsetWidth;el.style.animation='';el.style.setProperty('--d',(i*step)+'ms');});}
+function ba(s){const w=s.querySelector('.ba-wrap');if(!w)return;w.style.setProperty('--x','100%');void w.offsetWidth;setTimeout(()=>w.style.setProperty('--x','50%'),350);}
+function onShow(s){if(!s)return;s.querySelectorAll('[data-count]').forEach(countUp);s.querySelectorAll('[data-chart]').forEach(el=>draw(el,true));
+  stagger(s,'.card',220);stagger(s,'.score .r',140);ba(s);}
+deck.initialize().then(()=>{
+  if(PRINT){document.querySelectorAll('[data-count]').forEach(el=>setNum(el,parseFloat(el.dataset.count)));
+    document.querySelectorAll('[data-chart]').forEach(el=>draw(el,false));}
+  else onShow(deck.getCurrentSlide());});
+deck.on('slidechanged',e=>onShow(e.currentSlide));
+
+/* önce/sonra: sürükleme */
+document.querySelectorAll('.ba-wrap').forEach(w=>{
+  const set=e=>{const r=w.getBoundingClientRect();const x=Math.max(0,Math.min(1,((e.touches?e.touches[0].clientX:e.clientX)-r.left)/r.width));w.style.setProperty('--x',(x*100)+'%');};
+  const down=e=>{w.classList.add('drag');set(e);e.preventDefault();e.stopPropagation();};
+  w.addEventListener('mousedown',down);w.addEventListener('touchstart',down,{passive:false});
+  window.addEventListener('mousemove',e=>{if(w.classList.contains('drag'))set(e);});
+  window.addEventListener('touchmove',e=>{if(w.classList.contains('drag'))set(e);},{passive:true});
+  const up=()=>w.classList.remove('drag');window.addEventListener('mouseup',up);window.addEventListener('touchend',up);
+});
+document.getElementById('toggleNotes').addEventListener('click',()=>document.body.classList.toggle('shownotes'));
+document.getElementById('goPdf').addEventListener('click',()=>setTimeout(()=>location.reload(),50));
+const tools=document.getElementById('tools');let tt=null;
+function wake(){tools.classList.remove('hide');clearTimeout(tt);tt=setTimeout(()=>{if(!tools.matches(':hover'))tools.classList.add('hide');},2500);}
+document.addEventListener('mousemove',wake);wake();
+</script>
+</body>
+</html>

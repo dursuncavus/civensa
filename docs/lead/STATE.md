@@ -1,13 +1,13 @@
 # CIVENSA — CURRENT STATE
 
-Updated: 5 Nov 2026 ~09:30 Istanbul (CV Lider 62, D-419).
+Updated: 5 Nov 2026 ~09:45 Istanbul (CV Lider 62, D-422).
 Rules: AI_WORKING_CONSTITUTION v1.2 (Drive, global) · `HIERARCHY.md` v1.8 (D-408: the lead also codes; Codex reviews its PRs) · `PROJECT_RULES.md` v1.4 (D-271: PRIOR ART field mandatory in every package) · `BACKUP_LEAD.md` v2.
 Backup log ("Civensa Yedek Kaydı", Drive): no entries after 31 Oct (DOĞRULANDI 3 Nov 05:45, file unchanged since 23 Oct).
 Tags: DOĞRULANDI (lead checked) · TARİHSEL (past fact) · BEYAN (owner said) · BELİRSİZ (unknown).
 
 ## Next session — start here (D-253)
 Release #384 live (main c46cf4d, 4 Nov 21:11; D-410): CIV-175/176/177/178 are live, /health ok, migration c162a1b2c3d4. 9 Nov page for Ali: https://claude.ai/artifact/1TNVQZsZG9aWfmFNAPibZn (D-403). CIV-179 #382 (InDesign tagged text) PARKED until the owner's new Faaliyet Raporu template exists (D-410); mechanism proven in InDesign.
-CV Lider 62 (5 Nov ~09:20, DOĞRULANDI): no answer from Ali Abi; CIV-181 (K5 audit CSV keys + department Word name + ACTION_LABELS) dispatched to Codex (D-418) and CIV-182 (İdare meclis sunumu recipe, D-419) in parallel → review both PRs. Owner tests Ornek-Sunum.html on the hall computer.
+CV Lider 62 (5 Nov ~09:20, DOĞRULANDI): no answer from Ali Abi; CIV-181 (K5 audit CSV keys + department Word name + ACTION_LABELS) dispatched to Codex (D-418) and CIV-182 (İdare meclis sunumu recipe, D-419) in parallel → review both PRs. Meclis deck target above the previous one (D-420/D-421): 6 new slide types (spot, photo, önce/sonra, öne çıkan iş, scorecard, budget distribution) → designed by the lead (D-422, preview https://claude.ai/artifact/SaUoc6MvFT5ywgpNUUWQPG), owner look-review pending; lead verifies photo storage (Neon Object Storage preferred, R2 fallback) before the photo task. Owner tests Ornek-Sunum.html on the hall computer.
 CV Lider 61 (4 Nov ~21:25, DOĞRULANDI): no mail from Ali Abi; only open PR #382 (parked); the 18:03Z db-backup failure mail is the refused main dispatch already covered by D-410. Sunum work (D-411–D-415) continues in CV Lider 62 if the owner has remarks on the Fen İşleri presentation; local prototype files are not in the repo (artifact + files sent to the owner). Claude's next session: `CV Lider 62 · Claude Opus 5.5 · civensa-lead`. First job: Gmail check (D-361) → Ali Abi's answers (thread "Civensa – 2026 Faaliyet Raporu soruları", D-404; he returns 9 Nov). After his 2026 mapping upload: re-measure the 2026 snapshot and K4 (full PP PDF, 105 s of 120 s locally, D-409), then Strategy publishes 2026 via "Onaylı kitaptan yayınla". No Codex work is unblocked before Ali's answers.
 1. Releases live (D-346/D-350). Only Ali Abi uses the system; departments are not opened until the infrastructure is complete — data comes from the old system (BEYAN, D-351/D-352). Render stays Free; Starter ($7/month) on department rollout day.
 2. Codex: CIV-172 #354 merged (D-393); CIV-174 #358 merged after two Copilot rounds (D-394): warnings stored compactly (10.9 KB), builder no longer parses snapshots. CIV-175 #369 reviewed (D-401): 2026 snapshot 25.8 MB, 21.2 MB of it repeated cost_reconciliation errors from the 128 unmapped activities; no codec now. CIV-176 #372 merged (D-403): metadata loads no longer read snapshot_json. CIV-177 #374 merged (D-405): dashboard progress state and "Son işlem" period-bound. Copilot-bot commits need a lead update-branch to run CI (action_required).
@@ -21,7 +21,7 @@ CV Lider 61 (4 Nov ~21:25, DOĞRULANDI): no mail from Ali Abi; only open PR #382
 9. Claude account on Max from 4 Nov 2026 (BEYAN; next charge 4 Dec). Extra capacity goes to lead analysis/preparation work (D-400). The "Claude quota" block below is TARİHSEL (Pro era).
 10. Sunum module (D-411/D-412/D-413): reveal.js 6.0.1 + ECharts 6.1.0 via Civensa Jinja templates, Civensa design tokens; animated HTML + 16:9 PDF from the same file. Prototype https://claude.ai/artifact/DMpNp2f68JsogL2eMgJSRD review round 1 done (D-414); full Fen İşleri 2025 presentation with real data = CIV-180 reference (D-415); waits for the owner's hall-computer test + further remarks → CIV-180 (engine + FR müdürlük presentation). Future report modules proposed in D-411 (not accepted; after 1 Jan 2027).
 11. CIV-180 merged into phase5 (#394 → ab7551a, D-417); not live until the next release.
-Next IDs: task CIV-183, decision D-420.
+Next IDs: task CIV-183, decision D-423.
 
 ## Claude quota (BEYAN, owner 27 Oct 16:21)
 - Session 11%, week 67%, weekly reset Saturday 00:00 (D-300). Copilot 96 / 1,500 credits, reset 1 Nov.
