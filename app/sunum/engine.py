@@ -12,7 +12,7 @@ from .middleware import DECK_POLICY
 
 APP = Path(__file__).resolve().parents[1]
 MAX_BYTES = 3_000_000
-SLIDE_TYPES = {'cover', 'map', 'separator', 'kpi', 'chart', 'table', 'bullets', 'quote', 'closing', 'scorecard', 'budget'}
+SLIDE_TYPES = {'cover', 'map', 'separator', 'kpi', 'chart', 'table', 'bullets', 'quote', 'closing', 'scorecard', 'budget', 'photo', 'before_after'}
 
 
 class DeckTooLarge(ValueError):
@@ -145,11 +145,12 @@ def assets():
     }
 
 
-def render_deck(slides, *, title, code):
+def render_deck(slides, *, title, code, max_bytes=MAX_BYTES):
     env = Environment(loader=FileSystemLoader(APP / 'templates' / 'sunum'),
                       autoescape=select_autoescape(['html']))
     content = env.get_template('deck.html').render(
-        slides=prepare_slides(slides), title=title, code=code, csp=DECK_POLICY, **assets()).encode('utf-8')
-    if len(content) > MAX_BYTES:
-        raise DeckTooLarge('Sunum dosyası 3 MB sınırını aşıyor.')
+        slides=prepare_slides(slides), title=title, code=code, csp=DECK_POLICY,
+        has_photos=any(s['type'] in {'photo', 'before_after'} for s in slides), **assets()).encode('utf-8')
+    if len(content) > max_bytes:
+        raise DeckTooLarge(f'Sunum dosyası {max_bytes // 1_000_000} MB sınırını aşıyor.')
     return content

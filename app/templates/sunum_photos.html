@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+{% block page_title %}Meclis sunumu fotoğrafları{% endblock %}
+{% block page_subtitle %}{{ period.year }} Faaliyet Raporu · Tamamlanan işler{% endblock %}
+{% block content %}
+<style>
+.photo-page{max-width:1200px}.photo-page .panel{margin-bottom:24px}.photo-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.photo-fields label{display:flex;flex-direction:column;gap:6px}.photo-fields input,.photo-fields select{width:100%;min-width:0}.photo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:20px}.photo-card{border:1px solid var(--border);border-radius:8px;padding:16px;background:var(--surface)}.photo-card img{width:100%;height:180px;object-fit:cover;border-radius:6px}.photo-card h3{overflow-wrap:anywhere}.photo-actions{display:flex;flex-wrap:wrap;gap:8px}.photo-card form{margin:12px 0}.photo-page .consent{display:block;margin:20px 0}.photo-page .consent,.photo-card label{font-size:14px;line-height:1.5;text-transform:none;font-weight:400;letter-spacing:normal;color:var(--text)}.photo-card label{display:flex;align-items:center;gap:8px}.photo-page input[type=checkbox]{width:auto}.photo-card summary{cursor:pointer}.photo-page .error{padding:16px;background:var(--bad-bg,#fdebea);color:var(--bad,#a52424);margin:16px 0}@media(max-width:600px){.photo-fields{grid-template-columns:1fr}.photo-grid{grid-template-columns:minmax(0,1fr)}}
+</style>
+<div class="photo-page">
+<p><a class="button" href="/activity-sections/reports/{{ doc.id }}">Faaliyet raporuna dön</a> <a class="button" href="/activity-sections/reports/{{ doc.id }}/sunum" target="_blank" rel="noopener">Sunumu aç</a></p>
+{% if error %}<div class="error" role="alert">{{ error }}</div>{% endif %}
+<section class="panel"><h2>Fotoğraf yükle</h2><p>JPEG, PNG veya WebP · Dosya başına en fazla 15 MB. Önce/sonra çiftleri birlikte seçilir, sıralanır ve silinir.</p>
+<form method="post" enctype="multipart/form-data" action="/activity-sections/reports/{{ doc.id }}/photos">
+<input type="hidden" name="csrf_token" value="{{ request.session.get('csrf_token') }}">
+<div class="photo-fields">
+<label>Müdürlük<select name="department_id" required>{% for dep in departments %}<option value="{{ dep.id }}" {% if form.get('department_id')==dep.id|string %}selected{% endif %}>{{ dep.name }}</option>{% endfor %}</select></label>
+<label>Tür<select name="kind" id="photo-kind"><option value="single">Tek fotoğraf</option><option value="pair" {% if form.get('kind')=='pair' %}selected{% endif %}>Önce/sonra çifti</option></select></label>
+<label>Açıklama<input name="caption" maxlength="140" value="{{ form.get('caption','') }}" required></label>
+<label>Mahalle (isteğe bağlı)<input name="mahalle" maxlength="80" value="{{ form.get('mahalle','') }}"></label>
+<label>Tarih / önce tarihi (isteğe bağlı)<input name="taken_on" type="date" value="{{ form.get('taken_on','') }}"></label>
+<label><span id="first-photo-label">Fotoğraf / önce fotoğrafı</span><input type="file" name="file" accept="image/jpeg,image/png,image/webp" required></label>
+<label id="after-photo-label">Sonra fotoğrafı (yalnız önce/sonra çifti için)<input type="file" name="after_file" accept="image/jpeg,image/png,image/webp"></label>
+<label>Sonra tarihi (yalnız önce/sonra çifti için, isteğe bağlı)<input name="after_taken_on" type="date" value="{{ form.get('after_taken_on','') }}"></label>
+</div>
+<label class="consent"><input type="checkbox" name="consent" required> {{ consent_text }}</label>
+<button class="button primary" type="submit">Fotoğrafları yükle</button></form></section>
+<section class="panel"><h2>Sunum seçimi · {{ selected_count }} / 16 fotoğraf</h2><p>Sunumdaki sıra tüm müdürlükler için ortaktır. Yukarı ve aşağı düğmeleri bu sırayı değiştirir.</p>
+{% for dep in departments %}{% set items=photos|selectattr('department_id','equalto',dep.id)|list %}{% if items %}
+<h3>{{ dep.name }}</h3><div class="photo-grid">
+{% for photo in items %}<article class="photo-card" data-photo-id="{{ photo.id }}">
+<img src="/activity-sections/reports/{{ doc.id }}/photos/{{ photo.id }}/image?thumbnail=true" alt="{{ photo.caption }}" loading="lazy">
+<h3>{{ photo.caption }}</h3><p>{{ {'single':'Tek fotoğraf','before':'Önce','after':'Sonra'}[photo.kind] }} · Sunum sırası {{ photo.sort_order+1 }}{% if photo.mahalle %} · {{ photo.mahalle }}{% endif %}{% if photo.taken_on %} · {{ photo.taken_on.strftime('%d.%m.%Y') }}{% endif %}</p>
+<form method="post" action="/activity-sections/reports/{{ doc.id }}/photos/{{ photo.id }}/toggle"><input type="hidden" name="csrf_token" value="{{ request.session.get('csrf_token') }}"><label><input type="checkbox" name="value" {% if photo.selected %}checked{% endif %}> Sunumda göster</label> <button class="button">Kaydet</button></form>
+<div class="photo-actions">{% for value,label in [('up','↑ Yukarı'),('down','↓ Aşağı')] %}<form method="post" action="/activity-sections/reports/{{ doc.id }}/photos/{{ photo.id }}/order"><input type="hidden" name="csrf_token" value="{{ request.session.get('csrf_token') }}"><input type="hidden" name="value" value="{{ value }}"><button class="button" aria-label="{{ photo.caption }}: {{ label }}">{{ label }}</button></form>{% endfor %}</div>
+<details><summary>Fotoğrafı{% if photo.pair_key %} ve eşini{% endif %} sil</summary><form method="post" action="/activity-sections/reports/{{ doc.id }}/photos/{{ photo.id }}/delete"><input type="hidden" name="csrf_token" value="{{ request.session.get('csrf_token') }}"><p>Bu fotoğraf{% if photo.pair_key %} ve eşi{% endif %} kalıcı olarak silinecek.</p><label><input type="checkbox" name="value" value="yes" required> Silmeyi onaylıyorum</label> <button class="button">Sil</button></form></details>
+</article>{% endfor %}</div>{% endif %}{% endfor %}
+{% if not photos %}<p>Henüz fotoğraf yüklenmedi. Tamamlanan işlerin fotoğraflarını yukarıdaki formdan yükleyin.</p>{% endif %}
+</section></div>
+{% endblock %}

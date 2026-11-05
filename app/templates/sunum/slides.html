@@ -80,3 +80,18 @@
 <div class="closing-title"><h1>{{ s.title }}</h1><p class="lead">{{ s.subtitle }}</p>
 <div class="verify"><div class="code">{{ code }}</div><div class="txt">{% if code=='TASLAK' %}Bu sunum taslak Faaliyet Raporu'ndan otomatik üretilmiştir. Onaylı sunum için raporun onayını tamamlayın.{% else %}Bu sunumdaki rakamlar Civensa'daki onaylı Faaliyet Raporu'ndan otomatik üretilir. Doğrulama kodunu rapor sayfasındaki kodla karşılaştırın.{% endif %}</div></div></div>
 {%- endmacro %}
+
+{% macro photo(s) -%}
+<div class="img" role="img" aria-label="{{ s.title }}" style="background-image:url('{{ s.image }}')"></div><div class="shade"></div>
+<div class="eyebrow">{{ s.eyebrow }}</div><div class="cap"><div><h2>{{ s.title }}</h2>{% if s.meta %}<div class="meta">{{ s.meta }}</div>{% endif %}</div></div>
+{%- endmacro %}
+
+{% macro before_after(s) -%}
+<div class="ba-content"><h2>{{ s.title }}</h2>
+<div class="ba-wrap">
+<div class="img" role="img" aria-label="Önce: {{ s.title }}" style="background-image:url('{{ s.before }}')"></div>
+<div class="after-clip"><div class="img" role="img" aria-label="Sonra: {{ s.title }}" style="background-image:url('{{ s.after }}')"></div></div>
+<div class="handle" role="slider" tabindex="0" aria-label="Önce/sonra ayracı" aria-valuemin="0" aria-valuemax="100" aria-valuenow="100"></div>
+<span class="tag b">Önce{% if s.before_date %} · {{ s.before_date }}{% endif %}</span><span class="tag a">Sonra{% if s.after_date %} · {{ s.after_date }}{% endif %}</span>
+</div><div class="ba-meta"><span>{{ s.meta }}</span></div></div>
+{%- endmacro %}

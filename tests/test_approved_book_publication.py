@@ -19,7 +19,8 @@ from app.program_service import approved_book_provenance, publication_checks
 from app.security import hash_password
 from app.numbers import format_number
 from scripts import first_load_live as live
-from scripts.first_load_dryrun import disposable_database, inspect_import, local_test_url
+from scripts.first_load_dryrun import inspect_import, local_test_url
+from tests.first_load_checkpoint import disposable_first_load_database as disposable_database
 from test_sidebar_ui import browser
 import test_2026_screen_walk as existing_walk
 

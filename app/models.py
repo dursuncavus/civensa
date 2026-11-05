@@ -567,3 +567,4 @@ from .internal_control_models import (ICPlan, ICStandard, ICCondition, ICAction,
                                       ICUnitAlias, ICImport, ICImportAudit)
 
 from .activity_evidence_models import ActivityEvidenceFile, ActivityEvidenceFreeze
+from .sunum.models import SunumPhoto
