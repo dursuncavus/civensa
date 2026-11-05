@@ -12,7 +12,7 @@ from .middleware import DECK_POLICY
 
 APP = Path(__file__).resolve().parents[1]
 MAX_BYTES = 3_000_000
-SLIDE_TYPES = {'cover', 'map', 'separator', 'kpi', 'chart', 'table', 'bullets', 'quote', 'closing', 'scorecard', 'budget', 'photo', 'before_after'}
+SLIDE_TYPES = {'cover', 'map', 'separator', 'kpi', 'chart', 'table', 'bullets', 'quote', 'closing', 'scorecard', 'budget', 'photo', 'before_after', 'spot', 'feature'}
 
 
 class DeckTooLarge(ValueError):
@@ -97,6 +97,9 @@ def prepare_slides(slides):
                     if figure['value'] is not None else 0,
                     display=format_number(figure['value'], money=figure.get('money', False)))
                     for figure in slide['figures']]
+            elif kind == 'feature':
+                item['compact'] = any(len(card['sentence']) > 140 or len(card['label']) > 24
+                    or len(card.get('context') or '') > 55 for card in slide['cards'])
             elif kind == 'chart':
                 item['series'] = [dict(series,
                     values=[float(value) if value is not None else None for value in series['values']],
@@ -150,7 +153,8 @@ def render_deck(slides, *, title, code, max_bytes=MAX_BYTES):
                       autoescape=select_autoescape(['html']))
     content = env.get_template('deck.html').render(
         slides=prepare_slides(slides), title=title, code=code, csp=DECK_POLICY,
-        has_photos=any(s['type'] in {'photo', 'before_after'} for s in slides), **assets()).encode('utf-8')
+        has_photos=any(s['type'] in {'photo', 'before_after'} for s in slides),
+        has_highlights=any(s['type'] in {'spot', 'feature'} for s in slides), **assets()).encode('utf-8')
     if len(content) > max_bytes:
         raise DeckTooLarge(f'Sunum dosyası {max_bytes // 1_000_000} MB sınırını aşıyor.')
     return content

@@ -110,6 +110,8 @@ def register(app):
     from .sunum.middleware import SunumSecurityHeaders
     from .sunum.photos_routes import register as register_photos
     register_photos(app)
+    from .sunum_highlights import register as register_highlights
+    register_highlights(app)
     app.add_middleware(SunumSecurityHeaders)
     templates.env.filters['ar_number']=format_number
     templates.env.filters['ar_time']=turkey_time
@@ -186,7 +188,9 @@ def register(app):
                     service.fail('İdare sunumunun onaylı birim kaynağı raporla eşleşmiyor. Strateji ile rapor sürümünü kontrol edin.',409)
                 sources.append(dict(department_id=unit['department_id'],department=unit['department'],core=snapshot.get('core',{})))
             from .sunum_photos_service import deck_slides
-            slides=idare_activity_report(dict(payload,unit_indicator_sources=sources), photos=deck_slides(db,doc))
+            from .sunum_highlights import deck_items
+            slides=idare_activity_report(dict(payload,unit_indicator_sources=sources), photos=deck_slides(db,doc),
+                highlights=deck_items(db,doc))
         try:
             content=render_deck(slides,
                 title=f"{payload['department']} · {payload['year']} Faaliyet Raporu sunumu",

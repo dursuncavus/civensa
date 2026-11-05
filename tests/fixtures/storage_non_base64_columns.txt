@@ -347,3 +347,11 @@ sunum_photos.kind
 sunum_photos.mahalle
 sunum_photos.pair_key
 sunum_photos.sha256
+
+# CIV-185: bounded editorial words and stable fact keys only. Photos are an
+# integer FK to sunum_photos; no image or base64 content is stored in highlights.
+sunum_highlights.context
+sunum_highlights.fact_key
+sunum_highlights.kind
+sunum_highlights.label
+sunum_highlights.sentence

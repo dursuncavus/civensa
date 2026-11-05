@@ -29,8 +29,8 @@ def test_migration_pairs_and_data_preserving_downgrade(postgres_templates):
             assert (result.returncode == 0) == ok, result.stderr
             return result
 
-        migrate('upgrade', 'head')
-        migrate('upgrade', 'head')
+        migrate('upgrade', 'c184a1b2c3d4')
+        migrate('upgrade', 'c184a1b2c3d4')
         with engine.begin() as conn:
             conn.exec_driver_sql("INSERT INTO organizations(id,name) VALUES (1,'Sentetik Belediye')")
             conn.exec_driver_sql("INSERT INTO reporting_periods(id,year,status,template_status) VALUES (1,2027,'active','verified')")
@@ -77,4 +77,4 @@ def test_migration_pairs_and_data_preserving_downgrade(postgres_templates):
         assert 'sunum_photos' not in inspect(engine).get_table_names()
         with engine.connect() as conn:
             assert conn.execute(text('SELECT name FROM organizations')).scalar_one() == 'Sentetik Belediye'
-        migrate('upgrade', 'head')
+        migrate('upgrade', 'c184a1b2c3d4')
