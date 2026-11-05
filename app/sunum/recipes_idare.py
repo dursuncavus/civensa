@@ -5,6 +5,7 @@ import logging
 from ..numbers import format_number
 from .engine import pages, text
 from .recipes import complete_sum, lines, number, rate
+from .meclis import budget_distribution, one_decimal, scorecard
 
 logger = logging.getLogger(__name__)
 
@@ -89,6 +90,12 @@ def idare_activity_report(payload):
             dict(label='Bütçe gerçekleşme oranı', value=rate(actual, final), unit='yüzde')], source=source('III.A.1')))
     else:
         missing('eksiksiz bütçe')
+    distribution = budget_distribution(payload)
+    if distribution:
+        content.append(dict(type='budget', title='Her 100 TL nereye harcandı?', year=payload['year'],
+            **distribution, source=source('III.A.1')))
+    else:
+        missing('ekonomik sınıflandırmaya göre eksiksiz harcama dağılımı')
     # Use economic rows only; programme rows classify the same expenditure.
     spending = {}
     names = {dep: unit.get('department') for dep, unit in units.items()}
@@ -114,6 +121,16 @@ def idare_activity_report(payload):
     add_group('Bütçe', 'Ödenek, harcama', content)
 
     content = []
+    scores = scorecard(payload.get('unit_indicator_sources', []))
+    if scores and any(unit.get('core', {}).get('indicators') for unit in payload.get('unit_indicator_sources', [])):
+        content.append(dict(type='scorecard', title='Müdürlükler hedeflerine ne kadar yaklaştı?', rows=scores,
+            summary=[dict(css=css, count=sum(row['status'] == label for row in scores), label=description)
+                     for label, css, description in [('Hedefte', 'ok', 'müdürlük hedefte'),
+                         ('Yakın', 'w', 'müdürlük hedefe yakın'), ('Geride', 'bad', 'müdürlük geride')]],
+            source=source('III.B.2.i'), note='Müdürlüklere göre karne. Gerçekleşen ≥ hedef, hedefte sayılır. '
+                'Eşikler: %90 Hedefte, %70 Yakın; Strateji tarafından kesinleştirilecek.'))
+        for item in content[-1]['summary']:
+            item['display'] = format_number(item['count'])
     summary = []
     for unit in payload.get('unit_indicator_sources', []):
         indicators = unit.get('core', {}).get('indicators', [])
@@ -129,7 +146,7 @@ def idare_activity_report(payload):
                 ratios.append(actual / target)
         summary.append([text(unit.get('department')), format_number(len(indicators) if indicators else None),
             format_number(len(verified) if verified else None),
-            format_number(rate(sum(ratios), Decimal(len(ratios))) if ratios else None)])
+            one_decimal(rate(sum(ratios), Decimal(len(ratios))) if ratios else None)])
     if summary and any(unit.get('core', {}).get('indicators') for unit in payload.get('unit_indicator_sources', [])):
         content.append(dict(type='table', title='Müdürlüklere göre gösterge özeti',
             headers=['Müdürlük', 'Gösterge sayısı', 'Gerçekleşmesi girilen', 'Ortalama oran (%)'],

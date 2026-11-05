@@ -29,7 +29,7 @@ from test_sunum_browser import browser_options, deck_url
 pytestmark = pytest.mark.postgres
 
 
-def seed_indicators(db, doc, actor, values):
+def seed_indicators(db, doc, actor, values, blank_reason=False):
     report = db.scalar(select(ActivityReport).where(ActivityReport.organization_id == doc.organization_id,
         ActivityReport.period_id == doc.period_id))
     if report is None:
@@ -57,7 +57,7 @@ def seed_indicators(db, doc, actor, values):
         db.add(definition)
         db.flush()
         binding = PublicationIndicatorBinding(publication_id=revision.publication_id,
-            snapshot_indicator_id=20000+doc.id*10+index, definition_revision_id=definition.id,
+            snapshot_indicator_id=20000+doc.id*1000+index, definition_revision_id=definition.id,
             department_id=doc.department_id, created_by=actor.id, reason='CIV-182 test kaynağı')
         db.add(binding)
         db.flush()
@@ -66,7 +66,8 @@ def seed_indicators(db, doc, actor, values):
         db.flush()
         db.add(ActualRevision(report_indicator_id=item.id, revision=1, value=actual, state='verified',
             evidence_json='[{"title":"Kaynak","locator":"Sayfa 1","source_revision":"1"}]',
-            explanation='Test gözlemi', deviation_json='{}', created_by=actor.id))
+            explanation='' if blank_reason and actual is not None and actual < target else 'Test gözlemi',
+            deviation_json='{}', created_by=actor.id))
     db.flush()
 
 
@@ -82,13 +83,21 @@ def idare_fixture(section_client, db, sample, request):
         for doc, initial, actual in zip(units, [1000, 2000, 3000], [700, 1500, 2400])]
     if options.get('missing_budget'):
         budget_rows.pop()
+    if options.get('council'):
+        budget_rows = [dict(row, economic_code=code, initial=str(Decimal(row['initial'])*share/100),
+            actual=str(Decimal(row['actual'])*share/100)) for row in budget_rows
+            for code, share in [('03', 34), ('06', 27), ('01', 22), ('02', 6), ('05', 6), ('04', 3), ('07', 2)]]
+    if options.get('blank_economic'):
+        budget_rows[0]['actual'] = None
     response = client.post(f'/api/activity-sections/reports/{idare.id}/financial/budget/expenditure',
         headers={'X-CSRF-Token': token}, json={'expected_revision': idare.revision, 'rows': budget_rows})
     assert response.status_code == 200, response.text
-    for doc, counts, observations in zip(units, [(18, 4), (8, 2), (5, 1)],
-            [[(100, 75), (20, 10)], [(40, 0), (20, 30)], [(10, None)]]):
+    observations_by_unit = ([[(100, 100)]*10, [(100, 100)]*8 + [(100, 50)]*2,
+        [(100, 100)]*6 + [(100, 50)]*4 + [(100, None)]] if options.get('council') else
+        [[(100, 75), (20, 10)], [(40, 0), (20, 30)], [(10, None)]])
+    for doc, counts, observations in zip(units, [(18, 4), (8, 2), (5, 1)], observations_by_unit):
         actor = db.scalar(select(User).where(User.department_id == doc.department_id, User.role == 'department'))
-        seed_indicators(db, doc, actor, observations)
+        seed_indicators(db, doc, actor, observations, blank_reason=options.get('council'))
         ready_unit(db, doc, actor)
         if options.get('blank_staff') and doc == units[-1]:
             counts = (None, None)
@@ -127,7 +136,7 @@ def test_real_staff_budget_and_verified_indicator_aggregates(idare_fixture):
     assert [f['value'] for f in budget] == [6000, 4600, Decimal('76.67')]
     assert by_title(slides, 'Müdürlüklere göre harcama')['series'][0]['values'] == [2400, 1500, 700]
     summary = by_title(slides, 'Müdürlüklere göre gösterge özeti')
-    assert [row[1:] for row in summary['rows']] == [['2', '2', '62,5'], ['2', '2', '75'], ['1', '—', '—']]
+    assert [row[1:] for row in summary['rows']] == [['2', '2', '62,5'], ['2', '2', '75,0'], ['1', '—', '—']]
 
 
 @pytest.mark.parametrize('idare_fixture', [dict(blank_staff=True)], indirect=True)
@@ -246,7 +255,7 @@ def test_summary_verified_only_paging_and_blank_values(idare_fixture):
     tables = [s for s in prepare_slides(idare_activity_report(payload)) if s['type'] == 'table']
     assert [s['continuation'] for s in tables] == ['Tablo 1/3', 'Tablo 2/3', 'Tablo 3/3']
     assert [len(s['rows']) for s in tables] == [10, 10, 3]
-    assert tables[0]['rows'][0][1:] == ['8', '5', '25']
+    assert tables[0]['rows'][0][1:] == ['8', '5', '25,0']
     assert tables[-1]['rows'][-1][1:] == ['1', '—', '—']
 
 
@@ -312,9 +321,9 @@ def test_download_offline_browser_and_screenshots(idare_fixture, tmp_path):
         page.goto(url + '#pdf')
         page.wait_for_function('() => window.sunumRendered === true')
         assert page.locator('html.pdf').count() == 1
-        assert page.locator('[data-chart] svg').count() == 2
+        assert page.locator('[data-chart] svg').count() == 3
         pdf = PdfReader(BytesIO(page.pdf(prefer_css_page_size=True, print_background=True)))
-        assert len(pdf.pages) == 13
-        assert '62,5' in pdf.pages[11].extract_text()
+        assert len(pdf.pages) == 17
+        assert '62,5' in pdf.pages[15].extract_text()
         assert errors == []
         browser.close()

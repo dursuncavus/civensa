@@ -12,7 +12,7 @@ from .middleware import DECK_POLICY
 
 APP = Path(__file__).resolve().parents[1]
 MAX_BYTES = 3_000_000
-SLIDE_TYPES = {'cover', 'map', 'separator', 'kpi', 'chart', 'table', 'bullets', 'quote', 'closing'}
+SLIDE_TYPES = {'cover', 'map', 'separator', 'kpi', 'chart', 'table', 'bullets', 'quote', 'closing', 'scorecard', 'budget'}
 
 
 class DeckTooLarge(ValueError):
@@ -69,6 +69,8 @@ def prepare_slides(slides):
         if kind == 'table':
             groups = pages(slide['rows'], 10)
             alignment = numeric_columns(slide['headers'], slide['rows'])
+        elif kind == 'scorecard':
+            groups = pages(slide['rows'], 6)
         elif kind == 'bullets':
             groups = pages(slide['bullets'], 5)
         if kind == 'kpi' and not 2 <= len(slide['figures']) <= 8:
@@ -79,10 +81,13 @@ def prepare_slides(slides):
             if kind == 'table':
                 item['rows'] = [[text(cell) for cell in row] for row in group]
                 item['numeric_columns'] = alignment
-                item['continuation'] = f'Tablo {index}/{len(groups)}'
+                item['continuation'] = f'Tablo {index}/{len(groups)}' if len(groups) > 1 else ''
                 # Last row finishes in <= 1.5 s, regardless of row count.
                 step = min(150, 1150 // max(1, len(group) - 1))
                 item['row_delays'] = [i * step for i in range(len(group))]
+            elif kind == 'scorecard':
+                item['rows'] = [dict(row, popup_id=f'popup-{len(result)}-{i}') for i, row in enumerate(group)]
+                item['continuation'] = f'Tablo {index}/{len(groups)}' if len(groups) > 1 else ''
             elif kind == 'bullets':
                 item['bullets'] = [text(value) for value in group]
                 item['continuation'] = f'{index}/{len(groups)}' if len(groups) > 1 else ''
