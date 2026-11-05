@@ -129,6 +129,8 @@ def idare_activity_report(payload):
                          ('Yakın', 'w', 'müdürlük hedefe yakın'), ('Geride', 'bad', 'müdürlük geride')]],
             source=source('III.B.2.i'), note='Müdürlüklere göre karne. Gerçekleşen ≥ hedef, hedefte sayılır. '
                 'Eşikler: %90 Hedefte, %70 Yakın; Strateji tarafından kesinleştirilecek.'))
+        for item in content[-1]['summary']:
+            item['display'] = format_number(item['count'])
     summary = []
     for unit in payload.get('unit_indicator_sources', []):
         indicators = unit.get('core', {}).get('indicators', [])

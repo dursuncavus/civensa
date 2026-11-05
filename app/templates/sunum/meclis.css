@@ -73,7 +73,7 @@ section.pdf-detail .x,section.pdf-detail .hint{display:none}
 .pop.open{z-index:50}
 .budget-total{font-size:22px;color:var(--text2);margin-top:12px}
 section.pdf-detail .popbody{max-height:none;overflow:visible}
-section.pdf-detail .popbox{transform-origin:top left;overflow:visible}
+section.pdf-detail .popbox{overflow:visible}
 html.pdf .popbox{animation:none}
 /* Six rows leave room for the continuation and source footer. */
 .score:has(.r:nth-child(6)) .r{padding:10px 24px}

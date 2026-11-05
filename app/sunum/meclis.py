@@ -10,6 +10,14 @@ from .recipes import complete_sum, number, rate
 STATUS_THRESHOLDS = ((Decimal(90), 'Hedefte', 'ok'), (Decimal(70), 'Yakın', 'w'),
                      (Decimal(0), 'Geride', 'bad'))
 BUDGET_COLORS = ('#1e6b65', '#4f8f88', '#86b3ad', '#b7d3cf', '#c9ded9', '#dfe9e7')
+# Council wording from the approved design; codes retain the report's meaning.
+BUDGET_NAMES = {'01': 'Personel giderleri', '02': 'Sosyal güvenlik primleri',
+    '03': 'Mal ve hizmet alımı', '04': 'Faiz', '05': 'Cari transferler',
+    '06': 'Sermaye giderleri', '07': 'Sermaye transferi', '08': 'Borç verme', '09': 'Yedek ödenekler'}
+BUDGET_DESTINATIONS = {'01': 'Personel giderlerine', '02': 'Sosyal güvenlik primlerine',
+    '03': 'Mal ve hizmet alımına', '04': 'Faize', '05': 'Cari transferlere',
+    '06': 'Yatırımlara (sermaye giderleri)', '07': 'Sermaye transferine',
+    '08': 'Borç vermeye', '09': 'Yedek ödeneklere'}
 
 
 def one_decimal(value):
@@ -58,7 +66,8 @@ def scorecard(sources):
         value = Decimal(met) / measured * 100 if measured else None
         label, css = status(value)
         rows.append(dict(code=text(unit.get('department_id')), name=text(unit.get('department')),
-            measured=measured, met=met, rate=value, percentage='%' + one_decimal(value) if value is not None else '—',
+            measured=measured, met=met, measured_display=format_number(measured), met_display=format_number(met),
+            missed_display=format_number(len(missed)), rate=value, percentage='%' + one_decimal(value) if value is not None else '—',
             width=float(value) if value is not None else 0, status=label, css=css, missed=missed,
             expandable=label in {'Yakın', 'Geride'}))
     return rows
@@ -89,8 +98,8 @@ def budget_distribution(payload):
             return None
         categories[code] = categories.get(code, Decimal(0)) + actual
     ordered = sorted(categories.items(), key=lambda item: (-item[1], item[0]))
-    named = [(EXPENSE_CODES[code], value) for code, value in ordered if value * 100 >= total * 5]
-    other = [(EXPENSE_CODES[code], value) for code, value in ordered if value * 100 < total * 5]
+    named = [(BUDGET_NAMES[code], value) for code, value in ordered if value * 100 >= total * 5]
+    other = [(BUDGET_NAMES[code].lower(), value) for code, value in ordered if value * 100 < total * 5]
     if other:
         named.append(('Diğer (' + ', '.join(name for name, _ in other) + ')', sum(value for _, value in other)))
     exact = [value / total * 1000 for _, value in named]
@@ -102,6 +111,6 @@ def budget_distribution(payload):
              for i, (name, value) in enumerate(named)]
     # Side labels are the three largest original economic categories.
     displays = {box['name']: box['display'] for box in boxes}
-    top = [dict(name=EXPENSE_CODES[code], display=displays.get(EXPENSE_CODES[code], one_decimal(value / total * 100)), color=BUDGET_COLORS[i])
+    top = [dict(name=BUDGET_DESTINATIONS[code], display=displays.get(BUDGET_NAMES[code], one_decimal(value / total * 100)), color=BUDGET_COLORS[i])
            for i, (code, value) in enumerate(ordered[:3])]
     return dict(boxes=boxes, top=top, total=format_number(total, money=True))

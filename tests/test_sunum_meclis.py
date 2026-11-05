@@ -47,6 +47,8 @@ def test_unmeasurable_targets_and_actuals_zero_and_exact_status_boundaries():
     explanation = scorecard([dict(core=dict(indicators=[indicator(20, explanation='Gecikme',
         deviation=dict(corrective_action='Yeni takvim', delta='-80', achievement_percent=None))]))])[0]
     assert explanation['missed'][0]['reason'] == 'Gecikme\nYeni takvim'
+    many = scorecard([dict(core=dict(indicators=[base]*1000))])[0]
+    assert many['measured_display'] == many['met_display'] == '1.000'
 
 
 @pytest.mark.parametrize('idare_fixture', [dict(council=True)], indirect=True)
@@ -61,7 +63,9 @@ def test_approved_fixture_scorecard_distribution_and_group_order(idare_fixture):
     assert score['rows'][2]['missed'][0]['reason'] == '—'
     budget = by_title(slides, 'Her 100 TL nereye harcandı?')
     assert [b['share'] for b in budget['boxes']] == [34, 27, 22, 6, 6, 5]
-    assert budget['boxes'][-1]['name'] == 'Diğer (Faiz Giderleri, Sermaye Transferleri)'
+    assert budget['boxes'][-1]['name'] == 'Diğer (faiz, sermaye transferi)'
+    assert [row['name'] for row in budget['top']] == ['Mal ve hizmet alımına',
+        'Yatırımlara (sermaye giderleri)', 'Personel giderlerine']
     assert sum(Decimal(str(b['share'])) for b in budget['boxes']) == Decimal('100.0')
     titles = [s.get('title') for s in slides]
     assert titles.index('Bütçe bir bakışta') + 1 == titles.index(budget['title'])
@@ -219,4 +223,7 @@ def test_long_popup_scrolls_and_pdf_continuations_stay_with_their_card(tmp_path)
         assert sequence[cards[1]+1][2] == sequence[cards[1]][1]
         assert page.locator('section.pdf-detail').count() == 7
         assert page.locator('.pdf-detail .popbody').first.evaluate('el=>el.scrollHeight<=el.clientHeight+1')
+        pdf = PdfReader(BytesIO(page.pdf(prefer_css_page_size=True, print_background=True)))
+        assert len(pdf.pages) == len(sequence)
+        assert pdf.pages[cards[0]+1].extract_text().count('Gösterge') == 12
         browser.close()

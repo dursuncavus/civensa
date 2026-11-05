@@ -106,8 +106,10 @@ const printReady=PRINT?new Promise(resolve=>deck.on('pdf-ready',resolve)):Promis
 window.sunumReady = document.fonts.ready.then(()=>deck.initialize()).then(()=>printReady).then(()=>{
   if (PRINT) {
     document.querySelectorAll('.pdf-detail .popbox').forEach(box=>{
-      const scale=Math.min(1,840/box.scrollHeight);
-      if (scale<1) box.style.transform='scale('+scale+')';
+      // Layout zoom keeps the whole table inside the printed page. A visual
+      // transform leaves its unscaled rows subject to Chromium fragmentation.
+      const scale=Math.min(1,820/(box.scrollHeight+2));
+      if (scale<1) {box.style.width=box.offsetWidth+'px';box.style.zoom=String(scale);}
     });
     document.querySelectorAll('[data-count]').forEach(countUp);
     document.querySelectorAll('[data-chart]').forEach(el=>draw(el,false));
