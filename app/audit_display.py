@@ -63,6 +63,7 @@ ACTION_LABELS = {
     "period_indicator_identity": "Gösterge dönemler arasında ilişkilendirildi",
     "personnel_cost_update": "Personel gideri güncellendi",
     "pp_data_change": "Performans programı verisi değiştirildi",
+    "publication_approved_book": "Onaylı kitaptan yayın oluşturuldu",
     "publication_freeze": "Yayın sürümü oluşturuldu",
     "publication_indicator_bind": "Yayın göstergesi ilişkilendirildi",
     "program_create": "Program oluşturuldu",
