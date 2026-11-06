@@ -1404,3 +1404,12 @@ Done (lead): 2025-Meclis-Sunumu-Deneme.html (İndirilenler › SN-video), render
 Finding (DOĞRULANDI, screenshots): table pagination counts rows only; long müdürlük names wrap and push rows 10–11 past the footer. Live decks are affected once İdare FR data exist. Workaround only in the test deck (7 rows per page).
 Decision: CIV-186 (Codex, GPT-6.1 Sol, orta) — height-aware pagination for table/scorecard/bullets; package tasks/CIV-186.md.
 Next IDs: task CIV-187, decision D-430.
+
+## D-430 (6 Nov 2026 ~12:50–13:55 Istanbul, lead, live session CV Lider 67) — CIV-186 reviewed, two lead fixes, merged
+DOĞRULANDI: Gmail (1 day) — no mail from Ali Abi (only Earth Studio render notices and unrelated mail).
+DOĞRULANDI #413 CIV-186 (Codex, head 217c707) against tasks/CIV-186.md: allowed files only; pagination stays in Python; CI green. Defect found by the lead from the PR's own screenshots: every wrapped line was charged as a whole row and .65 em per character was used, so pages were half empty (33-row summary → 8 pages of ~4 rows; scorecard 2 rows/page; long bullets 1/page).
+Lead fix 9920c9d: an extra line costs a fraction of a row (table .6 = 35/64 px, bullets .6), CHAR_EM .58, bullets budget 7 units (5-item maximum unchanged). "@codex review" → P2 (valid): meclis.css switches scorecards to the compact layout only at 6 rows, so a split page has taller rows (5 full rows with two wrapped names end at 984 px, footer 971).
+Lead fix 6322759: scorecards paged by pixel height measured in Chrome (full row 104 + 36.4 per extra name line, compact 81 + 31.2, gap 14; limit 590 px with the "Tablo n/N" counter, 625 px for a single-page slide), largest group that fits. Regression: unit test (2 wrapped + 4 short) + browser slide "Karma karne". Local (Chrome, normal + #pdf): 15 passed; every last row above the footer. Short-row decks byte-identical to the old pagination (monkeypatched legacy check, CI).
+"@codex review" on 6322759: no major issues. CI green (run 42199880438), behind 0 → merged 00699ae.
+Result: 33-row İdare summary 8 → 6 pages; real-name scorecards 6 per page. Live after the next release (no migration). The 7-rows-per-page workaround in docs/lead/data/sunum-2025-deneme-build.py can go when the test deck is rebuilt.
+Next IDs: task CIV-187, decision D-431.
