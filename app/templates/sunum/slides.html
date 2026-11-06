@@ -1,0 +1,109 @@
+{% macro footer(s, code) -%}
+<div class="foot"><span>Kaynak: <b>{{ s.source }}</b></span><span>{% if code=='TASLAK' %}<b class="sample">TASLAK</b>{% else %}Doğrulama kodu <b>{{ code }}</b>{% endif %}</span></div>
+{%- endmacro %}
+
+{% macro cover(s, logo) -%}
+<div class="band"><span>{{ s.year }}</span></div>
+<img class="logo" src="{{ logo }}" alt="{{ s.organization }} logosu">
+<div class="cover-title"><h1>{{ s.department }}<br>{{ s.year }} Faaliyet Raporu</h1><p class="lead">{{ s.subtitle }}</p></div>
+{%- endmacro %}
+
+{% macro map(s) -%}
+<div class="eyebrow">Sunum haritası</div><h2>{{ s.title }}</h2>
+<div class="map" style="grid-template-columns:repeat({{ s.tiles|length }},1fr)">
+{% for tile in s.tiles %}<button type="button" class="tile" data-id="{{ tile.tile_id }}" data-go="{{ tile.id }}"><span class="no">{{ tile.number }}</span><span><span class="t">{{ tile.title }}</span><span class="s">{{ tile.subtitle }}</span></span></button>{% endfor %}
+</div>
+{%- endmacro %}
+
+{% macro separator(s, logo) -%}
+<img class="sep-logo" src="{{ logo }}" alt="Belediye logosu">
+<div class="tile" data-id="{{ s.tile_id }}"><div class="no">{{ s.number }}</div><div><div class="t">{{ s.title }}</div><div class="s">{{ s.subtitle }}</div></div></div>
+{%- endmacro %}
+
+{% macro kpi(s) -%}
+<div class="kpis{% if s.figures|length>4 %} small{% endif %}" style="grid-template-columns:repeat({{ 4 if s.figures|length>4 else s.figures|length }},1fr)">
+{% for figure in s.figures %}<div class="kpi{% if loop.first %} hero{% endif %}"><div><span class="v"{% if figure.value is not none %} data-count="{{ figure.value }}" data-decimals="{{ figure.decimals }}"{% endif %}>{{ figure.display }}</span><span class="u">{{ figure.unit }}</span></div><div class="l">{{ figure.label }}</div></div>{% endfor %}
+</div>
+{%- endmacro %}
+
+{% macro chart(s) -%}
+<div class="chart" data-chart role="img" aria-label="{{ s.title }}" style="height:{{ s.height }}px"></div>
+<script type="application/json" class="chart-data">{{ {'variant':s.variant, 'categories':s.categories, 'series':s.series, 'unit':s.unit|default(''), 'height':s.height}|tojson }}</script>
+{%- endmacro %}
+
+{% macro table(s) -%}
+<table class="t"><thead><tr>{% for header in s.headers %}<th scope="col"{% if s.numeric_columns[loop.index0] %} class="n"{% endif %}>{{ header }}</th>{% endfor %}</tr></thead>
+<tbody>{% for row in s.rows %}<tr class="row" style="--d:{{ s.row_delays[loop.index0] }}ms">{% for cell in row %}<td{% if s.numeric_columns[loop.index0] %} class="n"{% endif %}>{{ cell }}</td>{% endfor %}</tr>{% endfor %}</tbody></table>
+{% if s.continuation %}<p class="cont">{{ s.continuation }}</p>{% endif %}
+{%- endmacro %}
+
+{% macro scorecard(s) -%}
+<div class="score-sum">{% for status in s.summary %}<div class="s"><span class="dot {{ status.css }}"></span><b>{{ status.display }}</b> {{ status.label }}</div>{% endfor %}</div>
+<div class="score">
+{% for row in s.rows %}<div class="r" style="--d:{{ loop.index0 * 100 }}ms"{% if row.expandable %} data-detail="{{ row.popup_id }}" role="button" tabindex="0" aria-haspopup="dialog" aria-controls="{{ row.popup_id }}" aria-expanded="false"{% endif %}>
+{% if row.expandable %}<span class="more" aria-hidden="true">+</span>{% endif %}
+<div class="name">{{ row.name }}<small>{{ row.measured_display }} göstergenin {{ row.met_display }}'i hedefte</small></div>
+<div class="bar {{ row.css }}"><i style="--w:{{ row.width }}%"></i></div><div class="pct">{{ row.percentage }}</div>
+{% if row.status %}<span class="pill {{ row.css }}">{{ row.status }}</span>{% else %}<span>—</span>{% endif %}</div>{% endfor %}
+</div>
+{% if s.continuation %}<p class="cont">{{ s.continuation }}</p>{% endif %}
+{% for row in s.rows if row.expandable %}
+<div class="pop" id="{{ row.popup_id }}" role="dialog" aria-modal="true" aria-label="{{ row.name }} açılımı"><div class="popbox">
+<button class="x" type="button" aria-label="Kapat">×</button>
+<div class="eyebrow">Açılım</div>
+<h3>{{ row.name }} — hedefi tutmayan {{ row.missed_display }} gösterge</h3><div class="sub2">{{ row.measured_display }} göstergenin {{ row.met_display }}'i hedefte · {{ row.percentage }}</div>
+<div class="popbody" tabindex="0"><table><thead><tr><th>Gösterge</th><th class="n">Hedef</th><th class="n">Gerçekleşen</th><th class="n">Oran</th><th>Sapmanın nedeni (müdürlüğün raporundan)</th></tr></thead>
+<tbody>{% for indicator in row.missed %}<tr><td>{{ indicator.name }}</td><td class="n">{{ indicator.target }}</td><td class="n">{{ indicator.actual }}</td><td class="n"><span class="pill {{ indicator.css }}">{{ indicator.ratio }}</span></td><td class="why">{{ indicator.reason }}</td></tr>{% endfor %}</tbody></table></div>
+<div class="hint">Kapatmak için × ya da Esc · sunum kaldığı slayttan devam eder</div>
+</div></div>{% endfor %}
+{%- endmacro %}
+
+{% macro budget(s) -%}
+<div class="budget"><div class="side"><div class="hd">{{ s.year }} yılında harcanan her 100 TL'nin</div>
+{% for item in s.top %}<div class="it" style="--c:{{ item.color }}"><div class="v">{{ item.display }}<small>TL</small></div><div class="l">{{ item.name }}</div></div>{% endfor %}
+</div><div class="tm" data-chart role="img" aria-label="Ekonomik sınıflandırmaya göre harcama dağılımı"></div>
+<script type="application/json" class="chart-data">{{ {'variant':'treemap', 'boxes':s.boxes, 'height':660}|tojson }}</script></div>
+<p class="budget-total">Toplam harcama: {{ s.total }} TL</p>
+{%- endmacro %}
+
+{% macro bullets(s) -%}
+<ul class="b">{% for bullet in s.bullets %}<li class="fragment fade-up">{{ bullet }}</li>{% endfor %}</ul>
+{% if s.continuation %}<p class="cont">{{ s.continuation }}</p>{% endif %}
+{%- endmacro %}
+
+{% macro quote(s) -%}
+<div class="quote">{% for value in s.quotes %}<p>{{ value }}</p>{% endfor %}</div>
+{%- endmacro %}
+
+{% macro closing(s, logo, code) -%}
+<img class="logo" src="{{ logo }}" alt="Belediye logosu">
+<div class="closing-title"><h1>{{ s.title }}</h1><p class="lead">{{ s.subtitle }}</p>
+<div class="verify"><div class="code">{{ code }}</div><div class="txt">{% if code=='TASLAK' %}Bu sunum taslak Faaliyet Raporu'ndan otomatik üretilmiştir. Onaylı sunum için raporun onayını tamamlayın.{% else %}Bu sunumdaki rakamlar Civensa'daki onaylı Faaliyet Raporu'ndan otomatik üretilir. Doğrulama kodunu rapor sayfasındaki kodla karşılaştırın.{% endif %}</div></div></div>
+{%- endmacro %}
+
+{% macro photo(s) -%}
+<div class="img" role="img" aria-label="{{ s.title }}" style="background-image:url('{{ s.image }}')"></div><div class="shade"></div>
+<div class="eyebrow">{{ s.eyebrow }}</div><div class="cap"><div><h2>{{ s.title }}</h2>{% if s.meta %}<div class="meta">{{ s.meta }}</div>{% endif %}</div></div>
+{%- endmacro %}
+
+{% macro before_after(s) -%}
+<div class="ba-content"><h2>{{ s.title }}</h2>
+<div class="ba-wrap">
+<div class="img" role="img" aria-label="Önce: {{ s.title }}" style="background-image:url('{{ s.before }}')"></div>
+<div class="after-clip"><div class="img" role="img" aria-label="Sonra: {{ s.title }}" style="background-image:url('{{ s.after }}')"></div></div>
+<div class="handle" role="slider" tabindex="0" aria-label="Önce/sonra ayracı" aria-valuemin="0" aria-valuemax="100" aria-valuenow="100"></div>
+<span class="tag b">Önce{% if s.before_date %} · {{ s.before_date }}{% endif %}</span><span class="tag a">Sonra{% if s.after_date %} · {{ s.after_date }}{% endif %}</span>
+</div><div class="ba-meta"><span>{{ s.meta }}</span></div></div>
+{%- endmacro %}
+
+{% macro spot(s) -%}
+<div class="ghost" aria-hidden="true">{{ '%' if s.unit=='yüzde' else s.display }}</div><div class="mid">
+<div class="big{% if s.display|length>7 %} long{% endif %}"><span class="v" data-count="{{ s.value }}" data-decimals="{{ s.decimals }}">{{ s.display }}</span><span class="u">{{ s.label }}</span></div>
+<p class="msg reveal-line">{{ s.sentence }}</p>{% if s.context %}<p class="ctx reveal-line">{{ s.context }}</p>{% endif %}</div>
+{%- endmacro %}
+
+{% macro feature(s) -%}
+<div class="cards{% if s.compact %} compact{% endif %}">{% for card in s.cards %}<article class="card" style="--d:{{ loop.index0 * 180 }}ms">
+{% if card.image %}<img class="ph" src="{{ card.image }}" alt="{{ card.department }} çalışması">{% endif %}
+<div class="bd"><div class="dep">{{ card.department }}</div><div class="v">{{ card.display }}<small>{{ card.label }}</small></div><div class="t">{{ card.sentence }}</div>{% if card.context %}<div class="loc">{{ card.context }}</div>{% endif %}</div></article>{% endfor %}</div>
+{%- endmacro %}

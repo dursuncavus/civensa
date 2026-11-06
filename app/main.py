@@ -164,6 +164,7 @@ async def security_headers(request: Request, call_next):
     return response
 app.mount("/static", StaticFiles(directory=BASE_DIR / "static"), name="static")
 from .structure_service import period_name
+from .book_export import display_catalogue_keys
 
 templates = Jinja2Templates(directory=BASE_DIR / "templates")
 from .pp_errors import install as install_pp_errors, pp_error, payload as pp_error_payload
@@ -2040,7 +2041,7 @@ def export_department_docx(department_id: int, request: Request, db: Session = D
     from .book_export import export_book
     payload = {"period": period.year, "departments": [department_snapshot(db, period.id, department_id)]}
     output, mime = export_book(payload, "docx")
-    filename = quote(f"{period.year}-{dept.name}-performans-raporu.docx")
+    filename = quote(f"{period.year}-{period_name(db, period.id, dept)}-performans-raporu.docx")
     log(db, user, "department_export_docx", "department", dept.id, f"period_id={period.id}")
     return StreamingResponse(io.BytesIO(output), media_type=mime, headers={"Content-Disposition": f"attachment; filename*=UTF-8''{filename}"})
 
@@ -2298,7 +2299,7 @@ def audit_export(request: Request, db: Session = Depends(get_db), user: User = D
     writer.writerow(csv_row(["Tarih", "Kullanıcı", "İşlem", "Kayıt", "Kayıt ID", "Değişiklik"]))
     for row in rows:
         actor = users.get(row.user_id)
-        writer.writerow(csv_row([row.created_at.isoformat(sep=" "), actor.email if actor else "sistem", row.action, row.entity_type, row.entity_id or "", safe_audit_details(row.details)]))
+        writer.writerow(csv_row([row.created_at.isoformat(sep=" "), actor.email if actor else "sistem", row.action, row.entity_type, row.entity_id or "", display_catalogue_keys(safe_audit_details(row.details))]))
     data = ("\ufeff" + output.getvalue()).encode("utf-8")
     return StreamingResponse(io.BytesIO(data), media_type="text/csv; charset=utf-8", headers={"Content-Disposition": 'attachment; filename="civensa-denetim-gecmisi.csv"'})
 

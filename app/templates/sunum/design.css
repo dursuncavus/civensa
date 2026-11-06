@@ -1,0 +1,123 @@
+:root{
+  --bg:#f6f5f2;--surface:#fff;--muted:#efede8;--border:#e3e1dc;
+  --text:#1f2328;--text2:#545b64;--accent:#1e6b65;--accent-dark:#17554f;--accent-soft:#e3f0ee;
+  --warn:#8a5a00;--warn-bg:#fff4d6;--ok:#1e7a46;
+}
+html,body{background:var(--bg)}
+.reveal *,.reveal *:before,.reveal *:after{box-sizing:border-box}
+.reveal{font-family:"Fira Sans",system-ui,sans-serif;color:var(--text);font-size:34px}
+.reveal .slides{text-align:left}
+.reveal .slides section{height:1080px;width:1920px;padding:96px 120px 120px;box-sizing:border-box}
+.reveal h1,.reveal h2,.reveal h3{font-family:inherit;color:var(--text);text-transform:none;letter-spacing:0;margin:0}
+.reveal h1{font-size:96px;font-weight:600;line-height:1.1}
+.reveal h2{font-size:64px;font-weight:600;line-height:1.15}
+.reveal h3{font-size:40px;font-weight:500}
+.eyebrow{font-size:28px;font-weight:500;color:var(--accent);letter-spacing:.06em;text-transform:uppercase;margin-bottom:24px}
+.lead{font-size:38px;color:var(--text2);margin-top:28px;max-width:1400px}
+
+/* alt bilgi: her slaytta kaynak + doğrulama kodu */
+.foot{position:absolute;left:120px;right:120px;bottom:72px;display:flex;justify-content:space-between;font-size:20px;color:var(--text2);border-top:1px solid var(--border);padding-top:16px}
+.foot b{font-weight:500;color:var(--text)}
+.sample{color:var(--warn);background:var(--warn-bg);padding:2px 10px;border-radius:4px;font-weight:500}
+
+/* kapak */
+.cover{background:var(--accent);}
+.cover h1,.cover .lead,.cover .eyebrow{color:#fff}
+.cover .lead{color:#d6ebe8}
+.cover .band{position:absolute;right:0;top:0;bottom:0;width:560px;background:var(--accent-dark)}
+.cover .band span{position:absolute;bottom:120px;left:64px;font-size:220px;font-weight:600;color:rgba(255,255,255,.12);line-height:1}
+.cover .logo{position:absolute;left:120px;top:96px;height:110px;width:auto;margin:0}
+.cover .foot{border-top-color:rgba(255,255,255,.25);color:#cfe5e2}
+.cover .foot b{color:#fff}
+
+/* harita (Prezi hissi) */
+.map{display:grid;grid-template-columns:repeat(4,1fr);gap:32px;margin-top:64px}
+.tile{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:40px;min-height:420px;cursor:pointer;display:flex;flex-direction:column;justify-content:space-between;transition:transform .2s,box-shadow .2s}
+.tile:hover{transform:translateY(-6px);box-shadow:0 12px 32px rgba(31,35,40,.08)}
+.tile .no{font-size:88px;font-weight:600;color:var(--accent);line-height:1}
+.tile .t{font-size:40px;font-weight:600}
+.tile .s{font-size:24px;color:var(--text2);margin-top:8px}
+.tile.done{background:var(--accent-soft)}
+
+/* bölüm açılışı: haritadaki kutu büyüyerek gelir */
+.section-open .tile{position:absolute;left:0;top:0;width:1920px;height:1080px;border-radius:0;border:none;background:var(--accent);padding:120px;justify-content:flex-end;cursor:default}
+.section-open .tile .no{color:rgba(255,255,255,.35);font-size:240px}
+.section-open .tile .t{color:#fff;font-size:110px}
+.section-open .tile .s{color:#d6ebe8;font-size:40px}
+
+/* özet rakamlar */
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:32px;margin-top:140px}
+.kpi{min-height:330px;display:flex;flex-direction:column;justify-content:space-between}
+.kpi{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:44px 40px}
+.kpi .v{font-size:76px;font-weight:600;color:var(--accent);line-height:1.05;white-space:nowrap}
+.kpi .u{display:block;font-size:30px;font-weight:500;color:var(--text2);margin-top:6px}
+.kpi .l{font-size:26px;color:var(--text2);margin-top:18px;line-height:1.35}
+.kpi.hero{background:var(--accent)}
+.kpi.hero .v{color:#fff}
+.kpi.hero .u,.kpi.hero .l{color:#d6ebe8}
+
+/* grafik */
+.chart{width:1680px;height:640px;margin-top:40px}
+
+/* tablo */
+table.t{width:100%;border-collapse:collapse;margin-top:48px;font-size:28px}
+table.t th{text-align:left;font-weight:500;color:var(--text2);font-size:22px;text-transform:uppercase;letter-spacing:.04em;padding:14px 20px;border-bottom:2px solid var(--text)}
+table.t td{padding:20px;border-bottom:1px solid var(--border);background:var(--surface)}
+table.t td.n,table.t th.n{text-align:right;font-variant-numeric:tabular-nums}
+table.t tr.total td{font-weight:600;background:var(--accent-soft);border-bottom:2px solid var(--accent)}
+.pill{display:inline-block;font-size:20px;font-weight:500;padding:4px 14px;border-radius:999px}
+.pill.ok{background:#e6f4ea;color:var(--ok)}
+.pill.w{background:var(--warn-bg);color:var(--warn)}
+.cont{font-size:22px;color:var(--text2);margin-top:16px;text-align:right}
+
+tr.row{opacity:0;transform:translateY(16px)}
+section.present tr.row.in{animation:rowin .35s cubic-bezier(.2,.7,.3,1) forwards;animation-delay:var(--d,0ms)}
+@keyframes rowin{to{opacity:1;transform:none}}
+html.pdf tr.row{opacity:1;transform:none}
+/* madde metni */
+ul.b{list-style:none;margin:56px 0 0;padding:0;max-width:1500px}
+ul.b li{position:relative;padding-left:56px;margin:0 0 36px;font-size:40px;line-height:1.35}
+ul.b li:before{content:"";position:absolute;left:0;top:18px;width:24px;height:24px;border-radius:6px;background:var(--accent)}
+ul.b li small{display:block;font-size:28px;color:var(--text2);margin-top:6px}
+
+/* kapanış */
+.close{background:var(--text)}
+.close h1{color:#fff}
+.close .lead{color:#c9ced4}
+.verify{margin-top:80px;display:inline-flex;gap:40px;align-items:center;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.18);border-radius:12px;padding:32px 44px}
+.verify .code{font-size:64px;font-weight:600;color:#fff;letter-spacing:.08em;font-variant-numeric:tabular-nums}
+.verify .txt{font-size:26px;color:#c9ced4;max-width:760px;line-height:1.4}
+.close .foot{border-top-color:rgba(255,255,255,.2);color:#9aa1a9}
+.close .foot b{color:#fff}
+
+.map.five{grid-template-columns:repeat(5,1fr);gap:24px}
+.map.five .tile{min-height:440px;padding:32px}
+.map.five .t{font-size:34px}
+.sep-logo{position:absolute;left:120px;top:96px;height:96px;width:auto;margin:0;z-index:2}
+.sub{font-size:26px;color:var(--text2);margin-top:40px;max-width:1600px;line-height:1.4}
+.kpis.small{grid-template-columns:repeat(4,1fr);gap:24px;margin-top:56px}
+.kpis.small .kpi{min-height:230px;padding:32px}
+.kpis.small .v{font-size:60px}
+.kpis.small .u{font-size:24px}
+.kpis.small .l{font-size:22px;margin-top:10px}
+.chart.short{height:560px}
+.quote{margin-top:64px;max-width:1500px;border-left:8px solid var(--accent);padding:8px 0 8px 48px}
+.quote .qk{font-size:24px;font-weight:500;color:var(--accent);letter-spacing:.04em;text-transform:uppercase;margin-top:36px}
+.quote .qk:first-child{margin-top:0}
+.quote p{font-size:40px;line-height:1.4;margin:12px 0 0}
+.close .logo{position:absolute;left:120px;top:96px;height:110px;width:auto;margin:0}
+/* gezinme: haritaya dön */
+.tools{position:fixed;right:110px;bottom:14px;z-index:30;display:flex;gap:8px;opacity:1;transition:opacity .4s}
+.tools.hide{opacity:0;pointer-events:none}
+.ic{width:40px;height:40px;display:inline-flex;align-items:center;justify-content:center;background:rgba(255,255,255,.92);border:1px solid var(--accent);border-radius:8px;cursor:pointer;padding:0}
+.ic svg{width:22px;height:22px;fill:none;stroke:var(--accent);stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.ic:hover{background:var(--accent-soft)}
+.reveal .slide-number{right:auto;left:16px;bottom:14px;background:none;color:var(--text2);font:500 14px "Fira Sans",system-ui}
+/* tasarım notları (yalnız inceleme için; gerçek sunumda yok) */
+.note{position:absolute;top:28px;right:32px;max-width:640px;font-size:20px;line-height:1.4;background:#fffbe6;color:#5c4400;border:1px solid #f0d78c;border-radius:8px;padding:12px 16px;display:none;z-index:5}
+.shownotes .note{display:block}
+.reveal .progress{color:var(--accent);height:6px}
+@media print{.tools{display:none}}
+html.pdf .tools{display:none}
+html,body{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+html.pdf .reveal .slides section{padding:96px 120px 120px !important;box-sizing:border-box !important;width:1920px !important;height:1080px !important}

@@ -402,11 +402,16 @@ def test_secret_cli_argument_is_rejected_without_echo(capsys):
     assert 'secret-connection' not in capsys.readouterr().err
 
 
-def test_live_pin_equals_single_repository_alembic_head():
+def test_live_pin_remains_known_checkpoint_before_presentation_migrations():
     from alembic.config import Config
     from alembic.script import ScriptDirectory
-    heads = ScriptDirectory.from_config(Config(str(live.ROOT / 'alembic.ini'))).get_heads()
-    assert heads == [live.HEAD] == ['c162a1b2c3d4']
+    script = ScriptDirectory.from_config(Config(str(live.ROOT / 'alembic.ini')))
+    assert script.get_heads() == ['c185a1b2c3d4']
+    # Operational first-load commands retain their reviewed schema pin. Presentation
+    # storage does not authorize changing that operational target or its guards.
+    assert live.HEAD == 'c162a1b2c3d4'
+    assert script.get_revision('c185a1b2c3d4').down_revision == 'c184a1b2c3d4'
+    assert script.get_revision('c184a1b2c3d4').down_revision == live.HEAD
 
 
 def test_approved_source_pin_and_old_book_refusal():

@@ -93,7 +93,8 @@ class TurkishValidationRoute(APIRoute):
                     'lower_rate':'Alt gerçekleşme oranı','upper_rate':'Üst gerçekleşme oranı',
                     'metadata':'Malî tablo bilgileri','file':'Dosya','import_id':'İçe aktarma önizlemesi',
                     'statement_id':'Malî tablo','kind':'Tablo türü','version':'Yayın sürümü',
-                    'approval_id':'Birim onayı','table_keys':'Tablo ve satır anahtarları'}
+                    'approval_id':'Birim onayı','table_keys':'Tablo ve satır anahtarları',
+                    'photo_id':'Fotoğraf','thumbnail':'Küçük önizleme','action':'Fotoğraf işlemi'}
                 fields=[]
                 for issue in error.errors():
                     location=issue.get('loc',())
@@ -106,6 +107,12 @@ class TurkishValidationRoute(APIRoute):
 def register(app):
     router=APIRouter(route_class=TurkishValidationRoute)
     from .main import require_user, templates
+    from .sunum.middleware import SunumSecurityHeaders
+    from .sunum.photos_routes import register as register_photos
+    register_photos(app)
+    from .sunum_highlights import register as register_highlights
+    register_highlights(app)
+    app.add_middleware(SunumSecurityHeaders)
     templates.env.filters['ar_number']=format_number
     templates.env.filters['ar_time']=turkey_time
     templates.env.filters['ar_text']=blocks_text
@@ -143,6 +150,66 @@ def register(app):
         state='onayli' if payload['frozen'] else 'taslak'
         filename=f"{payload['year']}-faaliyet-raporu-{slug}-{state}"
         return payload,filename
+
+    def sunum_code(db,doc,payload,version=None):
+        if not payload.get('frozen'):
+            return 'TASLAK'
+        from .sunum import verification_code
+        # Match export.json exactly. Approved unit exports include workflow
+        # metadata, whereas historical idare exports use stored release bytes.
+        release=service.latest_release(db,doc,version) if version is not None else service.frozen(db,doc)
+        canonical=release.payload_json if release else service.numeric_canonical(payload)
+        return verification_code(payload,canonical)
+
+    @router.get('/activity-sections/reports/{document_id}/sunum')
+    @router.get('/activity-sections/reports/{document_id}/sunum.html')
+    def sunum(document_id:int,request:Request,version:int|None=None,db:Session=Depends(get_db),user=Depends(require_user)):
+        from .sunum import activity_report, render_deck
+        from .sunum.engine import DeckTooLarge
+        payload,filename=export_payload(document_id,db,user,version)
+        doc=service.document(db,user,document_id)
+        slides=activity_report(payload) if doc.department_id is not None else None
+        if doc.department_id is None:
+            from .sunum.recipes_idare import idare_activity_report
+            from .ar_unit_workflow_service import verified_payload
+            from .models import ARUnitWorkflowEvent
+            sources=[]
+            for unit in payload.get('unit_manifest',[]):
+                # Bind summaries to this export/release, never to today's latest
+                # unit report. The flattened İdare indicator list has no unit IDs.
+                approval=db.get(ARUnitWorkflowEvent,unit['approval_id'])
+                if (not approval or approval.action!='approve' or approval.document_id!=unit['document_id']
+                        or approval.sha256!=unit['sha256']):
+                    service.fail('İdare sunumunun onaylı birim kaynağı doğrulanamadı. Strateji ile rapor sürümünü kontrol edin.',409)
+                snapshot=verified_payload(approval)
+                if (snapshot.get('department_id')!=unit['department_id']
+                        or snapshot.get('organization_id')!=payload['organization_id']
+                        or snapshot.get('period_id')!=payload['period_id']):
+                    service.fail('İdare sunumunun onaylı birim kaynağı raporla eşleşmiyor. Strateji ile rapor sürümünü kontrol edin.',409)
+                sources.append(dict(department_id=unit['department_id'],department=unit['department'],core=snapshot.get('core',{})))
+            from .sunum_photos_service import deck_slides
+            from .sunum_highlights import deck_items
+            slides=idare_activity_report(dict(payload,unit_indicator_sources=sources), photos=deck_slides(db,doc),
+                highlights=deck_items(db,doc))
+        try:
+            content=render_deck(slides,
+                title=f"{payload['department']} · {payload['year']} Faaliyet Raporu sunumu",
+                code=sunum_code(db,doc,payload,version),
+                **({'max_bytes':8_000_000} if doc.department_id is None else {}))
+        except DeckTooLarge:
+            limit=8 if doc.department_id is None else 3
+            advice=('Seçili fotoğraf sayısını azaltın veya Strateji ile rapordaki uzun tablo ve metinleri gözden geçirip yeniden deneyin.'
+                if doc.department_id is None else
+                'Strateji ile rapordaki uzun tablo ve metinleri gözden geçirip yeniden deneyin.')
+            service.fail(f'{payload["year"]} {payload["department"]} faaliyet raporunun sunumu {limit} MB sınırını aşıyor. '
+                +advice,422)
+        except OSError:
+            service.fail(f'{payload["year"]} {payload["department"]} faaliyet raporunun sunum dosyaları açılamadı. '
+                'Sistem sorumlusundan sunum kütüphanelerini, logo ve yazı tiplerini kontrol etmesini isteyin.',503)
+        disposition='attachment' if request.url.path.endswith('.html') else 'inline'
+        return Response(content,media_type='text/html',headers={
+            'Content-Disposition':f'{disposition}; filename="{filename}-sunum.html"',
+            'Cache-Control':'private, no-store','X-Content-Type-Options':'nosniff'})
 
     @router.get('/activity-sections/reports/{document_id}/export.docx')
     def export_docx(document_id:int,version:int|None=None,db:Session=Depends(get_db),user=Depends(require_user)):
@@ -307,6 +374,7 @@ def register(app):
         actor_ids={event.actor_id for event in events}
         event_actor_names=dict(db.execute(select(User.id,User.full_name).where(User.id.in_(actor_ids))).all()) if actor_ids else {}
         return {**financial_context(db,user,doc,report), 'event_actor_names':event_actor_names, 'section_table_keys_json':json.dumps(keys),
+            'sunum_code':sunum_code(db,doc,report),
             'resource_key_map':resource_keys, 'typeset_approvals':approvals, 'user':user,'report':report,'section':section,'statuses':service.STATUSES,
             'reopen_allowed':reopen_allowed,'similarities':ar_similarity.for_report(db,user,report),
             'editable':not report['frozen'] and service.can_edit(db,user,doc,definition),

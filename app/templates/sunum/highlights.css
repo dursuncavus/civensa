@@ -1,0 +1,35 @@
+.spot .mid{position:absolute;left:120px;right:120px;top:50%;transform:translateY(-46%)}
+.spot .eyebrow{color:#a9d3cd;position:absolute;top:96px;left:120px}
+.spot .big{display:flex;align-items:baseline;gap:32px;line-height:.9}
+.spot .big .v{font-size:300px;font-weight:600;color:#fff;letter-spacing:-.02em;font-variant-numeric:tabular-nums;white-space:nowrap}
+.spot .big .u{font-size:72px;font-weight:500;color:#d6ebe8;overflow-wrap:anywhere;max-width:620px;line-height:1.1}
+.spot .big.long .v{font-size:200px}
+.spot .msg{font-size:54px;line-height:1.3;color:#fff;max-width:1380px;margin-top:56px;font-weight:400;overflow-wrap:anywhere}
+.spot .ctx{font-size:30px;color:#a9d3cd;margin-top:28px}
+.spot .ghost{position:absolute;right:-40px;bottom:120px;font-size:560px;font-weight:600;color:rgba(255,255,255,.05);line-height:.8;pointer-events:none}
+.spot.dark .eyebrow,.spot.dark .ctx{color:#9aa1a9}
+.spot.dark .big .u{color:#c9ced4}
+.spot .reveal-line{opacity:0;transform:translateY(24px);transition:opacity .6s .9s,transform .6s .9s}
+section.spot.present .reveal-line{opacity:1;transform:none}
+.spot .foot{border-top-color:rgba(255,255,255,.2);color:#c9ced4}
+.spot .foot b{color:#fff}
+.cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:36px;margin-top:56px}
+.cards .card{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;display:flex;flex-direction:column;opacity:0;transform:translateY(28px)}
+section.present .cards .card{animation:highlight-in .6s cubic-bezier(.2,.7,.3,1) forwards;animation-delay:var(--d,0ms)}
+.cards .ph{height:300px;object-fit:cover;width:100%;flex-shrink:0}
+.cards .bd{padding:32px 36px 36px;display:flex;flex-direction:column;gap:10px;flex:1}
+.cards .dep{font-size:22px;font-weight:500;color:var(--accent);letter-spacing:.05em;text-transform:uppercase}
+.cards .v{font-size:68px;font-weight:600;color:var(--text);line-height:1.05;overflow-wrap:anywhere}
+.cards .v small{font-size:30px;font-weight:500;color:var(--text2);margin-left:10px}
+.cards .t{font-size:28px;line-height:1.35;color:var(--text2);overflow-wrap:anywhere}
+.cards .loc{margin-top:auto;font-size:22px;color:var(--text2);padding-top:14px;border-top:1px solid var(--border)}
+.cards.compact .ph{height:200px}
+.cards.compact .bd{padding:24px;gap:8px}
+.cards.compact .dep{font-size:20px}
+.cards.compact .v{font-size:56px}
+.cards.compact .v small{font-size:24px}
+.cards.compact .t{font-size:26px;line-height:1.3}
+.cards.compact .loc{font-size:20px;padding-top:10px}
+@keyframes highlight-in{to{opacity:1;transform:none}}
+html.pdf .spot .reveal-line,html.pdf .cards .card{opacity:1;transform:none;animation:none}
+@media(prefers-reduced-motion:reduce){.spot .reveal-line,.cards .card{opacity:1;transform:none;animation:none!important}}

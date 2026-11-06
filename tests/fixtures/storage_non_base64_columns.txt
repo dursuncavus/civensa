@@ -339,3 +339,19 @@ workflow_events.reason
 workflow_events.resource_id
 workflow_events.resource_type
 workflow_events.source
+
+# CIV-184: plain caption/location/kind labels, pair UUID and SHA-256 hex.
+# Image payloads are separate LargeBinary columns, never base64 in these fields.
+sunum_photos.caption
+sunum_photos.kind
+sunum_photos.mahalle
+sunum_photos.pair_key
+sunum_photos.sha256
+
+# CIV-185: bounded editorial words and stable fact keys only. Photos are an
+# integer FK to sunum_photos; no image or base64 content is stored in highlights.
+sunum_highlights.context
+sunum_highlights.fact_key
+sunum_highlights.kind
+sunum_highlights.label
+sunum_highlights.sentence

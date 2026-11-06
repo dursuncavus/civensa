@@ -27,7 +27,8 @@ from app.models import (ARDocument, Department, DepartmentScope, OfficialActivit
 from app import activity_contract_service as contract, activity_sections_service as sections
 from app.security import hash_password
 from scripts import first_load_live as live
-from scripts.first_load_dryrun import disposable_database, inspect_import, local_test_url
+from scripts.first_load_dryrun import inspect_import, local_test_url
+from tests.first_load_checkpoint import disposable_first_load_database as disposable_database
 from test_sidebar_ui import browser
 from test_internal_control import workbook, action_row
 from test_internal_control_questionnaire import question_file
