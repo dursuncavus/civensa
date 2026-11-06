@@ -192,3 +192,11 @@ def test_limit_rejects_large_deck():
 def test_kpi_bounds(count):
     with pytest.raises(ValueError):
         prepare_slides([dict(type='kpi', figures=[dict(value=1, label='Test')] * count)])
+
+
+def test_existing_recipe_fixture_bytes_match_legacy_pagination(presentation_payload, monkeypatch):
+    from app.sunum import engine
+
+    current = render(presentation_payload)
+    monkeypatch.setattr(engine, 'line_pages', lambda items, maximum, estimate: engine.pages(items, maximum))
+    assert render(presentation_payload) == current
