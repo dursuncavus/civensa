@@ -4,7 +4,10 @@ def test_module_selector_distinguishes_readiness(client):
     assert 'href="/dashboard"' in response.text
     assert 'href="/activity-report"' in response.text
     assert 'href="/activity-reports"' in response.text
-    assert 'Tam rapor hazırlık aşamasında' in response.text
+    assert 'href="/activity-sections"' in response.text
+    assert '2026 birim raporunu tamamla · EK-1 ve EK-2' in response.text
+    assert 'bağımsız onaydan sonra onaylı Word ve PDF indirilir' in response.text
+    assert 'Tam rapor hazırlık aşamasında' not in response.text
 
 def test_activity_preparation_does_not_expose_write_form(client):
     response=client.get('/activity-report')

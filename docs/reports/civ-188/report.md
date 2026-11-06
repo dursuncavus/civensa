@@ -42,6 +42,8 @@ B2 faaliyet başına gerçekleşme girişi kapsam dışıdır; üç müdürlük 
 
 Yerel doğrulama: `python -m pytest -q --require-postgres tests/test_civ188_rehearsal_fixes.py tests/test_ar_deviation_gate.py tests/test_ar_unit_workflow.py tests/test_activity_sections.py tests/test_unsaved_drafts_ui.py` ilk çalıştırmada **81 geçti**. Hedef metni testleri eklendikten sonra `tests/test_civ188_rehearsal_fixes.py` **8 geçti**; sözleşme, mali bilgi, birim iş akışı ekranları ve tasarım kabuğunu kapsayan genişletilmiş çalışma **168 geçti** (`--require-postgres -n 4 --dist loadfile`). Bu sayımlar örtüşür; toplanmaz. `python -m compileall -q app scripts/fr_rehearsal.py`, `node --check app/static/app.js` ve `git diff --check` başarılıdır. Mevcut Starlette/httpx kullanımdan kaldırma uyarısı sürmektedir; bağımlılık değiştirilmedi.
 
+CIV-135 tasarım sözleşmesinin tarihsel fixture dosyaları ve SHA-256 değerleri korunur. Beklenen render kopyasına yalnız CIV-188'in hedef açıklaması ve kaynak etiketi/yardımı uygulanır; form alanları, değerleri, hata nitelikleri ve diğer davranış karşılaştırmaları sürer. Modül testi 2026 EK-1/EK-2 bağlantısını ve mevcut çıktı yolunu doğrular. `python -m pytest -q --require-postgres -n 4 --dist loadfile tests/test_activity_report_detail_design.py tests/test_module_selection.py tests/test_civ188_rehearsal_fixes.py`: **70 geçti**; masaüstü/mobil düzen, kontrast, geçmiş/salt okunur görünümler ve hatalı form değerleri dahildir.
+
 ## CIV-187 ile karşılaştırma
 
 | Koşu | OK | BLOCKER | SLOW | Toplam |

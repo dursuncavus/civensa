@@ -1,4 +1,4 @@
-"""CIV-135: frozen 007/008 behavior and synthetic browser acceptance."""
+"""CIV-135/188: frozen controls with authorized guidance and browser acceptance."""
 from collections import Counter
 from copy import deepcopy
 from datetime import datetime, timezone
@@ -84,12 +84,31 @@ def render_pair(ctx):
         raw = (FIXTURES / filename).read_bytes()
         assert sha256(raw).hexdigest() == digest
         sources[name] = raw.decode()
+    # Keep the historical fixture bytes and hashes intact. CIV-188 explicitly
+    # changes only this copy's target guidance and evidence label/help; all
+    # controls, values, validation attributes and other words remain frozen.
+    evidence = sources['activity_evidence_row.html']
+    evidence = evidence.replace('Sabit kaynak sürümü / tarihli kayıt numarası / dosya özeti',
+                                'Kaynak sürümü / kayıt numarası')
+    evidence = evidence.replace('</label>\n{% endfor %}',
+        '</label>\n{% if field == "source_revision" %}<p>Örnek: 15.01.2027 tarihli 123 sayılı evrak veya Faaliyet kayıtları.xlsx sürüm 2.</p>{% endif %}\n{% endfor %}')
+    sources['activity_evidence_row.html'] = evidence
+    original_target = "<p>Hedef: {% if row.definition.targets %}{% for target in row.definition.targets %}{{ target.value|trnum if target.state == 'verified' and target.value is not none else 'Doğrulanmalı' }}{% endfor %}{% else %}Kayıt yok{% endif %}</p>"
+    expected_target = """<p>{% for target in row.definition.targets %}
+        {% if target.state == 'verified' and target.value is not none %}Hedef: {{ target.value|trnum }}
+        {% else %}Hedef doğrulanmadı: basılı PP’deki hedef için doğrulanmış bir sayı yok. Fark hesaplanmaz; Strateji hedefi doğrulayacak.{% if target.raw_text %} Basılı hedef metni: {{ target.raw_text }}{% endif %}{% endif %}
+        {% else %}Hedef kaydı yok. Fark hesaplanmaz; Strateji basılı PP hedefini kontrol edip doğrulayacak.{% endfor %}</p>"""
+    assert sources['activity_contract_detail.html'].count(original_target) == 1
+    sources['activity_contract_detail.html'] = sources['activity_contract_detail.html'].replace(
+        original_target, expected_target)
     frozen_env = templates.env.overlay(loader=ChoiceLoader([DictLoader(sources), templates.env.loader]))
     before = frozen_env.get_template('activity_contract_detail.html').render(ctx)
     after = templates.env.get_template('activity_contract_detail.html').render(ctx)
     old, new = Behavior(before), Behavior(after)
     assert new.controls == old.controls
-    assert new.hooks == old.hooks
+    # The new marker identifies the actionable target guidance for the rehearsal.
+    target_marker = ('span', (('data-unverified-target', None),))
+    assert [hook for hook in new.hooks if hook != target_marker] == old.hooks
     assert new.allowed_hooks == [('div', (('aria-hidden', 'true'),))] * after.count('class="indicator-bullet"')
     assert new.inert == old.inert
     assert new.text == old.text
