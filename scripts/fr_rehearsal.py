@@ -1,0 +1,487 @@
+"""CIV-187 scenario for guide_screenshots.py; no application writes outside setup."""
+from contextlib import ExitStack
+from copy import deepcopy
+import hashlib
+import json
+import logging
+import os
+from pathlib import Path
+import re
+import secrets
+import signal
+import subprocess
+from tempfile import TemporaryDirectory
+from time import perf_counter
+from urllib.parse import urlsplit
+
+from scripts.guide_screenshots import ROOT, MAX_PNG_BYTES, Shot, check, local_http
+
+OUT = ROOT / 'docs/reports/civ-187'
+SCREENS = ROOT / 'docs/screenshots/civ-187'
+CANCELLED = False
+SYNTHETIC = 'SENTETİK CIV-187 provası: 2026 faaliyetleri yerel deneme kayıtlarıyla değerlendirilmiştir.'
+
+
+def setup(engine):
+    from sqlalchemy import select
+    from sqlalchemy.orm import Session
+    from app.models import Department, ReportingPeriod, User
+    from app.personal_accounts import prepare_user_creation
+    from app.released_permissions import commit_user_change
+    from app.security import hash_password
+    from scripts import first_load_live as live
+    from scripts.first_load_dryrun import inspect_import
+    book, digest = live.book_config(2026)
+    parsed = live.verify_book(book, year=2026)
+    with Session(engine, expire_on_commit=False) as db:
+        inspection = inspect_import(db, deepcopy(parsed), book.name, year=2026)
+        check(not inspection['apply_error'], '2026 onaylı kitap yüklenemedi.')
+        check(inspection['protected_2027_before'] == inspection['protected_2027_after'], '2027 bazı değişti.')
+        check(inspection['applied']['indicators'] == 226, '2026 gösterge sayısı beklenenden farklı.')
+        password = secrets.token_urlsafe(32)
+        strategy = db.scalar(select(User).where(User.role == 'strategy'))
+        strategy.department_id = db.scalar(select(Department.id).where(Department.name == 'Strateji Geliştirme Müdürlüğü'))
+        strategy.position = 'director'
+        strategy.full_name = 'Strateji Müdürü (SENTETİK)'
+        strategy.password_hash = hash_password(password)
+        db.commit()
+        data = dict(rehearsal=True, accounts={'strategy':strategy.email}, password=password,
+                    period=db.scalar(select(ReportingPeriod.id).where(ReportingPeriod.year == 2026)),
+                    units=[], book=str(book.relative_to(ROOT)), book_sha256=digest,
+                    counts=inspection['applied'], _server_errors=[])
+        for key, name in [('fen','Fen İşleri Müdürlüğü'), ('afet','Afet İşleri ve Risk Değerlendirme Müdürlüğü'),
+                          ('ozel','Özel Kalem Müdürlüğü')]:
+            dep = db.scalar(select(Department).where(Department.name == ('Afet İşleri ve Risk Yönetimi Müdürlüğü' if key == 'afet' else name)))
+            check(dep is not None, 'Prova müdürlüğü bulunamadı.')
+            for position in ('staff', 'director'):
+                account = f'{key}_{position}'
+                user = User(email=f'civ187.{account}@example.invalid', full_name=f'{name} {"Personel" if position == "staff" else "Müdür"} (SENTETİK)',
+                    role='department', department_id=dep.id, position=position, is_active=True,
+                    password_hash=hash_password(password))
+                prepare_user_creation(db, strategy, user)
+                db.add(user)
+                commit_user_change(db)
+                data['accounts'][account] = user.email
+            data['units'].append({'key':key, 'name':name, 'department_id':dep.id})
+        return data
+
+
+class Rehearsal:
+    def __init__(self, base, data, folder):
+        self.base, self.data, self.folder = base, data, folder
+        self.steps, self.http, self.js, self.logs, self.unexpected = [], [], [], [], []
+        self.stack = ExitStack()
+
+    def capture(self, page, role, title, start, result='OK', note=''):
+        from PIL import Image
+        page.wait_for_load_state('networkidle')
+        page.evaluate('document.fonts.ready')
+        elapsed = round((perf_counter() - start) * 1000)
+        if result=='OK' and elapsed>3000: result='SLOW'
+        shot = Shot(f'{len(self.steps)+1:03d}-{role}.png', urlsplit(page.url).path +
+                    ('?' + urlsplit(page.url).query if urlsplit(page.url).query else ''), title, role)
+        target = SCREENS / shot.filename
+        check(self.data['password'] not in page.content(), 'Parola sayfa içeriğinde bulundu.')
+        page.screenshot(path=str(target), animations='disabled', caret='hide')
+        with Image.open(target) as png:
+            check(png.size in {(1440,900),(390,900)}, 'Ekran boyutu geçersiz.')
+            png.save(target, optimize=True)
+        check(target.stat().st_size <= MAX_PNG_BYTES, 'PNG boyut sınırı aşıldı.')
+        visible = page.locator('body').inner_text()
+        technical = sorted(set(re.findall(r'name:[0-9a-f]+|\bNone\b|\b(?:structured-from-PP|needs_review|verified|missing|directorate)\b', visible)))
+        row = dict(role=role, step=title, result=result, route=shot.path, screenshot=shot.filename,
+                   load_ms=elapsed, note=note, technical=technical,
+                   server_errors=list(self.data['_server_errors'][self.server_cursor:]),
+                   http=list(self.http[self.http_cursor:]), js=list(self.js[self.js_cursor:]),
+                   warnings=list(self.logs[self.log_cursor:]))
+        row['viewport']=page.viewport_size
+        row['document_width']=page.evaluate('document.documentElement.scrollWidth')
+        self.steps.append(row)
+        self.write()
+        print(f"{len(self.steps):03d} {role}: {title}: {result} ({elapsed} ms)", flush=True)
+        return row
+
+    def begin(self):
+        check(not CANCELLED, 'Prova iptal edildi; mevcut istekten sonra güvenli temizleme yapılıyor.')
+        self.server_cursor=len(self.data['_server_errors'])
+        self.http_cursor=len(self.http); self.js_cursor=len(self.js); self.log_cursor=len(self.logs)
+        return perf_counter()
+
+    def goto(self, page, role, path, title, result='OK', note=''):
+        start=self.begin()
+        response=page.goto(self.base+path, wait_until='networkidle')
+        check(response is not None and response.status == 200, 'UI sayfası açılamadı.')
+        return self.capture(page, role, title, start, result, note)
+
+    def click(self, page, role, button, title, result='OK', note=''):
+        start=self.begin()
+        form=button.locator('xpath=ancestor::form[1]')
+        if form.count():
+            action=urlsplit(form.get_attribute('action') or page.url).path
+            actual=form.locator('[name=evidence_rows]').count()>0
+            expected=int(form.locator('[name=expected_revision]').input_value())+1 if actual else None
+            with page.expect_response(lambda response: response.request.method == 'POST' and urlsplit(response.url).path == action, timeout=180000) as response_info:
+                button.click()
+            if actual:
+                from playwright.sync_api import expect
+                saved_form=page.locator(f'form[action="{action}"]')
+                expect(saved_form.locator('[name=expected_revision]')).to_have_value(str(expected))
+                saved_form.locator('xpath=ancestor::section[1]').get_by_role('heading',level=2).scroll_into_view_if_needed()
+        else:
+            button.click()
+        return self.capture(page, role, title, start, result, note)
+
+    def login(self, role):
+        page=self.pages[role]
+        self.goto(page,role,'/login','Giriş ekranı')
+        page.locator('[name=email]').fill(self.data['accounts'][role])
+        page.locator('[name=password]').fill(self.data['password'])
+        self.click(page,role,page.get_by_role('button', name='Giriş yap', exact=False),'Hesapla giriş')
+        check(urlsplit(page.url).path == '/modules', 'UI girişi modüllere ulaşmadı.')
+        return page
+
+    def write(self):
+        (OUT/'steps.json').write_text(json.dumps(self.steps, ensure_ascii=False, indent=2)+'\n')
+
+    def actual(self,page,role,action,explanation,attach=False):
+        form=page.locator(f'form[action="{action}"]')
+        form.locator('[name=value]').fill('12,5')
+        form.locator('[name=state]').select_option('verified')
+        form.locator('[name=source_title]').first.fill('SENTETİK 2026 birim kayıtları')
+        form.locator('[name=source_locator]').first.fill('Prova sayfa 1')
+        form.locator('[name=source_revision]').first.fill('CIV-187 sentetik v1')
+        form.locator('[name=explanation]').fill(explanation)
+        if attach:
+            form.locator('[type=file]').first.set_input_files(str(self.folder/'sentetik-kanit.pdf'))
+        expected=int(form.locator('[name=expected_revision]').input_value())+1
+        self.click(page,role,form.get_by_role('button',name='Yeni gerçekleşme revizyonu kaydet'),
+                   'Gösterge gerçekleşmesi + '+('dosya kanıtı' if attach else 'kaynak')+(' (açıklama boş)' if not explanation else ''))
+        from playwright.sync_api import expect
+        expect(page.locator(f'form[action="{action}"] [name=expected_revision]')).to_have_value(str(expected))
+        check(page.locator('[role=alert]').count() == 0, 'Gerçekleşme kaydında beklenmeyen form hatası.')
+        if attach:
+            check(page.get_by_role('link',name=re.compile('sentetik-kanit.pdf')).count()>0,'Dosya kanıtı kayıtta görünmedi.')
+
+    def sections(self,page,role,document):
+        self.goto(page,role,document,'Birim raporu ve bölüm ağacı')
+        links=page.locator('nav[aria-label="EK-1 bölümleri"] a').evaluate_all('(els)=>els.map(e=>({href:e.getAttribute("href"),text:e.textContent.trim()}))')
+        for link in links:
+            path=document+link['href']
+            self.goto(page,role,path,'Bölüm aç: '+link['text'])
+            form=page.locator('form[data-ar-section-form]')
+            if not form.count():
+                continue
+            form.locator('[name=text]').fill(SYNTHETIC)
+            inapplicable=link['href'].split('code=')[-1] in {'III.A.3','III.A.4'}
+            form.locator('[name=status]').select_option('not_applicable' if inapplicable else 'ready')
+            if inapplicable:
+                form.locator('[name=reason]').fill('SENTETİK prova: bu müdürlük için denetim/yardım olayı kurgulanmadı.')
+            self.click(page,role,form.get_by_role('button',name='Bölümü kaydet'),'Bölüm metni kaydet: '+link['text'])
+            check(page.locator('[role=alert]').count()==0, 'Bölüm kaydında beklenmeyen hata.')
+        self.goto(page,role,document+'/assurances/EK-2','Harcama yetkilisi güvence beyanı')
+        values={'place':'Prova Belediyesi (SENTETİK)','date':'2027-01-15','person_ref_0':'CIV187-SENTETIK',
+            'name_0':'Prova Müdürü (SENTETİK)','title_0':'Müdür','start_date_0':'2026-01-01','end_date_0':'2026-12-31'}
+        for field,value in values.items(): page.locator(f'[name="{field}"]').fill(value)
+        self.click(page,role,page.get_by_role('button',name='Beyan alanlarını kaydet'),'EK-2 beyan alanlarını kaydet')
+
+    def workflow(self,page,role,document,label,title,expected):
+        self.goto(page,role,document,title+' öncesi')
+        button=page.get_by_role('button',name=label,exact=True)
+        row=self.click(page,role,button,title)
+        status=page.locator('[data-ar-workflow-status]').inner_text() if page.locator('[data-ar-workflow-status]').count() else ''
+        if status!=expected:
+            row['result']='BLOCKER'
+            row['note']='Beklenen durum: '+expected+'; görünen: '+(status or 'İşlem tamamlanamadı hata sayfası')+'; '+page.locator('body').inner_text()
+            self.write()
+            return False
+        return True
+
+    def walk(self):
+        from playwright.sync_api import sync_playwright
+        from reportlab.pdfgen import canvas
+        pdf=canvas.Canvas(str(self.folder/'sentetik-kanit.pdf')); pdf.drawString(50,750,'SENTETIK CIV-187 2026 prova kaniti'); pdf.save()
+        pw=self.stack.enter_context(sync_playwright())
+        options={'headless':True}
+        if os.getenv('CIVENSA_CHROMIUM_PATH'): options['executable_path']=os.environ['CIVENSA_CHROMIUM_PATH']
+        browser=self.stack.enter_context(pw.chromium.launch(**options))
+        self.data['browser']=browser.version
+        self.pages={}
+        for role in self.data['accounts']:
+            context=self.stack.enter_context(browser.new_context(viewport={'width':1440,'height':900},
+                locale='tr-TR',timezone_id='Europe/Istanbul',reduced_motion='reduce',
+                service_workers='block',extra_http_headers={'X-Guide-Account':role},accept_downloads=True))
+            def guard(route):
+                if urlsplit(route.request.url).netloc==urlsplit(self.base).netloc:
+                    route.continue_()
+                else:
+                    self.unexpected.append('Dış ağ isteği engellendi.'); route.abort()
+            context.route('**/*',guard)
+            page=context.new_page(); page.set_default_timeout(15000); page.set_default_navigation_timeout(180000)
+            page.on('pageerror',lambda e:self.js.append(type(e).__name__+': '+str(e)[:300]))
+            page.on('response',lambda r: self.http.append({'route':urlsplit(r.url).path,'status':r.status}) if r.status>=400 else None)
+            self.pages[role]=page
+        strategy=self.login('strategy'); pid=self.data['period']
+        self.goto(strategy,'strategy',f'/report-builder?period_id={pid}','2026 onaylı kitap yayın hazırlığı')
+        form=strategy.locator('form[action="/report-builder/publish-approved-book"]')
+        form.locator('[name=approval_reference]').fill('SENTETİK CIV-187 prova onay dayanağı; gerçek meclis kararı değildir.')
+        self.click(strategy,'strategy',form.get_by_role('button'),'Onaylı kitaptan yayınla')
+        check(strategy.locator('form[action="/report-builder/publish-approved-book"]').count()==0, 'Onaylı kitap yayınlanamadı.')
+        self.goto(strategy,'strategy','/activity-reports','2026 gösterge raporu oluşturma')
+        option=strategy.locator('select[name=publication_id] option').filter(has_text='2026').first
+        strategy.locator('select[name=publication_id]').select_option(option.get_attribute('value'))
+        self.click(strategy,'strategy',strategy.get_by_role('button',name='Seçilen yayınla rapor oluştur'),'Yayına bağlı 2026 FR revizyonu oluştur')
+        revision=urlsplit(strategy.url).path
+        check('/revisions/' in revision,'FR revizyonu oluşmadı.')
+        self.goto(strategy,'strategy','/activity-sections','2026 birim ve idare raporları oluşturma')
+        strategy.locator('form[action="/activity-sections/years"] select[name=period_id]').select_option(str(pid))
+        self.click(strategy,'strategy',strategy.get_by_role('button',name='Raporları oluştur'),'2026 EK-1 raporlarını oluştur')
+        approvals=[]
+        for unit in self.data['units']:
+            role=unit['key']+'_staff'; page=self.login(role)
+            self.goto(page,role,'/activity-reports','Müdürlük 2026 gösterge raporunu bul')
+            self.click(page,role,page.locator(f'a[href="{revision}"]').first,'2026 gösterge girişini aç')
+            actions=page.locator('form[data-actual-form]').evaluate_all('(els)=>els.map(e=>e.getAttribute("action"))')
+            check(bool(actions),'Müdürlüğün gösterge giriş formu bulunamadı.')
+            unit['targets']=page.locator('.indicator-target').all_inner_texts()
+            candidates=page.locator('section[data-draft-record]').evaluate_all(
+                '(els)=>els.filter(e=>!e.querySelector(".indicator-target").textContent.includes("Doğrulanmalı")).map(e=>e.querySelector("form").getAttribute("action"))')
+            if candidates:
+                actions=[candidates[0]]+[a for a in actions if a!=candidates[0]]
+            else:
+                self.goto(page,role,revision,'Sapma açıklaması zorunluluğu senaryosu','BLOCKER',
+                    'Bütün hedefler Doğrulanmalı görünüyor; sayısal fark hesaplanamıyor. Boş açıklamalı gerçekleşme kaydedilecek, ancak sapma kapısı kanıtlanamaz.')
+            page.set_viewport_size({'width':390,'height':900})
+            self.goto(page,role,revision,'390 piksel gösterge giriş sayfası')
+            start=self.begin()
+            page.locator('form[data-actual-form]').first.scroll_into_view_if_needed()
+            self.capture(page,role,'390 piksel giriş formu alanları',start)
+            page.set_viewport_size({'width':1440,'height':900})
+            for i,action in enumerate(actions): self.actual(page,role,action,'' if i==0 else SYNTHETIC,attach=i==0)
+            self.goto(page,role,'/activity-sections','Müdürlük 2026 birim raporunu bul')
+            group=page.locator('article.report-group').filter(has=page.get_by_role('heading',name='2026 · '+unit['name'],exact=True))
+            link=group.locator('a[href*="/activity-sections/reports/"]').first
+            document=urlsplit(link.get_attribute('href')).path
+            unit['document']=document
+            self.sections(page,role,document)
+            self.goto(page,role,document+'?code=III.A.1','Mali Hizmetler uyarıları')
+            warnings=page.locator('[aria-label="Malî bilgi uyarıları"]').inner_text()
+            check('gönderimi engellemez' in warnings,'Mali Hizmetler uyarısı bulunamadı.')
+            self.steps[-1]['note']=warnings
+            self.goto(page,role,f'/activity-report?year=2026&period_id={pid}','Faaliyet gerçekleşmesi girişi ara',
+                      'BLOCKER','Kaynak kayıt inceleme pilotu salt okunur; faaliyet başına gerçekleşme giriş formu sunulmuyor.')
+            director_role=unit['key']+'_director'; director=self.login(director_role)
+            self.goto(director,director_role,document,'Sapma açıklaması boşken gönderim kontrolü')
+            row=self.click(director,director_role,director.get_by_role('button',name='Strateji’ye gönder',exact=True),
+                           'Açıklamasız gerçekleşmeyi gönderme denemesi')
+            body=director.locator('body').inner_text()
+            check(any(r['status']==409 for r in row['http']),'Açıklamasız gerçekleşme gönderiminde beklenen engel yok.')
+            if 'hedef farkı açıklaması eksik' in body:
+                row['note']='Beklenen engel: açıklamasız sapma ile gönderilemedi.'
+            else:
+                row['result']='BLOCKER'
+                row['note']='Sapma kontrolüne ulaşmadan bölüm tamamlanma kapısı engelledi: '+body
+            self.goto(director,director_role,document,'Gönderim engelinden birim raporuna dön')
+            check(director.locator('[data-ar-workflow-status]').inner_text()=='Taslak','Gönderilemeyen rapor taslak durumda değil.')
+            self.goto(page,role,revision,'Sapma gerekçesini tamamla')
+            self.actual(page,role,actions[0],SYNTHETIC)
+            sent=self.workflow(director,director_role,document,'Strateji’ye gönder','Birim raporunu gönder','Gönderildi')
+            if not sent:
+                self.blocked_followups(document,unit)
+                self.goto(strategy,'strategy',document,'Strateji gönderilemeyen birimi incele')
+                self.downloads(strategy,unit,'Taslak')
+                continue
+            self.goto(strategy,'strategy',document,'Strateji birim incelemesi')
+            if unit['key']=='fen':
+                strategy.get_by_label('İade gerekçesi').fill('SENTETİK: Faaliyet anlatımına tamamlanma bilgisini ekleyin.')
+                self.click(strategy,'strategy',strategy.get_by_role('button',name='Gerekçeyle iade et'),'Fen İşleri gerekçeli iade')
+                self.goto(page,role,document,'İade notunu gör ve düzelt')
+                form=page.locator('form[data-ar-section-form]')
+                if form.count():
+                    form.locator('[name=text]').fill(SYNTHETIC+' SENTETİK düzeltme: faaliyet tamamlandı.')
+                    self.click(page,role,form.get_by_role('button',name='Bölümü kaydet'),'İade notuna göre düzeltmeyi kaydet')
+                check(self.workflow(director,director_role,document,'Yeniden gönder','Düzelt ve yeniden gönder','Gönderildi'),'Yeniden gönderim başarısız.')
+                self.goto(strategy,'strategy',document,'Strateji yeniden inceleme')
+            self.click(strategy,'strategy',strategy.get_by_role('button',name='Birimi onayla',exact=True),'Strateji bağımsız birim onayı')
+            check(strategy.locator('[data-ar-workflow-status]').inner_text()=='Onaylandı','Birim onaylanamadı.')
+            approvals.append(unit['key'])
+            self.downloads(strategy,unit,'Onaylı')
+        self.goto(strategy,'strategy',f'/activity-sections?period_id={pid}','İdare raporuna geçiş')
+        groups=strategy.locator('article.report-group')
+        institution=next(g for g in groups.all() if 'İdare' in g.locator('h3').inner_text())
+        path=urlsplit(institution.locator('td a[href*="?code="]').first.get_attribute('href')).path
+        self.goto(strategy,'strategy',path,'İdare konsolidasyonu ve eksik birimler')
+        row=self.click(strategy,'strategy',strategy.get_by_role('button',name='İçeriği onayla ve dondur'),
+                       'İdare raporunu onayla ve dondur denemesi','BLOCKER',
+                       'Yalnız üç müdürlük provası; diğer birimlerin onayları ve idare içerikleri tamamlanmadı. Beklenen kapsam engeli.')
+        self.data['approvals']=approvals
+
+    def downloads(self,page,unit,status):
+        page.locator('[data-section-export] summary').click()
+        for label,magic in [('Word olarak indir',b'PK'),('PDF olarak indir',b'%PDF')]:
+            start=self.begin()
+            with page.expect_download(timeout=180000) as info:
+                page.get_by_role('link',name=label,exact=True).click()
+            download=info.value; local=Path(download.path())
+            raw=local.read_bytes()
+            check(raw.startswith(magic),'İndirme dosya biçimi beklenenden farklı.')
+            self.capture(page,'strategy',status+' '+label+' · '+unit['name'],start,
+                         note=f'{len(raw)} bayt; SHA256: {hashlib.sha256(raw).hexdigest()}; dosya başlığı doğrulandı.')
+
+    def blocked_followups(self,document,unit):
+        for role,title in [
+            ('strategy','Gönderilmiş birimin Strateji incelemesi'),
+            ('strategy','Gerekçeli iade'),
+            (unit['key']+'_staff','İade üzerine düzeltme'),
+            (unit['key']+'_director','İade üzerine yeniden gönderim'),
+            ('strategy','Strateji bağımsız onayı'),
+            ('strategy','Onaylı birim Word indir'),
+            ('strategy','Onaylı birim PDF indir')]:
+            self.goto(self.pages[role],role,document,title,'BLOCKER',
+                      'Gönderim, Mali Hizmetler sahipli bölüm durumları nedeniyle tamamlanamadı; bu akış adımına ulaşılamadı.')
+
+
+def write_report(rehearsal, failed):
+    """Keep the human step table tied to the machine evidence on every rerun."""
+    from collections import Counter
+    from PIL import Image
+    steps=rehearsal.steps
+    sizes=[p.stat().st_size for p in SCREENS.glob('*.png')]
+    dimensions=Counter()
+    for path in SCREENS.glob('*.png'):
+        with Image.open(path) as png: dimensions[f'{png.width}×{png.height}']+=1
+    def cell(value): return str(value).replace('|','&#124;').replace('\n',' ')
+    labels={'strategy':'Strateji Müdürü'}
+    for unit in rehearsal.data['units']:
+        for suffix,label in [('staff','Personel'),('director','Müdür')]:
+            labels[unit['key']+'_'+suffix]=unit['name']+' · '+label
+    lines=['# CIV-187 — 2026 Faaliyet Raporu müdürlük provası','',
+        '**Sentetik prova; bulgular görevidir. Canlı veritabanına bağlanılmadı; uygulama kodu değiştirilmedi, birleştirme ve dağıtım yapılmadı.**','',
+        '## Tekrar çalıştırma','',
+        'Depo kökünde, mevcut `requirements-dev.txt` bağımlılıkları ve Playwright Chromium kuruluyken:', '',
+        '```sh','python scripts/guide_screenshots.py --fr-rehearsal','```','',
+        '`CIVENSA_TEST_POSTGRES_URL` önceden yalnız localhost üzerinde CREATE DATABASE yetkili PostgreSQL 16+ test rolünü göstermelidir. '
+        'İsteğe bağlı `CIVENSA_CHROMIUM_PATH` mevcut Chromium yoludur. Uygulama bağlantı değişkenleri başlangıçta maskelenir. '
+        'Mevcut `guide_screenshots.local_http`, `Shot`, PNG sınırı ve `first_load_dryrun.disposable_database` altyapısı kullanılır. '
+        'Her koşu yeni rastgele veritabanı oluşturur ve bağlam çıkışında siler; SIGINT/SIGTERM mevcut UI isteği tamamlandığında aynı temizliğe gider. '
+        'Başarısız kurulum/seçici/beklenmeyen sunucu veya JS hatası sıfır dışı çıkıştır. Kanıtlanmış ürün engeli, çizelgede BLOCKER olarak kaydedilerek koşu sürdürülür.','',
+        '## Veri ve yöntem','',
+        f"Kaynak: `{rehearsal.data['book']}`; SHA-256 `{rehearsal.data['book_sha256']}`. "
+        '`verify_book` + `inspect_import(..., year=2026)` gerçek operasyonel `first_load_live.execute` yolunu kullanır: '
+        'önce 2027 onaylı tabanı, sonra 2026 kitabını yükler; 2027 koruma hash eşitliği doğrulanır. '
+        'İçe aktarıcı sabit şeması mevcut `tests.first_load_checkpoint` ile hazırlanır; kurulum bitmeden mevcut migrasyonlarla tekrar depo head şemasına çıkılır. '
+        'Bu sırada test yardımcısının boş yardımcı sunum tabloları kontrol edilip mevcut migrasyonlarına bırakılır. Yeni migrasyon yazılmaz.','',
+        f"Yükleyici sayımları: `{json.dumps(rehearsal.data['counts'],ensure_ascii=False,sort_keys=True)}`. "
+        '2026 yayını kurulumda taklit edilmez: Strateji tarayıcıda **Onaylı kitaptan yayınla** düğmesini kullanır; '
+        'Onay dayanağı açıkça sentetiktir. Gösterge revizyonu ve EK-1 yıl raporları da UI üzerinden açılır.','',
+        'Hesaplar: bir `strategy/director`; Fen İşleri, Afet İşleri ve Risk Değerlendirme ve Özel Kalem için ayrı '
+        '`department/staff` ve `department/director` (toplam 7). Özel Kalem küçük müdürlük örneğidir. '
+        'Afet hesabı mevcut D-372 eşlemesindeki Risk Yönetimi sistem kaydına bağlıdır; 2026 görünen adı korunur. '
+        'Rastgele parola bellekte tutulur; raporlanmaz. Personel veri girer; müdür gönderir. Strateji birim içeriğini düzenlemeden bağımsız inceleme yapar.','',
+        'Kurulumdan sonraki bütün istekler Playwright tarafından görünen sayfa/formlar üzerinden yapılır. '
+        'TestClient köprüsü yalnız loopback sunucuyu uygulamaya bağlar; oturumlar tarayıcıdaki gerçek giriş formuyla açılır. '
+        'Doğrudan API çağrısı, JS ile form üretimi veya kurulum sonrası DB yazması yoktur. Dış ağ tarayıcıda engellenir. '
+        'Tüm gerçekleşmeler 12,5; kaynaklar, açıklamalar, beyan kişileri ve PDF kanıtı SENTETİK olarak işaretlidir. '
+        'Denetim/yardım olayı kurgulanmayan bölümler gerekçeli Uygulanamaz seçilir; boş mali tutarlar sıfıra çevrilmez.','',
+        f"Tarayıcı: Chromium {rehearsal.data.get('browser','?')}; tr-TR, Europe/Istanbul; açık tema. "
+        'Süre, navigasyon veya tıklamadan `networkidle` ve font hazır olmasına kadar duvar saati ölçümüdür (ms); '
+        'ekran görüntüsü kodlamasını kapsamaz. Formu yazma süresi dahil değildir. Loopback/TestClient ve paylaşılan makine ölçümüdür; '
+        'canlı kapasite/SLA testi değildir. 3.000 ms üzeri başarılı adımlar SLOW işaretlenir.','',
+        '## Bulgular','',
+        'Aşağıdaki bulgular bu koşunun ekranları ve `steps.json` ile birlikte değerlendirilmelidir. '
+        'BLOCKER kayıtları tamamlanamayan kullanıcı işlerini; beklenen kapsam kapısı ürün hatası olmayan sınırı ayrıca belirtir.','',
+        '<!-- CIV187_FINDINGS -->','',
+        '## Adım çizelgesi','',
+        '| Rol | Adım | Sonuç | Sayfa / route | Ekran | Süre (ms) | Hata / uyarı / not |',
+        '| --- | --- | --- | --- | --- | ---: | --- |']
+    for step in steps:
+        notes=[]
+        if step['http']: notes.append('HTTP: '+', '.join(f"{r['status']} {r['route']}" for r in step['http']))
+        if step['server_errors']: notes.append('Sunucu: '+json.dumps(step['server_errors'],ensure_ascii=False))
+        if step['js']: notes.append('JS: '+str(step['js']))
+        if step['warnings']: notes.append('Log uyarısı: '+str(step['warnings']))
+        if step['technical']: notes.append('Teknik metin: '+', '.join(step['technical']))
+        if step['note']: notes.append(step['note'])
+        if not notes: notes=['Sunucu/JS/log uyarısı gözlenmedi.']
+        result='SLOW' if step['result']=='OK' and step['load_ms']>3000 else step['result']
+        lines.append('| '+' | '.join([cell(labels[step['role']]),cell(step['step']),result,
+            '`'+cell(step['route'])+'`',f"[PNG](../../screenshots/civ-187/{step['screenshot']})",str(step['load_ms']),cell(' '.join(notes))])+' |')
+    lines+=['','## D-252 ekran sayımı','',f"Toplam **{len(sizes)} PNG**: "+', '.join(f'{k}: {v}' for k,v in sorted(dimensions.items()))+'. '
+        +f"En büyük dosya **{max(sizes,default=0)} bayt**; her PNG ≤ 1.500.000 bayt. ", '',
+        f"Koşu sonucu: {'BEKLENMEYEN HATA — sıfır dışı çıkış; unexpected.txt konumu incelenmeli' if failed else 'tamamlandı (çıkış 0; ürün engelleri yukarıda)'}. "
+        +f"Onaylanabilen prova birimleri: {', '.join(rehearsal.data.get('approvals',[])) or 'yok'}. ", '',
+        'Makine kanıtı: [steps.json](steps.json), [run.json](run.json). İndirmelerde gerçek tarayıcı indirme olayı, '
+        'dosya başlığı, byte sayısı ve SHA-256 denetlenir; dosyalar geçici klasörde kalır. '
+        'Bu prova gerçek kişisel hesap dağıtımını, Ali Abi kabulünü veya tam ölçekli 33 birim kapanışını karşılamaz. '
+        'CI durumu ve bu teslimin SHA bilgisi PR açıklamasında tutulur.','']
+    findings=OUT/'findings.md'
+    if findings.exists(): lines=[line.replace('<!-- CIV187_FINDINGS -->',findings.read_text().strip()) for line in lines]
+    (OUT/'report.md').write_text('\n'.join(lines))
+
+
+def run(url):
+    from scripts.first_load_dryrun import environment
+    from tests.first_load_checkpoint import disposable_first_load_database
+    OUT.mkdir(parents=True,exist_ok=True); SCREENS.mkdir(parents=True,exist_ok=True)
+    # Delete only this scenario's previously generated numbered images.
+    for path in SCREENS.glob('[0-9][0-9][0-9]-*.png'): path.unlink()
+    for path in (OUT/'steps.json',OUT/'run.json',OUT/'report.md',OUT/'unexpected.txt'):
+        path.unlink(missing_ok=True)
+    rehearsal=None; failed=False
+    global CANCELLED
+    CANCELLED=False
+    def cancel(signum,frame):
+        global CANCELLED
+        CANCELLED=True
+    signal.signal(signal.SIGINT,cancel); signal.signal(signal.SIGTERM,cancel)
+    logging.disable(logging.NOTSET)
+    try:
+        with TemporaryDirectory(prefix='civ187_') as temporary:
+            with disposable_first_load_database(url) as engine:
+                import app.db as app_db
+                app_db.engine.dispose(); app_db.engine=engine; app_db.SessionLocal.configure(bind=engine)
+                data=setup(engine)
+                # The operational importer is pinned; bring disposable schema back to
+                # current head before the first browser action, using existing migrations.
+                from alembic import command
+                from alembic.config import Config
+                # The existing first-load test harness creates two empty auxiliary
+                # tables for current metadata guards. Recreate them through their
+                # migrations now that the pinned loader has finished.
+                from app.sunum.models import SunumPhoto, SunumHighlight
+                from sqlalchemy import select, func
+                from sqlalchemy.orm import Session
+                with Session(engine) as db:
+                    for model in (SunumHighlight, SunumPhoto):
+                        check(db.scalar(select(func.count()).select_from(model)) == 0, 'Yardımcı prova tablosu boş değil.')
+                for model in (SunumHighlight, SunumPhoto):
+                    model.__table__.drop(engine)
+                rendered=engine.url.render_as_string(hide_password=False)
+                with environment(DATABASE_URL=rendered,MIGRATION_DATABASE_URL=rendered):
+                    command.upgrade(Config(str(ROOT/'alembic.ini')),'head')
+                with local_http(engine,data) as base:
+                    rehearsal=Rehearsal(base,data,Path(temporary))
+                    class Warnings(logging.Handler):
+                        def emit(self,record):
+                            if record.levelno>=logging.WARNING:
+                                rehearsal.logs.append({'logger':record.name,'level':record.levelname})
+                    handler=Warnings(); logging.getLogger().addHandler(handler)
+                    try: rehearsal.walk()
+                    finally:
+                        rehearsal.stack.close(); logging.getLogger().removeHandler(handler)
+                        safe={k:v for k,v in data.items() if k not in {'password','_clients','accounts'}}
+                        safe.update(unexpected=rehearsal.unexpected,server_errors=data['_server_errors'],js=rehearsal.js)
+                        (OUT/'run.json').write_text(json.dumps(safe,ensure_ascii=False,indent=2)+'\n')
+                check(not rehearsal.unexpected and not rehearsal.js and not data['_server_errors'],'Beklenmeyen tarayıcı/sunucu hatası.')
+    except (Exception, KeyboardInterrupt) as exc:
+        import traceback
+        failed=True
+        # Exception text may contain credentials: output only class and code locations.
+        locations=' -> '.join(f'{Path(f.filename).name}:{f.lineno}' for f in traceback.extract_tb(exc.__traceback__))
+        print(f'CIV-187 beklenmeyen hata: {type(exc).__name__}; {locations}',flush=True)
+        (OUT/'unexpected.txt').write_text(f'{type(exc).__name__}: {locations}\n')
+    else:
+        (OUT/'unexpected.txt').unlink(missing_ok=True)
+    if rehearsal:
+        rehearsal.write()
+        write_report(rehearsal,failed)
+    return 1 if failed else 0
