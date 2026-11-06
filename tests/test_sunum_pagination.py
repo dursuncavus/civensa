@@ -44,7 +44,7 @@ def test_short_decks_are_byte_identical_to_fixed_count_pagination(monkeypatch, k
                  summary=[], bullets=[f'Görev {i}' for i in range(23)])
     actual = engine.render_deck([slide], title='Test', code='TASLAK')
     # Independent old behaviour, exercising the full template including IDs/delays.
-    monkeypatch.setattr(engine, 'line_pages', lambda items, maximum, estimate: engine.pages(items, maximum))
+    monkeypatch.setattr(engine, 'line_pages', lambda items, maximum, estimate, budget=None: engine.pages(items, maximum))
     assert engine.render_deck([slide], title='Test', code='TASLAK') == actual
 
 

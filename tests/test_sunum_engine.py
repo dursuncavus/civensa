@@ -198,5 +198,5 @@ def test_existing_recipe_fixture_bytes_match_legacy_pagination(presentation_payl
     from app.sunum import engine
 
     current = render(presentation_payload)
-    monkeypatch.setattr(engine, 'line_pages', lambda items, maximum, estimate: engine.pages(items, maximum))
+    monkeypatch.setattr(engine, 'line_pages', lambda items, maximum, estimate, budget=None: engine.pages(items, maximum))
     assert render(presentation_payload) == current

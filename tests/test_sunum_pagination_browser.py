@@ -9,6 +9,9 @@ from playwright.sync_api import sync_playwright
 from app.sunum.engine import render_deck
 
 
+LONG_ROW = 'Uzun açıklama ve ayrıntı ' * 26
+
+
 @pytest.fixture
 def pagination_deck():
     # 2026 PP Sorumlu İdare names, with the reference builder's three aliases.
@@ -24,9 +27,9 @@ def pagination_deck():
                             percentage='%75', css='ok', status='Hedefte', expandable=False) for name in names]),
             dict(common, type='bullets', title='Görev ve sorumluluklar',
                  bullets=[name + ': ' + 'Vatandaş taleplerini değerlendirerek hizmetleri planlamak ve sonuçları raporlamak. ' * 2 for name in names]),
-            # >10 estimated lines, but still physically fits on its own slide.
-            dict(common, type='table', title='Tek uzun satır', headers=['Açıklama', 'Adet', 'Oran', 'Durum'],
-                 rows=[['Önce', 1, 2, 3], ['Uzun açıklama ve ayrıntı ' * 9, 1, 2, 3], ['Sonra', 1, 2, 3]])]
+            # Over the 10-unit budget by estimate, but still physically fits on its own slide.
+            dict(common, type='table', title='Tek uzun satır', headers=['Açıklama', 'Adet'],
+                 rows=[['Önce', 1], [LONG_ROW, 1], ['Sonra', 1]])]
 
 
 @pytest.mark.parametrize('pdf', [False, True], ids=['normal', 'pdf'])
@@ -75,5 +78,5 @@ def test_all_paginated_slides_clear_footer(tmp_path, pagination_deck, pdf):
         long_sections = sections.filter(has=page.locator('h2', has_text='Tek uzun satır'))
         assert long_sections.count() == 3
         assert long_sections.nth(1).locator('tbody tr').count() == 1
-        assert long_sections.nth(1).locator('tbody td').first.inner_text() == ('Uzun açıklama ve ayrıntı ' * 9).strip()
+        assert long_sections.nth(1).locator('tbody td').first.inner_text() == LONG_ROW.strip()
         browser.close()

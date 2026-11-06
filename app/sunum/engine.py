@@ -34,18 +34,23 @@ def pages(items, limit):
 
 # deck.html: 1920px slide, 120px side padding, fixed/equal table columns.
 # Fira Sans at 28px (table/name), 20px (score subline), 40px (bullets).
-# Reserve .65em per character (wide glyphs a full em), and wrap whole words:
+# Reserve .58em per character (wide glyphs a full em), and wrap whole words:
 # ceil(total characters / capacity) alone misses the unused ends of lines.
+# A wrapped line adds only its line height, not a whole row (padding, borders,
+# gaps stay once per row), so extra lines cost a fraction of a row unit
+# (measured at 1920×1080: table 35/64 px, scorecard name 37/116, bullet 54/90).
+CHAR_EM = .58
+EXTRA_LINE = {'table': .6, 'scorecard': .4, 'bullets': .6}
 CONTENT_WIDTH = 1920 - 2 * 120
 SCORE_NAME_WIDTH = CONTENT_WIDTH - 2 * 32 - 2 - 450 - 130 - 170 - 3 * 28
 BULLET_WIDTH = 1500 - 56
 
 
 def estimated_lines(value, width, font_size):
-    capacity = max(1, int(width / (font_size * .65)))
+    capacity = max(1, int(width / (font_size * CHAR_EM)))
     lines, used = 1, 0
     for word in text(value).split():
-        size = sum(1.0 / .65 if ch in 'WMwm@%&' else 1 for ch in word)
+        size = sum(1.0 / CHAR_EM if ch in 'WMwm@%&' else 1 for ch in word)
         if used and used + 1 + size <= capacity:
             used += 1 + size
         else:
@@ -57,15 +62,19 @@ def estimated_lines(value, width, font_size):
     return lines
 
 
-def line_pages(items, maximum, estimate):
-    """Keep old row limits and spend at most that many single-row line units.
+def line_pages(items, maximum, estimate, budget=None):
+    """Keep old row limits and spend at most `budget` single-row units per page.
+
+    The budget defaults to the old row limit; bullets have more room under
+    five single-line items (5 × 90 px of ~680 px), so they get a larger one.
 
     An oversized item is emitted intact, alone; pagination never truncates data.
     """
+    budget = maximum if budget is None else budget
     result, group, used = [], [], 0
     for item in items:
         cost = estimate(item)
-        if group and (len(group) == maximum or used + cost > maximum):
+        if group and (len(group) == maximum or used + cost > budget):
             result.append(group)
             group, used = [], 0
         group.append(item)
@@ -79,7 +88,12 @@ def scorecard_lines(row):
     # One ordinary row already includes one name line and one small subline.
     name = estimated_lines(row['name'], SCORE_NAME_WIDTH, 28)
     subline = f"{row.get('measured_display', '')} göstergenin {row.get('met_display', '')}'i hedefte"
-    return name + estimated_lines(subline, SCORE_NAME_WIDTH, 20) - 1
+    extra = name + estimated_lines(subline, SCORE_NAME_WIDTH, 20) - 2
+    return 1 + EXTRA_LINE['scorecard'] * extra
+
+
+def row_units(kind, lines):
+    return 1 + EXTRA_LINE[kind] * (lines - 1)
 
 
 def text(value):
@@ -119,14 +133,15 @@ def prepare_slides(slides):
         groups = [None]
         if kind == 'table':
             width = CONTENT_WIDTH / max(1, len(slide['headers'])) - 40
-            groups = line_pages(slide['rows'], 10, lambda row: max(
-                (estimated_lines(cell, width, 28) for cell in row), default=1))
+            groups = line_pages(slide['rows'], 10, lambda row: row_units('table', max(
+                (estimated_lines(cell, width, 28) for cell in row), default=1)))
             alignment = numeric_columns(slide['headers'], slide['rows'])
         elif kind == 'scorecard':
             groups = line_pages(slide['rows'], 6, scorecard_lines)
         elif kind == 'bullets':
             groups = line_pages(slide['bullets'], 5,
-                                lambda value: estimated_lines(value, BULLET_WIDTH, 40))
+                                lambda value: row_units('bullets', estimated_lines(value, BULLET_WIDTH, 40)),
+                                budget=7)
         if kind == 'kpi' and not 2 <= len(slide['figures']) <= 8:
             raise ValueError('Özet rakam slaytında 2–8 rakam olmalı.')
         for index, group in enumerate(groups, 1):
