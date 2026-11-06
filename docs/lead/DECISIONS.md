@@ -1388,3 +1388,10 @@ Next IDs: task CIV-186, decision D-427.
 BEYAN (owner 16:48): proposal from the SN opening video — a Sunum engine recipe "açılış döngüsü": 8–10 number scenes from the approved report + the meclis presentation photos, automatic advance and loop, optional music/clip upload, 16:9 with a 4:3 safe area. Example: owner's Mac, İndirilenler › SN-video › SN-Acilis-2025.mp4 (made with 2025 FR data; not checked by the lead, Mac not linked).
 Status: recorded as a proposal for after 1 Jan 2027 (same horizon as the D-411 future modules). Notes for that time (lead): number scenes can reuse the CIV-185 fact catalogue (no typed numbers) and CIV-184 photos; music/clip upload needs a licence/consent rule and raises the file size (8 MB İdare limit) — decide storage then.
 Next IDs: task CIV-186, decision D-428.
+
+## D-428 (6 Nov 2026 ~10:35–11:00 Istanbul, lead + owner, live session CV Lider 66) — release #410 live (CIV-180–185)
+DOĞRULANDI: Gmail (2 days) — no new mail from Ali Abi.
+DOĞRULANDI: owner merged release #410 phase5 → main (07:35Z) → main 23fb0ec (= owner approval of the additive live migrations c184 sunum_photos + c185 sunum_highlights, D-426). Daily verified database backup dispatched on phase5 (run 42181965099, 07:36Z) → success before deploy.
+Owner: Render "Manual Deploy → Deploy latest commit" (Render does not auto-deploy; first /health still showed c162). DOĞRULANDI from the owner's pasted /health (10:58): status ok, ready, database ok, migration current = head = c185a1b2c3d4.
+Result: Sunum engine + İdare meclis deck (karne, bütçe dağılımı, photos, önce/sonra, spot, öne çıkan iş) live for Ali Abi from 9 Nov. Carried risk (D-424): do not show the karne to the council before Ali's lower-is-better answer.
+Next IDs: task CIV-186, decision D-429.
