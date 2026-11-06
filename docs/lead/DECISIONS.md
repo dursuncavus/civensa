@@ -1413,3 +1413,10 @@ Lead fix 6322759: scorecards paged by pixel height measured in Chrome (full row 
 "@codex review" on 6322759: no major issues. CI green (run 42199880438), behind 0 → merged 00699ae.
 Result: 33-row İdare summary 8 → 6 pages; real-name scorecards 6 per page. Live after the next release (no migration). The 7-rows-per-page workaround in docs/lead/data/sunum-2025-deneme-build.py can go when the test deck is rebuilt.
 Next IDs: task CIV-187, decision D-431.
+
+## D-431 (6 Nov 2026 ~13:50–14:10 Istanbul, owner + lead, live session CV Lider 67) — work until January: directorate readiness; CIV-187; release #415
+BEYAN (owner 13:50): the new Faaliyet Raporu (template/writing) does not start before January; asked whether there is work until then.
+Lead answer (DOĞRULANDI from records): yes — D-361 FR3: directorates enter 2026 data by 15–20 Jan 2027, so Civensa must be ready for directorate entry before 1 Jan 2027. Everything so far was tested from the Strateji side only (D-352); AR-18 (accounts + real rehearsal) is PARTIAL; "infrastructure complete" has no written rollout checklist yet (D-352 consequence 4).
+Decisions (lead): (1) CIV-187 (Codex, GPT-6.1 Sol, orta) — automated directorate + Strateji rehearsal of the whole 2026 FR path on a disposable DB, findings only; package tasks/CIV-187.md. Findings become fix tasks. (2) Lead drafts the directorate rollout checklist (accounts/roles, Render Starter on rollout day per D-351, guide, rehearsal, backup, support channel) after CIV-187's findings, for owner approval. (3) Ali-dependent after 9 Nov: indicator-actuals Excel import (FR5), 2026 mapping + publish, directorate user list.
+Release PR #415 (phase5 → main, CIV-186 only, no migration) opened by the lead; owner merges + Render deploy so the fix is live before Ali's 9 Nov use.
+Next IDs: task CIV-188, decision D-432.
