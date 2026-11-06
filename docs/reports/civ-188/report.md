@@ -387,8 +387,8 @@ Yerel doğrulama: `python -m pytest -q --require-postgres tests/test_civ188_rehe
 
 Tam koşuda 329 adım yakalandı. Depoda yalnız değişen ekranlar ve önceki engelli adımlar tutulur; diğer PNG dosyaları geçici klasörle temizlenir.
 
-Toplam **40 PNG**: 1440×900: 39, 390×900: 1. En büyük dosya **137738 bayt**; her PNG ≤ 1.500.000 bayt. 
+Toplam **40 PNG**: 1440×900: 39, 390×900: 1. En büyük dosya **137738 bayt**; her PNG ≤ 1.500.000 bayt.
 
-Koşu sonucu: tamamlandı (çıkış 0; ürün engelleri yukarıda). Onaylanabilen prova birimleri: fen, afet, ozel. 
+Koşu sonucu: tamamlandı (çıkış 0; ürün engelleri yukarıda). Onaylanabilen prova birimleri: fen, afet, ozel.
 
 Makine kanıtı: [steps.json](steps.json), [run.json](run.json). İndirmelerde gerçek tarayıcı indirme olayı, dosya başlığı, byte sayısı ve SHA-256 denetlenir; dosyalar geçici klasörde kalır. Bu prova gerçek kişisel hesap dağıtımını, Ali Abi kabulünü veya tam ölçekli 33 birim kapanışını karşılamaz. CI durumu ve bu teslimin SHA bilgisi PR açıklamasında tutulur.

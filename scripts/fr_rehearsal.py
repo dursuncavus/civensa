@@ -456,7 +456,7 @@ def write_report(rehearsal, failed):
         'CI durumu ve bu teslimin SHA bilgisi PR açıklamasında tutulur.','']
     findings=OUT/'findings.md'
     if findings.exists(): lines=[line.replace('<!-- CIV188_FINDINGS -->',findings.read_text().strip()) for line in lines]
-    (OUT/'report.md').write_text('\n'.join(lines))
+    (OUT/'report.md').write_text('\n'.join(line.rstrip() for line in lines))
 
 
 def run(url):
