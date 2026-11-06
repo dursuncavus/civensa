@@ -1426,3 +1426,7 @@ DOĞRULANDI: owner merged #415 phase5 → main at 10:55Z → main b15abf3, befor
 BEYAN (owner 13:58): Render "Deploy latest commit" done. DOĞRULANDI from the owner's pasted /health (14:35): status ok, ready, database ok, migration c185a1b2c3d4 = head (no migration in this release, as expected). /health does not show the commit → running commit b15abf3 BELİRSİZ until Render Events shows it.
 Result: CIV-186 pagination live for Ali Abi's 9 Nov use (pending the commit check).
 Next IDs: task CIV-188, decision D-433.
+
+## D-433 (6 Nov 2026 14:36 Istanbul, owner, live session CV Lider 67) — running commit confirmed
+DOĞRULANDI from the owner's pasted Render deploy line (14:36): main b15abf3 is the live deploy. Closes the BELİRSİZ in D-432: CIV-186 pagination is live.
+Next IDs: task CIV-188, decision D-434.
