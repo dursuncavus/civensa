@@ -68,7 +68,9 @@ def approved_sources(db, doc):
 
 def completeness(payload):
     # Includes the read-only indicator section and the locked assurance slots.
-    return [s['title'] for s in payload['sections'] if s['status'] not in {'ready', 'not_applicable'}
+    return [s['title'] for s in payload['sections'] if
+            (s['status'] not in {'ready', 'not_applicable'} and
+             not (payload.get('department_id') and s['owner'] == 'finance'))
             or s['missing'] or (s['status'] == 'not_applicable' and not s['reason'].strip())]
 
 
