@@ -3,6 +3,7 @@
 
 Run from the checkout: python scripts/guide_screenshots.py --out docs/screenshots/guide-pp-v1
 UI map: python scripts/guide_screenshots.py --ui-map --out docs/screenshots/ui-map-v1
+FR rehearsal: python scripts/guide_screenshots.py --fr-rehearsal
 Only CIVENSA_TEST_POSTGRES_URL is an input; application database URLs are ignored.
 """
 import argparse
@@ -165,7 +166,7 @@ def persisted_state(engine):
 
 @contextmanager
 def local_http(engine, data):
-    """Reuse the UI tests' loopback TestClient bridge, with pre-browser logins."""
+    """Reuse the UI tests' loopback bridge; rehearsal accounts log in in the browser."""
     from fastapi.testclient import TestClient
     from sqlalchemy.orm import Session
     from app.db import get_db
@@ -179,9 +180,10 @@ def local_http(engine, data):
     try:
         with ExitStack() as stack:
             # Do not enter TestClient itself: lifespan would migrate again.
+            names = tuple(data['accounts']) + ('anonymous',) if data.get('rehearsal') else ('strategy', 'department', 'anonymous')
             clients = {name: stack.enter_context(closing(TestClient(app, follow_redirects=False)))
-                       for name in ('strategy', 'department', 'anonymous')}
-            for name, email in data['accounts'].items():
+                       for name in names}
+            for name, email in (() if data.get('rehearsal') else data['accounts'].items()):
                 response = clients[name].post('/login', data={'email': email, 'password': data['password']})
                 check(response.status_code == 303 and response.headers.get('location') == '/modules',
                       'Yerel test hesabı ile giriş yapılamadı.')
@@ -201,12 +203,30 @@ def local_http(engine, data):
                                self.headers.get('X-Guide-State', ''))
                         saved = data.get('_responses', {}).get(key)
                         response = saved if saved is not None and urlsplit(self.path).path == urlsplit(str(saved.request.url)).path else client.get(self.path, headers={'Accept': self.headers.get('Accept', '*/*')})
-                    except Exception:
+                    except Exception as exc:
+                        if data.get('rehearsal'):
+                            data['_server_errors'].append({'path': urlsplit(self.path).path, 'type': type(exc).__name__})
                         self.send_error(500)
                         return
                     self.reply(response)
 
                 def do_POST(self):
+                    if data.get('rehearsal'):
+                        client = clients.get(self.headers.get('X-Guide-Account', 'anonymous'))
+                        length = int(self.headers.get('Content-Length', '0'))
+                        if client is None or not self.path.startswith('/') or self.path.startswith('//') or not 0 < length <= 12_000_000:
+                            self.send_error(400)
+                            return
+                        try:
+                            response = client.post(self.path, content=self.rfile.read(length), headers={
+                                'Content-Type': self.headers.get('Content-Type', ''),
+                                'Accept': self.headers.get('Accept', '*/*'),
+                                'X-CSRF-Token': self.headers.get('X-CSRF-Token', '')})
+                            self.reply(response)
+                        except Exception as exc:
+                            data['_server_errors'].append({'path': urlsplit(self.path).path, 'type': type(exc).__name__})
+                            self.send_error(500)
+                        return
                     if not data.get('ui_map') or self.path not in UI_READONLY_POSTS:
                         self.send_error(405)
                         return
@@ -2290,6 +2310,7 @@ def main():
         action="store_true",
         help="CIV-093: bütün HTML ekranları ve DOM öğeleri",
     )
+    parser.add_argument('--fr-rehearsal', action='store_true', help='CIV-187: 2026 FR müdürlük UI provası')
     parser.add_argument('--viewport-width', type=int, choices=(1440, 390), default=1440,
                         help='UI haritası görünüm genişliği (varsayılan: 1440).')
     args = parser.parse_args()
@@ -2323,6 +2344,9 @@ def main():
 
     if args.ui_map:
         return ui_main(args, url)
+    if args.fr_rehearsal:
+        from scripts.fr_rehearsal import run
+        return run(url)
 
     data = None
     results = {

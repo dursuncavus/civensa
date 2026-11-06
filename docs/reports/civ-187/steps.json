@@ -1,0 +1,6212 @@
+[
+  {
+    "role": "strategy",
+    "step": "Giriş ekranı",
+    "result": "OK",
+    "route": "/login",
+    "screenshot": "001-strategy.png",
+    "load_ms": 862,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "strategy",
+    "step": "Hesapla giriş",
+    "result": "OK",
+    "route": "/modules",
+    "screenshot": "002-strategy.png",
+    "load_ms": 771,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "strategy",
+    "step": "2026 onaylı kitap yayın hazırlığı",
+    "result": "SLOW",
+    "route": "/report-builder?period_id=2",
+    "screenshot": "003-strategy.png",
+    "load_ms": 5002,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "strategy",
+    "step": "Onaylı kitaptan yayınla",
+    "result": "SLOW",
+    "route": "/report-builder?period_id=2",
+    "screenshot": "004-strategy.png",
+    "load_ms": 11110,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "strategy",
+    "step": "2026 gösterge raporu oluşturma",
+    "result": "OK",
+    "route": "/activity-reports",
+    "screenshot": "005-strategy.png",
+    "load_ms": 1438,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "strategy",
+    "step": "Yayına bağlı 2026 FR revizyonu oluştur",
+    "result": "SLOW",
+    "route": "/activity-reports/revisions/1",
+    "screenshot": "006-strategy.png",
+    "load_ms": 3003,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "strategy",
+    "step": "2026 birim ve idare raporları oluşturma",
+    "result": "OK",
+    "route": "/activity-sections",
+    "screenshot": "007-strategy.png",
+    "load_ms": 898,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "strategy",
+    "step": "2026 EK-1 raporlarını oluştur",
+    "result": "SLOW",
+    "route": "/activity-sections",
+    "screenshot": "008-strategy.png",
+    "load_ms": 12441,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "fen_staff",
+    "step": "Giriş ekranı",
+    "result": "OK",
+    "route": "/login",
+    "screenshot": "009-fen_staff.png",
+    "load_ms": 640,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "fen_staff",
+    "step": "Hesapla giriş",
+    "result": "OK",
+    "route": "/modules",
+    "screenshot": "010-fen_staff.png",
+    "load_ms": 785,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "fen_staff",
+    "step": "Müdürlük 2026 gösterge raporunu bul",
+    "result": "OK",
+    "route": "/activity-reports",
+    "screenshot": "011-fen_staff.png",
+    "load_ms": 673,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "fen_staff",
+    "step": "2026 gösterge girişini aç",
+    "result": "OK",
+    "route": "/activity-reports/revisions/1",
+    "screenshot": "012-fen_staff.png",
+    "load_ms": 1091,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "fen_staff",
+    "step": "390 piksel gösterge giriş sayfası",
+    "result": "OK",
+    "route": "/activity-reports/revisions/1",
+    "screenshot": "013-fen_staff.png",
+    "load_ms": 1120,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 390,
+      "height": 900
+    },
+    "document_width": 390
+  },
+  {
+    "role": "fen_staff",
+    "step": "390 piksel giriş formu alanları",
+    "result": "OK",
+    "route": "/activity-reports/revisions/1",
+    "screenshot": "014-fen_staff.png",
+    "load_ms": 22,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 390,
+      "height": 900
+    },
+    "document_width": 390
+  },
+  {
+    "role": "fen_staff",
+    "step": "Gösterge gerçekleşmesi + dosya kanıtı (açıklama boş)",
+    "result": "OK",
+    "route": "/activity-reports/revisions/1",
+    "screenshot": "015-fen_staff.png",
+    "load_ms": 1239,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "fen_staff",
+    "step": "Gösterge gerçekleşmesi + kaynak",
+    "result": "OK",
+    "route": "/activity-reports/revisions/1",
+    "screenshot": "016-fen_staff.png",
+    "load_ms": 1323,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "fen_staff",
+    "step": "Gösterge gerçekleşmesi + kaynak",
+    "result": "OK",
+    "route": "/activity-reports/revisions/1",
+    "screenshot": "017-fen_staff.png",
+    "load_ms": 1232,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "fen_staff",
+    "step": "Gösterge gerçekleşmesi + kaynak",
+    "result": "OK",
+    "route": "/activity-reports/revisions/1",
+    "screenshot": "018-fen_staff.png",
+    "load_ms": 1220,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "fen_staff",
+    "step": "Gösterge gerçekleşmesi + kaynak",
+    "result": "OK",
+    "route": "/activity-reports/revisions/1",
+    "screenshot": "019-fen_staff.png",
+    "load_ms": 1260,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "fen_staff",
+    "step": "Müdürlük 2026 birim raporunu bul",
+    "result": "OK",
+    "route": "/activity-sections",
+    "screenshot": "020-fen_staff.png",
+    "load_ms": 1707,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "fen_staff",
+    "step": "Birim raporu ve bölüm ağacı",
+    "result": "OK",
+    "route": "/activity-sections/reports/8",
+    "screenshot": "021-fen_staff.png",
+    "load_ms": 1104,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "fen_staff",
+    "step": "Bölüm aç: Yönetici özetiBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/8?code=OZET",
+    "screenshot": "022-fen_staff.png",
+    "load_ms": 1068,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "fen_staff",
+    "step": "Bölüm metni kaydet: Yönetici özetiBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/8?code=OZET",
+    "screenshot": "023-fen_staff.png",
+    "load_ms": 1232,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "fen_staff",
+    "step": "Bölüm aç: I- Genel bilgilerBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/8?code=I",
+    "screenshot": "024-fen_staff.png",
+    "load_ms": 1133,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "fen_staff",
+    "step": "Bölüm metni kaydet: I- Genel bilgilerBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/8?code=I",
+    "screenshot": "025-fen_staff.png",
+    "load_ms": 1266,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "fen_staff",
+    "step": "Bölüm aç: A- Misyon ve VizyonBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/8?code=I.A",
+    "screenshot": "026-fen_staff.png",
+    "load_ms": 1126,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "fen_staff",
+    "step": "Bölüm metni kaydet: A- Misyon ve VizyonBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/8?code=I.A",
+    "screenshot": "027-fen_staff.png",
+    "load_ms": 1203,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "fen_staff",
+    "step": "Bölüm aç: B- Yetki, Görev ve SorumluluklarBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/8?code=I.B",
+    "screenshot": "028-fen_staff.png",
+    "load_ms": 1063,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "fen_staff",
+    "step": "Bölüm metni kaydet: B- Yetki, Görev ve SorumluluklarBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/8?code=I.B",
+    "screenshot": "029-fen_staff.png",
+    "load_ms": 1154,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "fen_staff",
+    "step": "Bölüm aç: C- İdareye İlişkin BilgilerBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/8?code=I.C",
+    "screenshot": "030-fen_staff.png",
+    "load_ms": 1050,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "fen_staff",
+    "step": "Bölüm metni kaydet: C- İdareye İlişkin BilgilerBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/8?code=I.C",
+    "screenshot": "031-fen_staff.png",
+    "load_ms": 1145,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "fen_staff",
+    "step": "Bölüm aç: 1- Fiziksel YapıBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/8?code=I.C.1",
+    "screenshot": "032-fen_staff.png",
+    "load_ms": 1054,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "fen_staff",
+    "step": "Bölüm metni kaydet: 1- Fiziksel YapıBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/8?code=I.C.1",
+    "screenshot": "033-fen_staff.png",
+    "load_ms": 1160,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "fen_staff",
+    "step": "Bölüm aç: 2- Teşkilat YapısıBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/8?code=I.C.2",
+    "screenshot": "034-fen_staff.png",
+    "load_ms": 1055,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "fen_staff",
+    "step": "Bölüm metni kaydet: 2- Teşkilat YapısıBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/8?code=I.C.2",
+    "screenshot": "035-fen_staff.png",
+    "load_ms": 1142,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "fen_staff",
+    "step": "Bölüm aç: 3- Teknoloji ve Bilişim AltyapısıBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/8?code=I.C.3",
+    "screenshot": "036-fen_staff.png",
+    "load_ms": 1084,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "fen_staff",
+    "step": "Bölüm metni kaydet: 3- Teknoloji ve Bilişim AltyapısıBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/8?code=I.C.3",
+    "screenshot": "037-fen_staff.png",
+    "load_ms": 1152,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "fen_staff",
+    "step": "Bölüm aç: 4- İnsan KaynaklarıBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/8?code=I.C.4",
+    "screenshot": "038-fen_staff.png",
+    "load_ms": 1138,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "fen_staff",
+    "step": "Bölüm metni kaydet: 4- İnsan KaynaklarıBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/8?code=I.C.4",
+    "screenshot": "039-fen_staff.png",
+    "load_ms": 1271,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "fen_staff",
+    "step": "Bölüm aç: 5- Sunulan HizmetlerBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/8?code=I.C.5",
+    "screenshot": "040-fen_staff.png",
+    "load_ms": 1091,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "fen_staff",
+    "step": "Bölüm metni kaydet: 5- Sunulan HizmetlerBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/8?code=I.C.5",
+    "screenshot": "041-fen_staff.png",
+    "load_ms": 1216,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "fen_staff",
+    "step": "Bölüm aç: 6- Yönetim ve İç Kontrol SistemiBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/8?code=I.C.6",
+    "screenshot": "042-fen_staff.png",
+    "load_ms": 1083,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "fen_staff",
+    "step": "Bölüm metni kaydet: 6- Yönetim ve İç Kontrol SistemiBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/8?code=I.C.6",
+    "screenshot": "043-fen_staff.png",
+    "load_ms": 1447,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "fen_staff",
+    "step": "Bölüm aç: D- Diğer HususlarBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/8?code=I.D",
+    "screenshot": "044-fen_staff.png",
+    "load_ms": 1096,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "fen_staff",
+    "step": "Bölüm metni kaydet: D- Diğer HususlarBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/8?code=I.D",
+    "screenshot": "045-fen_staff.png",
+    "load_ms": 1185,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "fen_staff",
+    "step": "Bölüm aç: II- Amaçlar ve hedeflerBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/8?code=II",
+    "screenshot": "046-fen_staff.png",
+    "load_ms": 1046,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "fen_staff",
+    "step": "Bölüm metni kaydet: II- Amaçlar ve hedeflerBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/8?code=II",
+    "screenshot": "047-fen_staff.png",
+    "load_ms": 1175,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "fen_staff",
+    "step": "Bölüm aç: A- Temel Politika ve ÖnceliklerBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/8?code=II.A",
+    "screenshot": "048-fen_staff.png",
+    "load_ms": 1096,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "fen_staff",
+    "step": "Bölüm metni kaydet: A- Temel Politika ve ÖnceliklerBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/8?code=II.A",
+    "screenshot": "049-fen_staff.png",
+    "load_ms": 1153,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "fen_staff",
+    "step": "Bölüm aç: B- İdarenin Stratejik Planında Yer Alan Amaç ve HedeflerBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/8?code=II.B",
+    "screenshot": "050-fen_staff.png",
+    "load_ms": 1059,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "fen_staff",
+    "step": "Bölüm metni kaydet: B- İdarenin Stratejik Planında Yer Alan Amaç ve HedeflerBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/8?code=II.B",
+    "screenshot": "051-fen_staff.png",
+    "load_ms": 1188,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "fen_staff",
+    "step": "Bölüm aç: C- Diğer HususlarBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/8?code=II.C",
+    "screenshot": "052-fen_staff.png",
+    "load_ms": 1049,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "fen_staff",
+    "step": "Bölüm metni kaydet: C- Diğer HususlarBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/8?code=II.C",
+    "screenshot": "053-fen_staff.png",
+    "load_ms": 1179,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "fen_staff",
+    "step": "Bölüm aç: III- Faaliyetlere ilişkin bilgi ve değerlendirmelerBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/8?code=III",
+    "screenshot": "054-fen_staff.png",
+    "load_ms": 1073,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "fen_staff",
+    "step": "Bölüm metni kaydet: III- Faaliyetlere ilişkin bilgi ve değerlendirmelerBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/8?code=III",
+    "screenshot": "055-fen_staff.png",
+    "load_ms": 1180,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "fen_staff",
+    "step": "Bölüm aç: A- Malî BilgilerBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/8?code=III.A",
+    "screenshot": "056-fen_staff.png",
+    "load_ms": 1094,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "fen_staff",
+    "step": "Bölüm aç: 1- Bütçe Uygulama SonuçlarıBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/8?code=III.A.1",
+    "screenshot": "057-fen_staff.png",
+    "load_ms": 1109,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "fen_staff",
+    "step": "Bölüm aç: 2- Temel Malî Tablolara İlişkin AçıklamalarBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/8?code=III.A.2",
+    "screenshot": "058-fen_staff.png",
+    "load_ms": 1103,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "fen_staff",
+    "step": "Bölüm aç: 3- Malî Denetim SonuçlarıBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/8?code=III.A.3",
+    "screenshot": "059-fen_staff.png",
+    "load_ms": 1113,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "fen_staff",
+    "step": "Bölüm metni kaydet: 3- Malî Denetim SonuçlarıBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/8?code=III.A.3",
+    "screenshot": "060-fen_staff.png",
+    "load_ms": 1306,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "fen_staff",
+    "step": "Bölüm aç: 4- Diğer HususlarBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/8?code=III.A.4",
+    "screenshot": "061-fen_staff.png",
+    "load_ms": 1180,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "fen_staff",
+    "step": "Bölüm metni kaydet: 4- Diğer HususlarBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/8?code=III.A.4",
+    "screenshot": "062-fen_staff.png",
+    "load_ms": 1249,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "fen_staff",
+    "step": "Bölüm aç: B- Performans BilgileriBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/8?code=III.B",
+    "screenshot": "063-fen_staff.png",
+    "load_ms": 1118,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "fen_staff",
+    "step": "Bölüm metni kaydet: B- Performans BilgileriBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/8?code=III.B",
+    "screenshot": "064-fen_staff.png",
+    "load_ms": 1571,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "fen_staff",
+    "step": "Bölüm aç: 1- Program, Alt Program, Faaliyet BilgileriBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/8?code=III.B.1",
+    "screenshot": "065-fen_staff.png",
+    "load_ms": 1179,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "fen_staff",
+    "step": "Bölüm metni kaydet: 1- Program, Alt Program, Faaliyet BilgileriBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/8?code=III.B.1",
+    "screenshot": "066-fen_staff.png",
+    "load_ms": 1356,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "fen_staff",
+    "step": "Bölüm aç: 2- Performans Sonuçlarının DeğerlendirilmesiBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/8?code=III.B.2",
+    "screenshot": "067-fen_staff.png",
+    "load_ms": 1179,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "fen_staff",
+    "step": "Bölüm metni kaydet: 2- Performans Sonuçlarının DeğerlendirilmesiBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/8?code=III.B.2",
+    "screenshot": "068-fen_staff.png",
+    "load_ms": 1373,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "fen_staff",
+    "step": "Bölüm aç: i. Alt program hedef ve göstergeleriyle ilgili gerçekleşme sonuçları ve değerlendirmelerHazır",
+    "result": "OK",
+    "route": "/activity-sections/reports/8?code=III.B.2.i",
+    "screenshot": "069-fen_staff.png",
+    "load_ms": 1189,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "fen_staff",
+    "step": "Bölüm aç: ii. Performans denetim sonuçlarıBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/8?code=III.B.2.ii",
+    "screenshot": "070-fen_staff.png",
+    "load_ms": 1229,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "fen_staff",
+    "step": "Bölüm metni kaydet: ii. Performans denetim sonuçlarıBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/8?code=III.B.2.ii",
+    "screenshot": "071-fen_staff.png",
+    "load_ms": 1403,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "fen_staff",
+    "step": "Bölüm aç: 3- Stratejik Plan Değerlendirme TablolarıBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/8?code=III.B.3",
+    "screenshot": "072-fen_staff.png",
+    "load_ms": 1131,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "fen_staff",
+    "step": "Bölüm metni kaydet: 3- Stratejik Plan Değerlendirme TablolarıBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/8?code=III.B.3",
+    "screenshot": "073-fen_staff.png",
+    "load_ms": 1177,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "fen_staff",
+    "step": "Bölüm aç: 4- Performans Bilgi Sisteminin DeğerlendirilmesiBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/8?code=III.B.4",
+    "screenshot": "074-fen_staff.png",
+    "load_ms": 1059,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "fen_staff",
+    "step": "Bölüm metni kaydet: 4- Performans Bilgi Sisteminin DeğerlendirilmesiBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/8?code=III.B.4",
+    "screenshot": "075-fen_staff.png",
+    "load_ms": 1155,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "fen_staff",
+    "step": "Bölüm aç: 5- Diğer HususlarBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/8?code=III.B.5",
+    "screenshot": "076-fen_staff.png",
+    "load_ms": 1089,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "fen_staff",
+    "step": "Bölüm metni kaydet: 5- Diğer HususlarBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/8?code=III.B.5",
+    "screenshot": "077-fen_staff.png",
+    "load_ms": 1178,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "fen_staff",
+    "step": "Bölüm aç: IV- Kurumsal kabiliyet ve kapasitenin değerlendirilmesiBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/8?code=IV",
+    "screenshot": "078-fen_staff.png",
+    "load_ms": 1123,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "fen_staff",
+    "step": "Bölüm metni kaydet: IV- Kurumsal kabiliyet ve kapasitenin değerlendirilmesiBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/8?code=IV",
+    "screenshot": "079-fen_staff.png",
+    "load_ms": 1202,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "fen_staff",
+    "step": "Bölüm aç: A- ÜstünlüklerBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/8?code=IV.A",
+    "screenshot": "080-fen_staff.png",
+    "load_ms": 1084,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "fen_staff",
+    "step": "Bölüm metni kaydet: A- ÜstünlüklerBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/8?code=IV.A",
+    "screenshot": "081-fen_staff.png",
+    "load_ms": 1216,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "fen_staff",
+    "step": "Bölüm aç: B- ZayıflıklarBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/8?code=IV.B",
+    "screenshot": "082-fen_staff.png",
+    "load_ms": 1200,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "fen_staff",
+    "step": "Bölüm metni kaydet: B- ZayıflıklarBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/8?code=IV.B",
+    "screenshot": "083-fen_staff.png",
+    "load_ms": 1227,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "fen_staff",
+    "step": "Bölüm aç: C- DeğerlendirmeBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/8?code=IV.C",
+    "screenshot": "084-fen_staff.png",
+    "load_ms": 1104,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "fen_staff",
+    "step": "Bölüm metni kaydet: C- DeğerlendirmeBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/8?code=IV.C",
+    "screenshot": "085-fen_staff.png",
+    "load_ms": 1252,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "fen_staff",
+    "step": "Bölüm aç: V- Öneri ve tedbirlerBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/8?code=V",
+    "screenshot": "086-fen_staff.png",
+    "load_ms": 1069,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "fen_staff",
+    "step": "Bölüm metni kaydet: V- Öneri ve tedbirlerBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/8?code=V",
+    "screenshot": "087-fen_staff.png",
+    "load_ms": 1130,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "fen_staff",
+    "step": "Bölüm aç: EklerBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/8?code=EKLER",
+    "screenshot": "088-fen_staff.png",
+    "load_ms": 1331,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "fen_staff",
+    "step": "Harcama yetkilisi güvence beyanı",
+    "result": "OK",
+    "route": "/activity-sections/reports/8/assurances/EK-2",
+    "screenshot": "089-fen_staff.png",
+    "load_ms": 1001,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "fen_staff",
+    "step": "EK-2 beyan alanlarını kaydet",
+    "result": "OK",
+    "route": "/activity-sections/reports/8/assurances/EK-2",
+    "screenshot": "090-fen_staff.png",
+    "load_ms": 1078,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "fen_staff",
+    "step": "Mali Hizmetler uyarıları",
+    "result": "OK",
+    "route": "/activity-sections/reports/8?code=III.A.1",
+    "screenshot": "091-fen_staff.png",
+    "load_ms": 1009,
+    "note": "Uyarılar (gönderimi engellemez)\n\nFen İşleri Müdürlüğü: Ekonomik kod gider satırları eksik. Mali Hizmetler ilgili müdürlüğün tutarlarını girmeli; gerçek tutar sıfırsa 0 kullanılmalı. Bu tutarlar Mali Hizmetler Müdürlüğü'ne aittir; birim raporunun gönderimini engellemez, Mali Hizmetler'e bildirin.\n\nFen İşleri Müdürlüğü: Program / alt program gider satırları eksik. Mali Hizmetler ilgili müdürlüğün tutarlarını girmeli; gerçek tutar sıfırsa 0 kullanılmalı. Bu tutarlar Mali Hizmetler Müdürlüğü'ne aittir; birim raporunun gönderimini engellemez, Mali Hizmetler'e bildirin.\n\nEkonomik kod gider tablosu boş. Mali Hizmetler verileri geldiğinde giriş veya XLSX içe aktarma yapın. Bu tutarlar Mali Hizmetler Müdürlüğü'ne aittir; birim raporunun gönderimini engellemez, Mali Hizmetler'e bildirin.\n\nProgram / alt program gider tablosu boş. Mali Hizmetler verileri geldiğinde giriş veya XLSX içe aktarma yapın. Bu tutarlar Mali Hizmetler Müdürlüğü'ne aittir; birim raporunun gönderimini engellemez, Mali Hizmetler'e bildirin.",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "fen_staff",
+    "step": "Faaliyet gerçekleşmesi girişi ara",
+    "result": "BLOCKER",
+    "route": "/activity-report?year=2026&period_id=2",
+    "screenshot": "092-fen_staff.png",
+    "load_ms": 710,
+    "note": "Kaynak kayıt inceleme pilotu salt okunur; faaliyet başına gerçekleşme giriş formu sunulmuyor.",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "fen_director",
+    "step": "Giriş ekranı",
+    "result": "OK",
+    "route": "/login",
+    "screenshot": "093-fen_director.png",
+    "load_ms": 645,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "fen_director",
+    "step": "Hesapla giriş",
+    "result": "OK",
+    "route": "/modules",
+    "screenshot": "094-fen_director.png",
+    "load_ms": 773,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "fen_director",
+    "step": "Sapma açıklaması boşken gönderim kontrolü",
+    "result": "OK",
+    "route": "/activity-sections/reports/8",
+    "screenshot": "095-fen_director.png",
+    "load_ms": 1080,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "fen_director",
+    "step": "Açıklamasız gerçekleşmeyi gönderme denemesi",
+    "result": "BLOCKER",
+    "route": "/activity-sections/reports/8/workflow/submit",
+    "screenshot": "096-fen_director.png",
+    "load_ms": 1286,
+    "note": "Sapma kontrolüne ulaşmadan bölüm tamamlanma kapısı engelledi: İçeriğe geç\nCivensa\nKurumsal raporlama\n\nPerformans Programı\n\nGenel Bakış\nVeri Girişi\n\nFaaliyet Raporu\n\nFaaliyet Raporu · EK-1\n\nİç Kontrol\n\nİç Kontrol Eylemlerimiz\n\nYönetim\n\nModüller\nGönderim Yetkileri\nParolamı Değiştir\nÇıkış\nBildirimler\nMüdürlük\nFen İşleri Müdürlüğü Müdür (SENTETİK)\nBirim faaliyet raporu işlemi tamamlanamadı\n\nBirim faaliyet raporu gönderilemedi. Şu bölümleri tamamlayın: A- Malî Bilgiler; 1- Bütçe Uygulama Sonuçları; 2- Temel Malî Tablolara İlişkin Açıklamalar\n\nRaporun son sürümünü aç",
+    "technical": [],
+    "server_errors": [],
+    "http": [
+      {
+        "route": "/activity-sections/reports/8/workflow/submit",
+        "status": 409
+      }
+    ],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "fen_director",
+    "step": "Gönderim engelinden birim raporuna dön",
+    "result": "OK",
+    "route": "/activity-sections/reports/8",
+    "screenshot": "097-fen_director.png",
+    "load_ms": 1158,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "fen_staff",
+    "step": "Sapma gerekçesini tamamla",
+    "result": "OK",
+    "route": "/activity-reports/revisions/1",
+    "screenshot": "098-fen_staff.png",
+    "load_ms": 1100,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "fen_staff",
+    "step": "Gösterge gerçekleşmesi + kaynak",
+    "result": "OK",
+    "route": "/activity-reports/revisions/1",
+    "screenshot": "099-fen_staff.png",
+    "load_ms": 1308,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "fen_director",
+    "step": "Birim raporunu gönder öncesi",
+    "result": "OK",
+    "route": "/activity-sections/reports/8",
+    "screenshot": "100-fen_director.png",
+    "load_ms": 1148,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "fen_director",
+    "step": "Birim raporunu gönder",
+    "result": "BLOCKER",
+    "route": "/activity-sections/reports/8/workflow/submit",
+    "screenshot": "101-fen_director.png",
+    "load_ms": 1338,
+    "note": "Beklenen durum: Gönderildi; görünen: İşlem tamamlanamadı hata sayfası; İçeriğe geç\nCivensa\nKurumsal raporlama\n\nPerformans Programı\n\nGenel Bakış\nVeri Girişi\n\nFaaliyet Raporu\n\nFaaliyet Raporu · EK-1\n\nİç Kontrol\n\nİç Kontrol Eylemlerimiz\n\nYönetim\n\nModüller\nGönderim Yetkileri\nParolamı Değiştir\nÇıkış\nBildirimler\nMüdürlük\nFen İşleri Müdürlüğü Müdür (SENTETİK)\nBirim faaliyet raporu işlemi tamamlanamadı\n\nBirim faaliyet raporu gönderilemedi. Şu bölümleri tamamlayın: A- Malî Bilgiler; 1- Bütçe Uygulama Sonuçları; 2- Temel Malî Tablolara İlişkin Açıklamalar\n\nRaporun son sürümünü aç",
+    "technical": [],
+    "server_errors": [],
+    "http": [
+      {
+        "route": "/activity-sections/reports/8/workflow/submit",
+        "status": 409
+      }
+    ],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "strategy",
+    "step": "Gönderilmiş birimin Strateji incelemesi",
+    "result": "BLOCKER",
+    "route": "/activity-sections/reports/8",
+    "screenshot": "102-strategy.png",
+    "load_ms": 1076,
+    "note": "Gönderim, Mali Hizmetler sahipli bölüm durumları nedeniyle tamamlanamadı; bu akış adımına ulaşılamadı.",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "strategy",
+    "step": "Gerekçeli iade",
+    "result": "BLOCKER",
+    "route": "/activity-sections/reports/8",
+    "screenshot": "103-strategy.png",
+    "load_ms": 1087,
+    "note": "Gönderim, Mali Hizmetler sahipli bölüm durumları nedeniyle tamamlanamadı; bu akış adımına ulaşılamadı.",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "fen_staff",
+    "step": "İade üzerine düzeltme",
+    "result": "BLOCKER",
+    "route": "/activity-sections/reports/8",
+    "screenshot": "104-fen_staff.png",
+    "load_ms": 1201,
+    "note": "Gönderim, Mali Hizmetler sahipli bölüm durumları nedeniyle tamamlanamadı; bu akış adımına ulaşılamadı.",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "fen_director",
+    "step": "İade üzerine yeniden gönderim",
+    "result": "BLOCKER",
+    "route": "/activity-sections/reports/8",
+    "screenshot": "105-fen_director.png",
+    "load_ms": 1208,
+    "note": "Gönderim, Mali Hizmetler sahipli bölüm durumları nedeniyle tamamlanamadı; bu akış adımına ulaşılamadı.",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "strategy",
+    "step": "Strateji bağımsız onayı",
+    "result": "BLOCKER",
+    "route": "/activity-sections/reports/8",
+    "screenshot": "106-strategy.png",
+    "load_ms": 1163,
+    "note": "Gönderim, Mali Hizmetler sahipli bölüm durumları nedeniyle tamamlanamadı; bu akış adımına ulaşılamadı.",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "strategy",
+    "step": "Onaylı birim Word indir",
+    "result": "BLOCKER",
+    "route": "/activity-sections/reports/8",
+    "screenshot": "107-strategy.png",
+    "load_ms": 1293,
+    "note": "Gönderim, Mali Hizmetler sahipli bölüm durumları nedeniyle tamamlanamadı; bu akış adımına ulaşılamadı.",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "strategy",
+    "step": "Onaylı birim PDF indir",
+    "result": "BLOCKER",
+    "route": "/activity-sections/reports/8",
+    "screenshot": "108-strategy.png",
+    "load_ms": 1173,
+    "note": "Gönderim, Mali Hizmetler sahipli bölüm durumları nedeniyle tamamlanamadı; bu akış adımına ulaşılamadı.",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "strategy",
+    "step": "Strateji gönderilemeyen birimi incele",
+    "result": "OK",
+    "route": "/activity-sections/reports/8",
+    "screenshot": "109-strategy.png",
+    "load_ms": 1152,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "strategy",
+    "step": "Taslak Word olarak indir · Fen İşleri Müdürlüğü",
+    "result": "OK",
+    "route": "/activity-sections/reports/8",
+    "screenshot": "110-strategy.png",
+    "load_ms": 661,
+    "note": "43376 bayt; SHA256: f35abd377d67a64b8a30f9ecba573cad4c22a46cf501115a60ac21b1602fd299; dosya başlığı doğrulandı.",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "strategy",
+    "step": "Taslak PDF olarak indir · Fen İşleri Müdürlüğü",
+    "result": "OK",
+    "route": "/activity-sections/reports/8",
+    "screenshot": "111-strategy.png",
+    "load_ms": 862,
+    "note": "61548 bayt; SHA256: 762c5c95ad403e5fd458c9d49c22ccf94bfbabd14f3b4696d9e76a2979046355; dosya başlığı doğrulandı.",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "afet_staff",
+    "step": "Giriş ekranı",
+    "result": "OK",
+    "route": "/login",
+    "screenshot": "112-afet_staff.png",
+    "load_ms": 695,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "afet_staff",
+    "step": "Hesapla giriş",
+    "result": "OK",
+    "route": "/modules",
+    "screenshot": "113-afet_staff.png",
+    "load_ms": 911,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "afet_staff",
+    "step": "Müdürlük 2026 gösterge raporunu bul",
+    "result": "OK",
+    "route": "/activity-reports",
+    "screenshot": "114-afet_staff.png",
+    "load_ms": 680,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "afet_staff",
+    "step": "2026 gösterge girişini aç",
+    "result": "OK",
+    "route": "/activity-reports/revisions/1",
+    "screenshot": "115-afet_staff.png",
+    "load_ms": 1117,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "afet_staff",
+    "step": "390 piksel gösterge giriş sayfası",
+    "result": "OK",
+    "route": "/activity-reports/revisions/1",
+    "screenshot": "116-afet_staff.png",
+    "load_ms": 1093,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 390,
+      "height": 900
+    },
+    "document_width": 390
+  },
+  {
+    "role": "afet_staff",
+    "step": "390 piksel giriş formu alanları",
+    "result": "OK",
+    "route": "/activity-reports/revisions/1",
+    "screenshot": "117-afet_staff.png",
+    "load_ms": 28,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 390,
+      "height": 900
+    },
+    "document_width": 390
+  },
+  {
+    "role": "afet_staff",
+    "step": "Gösterge gerçekleşmesi + dosya kanıtı (açıklama boş)",
+    "result": "OK",
+    "route": "/activity-reports/revisions/1",
+    "screenshot": "118-afet_staff.png",
+    "load_ms": 1272,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "afet_staff",
+    "step": "Gösterge gerçekleşmesi + kaynak",
+    "result": "OK",
+    "route": "/activity-reports/revisions/1",
+    "screenshot": "119-afet_staff.png",
+    "load_ms": 1253,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "afet_staff",
+    "step": "Gösterge gerçekleşmesi + kaynak",
+    "result": "OK",
+    "route": "/activity-reports/revisions/1",
+    "screenshot": "120-afet_staff.png",
+    "load_ms": 1271,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "afet_staff",
+    "step": "Gösterge gerçekleşmesi + kaynak",
+    "result": "OK",
+    "route": "/activity-reports/revisions/1",
+    "screenshot": "121-afet_staff.png",
+    "load_ms": 1244,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "afet_staff",
+    "step": "Gösterge gerçekleşmesi + kaynak",
+    "result": "OK",
+    "route": "/activity-reports/revisions/1",
+    "screenshot": "122-afet_staff.png",
+    "load_ms": 1278,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "afet_staff",
+    "step": "Gösterge gerçekleşmesi + kaynak",
+    "result": "OK",
+    "route": "/activity-reports/revisions/1",
+    "screenshot": "123-afet_staff.png",
+    "load_ms": 1310,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "afet_staff",
+    "step": "Gösterge gerçekleşmesi + kaynak",
+    "result": "OK",
+    "route": "/activity-reports/revisions/1",
+    "screenshot": "124-afet_staff.png",
+    "load_ms": 1288,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "afet_staff",
+    "step": "Gösterge gerçekleşmesi + kaynak",
+    "result": "OK",
+    "route": "/activity-reports/revisions/1",
+    "screenshot": "125-afet_staff.png",
+    "load_ms": 1347,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "afet_staff",
+    "step": "Gösterge gerçekleşmesi + kaynak",
+    "result": "OK",
+    "route": "/activity-reports/revisions/1",
+    "screenshot": "126-afet_staff.png",
+    "load_ms": 1345,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "afet_staff",
+    "step": "Gösterge gerçekleşmesi + kaynak",
+    "result": "OK",
+    "route": "/activity-reports/revisions/1",
+    "screenshot": "127-afet_staff.png",
+    "load_ms": 1409,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "afet_staff",
+    "step": "Müdürlük 2026 birim raporunu bul",
+    "result": "OK",
+    "route": "/activity-sections",
+    "screenshot": "128-afet_staff.png",
+    "load_ms": 2070,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "afet_staff",
+    "step": "Birim raporu ve bölüm ağacı",
+    "result": "OK",
+    "route": "/activity-sections/reports/2",
+    "screenshot": "129-afet_staff.png",
+    "load_ms": 1121,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "afet_staff",
+    "step": "Bölüm aç: Yönetici özetiBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/2?code=OZET",
+    "screenshot": "130-afet_staff.png",
+    "load_ms": 1174,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "afet_staff",
+    "step": "Bölüm metni kaydet: Yönetici özetiBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/2?code=OZET",
+    "screenshot": "131-afet_staff.png",
+    "load_ms": 1202,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "afet_staff",
+    "step": "Bölüm aç: I- Genel bilgilerBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/2?code=I",
+    "screenshot": "132-afet_staff.png",
+    "load_ms": 1087,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "afet_staff",
+    "step": "Bölüm metni kaydet: I- Genel bilgilerBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/2?code=I",
+    "screenshot": "133-afet_staff.png",
+    "load_ms": 1204,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "afet_staff",
+    "step": "Bölüm aç: A- Misyon ve VizyonBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/2?code=I.A",
+    "screenshot": "134-afet_staff.png",
+    "load_ms": 1057,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "afet_staff",
+    "step": "Bölüm metni kaydet: A- Misyon ve VizyonBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/2?code=I.A",
+    "screenshot": "135-afet_staff.png",
+    "load_ms": 1162,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "afet_staff",
+    "step": "Bölüm aç: B- Yetki, Görev ve SorumluluklarBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/2?code=I.B",
+    "screenshot": "136-afet_staff.png",
+    "load_ms": 1122,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "afet_staff",
+    "step": "Bölüm metni kaydet: B- Yetki, Görev ve SorumluluklarBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/2?code=I.B",
+    "screenshot": "137-afet_staff.png",
+    "load_ms": 1159,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "afet_staff",
+    "step": "Bölüm aç: C- İdareye İlişkin BilgilerBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/2?code=I.C",
+    "screenshot": "138-afet_staff.png",
+    "load_ms": 1059,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "afet_staff",
+    "step": "Bölüm metni kaydet: C- İdareye İlişkin BilgilerBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/2?code=I.C",
+    "screenshot": "139-afet_staff.png",
+    "load_ms": 1119,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "afet_staff",
+    "step": "Bölüm aç: 1- Fiziksel YapıBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/2?code=I.C.1",
+    "screenshot": "140-afet_staff.png",
+    "load_ms": 1088,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "afet_staff",
+    "step": "Bölüm metni kaydet: 1- Fiziksel YapıBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/2?code=I.C.1",
+    "screenshot": "141-afet_staff.png",
+    "load_ms": 1192,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "afet_staff",
+    "step": "Bölüm aç: 2- Teşkilat YapısıBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/2?code=I.C.2",
+    "screenshot": "142-afet_staff.png",
+    "load_ms": 1091,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "afet_staff",
+    "step": "Bölüm metni kaydet: 2- Teşkilat YapısıBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/2?code=I.C.2",
+    "screenshot": "143-afet_staff.png",
+    "load_ms": 1445,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "afet_staff",
+    "step": "Bölüm aç: 3- Teknoloji ve Bilişim AltyapısıBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/2?code=I.C.3",
+    "screenshot": "144-afet_staff.png",
+    "load_ms": 1083,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "afet_staff",
+    "step": "Bölüm metni kaydet: 3- Teknoloji ve Bilişim AltyapısıBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/2?code=I.C.3",
+    "screenshot": "145-afet_staff.png",
+    "load_ms": 1184,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "afet_staff",
+    "step": "Bölüm aç: 4- İnsan KaynaklarıBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/2?code=I.C.4",
+    "screenshot": "146-afet_staff.png",
+    "load_ms": 1077,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "afet_staff",
+    "step": "Bölüm metni kaydet: 4- İnsan KaynaklarıBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/2?code=I.C.4",
+    "screenshot": "147-afet_staff.png",
+    "load_ms": 1158,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "afet_staff",
+    "step": "Bölüm aç: 5- Sunulan HizmetlerBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/2?code=I.C.5",
+    "screenshot": "148-afet_staff.png",
+    "load_ms": 1089,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "afet_staff",
+    "step": "Bölüm metni kaydet: 5- Sunulan HizmetlerBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/2?code=I.C.5",
+    "screenshot": "149-afet_staff.png",
+    "load_ms": 1314,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "afet_staff",
+    "step": "Bölüm aç: 6- Yönetim ve İç Kontrol SistemiBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/2?code=I.C.6",
+    "screenshot": "150-afet_staff.png",
+    "load_ms": 1104,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "afet_staff",
+    "step": "Bölüm metni kaydet: 6- Yönetim ve İç Kontrol SistemiBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/2?code=I.C.6",
+    "screenshot": "151-afet_staff.png",
+    "load_ms": 1157,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "afet_staff",
+    "step": "Bölüm aç: D- Diğer HususlarBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/2?code=I.D",
+    "screenshot": "152-afet_staff.png",
+    "load_ms": 1058,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "afet_staff",
+    "step": "Bölüm metni kaydet: D- Diğer HususlarBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/2?code=I.D",
+    "screenshot": "153-afet_staff.png",
+    "load_ms": 1177,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "afet_staff",
+    "step": "Bölüm aç: II- Amaçlar ve hedeflerBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/2?code=II",
+    "screenshot": "154-afet_staff.png",
+    "load_ms": 1064,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "afet_staff",
+    "step": "Bölüm metni kaydet: II- Amaçlar ve hedeflerBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/2?code=II",
+    "screenshot": "155-afet_staff.png",
+    "load_ms": 1163,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "afet_staff",
+    "step": "Bölüm aç: A- Temel Politika ve ÖnceliklerBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/2?code=II.A",
+    "screenshot": "156-afet_staff.png",
+    "load_ms": 1058,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "afet_staff",
+    "step": "Bölüm metni kaydet: A- Temel Politika ve ÖnceliklerBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/2?code=II.A",
+    "screenshot": "157-afet_staff.png",
+    "load_ms": 1169,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "afet_staff",
+    "step": "Bölüm aç: B- İdarenin Stratejik Planında Yer Alan Amaç ve HedeflerBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/2?code=II.B",
+    "screenshot": "158-afet_staff.png",
+    "load_ms": 1054,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "afet_staff",
+    "step": "Bölüm metni kaydet: B- İdarenin Stratejik Planında Yer Alan Amaç ve HedeflerBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/2?code=II.B",
+    "screenshot": "159-afet_staff.png",
+    "load_ms": 1195,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "afet_staff",
+    "step": "Bölüm aç: C- Diğer HususlarBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/2?code=II.C",
+    "screenshot": "160-afet_staff.png",
+    "load_ms": 1079,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "afet_staff",
+    "step": "Bölüm metni kaydet: C- Diğer HususlarBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/2?code=II.C",
+    "screenshot": "161-afet_staff.png",
+    "load_ms": 1168,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "afet_staff",
+    "step": "Bölüm aç: III- Faaliyetlere ilişkin bilgi ve değerlendirmelerBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/2?code=III",
+    "screenshot": "162-afet_staff.png",
+    "load_ms": 1055,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "afet_staff",
+    "step": "Bölüm metni kaydet: III- Faaliyetlere ilişkin bilgi ve değerlendirmelerBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/2?code=III",
+    "screenshot": "163-afet_staff.png",
+    "load_ms": 1189,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "afet_staff",
+    "step": "Bölüm aç: A- Malî BilgilerBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/2?code=III.A",
+    "screenshot": "164-afet_staff.png",
+    "load_ms": 1074,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "afet_staff",
+    "step": "Bölüm aç: 1- Bütçe Uygulama SonuçlarıBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/2?code=III.A.1",
+    "screenshot": "165-afet_staff.png",
+    "load_ms": 1088,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "afet_staff",
+    "step": "Bölüm aç: 2- Temel Malî Tablolara İlişkin AçıklamalarBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/2?code=III.A.2",
+    "screenshot": "166-afet_staff.png",
+    "load_ms": 1077,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "afet_staff",
+    "step": "Bölüm aç: 3- Malî Denetim SonuçlarıBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/2?code=III.A.3",
+    "screenshot": "167-afet_staff.png",
+    "load_ms": 1119,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "afet_staff",
+    "step": "Bölüm metni kaydet: 3- Malî Denetim SonuçlarıBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/2?code=III.A.3",
+    "screenshot": "168-afet_staff.png",
+    "load_ms": 1258,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "afet_staff",
+    "step": "Bölüm aç: 4- Diğer HususlarBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/2?code=III.A.4",
+    "screenshot": "169-afet_staff.png",
+    "load_ms": 1099,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "afet_staff",
+    "step": "Bölüm metni kaydet: 4- Diğer HususlarBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/2?code=III.A.4",
+    "screenshot": "170-afet_staff.png",
+    "load_ms": 1170,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "afet_staff",
+    "step": "Bölüm aç: B- Performans BilgileriBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/2?code=III.B",
+    "screenshot": "171-afet_staff.png",
+    "load_ms": 1227,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "afet_staff",
+    "step": "Bölüm metni kaydet: B- Performans BilgileriBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/2?code=III.B",
+    "screenshot": "172-afet_staff.png",
+    "load_ms": 1667,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "afet_staff",
+    "step": "Bölüm aç: 1- Program, Alt Program, Faaliyet BilgileriBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/2?code=III.B.1",
+    "screenshot": "173-afet_staff.png",
+    "load_ms": 1074,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "afet_staff",
+    "step": "Bölüm metni kaydet: 1- Program, Alt Program, Faaliyet BilgileriBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/2?code=III.B.1",
+    "screenshot": "174-afet_staff.png",
+    "load_ms": 1201,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "afet_staff",
+    "step": "Bölüm aç: 2- Performans Sonuçlarının DeğerlendirilmesiBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/2?code=III.B.2",
+    "screenshot": "175-afet_staff.png",
+    "load_ms": 1125,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "afet_staff",
+    "step": "Bölüm metni kaydet: 2- Performans Sonuçlarının DeğerlendirilmesiBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/2?code=III.B.2",
+    "screenshot": "176-afet_staff.png",
+    "load_ms": 1184,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "afet_staff",
+    "step": "Bölüm aç: i. Alt program hedef ve göstergeleriyle ilgili gerçekleşme sonuçları ve değerlendirmelerHazır",
+    "result": "OK",
+    "route": "/activity-sections/reports/2?code=III.B.2.i",
+    "screenshot": "177-afet_staff.png",
+    "load_ms": 1136,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "afet_staff",
+    "step": "Bölüm aç: ii. Performans denetim sonuçlarıBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/2?code=III.B.2.ii",
+    "screenshot": "178-afet_staff.png",
+    "load_ms": 1161,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "afet_staff",
+    "step": "Bölüm metni kaydet: ii. Performans denetim sonuçlarıBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/2?code=III.B.2.ii",
+    "screenshot": "179-afet_staff.png",
+    "load_ms": 1238,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "afet_staff",
+    "step": "Bölüm aç: 3- Stratejik Plan Değerlendirme TablolarıBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/2?code=III.B.3",
+    "screenshot": "180-afet_staff.png",
+    "load_ms": 1066,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "afet_staff",
+    "step": "Bölüm metni kaydet: 3- Stratejik Plan Değerlendirme TablolarıBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/2?code=III.B.3",
+    "screenshot": "181-afet_staff.png",
+    "load_ms": 1258,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "afet_staff",
+    "step": "Bölüm aç: 4- Performans Bilgi Sisteminin DeğerlendirilmesiBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/2?code=III.B.4",
+    "screenshot": "182-afet_staff.png",
+    "load_ms": 1098,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "afet_staff",
+    "step": "Bölüm metni kaydet: 4- Performans Bilgi Sisteminin DeğerlendirilmesiBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/2?code=III.B.4",
+    "screenshot": "183-afet_staff.png",
+    "load_ms": 1230,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "afet_staff",
+    "step": "Bölüm aç: 5- Diğer HususlarBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/2?code=III.B.5",
+    "screenshot": "184-afet_staff.png",
+    "load_ms": 1088,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "afet_staff",
+    "step": "Bölüm metni kaydet: 5- Diğer HususlarBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/2?code=III.B.5",
+    "screenshot": "185-afet_staff.png",
+    "load_ms": 1228,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "afet_staff",
+    "step": "Bölüm aç: IV- Kurumsal kabiliyet ve kapasitenin değerlendirilmesiBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/2?code=IV",
+    "screenshot": "186-afet_staff.png",
+    "load_ms": 1088,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "afet_staff",
+    "step": "Bölüm metni kaydet: IV- Kurumsal kabiliyet ve kapasitenin değerlendirilmesiBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/2?code=IV",
+    "screenshot": "187-afet_staff.png",
+    "load_ms": 1439,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "afet_staff",
+    "step": "Bölüm aç: A- ÜstünlüklerBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/2?code=IV.A",
+    "screenshot": "188-afet_staff.png",
+    "load_ms": 1327,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "afet_staff",
+    "step": "Bölüm metni kaydet: A- ÜstünlüklerBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/2?code=IV.A",
+    "screenshot": "189-afet_staff.png",
+    "load_ms": 1296,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "afet_staff",
+    "step": "Bölüm aç: B- ZayıflıklarBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/2?code=IV.B",
+    "screenshot": "190-afet_staff.png",
+    "load_ms": 1137,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "afet_staff",
+    "step": "Bölüm metni kaydet: B- ZayıflıklarBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/2?code=IV.B",
+    "screenshot": "191-afet_staff.png",
+    "load_ms": 1226,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "afet_staff",
+    "step": "Bölüm aç: C- DeğerlendirmeBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/2?code=IV.C",
+    "screenshot": "192-afet_staff.png",
+    "load_ms": 1204,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "afet_staff",
+    "step": "Bölüm metni kaydet: C- DeğerlendirmeBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/2?code=IV.C",
+    "screenshot": "193-afet_staff.png",
+    "load_ms": 1241,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "afet_staff",
+    "step": "Bölüm aç: V- Öneri ve tedbirlerBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/2?code=V",
+    "screenshot": "194-afet_staff.png",
+    "load_ms": 1061,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "afet_staff",
+    "step": "Bölüm metni kaydet: V- Öneri ve tedbirlerBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/2?code=V",
+    "screenshot": "195-afet_staff.png",
+    "load_ms": 1180,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "afet_staff",
+    "step": "Bölüm aç: EklerBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/2?code=EKLER",
+    "screenshot": "196-afet_staff.png",
+    "load_ms": 1100,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "afet_staff",
+    "step": "Harcama yetkilisi güvence beyanı",
+    "result": "OK",
+    "route": "/activity-sections/reports/2/assurances/EK-2",
+    "screenshot": "197-afet_staff.png",
+    "load_ms": 1037,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "afet_staff",
+    "step": "EK-2 beyan alanlarını kaydet",
+    "result": "OK",
+    "route": "/activity-sections/reports/2/assurances/EK-2",
+    "screenshot": "198-afet_staff.png",
+    "load_ms": 1101,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "afet_staff",
+    "step": "Mali Hizmetler uyarıları",
+    "result": "OK",
+    "route": "/activity-sections/reports/2?code=III.A.1",
+    "screenshot": "199-afet_staff.png",
+    "load_ms": 1165,
+    "note": "Uyarılar (gönderimi engellemez)\n\nAfet İşleri ve Risk Değerlendirme Müdürlüğü: Ekonomik kod gider satırları eksik. Mali Hizmetler ilgili müdürlüğün tutarlarını girmeli; gerçek tutar sıfırsa 0 kullanılmalı. Bu tutarlar Mali Hizmetler Müdürlüğü'ne aittir; birim raporunun gönderimini engellemez, Mali Hizmetler'e bildirin.\n\nAfet İşleri ve Risk Değerlendirme Müdürlüğü: Program / alt program gider satırları eksik. Mali Hizmetler ilgili müdürlüğün tutarlarını girmeli; gerçek tutar sıfırsa 0 kullanılmalı. Bu tutarlar Mali Hizmetler Müdürlüğü'ne aittir; birim raporunun gönderimini engellemez, Mali Hizmetler'e bildirin.\n\nEkonomik kod gider tablosu boş. Mali Hizmetler verileri geldiğinde giriş veya XLSX içe aktarma yapın. Bu tutarlar Mali Hizmetler Müdürlüğü'ne aittir; birim raporunun gönderimini engellemez, Mali Hizmetler'e bildirin.\n\nProgram / alt program gider tablosu boş. Mali Hizmetler verileri geldiğinde giriş veya XLSX içe aktarma yapın. Bu tutarlar Mali Hizmetler Müdürlüğü'ne aittir; birim raporunun gönderimini engellemez, Mali Hizmetler'e bildirin.",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "afet_staff",
+    "step": "Faaliyet gerçekleşmesi girişi ara",
+    "result": "BLOCKER",
+    "route": "/activity-report?year=2026&period_id=2",
+    "screenshot": "200-afet_staff.png",
+    "load_ms": 743,
+    "note": "Kaynak kayıt inceleme pilotu salt okunur; faaliyet başına gerçekleşme giriş formu sunulmuyor.",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "afet_director",
+    "step": "Giriş ekranı",
+    "result": "OK",
+    "route": "/login",
+    "screenshot": "201-afet_director.png",
+    "load_ms": 648,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "afet_director",
+    "step": "Hesapla giriş",
+    "result": "OK",
+    "route": "/modules",
+    "screenshot": "202-afet_director.png",
+    "load_ms": 796,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "afet_director",
+    "step": "Sapma açıklaması boşken gönderim kontrolü",
+    "result": "OK",
+    "route": "/activity-sections/reports/2",
+    "screenshot": "203-afet_director.png",
+    "load_ms": 1624,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "afet_director",
+    "step": "Açıklamasız gerçekleşmeyi gönderme denemesi",
+    "result": "BLOCKER",
+    "route": "/activity-sections/reports/2/workflow/submit",
+    "screenshot": "204-afet_director.png",
+    "load_ms": 1467,
+    "note": "Sapma kontrolüne ulaşmadan bölüm tamamlanma kapısı engelledi: İçeriğe geç\nCivensa\nKurumsal raporlama\n\nPerformans Programı\n\nGenel Bakış\nVeri Girişi\n\nFaaliyet Raporu\n\nFaaliyet Raporu · EK-1\n\nİç Kontrol\n\nİç Kontrol Eylemlerimiz\n\nYönetim\n\nModüller\nGönderim Yetkileri\nParolamı Değiştir\nÇıkış\nBildirimler\nMüdürlük\nAfet İşleri ve Risk Değerlendirme Müdürlüğü Müdür (SENTETİK)\nBirim faaliyet raporu işlemi tamamlanamadı\n\nBirim faaliyet raporu gönderilemedi. Şu bölümleri tamamlayın: A- Malî Bilgiler; 1- Bütçe Uygulama Sonuçları; 2- Temel Malî Tablolara İlişkin Açıklamalar\n\nRaporun son sürümünü aç",
+    "technical": [],
+    "server_errors": [],
+    "http": [
+      {
+        "route": "/activity-sections/reports/2/workflow/submit",
+        "status": 409
+      }
+    ],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "afet_director",
+    "step": "Gönderim engelinden birim raporuna dön",
+    "result": "OK",
+    "route": "/activity-sections/reports/2",
+    "screenshot": "205-afet_director.png",
+    "load_ms": 1226,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "afet_staff",
+    "step": "Sapma gerekçesini tamamla",
+    "result": "OK",
+    "route": "/activity-reports/revisions/1",
+    "screenshot": "206-afet_staff.png",
+    "load_ms": 1168,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "afet_staff",
+    "step": "Gösterge gerçekleşmesi + kaynak",
+    "result": "OK",
+    "route": "/activity-reports/revisions/1",
+    "screenshot": "207-afet_staff.png",
+    "load_ms": 1434,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "afet_director",
+    "step": "Birim raporunu gönder öncesi",
+    "result": "OK",
+    "route": "/activity-sections/reports/2",
+    "screenshot": "208-afet_director.png",
+    "load_ms": 1107,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "afet_director",
+    "step": "Birim raporunu gönder",
+    "result": "BLOCKER",
+    "route": "/activity-sections/reports/2/workflow/submit",
+    "screenshot": "209-afet_director.png",
+    "load_ms": 1333,
+    "note": "Beklenen durum: Gönderildi; görünen: İşlem tamamlanamadı hata sayfası; İçeriğe geç\nCivensa\nKurumsal raporlama\n\nPerformans Programı\n\nGenel Bakış\nVeri Girişi\n\nFaaliyet Raporu\n\nFaaliyet Raporu · EK-1\n\nİç Kontrol\n\nİç Kontrol Eylemlerimiz\n\nYönetim\n\nModüller\nGönderim Yetkileri\nParolamı Değiştir\nÇıkış\nBildirimler\nMüdürlük\nAfet İşleri ve Risk Değerlendirme Müdürlüğü Müdür (SENTETİK)\nBirim faaliyet raporu işlemi tamamlanamadı\n\nBirim faaliyet raporu gönderilemedi. Şu bölümleri tamamlayın: A- Malî Bilgiler; 1- Bütçe Uygulama Sonuçları; 2- Temel Malî Tablolara İlişkin Açıklamalar\n\nRaporun son sürümünü aç",
+    "technical": [],
+    "server_errors": [],
+    "http": [
+      {
+        "route": "/activity-sections/reports/2/workflow/submit",
+        "status": 409
+      }
+    ],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "strategy",
+    "step": "Gönderilmiş birimin Strateji incelemesi",
+    "result": "BLOCKER",
+    "route": "/activity-sections/reports/2",
+    "screenshot": "210-strategy.png",
+    "load_ms": 1141,
+    "note": "Gönderim, Mali Hizmetler sahipli bölüm durumları nedeniyle tamamlanamadı; bu akış adımına ulaşılamadı.",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "strategy",
+    "step": "Gerekçeli iade",
+    "result": "BLOCKER",
+    "route": "/activity-sections/reports/2",
+    "screenshot": "211-strategy.png",
+    "load_ms": 1079,
+    "note": "Gönderim, Mali Hizmetler sahipli bölüm durumları nedeniyle tamamlanamadı; bu akış adımına ulaşılamadı.",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "afet_staff",
+    "step": "İade üzerine düzeltme",
+    "result": "BLOCKER",
+    "route": "/activity-sections/reports/2",
+    "screenshot": "212-afet_staff.png",
+    "load_ms": 1089,
+    "note": "Gönderim, Mali Hizmetler sahipli bölüm durumları nedeniyle tamamlanamadı; bu akış adımına ulaşılamadı.",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "afet_director",
+    "step": "İade üzerine yeniden gönderim",
+    "result": "BLOCKER",
+    "route": "/activity-sections/reports/2",
+    "screenshot": "213-afet_director.png",
+    "load_ms": 1179,
+    "note": "Gönderim, Mali Hizmetler sahipli bölüm durumları nedeniyle tamamlanamadı; bu akış adımına ulaşılamadı.",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "strategy",
+    "step": "Strateji bağımsız onayı",
+    "result": "BLOCKER",
+    "route": "/activity-sections/reports/2",
+    "screenshot": "214-strategy.png",
+    "load_ms": 1217,
+    "note": "Gönderim, Mali Hizmetler sahipli bölüm durumları nedeniyle tamamlanamadı; bu akış adımına ulaşılamadı.",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "strategy",
+    "step": "Onaylı birim Word indir",
+    "result": "BLOCKER",
+    "route": "/activity-sections/reports/2",
+    "screenshot": "215-strategy.png",
+    "load_ms": 1135,
+    "note": "Gönderim, Mali Hizmetler sahipli bölüm durumları nedeniyle tamamlanamadı; bu akış adımına ulaşılamadı.",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "strategy",
+    "step": "Onaylı birim PDF indir",
+    "result": "BLOCKER",
+    "route": "/activity-sections/reports/2",
+    "screenshot": "216-strategy.png",
+    "load_ms": 1200,
+    "note": "Gönderim, Mali Hizmetler sahipli bölüm durumları nedeniyle tamamlanamadı; bu akış adımına ulaşılamadı.",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "strategy",
+    "step": "Strateji gönderilemeyen birimi incele",
+    "result": "OK",
+    "route": "/activity-sections/reports/2",
+    "screenshot": "217-strategy.png",
+    "load_ms": 1150,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "strategy",
+    "step": "Taslak Word olarak indir · Afet İşleri ve Risk Değerlendirme Müdürlüğü",
+    "result": "OK",
+    "route": "/activity-sections/reports/2",
+    "screenshot": "218-strategy.png",
+    "load_ms": 731,
+    "note": "43706 bayt; SHA256: 25add1a57931e69563d0bb61b967337eaf0e43ca8a801944f3c5dacffd54bcf1; dosya başlığı doğrulandı.",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "strategy",
+    "step": "Taslak PDF olarak indir · Afet İşleri ve Risk Değerlendirme Müdürlüğü",
+    "result": "OK",
+    "route": "/activity-sections/reports/2",
+    "screenshot": "219-strategy.png",
+    "load_ms": 572,
+    "note": "63630 bayt; SHA256: 48cc5bc2d809248dec92bacef8c5b0c928d0ac7469b3965c97ee6ebb81963f12; dosya başlığı doğrulandı.",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "ozel_staff",
+    "step": "Giriş ekranı",
+    "result": "OK",
+    "route": "/login",
+    "screenshot": "220-ozel_staff.png",
+    "load_ms": 672,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "ozel_staff",
+    "step": "Hesapla giriş",
+    "result": "OK",
+    "route": "/modules",
+    "screenshot": "221-ozel_staff.png",
+    "load_ms": 776,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "ozel_staff",
+    "step": "Müdürlük 2026 gösterge raporunu bul",
+    "result": "OK",
+    "route": "/activity-reports",
+    "screenshot": "222-ozel_staff.png",
+    "load_ms": 695,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "ozel_staff",
+    "step": "2026 gösterge girişini aç",
+    "result": "OK",
+    "route": "/activity-reports/revisions/1",
+    "screenshot": "223-ozel_staff.png",
+    "load_ms": 1241,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "ozel_staff",
+    "step": "390 piksel gösterge giriş sayfası",
+    "result": "OK",
+    "route": "/activity-reports/revisions/1",
+    "screenshot": "224-ozel_staff.png",
+    "load_ms": 1136,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 390,
+      "height": 900
+    },
+    "document_width": 390
+  },
+  {
+    "role": "ozel_staff",
+    "step": "390 piksel giriş formu alanları",
+    "result": "OK",
+    "route": "/activity-reports/revisions/1",
+    "screenshot": "225-ozel_staff.png",
+    "load_ms": 53,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 390,
+      "height": 900
+    },
+    "document_width": 390
+  },
+  {
+    "role": "ozel_staff",
+    "step": "Gösterge gerçekleşmesi + dosya kanıtı (açıklama boş)",
+    "result": "OK",
+    "route": "/activity-reports/revisions/1",
+    "screenshot": "226-ozel_staff.png",
+    "load_ms": 1294,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "ozel_staff",
+    "step": "Gösterge gerçekleşmesi + kaynak",
+    "result": "OK",
+    "route": "/activity-reports/revisions/1",
+    "screenshot": "227-ozel_staff.png",
+    "load_ms": 1279,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "ozel_staff",
+    "step": "Gösterge gerçekleşmesi + kaynak",
+    "result": "OK",
+    "route": "/activity-reports/revisions/1",
+    "screenshot": "228-ozel_staff.png",
+    "load_ms": 1233,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "ozel_staff",
+    "step": "Gösterge gerçekleşmesi + kaynak",
+    "result": "OK",
+    "route": "/activity-reports/revisions/1",
+    "screenshot": "229-ozel_staff.png",
+    "load_ms": 1817,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "ozel_staff",
+    "step": "Gösterge gerçekleşmesi + kaynak",
+    "result": "OK",
+    "route": "/activity-reports/revisions/1",
+    "screenshot": "230-ozel_staff.png",
+    "load_ms": 1229,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "ozel_staff",
+    "step": "Müdürlük 2026 birim raporunu bul",
+    "result": "OK",
+    "route": "/activity-sections",
+    "screenshot": "231-ozel_staff.png",
+    "load_ms": 2069,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "ozel_staff",
+    "step": "Birim raporu ve bölüm ağacı",
+    "result": "OK",
+    "route": "/activity-sections/reports/31",
+    "screenshot": "232-ozel_staff.png",
+    "load_ms": 1102,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "ozel_staff",
+    "step": "Bölüm aç: Yönetici özetiBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/31?code=OZET",
+    "screenshot": "233-ozel_staff.png",
+    "load_ms": 1301,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "ozel_staff",
+    "step": "Bölüm metni kaydet: Yönetici özetiBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/31?code=OZET",
+    "screenshot": "234-ozel_staff.png",
+    "load_ms": 1405,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "ozel_staff",
+    "step": "Bölüm aç: I- Genel bilgilerBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/31?code=I",
+    "screenshot": "235-ozel_staff.png",
+    "load_ms": 1242,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "ozel_staff",
+    "step": "Bölüm metni kaydet: I- Genel bilgilerBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/31?code=I",
+    "screenshot": "236-ozel_staff.png",
+    "load_ms": 1267,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "ozel_staff",
+    "step": "Bölüm aç: A- Misyon ve VizyonBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/31?code=I.A",
+    "screenshot": "237-ozel_staff.png",
+    "load_ms": 1157,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "ozel_staff",
+    "step": "Bölüm metni kaydet: A- Misyon ve VizyonBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/31?code=I.A",
+    "screenshot": "238-ozel_staff.png",
+    "load_ms": 1174,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "ozel_staff",
+    "step": "Bölüm aç: B- Yetki, Görev ve SorumluluklarBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/31?code=I.B",
+    "screenshot": "239-ozel_staff.png",
+    "load_ms": 1129,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "ozel_staff",
+    "step": "Bölüm metni kaydet: B- Yetki, Görev ve SorumluluklarBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/31?code=I.B",
+    "screenshot": "240-ozel_staff.png",
+    "load_ms": 1189,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "ozel_staff",
+    "step": "Bölüm aç: C- İdareye İlişkin BilgilerBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/31?code=I.C",
+    "screenshot": "241-ozel_staff.png",
+    "load_ms": 1148,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "ozel_staff",
+    "step": "Bölüm metni kaydet: C- İdareye İlişkin BilgilerBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/31?code=I.C",
+    "screenshot": "242-ozel_staff.png",
+    "load_ms": 1200,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "ozel_staff",
+    "step": "Bölüm aç: 1- Fiziksel YapıBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/31?code=I.C.1",
+    "screenshot": "243-ozel_staff.png",
+    "load_ms": 1091,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "ozel_staff",
+    "step": "Bölüm metni kaydet: 1- Fiziksel YapıBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/31?code=I.C.1",
+    "screenshot": "244-ozel_staff.png",
+    "load_ms": 1180,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "ozel_staff",
+    "step": "Bölüm aç: 2- Teşkilat YapısıBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/31?code=I.C.2",
+    "screenshot": "245-ozel_staff.png",
+    "load_ms": 1169,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "ozel_staff",
+    "step": "Bölüm metni kaydet: 2- Teşkilat YapısıBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/31?code=I.C.2",
+    "screenshot": "246-ozel_staff.png",
+    "load_ms": 1200,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "ozel_staff",
+    "step": "Bölüm aç: 3- Teknoloji ve Bilişim AltyapısıBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/31?code=I.C.3",
+    "screenshot": "247-ozel_staff.png",
+    "load_ms": 1062,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "ozel_staff",
+    "step": "Bölüm metni kaydet: 3- Teknoloji ve Bilişim AltyapısıBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/31?code=I.C.3",
+    "screenshot": "248-ozel_staff.png",
+    "load_ms": 1180,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "ozel_staff",
+    "step": "Bölüm aç: 4- İnsan KaynaklarıBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/31?code=I.C.4",
+    "screenshot": "249-ozel_staff.png",
+    "load_ms": 1079,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "ozel_staff",
+    "step": "Bölüm metni kaydet: 4- İnsan KaynaklarıBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/31?code=I.C.4",
+    "screenshot": "250-ozel_staff.png",
+    "load_ms": 1225,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "ozel_staff",
+    "step": "Bölüm aç: 5- Sunulan HizmetlerBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/31?code=I.C.5",
+    "screenshot": "251-ozel_staff.png",
+    "load_ms": 1107,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "ozel_staff",
+    "step": "Bölüm metni kaydet: 5- Sunulan HizmetlerBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/31?code=I.C.5",
+    "screenshot": "252-ozel_staff.png",
+    "load_ms": 1195,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "ozel_staff",
+    "step": "Bölüm aç: 6- Yönetim ve İç Kontrol SistemiBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/31?code=I.C.6",
+    "screenshot": "253-ozel_staff.png",
+    "load_ms": 1083,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "ozel_staff",
+    "step": "Bölüm metni kaydet: 6- Yönetim ve İç Kontrol SistemiBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/31?code=I.C.6",
+    "screenshot": "254-ozel_staff.png",
+    "load_ms": 1244,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "ozel_staff",
+    "step": "Bölüm aç: D- Diğer HususlarBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/31?code=I.D",
+    "screenshot": "255-ozel_staff.png",
+    "load_ms": 1092,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "ozel_staff",
+    "step": "Bölüm metni kaydet: D- Diğer HususlarBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/31?code=I.D",
+    "screenshot": "256-ozel_staff.png",
+    "load_ms": 1204,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "ozel_staff",
+    "step": "Bölüm aç: II- Amaçlar ve hedeflerBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/31?code=II",
+    "screenshot": "257-ozel_staff.png",
+    "load_ms": 1119,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "ozel_staff",
+    "step": "Bölüm metni kaydet: II- Amaçlar ve hedeflerBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/31?code=II",
+    "screenshot": "258-ozel_staff.png",
+    "load_ms": 1223,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "ozel_staff",
+    "step": "Bölüm aç: A- Temel Politika ve ÖnceliklerBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/31?code=II.A",
+    "screenshot": "259-ozel_staff.png",
+    "load_ms": 1162,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "ozel_staff",
+    "step": "Bölüm metni kaydet: A- Temel Politika ve ÖnceliklerBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/31?code=II.A",
+    "screenshot": "260-ozel_staff.png",
+    "load_ms": 1249,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "ozel_staff",
+    "step": "Bölüm aç: B- İdarenin Stratejik Planında Yer Alan Amaç ve HedeflerBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/31?code=II.B",
+    "screenshot": "261-ozel_staff.png",
+    "load_ms": 1096,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "ozel_staff",
+    "step": "Bölüm metni kaydet: B- İdarenin Stratejik Planında Yer Alan Amaç ve HedeflerBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/31?code=II.B",
+    "screenshot": "262-ozel_staff.png",
+    "load_ms": 1193,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "ozel_staff",
+    "step": "Bölüm aç: C- Diğer HususlarBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/31?code=II.C",
+    "screenshot": "263-ozel_staff.png",
+    "load_ms": 1056,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "ozel_staff",
+    "step": "Bölüm metni kaydet: C- Diğer HususlarBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/31?code=II.C",
+    "screenshot": "264-ozel_staff.png",
+    "load_ms": 1190,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "ozel_staff",
+    "step": "Bölüm aç: III- Faaliyetlere ilişkin bilgi ve değerlendirmelerBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/31?code=III",
+    "screenshot": "265-ozel_staff.png",
+    "load_ms": 1131,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "ozel_staff",
+    "step": "Bölüm metni kaydet: III- Faaliyetlere ilişkin bilgi ve değerlendirmelerBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/31?code=III",
+    "screenshot": "266-ozel_staff.png",
+    "load_ms": 1256,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "ozel_staff",
+    "step": "Bölüm aç: A- Malî BilgilerBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/31?code=III.A",
+    "screenshot": "267-ozel_staff.png",
+    "load_ms": 1658,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "ozel_staff",
+    "step": "Bölüm aç: 1- Bütçe Uygulama SonuçlarıBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/31?code=III.A.1",
+    "screenshot": "268-ozel_staff.png",
+    "load_ms": 1179,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "ozel_staff",
+    "step": "Bölüm aç: 2- Temel Malî Tablolara İlişkin AçıklamalarBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/31?code=III.A.2",
+    "screenshot": "269-ozel_staff.png",
+    "load_ms": 1166,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "ozel_staff",
+    "step": "Bölüm aç: 3- Malî Denetim SonuçlarıBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/31?code=III.A.3",
+    "screenshot": "270-ozel_staff.png",
+    "load_ms": 1123,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "ozel_staff",
+    "step": "Bölüm metni kaydet: 3- Malî Denetim SonuçlarıBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/31?code=III.A.3",
+    "screenshot": "271-ozel_staff.png",
+    "load_ms": 1188,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "ozel_staff",
+    "step": "Bölüm aç: 4- Diğer HususlarBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/31?code=III.A.4",
+    "screenshot": "272-ozel_staff.png",
+    "load_ms": 1073,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "ozel_staff",
+    "step": "Bölüm metni kaydet: 4- Diğer HususlarBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/31?code=III.A.4",
+    "screenshot": "273-ozel_staff.png",
+    "load_ms": 1165,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "ozel_staff",
+    "step": "Bölüm aç: B- Performans BilgileriBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/31?code=III.B",
+    "screenshot": "274-ozel_staff.png",
+    "load_ms": 1132,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "ozel_staff",
+    "step": "Bölüm metni kaydet: B- Performans BilgileriBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/31?code=III.B",
+    "screenshot": "275-ozel_staff.png",
+    "load_ms": 1197,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "ozel_staff",
+    "step": "Bölüm aç: 1- Program, Alt Program, Faaliyet BilgileriBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/31?code=III.B.1",
+    "screenshot": "276-ozel_staff.png",
+    "load_ms": 1033,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "ozel_staff",
+    "step": "Bölüm metni kaydet: 1- Program, Alt Program, Faaliyet BilgileriBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/31?code=III.B.1",
+    "screenshot": "277-ozel_staff.png",
+    "load_ms": 1170,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "ozel_staff",
+    "step": "Bölüm aç: 2- Performans Sonuçlarının DeğerlendirilmesiBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/31?code=III.B.2",
+    "screenshot": "278-ozel_staff.png",
+    "load_ms": 1122,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "ozel_staff",
+    "step": "Bölüm metni kaydet: 2- Performans Sonuçlarının DeğerlendirilmesiBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/31?code=III.B.2",
+    "screenshot": "279-ozel_staff.png",
+    "load_ms": 1227,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "ozel_staff",
+    "step": "Bölüm aç: i. Alt program hedef ve göstergeleriyle ilgili gerçekleşme sonuçları ve değerlendirmelerHazır",
+    "result": "OK",
+    "route": "/activity-sections/reports/31?code=III.B.2.i",
+    "screenshot": "280-ozel_staff.png",
+    "load_ms": 1183,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "ozel_staff",
+    "step": "Bölüm aç: ii. Performans denetim sonuçlarıBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/31?code=III.B.2.ii",
+    "screenshot": "281-ozel_staff.png",
+    "load_ms": 1130,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "ozel_staff",
+    "step": "Bölüm metni kaydet: ii. Performans denetim sonuçlarıBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/31?code=III.B.2.ii",
+    "screenshot": "282-ozel_staff.png",
+    "load_ms": 1192,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "ozel_staff",
+    "step": "Bölüm aç: 3- Stratejik Plan Değerlendirme TablolarıBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/31?code=III.B.3",
+    "screenshot": "283-ozel_staff.png",
+    "load_ms": 1090,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "ozel_staff",
+    "step": "Bölüm metni kaydet: 3- Stratejik Plan Değerlendirme TablolarıBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/31?code=III.B.3",
+    "screenshot": "284-ozel_staff.png",
+    "load_ms": 1160,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "ozel_staff",
+    "step": "Bölüm aç: 4- Performans Bilgi Sisteminin DeğerlendirilmesiBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/31?code=III.B.4",
+    "screenshot": "285-ozel_staff.png",
+    "load_ms": 1082,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "ozel_staff",
+    "step": "Bölüm metni kaydet: 4- Performans Bilgi Sisteminin DeğerlendirilmesiBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/31?code=III.B.4",
+    "screenshot": "286-ozel_staff.png",
+    "load_ms": 1223,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "ozel_staff",
+    "step": "Bölüm aç: 5- Diğer HususlarBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/31?code=III.B.5",
+    "screenshot": "287-ozel_staff.png",
+    "load_ms": 1108,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "ozel_staff",
+    "step": "Bölüm metni kaydet: 5- Diğer HususlarBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/31?code=III.B.5",
+    "screenshot": "288-ozel_staff.png",
+    "load_ms": 1421,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "ozel_staff",
+    "step": "Bölüm aç: IV- Kurumsal kabiliyet ve kapasitenin değerlendirilmesiBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/31?code=IV",
+    "screenshot": "289-ozel_staff.png",
+    "load_ms": 1168,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "ozel_staff",
+    "step": "Bölüm metni kaydet: IV- Kurumsal kabiliyet ve kapasitenin değerlendirilmesiBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/31?code=IV",
+    "screenshot": "290-ozel_staff.png",
+    "load_ms": 1255,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "ozel_staff",
+    "step": "Bölüm aç: A- ÜstünlüklerBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/31?code=IV.A",
+    "screenshot": "291-ozel_staff.png",
+    "load_ms": 1144,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "ozel_staff",
+    "step": "Bölüm metni kaydet: A- ÜstünlüklerBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/31?code=IV.A",
+    "screenshot": "292-ozel_staff.png",
+    "load_ms": 1189,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "ozel_staff",
+    "step": "Bölüm aç: B- ZayıflıklarBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/31?code=IV.B",
+    "screenshot": "293-ozel_staff.png",
+    "load_ms": 1092,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "ozel_staff",
+    "step": "Bölüm metni kaydet: B- ZayıflıklarBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/31?code=IV.B",
+    "screenshot": "294-ozel_staff.png",
+    "load_ms": 1244,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "ozel_staff",
+    "step": "Bölüm aç: C- DeğerlendirmeBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/31?code=IV.C",
+    "screenshot": "295-ozel_staff.png",
+    "load_ms": 1048,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "ozel_staff",
+    "step": "Bölüm metni kaydet: C- DeğerlendirmeBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/31?code=IV.C",
+    "screenshot": "296-ozel_staff.png",
+    "load_ms": 1188,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "ozel_staff",
+    "step": "Bölüm aç: V- Öneri ve tedbirlerBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/31?code=V",
+    "screenshot": "297-ozel_staff.png",
+    "load_ms": 1171,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "ozel_staff",
+    "step": "Bölüm metni kaydet: V- Öneri ve tedbirlerBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/31?code=V",
+    "screenshot": "298-ozel_staff.png",
+    "load_ms": 1261,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "ozel_staff",
+    "step": "Bölüm aç: EklerBoş",
+    "result": "OK",
+    "route": "/activity-sections/reports/31?code=EKLER",
+    "screenshot": "299-ozel_staff.png",
+    "load_ms": 1070,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "ozel_staff",
+    "step": "Harcama yetkilisi güvence beyanı",
+    "result": "OK",
+    "route": "/activity-sections/reports/31/assurances/EK-2",
+    "screenshot": "300-ozel_staff.png",
+    "load_ms": 1001,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "ozel_staff",
+    "step": "EK-2 beyan alanlarını kaydet",
+    "result": "OK",
+    "route": "/activity-sections/reports/31/assurances/EK-2",
+    "screenshot": "301-ozel_staff.png",
+    "load_ms": 1128,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "ozel_staff",
+    "step": "Mali Hizmetler uyarıları",
+    "result": "OK",
+    "route": "/activity-sections/reports/31?code=III.A.1",
+    "screenshot": "302-ozel_staff.png",
+    "load_ms": 1158,
+    "note": "Uyarılar (gönderimi engellemez)\n\nÖzel Kalem Müdürlüğü: Ekonomik kod gider satırları eksik. Mali Hizmetler ilgili müdürlüğün tutarlarını girmeli; gerçek tutar sıfırsa 0 kullanılmalı. Bu tutarlar Mali Hizmetler Müdürlüğü'ne aittir; birim raporunun gönderimini engellemez, Mali Hizmetler'e bildirin.\n\nÖzel Kalem Müdürlüğü: Program / alt program gider satırları eksik. Mali Hizmetler ilgili müdürlüğün tutarlarını girmeli; gerçek tutar sıfırsa 0 kullanılmalı. Bu tutarlar Mali Hizmetler Müdürlüğü'ne aittir; birim raporunun gönderimini engellemez, Mali Hizmetler'e bildirin.\n\nEkonomik kod gider tablosu boş. Mali Hizmetler verileri geldiğinde giriş veya XLSX içe aktarma yapın. Bu tutarlar Mali Hizmetler Müdürlüğü'ne aittir; birim raporunun gönderimini engellemez, Mali Hizmetler'e bildirin.\n\nProgram / alt program gider tablosu boş. Mali Hizmetler verileri geldiğinde giriş veya XLSX içe aktarma yapın. Bu tutarlar Mali Hizmetler Müdürlüğü'ne aittir; birim raporunun gönderimini engellemez, Mali Hizmetler'e bildirin.",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "ozel_staff",
+    "step": "Faaliyet gerçekleşmesi girişi ara",
+    "result": "BLOCKER",
+    "route": "/activity-report?year=2026&period_id=2",
+    "screenshot": "303-ozel_staff.png",
+    "load_ms": 722,
+    "note": "Kaynak kayıt inceleme pilotu salt okunur; faaliyet başına gerçekleşme giriş formu sunulmuyor.",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "ozel_director",
+    "step": "Giriş ekranı",
+    "result": "OK",
+    "route": "/login",
+    "screenshot": "304-ozel_director.png",
+    "load_ms": 1155,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "ozel_director",
+    "step": "Hesapla giriş",
+    "result": "OK",
+    "route": "/modules",
+    "screenshot": "305-ozel_director.png",
+    "load_ms": 788,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "ozel_director",
+    "step": "Sapma açıklaması boşken gönderim kontrolü",
+    "result": "OK",
+    "route": "/activity-sections/reports/31",
+    "screenshot": "306-ozel_director.png",
+    "load_ms": 1189,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "ozel_director",
+    "step": "Açıklamasız gerçekleşmeyi gönderme denemesi",
+    "result": "BLOCKER",
+    "route": "/activity-sections/reports/31/workflow/submit",
+    "screenshot": "307-ozel_director.png",
+    "load_ms": 1484,
+    "note": "Sapma kontrolüne ulaşmadan bölüm tamamlanma kapısı engelledi: İçeriğe geç\nCivensa\nKurumsal raporlama\n\nPerformans Programı\n\nGenel Bakış\nVeri Girişi\n\nFaaliyet Raporu\n\nFaaliyet Raporu · EK-1\n\nİç Kontrol\n\nİç Kontrol Eylemlerimiz\n\nYönetim\n\nModüller\nGönderim Yetkileri\nParolamı Değiştir\nÇıkış\nBildirimler\nMüdürlük\nÖzel Kalem Müdürlüğü Müdür (SENTETİK)\nBirim faaliyet raporu işlemi tamamlanamadı\n\nBirim faaliyet raporu gönderilemedi. Şu bölümleri tamamlayın: A- Malî Bilgiler; 1- Bütçe Uygulama Sonuçları; 2- Temel Malî Tablolara İlişkin Açıklamalar\n\nRaporun son sürümünü aç",
+    "technical": [],
+    "server_errors": [],
+    "http": [
+      {
+        "route": "/activity-sections/reports/31/workflow/submit",
+        "status": 409
+      }
+    ],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "ozel_director",
+    "step": "Gönderim engelinden birim raporuna dön",
+    "result": "OK",
+    "route": "/activity-sections/reports/31",
+    "screenshot": "308-ozel_director.png",
+    "load_ms": 1204,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "ozel_staff",
+    "step": "Sapma gerekçesini tamamla",
+    "result": "OK",
+    "route": "/activity-reports/revisions/1",
+    "screenshot": "309-ozel_staff.png",
+    "load_ms": 1102,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "ozel_staff",
+    "step": "Gösterge gerçekleşmesi + kaynak",
+    "result": "OK",
+    "route": "/activity-reports/revisions/1",
+    "screenshot": "310-ozel_staff.png",
+    "load_ms": 1304,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "ozel_director",
+    "step": "Birim raporunu gönder öncesi",
+    "result": "OK",
+    "route": "/activity-sections/reports/31",
+    "screenshot": "311-ozel_director.png",
+    "load_ms": 1187,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "ozel_director",
+    "step": "Birim raporunu gönder",
+    "result": "BLOCKER",
+    "route": "/activity-sections/reports/31/workflow/submit",
+    "screenshot": "312-ozel_director.png",
+    "load_ms": 1325,
+    "note": "Beklenen durum: Gönderildi; görünen: İşlem tamamlanamadı hata sayfası; İçeriğe geç\nCivensa\nKurumsal raporlama\n\nPerformans Programı\n\nGenel Bakış\nVeri Girişi\n\nFaaliyet Raporu\n\nFaaliyet Raporu · EK-1\n\nİç Kontrol\n\nİç Kontrol Eylemlerimiz\n\nYönetim\n\nModüller\nGönderim Yetkileri\nParolamı Değiştir\nÇıkış\nBildirimler\nMüdürlük\nÖzel Kalem Müdürlüğü Müdür (SENTETİK)\nBirim faaliyet raporu işlemi tamamlanamadı\n\nBirim faaliyet raporu gönderilemedi. Şu bölümleri tamamlayın: A- Malî Bilgiler; 1- Bütçe Uygulama Sonuçları; 2- Temel Malî Tablolara İlişkin Açıklamalar\n\nRaporun son sürümünü aç",
+    "technical": [],
+    "server_errors": [],
+    "http": [
+      {
+        "route": "/activity-sections/reports/31/workflow/submit",
+        "status": 409
+      }
+    ],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "strategy",
+    "step": "Gönderilmiş birimin Strateji incelemesi",
+    "result": "BLOCKER",
+    "route": "/activity-sections/reports/31",
+    "screenshot": "313-strategy.png",
+    "load_ms": 1124,
+    "note": "Gönderim, Mali Hizmetler sahipli bölüm durumları nedeniyle tamamlanamadı; bu akış adımına ulaşılamadı.",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "strategy",
+    "step": "Gerekçeli iade",
+    "result": "BLOCKER",
+    "route": "/activity-sections/reports/31",
+    "screenshot": "314-strategy.png",
+    "load_ms": 1070,
+    "note": "Gönderim, Mali Hizmetler sahipli bölüm durumları nedeniyle tamamlanamadı; bu akış adımına ulaşılamadı.",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "ozel_staff",
+    "step": "İade üzerine düzeltme",
+    "result": "BLOCKER",
+    "route": "/activity-sections/reports/31",
+    "screenshot": "315-ozel_staff.png",
+    "load_ms": 1111,
+    "note": "Gönderim, Mali Hizmetler sahipli bölüm durumları nedeniyle tamamlanamadı; bu akış adımına ulaşılamadı.",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "ozel_director",
+    "step": "İade üzerine yeniden gönderim",
+    "result": "BLOCKER",
+    "route": "/activity-sections/reports/31",
+    "screenshot": "316-ozel_director.png",
+    "load_ms": 1117,
+    "note": "Gönderim, Mali Hizmetler sahipli bölüm durumları nedeniyle tamamlanamadı; bu akış adımına ulaşılamadı.",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "strategy",
+    "step": "Strateji bağımsız onayı",
+    "result": "BLOCKER",
+    "route": "/activity-sections/reports/31",
+    "screenshot": "317-strategy.png",
+    "load_ms": 1096,
+    "note": "Gönderim, Mali Hizmetler sahipli bölüm durumları nedeniyle tamamlanamadı; bu akış adımına ulaşılamadı.",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "strategy",
+    "step": "Onaylı birim Word indir",
+    "result": "BLOCKER",
+    "route": "/activity-sections/reports/31",
+    "screenshot": "318-strategy.png",
+    "load_ms": 1097,
+    "note": "Gönderim, Mali Hizmetler sahipli bölüm durumları nedeniyle tamamlanamadı; bu akış adımına ulaşılamadı.",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "strategy",
+    "step": "Onaylı birim PDF indir",
+    "result": "BLOCKER",
+    "route": "/activity-sections/reports/31",
+    "screenshot": "319-strategy.png",
+    "load_ms": 1151,
+    "note": "Gönderim, Mali Hizmetler sahipli bölüm durumları nedeniyle tamamlanamadı; bu akış adımına ulaşılamadı.",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "strategy",
+    "step": "Strateji gönderilemeyen birimi incele",
+    "result": "OK",
+    "route": "/activity-sections/reports/31",
+    "screenshot": "320-strategy.png",
+    "load_ms": 1150,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "strategy",
+    "step": "Taslak Word olarak indir · Özel Kalem Müdürlüğü",
+    "result": "OK",
+    "route": "/activity-sections/reports/31",
+    "screenshot": "321-strategy.png",
+    "load_ms": 678,
+    "note": "43391 bayt; SHA256: 7a4629f8a6683a04d630539a52c44f2b1076ac98f277c8cbd42798e9cb4a0a17; dosya başlığı doğrulandı.",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "strategy",
+    "step": "Taslak PDF olarak indir · Özel Kalem Müdürlüğü",
+    "result": "OK",
+    "route": "/activity-sections/reports/31",
+    "screenshot": "322-strategy.png",
+    "load_ms": 457,
+    "note": "61592 bayt; SHA256: 6a0238c0c4479bf2ba4109350e2c7e10957f8c2673e5c8a13038851be5a56142; dosya başlığı doğrulandı.",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "strategy",
+    "step": "İdare raporuna geçiş",
+    "result": "SLOW",
+    "route": "/activity-sections?period_id=2",
+    "screenshot": "323-strategy.png",
+    "load_ms": 11751,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "strategy",
+    "step": "İdare konsolidasyonu ve eksik birimler",
+    "result": "OK",
+    "route": "/activity-sections/reports/1",
+    "screenshot": "324-strategy.png",
+    "load_ms": 1662,
+    "note": "",
+    "technical": [],
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "strategy",
+    "step": "İdare raporunu onayla ve dondur denemesi",
+    "result": "BLOCKER",
+    "route": "/activity-sections/reports/1/freeze",
+    "screenshot": "325-strategy.png",
+    "load_ms": 1717,
+    "note": "Yalnız üç müdürlük provası; diğer birimlerin onayları ve idare içerikleri tamamlanmadı. Beklenen kapsam engeli.",
+    "technical": [],
+    "server_errors": [],
+    "http": [
+      {
+        "route": "/activity-sections/reports/1/freeze",
+        "status": 409
+      }
+    ],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  }
+]
