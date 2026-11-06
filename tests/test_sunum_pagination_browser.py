@@ -27,6 +27,11 @@ def pagination_deck():
                             percentage='%75', css='ok', status='Hedefte', expandable=False) for name in names]),
             dict(common, type='bullets', title='Görev ve sorumluluklar',
                  bullets=[name + ': ' + 'Vatandaş taleplerini değerlendirerek hizmetleri planlamak ve sonuçları raporlamak. ' * 2 for name in names]),
+            # Mixed lengths: two wrapped names + four short ones must stay one compact page of six.
+            dict(common, type='scorecard', title='Karma karne', summary=[dict(css='ok', display='6', label='müdürlük')],
+                 rows=[dict(name=name, measured_display='12', met_display='9', width=75, percentage='%75',
+                            css='ok', status='Hedefte', expandable=False)
+                       for name in [names[0] + ' · ' + names[0], names[1] + ' · ' + names[1]] + names[2:6]]),
             # Over the 10-unit budget by estimate, but still physically fits on its own slide.
             dict(common, type='table', title='Tek uzun satır', headers=['Açıklama', 'Adet'],
                  rows=[['Önce', 1], [LONG_ROW, 1], ['Sonra', 1]])]
@@ -75,6 +80,8 @@ def test_all_paginated_slides_clear_footer(tmp_path, pagination_deck, pdf):
             target = section.locator('xpath=..') if pdf else page.locator('body')
             target.screenshot(path=str(folder / f'{"pdf" if pdf else "normal"}-{kind}-{counts[kind]:02}.png'))
         assert all(count > 1 for count in counts.values())
+        mixed = sections.filter(has=page.locator('h2', has_text='Karma karne'))
+        assert mixed.count() == 1 and mixed.first.locator('.score .r').count() == 6
         long_sections = sections.filter(has=page.locator('h2', has_text='Tek uzun satır'))
         assert long_sections.count() == 3
         assert long_sections.nth(1).locator('tbody tr').count() == 1

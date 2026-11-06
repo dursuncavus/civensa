@@ -38,9 +38,9 @@ def pages(items, limit):
 # ceil(total characters / capacity) alone misses the unused ends of lines.
 # A wrapped line adds only its line height, not a whole row (padding, borders,
 # gaps stay once per row), so extra lines cost a fraction of a row unit
-# (measured at 1920×1080: table 35/64 px, scorecard name 37/116, bullet 54/90).
+# (measured at 1920×1080: table 35/64 px, bullet 54/90; scorecards by height).
 CHAR_EM = .58
-EXTRA_LINE = {'table': .6, 'scorecard': .4, 'bullets': .6}
+EXTRA_LINE = {'table': .6, 'bullets': .6}
 CONTENT_WIDTH = 1920 - 2 * 120
 SCORE_NAME_WIDTH = CONTENT_WIDTH - 2 * 32 - 2 - 450 - 130 - 170 - 3 * 28
 BULLET_WIDTH = 1500 - 56
@@ -84,12 +84,43 @@ def line_pages(items, maximum, estimate, budget=None):
     return result
 
 
+# meclis.css: rows are full size up to five; a sixth row switches the whole
+# list to the compact layout (.score:has(.r:nth-child(6))). Heights in px,
+# measured at 1920×1080: full row 104 (+36.4 per extra name line), compact
+# row 81 (+31.2), subline 24 per extra line, gap 14. Five full single-line
+# rows (576 px) are the most that clear the footer with summary and the
+# "Tablo n/N" counter; a slide that needs no second page has no counter and
+# may use that line too (e.g. six compact rows with two wrapped names, 619 px).
+SCORE_HEIGHT = 590
+SCORE_HEIGHT_ALONE = 625
+SCORE_ROW = {False: (104, 36.4), True: (81, 31.2)}
+
+
 def scorecard_lines(row):
-    # One ordinary row already includes one name line and one small subline.
     name = estimated_lines(row['name'], SCORE_NAME_WIDTH, 28)
     subline = f"{row.get('measured_display', '')} göstergenin {row.get('met_display', '')}'i hedefte"
-    extra = name + estimated_lines(subline, SCORE_NAME_WIDTH, 20) - 2
-    return 1 + EXTRA_LINE['scorecard'] * extra
+    return name, estimated_lines(subline, SCORE_NAME_WIDTH, 20)
+
+
+def scorecard_fits(rows, limit=SCORE_HEIGHT):
+    compact = len(rows) >= 6
+    base, extra = SCORE_ROW[compact]
+    height = 14 * (len(rows) - 1)
+    for row in rows:
+        name, subline = scorecard_lines(row)
+        height += base + extra * (name - 1) + 24 * (subline - 1)
+    return height <= limit
+
+
+def fit_pages(items, maximum, fits):
+    """Largest group from the front that fits; its height depends on its size."""
+    result, start = [], 0
+    while start < len(items):
+        size = next((k for k in range(min(maximum, len(items) - start), 0, -1)
+                     if fits(items[start:start + k])), 1)
+        result.append(items[start:start + size])
+        start += size
+    return result
 
 
 def row_units(kind, lines):
@@ -137,7 +168,9 @@ def prepare_slides(slides):
                 (estimated_lines(cell, width, 28) for cell in row), default=1)))
             alignment = numeric_columns(slide['headers'], slide['rows'])
         elif kind == 'scorecard':
-            groups = line_pages(slide['rows'], 6, scorecard_lines)
+            rows = slide['rows']
+            alone = len(rows) <= 6 and scorecard_fits(rows, SCORE_HEIGHT_ALONE)
+            groups = [rows] if alone and rows else fit_pages(rows, 6, scorecard_fits)
         elif kind == 'bullets':
             groups = line_pages(slide['bullets'], 5,
                                 lambda value: row_units('bullets', estimated_lines(value, BULLET_WIDTH, 40)),

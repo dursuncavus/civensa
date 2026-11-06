@@ -45,6 +45,7 @@ def test_short_decks_are_byte_identical_to_fixed_count_pagination(monkeypatch, k
     actual = engine.render_deck([slide], title='Test', code='TASLAK')
     # Independent old behaviour, exercising the full template including IDs/delays.
     monkeypatch.setattr(engine, 'line_pages', lambda items, maximum, estimate, budget=None: engine.pages(items, maximum))
+    monkeypatch.setattr(engine, 'fit_pages', lambda items, maximum, fits: engine.pages(items, maximum))
     assert engine.render_deck([slide], title='Test', code='TASLAK') == actual
 
 
@@ -62,3 +63,15 @@ def test_single_oversize_item_keeps_neighbours_on_separate_pages(kind):
 @pytest.mark.parametrize('kind', ['table', 'scorecard', 'bullets'])
 def test_empty_paginated_slide_stays_empty(kind):
     assert engine.prepare_slides([dict(type=kind, rows=[], bullets=[], headers=['Adı'])]) == []
+
+
+def test_scorecard_respects_compact_layout_heights():
+    # Codex P2 (#413): 2 wrapped + 4 short names. Alone they fit as one compact
+    # page of six; inside a longer list every page must fit with its counter.
+    long = 'Afet İşleri ve Risk Değerlendirme Müdürlüğü · Afet İşleri ve Risk Değerlendirme Müdürlüğü'
+    mixed = [dict(name=long)] * 2 + [dict(name=f'Birim {i}') for i in range(4)]
+    assert [len(s['rows']) for s in engine.prepare_slides([dict(type='scorecard', rows=mixed)])] == [6]
+    groups = engine.prepare_slides([dict(type='scorecard', rows=mixed * 3)])
+    assert sum(len(s['rows']) for s in groups) == 18
+    assert all(engine.scorecard_fits(s['rows']) for s in groups)
+    assert not engine.scorecard_fits(mixed[:5])  # five full-size rows with two wrapped names overflow
