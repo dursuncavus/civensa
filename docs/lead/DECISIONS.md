@@ -1430,3 +1430,16 @@ Next IDs: task CIV-188, decision D-433.
 ## D-433 (6 Nov 2026 14:36 Istanbul, owner, live session CV Lider 67) — running commit confirmed
 DOĞRULANDI from the owner's pasted Render deploy line (14:36): main b15abf3 is the live deploy. Closes the BELİRSİZ in D-432: CIV-186 pagination is live.
 Next IDs: task CIV-188, decision D-434.
+
+## D-434 (6 Nov 2026 ~15:00–15:40 Istanbul, lead, live session CV Lider 68) — CIV-187 rehearsal reviewed and merged; CIV-188 dispatched; B2 to Ali
+DOĞRULANDI: Gmail (1 day, Civensa/FR/Ali) — no mail from Ali Abi.
+DOĞRULANDI #419 CIV-187 (Codex, head 527b8ad) against tasks/CIV-187.md: no app code; scripts/fr_rehearsal.py + guide_screenshots.py --fr-rehearsal mode (reuses the existing harness), tests/test_fr_rehearsal_harness.py, report + findings + steps.json; 325 steps (289 OK / 31 BLOCKER / 5 SLOW), 325 PNG = 26,3 MB (largest 156 KB). CI green on 527b8ad; branch updated (behind 4, lead records only) → merged after green (see CI line).
+Lead check of findings on phase5 code:
+- B1 CONFIRMED: ar_unit_workflow_service.completeness() needs status ready/not_applicable for every section; in unit reports III.A, III.A.1, III.A.2 are finance-owned and not editable by the directorate → unit submit always 409. CIV-166 moved only the financial items to warnings, not the section status. Contradicts D-367 → fix in CIV-188. Consequence: return/resubmit/approve/approved downloads were never proven (30 of 31 BLOCKERs follow from B1).
+- B2 (no per-activity actual entry): not accepted as a directorate-entry fix yet. Activity cost actuals come from Mali Hizmetler (ML1, budget accounting); whether directorates must also enter a non-cost result per activity is Ali's call → ask Ali 9 Nov; no task before his answer.
+- H1, H2, L1, L2 accepted → CIV-188. H3 (SLOW, loopback) → measure on Render later; L3 (native file input text) → no action (localised by a Turkish browser).
+- Count note: the loader yields 105 cards / 182 local activities / 226 indicators (same as CIV-175); STATE "105 activities" means cards.
+CI: after update-branch (Markdown only) shard 0 failed once in tests/test_activity_mapping_design.py::test_browser_contract_layout_flows_and_evidence[populated-before-390] (IndexError, unrelated, green on 527b8ad) → re-run green on 2723002 → squash-merged 71fe3c8.
+Repo size note: full-set screenshots (26 MB) are not repeated; CIV-188 commits only changed/blocked steps.
+Decision: CIV-188 (Codex, GPT-6.1 Sol, yüksek) — B1 + H1 + H2 + L1 + L2, proven by re-running the CIV-187 rehearsal; package tasks/CIV-188.md.
+Next IDs: task CIV-189, decision D-435.
