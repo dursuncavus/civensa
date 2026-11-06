@@ -522,16 +522,23 @@ def report_data(db,user,document_id,use_freeze=True,version=None,include_typeset
             'parent_id':definition.parent_id,'depth':definition.code.count('.'),
             'owner':owner(definition,doc),'content_kind':definition.content_kind,**content_data(content)}
         missing=[]
+        warnings=list(result['financial']['warnings'].get(definition.code,[]))
         if definition.code==CORE:
             row['status']=core['status']
             if core['status']!='ready':missing.append(core['message'])
         else:
-            if content.status in {'empty','draft'}:missing.append('Bölüm içeriğini gözden geçirip Hazır veya gerekçeli Uygulanamaz seçin.')
-            if content.copied_needs_review:missing.append('Geçen yıldan kopyalandı — gözden geçirin')
+            # D-367: the directorate cannot complete centrally owned content.
+            # Keep its open content in the existing finance warning channel.
+            content_issues=[]
+            if content.status in {'empty','draft'}:content_issues.append('Bölüm içeriğini gözden geçirip Hazır veya gerekçeli Uygulanamaz seçin.')
+            if content.copied_needs_review:content_issues.append('Geçen yıldan kopyalandı — gözden geçirin')
+            if doc.department_id and row['owner']=='finance':
+                warnings.extend('Mali Hizmetler: '+issue+' Bu içerik birim raporunun gönderimini engellemez, Mali Hizmetler\'e bildirin.' for issue in content_issues)
+            else:missing+=content_issues
         if content.status!='not_applicable' or has_slot_data(result['financial'],definition.code):
             missing+=result['financial']['missing'].get(definition.code,[])
         row['missing']=missing
-        row['warnings']=list(result['financial']['warnings'].get(definition.code,[]))
+        row['warnings']=warnings
         row['editor_name']=db.get(User,content.edited_by).full_name if content.edited_by else '—'
         if definition.code == 'EKLER':
             from .assurance_service import slot
