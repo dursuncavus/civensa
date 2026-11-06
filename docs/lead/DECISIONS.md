@@ -1420,3 +1420,9 @@ Lead answer (DOĞRULANDI from records): yes — D-361 FR3: directorates enter 20
 Decisions (lead): (1) CIV-187 (Codex, GPT-6.1 Sol, orta) — automated directorate + Strateji rehearsal of the whole 2026 FR path on a disposable DB, findings only; package tasks/CIV-187.md. Findings become fix tasks. (2) Lead drafts the directorate rollout checklist (accounts/roles, Render Starter on rollout day per D-351, guide, rehearsal, backup, support channel) after CIV-187's findings, for owner approval. (3) Ali-dependent after 9 Nov: indicator-actuals Excel import (FR5), 2026 mapping + publish, directorate user list.
 Release PR #415 (phase5 → main, CIV-186 only, no migration) opened by the lead; owner merges + Render deploy so the fix is live before Ali's 9 Nov use.
 Next IDs: task CIV-188, decision D-432.
+
+## D-432 (6 Nov 2026 ~14:35 Istanbul, owner + lead, live session CV Lider 67) — release #415 (CIV-186) merged and deployed
+DOĞRULANDI: owner merged #415 phase5 → main at 10:55Z → main b15abf3, before its tests had finished (the same code was CI-green on 6322759; the later commits were Markdown only). Tests on the PR head 65fa3b8 then finished green (run 42205969048). Owner told to wait for green next time.
+BEYAN (owner 13:58): Render "Deploy latest commit" done. DOĞRULANDI from the owner's pasted /health (14:35): status ok, ready, database ok, migration c185a1b2c3d4 = head (no migration in this release, as expected). /health does not show the commit → running commit b15abf3 BELİRSİZ until Render Events shows it.
+Result: CIV-186 pagination live for Ali Abi's 9 Nov use (pending the commit check).
+Next IDs: task CIV-188, decision D-433.
