@@ -22,7 +22,45 @@ CANCELLED = False
 SYNTHETIC = 'SENTETİK CIV-188 provası: 2026 faaliyetleri yerel deneme kayıtlarıyla değerlendirilmiştir.'
 
 
-def setup(engine):
+# A stable, small selection from the existing end-to-end walk. Titles are
+# harness step identifiers, not UI copy. Other rehearsal captures stay temporary.
+GUIDE_SHOTS = {
+    'Giriş ekranı': '01-giris',
+    'Kılavuz mobil giriş': '02-giris-mobil',
+    'Kılavuz ilk parola': '03-ilk-parola',
+    'Kılavuz mobil ilk parola': '04-ilk-parola-mobil',
+    'Hesapla giriş': '05-moduller',
+    'Müdürlük 2026 gösterge raporunu bul': '06-gosterge-raporlari',
+    '2026 gösterge girişini aç': '07-gosterge-ozet',
+    'Kılavuz gerçekleşme alanları': '08-gerceklesme',
+    'Kılavuz kanıt alanları': '09-kanit',
+    'Kılavuz sapma açıklaması': '10-sapma',
+    'Müdürlük 2026 birim raporunu bul': '11-birim-raporlari',
+    'Kılavuz bölüm alanları': '12-bolum',
+    'Kılavuz uygulanamaz': '13-uygulanamaz',
+    'Harcama yetkilisi güvence beyanı': '14-ek2',
+    'Mali Hizmetler uyarıları': '15-mali-uyarilar',
+    'Sapma açıklaması boşken gönderim kontrolü': '16-gonder',
+    'Açıklamasız gerçekleşmeyi gönderme denemesi': '17-gonderim-engeli',
+    'Birim raporunu gönder': '18-gonderildi',
+    'İade notunu gör ve düzelt': '19-iade',
+    'İade notuna göre düzeltmeyi kaydet': '20-duzeltme',
+    'Düzelt ve yeniden gönder': '21-yeniden-gonder',
+    'Kılavuz onaylı indirme': '22-onayli-indirme',
+}
+
+
+def guide_filename(role, title):
+    if role != ('fen_director' if title in {
+            'Sapma açıklaması boşken gönderim kontrolü',
+            'Açıklamasız gerçekleşmeyi gönderme denemesi', 'Birim raporunu gönder',
+            'Düzelt ve yeniden gönder', 'Kılavuz onaylı indirme'} else 'fen_staff'):
+        return None
+    name = GUIDE_SHOTS.get(title)
+    return name + '.png' if name else None
+
+
+def setup(engine, *, guide=False):
     from sqlalchemy import select
     from sqlalchemy.orm import Session
     from app.models import Department, ReportingPeriod, User
@@ -45,7 +83,7 @@ def setup(engine):
         strategy.full_name = 'Strateji Müdürü (SENTETİK)'
         strategy.password_hash = hash_password(password)
         db.commit()
-        data = dict(rehearsal=True, accounts={'strategy':strategy.email}, password=password,
+        data = dict(rehearsal=True, guide=guide, accounts={'strategy':strategy.email}, password=password,
                     period=db.scalar(select(ReportingPeriod.id).where(ReportingPeriod.year == 2026)),
                     units=[], book=str(book.relative_to(ROOT)), book_sha256=digest,
                     counts=inspection['applied'], _server_errors=[])
@@ -57,12 +95,15 @@ def setup(engine):
                 account = f'{key}_{position}'
                 user = User(email=f'civ188.{account}@example.invalid', full_name=f'{name} {"Personel" if position == "staff" else "Müdür"} (SENTETİK)',
                     role='department', department_id=dep.id, position=position, is_active=True,
-                    password_hash=hash_password(password))
+                    password_hash=hash_password(password),
+                    must_change_password=guide and account == 'fen_staff')
                 prepare_user_creation(db, strategy, user)
                 db.add(user)
                 commit_user_change(db)
                 data['accounts'][account] = user.email
             data['units'].append({'key':key, 'name':name, 'department_id':dep.id})
+        if guide:
+            data['units'] = [unit for unit in data['units'] if unit['key'] == 'fen']
         return data
 
 
@@ -93,6 +134,15 @@ class Rehearsal:
                 'Hesapla giriş', '390 piksel giriş formu alanları', 'Doğrulanmamış hedefin sonraki adımı'}))
         full = self.folder / 'full-screenshots'
         full.mkdir(exist_ok=True)
+        if self.data.get('guide'):
+            name = guide_filename(role, title)
+            keep = name is not None and not any(
+                row['screenshot'] == name for row in self.steps)
+            if keep:
+                shot = Shot(name, shot.path, title, role)
+        if self.data.get('guide') and keep and title == 'Mali Hizmetler uyarıları':
+            page.locator('[aria-label="Malî bilgi uyarıları"]').evaluate(
+                "el => el.scrollIntoView({block: 'center'})")
         target = (SCREENS if keep else full) / shot.filename
         check(self.data['password'] not in page.content(), 'Parola sayfa içeriğinde bulundu.')
         page.screenshot(path=str(target), animations='disabled', caret='hide')
@@ -147,14 +197,32 @@ class Rehearsal:
     def login(self, role):
         page=self.pages[role]
         self.goto(page,role,'/login','Giriş ekranı')
+        if self.data.get('guide') and role == 'fen_staff':
+            page.set_viewport_size({'width':390,'height':900})
+            self.goto(page,role,'/login','Kılavuz mobil giriş')
+            page.set_viewport_size({'width':1440,'height':900})
         page.locator('[name=email]').fill(self.data['accounts'][role])
         page.locator('[name=password]').fill(self.data['password'])
-        self.click(page,role,page.get_by_role('button', name='Giriş yap', exact=False),'Hesapla giriş')
+        self.click(page,role,page.get_by_role('button', name='Giriş yap', exact=False),'İlk hesapla giriş' if self.data.get('guide') and role == 'fen_staff' else 'Hesapla giriş')
+        if self.data.get('guide') and role == 'fen_staff':
+            check(urlsplit(page.url).path == '/change-password', 'İlk parola ekranı açılmadı.')
+            self.goto(page, role, '/change-password', 'Kılavuz ilk parola')
+            page.set_viewport_size({'width':390,'height':900})
+            self.goto(page, role, '/change-password', 'Kılavuz mobil ilk parola')
+            page.set_viewport_size({'width':1440,'height':900})
+            new_password = secrets.token_urlsafe(32)
+            page.locator('#firstCurrentPassword').fill(self.data['password'])
+            page.locator('#firstNewPassword').fill(new_password)
+            page.locator('#firstConfirmPassword').fill(new_password)
+            page.get_by_role('button', name='Parolamı belirle ve devam et').click()
+            page.wait_for_url(self.base+'/modules')
+            self.goto(page, role, '/modules', 'Hesapla giriş')
         check(urlsplit(page.url).path == '/modules', 'UI girişi modüllere ulaşmadı.')
         return page
 
     def write(self):
-        (OUT/'steps.json').write_text(json.dumps(self.steps, ensure_ascii=False, indent=2)+'\n')
+        rows = [s for s in self.steps if s['screenshot_retained']] if self.data.get('guide') else self.steps
+        (OUT/'steps.json').write_text(json.dumps(rows, ensure_ascii=False, indent=2)+'\n')
 
     def actual(self,page,role,action,explanation,attach=False):
         form=page.locator(f'form[action="{action}"]')
@@ -166,6 +234,22 @@ class Rehearsal:
         form.locator('[name=explanation]').fill(explanation)
         if attach:
             form.locator('[type=file]').first.set_input_files(str(self.folder/'sentetik-kanit.pdf'))
+        if self.data.get('guide') and role == 'fen_staff':
+            for selector,title in [('[name=value]', 'Kılavuz gerçekleşme alanları'),
+                                   ('[name=source_title]', 'Kılavuz kanıt alanları'),
+                                   ('[name=explanation]', 'Kılavuz sapma açıklaması')]:
+                name = guide_filename(role, title)
+                if any(row['screenshot'] == name for row in self.steps) or (selector == '[name=explanation]' and not explanation):
+                    continue
+                start=self.begin()
+                if title == 'Kılavuz kanıt alanları':
+                    form.locator('[data-evidence-row]').first.evaluate(
+                        "el => el.scrollIntoView({block: 'center'})")
+                elif title == 'Kılavuz gerçekleşme alanları':
+                    form.evaluate("el => el.scrollIntoView({block: 'start'})")
+                else:
+                    form.locator(selector).first.scroll_into_view_if_needed()
+                self.capture(page,role,title,start)
         expected=int(form.locator('[name=expected_revision]').input_value())+1
         self.click(page,role,form.get_by_role('button',name='Yeni gerçekleşme revizyonu kaydet'),
                    'Gösterge gerçekleşmesi + '+('dosya kanıtı' if attach else 'kaynak')+(' (açıklama boş)' if not explanation else ''))
@@ -189,12 +273,17 @@ class Rehearsal:
             form.locator('[name=status]').select_option('not_applicable' if inapplicable else 'ready')
             if inapplicable:
                 form.locator('[name=reason]').fill('SENTETİK prova: bu müdürlük için denetim/yardım olayı kurgulanmadı.')
+            if self.data.get('guide') and role == 'fen_staff':
+                start=self.begin(); form.scroll_into_view_if_needed()
+                self.capture(page,role,'Kılavuz uygulanamaz' if inapplicable else 'Kılavuz bölüm alanları',start)
             self.click(page,role,form.get_by_role('button',name='Bölümü kaydet'),'Bölüm metni kaydet: '+link['text'])
             check(page.locator('[role=alert]').count()==0, 'Bölüm kaydında beklenmeyen hata.')
-        self.goto(page,role,document+'/assurances/EK-2','Harcama yetkilisi güvence beyanı')
+        self.goto(page,role,document+'/assurances/EK-2','EK-2 aç' if self.data.get('guide') else 'Harcama yetkilisi güvence beyanı')
         values={'place':'Prova Belediyesi (SENTETİK)','date':'2027-01-15','person_ref_0':'CIV188-SENTETIK',
             'name_0':'Prova Müdürü (SENTETİK)','title_0':'Müdür','start_date_0':'2026-01-01','end_date_0':'2026-12-31'}
         for field,value in values.items(): page.locator(f'[name="{field}"]').fill(value)
+        if self.data.get('guide'):
+            self.capture(page,role,'Harcama yetkilisi güvence beyanı',self.begin())
         self.click(page,role,page.get_by_role('button',name='Beyan alanlarını kaydet'),'EK-2 beyan alanlarını kaydet')
 
     def workflow(self,page,role,document,label,title,expected):
@@ -335,6 +424,11 @@ class Rehearsal:
             check(strategy.locator('[data-ar-workflow-status]').inner_text()=='Onaylandı','Birim onaylanamadı.')
             approvals.append(unit['key'])
             self.downloads(strategy,unit,'Onaylı')
+            if self.data.get('guide') and unit['key']=='fen':
+                self.goto(director,director_role,document,'Kılavuz onaylı raporu aç')
+                director.locator('[data-section-export] summary').click()
+                self.capture(director,director_role,'Kılavuz onaylı indirme',self.begin())
+                self.downloads(director,unit,'Onaylı müdürlük',role=director_role)
         self.goto(strategy,'strategy',f'/activity-sections?period_id={pid}','İdare raporuna geçiş')
         groups=strategy.locator('article.report-group')
         institution=next(g for g in groups.all() if 'İdare' in g.locator('h3').inner_text())
@@ -345,13 +439,15 @@ class Rehearsal:
                        'Yalnız üç müdürlük provası; diğer birimlerin onayları ve idare içerikleri tamamlanmadı. Beklenen kapsam engeli.')
         check(any(r['status']==409 for r in row['http']),'Eksik İdare raporu dondurma denemesi reddedilmedi.')
         self.data['approvals']=approvals
-        check(approvals==['fen','afet','ozel'],'Üç müdürlüğün bağımsız onayı tamamlanamadı.')
+        expected_units = [unit['key'] for unit in self.data['units']]
+        check(approvals==expected_units,'Prova müdürlüklerinin bağımsız onayı tamamlanamadı.')
         blockers=[step for step in self.steps if step['result']=='BLOCKER']
-        check(len(blockers)==4 and sum(step['step']=='Faaliyet gerçekleşmesi girişi ara' for step in blockers)==3,
+        check(len(blockers)==len(expected_units)+1 and sum(step['step']=='Faaliyet gerçekleşmesi girişi ara' for step in blockers)==len(expected_units),
               'B2 ve beklenen İdare kapsam sınırı dışında engel kaldı.')
 
-    def downloads(self,page,unit,status):
-        page.locator('[data-section-export] summary').click()
+    def downloads(self,page,unit,status,role='strategy'):
+        if page.locator('[data-section-export]').get_attribute('open') is None:
+            page.locator('[data-section-export] summary').click()
         for label,magic in [('Word olarak indir',b'PK'),('PDF olarak indir',b'%PDF')]:
             start=self.begin()
             with page.expect_download(timeout=180000) as info:
@@ -359,7 +455,7 @@ class Rehearsal:
             download=info.value; local=Path(download.path())
             raw=local.read_bytes()
             check(raw.startswith(magic),'İndirme dosya biçimi beklenenden farklı.')
-            self.capture(page,'strategy',status+' '+label+' · '+unit['name'],start,
+            self.capture(page,role,status+' '+label+' · '+unit['name'],start,
                          note=f'{len(raw)} bayt; SHA256: {hashlib.sha256(raw).hexdigest()}; dosya başlığı doğrulandı.')
 
     def blocked_followups(self,document,unit):
@@ -459,13 +555,14 @@ def write_report(rehearsal, failed):
     (OUT/'report.md').write_text('\n'.join(line.rstrip() for line in lines))
 
 
-def run(url):
+def _run(url, *, guide=False):
     from scripts.first_load_dryrun import environment
     from tests.first_load_checkpoint import disposable_first_load_database
     OUT.mkdir(parents=True,exist_ok=True); SCREENS.mkdir(parents=True,exist_ok=True)
     # Delete only this scenario's previously generated numbered images.
-    for path in SCREENS.glob('[0-9][0-9][0-9]-*.png'): path.unlink()
-    for path in (OUT/'steps.json',OUT/'run.json',OUT/'report.md',OUT/'unexpected.txt'):
+    for path in SCREENS.glob('[0-9][0-9]-*.png' if guide else '[0-9][0-9][0-9]-*.png'): path.unlink()
+    outputs = ['steps.json', 'run.json', 'unexpected.txt'] + ([] if guide else ['report.md'])
+    for path in (OUT/name for name in outputs):
         path.unlink(missing_ok=True)
     rehearsal=None; failed=False
     global CANCELLED
@@ -480,7 +577,7 @@ def run(url):
             with disposable_first_load_database(url) as engine:
                 import app.db as app_db
                 app_db.engine.dispose(); app_db.engine=engine; app_db.SessionLocal.configure(bind=engine)
-                data=setup(engine)
+                data=setup(engine, guide=guide)
                 # The operational importer is pinned; bring disposable schema back to
                 # current head before the first browser action, using existing migrations.
                 from alembic import command
@@ -524,5 +621,47 @@ def run(url):
         (OUT/'unexpected.txt').unlink(missing_ok=True)
     if rehearsal:
         rehearsal.write()
-        write_report(rehearsal,failed)
+        if guide:
+            write_guide_index(rehearsal, failed)
+        else:
+            write_report(rehearsal,failed)
     return 1 if failed else 0
+
+
+def write_guide_index(rehearsal, failed):
+    rows = [row for row in rehearsal.steps if row['screenshot_retained']]
+    expected = {name+'.png' for name in GUIDE_SHOTS.values()}
+    actual = {row['screenshot'] for row in rows}
+    if not failed:
+        check(actual == expected, 'Kılavuz ekran listesi tamamlanmadı.')
+    commit = subprocess.check_output(['git','rev-parse','HEAD'],cwd=ROOT,text=True).strip()
+    lines = ['# CIV-189 · Müdürlük FR 2026 · ekran görüntüleri', '',
+        'Yenileme: `python scripts/guide_screenshots.py --fr-guide`.', '',
+        'Yalnız yerel PostgreSQL 16+ için `CIVENSA_TEST_POSTGRES_URL` kullanılır. '
+        'Geçici veritabanı koşu sonunda silinir. Canlı veritabanına bağlanılmaz.', '',
+        f'Kaynak kod: `{commit}`. Chromium: `{rehearsal.data["browser"]}`.',
+        f'2026 kitap SHA-256: `{rehearsal.data["book_sha256"]}`.', '',
+        'Veri notu: **SENTETİK**. Kurumsal başlık ve hedefler test kitabından; hesaplar, '
+        'gerçekleşmeler, kanıt, beyan, iade ve onay deneme verisidir. Gerçek kişi adı yoktur. '
+        'Parolalar rastgele üretilir, görsellere ve dosyalara yazılmaz.', '',
+        '1440×900; yalnız giriş ve ilk parola ekranları ayrıca 390×900. '
+        'deviceScaleFactor 1 · tr-TR · Europe/Istanbul · açık tema. '
+        'Tarih ve kayıt kimlikleri değişebilir; bayt eşitliği beklenmez. '
+        'Adım listesi sabittir. Her PNG ≤ 1.500.000 bayt; toplam ≤ 40.', '',
+        '| Dosya | Harness adımı | Hesap | URL | Viewport |',
+        '| --- | --- | --- | --- | --- |']
+    for row in sorted(rows,key=lambda r:r['screenshot']):
+        lines.append(f"| [{row['screenshot']}](img/{row['screenshot']}) | {row['step']} | {row['role']} | `{row['route']}` | {row['viewport']['width']}×900 |")
+    (SCREENS.parent/'INDEX.md').write_text('\n'.join(lines)+'\n')
+
+
+def run(url, *, guide=False):
+    global OUT, SCREENS
+    previous = OUT, SCREENS
+    if guide:
+        OUT = ROOT/'docs/reports/civ-189'
+        SCREENS = ROOT/'docs/guides/mudurluk-fr-2026/img'
+    try:
+        return _run(url, guide=guide)
+    finally:
+        OUT, SCREENS = previous
