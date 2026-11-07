@@ -1457,3 +1457,13 @@ CI on e8f546f: test (18,0) + test (18,1), secrets, backup-security success; full
 Merge attempt (PUT /pulls/421/merge, sha e8f546f) refused by the session permission check (same as D-213/D-255). Left for the live session / owner: https://github.com/dursuncavus/civensa/pull/421
 DeepSeek mirror GUNCEL-DURUM.md not reachable from a scheduled run; the lead refreshes it in the next live session with the Mac linked.
 Next IDs: task CIV-189, decision D-436.
+
+## D-436 (7 Nov 2026 ~22:10 Istanbul, lead, live session CV Lider 69) — session audit; CIV-188 #421 merged; D-435 records merged
+Session: CV Lider 69 · Claude Opus 5.5 · civensa-lead (skill loaded from the account skills; BEYAN owner 22:06 opening line).
+DOĞRULANDI audit (REST, 19:10Z): open PRs #422 (D-435 night record, guard green, behind 0), #421 (CIV-188, CI green on e8f546f, behind 0, mergeable clean), #382 (CIV-179, PARKED per D-410). No other lead/* branch after D-435. Drive "Civensa Yedek Kaydı" last modified 23 Oct 22:37Z → no backup-lead entries to re-check.
+BELİRSİZ: Gmail check for Ali Abi after the 05:43 night check — the Gmail search was refused by this session's permission check; D-435 (05:43) found no mail. Next session repeats the check.
+DOĞRULANDI live re-review of #421 (independent of D-435): code diff read — completeness() skips only the section-status clause for finance-owned sections of unit reports; 'missing' and not_applicable-without-reason still block; open finance content moved into the existing warnings list with a Turkish "gönderimi engellemez" note; İdare reports unchanged. app.js replaces .indicator-report-summary from the server response; target macro escapes raw_text (Jinja autoescape); evidence label text only, field name unchanged. Agrees with D-435: no HIGH/MEDIUM. LOW (watch only): a finance-owned section set to Uygulanamaz without a reason still blocks the unit submit — Mali Hizmetler must give the reason; check in the rollout rehearsal.
+Merged by the lead: #421 squash → 891f9ee (head e8f546f, CI green, behind 0). #422 D-435 records merged together with these records.
+Decision: CIV-188 goes live with the next release phase5 → main (no migration); no separate release now — directorates are not opened yet (D-351/D-352) and nothing in CIV-188 is needed for Ali Abi's 9 Nov use.
+Next (lead): draft the directorate rollout checklist (D-431) for owner approval; 9 Nov: Ali's answers (B2, lower-is-better, 2026 mapping, Onay dayanağı).
+Next IDs: task CIV-189, decision D-437.
