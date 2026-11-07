@@ -140,6 +140,9 @@ class Rehearsal:
                 row['screenshot'] == name for row in self.steps)
             if keep:
                 shot = Shot(name, shot.path, title, role)
+        if self.data.get('guide') and keep and title == 'Mali Hizmetler uyarıları':
+            page.locator('[aria-label="Malî bilgi uyarıları"]').evaluate(
+                "el => el.scrollIntoView({block: 'center'})")
         target = (SCREENS if keep else full) / shot.filename
         check(self.data['password'] not in page.content(), 'Parola sayfa içeriğinde bulundu.')
         page.screenshot(path=str(target), animations='disabled', caret='hide')
@@ -239,7 +242,13 @@ class Rehearsal:
                 if any(row['screenshot'] == name for row in self.steps) or (selector == '[name=explanation]' and not explanation):
                     continue
                 start=self.begin()
-                form.locator(selector).first.scroll_into_view_if_needed()
+                if title == 'Kılavuz kanıt alanları':
+                    form.locator('[data-evidence-row]').first.evaluate(
+                        "el => el.scrollIntoView({block: 'center'})")
+                elif title == 'Kılavuz gerçekleşme alanları':
+                    form.evaluate("el => el.scrollIntoView({block: 'start'})")
+                else:
+                    form.locator(selector).first.scroll_into_view_if_needed()
                 self.capture(page,role,title,start)
         expected=int(form.locator('[name=expected_revision]').input_value())+1
         self.click(page,role,form.get_by_role('button',name='Yeni gerçekleşme revizyonu kaydet'),
