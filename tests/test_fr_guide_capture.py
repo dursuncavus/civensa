@@ -29,7 +29,7 @@ def test_committed_guide_contract():
         assert body.count(placeholder) == 1
     assert 'Destek kanalı: Strateji Geliştirme Müdürlüğü duyuracak.' in body
     sources = [p for p in (ROOT/'app/templates').rglob('*') if p.is_file()]
-    sources += list((ROOT/'app/static').rglob('*.js'))
+    sources += [p for p in (ROOT/'app/static').rglob('*.js') if p.is_file()]
     # All quoted UI text must exist verbatim; no normalized/paraphrased labels.
     for label in set(re.findall(r'`([^`]+)`', body)):
         assert any(label in p.read_text() for p in sources), label

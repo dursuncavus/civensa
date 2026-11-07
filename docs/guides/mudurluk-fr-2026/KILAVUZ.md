@@ -46,7 +46,7 @@ Girişten sonra `Gösterge gerçekleşmelerine gir` bağlantısıyla göstergele
 
    ![Gösterge özeti](img/07-gosterge-ozet.png)
 
-3. Göstergenin `Yeni gerçekleşme gir` alanına ilerleyin. `Gerçekleşme (ondalık için virgül kullanın)` alanına sonucu yazın. Ondalık sayı için virgül kullanın: 12,5. Değeri bilmiyorsanız sıfır yazmayın; boş bırakın.
+3. Göstergenin `Yeni gerçekleşme gir` alanına ilerleyin. `Gerçekleşme (ondalık için virgül kullanın)` alanına sonucu yazın. Ondalık sayı için virgül kullanın: 12,5. Değeri bilmiyorsanız sıfır yazmayın; alanı boş bırakıp `Eksik` seçin.
 
    `Veri durumu` seçin:
 
@@ -71,7 +71,7 @@ Girişten sonra `Gösterge gerçekleşmelerine gir` bağlantısıyla göstergele
 
    ![Birim raporları ve bölümler](img/11-birim-raporlari.png)
 
-2. Müdürlüğünüzün sorumlu olduğu bölümde `Bölüm içeriği` alanını doldurun. `Durum` alanından içeriğin durumunu seçin. `Bölümü kaydet` düğmesine basın. Diğer bölümler için aynı işlemi yapın.
+2. Müdürlüğünüzün sorumlu olduğu bölümde `Bölüm içeriği` alanını doldurun. Tamamlanan içerik için `Durum` alanından `Hazır` seçin. `Bölümü kaydet` düğmesine basın. Diğer bölümler için aynı işlemi yapın.
 
    ![Bölüm içeriğini kaydetme](img/12-bolum.png)
 
