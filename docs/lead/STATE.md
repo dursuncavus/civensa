@@ -1,11 +1,12 @@
 # CIVENSA — CURRENT STATE
 
-Updated: 7 Nov 2026 ~22:10 Istanbul (CV Lider 69, D-436).
+Updated: 7 Nov 2026 ~22:15 Istanbul (CV Lider 69, D-436–D-437).
 Rules: AI_WORKING_CONSTITUTION v1.2 (Drive, global) · `HIERARCHY.md` v1.8 (D-408: the lead also codes; Codex reviews its PRs) · `PROJECT_RULES.md` v1.4 (D-271: PRIOR ART field mandatory in every package) · `BACKUP_LEAD.md` v2.
 Backup log ("Civensa Yedek Kaydı", Drive): no entries after 31 Oct (DOĞRULANDI 3 Nov 05:45, file unchanged since 23 Oct).
 Tags: DOĞRULANDI (lead checked) · TARİHSEL (past fact) · BEYAN (owner said) · BELİRSİZ (unknown).
 
 ## Next session — start here (D-253)
+D-437 (7 Nov ~22:15): lead sessions now run as threads in the Claude Code project "Civensa" (one thread at a time). Gmail is refused inside the project session → if still refused, report it to the owner. Gmail checked 22:15 from the chat: no mail from Ali Abi (closes the D-436 BELİRSİZ).
 CV Lider 69 (7 Nov ~22:10, DOĞRULANDI): audit done; CIV-188 #421 re-reviewed and merged 891f9ee; D-435 records merged (D-436). CIV-188 goes live with the next release (no migration). Gmail after 05:43 BELİRSİZ (search refused by the permission check) → next session: Gmail check first. DeepSeek mirror refreshed. Next lead work: directorate rollout checklist draft (D-431). 9 Nov: Ali's answers.
 Night run 7 Nov 05:43 (D-435, DOĞRULANDI): no mail from Ali Abi. CIV-188 #421 reviewed — no HIGH/MEDIUM, CI green on e8f546f, behind 0 → merge-ready; scheduled merge refused by the permission check → live session/owner merges #421 (re-check behind 0 first). Rehearsal now 321 OK / 4 BLOCKER (B2 ×3 + İdare freeze). Then: lead drafts the rollout checklist (D-431). DeepSeek mirror GUNCEL-DURUM.md: refresh in the next live session with the Mac linked.
 CV Lider 68 (6 Nov ~15:40, DOĞRULANDI): no mail from Ali Abi; CIV-187 #419 reviewed and merged (D-434). Main blocker found: finance-owned sections block every unit submit (B1) → CIV-188 dispatched (fix + rehearsal re-run) → review its PR. Ask Ali 9 Nov: do directorates enter a result per activity besides indicators (B2)? Rollout checklist drafted by the lead after CIV-188.
@@ -31,7 +32,7 @@ CV Lider 61 (4 Nov ~21:25, DOĞRULANDI): no mail from Ali Abi; only open PR #382
 9. Claude account on Max from 4 Nov 2026 (BEYAN; next charge 4 Dec). Extra capacity goes to lead analysis/preparation work (D-400). The "Claude quota" block below is TARİHSEL (Pro era).
 10. Sunum module (D-411/D-412/D-413): reveal.js 6.0.1 + ECharts 6.1.0 via Civensa Jinja templates, Civensa design tokens; animated HTML + 16:9 PDF from the same file. Prototype https://claude.ai/artifact/DMpNp2f68JsogL2eMgJSRD review round 1 done (D-414); full Fen İşleri 2025 presentation with real data = CIV-180 reference (D-415); waits for the owner's hall-computer test + further remarks → CIV-180 (engine + FR müdürlük presentation). Future report modules proposed in D-411 (not accepted; after 1 Jan 2027).
 11. CIV-180–185 live since release #410 (D-428).
-Next IDs: task CIV-189, decision D-437.
+Next IDs: task CIV-189, decision D-438.
 
 ## Claude quota (BEYAN, owner 27 Oct 16:21)
 - Session 11%, week 67%, weekly reset Saturday 00:00 (D-300). Copilot 96 / 1,500 credits, reset 1 Nov.
