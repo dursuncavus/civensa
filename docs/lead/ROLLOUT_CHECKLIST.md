@@ -66,7 +66,7 @@ Gerekçe: pilot, gerçek kişilerle yolu bir kez dener; tam açılışı tatil �
 ## E. Kılavuz ve destek
 | # | Madde | Sahip | Durum |
 | --- | --- | --- | --- |
-| E1 | Müdürlük için kısa giriş kılavuzu (Türkçe, ekran görüntülü: giriş, parola, gösterge + kanıt, EK-1/EK-2, gönderim, iade düzeltmesi) | Lider paket → Codex (prova düzeneğinin ekran görüntüleriyle) | A2–A3 netleşince |
+| E1 | Müdürlük için kısa giriş kılavuzu (Türkçe, ekran görüntülü: giriş, parola, gösterge + kanıt, EK-1/EK-2, gönderim, iade düzeltmesi) | Lider paket → Codex (prova düzeneğinin ekran görüntüleriyle) | Sabit bölümler tamam: docs/guides/mudurluk-fr-2026/KILAVUZ.md (CIV-189, D-441); B2/FR5 bölümleri Ali'den sonra |
 | E2 | Destek kanalı: kim cevaplar, nereden (telefon / e-posta / grup) | Sahip + Ali karar verir | BELİRSİZ |
 | E3 | Sorun kaydı: gelen her sorun lider oturumunda kayda geçer, hata ise görev olur | Lider | ÖNERİ |
 | E4 | Duyuru: Strateji müdürlüklere tarih, son gün, kılavuz, destek kanalını yazar | Ali | Pilot ve tam açılış öncesi |
