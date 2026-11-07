@@ -1486,3 +1486,9 @@ Next IDs: task CIV-189, decision D-439.
 ## D-439 (7 Nov 2026 22:46 Istanbul, owner, live session CV Lider 70) — rollout calendar and January deploy freeze approved
 BEYAN (owner 22:46, "Ok" to the single ask in the D-438 reply): approves the ROLLOUT_CHECKLIST.md calendar — pilot opening in the week of 14 Dec 2026 for Bilgi İşlem, Strateji Geliştirme, Fen İşleri (Render Starter that day); all directorates on Mon 4 Jan 2027; deploy freeze 1–20 Jan 2027 except urgent fixes outside working hours. Checklist → v1.0. Still open: support channel (owner + Ali, 9 Nov) and every Ali-dependent row of sections A/B. The dates hold only if section A is done by 30 Nov; if Ali's answers slip, the lead re-plans and reports instead of opening with open rows.
 Next IDs: task CIV-189, decision D-440.
+
+## D-440 (7 Nov 2026 ~23:05 Istanbul, lead, live session CV Lider 70) — CIV-189 directorate entry guide (stable sections) dispatched; Monday reminder
+BEYAN (owner 22:50–22:57): meets Ali Abi on Monday 9 Nov to work on the project; asked for a reminder. Done: Google Calendar event "Civensa – Ali Abi'ye sorulacaklar" 9 Nov 11:00 with popups at 10:00 and 11:00 (owner's times), description = the 9 questions of the 4 Nov e-mail + 7 new oral questions (user list, B2, lower-is-better, photos, support channel, 2025 deck, directorate name changes).
+DOĞRULANDI comparison: the 4 Nov e-mail "Civensa – 2026 Faaliyet Raporu soruları" holds mapping, K1–K6, V1, V2, O1, O2, İ1–İ3; the new questions after it are asked orally on 9 Nov.
+Decision: ROLLOUT_CHECKLIST E1 starts now for the steps that do not depend on Ali (login/password, roles, screen entry + evidence, EK-1/EK-2, submit, return, approval, download); B2 and FR5 sections stay as marked placeholders. CIV-189 (Codex, GPT-6.1 Sol, orta) — package tasks/CIV-189.md; reuses the CIV-187/188 rehearsal harness for screenshots, no app changes.
+Next IDs: task CIV-190, decision D-441.
