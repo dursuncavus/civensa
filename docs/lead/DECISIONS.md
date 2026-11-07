@@ -1443,3 +1443,28 @@ CI: after update-branch (Markdown only) shard 0 failed once in tests/test_activi
 Repo size note: full-set screenshots (26 MB) are not repeated; CIV-188 commits only changed/blocked steps.
 Decision: CIV-188 (Codex, GPT-6.1 Sol, yüksek) — B1 + H1 + H2 + L1 + L2, proven by re-running the CIV-187 rehearsal; package tasks/CIV-188.md.
 Next IDs: task CIV-189, decision D-435.
+
+## D-435 (7 Nov 2026 ~05:43 Istanbul, lead, scheduled run "Civensa gece kontrol") — CIV-188 #421 reviewed: merge-ready; scheduled merge refused
+DOĞRULANDI: Gmail (from:alikaya136@gmail.com after 6 Nov) — no mail from Ali Abi. No other lead/* branch or PR after T (6 Nov 12:47Z) records this.
+DOĞRULANDI #421 CIV-188 (Codex, head e8f546f, 4 commits, not draft, behind 0, mergeable clean) against tasks/CIV-188.md:
+- Files: only allowed paths (ar_unit_workflow_service.py, activity_sections_service.py, app.js, activity_contract_detail.html, activity_evidence_row.html, modules.html, tests/, scripts/fr_rehearsal.py, docs/reports/civ-188/**, docs/screenshots/civ-188/**). No migrations, no dependency, no docs/lead/AGENTS.md/ops/.github changes. No file overlap with #382.
+- B1: completeness() skips the status check only for finance-owned sections of unit reports (payload department_id); 'missing' items and not-applicable-without-reason still block; open finance content goes to the existing CIV-166 warnings channel; İdare freeze unchanged. Tests: open finance + empty deviation explanation → 409 naming the indicator, then 200 after explanation; İdare freeze still 409 'sections'; not_applicable reason unit test.
+- H1: after AJAX save the server-rendered .indicator-report-summary from the response replaces the old one (same Jinja as reload); browser test compares with reload for Eksik/İncelenmeli/Doğrulanmış and açıklama bekliyor.
+- H2/L1/L2: Turkish texts describe what exists; raw target text escaped (test with <script>); zero target shows "Hedef: 0" (blank ≠ zero); source_revision field/value unchanged. CIV-135 frozen-design test now applies only these authorised text changes to the expected copy (fixture hashes kept).
+- Rehearsal: 329 steps 321 OK / 4 BLOCKER / 4 SLOW (CIV-187: 289/31/5). Return, resubmit, independent approval, approved Word/PDF OK for Fen İşleri, Afet İşleri, Özel Kalem. Remaining BLOCKERs = B2 ×3 + İdare freeze (expected). 40 PNGs, 4.5 MB, largest 138 KB.
+- LOW (no action): modules.html button text hard-codes "2026" — update with the next year's rollout.
+CI on e8f546f: test (18,0) + test (18,1), secrets, backup-security success; full-history skipped. No HIGH/MEDIUM finding → all merge conditions met.
+Merge attempt (PUT /pulls/421/merge, sha e8f546f) refused by the session permission check (same as D-213/D-255). Left for the live session / owner: https://github.com/dursuncavus/civensa/pull/421
+DeepSeek mirror GUNCEL-DURUM.md not reachable from a scheduled run; the lead refreshes it in the next live session with the Mac linked.
+Next IDs: task CIV-189, decision D-436.
+
+## D-436 (7 Nov 2026 ~22:10 Istanbul, lead, live session CV Lider 69) — session audit; CIV-188 #421 merged; D-435 records merged
+Session: CV Lider 69 · Claude Opus 5.5 · civensa-lead (skill loaded from the account skills; BEYAN owner 22:06 opening line).
+DOĞRULANDI audit (REST, 19:10Z): open PRs #422 (D-435 night record, guard green, behind 0), #421 (CIV-188, CI green on e8f546f, behind 0, mergeable clean), #382 (CIV-179, PARKED per D-410). No other lead/* branch after D-435. Drive "Civensa Yedek Kaydı" last modified 23 Oct 22:37Z → no backup-lead entries to re-check.
+BELİRSİZ: Gmail check for Ali Abi after the 05:43 night check — the Gmail search was refused by this session's permission check; D-435 (05:43) found no mail. Next session repeats the check.
+DOĞRULANDI live re-review of #421 (independent of D-435): code diff read — completeness() skips only the section-status clause for finance-owned sections of unit reports; 'missing' and not_applicable-without-reason still block; open finance content moved into the existing warnings list with a Turkish "gönderimi engellemez" note; İdare reports unchanged. app.js replaces .indicator-report-summary from the server response; target macro escapes raw_text (Jinja autoescape); evidence label text only, field name unchanged. Agrees with D-435: no HIGH/MEDIUM. LOW (watch only): a finance-owned section set to Uygulanamaz without a reason still blocks the unit submit — Mali Hizmetler must give the reason; check in the rollout rehearsal.
+Merged by the lead: #421 squash → 891f9ee (head e8f546f, CI green, behind 0). #422 D-435 records merged together with these records.
+Decision: CIV-188 goes live with the next release phase5 → main (no migration); no separate release now — directorates are not opened yet (D-351/D-352) and nothing in CIV-188 is needed for Ali Abi's 9 Nov use.
+DOĞRULANDI (Mac linked): DeepSeek mirror GUNCEL-DURUM.md refreshed from this STATE.md (was 3 Nov, D-391); YEDEK-KAYIT.md last changed 29 Oct (covered by D-309).
+Next (lead): draft the directorate rollout checklist (D-431) for owner approval; 9 Nov: Ali's answers (B2, lower-is-better, 2026 mapping, Onay dayanağı).
+Next IDs: task CIV-189, decision D-437.
