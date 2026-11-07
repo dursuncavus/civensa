@@ -248,6 +248,10 @@ document.addEventListener('submit',async event=>{
     const selection=focused?.selectionStart;
     const detailsOpen=record.querySelector('details')?.open;
     record.replaceWith(replacement);drafts.register(replacement);
+    // The redirected save response uses the same server-rendered summary as
+    // a full page load, including scoped records and deviation explanations.
+    const summary=page.querySelector('.indicator-report-summary');
+    if(summary)document.querySelector('.indicator-report-summary')?.replaceWith(summary);
     const baseline=drafts.values(replacement);
     // The server response carries the new CAS revision and complete history.
     // Preserve only changes made after submitting, atop the saved baseline.
