@@ -1468,3 +1468,9 @@ Decision: CIV-188 goes live with the next release phase5 → main (no migration)
 DOĞRULANDI (Mac linked): DeepSeek mirror GUNCEL-DURUM.md refreshed from this STATE.md (was 3 Nov, D-391); YEDEK-KAYIT.md last changed 29 Oct (covered by D-309).
 Next (lead): draft the directorate rollout checklist (D-431) for owner approval; 9 Nov: Ali's answers (B2, lower-is-better, 2026 mapping, Onay dayanağı).
 Next IDs: task CIV-189, decision D-437.
+
+## D-437 (7 Nov 2026 ~22:15 Istanbul, owner + lead, CV Lider 68 chat) — new Claude Code project "Civensa" is the lead's home; old project deleted
+BEYAN (owner 22:02/22:04): delete the old project, create a new one. DOĞRULANDI (lead, built-in browser, owner signed in): old Claude Code project "Civensa" (archived 13 Oct; old "Technical Team Lead"/Nexa instructions, superseded) permanently deleted after the owner's explicit "evet sil". New Claude Code project "Civensa" created and pinned (chan_014vbPgCrJczG7HEfjKctHjq); description: load civensa-lead first, records live in the repo (docs/lead), no files uploaded to the project.
+DOĞRULANDI first session inside it (CV Lider 69, D-436): repo access, PR review/merge, Mac folder (DeepSeek mirror) all worked. Gap: Gmail search was refused by the project session's permission check → Ali's mail check could not run there. Covered now: Gmail checked from the CV Lider 68 chat (from:alikaya136, 3 days) — no mail from Ali Abi.
+Decision: Civensa lead sessions run as threads in this project from CV Lider 70 on. Supersedes the civensa-lead skill line "Claude Code project threads do not get new Civensa work" for this project only (the old project it referred to is gone); skill text update proposed to the owner. One live lead thread at a time (D-363) still holds: do not start parallel threads in the project. Old CV Lider chats stay where they are (normal chats cannot move into a Code project; nothing is needed from them).
+Next IDs: task CIV-189, decision D-438.
