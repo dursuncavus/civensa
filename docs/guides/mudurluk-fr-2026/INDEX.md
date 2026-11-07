@@ -4,7 +4,7 @@ Yenileme: `python scripts/guide_screenshots.py --fr-guide`.
 
 Yalnız yerel PostgreSQL 16+ için `CIVENSA_TEST_POSTGRES_URL` kullanılır. Geçici veritabanı koşu sonunda silinir. Canlı veritabanına bağlanılmaz.
 
-Kaynak kod: `b6692f39344abdf75ffb65b4ba9dd657a543a5b5`. Chromium: `151.0.7922.173`.
+Kaynak kod: `69c5752ebcb9c478efc40f5e79cbd6fdeaf180ab`. Chromium: `151.0.7922.173`.
 2026 kitap SHA-256: `1aaa0bb81c3cf4e245edaab42452a972b8a59ffc252814216c7628f6dbaf33d6`.
 
 Veri notu: **SENTETİK**. Kurumsal başlık ve hedefler test kitabından; hesaplar, gerçekleşmeler, kanıt, beyan, iade ve onay deneme verisidir. Gerçek kişi adı yoktur. Parolalar rastgele üretilir, görsellere ve dosyalara yazılmaz.

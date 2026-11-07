@@ -30,6 +30,8 @@ Yeni tarayıcı altyapısı yoktur. Mevcut `fr_rehearsal.Rehearsal.walk`, `local
 - B2 faaliyet sonucu girişi ve tam İdare dondurma mevcut provanın kapsam engelleridir. B2 yer tutucu olarak kalır; İdare onayı müdürlük kullanıcısının adımı olarak sunulmaz.
 - Tarayıcının yerel dosya seçme denetimi tarayıcı/işletim sistemi diline göre değişebilir. Kılavuz yalnız uygulamanın sabit alan etiketini kullanır.
 
+- Mali Hizmetler uyarısındaki “giriş veya XLSX içe aktarma yapın” ifadesi müdürlük kullanıcısına da görünüyor (15 numaralı görsel). Kılavuz bu bilgilerin Mali Hizmetler tarafından girileceğini belirtir; kullanıcıya bu uyarı üzerinden aktarım adımı verilmez.
+
 Bu bulgular için uygulama metni veya arayüz değiştirilmedi.
 
 ## Düğme ve ekran adı denetimi
@@ -100,9 +102,9 @@ Birebir doğrulanan benzersiz etiket sayısı: **57**.
 
 ## Doğrulama
 
-- `python scripts/guide_screenshots.py --fr-guide`: **çıkış 0**. 159 prova adımı; 22 kılavuz görseli. Tek birimin onayı tamamlandı. B2 ve diğer birimler/İdare içeriği eksikliği nedeniyle İdare dondurma denemesi, mevcut provanın iki beklenen kapsam engeli olarak kaldı; bunlar kılavuz çekim listesinde değildir.
-- Depoya alınan PNG sayısı **22**; en büyük PNG **128761 bayt**. Görsellerden giriş/parola, kanıt, sapma, bölüm düzenleme ve onaylı indirme ekranları görsel olarak incelendi.
-- `python -m pytest -q --require-postgres tests/test_fr_guide_capture.py tests/test_fr_rehearsal_harness.py tests/test_civ188_rehearsal_fixes.py`: **13 geçti** (PostgreSQL; 11,52 saniye).
+- `python scripts/guide_screenshots.py --fr-guide`: **çıkış 0**. 159 prova adımı; 22 kılavuz görseli. İki başarılı koşunun `(adım, hesap, PNG adı)` listeleri birebir karşılaştırıldı; aynı 22 adım yeniden üretildi. Tek birimin onayı tamamlandı. B2 ve diğer birimler/İdare içeriği eksikliği nedeniyle İdare dondurma denemesi, mevcut provanın iki beklenen kapsam engeli olarak kaldı; bunlar kılavuz çekim listesinde değildir.
+- Depoya alınan PNG sayısı **22**; en büyük PNG **131207 bayt**. Görsellerden giriş/parola, kanıt, sapma, bölüm düzenleme ve onaylı indirme ekranları görsel olarak incelendi.
+- `python -m pytest -q --require-postgres tests/test_fr_guide_capture.py tests/test_fr_rehearsal_harness.py tests/test_civ188_rehearsal_fixes.py`: **13 geçti** (PostgreSQL; son koşu).
 - `python -m compileall -q scripts/guide_screenshots.py scripts/fr_rehearsal.py` ve `git diff --check`: başarılı.
 - Mevcut Starlette/httpx kullanımdan kaldırma uyarısı sürüyor. Yeni bağımlılık eklenmedi.
 
