@@ -1492,3 +1492,14 @@ BEYAN (owner 22:50–22:57): meets Ali Abi on Monday 9 Nov to work on the projec
 DOĞRULANDI comparison: the 4 Nov e-mail "Civensa – 2026 Faaliyet Raporu soruları" holds mapping, K1–K6, V1, V2, O1, O2, İ1–İ3; the new questions after it are asked orally on 9 Nov.
 Decision: ROLLOUT_CHECKLIST E1 starts now for the steps that do not depend on Ali (login/password, roles, screen entry + evidence, EK-1/EK-2, submit, return, approval, download); B2 and FR5 sections stay as marked placeholders. CIV-189 (Codex, GPT-6.1 Sol, orta) — package tasks/CIV-189.md; reuses the CIV-187/188 rehearsal harness for screenshots, no app changes.
 Next IDs: task CIV-190, decision D-441.
+
+## D-441 (7 Nov 2026 ~23:45 Istanbul, lead, live session CV Lider 70) — CIV-189 #427 reviewed and merged
+BEYAN (owner 23:38): "189 bitti".
+DOĞRULANDI #427 CIV-189 (Codex, head 13343c1, 5 commits, not draft, behind 0, mergeable clean) against tasks/CIV-189.md:
+- Files: only allowed paths (docs/guides/mudurluk-fr-2026/** with KILAVUZ.md, INDEX.md, 22 PNG ≤ 131 KB; docs/reports/civ-189/**; scripts/fr_rehearsal.py + scripts/guide_screenshots.py new --fr-guide mode in a mutually exclusive group with --ui-map/--fr-rehearsal; tests/test_fr_guide_capture.py). No app/ change, no migration, no dependency, no docs/lead/AGENTS.md/ops/.github change.
+- Guide: sections a–j in order, both placeholders verbatim; ~730 words (limit 2,500); SENTETİK note. Lead spot check of 10 quoted labels in app/ (all present) and of the password rule: change-password needs ≥ 12 characters (app/main.py ~1686) — guide says 12, correct. test_committed_guide_contract fails on any quoted label not found verbatim (57 labels).
+- Harness: first-password step uses a random secrets.token_urlsafe password, disposable DB only; no network/DB-URL handling added.
+CI on 13343c1: test (18,0) + test (18,1), secrets, backup-security success; full-history skipped. Merged squash → 8a2019b.
+Screen-text findings from the report (LOW, no task now; collect for one small text task after Ali's answers): "Faaliyet Raporu · EK-1" vs "Faaliyet raporları" menu names look alike; Dışa aktar Word/PDF links visible on drafts; the Mali Hizmetler warning "giriş veya XLSX içe aktarma yapın" is shown to directorate users; "Bu bölümün yapılandırılmış verileri daha sonra eklenecek" note in some EK-1 sections.
+ROLLOUT_CHECKLIST E1: stable sections done; B2/FR5 sections and the support-channel line follow Ali's answers (9 Nov).
+Next IDs: task CIV-190, decision D-442.
