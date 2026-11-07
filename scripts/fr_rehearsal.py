@@ -51,7 +51,10 @@ GUIDE_SHOTS = {
 
 
 def guide_filename(role, title):
-    if role not in {'fen_staff', 'fen_director'}:
+    if role != ('fen_director' if title in {
+            'Sapma açıklaması boşken gönderim kontrolü',
+            'Açıklamasız gerçekleşmeyi gönderme denemesi', 'Birim raporunu gönder',
+            'Düzelt ve yeniden gönder', 'Kılavuz onaylı indirme'} else 'fen_staff'):
         return None
     name = GUIDE_SHOTS.get(title)
     return name + '.png' if name else None
@@ -99,6 +102,8 @@ def setup(engine, *, guide=False):
                 commit_user_change(db)
                 data['accounts'][account] = user.email
             data['units'].append({'key':key, 'name':name, 'department_id':dep.id})
+        if guide:
+            data['units'] = [unit for unit in data['units'] if unit['key'] == 'fen']
         return data
 
 
@@ -414,7 +419,7 @@ class Rehearsal:
                 self.goto(director,director_role,document,'Kılavuz onaylı raporu aç')
                 director.locator('[data-section-export] summary').click()
                 self.capture(director,director_role,'Kılavuz onaylı indirme',self.begin())
-                self.downloads(director,unit,'Onaylı müdürlük')
+                self.downloads(director,unit,'Onaylı müdürlük',role=director_role)
         self.goto(strategy,'strategy',f'/activity-sections?period_id={pid}','İdare raporuna geçiş')
         groups=strategy.locator('article.report-group')
         institution=next(g for g in groups.all() if 'İdare' in g.locator('h3').inner_text())
@@ -425,12 +430,13 @@ class Rehearsal:
                        'Yalnız üç müdürlük provası; diğer birimlerin onayları ve idare içerikleri tamamlanmadı. Beklenen kapsam engeli.')
         check(any(r['status']==409 for r in row['http']),'Eksik İdare raporu dondurma denemesi reddedilmedi.')
         self.data['approvals']=approvals
-        check(approvals==['fen','afet','ozel'],'Üç müdürlüğün bağımsız onayı tamamlanamadı.')
+        expected_units = [unit['key'] for unit in self.data['units']]
+        check(approvals==expected_units,'Prova müdürlüklerinin bağımsız onayı tamamlanamadı.')
         blockers=[step for step in self.steps if step['result']=='BLOCKER']
-        check(len(blockers)==4 and sum(step['step']=='Faaliyet gerçekleşmesi girişi ara' for step in blockers)==3,
+        check(len(blockers)==len(expected_units)+1 and sum(step['step']=='Faaliyet gerçekleşmesi girişi ara' for step in blockers)==len(expected_units),
               'B2 ve beklenen İdare kapsam sınırı dışında engel kaldı.')
 
-    def downloads(self,page,unit,status):
+    def downloads(self,page,unit,status,role='strategy'):
         if page.locator('[data-section-export]').get_attribute('open') is None:
             page.locator('[data-section-export] summary').click()
         for label,magic in [('Word olarak indir',b'PK'),('PDF olarak indir',b'%PDF')]:
@@ -440,7 +446,7 @@ class Rehearsal:
             download=info.value; local=Path(download.path())
             raw=local.read_bytes()
             check(raw.startswith(magic),'İndirme dosya biçimi beklenenden farklı.')
-            self.capture(page,'strategy',status+' '+label+' · '+unit['name'],start,
+            self.capture(page,role,status+' '+label+' · '+unit['name'],start,
                          note=f'{len(raw)} bayt; SHA256: {hashlib.sha256(raw).hexdigest()}; dosya başlığı doğrulandı.')
 
     def blocked_followups(self,document,unit):
