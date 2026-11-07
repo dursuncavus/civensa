@@ -1,6 +1,6 @@
 # Müdürlüklere açılış kontrol listesi — Faaliyet Raporu 2026
 
-Sürüm: TASLAK v0.1 · 7 Kas 2026 · CV Lider 70 (D-438) · **sahibin onayını bekliyor**.
+Sürüm: v1.0 · 7 Kas 2026 · CV Lider 70 (D-438, D-439) · takvim ve Ocak yayın dondurma **sahip onayladı** (BEYAN 7 Kas 22:46); destek kanalı açık.
 Kaynak kararlar: D-351, D-352, D-358, D-361, D-367, D-387, D-431, D-434, D-435, D-436.
 Etiketler: DOĞRULANDI (lider kontrol etti) · BEYAN (sahip/Ali söyledi) · BELİRSİZ (bilinmiyor) · ÖNERİ (lider önerisi, onay gerekir).
 
@@ -9,7 +9,7 @@ Etiketler: DOĞRULANDI (lider kontrol etti) · BEYAN (sahip/Ali söyledi) · BEL
 - Kapsam: 2026 Faaliyet Raporu müdürlük girişi (D-387 sıra 1). İç Kontrol açılışı ayrı listedir (D-358), burada yok.
 - Takvim kısıtı (BEYAN, Ali 2 Kas, D-361 FR3): müdürlükler 2026 verisini 15–20 Ocak 2027'ye kadar girer → sistem 1 Ocak 2027'den önce hazır olmalı.
 
-## Önerilen takvim (ÖNERİ)
+## Takvim (sahip onayladı, D-439)
 | Tarih | Adım |
 | --- | --- |
 | 9–20 Kas | Ali'nin cevapları (bölüm A) gelir; lider bunları görevlere çevirir. |
@@ -60,7 +60,7 @@ Gerekçe: pilot, gerçek kişilerle yolu bir kez dener; tam açılışı tatil �
 | D1 | Render Free → Starter (7 $/ay) pilot açılış günü (D-351) | Sahip (ödeme) | Pilot günü |
 | D2 | Açılıştan hemen önce db-backup çalışır, Neon yedek dalı alınır | Lider tetikler, sahip onaylar | Her açılış öncesi |
 | D3 | /health: status ok, migration = head; çalışan commit Render olaylarında doğrulanır | Sahip yapıştırır, lider kontrol eder | Her yayından sonra |
-| D4 | Ocak giriş penceresinde yayın dondurma; acil düzeltme mesai dışında | Lider | ÖNERİ |
+| D4 | Ocak giriş penceresinde yayın dondurma; acil düzeltme mesai dışında | Lider | Onaylandı (D-439) |
 | D5 | Geri dönüş yolu: önceki Render yayını + yedek daldan geri yükleme (docs/operations/render.md) | Sahip + lider | Belgeli (DOĞRULANDI) |
 
 ## E. Kılavuz ve destek
@@ -81,6 +81,6 @@ Gerekçe: pilot, gerçek kişilerle yolu bir kez dener; tam açılışı tatil �
 7. İlk gün: lider giriş/gönderim sayılarını ve hata kayıtlarını kontrol eder.
 
 ## Sahibin onaylayacağı noktalar
-- Takvim (pilot 14 Ara haftası, tam açılış 4 Oca 2027).
-- Ocak yayın dondurma (D4).
-- Destek kanalı (E2) Ali ile birlikte.
+- (onaylandı D-439) Takvim: pilot 14 Ara haftası, tam açılış 4 Oca 2027.
+- (onaylandı D-439) Ocak yayın dondurma (D4).
+- Açık: destek kanalı (E2), Ali ile birlikte 9 Kas.
