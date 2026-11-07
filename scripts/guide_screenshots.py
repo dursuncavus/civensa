@@ -2310,6 +2310,7 @@ def main():
         action="store_true",
         help="CIV-093: bütün HTML ekranları ve DOM öğeleri",
     )
+    parser.add_argument('--fr-guide', action='store_true', help='CIV-189: müdürlük kılavuzu ekranları (sentetik prova)')
     parser.add_argument('--fr-rehearsal', action='store_true', help='CIV-187: 2026 FR müdürlük UI provası')
     parser.add_argument('--viewport-width', type=int, choices=(1440, 390), default=1440,
                         help='UI haritası görünüm genişliği (varsayılan: 1440).')
@@ -2344,9 +2345,9 @@ def main():
 
     if args.ui_map:
         return ui_main(args, url)
-    if args.fr_rehearsal:
+    if args.fr_rehearsal or args.fr_guide:
         from scripts.fr_rehearsal import run
-        return run(url)
+        return run(url, guide=args.fr_guide)
 
     data = None
     results = {
