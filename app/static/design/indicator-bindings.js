@@ -4,6 +4,15 @@
   const saved=document.querySelector('.binding-row.is-saved');
   const dialog=saved&&saved.closest('dialog');
   if(dialog&&typeof dialog.showModal==='function'){dialog.showModal();saved.scrollIntoView({block:'center'});}
+  // (14) Owner, 9 Nov: the save button stays inactive until something actually changed.
+  document.querySelectorAll('.indicator-direction-form').forEach(form=>{
+    const select=form.querySelector('select[name=direction]'),reason=form.querySelector('textarea[name=reason]'),button=form.querySelector('button.primary');
+    if(!select||!reason||!button)return;
+    const initial=select.value;
+    const sync=()=>{const changed=select.value!==initial;button.disabled=!(changed&&reason.value.trim());
+      button.title=changed?(reason.value.trim()?'':'Önce gerekçe yazın.'):'Yön değişmedi.';};
+    select.addEventListener('change',sync);reason.addEventListener('input',sync);sync();
+  });
   const input=document.getElementById('bindingSearch'), count=document.getElementById('bindingSearchCount');
   if(!input)return;
   const rows=[...document.querySelectorAll('.binding-row')];

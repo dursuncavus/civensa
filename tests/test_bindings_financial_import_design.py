@@ -167,7 +167,8 @@ def assert_design(page, selector):
             assert cell.evaluate("el => getComputedStyle(el).textAlign === 'right' && getComputedStyle(el).fontVariantNumeric.includes('tabular-nums')")
     script = TEXT_PAIRS.replace('.section-index-page',selector)
     pairs = set(map(tuple,page.evaluate(script)))
-    for control in root.locator('a,button,select,textarea').all():
+    # CIV-199 (14): a disabled save button cannot take focus; only enabled controls are checked.
+    for control in root.locator('a,button:enabled,select,textarea').all():
         control.hover()
         pairs.update(map(tuple,page.evaluate(script)))
         control.focus()
