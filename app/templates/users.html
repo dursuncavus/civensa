@@ -4,7 +4,22 @@
 {% block content %}
   <link rel="stylesheet" href="/static/design/users.css">
   <div class="users-page">
-    <p class="muted users-summary">{{ departments|length }} müdürlük · {{ department_account_count }} etkin müdürlük hesabı · {% if missing_departments %}<span class="status warning">{{ missing_departments|length }} hesap bekliyor</span>{% else %}{{ missing_departments|length }} hesap bekliyor{% endif %}</p>
+    <section class="users-todo" aria-labelledby="users-todo-title">
+      <h2 id="users-todo-title">Yapılacaklar</h2>
+      {% if missing_departments %}
+        <ol class="users-todo-list">
+          <li><a href="/api/users/template.csv">{{ missing_departments|length }} müdürlüğe kişisel hesap oluştur</a></li>
+          <li><a href="#previewBulkUsers">CSV önizle</a></li>
+          <li><a href="#downloadBulkCredentials">parola dosyasını teslim et</a></li>
+        </ol>
+      {% else %}
+        <p class="users-todo-empty">Yapılacak iş kalmadı.</p>
+      {% endif %}
+    </section>
+    <details class="users-counts-details">
+      <summary>Bütün sayılar</summary>
+      <p class="muted users-summary">{{ departments|length }} müdürlük · {{ department_account_count }} etkin müdürlük hesabı · {% if missing_departments %}<span class="status warning">{{ missing_departments|length }} hesap bekliyor</span>{% else %}{{ missing_departments|length }} hesap bekliyor{% endif %}</p>
+    </details>
     <section class="users-panel">
       <h2>Kişisel müdürlük hesaplarını toplu oluştur</h2>
       <p class="muted">Her kişi için ayrı satır kullanın. Aynı müdürlüğe bir Müdür ve birden çok Personel ekleyebilirsiniz. Parolalar otomatik üretilir; ilk girişte değiştirilir.</p>

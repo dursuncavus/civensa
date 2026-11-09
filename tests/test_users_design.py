@@ -14,6 +14,7 @@ from app.models import Department, User
 from test_section_index_design import TEXT_PAIRS, contrast
 from test_sidebar_ui import browser
 from tests.test_users_personal_accounts import accounts
+from civ203_contract import users_todo_removed
 
 pytestmark = pytest.mark.postgres
 FROZEN = Path(__file__).parent / 'fixtures/users_start.html'
@@ -169,7 +170,7 @@ def test_frozen_controls_hooks_copy_options_and_headers(accounts, users_data, db
     source = FROZEN.read_bytes()
     assert sha256(source).hexdigest() == '53e0086d52cc338dbd8603a87afa0bee1ea11ea19c46b7791c8ff2e83105c924'
     old = response.template.environment.from_string(source.decode()).render(response.context)
-    actual, expected = Contract(response.text), Contract(old)
+    actual, expected = Contract(users_todo_removed(response.text)), Contract(old)
     assert Counter(actual.controls) == Counter(expected.controls)
     assert Counter(actual.hooks) == Counter(expected.hooks)
     assert actual.options == expected.options
@@ -228,10 +229,13 @@ def test_browser_layout_contrast_and_existing_controls(browser, accounts, users_
         page.on('pageerror', lambda error: errors.append(str(error)))
         page.goto('http://testserver/users')
         page.evaluate('document.fonts.ready')
+        if phase == 'after':
+            # CIV-203: the raw summary is folded behind "Bütün sayılar".
+            page.locator('.users-counts-details summary').click()
         if missing:
-            page.locator('details summary').click()
+            page.locator('details:not(.users-counts-details) summary').click()
         else:
-            expect(page.locator('main details')).to_have_count(0)
+            expect(page.locator('details:not(.users-counts-details)')).to_have_count(0)
         page.locator('#newUserBtn').click()
         expect(page.locator('#newUserForm')).to_be_visible()
         expect(page.locator('#userName')).to_be_focused()
