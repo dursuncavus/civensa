@@ -241,3 +241,25 @@ def test_civ199_direction_save_returns_to_row_and_says_saved(client, db, sample)
             page.screenshot(path=str(Path(os.environ['CIVENSA_CIV199_ARTIFACTS']) / 'gosterge-yonu-kaydedildi.png'))
         browser.close()
     app.dependency_overrides.pop(require_user, None)
+
+
+def test_civ199_many_directorates_become_cards_with_dialogs(client, db, sample):
+    """CIV-199 (11): more than three directorates -> card grid; indicators open in an in-page <dialog>."""
+    from copy import deepcopy
+    pub = publish(client, db, sample)
+    app.dependency_overrides[require_user] = lambda: sample['strategy']
+    response = client.get(f'/activity-reports/publications/{pub.id}/bindings')
+    rows = response.context['rows']
+    assert 'binding-grid' not in response.text and '<dialog' not in response.text
+    many = []
+    for n in range(4):
+        for row in rows:
+            copy = deepcopy(row)
+            copy['department'] = f'Sentetik Müdürlük {n}'
+            many.append(copy)
+    html = response.template.render({**response.context, 'rows': many})
+    assert 'reports-panel binding-grid' in html
+    assert html.count('<article class="binding-card" data-binding-card>') == 4
+    assert html.count('<dialog class="binding-dialog"') == 4
+    assert html.count('data-open-dialog="binding-dialog-') == 4
+    assert '<details class="binding-dept"' not in html

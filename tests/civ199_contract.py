@@ -96,4 +96,8 @@ def mapping_without_folds(html):
 def bindings_without_department_folds(html):
     """(10) Indicator rows fold per directorate."""
     html = re.sub(r'<details class="binding-dept"(?: open)?>\s*<summary>.*?</summary>\s*', '', html, flags=re.S)
-    return re.sub(r'</section>\s*</details>', '</section>', html)
+    html = re.sub(r'</section>\s*</details>', '</section>', html)
+    # (11) or, with more than three directorates, a card whose indicators open in a <dialog>.
+    html = html.replace('reports-panel binding-grid', 'reports-panel')
+    html = re.sub(r'<article class="binding-card" data-binding-card>.*?</form></div>\s*', '', html, flags=re.S)
+    return re.sub(r'</section>\s*</dialog>\s*</article>', '</section>', html)

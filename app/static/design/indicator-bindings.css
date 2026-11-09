@@ -25,3 +25,25 @@
 .indicator-bindings-page .binding-dept > summary { cursor: pointer; }
 .indicator-bindings-page .binding-dept[open] > summary { margin-bottom: var(--space-4); }
 .indicator-bindings-page .binding-pending { color: var(--warning); }
+/* CIV-199 (11, 12): many directorates become a card grid; each card opens its indicators in an in-page window. */
+.indicator-bindings-page .binding-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(17rem, 1fr)); gap: var(--space-4); align-items: stretch; }
+.indicator-bindings-page .binding-card { display: flex; flex-direction: column; gap: var(--space-2); padding: 0 var(--space-4) var(--space-4); overflow: hidden; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); }
+.indicator-bindings-page .binding-card[hidden] { display: none; }
+.indicator-bindings-page .binding-card-head { margin: 0 calc(-1 * var(--space-4)); padding: var(--space-3) var(--space-4); background: var(--accent-soft); border-bottom: 1px solid var(--border); }
+.indicator-bindings-page .binding-card-head h2 { margin: 0; font-size: var(--text-base); color: var(--accent-hover); }
+.indicator-bindings-page .binding-card-summary { margin: 0; flex: 1; }
+.indicator-bindings-page .binding-hits:empty { display: none; }
+.indicator-bindings-page .binding-open { align-self: flex-start; }
+.indicator-bindings-page .binding-dialog { width: min(64rem, calc(100% - 32px)); max-height: calc(100vh - 48px); overflow: auto; padding: var(--space-6); border: 1px solid var(--text-secondary); border-radius: var(--radius); background: var(--surface); color: var(--text); }
+.indicator-bindings-page .binding-dialog::backdrop { background: color-mix(in srgb, var(--text) 40%, transparent); }
+.indicator-bindings-page .binding-dialog-head { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); margin-bottom: var(--space-4); }
+.indicator-bindings-page .binding-dialog-head h2 { margin: 0; }
+.indicator-bindings-page .binding-dialog-head form { margin: 0; }
+/* Inside the window each indicator uses the full width: description left, form right. */
+.indicator-bindings-page .binding-dialog .binding-row { max-width: none; display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); column-gap: var(--space-6); align-items: start; }
+.indicator-bindings-page .binding-dialog .binding-row > :not(form) { grid-column: 1; }
+.indicator-bindings-page .binding-dialog .binding-row > form { grid-column: 2; grid-row: 1 / span 6; }
+@media (max-width: 800px) {
+  .indicator-bindings-page .binding-dialog .binding-row { grid-template-columns: minmax(0,1fr); }
+  .indicator-bindings-page .binding-dialog .binding-row > form { grid-column: 1; grid-row: auto; }
+}
