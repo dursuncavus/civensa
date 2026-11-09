@@ -154,8 +154,11 @@ eksik genel toplam ve yinelenen kod hâlâ hatadır.
    satırındaki tam basılı yüzde için `round(pay / payda × 100, 2)` hesaplanır;
    bütün satırlara uyan tam bir ortak çift bulunmalıdır. Hiçbir çift uymaması,
    satırların ortak çiftinin bulunmaması veya birden çok ortak çift kalması,
-   ilgili sayfa/satır ve gelir kodlarıyla hatadır. Sıfır paydalı çiftler
-   kullanılmaz; boş veya eksik yüzde sıfır sayılmaz, eksik hane türetilmez.
+   ilgili sayfa/satır ve gelir kodlarıyla hatadır. PDF’nin belgelenmiş
+   tanımsız oran gösterimi nedeniyle, payda sıfırken yalnız basılı `0,00`
+   kabul edilir. Bu satır formülü kanıtlamaz; seçilen çift için en az bir
+   sıfırdan farklı paydalı satır zorunludur. Sıfır paydada sıfırdan farklı
+   yüzde hatadır. Boş veya eksik yüzde sıfır sayılmaz, eksik hane türetilmez.
    Açık iki ondalığı birleştirilen yüzdeler de aynı denetime tabidir.
 
    TOPLAM varsa basılı tam oran, **seçilen pay sütununun satır toplamı /
@@ -389,6 +392,16 @@ satırında 0,01 puanlık yüzde farkı, eksik/boş satır yüzdesi ve iki ondal
 açıkça basılmış bölünmüş yüzde de test edilir. Eski sentetik yüzdeler tutarlı
 hesaplarla değiştirilmiştir; birbirine yakın tutarlı dar hücre örneğinde
 formülü tekilleştirmek için ayrı bir sentetik gelir satırı kullanılır.
+
+Lead’in `issuecomment-6745928672` gerçek dosya tekrar koşusuyla belgelediği
+tanımsız oran kuralı da sentetik PDF’lerde kapsanır: tamamen sıfır bir düzey 1
+satırı ile yalnız negatif plan tahmini içeren `09` satırı, basılı `0,00` ile
+birlikte kabul edilir. Tekil formül diğer satırlardan kanıtlanır; raporda bu
+iki satır için “payda sıfır, basılı 0,00 kabul edildi” yazılır. Aynı örnekler
+`/Rotate 90` ile de çalışır. Sıfır paydada basılı sıfırdan farklı oran ve
+yalnız tanımsız oranlardan formül çıkarma girişimi hatadır. İki başarı
+regresyonu önceki commit’te başarısızdı. TOPLAM paydasının sıfır olmasına
+ilişkin engel ve bütün parasal kontroller korunur.
 
 ```sh
 python -m pytest -q --require-postgres tests/test_kesin_hesap_xlsx.py

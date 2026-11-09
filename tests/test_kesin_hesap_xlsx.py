@@ -1290,7 +1290,7 @@ def test_incomplete_row_ratio_is_not_zero_or_inferred(tmp_path, error):
 
 @pytest.mark.parametrize('total_error', ['zero_denominator', 'mismatch'])
 def test_complete_total_ratio_is_checked_from_row_sums(tmp_path, total_error):
-    values = list(map(Decimal, ['100', '20', '70', '90', '60', '10', '50', '40']))
+    values = list(map(Decimal, ['100', '17', '73', '90', '61', '11', '50', '40']))
     deduction = Decimal('-100' if total_error == 'zero_denominator' else '-20')
     summed = [values[0] + deduction, *values[1:]]
     total_rate = ('0,00' if total_error == 'zero_denominator'
@@ -1305,3 +1305,40 @@ def test_complete_total_ratio_is_checked_from_row_sums(tmp_path, total_error):
     report = (out / 'report.md').read_text()
     assert 'Oran' in report and 'sayfa 1' in report
     assert ('toplamı sıfır' if total_error == 'zero_denominator' else 'TOPLAM oranı uyuşmuyor') in report
+
+
+@pytest.mark.parametrize('rotation', [0, 90])
+@pytest.mark.parametrize('bad_ratio', [False, True])
+def test_lead_zero_denominator_rows_do_not_constrain_the_proven_formula(tmp_path, rotation, bad_ratio):
+    vectors = [list(map(Decimal, values)) for values in (
+        ['1250.25', '20.25', '1180.50', '1200.75', '1150.25', '10.10', '1140.15', '60.60'],
+        ['100.11', '0.10', '80.20', '80.30', '70.22', '0.11', '70.11', '10.19'],
+        ['0'] * 8, ['-5.25', *(['0'] * 7)])]
+    rows = [[code, label, *map(money, values),
+             money((values[6] / values[3] * 100).quantize(Decimal('.01'))) if values[3] else '0,00']
+            for code, label, values in zip(
+                ['01', '03', '08', '09'],
+                ['SENTETİK VERGİ', 'SENTETİK GELİR', 'SENTETİK SIFIR GELİR', 'Red ve İadeler (-)'], vectors)]
+    if bad_ratio:
+        rows[2][-1] = '1,00'
+    summed = [sum((v[i] for v in vectors), Decimal(0)) for i in range(8)]
+    rows.append(['', 'GENEL TOPLAM', *map(money, summed),
+                 money((summed[6] / summed[3] * 100).quantize(Decimal('.01')))])
+    headers = ['Gelirin Kodu', 'Açıklama', *converter.revenue_labels(2026), 'Oran']
+    pdf = pdf_table(tmp_path / 'zero-denominator.pdf', headers, [90, 140] + [90] * 8 + [45], [rows])
+    result, out = run(tmp_path, '--gider', expense_pdf(tmp_path), '--gelir', rotate_synthetic(pdf, rotation))
+    report = (out / 'report.md').read_text()
+    if bad_ratio:
+        assert result.returncode != 0 and not list(out.glob('*.xlsx'))
+        assert '08' in report and 'Oran' in report and 'sayfa 1' in report
+    else:
+        assert result.returncode == 0, report
+        assert 'Yılı Net Tahsilatı / Toplam Tahakkuk' in report
+        assert report.count('payda sıfır, basılı 0,00 kabul edildi') == 2
+        assert [r[0] for r in list(load_workbook(out / 'revenue.xlsx').active.values)[1:]] == ['01', '03', '08']
+
+
+def test_all_undefined_zero_ratios_cannot_prove_a_formula():
+    row = converter.Row([['08'], ['SENTETİK SIFIR GELİR'], *([['0,00']] * 9)], 'sayfa 1, satır 1')
+    with pytest.raises(converter.ConversionError, match='formül.*kanıtlanamadı'):
+        converter.infer_ratio_formula([(row, [Decimal(0)] * 8)], 2026, [])

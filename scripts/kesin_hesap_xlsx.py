@@ -1091,27 +1091,36 @@ def infer_ratio_formula(records, year, notes):
     traces = []
     for row, values in records:
         printed = printed_ratio(row)
-        fitting = {pair for pair in pairs if ratio_value(values[pair[0]], values[pair[1]]) == printed}
+        fitting = {pair for pair in pairs
+                   if (values[pair[1]] == 0 and printed == 0)
+                   or ratio_value(values[pair[0]], values[pair[1]]) == printed}
         name = f'{row.where}, gelir {row.text(0)} {safe(row.text(1))}'
         if not fitting:
             raise ConversionError(f'{name}, Oran: hiçbir sütun çifti basılı {money(printed)} '
                                   'oranını vermiyor. Sekiz tutarı ve yüzdeyi kontrol edin; '
-                                  'sıfır paydalı çiftler kullanılmadı.')
+                                  'sıfır paydada yalnız basılı 0,00 kabul edilir.')
         common &= fitting
-        traces.append((name, printed))
+        traces.append((name, printed, values))
     if len(common) != 1:
         reason = 'hiçbir ortak sütun çifti yok' if not common else f'birden çok ortak sütun çifti var ({len(common)})'
-        raise ConversionError(f'Gelir Oran formülü doğrulanamadı: {reason}. '
-                              f'Satırlar: {"; ".join(name for name, _ in traces)}. '
+        raise ConversionError(f'Gelir Oran formülü kanıtlanamadı: {reason}. '
+                              f'Satırlar: {"; ".join(name for name, _, _ in traces)}. '
                               'Tüm düzey 1 satırlarının tutar ve yüzdelerini kontrol edin; formül tahmin edilmedi.')
     a, b = next(iter(common))
+    if not any(values[b] != 0 for _, _, values in traces):
+        raise ConversionError('Gelir Oran formülü kanıtlanamadı: seçilen payda bütün satırlarda sıfır. '
+                              f'Satırlar: {"; ".join(name for name, _, _ in traces)}. '
+                              'Sıfırdan farklı paydalı kaynak satırları kontrol edin; formül tahmin edilmedi.')
     labels = revenue_labels(year)
     notes.extend(['\n### Oran kontrolü\n',
                   f'Oran formülü: {labels[a]} / {labels[b]} × 100; iki ondalığa yuvarlanır. '
                   '56 sıralı, farklı sütun çiftinden yalnız bu çift bütün düzey 1 satırlarına uydu. '
                   'Oranlar toplanmaz ve XLSX’e yazılmaz.'])
-    for name, printed in traces:
-        notes.append(f'{name}: basılı Oran {money(printed)}; aynı sütun çiftiyle doğrulandı.')
+    for name, printed, values in traces:
+        if values[b] == 0:
+            notes.append(f'{name}: payda sıfır, basılı 0,00 kabul edildi; bu satır formülü kanıtlamaz.')
+        else:
+            notes.append(f'{name}: basılı Oran {money(printed)}; aynı sütun çiftiyle doğrulandı.')
     return a, b
 
 
