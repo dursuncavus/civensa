@@ -36,7 +36,7 @@
   </div>
   {% endif %}
   {% if user.role == 'strategy' %}
-  <section class="reports-panel">
+  <section class="reports-panel" id="actual-excel-import">
     <h2>Excel'den içe aktar</h2>
     <p>Tüm müdürlüklerin gösterge gerçekleşmelerini içeren ana XLSX dosyasını yükleyin. Önizlemede eşleşmeleri ve yıllık değerleri onaylayın.</p>
     <form method="post" enctype="multipart/form-data" action="/activity-reports/imports/preview">
