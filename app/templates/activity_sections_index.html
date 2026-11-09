@@ -42,7 +42,7 @@
 <tr><td data-label="Bölüm"><a href="/activity-sections/reports/{{ item.report.id }}?code={{ s.code }}">{{ s.code }} · {{ s.title }}</a></td>
 <td data-label="Durum"><span class="ar-status ar-{{ s.status }}">{{ statuses[s.status] }}</span></td><td data-label="Sahibi">{{ owners[s.owner] }}</td>
 <td data-label="Eksikler">{% if directorate_finance_info and s.owner=='finance' and s.missing %}<p role="status">Bu bölümü Mali Hizmetler dolduracak; gönderiminizi engellemez.</p>{% elif row.problems %}{{ folded(row.problems) }}{% elif row.needs_review %}<span class="muted">Gözden geçirilmeli</span>{% else %}—{% endif %}
-{% if s.get('warnings') %}<details class="row-warnings"><summary><h4>Uyarılar (gönderimi engellemez)</h4>{% if not (directorate_finance_info and s.owner=='finance') %} · {{ row.warnings|length }}{% endif %}</summary>{% if directorate_finance_info and s.owner=='finance' %}<p role="status">Bu bölümü Mali Hizmetler dolduracak; gönderiminizi engellemez.</p>{% else %}{{ folded(row.warnings, 'ar-warning') }}{% endif %}</details>{% endif %}
+{% if s.get('warnings') %}{% if directorate_finance_info and s.owner=='finance' %}<h4>Uyarılar (gönderimi engellemez)</h4><p role="status">Bu bölümü Mali Hizmetler dolduracak; gönderiminizi engellemez.</p>{% else %}<details class="row-warnings"><summary><h4>Uyarılar (gönderimi engellemez)</h4> · {{ row.warnings|length }}</summary>{{ folded(row.warnings, 'ar-warning') }}</details>{% endif %}{% endif %}
 {% set similarity=item.similarities.get(s.code) %}
 {% if similarity %}
 {% if similarity.message %}<p class="ar-warning" role="status" data-ar-similarity>{{ similarity.message }}{% if similarity.source_url %} <a href="{{ similarity.source_url }}">{{ similarity.source_label }}</a>{% endif %}</p>

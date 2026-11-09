@@ -213,17 +213,28 @@ def test_civ199_direction_save_returns_to_row_and_says_saved(client, db, sample)
     assert 'Kaydedildi' not in client.get(f'{page_url}?saved=direction&row=x').text
     with sync_playwright() as p:
         browser = p.chromium.launch(**browser_options())
-        page = browser.new_page(viewport=dict(width=1440, height=500))
+        context = browser.new_context(viewport=dict(width=1440, height=500))
+        page = context.new_page()
+        errors = []
+        page.on('pageerror', lambda error: errors.append(str(error)))
         def route(request):
             path = request.request.url.replace('http://testserver', '')
             if request.request.method == 'POST':
                 result = client.post(path, content=request.request.post_data_buffer, follow_redirects=False,
                     headers={'content-type': request.request.headers['content-type']})
+                if result.status_code == 303:
+                    # Chromium does not send the follow-up GET of a fulfilled 303 back through the route
+                    # (it fails with ERR_NAME_NOT_RESOLVED for testserver); hand the browser a plain
+                    # navigation to the same Location, hash included, so the anchor behaviour is tested.
+                    target = 'http://testserver' + result.headers['location']
+                    request.fulfill(status=200, content_type='text/html',
+                        body=f'<meta http-equiv="refresh" content="0;url={target}">')
+                    return
                 request.fulfill(status=result.status_code, headers=dict(result.headers), body=result.content)
                 return
             result = client.get(path)
             request.fulfill(status=result.status_code, headers={'content-type': result.headers.get('content-type', 'text/html')}, body=result.content)
-        page.route('http://testserver/**', route)
+        context.route('http://testserver/**', route)
         page.goto('http://testserver' + page_url)
         page.locator('#bindingSearch').fill('yanıt süresi')
         expect(page.locator('#bindingSearchCount')).to_have_text('1 gösterge bulundu.')
@@ -244,7 +255,11 @@ def test_civ199_direction_save_returns_to_row_and_says_saved(client, db, sample)
         row.locator('select[name=direction]').select_option('lower')
         expect(save).to_be_disabled()
         row.locator('select[name=direction]').select_option('higher')
-        save.click()
+        expect(save).to_be_enabled()
+        # Wait for the POST -> 303 -> GET round trip itself; CI runners were slower than the 5 s default.
+        with page.expect_navigation(url=f'**{page_url}?saved=direction&row={sid}*', timeout=20000):
+            save.click()
+        assert not errors, errors
         saved = page.locator(f'#gosterge-{sid} .binding-saved')
         expect(saved).to_have_text('Kaydedildi: yön «Yüksek değer daha iyi».')
         expect(saved).to_be_in_viewport()

@@ -80,7 +80,7 @@ def sections_without_folds(html):
     html = re.sub(r'</details>\s*</section>', '</section>', html)
     # (12) owners on their own line; row warnings fold to one line.
     html = re.sub(r'<span class="summary-owners">(.*?)</span></p>', r' · \1</p>', html)
-    html = re.sub(r'<details class="row-warnings"><summary>(<h4>.*?</h4>)(?: · \d+)?</summary>(.*?)</details>', r'\1\2', html, flags=re.S)
+    html = re.sub(r'<details class="row-warnings"><summary>(<h4>.*?</h4>) · \d+</summary>(.*?)</details>', r'\1\2', html, flags=re.S)
     return re.sub(r'<script src="/static/design/section-index.js" defer></script>\s*', '', html)
 
 
