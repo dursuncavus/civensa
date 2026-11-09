@@ -32,7 +32,7 @@ Uygulama önizleme kaydını kilitler; tekrar gönderimde saklanan sonucu dönd�
 
 ## Doğrulama
 
-- Yalnız sentetik çalışma kitapları ve geçici yerel PostgreSQL 16 kullanıldı; gerçek çalışma kitabı veya gerçek 2026 gerçekleşmesi kullanılmadı.
+- Yalnız sentetik çalışma kitapları ve geçici yerel PostgreSQL 16 ve 18 sunucuları kullanıldı; gerçek çalışma kitabı veya gerçek 2026 gerçekleşmesi kullanılmadı.
 - `tests/test_actual_import.py`: tam/yakın/eşleşmeyen ad, aynı PG kodları, ikinci gösterge talebi, ad değişikliği/birleşme, TOPLA/KÜMÜLATİF, boş Q4, metin hücre, sayısal sıfır önceliği, yüzde ve belirsiz ölçek, onaysız satırın yazılmaması, idempotent tekrar, servis reddi, eşzamanlı actual değişikliği, önizleme süresi, başlıklar ve üç uçta 403.
 - Önizleme sonrası `actual_revisions` sayısının değişmediği; uygulama sonrası sabit tanımların ve yayın içeriğinin aynı kaldığı; kanıtın korunduğu test edildi.
 - `tests/test_actual_import_migration.py`: gerçek upgrade/boş downgrade/upgrade ve dolu tabloda veri koruyan ret; tek head.
