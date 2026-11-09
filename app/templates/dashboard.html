@@ -30,6 +30,19 @@
   <div class="dashboard-page">
     <div class="dashboard-layout">
       <aside class="dashboard-summary" aria-label="Özet">
+        <section class="dashboard-todo" aria-labelledby="dashboard-todo-title">
+          <h2 id="dashboard-todo-title">Yapılacaklar</h2>
+          {% if progress_summary.missing_accounts or unresolved_count %}
+            <ol class="dashboard-todo-list">
+              {% if progress_summary.missing_accounts %}<li><a href="/users?period_id={{ period.id }}">{{ progress_summary.missing_accounts }} müdürlüğe kişisel hesap aç — Kullanıcılar</a></li>{% endif %}
+              {% if unresolved_count %}<li><a href="/activity-mapping?period_id={{ period.id }}">{{ unresolved_count }} faaliyetin alt programını seç — Faaliyet Eşleştirme</a></li>{% endif %}
+            </ol>
+          {% else %}
+            <p class="dashboard-todo-empty">Yapılacak iş kalmadı.</p>
+          {% endif %}
+        </section>
+        <details class="dashboard-counts-details">
+          <summary>Bütün sayılar</summary>
         {# Preserve 021 whitespace. #}
           <div class="cards strategy-cards">
             <a class="card action-card" href="#mudurluk-ilerleme" aria-label="Dönemdeki müdürlük {{ departments|length }}">
@@ -47,6 +60,7 @@
             </a>
           </div>
         {# Preserve 021 whitespace. #}
+        </details>
       </aside>
       <div class="dashboard-main">
         {% if user.role=='strategy' %}
@@ -160,6 +174,8 @@
                 <a class="button" href="/api/progress?period_id={{ period.id }}">JSON</a>
               </div>
             </div>
+            <details class="dashboard-counts-details">
+              <summary>Bütün sayılar</summary>
             <div class="progress-list">
               <a class="progress-row progress-filter" href="#mudurluk-ilerleme" data-filter-states="approved" aria-label="Onaylanan müdürlük {{ progress_summary.approved }}">
                 <span>Onaylanan müdürlük</span>
@@ -186,6 +202,7 @@
                 <b class="{{ 'bad' if progress_summary.missing_accounts else 'ok' }}">{{ progress_summary.missing_accounts }}</b>
               </a>
             </div>
+            </details>
             <p class="muted progress-filter-status" id="progressFilterStatus" hidden aria-live="polite"><span data-filter-count></span> müdürlük gösteriliyor · <a href="#mudurluk-ilerleme" data-clear-progress-filter>Tümünü göster</a></p>
             <div class="table-wrap" role="region" aria-label="Müdürlük ilerlemesi" tabindex="0">
               <table>
