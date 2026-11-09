@@ -1,0 +1,49 @@
+# CIV-192 — Gösterge gerçekleşmeleri Excel içe aktarma
+
+## Akış
+
+Strateji, mevcut `/activity-reports` ekranındaki **Excel'den içe aktar** alanında 2026 rapor revizyonunu seçer ve tüm müdürlükleri içeren ana XLSX dosyasını yükler. Yalnız `veriler` sayfası, normalleştirilmiş başlıklarla okunur; diğer sayfalar dikkate alınmaz. Formüller hesaplanmaz (`data_only=True`). Zorunlu başlık eksikliği veya yinelenmesi Türkçe hata verir; açıklama sütunu isteğe bağlıdır.
+
+Önizleme actual kaydı oluşturmaz. Müdürlük ve gösterge adları, Q1–Q4, yöntem, yıllık değer, mevcut değer, durum ve seçim birlikte gösterilir. Her satır başlangıçta **Aktarma** seçilidir. Strateji eşleşmeyi ve sayı yorumunu seçerek onaylar; uygulanacak değer istemciden alınmaz, saklanan önizlemeden türetilir. Önizleme 24 saat geçerlidir.
+
+Uygulama yalnız onaylanmış satırları `activity_contract_service.save_actual` üzerinden `verified` durumunda yeni revizyon olarak yazar. Önceki kanıtlar ve sapma bilgileri korunur; açıklama Excel'den alınır. Yeni kanıt eklenmez. Kanıtsız kayıt, onaylı/geçmiş rapor, eşzamanlı değişiklik veya mevcut iş akışı kuralı nedeniyle servis reddederse satır ayrı işlem noktasıyla geri alınır ve Türkçe neden sonuçta gösterilir. Sapma açıklamasının gönderimi engelleme davranışı ekran girişiyle aynıdır; servis dışında ek bir onay istisnası açılmaz.
+
+## Eşleştirme ve durumlar
+
+Müdürlükler `structure_service` içindeki yıl adı ve iptal edilmemiş Kurum Yapısı kararlarının önceki/sonraki adlarıyla çözülür. Birleşme bağlantıları devralan kitap müdürlüğüne ulaşmayı sağlar. İçe aktarıcıda ad değişikliği tablosu yoktur; kaydı olmayan ad farkı için Kurum Yapısı kaydı gerekir.
+
+Gösterge adları Türkçe İ/ı, harf durumu, boşluk ve noktalama bakımından normalleştirilir; baştaki SH/PG kodları çıkarılır. Anahtar, çözülmüş müdürlük ve gösterge adıdır. PG sütunu eşleştirme için kullanılmaz. Tam tek eşleşme **Eşleşti** olur. Diğer adlar aynı müdürlük kümesinde `SequenceMatcher` benzerliği en az 0,60 olan en fazla üç adayı **Onay gerekiyor** durumuyla sunar. Birden fazla tam ad eşleşmesi de seçim gerektirir. Aday yoksa **Eşleşmedi** olur. Aynı göstergeyi ikinci kez isteyen tam eşleşme veya uygulamadaki ikinci seçim **Hata** olur.
+
+**Eksik**, sayısal yıllık değeri hesaplanamayan satırdır; sıfır olarak yazılmaz. **Aktarılmadı**, Stratejinin seçim yapmadığı satırdır. **Değişmedi**, mevcut gerçekleşme değeriyle aynı olduğundan yeni revizyon yazılmayan satırdır. **Yazıldı**, yeni gerçekleşme revizyonu oluşturulan satırdır. Önizlemedeki eksik/hatalı/eşleşmeyen satırlar başka satırların uygulanmasını engellemez.
+
+## Yıllık değer ve ölçek
+
+Sayısal `2026 YILI TOPLAMI` önceliklidir; sıfır da sayıdır. Bu hücre sayısal değilse TOPLA yalnız dört çeyreğin tamamı sayısalken toplam üretir; KÜMÜLATİF, `kÜMÜLATİF`, `T.KÜMÜLATİF` ve aksansız yazımlar Q4'ü kullanır. Metin hücreler (`%` dahil), boşluklar ve önbelleksiz formüller sayı değildir.
+
+Excel birimi Oran içeriyorsa ve yıllık değer ≤ 1 ise kitap birimindeki yüzde işareti/yüzde ifadesi veya Oran birimiyle birlikte 1'den büyük doğrulanmış hedef, yüzde ölçeği kabul edilir. Dönüşüm **×100 (oran kesirden yüzdeye)** olarak gösterilir ve ancak bu yorumu seçerek onaylayınca uygulanır. Ölçek belli değilse özgün ve ×100 değerlerinin ikisi de sunulur; Strateji birini seçer. Sayılar Türkçe biçimlenir.
+
+## Saklama, migration ve denetim
+
+Bir eklemeli migration eklendi: `c192a1b2c3d4`, ebeveyni `c185a1b2c3d4`; tek Alembic head korunur. `actual_imports`, rapor revizyonunu, yükleyeni, SHA-256'yı, ayrıştırılmış önizlemeyi ve tek uygulama sonucunu tutar. Ham Excel hiçbir zaman saklanmaz. Dolu tablo için downgrade veri kaybını önlemek üzere reddedilir.
+
+Mevcut `ARFinancialImport`, farklı `ARDocument` modeline bağlı ve malî satırlarla ilişkilidir. `ICImport` iç kontrol içindir; `BudgetOperation` bütçe talimatı alanlarını zorunlu tutar. Genel adlı `ImportBatch` ise PP kitabı yükleyicisinin müdürlük planı, tanım/kitap yazımı ve geri alma geçmişidir; mevcut ekran ve uygulama yolları onu PP içeriği olarak yorumlar. Bu kayıtları kullanmak PP yükleyicilerine tür ayrımı ve yeni korumalar eklemeyi gerektirir; görev bu yükleyicilere dokunmayı yasaklar. Bu nedenle ayrı rapor revizyonu önizleme tablosu kullanıldı.
+
+Uygulama önizleme kaydını kilitler; tekrar gönderimde saklanan sonucu döndürür. Her yeni uygulama için tek `actual_import_apply` audit kaydı dosya SHA-256, kullanıcı, durum sayıları, Excel satırları, gösterge ve yazılan actual revizyon kimliklerini içerir. Aynı dosyanın yeniden yüklenmesi, aynı değerler için yeni actual revizyonu üretmez. Geri alma, ekranın mevcut yeni gerçekleşme revizyonu mekanizmasıyla yapılır; geçmiş kayıtlar silinmez.
+
+## Doğrulama
+
+- Yalnız sentetik çalışma kitapları ve geçici yerel PostgreSQL 16 kullanıldı; gerçek çalışma kitabı veya gerçek 2026 gerçekleşmesi kullanılmadı.
+- `tests/test_actual_import.py`: tam/yakın/eşleşmeyen ad, aynı PG kodları, ikinci gösterge talebi, ad değişikliği/birleşme, TOPLA/KÜMÜLATİF, boş Q4, metin hücre, sayısal sıfır önceliği, yüzde ve belirsiz ölçek, onaysız satırın yazılmaması, idempotent tekrar, servis reddi, eşzamanlı actual değişikliği, önizleme süresi, başlıklar ve üç uçta 403.
+- Önizleme sonrası `actual_revisions` sayısının değişmediği; uygulama sonrası sabit tanımların ve yayın içeriğinin aynı kaldığı; kanıtın korunduğu test edildi.
+- `tests/test_actual_import_migration.py`: gerçek upgrade/boş downgrade/upgrade ve dolu tabloda veri koruyan ret; tek head.
+- Odaklı doğrulama: 12 test geçti (içe aktarma, tarayıcı ve yeni/eski migration testleri).
+- İlgili mevcut sözleşme, kanıt, Türkçe hata ve kılavuz testleri çalıştırıldı; kılavuz etiket sözleşmesi geçti. Yeni head nedeniyle mevcut migration testlerinin head beklentileri güncellendi.
+- Tam PostgreSQL takımı ve PR CI sonucu tamamlandığında bu rapora eklenecek.
+- `compileall` ve `git diff --check` geçti.
+
+Gerçek dosyanın başlık varyantları ve Kurum Yapısı kayıtlarının belediyedeki kapsamı sentetik testlerden doğrulanamaz. Gerekli başlık veya yapı eşleşmesi bulunmazsa kullanıcıya hata/eşleşmeyen satır gösterilir; tanımlar veya hedefler değiştirilmez. Aday/yayın iş akışına geçmiş raporların kapalı yazma yolları ve `ACTIVITY_REFERENCE_SUCCESSORS=False` korunmuştur. Merge, deploy veya canlı veritabanı bağlantısı yapılmadı.
+
+## Sentetik ekran görüntüleri
+
+- [Önizleme](preview.png)
+- [Uygulama sonucu](result.png)

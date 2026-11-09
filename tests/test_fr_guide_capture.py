@@ -24,8 +24,9 @@ def test_committed_guide_contract():
                         'Gösterge gerçekleşmesi ve kanıt', 'EK-1 bölümleri ve EK-2',
                         'Gönderme (Müdür)', 'İade ve düzeltme', 'Onay sonrası',
                         'Yardım', 'Daha sonra eklenecek bölümler']
-    for placeholder in ['[EKLENECEK — faaliyet sonucu girişi, Ali Abi cevabı bekleniyor]',
-                        '[EKLENECEK — gösterge Excel ile toplu giriş]']:
+    assert '[EKLENECEK — gösterge Excel ile toplu giriş]' not in body
+    assert "`Excel'den içe aktar`" in body
+    for placeholder in ['[EKLENECEK — faaliyet sonucu girişi, Ali Abi cevabı bekleniyor]']:
         assert body.count(placeholder) == 1
     assert 'Destek kanalı: Strateji Geliştirme Müdürlüğü duyuracak.' in body
     sources = [p for p in (ROOT/'app/templates').rglob('*') if p.is_file()]

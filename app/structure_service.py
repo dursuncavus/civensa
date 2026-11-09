@@ -490,3 +490,33 @@ def copy_period_work(db, actor, base, period, sub_map):
     missing = unresolved_work(db,base.id,period.year)
     audit_change(db,actor,'structure_period_copy',period,None,{'base_period_id':base.id,'change_ids':used,'untransferred':missing})
     return missing
+
+
+def import_department_ids(db, organization_id, year, workbook_name, normalize):
+    """Resolve workbook names through non-cancelled structure history.
+
+    A merge may route an old name to the receiving book department. Keep all
+    reachable departments so ambiguous indicator names require user selection.
+    No spelling/rename overrides belong to an individual importer.
+    """
+    departments = {d.id: d for d in db.scalars(select(Department).where(
+        Department.organization_id == organization_id))}
+    names = {did: {normalize(d.name), normalize(display_name_for_year(db, year, d))}
+             for did, d in departments.items()}
+    edges = {}
+    for change in live_changes(db):
+        snapshot = json.loads(change.snapshot_json)
+        for side in ('before', 'after'):
+            for did, profile in snapshot[side]['departments'].items():
+                if int(did) in names and profile:
+                    names[int(did)].add(normalize(profile['name']))
+        for link in links_for(db, change.id):
+            if change.change_type == 'MERGED' and link.from_department_id in names and link.to_department_id in names:
+                edges.setdefault(link.from_department_id, set()).add(link.to_department_id)
+    found = {did for did, aliases in names.items() if normalize(workbook_name) in aliases}
+    pending = list(found)
+    while pending:
+        for did in edges.get(pending.pop(), set()) - found:
+            found.add(did)
+            pending.append(did)
+    return found

@@ -1,0 +1,8 @@
+.actual-import-scroll { overflow-x: auto; margin-block: var(--space-4); }
+.actual-import-table { min-width: 1380px; width: 100%; }
+.actual-import-table :is(th, td) { overflow-wrap: normal; }
+.actual-import-table .quarter { white-space: nowrap; min-width: 48px; }
+.actual-import-table .selection { min-width: 260px; max-width: 340px; }
+.actual-import-table .indicator { min-width: 150px; }
+.actual-import-table .department { min-width: 130px; }
+.actual-import-table caption { text-align: left; font-weight: var(--font-medium); margin-bottom: var(--space-3); }
