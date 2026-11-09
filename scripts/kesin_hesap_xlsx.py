@@ -1043,15 +1043,12 @@ def expenditure(rows, departments, notes, errors):
 
 
 def check_total_prefixes(row, summed, year, notes, errors):
-    if summed[0] <= 0:
-        raise ConversionError(f'{row.where}, Oran: toplam bütçe tahmini pozitif değil; '
-                              'yüzde doğrulanamıyor. Kaynak toplam ve tahminleri kontrol edin.')
-    expected = [*summed, (summed[6] / summed[0] * 100).quantize(Decimal('.01'))]
-    labels = (*revenue_labels(year), 'Oran')
+    expected = summed
+    labels = revenue_labels(year)
     matches = set()
     notes.extend(['\n### TOPLAM önek kontrolü\n',
                   'Bu satır kontrol altbilgisidir; XLSX verisi yapılmadı, eksik haneler tahmin edilmedi. '
-                  'Basılmayan ondalıklar bağımsız olarak doğrulanamaz. Oran = net tahsilat / bütçe tahmini × 100.',
+                  'Basılmayan ondalıklar bağımsız olarak doğrulanamaz. Oran bu toplama dahil değildir.',
                   '\n| Sütun | Basılı PDF | Düzey 1 toplamı | Kontrol |', '| --- | --- | --- | --- |'])
     for offset, (label, value) in enumerate(zip(labels, expected)):
         raw = compact_sign(row.text(2 + offset))
@@ -1071,14 +1068,81 @@ def check_total_prefixes(row, summed, year, notes, errors):
     return matches
 
 
+def printed_ratio(row):
+    raw = ''.join(row.cells[10])
+    if not MONEY.fullmatch(raw):
+        raise ConversionError(f'{row.where}, gelir {row.text(0)} {safe(row.text(1))}, Oran: '
+                              'basılı yüzde boş veya iki ondalıkla tamamlanmadı. '
+                              'Kaynak Oran hücresini kontrol edin; boş sıfır sayılmadı.')
+    return Decimal(compact_sign(raw).replace('.', '').replace(',', '.'))
+
+
+def ratio_value(numerator, denominator):
+    if denominator == 0:
+        return None
+    value = (numerator / denominator * 100).quantize(Decimal('.01'))
+    return value if value else Decimal('0.00')
+
+
+def infer_ratio_formula(records, year, notes):
+    """Prove one ordered pair of distinct source columns across every level-I row."""
+    pairs = {(a, b) for a in range(8) for b in range(8) if a != b}
+    common = set(pairs)
+    traces = []
+    for row, values in records:
+        printed = printed_ratio(row)
+        fitting = {pair for pair in pairs if ratio_value(values[pair[0]], values[pair[1]]) == printed}
+        name = f'{row.where}, gelir {row.text(0)} {safe(row.text(1))}'
+        if not fitting:
+            raise ConversionError(f'{name}, Oran: hiçbir sütun çifti basılı {money(printed)} '
+                                  'oranını vermiyor. Sekiz tutarı ve yüzdeyi kontrol edin; '
+                                  'sıfır paydalı çiftler kullanılmadı.')
+        common &= fitting
+        traces.append((name, printed))
+    if len(common) != 1:
+        reason = 'hiçbir ortak sütun çifti yok' if not common else f'birden çok ortak sütun çifti var ({len(common)})'
+        raise ConversionError(f'Gelir Oran formülü doğrulanamadı: {reason}. '
+                              f'Satırlar: {"; ".join(name for name, _ in traces)}. '
+                              'Tüm düzey 1 satırlarının tutar ve yüzdelerini kontrol edin; formül tahmin edilmedi.')
+    a, b = next(iter(common))
+    labels = revenue_labels(year)
+    notes.extend(['\n### Oran kontrolü\n',
+                  f'Oran formülü: {labels[a]} / {labels[b]} × 100; iki ondalığa yuvarlanır. '
+                  '56 sıralı, farklı sütun çiftinden yalnız bu çift bütün düzey 1 satırlarına uydu. '
+                  'Oranlar toplanmaz ve XLSX’e yazılmaz.'])
+    for name, printed in traces:
+        notes.append(f'{name}: basılı Oran {money(printed)}; aynı sütun çiftiyle doğrulandı.')
+    return a, b
+
+
+def check_total_ratio(row, summed, pair, year, notes, errors):
+    a, b = pair
+    labels = revenue_labels(year)
+    calculated = ratio_value(summed[a], summed[b])
+    if calculated is None:
+        raise ConversionError(f'{row.where}, Oran: {labels[b]} toplamı sıfır; toplam oranı '
+                              'hesaplanamıyor. Kaynak payda ve yüzdeyi kontrol edin; sıfıra bölünmedi.')
+    printed = printed_ratio(row)
+    difference = printed - calculated
+    notes.append(f'{row.where}, Oran: PDF {money(printed)}, satır toplamlarından '
+                 f'{labels[a]} / {labels[b]} × 100 = {money(calculated)}, fark {money(difference)}. '
+                 'Kesik TOPLAM tutarları yüzde hesabında kullanılmadı.')
+    if difference:
+        errors.append(f'{row.where}, Oran: TOPLAM oranı uyuşmuyor; basılı PDF {money(printed)}, '
+                      f'satır toplamlarından {money(calculated)}, fark {money(difference)}. '
+                      'Aynı sütun çiftinin toplamlarını ve basılı yüzdeyi kontrol edin.')
+
+
 def revenue(rows, year, notes, errors):
     labels = revenue_labels(year)
     emitted = {}
     total = None
+    total_row = None
     prefix_total = None
     details = []
     pending = []
     planned_deduction = None
+    ratio_records = []
     for row in rows:
         if row.check_prefixes:
             if total is not None or prefix_total is not None:
@@ -1100,6 +1164,7 @@ def revenue(rows, year, notes, errors):
             if total is not None or prefix_total is not None:
                 raise ConversionError(f'{row.where}: gelir toplamı yinelenmiş. Tek toplamlı PDF kullanın.')
             total = row.amounts(2, labels, revenue=True, notes=notes)
+            total_row = row
             continue
         if code[0] not in REVENUE_CODES or code[0] in emitted:
             raise ConversionError(f'{row.where}: gelir kodu bilinmiyor veya yinelenmiş ({code[0]}). '
@@ -1113,6 +1178,7 @@ def revenue(rows, year, notes, errors):
                                       'plan kesintisinde, diğer yedi parasal alan açık sıfırken desteklenir. '
                                       'Kaynak satırı kontrol edin; tutar pozitif gelire çevrilmedi.')
             planned_deduction = row
+        ratio_records.append((row, v))
     if not emitted:
         raise ConversionError('Gelir: düzey 1 satır bulunamadı. Tam gelir cetvelini kullanın.')
     for parent, where in details:
@@ -1149,6 +1215,10 @@ def revenue(rows, year, notes, errors):
                           'doğrulanamıyor. Genel toplamı içeren kaynak PDF kullanın.')
         notes.append('Gelir PDF toplam satırı yok; genel toplam karşılaştırması yapılamadı. '
                      'Düzey 1 satırlarının tahakkuk ve net tahsilat eşitlikleri doğrulandı.')
+    pair = infer_ratio_formula(ratio_records, year, notes)
+    if prefix_total is not None or total_row is not None:
+        check_total_ratio(prefix_total if prefix_total is not None else total_row,
+                          summed, pair, year, notes, errors)
     output = []
     for code, v in sorted(emitted.items()):
         if code == '09' and planned_deduction is not None:

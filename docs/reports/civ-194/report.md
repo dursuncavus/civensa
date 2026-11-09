@@ -140,14 +140,32 @@ eksik genel toplam ve yinelenen kod hâlâ hatadır.
    ondalıklar bu gösterimin öneki olmalıdır. Örneğin sentetik `11.223.333`
    ve `11.223.333,5`, hesaplanan `11.223.333,56` için geçerlidir; `11.223`
    tam sayı kısmını tamamlamadığı için geçersizdir. Tam basılan tutarlarda
-   kuruş eşitliği, tam basılan yüzdede `net tahsilat / bütçe tahmini × 100`
-   hesabının iki ondalığa yuvarlanmış değeri aranır. Pozitif toplam tahmin
-   yoksa yüzde doğrulanamaz ve dönüşüm durur. Bir kuruş veya tek basılı rakam
+   kuruş eşitliği aranır. Oran, sekiz parasal sütunun toplama/önek kontrolüne
+   katılmaz; aşağıdaki ayrı formül denetimiyle doğrulanır. Bir kuruş veya tek
+   basılı rakam
    farkı sayfa/sütun belirtilerek hatadır; hiçbir eksik hane tamamlanmaz.
 
    Rapor bu denetimi **TOPLAM önek kontrolü** olarak ayrı gösterir: basılı
    önek, hesaplanan düzey 1 toplamı ve kontrol sonucu yer alır. Basılmayan
    ondalıklar için sıfır fark veya tam bağımsız mutabakat iddia edilmez.
+
+   **Oran formülü** sabit bir sütun eşlemesi varsayılmaz. Sekiz parasal
+   sütundan farklı pay ve payda seçilerek 56 sıralı çift denenir. Her düzey 1
+   satırındaki tam basılı yüzde için `round(pay / payda × 100, 2)` hesaplanır;
+   bütün satırlara uyan tam bir ortak çift bulunmalıdır. Hiçbir çift uymaması,
+   satırların ortak çiftinin bulunmaması veya birden çok ortak çift kalması,
+   ilgili sayfa/satır ve gelir kodlarıyla hatadır. Sıfır paydalı çiftler
+   kullanılmaz; boş veya eksik yüzde sıfır sayılmaz, eksik hane türetilmez.
+   Açık iki ondalığı birleştirilen yüzdeler de aynı denetime tabidir.
+
+   TOPLAM varsa basılı tam oran, **seçilen pay sütununun satır toplamı /
+   seçilen payda sütununun satır toplamı × 100** hesabının iki ondalıklı
+   değeriyle karşılaştırılır. Kesik TOPLAM tutarları hesapta kullanılmaz;
+   yüzdeler toplanmaz. Payda toplamı sıfırsa veya basılı oran farklıysa dönüşüm
+   durur. Bütçe tahmininin pozitif olması tek başına koşul değildir; seçilen
+   payda önemlidir. Raporda tekil formül, her satırın kontrolü ve toplam oran
+   farkı ayrı gösterilir. Oran XLSX’e yazılmaz.
+
    TOPLAM metninden hiçbir tutar XLSX’e yazılmaz. Veri satırlarının tutar,
    satır eşitliği ve tekil konum denetimleri korunur. Tahmin/devreden kaynak
    birleşimi iki ondalıkla tamamlanmamışsa, eksik TOPLAM ondalığı ona kanıt
@@ -359,6 +377,18 @@ ve çıplak kod hanesi bulunur. Kesik TOPLAM, imza ve `/Rotate 90` ile birlikte
 test edilir; ilk veri kaydı da kısmi olabilir. Dört başarı regresyonu önceki
 kodda başarısızdı. İki tam tutar, boş hücre altında ek, yanlış kuruş, farklı
 kod konumu, yabancı metin ve bilinmeyen `02` üst kodu dönüşümü durdurur.
+
+`issuecomment-6744813216` için sentetik satır yüzdeleri TOPLAM yüzdesine
+eklenmez; üç farklı tekil pay/payda çiftiyle, düz ve `/Rotate 90` sayfalarda
+satır toplamlarından hesap doğrulanır. Yeni başarı ve hata regresyonları
+düzeltmeden önce başarısızdı. Bir satırın hiçbir çifte uymaması, her satırın
+ayrı çiftlere uyması fakat ortak çift bulunamaması ve birden çok ortak çift
+kalması iki XLSX’i de engeller. Sıfır bütçe tahmini başka bir geçerli payda
+varsa kabul edilir; seçilen paydanın toplamı sıfırsa dönüşüm durur. Tam TOPLAM
+satırında 0,01 puanlık yüzde farkı, eksik/boş satır yüzdesi ve iki ondalığı
+açıkça basılmış bölünmüş yüzde de test edilir. Eski sentetik yüzdeler tutarlı
+hesaplarla değiştirilmiştir; birbirine yakın tutarlı dar hücre örneğinde
+formülü tekilleştirmek için ayrı bir sentetik gelir satırı kullanılır.
 
 ```sh
 python -m pytest -q --require-postgres tests/test_kesin_hesap_xlsx.py

@@ -314,6 +314,9 @@ def revenue_pdf(tmp_path, *, ambiguous=False, total=True, mismatch=False, unprov
                         '80,00', '70,00', '0,00', '70,00', '10,00', '70,00'])
     if detail_first:
         rows[0], rows[1] = rows[1], rows[0]
+    if total:
+        rows[-1][-1] = money((parse_number(rows[-1][8]) / parse_number(rows[-1][2]) * 100)
+                            .quantize(Decimal('.01')))
     if integer_wrap:
         for row in rows:
             for i in range(2, 10):
@@ -789,8 +792,16 @@ def narrow_decimal_pdf(tmp_path, mode, *, wrong=False, invalid=None):
         parts[0] = '12.345.678\n9'  # No preceding ,d to complete.
     if invalid == 'missing_suffix':
         parts[-1] = parts[-1].split('\n')[0]
-    rows = [['0\n1', 'SENTETİK DAR HÜCRELİ GELİR', *parts, '90,00'],
-            ['', 'GENEL TOPLAM', *[v.replace('\n', '') for v in parts], '90,00']]
+    # A distinct second row disambiguates the ratio's denominator despite the
+    # first row's almost equal amounts rounding to the same percentage.
+    v = list(map(parse_number, values))
+    extra = list(map(Decimal, ['100.11', '2.34', '70.56', '72.90', '60.78', '1.23', '59.55', '13.35']))
+    summed = [a + b for a, b in zip(v, extra)]
+    def rate(vector):
+        return money((vector[6] / vector[0] * 100).quantize(Decimal('.01')))
+    rows = [['0\n1', 'SENTETİK DAR HÜCRELİ GELİR', *parts, rate(v)],
+            ['03', 'SENTETİK AYIRT EDİCİ GELİR', *map(money, extra), rate(extra)],
+            ['', 'GENEL TOPLAM', *map(money, summed), rate(summed)]]
     # Adjacent columns are deliberately too narrow for a complete amount.
     return pdf_table(tmp_path / 'dar-gelir.pdf', headers, [90, 140] + [36] * 8 + [30],
                      [rows], lead_layout=True, header_size=4, amount_size=4.5,
@@ -906,14 +917,18 @@ def test_both_lead_blockers_together_keep_all_reconciliations_exact(tmp_path):
 
 def test_detached_minus_with_grouped_millions_stays_in_its_column(tmp_path):
     headers = ['Gelirin Kodu', 'Açıklama', *converter.revenue_labels(2026), 'Oran']
-    rows = [['01', 'SENTETİK GELİR', '5.000.000,00', *(['0,00'] * 8)],
+    values = list(map(Decimal, ['5000000', '1000000', '2500000', '3500000',
+                               '3000000', '100000', '2900000', '600000']))
+    summed = [values[0] - Decimal('2345678.91'), *values[1:]]
+    rate = money((summed[6] / summed[0] * 100).quantize(Decimal('.01')))
+    rows = [['01', 'SENTETİK GELİR', *map(money, values), '58,00'],
             ['09', 'Red ve İadeler (-)', '- 2.345.678,91', *(['0,00'] * 8)],
-            ['', 'GENEL TOPLAM', '2.654.321,09', *(['0,00'] * 8)]]
+            ['', 'GENEL TOPLAM', *map(money, summed), rate]]
     pdf = pdf_table(tmp_path / 'large-synthetic.pdf', headers, [90, 140] + [90] * 8 + [45], [rows])
     result, out = run(tmp_path, '--gelir', pdf)
     assert result.returncode == 0, (out / 'report.md').read_text()
     assert list(load_workbook(out / 'revenue.xlsx').active.values)[1] == (
-        '01', '5.000.000,00', '0,00', '0,00', None)
+        '01', '5.000.000,00', '3.000.000,00', '100.000,00', None)
     assert '5.000.000,00 + (-2.345.678,91) = 2.654.321,09' in (out / 'report.md').read_text()
 
 
@@ -951,7 +966,8 @@ def straddled_code_pdf(tmp_path, *, first=True, centered=False, invalid=None):
         code = '0'
     elif invalid == 'ambiguous_code':
         wrapped = ['\n' + money(value) for value in v]
-    rows = [[code, '\nDiğer Gelirler', *wrapped, '\n91,22'],
+    rate = money((v[6] / v[0] * 100).quantize(Decimal('.01')))
+    rows = [[code, '\nDiğer Gelirler', *wrapped, '\n' + rate],
             ['0\n\n6', '\nSermaye Gelirleri', *['\n' + money(value) for value in extra], '\n70,00']]
     if invalid == 'ambiguous_code':
         rows[1][0] = ''
@@ -959,7 +975,8 @@ def straddled_code_pdf(tmp_path, *, first=True, centered=False, invalid=None):
     if not first:
         rows.insert(0, ['01', 'SENTETİK ÖNCEKİ GELİR', *map(money, extra), '70,00'])
         total = [a + b for a, b in zip(total, extra)]
-    rows.append(['', 'GENEL TOPLAM', *map(money, total), '89,00'])
+    rate = money((total[6] / total[0] * 100).quantize(Decimal('.01')))
+    rows.append(['', 'GENEL TOPLAM', *map(money, total), rate])
     return pdf_table(tmp_path / 'straddled.pdf', headers, [90, 140] + [90] * 8 + [45], [rows],
                      centered=centered)
 
@@ -998,19 +1015,37 @@ def test_straddled_code_keeps_invalid_continuations_blocking(tmp_path, invalid):
         assert 'kayıtlar arasında kod tahmin edilmedi' in report
 
 
-def truncated_total_pdf(tmp_path, *, invalid=None, deduction=False, rotation=0):
+def truncated_total_pdf(tmp_path, *, invalid=None, deduction=False, rotation=0,
+                        ratio_pair=(6, 0), ratio_error=None, zero_estimates=False):
     headers = ['Gelirin Kodu', 'Açıklama', *converter.revenue_labels(2026), 'Oran']
     headers[5] = 'Toplam\nTahakkuk'  # A separate "Toplam" text object in the column header.
     values = list(map(Decimal, ['11222333.45', '1234567.89', '8765432.11', '10000000',
                                '9876543.21', '123456.78', '9753086.43', '246913.57']))
     extra = list(map(Decimal, ['1000.11', '0.10', '50.20', '50.30', '30.22', '0.11', '30.11', '20.19']))
+    if zero_estimates:
+        values[0] = extra[0] = Decimal(0)
+    if ratio_error == 'ambiguous':
+        values = list(map(Decimal, ['200', '0', '100', '100', '50', '0', '50', '50']))
+        extra = list(map(Decimal, ['100', '0', '80', '80', '20', '0', '20', '60']))
+        ratio_pair = (2, 3)
+    a, b = ratio_pair
     summed = [a + b for a, b in zip(values, extra)]
     if deduction:
         summed[0] -= Decimal('250.25')
-    rate = (summed[6] / summed[0] * 100).quantize(Decimal('.01'))
-    rows = [['01', 'SENTETİK GELİR', *map(money, values), '86,91'],
-            ['05', 'SENTETİK EK GELİR', *map(money, extra), '3,01'],
+    rate = (summed[a] / summed[b] * 100).quantize(Decimal('.01'))
+    rows = [['01', 'SENTETİK GELİR', *map(money, values), money((values[a] / values[b] * 100).quantize(Decimal('.01')))],
+            ['05', 'SENTETİK EK GELİR', *map(money, extra), money((extra[a] / extra[b] * 100).quantize(Decimal('.01')))],
             ['', 'TOPLAM', *map(money, summed), money(rate)]]
+    if ratio_error == 'no_pair':
+        rows[1][-1] = '13,37'
+    elif ratio_error == 'conflicting':
+        rows[1][-1] = money((extra[6] / extra[0] * 100).quantize(Decimal('.01')))
+    elif ratio_error == 'wrapped':
+        rows[0][-1] = rows[0][-1].replace(',', '\n,')
+    elif ratio_error == 'missing':
+        rows[1][-1] = ''
+    elif ratio_error == 'partial':
+        rows[1][-1] = rows[1][-1][:-1]
     if deduction:
         rows.insert(2, ['09', 'Red ve İadeler (-)', '- 250,25', *(['0,00'] * 8)])
     if invalid == 'body_truncation':
@@ -1020,7 +1055,9 @@ def truncated_total_pdf(tmp_path, *, invalid=None, deduction=False, rotation=0):
     elif invalid == 'unproved_one_decimal_data':
         rows[0][2] = rows[0][2][:-1].replace(',', '\n,')
     path = pdf_table(tmp_path / 'truncated-total.pdf', headers, [90, 140] + [65] * 8 + [45], [rows],
-                      header_size=5, total_footer=invalid or 'valid')
+                      header_size=5,
+                      total_footer='complete' if zero_estimates or ratio_error in {'ambiguous', 'missing'}
+                      else invalid or 'valid')
     return rotate_synthetic(path, rotation)
 
 
@@ -1193,3 +1230,78 @@ def test_two_line_revenue_cells_are_not_guessed_or_added_twice(tmp_path, rotatio
         assert '0,01' in report
     elif invalid == 'unknown_code':
         assert 'bilinmeyen gelir üst kodu 02' in report
+
+
+@pytest.mark.parametrize('rotation', [0, 90])
+@pytest.mark.parametrize('pair', [(4, 3), (2, 0), (6, 0)])
+def test_lead_oran_formula_is_unique_across_rows_and_recomputed_from_sums(tmp_path, rotation, pair):
+    pdf = truncated_total_pdf(tmp_path, rotation=rotation, ratio_pair=pair)
+    result, out = run(tmp_path, '--gelir', pdf)
+    assert result.returncode == 0, (out / 'report.md').read_text()
+    parsed = converter.pdf_rows(pdf, 'revenue', 2026, [])
+    row_rates = [parse_number(row.text(10)) for row in parsed if row.text(0)]
+    total_rate = parse_number(next(row.text(10) for row in parsed if row.check_prefixes))
+    assert sum(row_rates) != total_rate
+    report = (out / 'report.md').read_text()
+    a, b = pair
+    assert 'Oran formülü' in report
+    assert f'{converter.revenue_labels(2026)[a]} / {converter.revenue_labels(2026)[b]}' in report
+    assert 'Oran' not in next(load_workbook(out / 'revenue.xlsx').active.values)
+
+
+@pytest.mark.parametrize('error', ['no_pair', 'conflicting', 'ambiguous'])
+def test_oran_with_no_unique_common_formula_blocks_both_outputs(tmp_path, error):
+    pair = (6, 0) if error == 'no_pair' else (4, 3)
+    result, out = run(tmp_path, '--gider', expense_pdf(tmp_path),
+                      '--gelir', truncated_total_pdf(tmp_path, ratio_pair=pair, ratio_error=error))
+    assert result.returncode != 0 and not list(out.glob('*.xlsx'))
+    report = (out / 'report.md').read_text()
+    assert 'Oran' in report and 'sayfa 1' in report and '05' in report
+    assert 'SENTETİK EK GELİR' in report
+    if error == 'ambiguous':
+        assert 'birden çok' in report
+    else:
+        assert 'hiçbir' in report
+
+
+def test_ratio_denominator_is_not_assumed_to_be_the_budget_estimate(tmp_path):
+    result, out = run(tmp_path, '--gelir', truncated_total_pdf(tmp_path, ratio_pair=(4, 3), zero_estimates=True))
+    assert result.returncode == 0, (out / 'report.md').read_text()
+
+
+def test_explicit_two_decimal_wrapped_ratio_is_checked(tmp_path):
+    result, out = run(tmp_path, '--gelir', truncated_total_pdf(tmp_path, ratio_error='wrapped'))
+    assert result.returncode == 0, (out / 'report.md').read_text()
+    assert 'Oran formülü' in (out / 'report.md').read_text()
+
+
+@pytest.mark.parametrize('error', ['missing', 'partial'])
+def test_incomplete_row_ratio_is_not_zero_or_inferred(tmp_path, error):
+    result, out = run(tmp_path, '--gider', expense_pdf(tmp_path),
+                      '--gelir', truncated_total_pdf(tmp_path, ratio_error=error))
+    assert result.returncode != 0 and not list(out.glob('*.xlsx'))
+    report = (out / 'report.md').read_text()
+    assert 'sayfa 1' in report
+    if error == 'partial':
+        assert 'Oran' in report
+    else:
+        assert 'boş' in report
+
+
+@pytest.mark.parametrize('total_error', ['zero_denominator', 'mismatch'])
+def test_complete_total_ratio_is_checked_from_row_sums(tmp_path, total_error):
+    values = list(map(Decimal, ['100', '20', '70', '90', '60', '10', '50', '40']))
+    deduction = Decimal('-100' if total_error == 'zero_denominator' else '-20')
+    summed = [values[0] + deduction, *values[1:]]
+    total_rate = ('0,00' if total_error == 'zero_denominator'
+                  else money(summed[6] / summed[0] * 100 + Decimal('.01')))
+    rows = [['01', 'SENTETİK GELİR', *map(money, values), '50,00'],
+            ['09', 'Red ve İadeler (-)', money(deduction), *(['0,00'] * 8)],
+            ['', 'GENEL TOPLAM', *map(money, summed), total_rate]]
+    headers = ['Gelirin Kodu', 'Açıklama', *converter.revenue_labels(2026), 'Oran']
+    pdf = pdf_table(tmp_path / 'total-ratio.pdf', headers, [90, 140] + [90] * 8 + [45], [rows])
+    result, out = run(tmp_path, '--gider', expense_pdf(tmp_path), '--gelir', pdf)
+    assert result.returncode != 0 and not list(out.glob('*.xlsx'))
+    report = (out / 'report.md').read_text()
+    assert 'Oran' in report and 'sayfa 1' in report
+    assert ('toplamı sıfır' if total_error == 'zero_denominator' else 'TOPLAM oranı uyuşmuyor') in report
