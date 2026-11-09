@@ -42,7 +42,8 @@ def vector(scale=1):
 
 
 def pdf_table(path, headers, widths, pages, *, centered=False, scale=1, year=2026,
-              lead_layout=False, page_shift=0, dates=None, date_overrides=None, date_prefix=False):
+              lead_layout=False, page_shift=0, dates=None, date_overrides=None, date_prefix=False,
+              table_marker=False, header_size=6, amount_size=6, continuation_shift=0):
     """Separate PDF text objects, proportional Turkish font and right-aligned money."""
     if 'Civ194Test' not in pdfmetrics.getRegisteredFontNames():
         pdfmetrics.registerFont(TTFont('Civ194Test', str(ROOT / 'app/fonts/DejaVuSans.ttf')))
@@ -58,19 +59,26 @@ def pdf_table(path, headers, widths, pages, *, centered=False, scale=1, year=202
         metadata.update(dates or {})
         metadata.update((date_overrides or {}).get(page_no, {}))
         if metadata['start'] is not None:
-            canvas.drawRightString(1130, 810, 'Başlangıç Tarihi : ' + metadata['start'])
+            canvas.drawRightString(900 if table_marker else 1130, 810,
+                                   'Başlangıç Tarihi : ' + metadata['start'])
         if metadata['end'] is not None:
-            canvas.drawRightString(1130, 800, 'Bitiş Tarihi : ' + metadata['end'])
+            canvas.drawRightString(1130, 810 if table_marker else 800,
+                                   'Bitiş Tarihi : ' + metadata['end'])
         if len(headers) == 11 and metadata['period'] is not None:
             canvas.drawString(20, 800, 'Dönemi : ' + metadata['period'])
         if date_prefix:
             # Dotted title dates resemble code prefixes, but carry no amounts.
             canvas.drawString(20, 800, f'01.01.{year}')
+        if table_marker:
+            canvas.drawString(23, 786, '11' if table_marker is True else str(table_marker))
+        canvas.setFont('Civ194Test', header_size)
         x = 20
-        for label, width in zip(headers, widths):
-            fragments = label.split('\n') if lead_layout else simpleSplit(label, 'Civ194Test', 6, width - 10)
+        for column, (label, width) in enumerate(zip(headers, widths)):
+            fragments = label.split('\n') if lead_layout else simpleSplit(label, 'Civ194Test', header_size, width - 10)
             for n, line in enumerate(fragments):
-                if centered:
+                if table_marker and column == 8 and n == 0:
+                    canvas.drawCentredString(x + width, 770, line)
+                elif centered:
                     canvas.drawCentredString(x + width / 2, 770 - n * 8, line)
                 else:
                     canvas.drawString(x + 3, 770 - n * 8, line)
@@ -86,8 +94,11 @@ def pdf_table(path, headers, widths, pages, *, centered=False, scale=1, year=202
                 height = max(height, len(lines))
                 for n, line in enumerate(lines):
                     if index >= (5 if len(headers) == 16 else 2):
-                        canvas.drawRightString(x + width - 5, y - n * 8, line)
+                        canvas.setFont('Civ194Test', amount_size)
+                        canvas.drawRightString(x + width - 5 + (continuation_shift if n else 0),
+                                               y - n * 8, line)
                     else:
+                        canvas.setFont('Civ194Test', 6)
                         canvas.drawString(x + 3, y - n * 8, line)
                 x += width
             y -= height * 8 + 8
@@ -101,7 +112,8 @@ def pdf_table(path, headers, widths, pages, *, centered=False, scale=1, year=202
 def expense_pdf(tmp_path, *, mismatch=None, blank=False, duplicate=False, centered=False,
                 scale=1, directorate_mismatch=False, fund_split=False, foreign_code=False,
                 lead_layout=False, transfer='Suratiyle', page_shift=0, dotted_first=None,
-                year=2026, dates=None, date_overrides=None, bad_header=None, date_prefix=False):
+                year=2026, dates=None, date_overrides=None, bad_header=None, date_prefix=False,
+                table_marker=False):
     def row(kurum='', function='', fund='', economic='', name='', amounts=None):
         values = list(map(money, vector() if amounts is None else amounts))
         return [kurum, function, fund, economic, name, *values]
@@ -167,10 +179,14 @@ def expense_pdf(tmp_path, *, mismatch=None, blank=False, duplicate=False, center
                    'Gelecek Yıla\nDevrolan\nÖdenek\nTL']
     if bad_header:
         headers[bad_header[0]] = bad_header[1]
+    if table_marker:
+        headers[10:15] = ['Net\nÖdenek\nToplamı\nTL', 'Bütçe\nGideri\nToplamı\nTL',
+                          'Ödenen\nBütçe\nGideri\nTL', 'Ödenek\nÜstü\nHarcama\nTL',
+                          'İptal\nEdilen\nÖdenek\nTL']
     return pdf_table(tmp_path / 'gider.pdf', headers, [65, 55, 45, 50, 120] + [65] * 11,
                      [first, second], centered=centered, scale=scale, year=year,
                      lead_layout=lead_layout, page_shift=page_shift, dates=dates,
-                     date_overrides=date_overrides, date_prefix=date_prefix)
+                     date_overrides=date_overrides, date_prefix=date_prefix, table_marker=table_marker)
 
 
 def revenue_pdf(tmp_path, *, ambiguous=False, total=True, mismatch=False, unproved=False,
@@ -642,3 +658,71 @@ def test_text_only_continuation_does_not_bypass_reconciliation(tmp_path):
     result, out = run(tmp_path, '--gider', expense_pdf(tmp_path), '--gelir', pdf)
     assert result.returncode != 0 and not list(out.glob('*.xlsx'))
     assert '0,01' in (out / 'report.md').read_text()
+
+
+@pytest.mark.parametrize('centered', [False, True])
+def test_bare_form_number_above_three_line_financial_header(tmp_path, centered):
+    pdf = expense_pdf(tmp_path, lead_layout=True, table_marker=True, centered=centered)
+    result, out = run(tmp_path, '--gider', pdf)
+    assert result.returncode == 0, (out / 'report.md').read_text()
+    rows = list(load_workbook(out / 'expenditure.xlsx').active.values)[1:]
+    assert [(row[0], row[1]) for row in rows] == [(101, '01'), (101, '03'), (102, '02')]
+
+
+def narrow_decimal_pdf(tmp_path, mode, *, wrong=False, invalid=None):
+    """Invented amounts; integer and suffix use different baselines/alignment."""
+    values = ['12.345.678,90', '12.345.678,12', '12.345.678,34', '24.691.356,46',
+              '12.345.678,56', '1.234.567,12', '11.111.111,44', '13.580.245,02']
+    headers = ['\n\nI   II   III   IV   V', '\n\nAçıklama', '\nBütçe ile\nTahmin Edilen\nTL',
+               '2025\nYılından\nDevreden Gelir\nTL', '2026\nYılı\nTahakkuku\nTL',
+               '\nToplam\nTahakkuk\nTL', '\nYılı\nTahsilatı\nTL',
+               '\nTahsilattan\nRed ve İadeler\nTL', '\nYılı Net\nTahsilatı\nTL',
+               '2027\nYılına Devreden\nTahakkuk\nTL', '\n\nOran']
+    parts = []
+    for i, value in enumerate(values):
+        integer, decimals = value.split(',')
+        form = 'comma' if mode == 'mixed' and i % 2 == 0 else 'digit' if mode == 'mixed' else mode
+        parts.append(integer + '\n,' + decimals if form == 'comma'
+                     else integer + ',' + decimals[0] + '\n' + decimals[1])
+    if wrong:
+        parts[4] = parts[4][:-1] + '7'  # Net identity must fail; never repair the amount.
+    if invalid == 'orphan_digit':
+        parts[0] = '12.345.678\n9'  # No preceding ,d to complete.
+    if invalid == 'missing_suffix':
+        parts[-1] = parts[-1].split('\n')[0]
+    rows = [['0\n1', 'SENTETİK DAR HÜCRELİ GELİR', *parts, '90,00'],
+            ['', 'GENEL TOPLAM', *[v.replace('\n', '') for v in parts], '90,00']]
+    # Adjacent columns are deliberately too narrow for a complete amount.
+    return pdf_table(tmp_path / 'dar-gelir.pdf', headers, [90, 140] + [36] * 8 + [30],
+                     [rows], lead_layout=True, header_size=4, amount_size=4.5,
+                     continuation_shift=5)
+
+
+@pytest.mark.parametrize('mode', ['comma', 'digit', 'mixed'])
+def test_decimal_continuations_in_adjacent_narrow_columns(tmp_path, mode):
+    result, out = run(tmp_path, '--gelir', narrow_decimal_pdf(tmp_path, mode))
+    assert result.returncode == 0, (out / 'report.md').read_text()
+    row = list(load_workbook(out / 'revenue.xlsx').active.values)[1]
+    assert row[0] == '01'
+    assert [parse_number(v) for v in row[1:4]] == [Decimal('12345678.90'), Decimal('12345678.56'),
+                                                 Decimal('1234567.12')]
+
+
+def test_wrong_decimal_continuation_still_blocks_both_workbooks(tmp_path):
+    result, out = run(tmp_path, '--gider', expense_pdf(tmp_path, lead_layout=True, table_marker=True),
+                      '--gelir', narrow_decimal_pdf(tmp_path, 'mixed', wrong=True))
+    assert result.returncode != 0 and not list(out.glob('*.xlsx'))
+    assert '0,01' in (out / 'report.md').read_text()
+
+
+@pytest.mark.parametrize('invalid', ['orphan_digit', 'missing_suffix'])
+def test_incomplete_decimal_continuations_are_never_guessed(tmp_path, invalid):
+    result, out = run(tmp_path, '--gelir', narrow_decimal_pdf(tmp_path, 'comma', invalid=invalid))
+    assert result.returncode != 0 and not list(out.glob('*.xlsx'))
+    assert 'sayfa 1' in (out / 'report.md').read_text()
+
+
+def test_form_marker_filter_preserves_four_digit_year_evidence(tmp_path):
+    result, out = run(tmp_path, '--gider', expense_pdf(tmp_path, lead_layout=True, table_marker='2025'))
+    assert result.returncode != 0 and not list(out.glob('*.xlsx'))
+    assert '2025' in (out / 'report.md').read_text()

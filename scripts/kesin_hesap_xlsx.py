@@ -169,6 +169,16 @@ def numeric_spans(line, after=0):
             if match.start() >= after and NUMBER_FRAGMENT.fullmatch(match.group())]
 
 
+def decimal_fragments(line, after):
+    """Recognize suffix-only baselines; record text is never a continuation."""
+    if re.search(r'[^\W\d_]', line):
+        return []
+    words = [word for word in re.finditer(r'\S+', line) if word.start() >= after]
+    if words and all(re.fullmatch(r',\d{1,2}|\d', word.group()) for word in words):
+        return words
+    return []
+
+
 def description_anchor(lines, where):
     for line in lines:
         for word in re.finditer(r'\S+', line):
@@ -185,13 +195,87 @@ def financial_samples(lines, count, after):
     """
     result = []
     for i, line in enumerate(lines):
+        if decimal_fragments(line, after):
+            continue
         spans = numeric_spans(line, after)
         if len(spans) >= count:
             result.append((i, spans[-count:]))
     return result
 
 
-def header_bounds(lines, body, samples, expected, where, code_count, year):
+def normalize_decimal_lines(body, samples, after, where):
+    """Join uniquely placed suffixes before geometry or monetary validation.
+
+    Baseline amount columns establish provisional position bands. Horizontal
+    order, bounded column distance and the preceding number's syntax must
+    identify exactly one assignment; no numerical digit is inferred.
+    """
+    count = len(samples[0][1])
+    anchors = [(min(row[i].end() for _, row in samples) + max(row[i].end() for _, row in samples)) / 2
+               for i in range(count)]
+    pitches = [min(abs(anchor - other) for j, other in enumerate(anchors) if j != i)
+               for i, anchor in enumerate(anchors)]
+    baselines = {i + 1: spans for i, spans in samples}
+    values = {}
+    result = []
+    active = None
+    integer = MONEY.pattern.rsplit(',', 1)[0]
+    for line_no, line in body:
+        spans = baselines.get(line_no)
+        if spans is not None:
+            values[line_no] = [[span.group()] for span in spans]
+            active = line_no
+            result.append((line_no, line))
+            continue
+        suffixes = decimal_fragments(line, after)
+        if not suffixes:
+            # A new incomplete coded record cannot borrow the prior record's
+            # amounts. Description-only wraps keep the active record.
+            if re.search(r'[^\W\d_]', line) and numeric_spans(line[:after]):
+                active = None
+            result.append((line_no, line))
+            continue
+        if active is None:
+            raise ConversionError(f'{where}, satır {line_no}: sahipsiz ondalık devamı. '
+                                  'Önceki kayıt ve tutar parçalarını kontrol edin.')
+        previous = values[active]
+
+        def compatible(column, fragment):
+            raw = ''.join(previous[column])
+            suffix = fragment.group()
+            syntax = (re.fullmatch(integer, raw) if suffix.startswith(',') else
+                      re.fullmatch(integer + r',\d', raw))
+            return bool(syntax) and abs(fragment.end() - anchors[column]) < pitches[column]
+
+        @lru_cache(maxsize=None)
+        def assignments(index, first):
+            if index == len(suffixes):
+                return ((),)
+            matches = []
+            for column in range(first, count):
+                if compatible(column, suffixes[index]):
+                    for tail in assignments(index + 1, column + 1):
+                        matches.append((column, *tail))
+                        if len(matches) == 2:
+                            return tuple(matches)
+            return tuple(matches)
+
+        matches = assignments(0, 0)
+        if len(matches) != 1:
+            raise ConversionError(f'{where}, satır {line_no}: ondalık devamı önceki tutarın '
+                                  'aynı sütunuyla tekil eşleşmedi. PDF hücre konumlarını ve '
+                                  'önceki ,d parçasını kontrol edin; tahmin yapılmadı.')
+        stripped = list(line)
+        for column, fragment in zip(matches[0], suffixes):
+            previous[column].append(fragment.group())
+            stripped[fragment.start():fragment.end()] = ' ' * (fragment.end() - fragment.start())
+        # Preserve separately positioned code fragments (e.g. 0 / 1).
+        if ''.join(stripped).strip():
+            result.append((line_no, ''.join(stripped)))
+    return result, values
+
+
+def header_bounds(lines, body, samples, expected, where, code_count, year, amounts=None):
     """Fit column bands to data-only gutters and the complete header schema.
 
     Centred words need not share an x0 or overlap other header lines. Each
@@ -218,32 +302,14 @@ def header_bounds(lines, body, samples, expected, where, code_count, year):
     # Exclude prose crossing numeric columns. Keep full records, numeric-only
     # suffix baselines, and partial records whose monetary tail is numeric.
     after = description_anchor(lines, where)
-    data = [line for line in body if numeric_spans(line, after)
+    data = [(i, line) for i, line in body if numeric_spans(line, after)
             and not re.search(r'[^\W\d_]', line[groups[0][0]:])]
     if not data:
         raise ConversionError(f'{where}: tutar taşıyan veri satırı yok. PDF tutarlarını kontrol edin.')
-    # Complete baselines identify right-aligned amount columns. Short suffix
-    # baselines can extend slightly farther in pypdf's virtual character grid;
-    # include their unambiguous right-edge bucket before selecting gutters.
-    anchors = [(min(row[i].end() for row in samples) + max(row[i].end() for row in samples)) / 2
-               for i in range(count)]
-    expanded = [list(group) for group in groups]
-    for line in data:
-        for fragment in numeric_spans(line, after):
-            if fragment.end() < groups[0][0]:
-                continue
-            distances = [abs(fragment.end() - anchor) for anchor in anchors]
-            closest = min(distances)
-            if distances.count(closest) != 1:
-                raise ConversionError(f'{where}: tutar parçasının sütunu belirsiz. PDF hücrelerini kontrol edin.')
-            i = distances.index(closest)
-            expanded[i][0] = min(expanded[i][0], fragment.start())
-            expanded[i][1] = max(expanded[i][1], fragment.end())
-    groups = expanded
-    width = max([len(line) for line in data] + [right for _, right, _ in fragments]) + 1
+    width = max([len(line) for _, line in data] + [right for _, right, _ in fragments]) + 1
 
     def gutter(position):
-        return all(not line[position - 1:position + 1].strip() for line in data)
+        return all(not line[position - 1:position + 1].strip() for _, line in data)
 
     candidates = []
     for column in range(len(expected) - 1):
@@ -264,7 +330,7 @@ def header_bounds(lines, body, samples, expected, where, code_count, year):
     def valid(column, left, right):
         if not header_matches(label(left, right), expected[column], year):
             return False
-        cells = [line[left:right].strip() for line in data]
+        cells = [line[left:right].strip() for _, line in data]
         if column < code_count:
             pattern = (r'\d{1,2}(?:[ .]+\d{1,2}){0,4}' if code_count == 1 else
                        (r'46(?:[ .]+\d{1,2}){0,3}',
@@ -275,7 +341,16 @@ def header_bounds(lines, body, samples, expected, where, code_count, year):
                        for cell in cells)
         if column == code_count:
             return all(not re.search(r'\d,\d{2}(?:\s|$)', cell) for cell in cells)
-        return any(cells) and all(not cell or re.fullmatch(r'-?[\d.,]+', cell) for cell in cells)
+        if not (any(cells) and all(not cell or re.fullmatch(r'-?[\d.,]+', cell) for cell in cells)):
+            return False
+        if amounts is not None and column < len(expected) - 1:
+            for line_no, _ in data:
+                if line_no in amounts:
+                    parts = amounts[line_no][column - first_money]
+                    pattern = WRAPPED_MONEY if len(parts) > 1 else MONEY
+                    if not pattern.fullmatch(''.join(parts)):
+                        return False
+        return True
 
     @lru_cache(maxsize=None)
     def solve(column, left):
@@ -407,14 +482,22 @@ def pdf_rows(path, kind, year, notes=None):
                 raise header_error(exc, lines[:12], 0, where, notes) from None
             body = samples[0][0]
             start = read_metadata(lines[:body], where, metadata, year)
+            # Short bare form/page counters precede the table, while four-digit
+            # revenue year labels remain part of the actual header block.
+            while start < body and (not lines[start].strip()
+                                   or re.fullmatch(r'\s*\d{1,3}\s*', lines[start])):
+                start += 1
             header = lines[start:body]
             body_lines = [(i, line) for i, line in enumerate(lines[body:], body + 1)
                           if line.strip() and not re.fullmatch(
                               r'\s*Sayfa\s+\d+(?:\s*/\s*\d+)?\s*', line, re.IGNORECASE)]
             located = f'{where}, satırlar {body + 1}–{len(lines)}'
+            amounts = None
+            if not expense:
+                body_lines, amounts = normalize_decimal_lines(body_lines, samples, after, where)
             try:
-                bounds, level_one_end = header_bounds(header, [line for _, line in body_lines],
-                    [spans for _, spans in samples], expected, located, code_count, year)
+                bounds, level_one_end = header_bounds(header, body_lines,
+                    [spans for _, spans in samples], expected, located, code_count, year, amounts)
             except ConversionError as exc:
                 raise header_error(exc, header, start, where, notes) from None
             current = None
@@ -458,6 +541,8 @@ def pdf_rows(path, kind, year, notes=None):
                     current = Row([[cell] if cell else [] for cell in cells],
                                   f'{where}, satır {line_no}',
                                   [code_positions] if not expense and cells[0] else [], level_one_end)
+                    if amounts is not None and line_no in amounts:
+                        current.cells[description + 1:] = amounts[line_no]
                     rows.append(current)
                 elif current is not None:
                     for index, cell in enumerate(cells):

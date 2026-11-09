@@ -151,6 +151,11 @@ yazılamıyorsa veya girdiyle çakışıyorsa hata standart hata akışına yaz�
   Kod biçimine benzeyen başlık tarihleri (`01.01.2026` gibi) veri başlangıcı
   sayılmaz; başlangıç için tutar taşıyan kayıt aranır. Başlık çözümlemesi
   başarısız olduğunda aday blok satır numaraları ve boşluklarıyla rapora yazılır.
+  Başlığın önündeki tek başına kısa form/sayfa numarası (`11` gibi) başlık
+  etiketi sayılmaz. Yalnız başlık bloğunun başındaki 1–3 basamaklı satırlar
+  ayıklanır; dört basamaklı mali yıl etiketleri ve başlığın içindeki parçalar
+  korunur. `Finan / sal / Kodu` ve iki aktarma sütununa yayılan `Aktarma
+  Suratiyle` başlığı bu düzenle birlikte test edilir.
 - Giderde `46` kurum hiyerarşisi, üç parçalı tek belediye toplamı, dört
   parçalı müdürlük kodu ve ekonomik satır için dört parçalı fonksiyon/tek
   parçalı finansman bağlamı gerekir. Sayfa geçişinde bağlam korunur.
@@ -162,6 +167,12 @@ yazılamıyorsa veya girdiyle çakışıyorsa hata standart hata akışına yaz�
   II veya sonraki sütundaki parçalar I düzeyi olarak yorumlanmaz. Tutarın tam kısmından sonraki
   `,dd` veya `,d` eki aynı tutar sütununda birleştirilir; eksik rakam eklenmez.
   Birleşim satır eşitliği veya bağımsız genel toplamla kanıtlanmalıdır.
+  Ondalık devam satırları, sütun boşluğu hesabı ve hücre doğrulamasından
+  **önce** önceki kayda bağlanır ve geometri hesabına katılmaz. Önceki sayı
+  tam kısmıysa yalnız `,dd`/`,d`; önceki parça `,d` ile bitiyorsa tek son
+  basamak eklenebilir. Parçaların yatay sırası ve geçici sütun bantları tek
+  bir eşleme vermelidir; belirsiz/sahipsiz parçalar reddedilir. Ayrı konumdaki
+  `0 / 1` kod parçaları korunur. Ham tutar parçaları raporda izlenebilir.
   Tutar içermeyen açıklama devam satırları açıklama alanına eklenir; metin
   tutar sütunlarının üzerine uzasa da sütun boşluğu hesabına katılmaz.
   Açıklama sütununda başlamayan sahipsiz metin tutar olarak tahmin edilmez.
@@ -198,6 +209,13 @@ dört satırlı ortalanmış başlık ve tutar alanlarına taşan, yalnız metin
 hesap adı devamı. Bu senaryolar eski commit’te başarısızdır. Yeni ayrıştırıcıda
 başlıklar sütun bantlarına atanır; açıklama devamı korunur ve aynı dosyada
 kasıtlı tutar farkı varsa iki XLSX de engellenir.
+
+Lead’in b77cac8 tekrar koşusunda belirlediği iki kesin neden için ek regresyonlar
+vardır: başlığın üzerinde Kurum Kodu hizasında duran yalın `11` ve dar,
+yan yana tutar sütunlarında `tam kısım / ,dd` ile `…,d / d` biçimindeki
+ondalık devamları. Bu altı test eski commit’te başarısızdı; yeni akışta geçer.
+Yanlış son basamak mutabakat hatasıdır; eksik ek, önünde `,d` bulunmayan
+tek basamak ve yanlış dört basamaklı yıl kanıtı kabul edilmez.
 
 ```sh
 python -m pytest -q --require-postgres tests/test_kesin_hesap_xlsx.py
