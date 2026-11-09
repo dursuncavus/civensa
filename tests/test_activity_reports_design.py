@@ -8,6 +8,7 @@ from pathlib import Path
 from urllib.parse import urlsplit
 
 import pytest
+from civ199_contract import single_organization_as_select
 from starlette.requests import Request
 
 from app.main import app, require_user, templates
@@ -92,7 +93,7 @@ def assert_contract(ctx):
     assert sha256(source).hexdigest() == 'ba26b6a53cb7000bb123174bdd35668c7b26d1f7a8c30e4fe605def1053305ab'
     old = templates.env.from_string(source.decode()).render(ctx)
     new = templates.env.get_template('activity_contract_index.html').render(ctx)
-    legacy = without_excel_import(new)
+    legacy = single_organization_as_select(without_excel_import(new))  # CIV-199 (2)
     before, after = Contract(old), Contract(legacy)
     assert after.controls == before.controls
     assert after.bindings == before.bindings
@@ -121,7 +122,7 @@ def test_frozen_links_form_options_required_and_revision_badges(scenario):
     # outside that heading and the Excel block, the original prose stays frozen.
     def text(html):
         import re
-        main = without_excel_import(html).split('<main ', 1)[1].split('</main>', 1)[0]
+        main = single_organization_as_select(without_excel_import(html)).split('<main ', 1)[1].split('</main>', 1)[0]
         main = re.sub(r'<style>.*?</style>', '', main, flags=re.S)
         return ''.join(re.sub(r'<[^>]*>', '', main).split())
     assert text(new) == text(old).replace('FaaliyetRaporları', 'Göstergegerçekleşmeleri', 1).replace(

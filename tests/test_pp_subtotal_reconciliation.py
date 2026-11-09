@@ -214,18 +214,21 @@ def test_turkish_reconciliation_in_chromium(client, db, sample, tmp_path, state)
             page.goto('http://civensa.test/report-builder?period_id=1')
             view = page.locator('#pp-reconciliation')
             expect(view).to_be_visible()
+            # CIV-199: on the report builder the table is folded behind its summary.
+            if view.locator('details.pp-reconciliation-table').count():
+                view.locator('details.pp-reconciliation-table > summary').click()
             assert view.get_by_text('Yayın engeli', exact=True).count() == (12 if state == 'missing_link' else 4)
             if state == 'missing_link':
                 assert view.get_by_text('Eksik ara toplam', exact=True).count() == 12
-                view.locator('details').first.evaluate('el => el.open = true')
+                view.locator('details.pp-reconciliation-details').first.evaluate('el => el.open = true')
                 assert 'bağlantıları tamamlayın' in view.inner_text()
             else:
                 assert view.get_by_text('133,50', exact=True).count() == 12
                 assert view.get_by_text('130,00', exact=True).count() == 4
                 assert view.get_by_text('3,50', exact=True).count() == 4
-                view.locator('details').first.evaluate('el => el.open = true')
+                view.locator('details.pp-reconciliation-details').first.evaluate('el => el.open = true')
                 assert 'kaynakla karşılaştırın' in view.inner_text().lower()
-            view.locator('details').first.evaluate('el => el.open = false')
+            view.locator('details.pp-reconciliation-details').first.evaluate('el => el.open = false')
             output = Path(os.getenv('CIVENSA_RECONCILIATION_SCREENSHOT_DIR', str(tmp_path)))
             output.mkdir(parents=True, exist_ok=True)
             view.screenshot(path=str(output / f'reconciliation-{state}.png'))

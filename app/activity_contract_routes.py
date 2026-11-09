@@ -110,6 +110,11 @@ def register(app):
     def ui_error(request, user, error, back):
         return render_error(request, user, error, back)
 
+    def saved_url(back, kind, snapshot_id):
+        """CIV-199 item 8: return to the saved row and say that it was saved."""
+        row = int(snapshot_id)  # already validated by the service call
+        return f'{back}?saved={kind}&row={row}#gosterge-{row}'
+
     def integer(value, field='expected_revision'):
         try:
             parsed = int(value)
@@ -164,7 +169,38 @@ def register(app):
                     integer(data.get('expected_revision', 0)), data.get('revision_reason', '')))
             return RedirectResponse(f'/activity-reports/revisions/{result.id}', 303)
         except HTTPException as error:
-            return ui_error(request, user, error, '/activity-reports')
+            display, existing, hidden = create_form_context(db, data)
+            return render_error(request, user, error, '/activity-reports', display_values=display, existing=existing,
+                                hidden_fields=hidden)
+
+    def create_form_context(db, data):
+        """CIV-199: human labels for the selected ids and, when a report for the
+        same organization and year already exists, a link to its current revision."""
+        def as_int(value):
+            try:
+                return int(value)
+            except (TypeError, ValueError):
+                return None
+        display, existing = {}, None
+        organization = db.get(Organization, as_int(data.get('organization_id'))) if as_int(data.get('organization_id')) else None
+        publication = db.get(Publication, as_int(data.get('publication_id'))) if as_int(data.get('publication_id')) else None
+        # CIV-199 (2b): with one organization its name says nothing to the user.
+        single = db.scalar(select(func.count()).select_from(Organization)) == 1
+        if organization:
+            display['organization_id'] = organization.name
+        if publication:
+            period = db.get(ReportingPeriod, publication.period_id)
+            display['publication_id'] = f'{period.year if period else "?"} · v{publication.version}'
+        if organization and publication and not data.get('report_id'):
+            report = db.scalar(select(ActivityReport).where(ActivityReport.organization_id == organization.id,
+                                                            ActivityReport.period_id == publication.period_id))
+            revision = db.scalar(select(ActivityReportRevision).where(
+                ActivityReportRevision.report_id == report.id,
+                ActivityReportRevision.revision == report.current_revision)) if report else None
+            if revision:
+                existing = dict(url=f'/activity-reports/revisions/{revision.id}',
+                                label=('' if single else f'{organization.name} · ') + f'{display.get("publication_id", "").split(" · ")[0]} · Rapor revizyon {revision.revision}')
+        return display, existing, ({'organization_id'} if single and organization else set())
 
     @router.get('/activity-reports/revisions/{revision_id}')
     def detail(revision_id: int, request: Request, db: Session = Depends(get_db), user=Depends(require_user)):
@@ -307,9 +343,16 @@ def register(app):
                 metadata = json.loads(definition.definition_json)
                 identities.append({'indicator_id': identity.indicator_id, 'organization_id': identity.organization_id,
                     'label': f"{metadata['name']} · {metadata['unit']} · {metadata['year']} · Tanım sürümü {definition.revision}"})
+        saved_kind = request.query_params.get('saved')
+        try:
+            saved_row = int(request.query_params.get('row', ''))
+        except ValueError:
+            saved_row = None
+        if saved_kind not in {'direction', 'binding'}:
+            saved_kind = saved_row = None
         return templates.TemplateResponse(request, 'activity_contract_bindings.html', {'user': user,
             'publication': pub, 'year': payload['period'], 'rows': rows,
-            'identities': identities})
+            'identities': identities, 'saved_kind': saved_kind, 'saved_row': saved_row})
 
     @router.post('/activity-reports/publications/{publication_id}/bindings')
     async def bind_form(publication_id: int, request: Request, db: Session = Depends(get_db), user=Depends(require_user)):
@@ -319,7 +362,7 @@ def register(app):
             transact(db, user, 'publication_indicator_bind', 'publication_indicator_binding',
                 lambda: service.bind_legacy_indicator(db, user, publication_id, integer(data.get('snapshot_indicator_id'), 'snapshot_indicator_id'),
                     data.get('indicator_id') or None, data.get('reason', '')))
-            return RedirectResponse(back, 303)
+            return RedirectResponse(saved_url(back, 'binding', data.get('snapshot_indicator_id')), 303)
         except HTTPException as error:
             return ui_error(request, user, error, back)
 
@@ -335,7 +378,7 @@ def register(app):
                     data.get('direction', ''), data.get('reason', '')),
                 audit_details=service.canonical({'direction': data.get('direction', ''),
                     'reason': data.get('reason', '').strip(), 'publication_id': publication_id}))
-            return RedirectResponse(back, 303)
+            return RedirectResponse(saved_url(back, 'direction', data.get('snapshot_indicator_id')), 303)
         except HTTPException as error:
             return ui_error(request, user, error, back)
 

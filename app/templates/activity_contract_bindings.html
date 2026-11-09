@@ -11,9 +11,33 @@
     <p class="indicator-direction-help">Gösterge yönü bu dönem için geçerlidir. Yeni raporlarda hedef karşılaştırmasına uygulanır; daha önce sabitlenen faaliyet raporları değişmez.</p>
     <p>Ad ve kod benzerliğine göre eşleme yapılmaz. Eski yayın içeriği değiştirilmez; açık kimlik ilişkisi ayrı saklanır. Aynı kavramı temsil ettiğini doğrulamadan mevcut kimlik seçmeyin. Eşleme kaydedildikten sonra üzerine yazılmaz.</p>
   </section>
-  <div class="reports-panel">
-    {% for row in rows %}
-    <section class="binding-row">
+  <div class="binding-search">
+    <label>Gösterge ara
+      <input type="search" id="bindingSearch" placeholder="Gösterge adı veya müdürlük yazın" autocomplete="off">
+    </label>
+    <p class="secondary" id="bindingSearchCount" role="status"></p>
+  </div>
+  {% set departments = rows|groupby('department') %}
+  {% set use_dialog = departments|length > 3 %}
+  <div class="reports-panel{% if use_dialog %} binding-grid{% endif %}">
+    {% for dep, items in departments %}
+    {% set pending = items|rejectattr('bound')|list|length %}
+    {% if use_dialog %}
+    <article class="binding-card" data-binding-card>
+    <header class="binding-card-head"><h2>{{ dep }}</h2></header>
+    <p class="binding-card-summary">{{ items|length }} gösterge{% if pending %} · <span class="binding-pending">{{ pending }} eşleme bekliyor</span>{% endif %}</p>
+    <p class="secondary binding-hits" data-binding-hits role="status"></p>
+    <button type="button" class="button binding-open" data-open-dialog="binding-dialog-{{ loop.index }}">Göstergeleri aç</button>
+    <dialog class="binding-dialog" id="binding-dialog-{{ loop.index }}" aria-labelledby="binding-dialog-title-{{ loop.index }}"><div class="binding-dialog-head"><h2 id="binding-dialog-title-{{ loop.index }}">{{ dep }}</h2><form method="dialog"><button class="button">Kapat</button></form></div>
+    {% else %}
+    <details class="binding-dept"{% if rows|length <= 10 or items|selectattr('id', 'equalto', saved_row)|list %} open{% endif %}>
+    <summary><b>{{ dep }}</b> · {{ items|length }} gösterge{% if pending %} · <span class="binding-pending">{{ pending }} eşleme bekliyor</span>{% endif %}</summary>
+    {% endif %}
+    {% for row in items %}
+    <section class="binding-row{% if saved_row == row.id %} is-saved{% endif %}" id="gosterge-{{ row.id }}" data-search="{{ (row.name ~ ' ' ~ row.department ~ ' ' ~ (row.code or '')) }}">
+      {% if saved_row == row.id %}
+      <p class="status success binding-saved" role="status">Kaydedildi{% if saved_kind == 'direction' %}: yön «{{ 'Düşük değer daha iyi' if row.direction == 'lower' else 'Yüksek değer daha iyi' }}»{% else %}: kimlik ilişkisi sabitlendi{% endif %}.</p>
+      {% endif %}
       <div class="binding-heading">
         <h2>{{ row.name }}</h2>
         <span class="status {{ 'success' if row.bound else 'warning' }}">{{ 'Sabitlendi' if row.bound else 'Eşleme bekliyor' }}</span>
@@ -57,6 +81,11 @@
       {% endif %}
     </section>
     {% endfor %}
+    {% if use_dialog %}</dialog>
+    </article>{% else %}
+    </details>{% endif %}
+    {% endfor %}
   </div>
 </div>
+<script src="/static/design/indicator-bindings.js" defer></script>
 {% endblock %}
