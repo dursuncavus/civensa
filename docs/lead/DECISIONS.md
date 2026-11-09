@@ -1600,3 +1600,13 @@ Owner 9 Nov 11:21 (BEYAN): "DeepSeek denetleme yapmadığı zamanlarda senin ver
 - PR #440 (lead): setup-age caches the verified archive and retries the GitHub release download for 5 min; the same action runs in db-backup.yml, so the 504s could also fail a real backup.
 - #433: Copilot's first review (3 MEDIUM: typeset field classes, explicit zero scope, hover-only amounts) checked by the lead and forwarded to Codex.
 
+
+## D-451 — merges, Ali's S12 answer, real-file validation rule (9 Nov 2026 ~13:30, CV Lider 71)
+- Merged into phase5 (DOĞRULANDI, CI green, behind 0): #440 age download cache (lead) → d873b92 · #442 CIV-193 B2 closure + guide Faaliyet sonuçları/Yardım → c9a9a95 (rehearsal now shows only the İdare freeze blocker) · #432 CIV-191 screen texts → 620d4b4 · #433 CIV-190 PP errata (export notes + 3 Copilot findings fixed) → dbaa7d2.
+- Ali (S12, e-mail, DOĞRULANDI): the annual actual is "2026 YILI 4. ÇEYREK GERÇEKLEŞEN TOPLAMI", filled at the end of December; "2026 YILI TOPLAMI" is a success-ratio formula (=R/M) by design and must never be imported.
+- Lead package error (own): CIV-192.md treated "2026 YILI TOPLAMI" as the total and described the real headers loosely; CIV-194.md described the real PDF layout loosely. Corrected in PR comments. Rule from now: a package for any import of a real file quotes the exact header strings and layout quirks (lead reads the real file first, formulas with data_only=False), and the lead runs the PR's parser on the real file locally (scratchpad, never committed) before merge.
+- CIV-192 #438: Codex fixes validated on the real workbook (all headers match, 227 rows, ratio column never read; today every row is Eksik because Q4 is blank — correct). Copilot round 3: two findings adopted and fixed by the lead (fc12ac4: keep all exact matches; preview/apply DB work via run_in_threadpool) → merge when CI green.
+- CIV-194 #443: head 46617e4 still fails on both real 2025 PDFs (gider multi-line header block; gelir wrapped description lines break the gap search) → sent to Codex with structure only, no figures.
+- The Codex GitHub connector cannot act on "@codex" PR comments here ("create an environment") → the owner pastes each follow-up into the Codex task; the lead writes the paste line.
+- Local lane live: Remote Control on the Mac, test PostgreSQL 18.6 on 5433 (pg_ctl per session). Gemini CIV-195 and DeepSeek CIV-196 not yet started (only TASK.md present, 9 Nov 13:17) → owner starts them.
+Next IDs: task CIV-197, decision D-452.
