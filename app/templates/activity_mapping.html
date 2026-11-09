@@ -12,11 +12,18 @@
           Bütün faaliyetlerin alt program, kart ve resmî katalog bağlantıları tamam.
         {% elif mapping_counts.subprogram %}
           <b>{{ mapping_ns.subprogram_departments }} müdürlükte {{ mapping_counts.subprogram }} faaliyetin alt programı seçilmeli</b>{% if strong_suggestion_count %}; {{ strong_suggestion_count }} faaliyet için güçlü öneri var{% endif %}.
-          {% if mapping_counts.card or mapping_counts.catalogue %}Ayrıca {{ mapping_counts.card }} faaliyette kart, {{ mapping_counts.catalogue }} faaliyette resmî katalog bağlantısı eksik; bunlar “Performans Kartlarını Aç” adımıyla tamamlanır.{% endif %}
         {% else %}
-          <b>Alt program seçimi tamam.</b> {{ mapping_counts.card }} faaliyette kart, {{ mapping_counts.catalogue }} faaliyette resmî katalog bağlantısı eksik; bunlar “Performans Kartlarını Aç” adımıyla tamamlanır.
+          <b>Alt program seçimi tamam.</b> {{ mapping_counts.card }} faaliyette kart, {{ mapping_counts.catalogue }} faaliyette resmî katalog bağlantısı eksik; bunlar müdürlüğün performans kartları sayfasında tamamlanır.
         {% endif %}
       </p>
+      {% if unresolved_count %}
+      <ol class="mapping-todo" data-mapping-todo>
+        <li class="{{ 'todo-done' if not mapping_counts.subprogram else 'todo-open' }}"><b>Alt program seçimi</b> — {% if mapping_counts.subprogram %}{{ mapping_counts.subprogram }} faaliyet. Bu sayfada, aşağıdaki listede seçip “Seçimleri Kaydet”e basın.{% if strong_suggestion_count %} {{ strong_suggestion_count }} faaliyet için güçlü öneri var: “Güçlü önerileri seç” düğmesi bunları forma taşır.{% endif %}{% else %}tamam.{% endif %}</li>
+        <li class="{{ 'todo-done' if not mapping_counts.card else 'todo-open' }}"><b>Kart bağlantısı</b> — {% if mapping_counts.card %}{{ mapping_counts.card }} faaliyet. Müdürlük başlığındaki “Performans kartlarını aç” bağlantısından yapılır.{% else %}tamam.{% endif %}</li>
+        <li class="{{ 'todo-done' if not mapping_counts.catalogue else 'todo-open' }}"><b>Resmî katalog bağlantısı</b> — {% if mapping_counts.catalogue %}{{ mapping_counts.catalogue }} faaliyet. Kart bağlantısıyla aynı sayfada yapılır.{% else %}tamam.{% endif %}</li>
+      </ol>
+      {% endif %}
+      <details class="mapping-counts-details"><summary>Bütün sayılar</summary>
       <dl class="mapping-counts">
         <div>
           <dt>Eşleştirme bekleyen faaliyet</dt>
@@ -53,13 +60,14 @@
           </dd>
         </div>
       </dl>
+      </details>
     </div>
     {% if groups %}
       <section class="mapping-help">
         <div class="mapping-info">
           <h2>Nasıl kullanılır?</h2>
           <p class="muted">Civensa yalnız güvenli kaynak ilişkilerini otomatik bağlar. Buradaki kayıtlar için tahmin zorlamaz. Uygun Program / Alt Programı seçip topluca kaydedebilirsiniz.</p>
-          <p class="muted">Toplam, en az bir bağlantısı eksik faaliyetleri sayar; aynı faaliyette birden fazla eksik olabilir. Kart ve katalog bağlantıları için “Performans Kartlarını Aç” adımını kullanın. CSV ve toplu kayıt yalnız alt program bağlantısını değiştirir.</p>
+          <p class="muted">Toplam, en az bir bağlantısı eksik faaliyetleri sayar; aynı faaliyette birden fazla eksik olabilir. Kart ve katalog bağlantıları müdürlüğün “Performans kartlarını aç” bağlantısındaki sayfada yapılır. CSV ve toplu kayıt yalnız alt program bağlantısını değiştirir.</p>
           <p class="muted">Öneriler hiçbir zaman kendiliğinden seçilmez veya kaydedilmez. “Güçlü önerileri seç” yalnız güveni en az %50 olan önerileri forma taşır; kaydetmeden önce kullanıcı onayı gerekir.</p>
         </div>
         <div class="rowbuttons">
@@ -132,6 +140,7 @@
                 <p class="muted">{{ g.activities|length }} faaliyet eşleştirme bekliyor · {{ g.choices|length }} Program / Alt Program seçeneği</p>
               </div>
               <a class="button small" href="/department/{{ g.department.id }}?period_id={{ period.id }}">Müdürlüğü Aç</a>
+              <a class="button small" data-program-link href="/program/{{ g.department.id }}?period_id={{ period.id }}">Performans kartlarını aç</a>
             </div>
             {% if not g.choices %}
               <div class="issue-list">Bu müdürlük için performans göstergelerinden türetilebilen Program / Alt Program bulunamadı. Önce gösterge yapısını kontrol edin.</div>

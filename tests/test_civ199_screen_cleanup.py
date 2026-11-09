@@ -8,7 +8,7 @@ from sqlalchemy import delete, select
 
 from app.main import app, require_user, templates
 from app.activity_sections_routes import GENERIC_SECTION_HINT, completion_view, fold_department_messages
-from app.models import ActivityCatalogueLink, ActivityReport, ActivityReportRevision, Organization
+from app.models import ActivityCatalogueLink, ActivityReport, ActivityReportRevision, Organization, ReportingPeriod
 from test_activity_contract import publish, new_report
 from test_activity_sections import section_client  # noqa: F401  (fixture)
 
@@ -41,6 +41,10 @@ def test_double_submit_guard_is_global_and_leaves_custom_handlers_alone():
     assert '.is-busy::before' in css and 'prefers-reduced-motion' in css
 
 
+def pub_year(db, pub):
+    return db.get(ReportingPeriod, pub.period_id).year
+
+
 # (2) single organization ----------------------------------------------------------
 
 def test_single_organization_is_shown_as_text_with_hidden_id(strategy_client, db, sample):
@@ -50,7 +54,8 @@ def test_single_organization_is_shown_as_text_with_hidden_id(strategy_client, db
         html = strategy_client.get(path).text
         assert '<select name="organization_id"' not in html, path
         assert f'<input type="hidden" name="organization_id" value="{org.id}">' in html, path
-        assert 'single-organization' in html and org.name in html
+        # (2b) owner, 9 Nov 2026: with one organization its name is not shown at all.
+        assert '<div class="single-organization" hidden>' in html, path
 
 
 def test_two_organizations_keep_the_select(strategy_client, db, sample):
@@ -91,7 +96,7 @@ def test_collapsed_reconciliation_summary_and_scope_note():
 
 @pytest.mark.parametrize('kind,expected', [
     ('subprogram', '1 müdürlükte 1 faaliyetin alt programı seçilmeli'),
-    ('card', 'Alt program seçimi tamam. 1 faaliyette kart, 0 faaliyette resmî katalog bağlantısı eksik'),
+    ('card', 'Alt program seçimi tamam. 1 faaliyette kart, 0 faaliyette resmî katalog bağlantısı eksik; bunlar müdürlüğün performans kartları sayfasında tamamlanır.'),
     (None, 'Bütün faaliyetlerin alt program, kart ve resmî katalog bağlantıları tamam.'),
 ])
 def test_mapping_summary_is_one_plain_sentence(strategy_client, db, sample, kind, expected):
@@ -101,7 +106,15 @@ def test_mapping_summary_is_one_plain_sentence(strategy_client, db, sample, kind
     html = strategy_client.get(f'/activity-mapping?period_id={sample["period"].id}').text
     sentence = re.search(r'<p class="mapping-sentence" data-mapping-sentence>(.*?)</p>', html, re.S)
     assert sentence and expected in text(sentence.group(1))
-    assert '<dl class="mapping-counts">' in html  # counters stay, secondary
+    assert '<dl class="mapping-counts">' in html  # counters stay, folded under "Bütün sayılar"
+    assert '<details class="mapping-counts-details"><summary>Bütün sayılar</summary>' in html
+    todo = re.search(r'<ol class="mapping-todo" data-mapping-todo>(.*?)</ol>', html, re.S)
+    if kind:
+        assert todo and text(todo.group(1)).count('—') == 3
+        assert ('Kart bağlantısı — 1 faaliyet.' in text(todo.group(1))) == (kind == 'card')
+        assert f'href="/program/{sample["department"].id}?period_id={sample["period"].id}"' in html
+    else:
+        assert todo is None
 
 
 # (5) EK-1 completion view -------------------------------------------------------------
@@ -171,7 +184,11 @@ def test_duplicate_report_error_links_existing_report_and_shows_names(strategy_c
     revision = db.scalar(select(ActivityReportRevision).where(ActivityReportRevision.report_id == report.id,
                                                               ActivityReportRevision.revision == report.current_revision))
     assert f'href="/activity-reports/revisions/{revision.id}" data-existing-record' in html
-    assert 'Mevcut raporu aç:' in html and org.name in html
+    assert f'Mevcut raporu aç: {pub_year(db, pub)} · Rapor revizyon {revision.revision}' in html
+    assert org.name not in html.split('data-existing-record>')[1].split('</a>')[0]  # (2b) single organization
+    db.add(Organization(name='İkinci Belediye')); db.commit()
+    again = strategy_client.post('/activity-reports/revisions', data={'publication_id': pub.id, 'organization_id': org.id}).text
+    assert f'Mevcut raporu aç: {org.name} ·' in again
     assert 'Düzeltilen bilgileri yeniden gönder' not in html
     assert '<textarea name="organization_id"' not in html
 
@@ -184,5 +201,10 @@ def test_other_errors_show_ids_read_only_with_labels(strategy_client, db, sample
     assert response.status_code >= 400
     html = response.text
     assert '<textarea name="organization_id"' not in html and '<textarea name="publication_id"' not in html
-    assert f'<span>Kurum</span> <b>{org.name}</b>' in html
+    # (2b) single organization: the Kurum row is a bare hidden field.
+    assert '<span>Kurum</span>' not in html
     assert f'<input type="hidden" name="organization_id" value="{org.id}">' in html
+    db.add(Organization(name='İkinci Belediye')); db.commit()
+    again = strategy_client.post('/activity-reports/revisions',
+                                 data={'publication_id': pub.id + 999, 'organization_id': org.id}).text
+    assert f'<span>Kurum</span> <b>{org.name}</b>' in again

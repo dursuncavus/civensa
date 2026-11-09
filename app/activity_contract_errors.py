@@ -45,7 +45,7 @@ ID_FIELDS = {'publication_id', 'organization_id', 'report_id', 'revision_id', 'r
              'snapshot_indicator_id', 'indicator_id', 'period_indicator_id', 'expected_revision'}
 
 
-def render_error(request, user, error, back, attempted=None, *, display_values=None, existing=None):
+def render_error(request, user, error, back, attempted=None, *, display_values=None, existing=None, hidden_fields=None):
     from .main import templates
     detail = error_detail(error)
     # Files and CSRF tokens must never be replayed as text or stale hidden values.
@@ -59,6 +59,7 @@ def render_error(request, user, error, back, attempted=None, *, display_values=N
         'blockers': detail.get('blockers', []) if isinstance(detail, dict) else [],
         'back': back, 'attempted_items': items, 'field_labels': LABELS, 'had_files': had_files,
         'id_fields': ID_FIELDS, 'display_values': display_values or {}, 'existing': existing,
+        'hidden_fields': hidden_fields or set(),
     }, status_code=error.status_code)
 
 

@@ -9,7 +9,7 @@ import re
 def single_organization_as_select(html):
     """(2) A lone organization is shown as text plus a hidden id; frozen pages had a select."""
     return re.sub(
-        r'<div class="single-organization"><span>Kurum</span><b>(.*?)</b>\s*'
+        r'<div class="single-organization" hidden><span>Kurum</span><b>(.*?)</b>\s*'
         r'<input type="hidden" name="organization_id" value="(\d+)"></div>',
         lambda m: (f'<label>Kurum<select name="organization_id"{" required" if "/activity-reports/revisions" in html else ""}>'
                    f'<option value="{m.group(2)}">{m.group(1)}</option></select></label>'),
@@ -17,8 +17,15 @@ def single_organization_as_select(html):
 
 
 def without_mapping_sentence(html):
-    """(4) The plain-language sentence is new; the counters below it are unchanged."""
-    return re.sub(r'<p class="mapping-sentence" data-mapping-sentence>.*?</p>\s*', '', html, flags=re.S)
+    """(4) The plain-language sentence and to-do list are new; the counters are folded but unchanged.
+    The help text now names the real place for card/catalogue links, which each group links to."""
+    html = re.sub(r'<p class="mapping-sentence" data-mapping-sentence>.*?</p>\s*', '', html, flags=re.S)
+    html = re.sub(r'<ol class="mapping-todo" data-mapping-todo>.*?</ol>\s*', '', html, flags=re.S)
+    html = re.sub(r'<details class="mapping-counts-details"><summary>Bütün sayılar</summary>\s*(<dl class="mapping-counts">.*?</dl>)\s*</details>',
+                  r'\1', html, flags=re.S)
+    html = re.sub(r'\s*<a class="button small" data-program-link href="[^"]*">Performans kartlarını aç</a>', '', html)
+    return html.replace('Kart ve katalog bağlantıları müdürlüğün “Performans kartlarını aç” bağlantısındaki sayfada yapılır.',
+                        'Kart ve katalog bağlantıları için “Performans Kartlarını Aç” adımını kullanın.')
 
 
 def report_builder_original_order(html):

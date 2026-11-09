@@ -8,7 +8,7 @@
 <section class="index-panel"><h2>Yıl raporlarını oluştur</h2><p>Kapsamdaki müdürlüklere birer birim raporu ve kuruma bir idare raporu açılır. Mevcut kayıtlar korunur.</p>
 <form method="post" action="/activity-sections/years" class="index-filters">
 <input type="hidden" name="csrf_token" value="{{ request.session.get('csrf_token') }}">
-{% if organizations|length == 1 %}<div class="single-organization"><span>Kurum</span><b>{{ organizations[0].name }}</b><input type="hidden" name="organization_id" value="{{ organizations[0].id }}"></div>{% else %}<label>Kurum<select name="organization_id">{% for org in organizations %}<option value="{{ org.id }}">{{ org.name }}</option>{% endfor %}</select></label>{% endif %}
+{% if organizations|length == 1 %}<div class="single-organization" hidden><span>Kurum</span><b>{{ organizations[0].name }}</b><input type="hidden" name="organization_id" value="{{ organizations[0].id }}"></div>{% else %}<label>Kurum<select name="organization_id">{% for org in organizations %}<option value="{{ org.id }}">{{ org.name }}</option>{% endfor %}</select></label>{% endif %}
 <label>Raporlama yılı<select name="period_id">{% for period in periods %}<option value="{{ period.id }}">{{ period.year }}</option>{% endfor %}</select></label>
 <label><input type="checkbox" name="copy_previous"> Önceki yılın onaylı kopyasından doldur</label><button class="button primary">Raporları oluştur</button></form></section>
 {% endif %}

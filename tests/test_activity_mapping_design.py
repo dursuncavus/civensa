@@ -178,12 +178,19 @@ def assert_design(page, width, populated):
         assert abs(box['height'] - button['height']) <= 1
     bar = root.locator('.sticky-save')
     assert bar.evaluate("el => getComputedStyle(el).position") == 'sticky'
+    # CIV-199 (4b): the floating bar stays hidden until something is selected.
+    expect(bar).to_be_hidden()
+    chosen = root.locator('.mapping-select:enabled').first
+    chosen.select_option(index=1)
+    expect(bar).to_be_visible()
     # The mobile navigation follows the workspace; measure scrolling within this
     # page's content, before the separate navigation region below it.
     end = root.evaluate('el => el.getBoundingClientRect().bottom + scrollY - innerHeight')
     for offset in (0, max(0, end / 2), max(0, end)):
         page.evaluate('(offset) => window.scrollTo(0, offset)', offset)
         expect(bar).to_be_in_viewport(ratio=1)
+    chosen.select_option('')
+    expect(bar).to_be_hidden()
     expect(root.locator('.mapping-select[data-activity="804"]')).to_be_disabled()
 
 

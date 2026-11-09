@@ -412,6 +412,8 @@ document.querySelectorAll('.save-password-reset').forEach(button=>button.addEven
     const n=selects.filter(s=>s.value).length;
     if(count)count.textContent=String(n);
     [topSave,bottomSave].forEach(b=>{if(b)b.disabled=n===0});
+    // CIV-199 (4b): the floating bar only appears once something is selected.
+    const bar=bottomSave?.closest('.sticky-save');if(bar)bar.hidden=n===0;
   }
   selects.forEach(s=>s.addEventListener('change',()=>{s.classList.toggle('changed',!!s.value);updateCount()}));
   document.querySelectorAll('.choose-suggestion').forEach(button=>button.addEventListener('click',()=>{

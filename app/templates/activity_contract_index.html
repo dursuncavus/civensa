@@ -58,7 +58,7 @@
       <input type="hidden" name="csrf_token" value="{{ request.session.get('csrf_token') }}">
       <div class="form-grid">
         {% if organizations|length == 1 %}
-        <div class="single-organization"><span>Kurum</span><b>{{ organizations[0].name }}</b>
+        <div class="single-organization" hidden><span>Kurum</span><b>{{ organizations[0].name }}</b>
           <input type="hidden" name="organization_id" value="{{ organizations[0].id }}"></div>
         {% else %}
         <label>Kurum

@@ -169,8 +169,9 @@ def register(app):
                     integer(data.get('expected_revision', 0)), data.get('revision_reason', '')))
             return RedirectResponse(f'/activity-reports/revisions/{result.id}', 303)
         except HTTPException as error:
-            display, existing = create_form_context(db, data)
-            return render_error(request, user, error, '/activity-reports', display_values=display, existing=existing)
+            display, existing, hidden = create_form_context(db, data)
+            return render_error(request, user, error, '/activity-reports', display_values=display, existing=existing,
+                                hidden_fields=hidden)
 
     def create_form_context(db, data):
         """CIV-199: human labels for the selected ids and, when a report for the
@@ -183,6 +184,8 @@ def register(app):
         display, existing = {}, None
         organization = db.get(Organization, as_int(data.get('organization_id'))) if as_int(data.get('organization_id')) else None
         publication = db.get(Publication, as_int(data.get('publication_id'))) if as_int(data.get('publication_id')) else None
+        # CIV-199 (2b): with one organization its name says nothing to the user.
+        single = db.scalar(select(func.count()).select_from(Organization)) == 1
         if organization:
             display['organization_id'] = organization.name
         if publication:
@@ -196,8 +199,8 @@ def register(app):
                 ActivityReportRevision.revision == report.current_revision)) if report else None
             if revision:
                 existing = dict(url=f'/activity-reports/revisions/{revision.id}',
-                                label=f'{organization.name} · {display.get("publication_id", "").split(" · ")[0]} · Rapor revizyon {revision.revision}')
-        return display, existing
+                                label=('' if single else f'{organization.name} · ') + f'{display.get("publication_id", "").split(" · ")[0]} · Rapor revizyon {revision.revision}')
+        return display, existing, ({'organization_id'} if single and organization else set())
 
     @router.get('/activity-reports/revisions/{revision_id}')
     def detail(revision_id: int, request: Request, db: Session = Depends(get_db), user=Depends(require_user)):
