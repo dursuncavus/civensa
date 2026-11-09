@@ -136,9 +136,12 @@ def test_blank_workbook_explanation_keeps_directorate_text(client, db, sample, s
     assert latest.evidence_json == previous.evidence_json
 
 
-def test_obsolete_ratio_based_preview_is_rejected(client, db, sample, scenario):
+@pytest.mark.parametrize('version', [None,2])
+def test_obsolete_ratio_based_preview_is_rejected(client, db, sample, scenario, version):
     record, p = stored(db, sample, scenario, workbook([{'name':'Hizmet sayısı', 'annual':19}]))
     p.pop('schema_version', None)
+    if version is not None:
+        p['schema_version'] = version
     record.preview_json = json.dumps(p); db.commit()
     before = db.scalar(select(func.count()).select_from(ActualRevision))
     with pytest.raises(HTTPException) as error:

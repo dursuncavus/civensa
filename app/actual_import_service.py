@@ -22,7 +22,7 @@ from .models import ActualImport, ActualRevision, AuditLog
 
 MAX_FILE = attachment_max_bytes()
 TTL = timedelta(hours=24)
-PREVIEW_VERSION = 2
+PREVIEW_VERSION = 3
 HEADERS = {
     'department': ('Sorumlu Müdürlük', 'Müdürlük'),
     'name': ('Gösterge Adı', 'Performans Göstergesi', 'Performans Gösterge Adı', 'PERFORMANS \nGÖSTERLERİ'),
@@ -149,7 +149,24 @@ def annual_value(row):
     return (readings[0]['value'], readings[0]['rule']) if readings else (None, method_value(row)[1])
 
 
-def option(indicator, reading, workbook_unit):
+def candidate_context(indicator, book_row):
+    """Use pinned book text, never mutable PP rows, to distinguish candidates."""
+    definition = indicator['definition']
+    card = book_row.get('_report_card') or {}
+    parts = [indicator['department'], f"Kart: {card.get('source_title') or definition.get('card_id') or 'belirtilmemiş'}"]
+    for key, label in (('program', 'Program'), ('subprogram', 'Alt program')):
+        if book_row.get(key):
+            parts.append(f'{label}: {book_row[key]}')
+    if card.get('goal'):
+        goal = str(card['goal'])
+        parts.append(f"Kart hedefi: {goal[:120]}{'…' if len(goal) > 120 else ''}")
+    if definition.get('code'):
+        parts.append(f"Gösterge kodu: {definition['code']}")
+    parts.append(f"Kitap kaydı #{indicator['snapshot_indicator_id']}")
+    return ' · '.join(parts)
+
+
+def option(indicator, reading, workbook_unit, book_row):
     raw = reading['value']
     definition = indicator['definition']
     previous = indicator['actuals'][-1] if indicator['actuals'] else None
@@ -164,6 +181,7 @@ def option(indicator, reading, workbook_unit):
             scale = 'choose'
     value = raw * 100 if raw is not None and scale == 'percent' else raw
     return {'id': indicator['report_indicator_id'], 'name': definition['name'], 'department': indicator['department'],
+        'context': candidate_context(indicator, book_row),
         'reading': reading['key'], 'rule': reading['rule'], 'scale': scale, 'value': value, 'raw_value': raw,
         'percent_value': raw * 100 if raw is not None else None,
         'current': previous['value'] if previous else None,
@@ -181,16 +199,14 @@ def preview_import(db, user, revision_id, data):
         fail('Excel aktarımı yalnız 2026 yılı içindir. 2026 Faaliyet Raporu revizyonunu seçin.')
     rows = []
     claimed = set()
-    department_cache = {}
+    department_map = structure_service.import_department_map(db, report['organization_id'], 2026, normalized)
+    _, publication = contract.checked_publication(db, report['publication_id'])
+    book_rows = contract.snapshot_rows(publication)
     for line, source in read_rows(data):
         readings = annual_readings(source)
         conflict = len(readings) > 1
         raw, rule = annual_value(source)
-        department_key = normalized(source['department'])
-        if department_key not in department_cache:
-            department_cache[department_key] = structure_service.import_department_ids(
-                db, report['organization_id'], 2026, source['department'], normalized)
-        deps = department_cache[department_key]
+        deps = department_map.get(normalized(source['department']), set())
         pool = [i for i in report['indicators'] if i['definition']['department_id'] in deps]
         name = indicator_name(source['name'])
         exact = [i for i in pool if name and indicator_name(i['definition']['name']) == name]
@@ -198,7 +214,8 @@ def preview_import(db, user, revision_id, data):
             indicator_name(i['definition']['name'])).ratio() >= .6], key=lambda i: (-SequenceMatcher(None, name,
                 indicator_name(i['definition']['name'])).ratio(), i['report_indicator_id']))[:3]
         available = readings or [{'key':'missing', 'value':None, 'rule':rule}]
-        options = [option(i, reading, source['unit']) for i in candidates[:3] for reading in available]
+        options = [option(i, reading, source['unit'], book_rows[i['snapshot_indicator_id']])
+                   for i in candidates[:3] for reading in available]
         match = len(exact) == 1
         status = 'Eşleşti' if match else 'Onay gerekiyor' if options else 'Eşleşmedi'
         message = ''
@@ -308,6 +325,10 @@ def apply_import(db, user, import_id, expected_revision, choices):
                         report_indicator_id=selected['id'], actual_revision_id=actual.id,
                         annual_reading=selected['reading'], annual_rule=selected['rule'], scale=scale, value=format(value, 'f'))
         except HTTPException as error:
+            # lock_report uses a SQL CAS followed by refresh, without marking
+            # the ORM row dirty. Savepoint rollback does not restore that cached
+            # lock_version; reload before the next row can try its own lock.
+            db.expire(report)
             detail = error.detail.get('message', str(error.detail)) if isinstance(error.detail, dict) else str(error.detail)
             item.update(status='Hata', message=detail)
         results.append(item)

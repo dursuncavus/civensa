@@ -29,8 +29,8 @@
 <td>{% for o in row.options|unique(attribute='id') %}{{ o.current|trnum }}{% if not loop.last %}<br>{% endif %}{% endfor %}</td><td>{{ row.status }}<p>{{ row.message }}</p></td>
 <td class="selection">{% if row.status not in ['Hata', 'Eksik', 'Eşleşmedi'] %}<label>Satır {{ row.line }} onayı<select name="choice_{{ row.line }}"><option value="">Aktarma</option>
 {% for o in row.options %}
-{% if o.scale in ['raw','choose'] %}<option value="{{ o.id }}:raw:{{ o.reading }}">Onayla: {{ o.name }} · {{ o.rule }} · {{ o.raw_value|trnum }} (olduğu gibi)</option>{% endif %}
-{% if o.scale in ['percent','choose'] %}<option value="{{ o.id }}:percent:{{ o.reading }}">Onayla: {{ o.name }} · {{ o.rule }} · {{ o.percent_value|trnum }} · ×100 (oran kesirden yüzdeye)</option>{% endif %}
+{% if o.scale in ['raw','choose'] %}<option value="{{ o.id }}:raw:{{ o.reading }}">Onayla: {{ o.name }} · {{ o.context }} · {{ o.rule }} · {{ o.raw_value|trnum }} (olduğu gibi)</option>{% endif %}
+{% if o.scale in ['percent','choose'] %}<option value="{{ o.id }}:percent:{{ o.reading }}">Onayla: {{ o.name }} · {{ o.context }} · {{ o.rule }} · {{ o.percent_value|trnum }} · ×100 (oran kesirden yüzdeye)</option>{% endif %}
 {% endfor %}</select></label>{% else %}Aktarılmaz{% endif %}</td></tr>
 {% endfor %}</tbody></table></div>
 <p>Seçimlerimle gösterge eşleştirmelerini, yıllık değerin kaynağını ve varsa ×100 dönüşümünü onaylıyorum.</p>
