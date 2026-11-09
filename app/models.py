@@ -399,6 +399,21 @@ class IndicatorDefinitionRevision(Base):
     __table_args__ = (UniqueConstraint('indicator_id', 'revision', name='uq_indicator_definition_revision'),)
 
 
+class IndicatorDirection(Base):
+    __tablename__ = 'indicator_directions'
+    id: Mapped[int] = mapped_column(primary_key=True)
+    indicator_id: Mapped[str] = mapped_column(ForeignKey('indicator_identities.indicator_id'))
+    period_id: Mapped[int] = mapped_column(ForeignKey('reporting_periods.id'))
+    direction: Mapped[str] = mapped_column(String(6))
+    reason: Mapped[str] = mapped_column(Text)
+    created_by: Mapped[int] = mapped_column(ForeignKey('users.id'))
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(UTC).replace(tzinfo=None))
+    __table_args__ = (
+        CheckConstraint("direction IN ('higher','lower')", name='ck_indicator_direction'),
+        CheckConstraint('length(trim(reason)) > 0', name='ck_indicator_direction_reason'),
+        Index('ix_indicator_direction_latest', 'indicator_id', 'period_id', 'id'),)
+
+
 class PublicationIndicatorBinding(Base):
     __tablename__ = 'publication_indicator_bindings'
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -488,7 +503,7 @@ def _immutable_revision(mapper, connection, target):
     raise ValueError('Geçmiş sürüm değiştirilemez; yeni revizyon oluşturun.')
 
 
-for _model in (ReleaseConfirmation, Publication, IndicatorIdentity, IndicatorDefinitionRevision,
+for _model in (ReleaseConfirmation, Publication, IndicatorIdentity, IndicatorDefinitionRevision, IndicatorDirection,
                PublicationIndicatorBinding, ActivityReportRevision, ReportIndicator,
                ActualRevision, ActivityReportApproval):
     event.listen(_model, 'before_update', _immutable_revision)

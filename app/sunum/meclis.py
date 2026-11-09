@@ -4,7 +4,7 @@ from decimal import Decimal, ROUND_FLOOR
 from ..activity_financial_service import EXPENSE_CODES
 from ..numbers import format_number
 from .engine import text
-from .recipes import complete_sum, number, rate
+from .recipes import complete_sum, number, indicator_comparison, indicator_name
 
 # Pending confirmation by Strateji; compare unrounded rates at the boundaries.
 STATUS_THRESHOLDS = ((Decimal(90), 'Hedefte', 'ok'), (Decimal(70), 'Yakın', 'w'),
@@ -34,12 +34,11 @@ def status(value):
 
 
 def scorecard(sources):
-    """Approved core has no stable SP-goal link or direction: group by unit.
+    """Compare directions in approved core facts, grouped by unit.
 
     ReportCard.strategic_link is free text, absent from the approved core. Never
     join current cards to historical approvals or guess goals from their names.
-    The current definition contract has no lower-is-better field, so actual >=
-    target is the explicit council assumption (including a zero target).
+    Older frozen facts without direction retain the higher-is-better rule.
     """
     rows = []
     for unit in sources:
@@ -51,18 +50,18 @@ def scorecard(sources):
             if target is None or actual is None:
                 continue
             measured += 1
-            if actual >= target:
+            is_met, ratio = indicator_comparison(actual, target, indicator.get('direction', 'higher'))
+            if is_met:
                 met += 1
             else:
-                ratio = rate(actual, target)
                 explanation = indicator.get('explanation', '')
                 correction = indicator.get('deviation', {}).get('corrective_action', '')
                 reason = '\n'.join(value.strip() for value in (explanation, correction)
                                    if isinstance(value, str) and value.strip())
-                missed.append(dict(name=text(indicator.get('name')), department=text(unit.get('department')),
+                missed.append(dict(name=indicator_name(indicator), department=text(unit.get('department')),
                     target=format_number(target), actual=format_number(actual),
-                    ratio='%' + one_decimal(ratio) if ratio is not None else '—',
-                    css=status(ratio)[1], reason=text(reason)))
+                    ratio='%' + one_decimal(ratio.quantize(Decimal('.01'))) if ratio is not None else '—',
+                    css=status(ratio.quantize(Decimal('.01')) if ratio is not None else None)[1], reason=text(reason)))
         value = Decimal(met) / measured * 100 if measured else None
         label, css = status(value)
         rows.append(dict(code=text(unit.get('department_id')), name=text(unit.get('department')),

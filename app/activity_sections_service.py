@@ -434,6 +434,7 @@ def save_resources(db,user,document_id,kind,rows,expected_revision):
 
 
 def core_summary(db,doc):
+    from .activity_contract_service import indicator_direction
     report=db.scalar(select(ActivityReport).where(ActivityReport.organization_id==doc.organization_id,ActivityReport.period_id==doc.period_id))
     if not report:
         return {'status':'empty','total':0,'verified':0,'link':'/activity-reports','message':'Gösterge raporu henüz oluşturulmadı. Gerçekleşme ekranında raporu oluşturun.'}
@@ -453,6 +454,7 @@ def core_summary(db,doc):
             fail('Gösterge tanımı doğrulanamadı. Strateji ile gösterge raporunu kontrol edin.',409)
         data=json.loads(definition.definition_json)
         indicators.append({'name':data['name'],'unit':data.get('unit'),'targets':data.get('targets',[]),
+            'direction':indicator_direction(db,definition.indicator_id,doc.period_id),
             'data_source':data.get('data_source',''), 'actual':latest.value if latest else None,
             'actual_state':latest.state if latest else 'missing','raw_text':latest.raw_text if latest else '',
             'evidence':json.loads(latest.evidence_json) if latest else [],

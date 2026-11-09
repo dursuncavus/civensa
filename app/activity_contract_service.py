@@ -9,7 +9,7 @@ from fastapi import HTTPException
 from sqlalchemy import select, func, update, inspect
 
 from .models import (Indicator, Department, ReportingPeriod, Publication, IndicatorIdentity,
-                     IndicatorDefinitionRevision, PublicationIndicatorBinding, ActivityReport,
+                     IndicatorDefinitionRevision, IndicatorDirection, PublicationIndicatorBinding, ActivityReport,
                      ActivityReportRevision, ReportIndicator, ActualRevision, ActivityReportApproval, User,
                      ReportCandidate, ReportCandidateState, ReportRelease)
 from .serialization import json_dumps
@@ -36,6 +36,33 @@ def digest(text):
 def strategy(user):
     if user.role != 'strategy':
         raise HTTPException(403, 'Bu işlem için strateji birimi yetkisi gerekir.')
+
+
+def indicator_direction(db, indicator_id, period_id):
+    return db.scalar(select(IndicatorDirection.direction).where(
+        IndicatorDirection.indicator_id == indicator_id,
+        IndicatorDirection.period_id == period_id).order_by(IndicatorDirection.id.desc()).limit(1)) or 'higher'
+
+
+def set_indicator_direction(db, user, publication_id, snapshot_indicator_id, direction, reason):
+    strategy(user)
+    if direction not in {'higher', 'lower'}:
+        raise HTTPException(422, 'Gösterge yönü geçersiz. Yüksek veya düşük değer daha iyi seçeneğini seçin.')
+    if not reason.strip():
+        raise HTTPException(422, 'Gösterge yönü kaydedilemedi. Yön değişikliği için gerekçe girin.')
+    pub, payload = checked_publication(db, publication_id)
+    binding = db.scalar(select(PublicationIndicatorBinding).where(
+        PublicationIndicatorBinding.publication_id == pub.id,
+        PublicationIndicatorBinding.snapshot_indicator_id == snapshot_indicator_id))
+    if snapshot_indicator_id not in snapshot_rows(payload) or not binding:
+        raise HTTPException(422, 'Yayın göstergesinin kimlik ilişkisi bulunamadı. Önce kimlik eşlemesini tamamlayın.')
+    definition = db.get(IndicatorDefinitionRevision, binding.definition_revision_id)
+    if definition.period_id != pub.period_id or digest(definition.definition_json) != definition.sha256:
+        raise HTTPException(409, 'Gösterge tanımı doğrulanamadı. Gösterge raporunu kontrol edin.')
+    row = IndicatorDirection(indicator_id=definition.indicator_id, period_id=pub.period_id,
+        direction=direction, reason=reason.strip(), created_by=user.id)
+    db.add(row); db.flush()
+    return row
 
 
 def authorize(user, department_id=None):

@@ -406,7 +406,7 @@ def test_live_pin_remains_known_checkpoint_before_presentation_migrations():
     from alembic.config import Config
     from alembic.script import ScriptDirectory
     script = ScriptDirectory.from_config(Config(str(live.ROOT / 'alembic.ini')))
-    assert script.get_heads() == ['c192a1b2c3d4']
+    assert script.get_heads() == ['c197a1b2c3d4']
     # Operational first-load commands retain their reviewed schema pin. Presentation
     # storage does not authorize changing that operational target or its guards.
     assert live.HEAD == 'c162a1b2c3d4'

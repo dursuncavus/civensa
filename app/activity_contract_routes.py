@@ -290,12 +290,16 @@ def register(app):
     def bindings_form(publication_id: int, request: Request, db: Session = Depends(get_db), user=Depends(require_user)):
         service.strategy(user)
         pub, payload = service.checked_publication(db, publication_id)
-        bound = set(db.scalars(select(PublicationIndicatorBinding.snapshot_indicator_id).where(PublicationIndicatorBinding.publication_id == pub.id)))
+        bindings = {b.snapshot_indicator_id: b for b in db.scalars(select(PublicationIndicatorBinding).where(PublicationIndicatorBinding.publication_id == pub.id))}
         rows = list(service.snapshot_rows(payload).values())
-        for row in rows:
-            row['bound'] = row['id'] in bound
-            row['organization_id'] = db.get(Department, row['department_id']).organization_id
         from .models import IndicatorDefinitionRevision
+        for row in rows:
+            binding = bindings.get(row['id'])
+            row['bound'] = binding is not None
+            row['organization_id'] = db.get(Department, row['department_id']).organization_id
+            if binding:
+                definition = db.get(IndicatorDefinitionRevision, binding.definition_revision_id)
+                row['direction'] = service.indicator_direction(db, definition.indicator_id, pub.period_id)
         identities = []
         for identity in db.scalars(select(IndicatorIdentity).order_by(IndicatorIdentity.indicator_id)):
             definition = db.scalar(select(IndicatorDefinitionRevision).where(IndicatorDefinitionRevision.indicator_id == identity.indicator_id).order_by(IndicatorDefinitionRevision.revision.desc()))
@@ -315,6 +319,22 @@ def register(app):
             transact(db, user, 'publication_indicator_bind', 'publication_indicator_binding',
                 lambda: service.bind_legacy_indicator(db, user, publication_id, integer(data.get('snapshot_indicator_id'), 'snapshot_indicator_id'),
                     data.get('indicator_id') or None, data.get('reason', '')))
+            return RedirectResponse(back, 303)
+        except HTTPException as error:
+            return ui_error(request, user, error, back)
+
+    @router.post('/activity-reports/publications/{publication_id}/directions')
+    async def direction_form(publication_id: int, request: Request, db: Session = Depends(get_db), user=Depends(require_user)):
+        service.strategy(user)
+        data = await request.form()
+        back = f'/activity-reports/publications/{publication_id}/bindings'
+        try:
+            transact(db, user, 'indicator_direction_set', 'indicator_direction',
+                lambda: service.set_indicator_direction(db, user, publication_id,
+                    integer(data.get('snapshot_indicator_id'), 'snapshot_indicator_id'),
+                    data.get('direction', ''), data.get('reason', '')),
+                audit_details=service.canonical({'direction': data.get('direction', ''),
+                    'reason': data.get('reason', '').strip(), 'publication_id': publication_id}))
             return RedirectResponse(back, 303)
         except HTTPException as error:
             return ui_error(request, user, error, back)

@@ -14,7 +14,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 def test_actual_preview_migration(postgres_templates):
     scripts = ScriptDirectory.from_config(Config(str(ROOT/'alembic.ini')))
-    assert scripts.get_heads() == ['c192a1b2c3d4']
+    assert len(scripts.get_heads()) == 1
     with postgres_templates.clone('c185a1b2c3d4') as engine:
         def migrate(action, revision, ok=True):
             result = subprocess.run([sys.executable, '-m', 'alembic', action, revision], cwd=ROOT,
@@ -22,11 +22,12 @@ def test_actual_preview_migration(postgres_templates):
                 capture_output=True, text=True)
             assert (result.returncode == 0) == ok, result.stderr
             return result
-        migrate('upgrade', 'head')
+        # Exercise this migration's checkpoint even when later heads exist.
+        migrate('upgrade', 'c192a1b2c3d4')
         assert 'actual_imports' in inspect(engine).get_table_names()
         migrate('downgrade', 'c185a1b2c3d4')
         assert 'actual_imports' not in inspect(engine).get_table_names()
-        migrate('upgrade', 'head')
+        migrate('upgrade', 'c192a1b2c3d4')
         with engine.begin() as c:
             c.exec_driver_sql("INSERT INTO organizations(id,name) VALUES (1,'Sentetik Belediye')")
             c.exec_driver_sql("INSERT INTO reporting_periods(id,year,status,template_status) VALUES (1,2026,'active','verified')")

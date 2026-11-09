@@ -4,7 +4,7 @@ import os
 from pathlib import Path
 from urllib.parse import urlsplit
 
-from lxml.html import fromstring
+from lxml.html import fromstring, tostring
 from playwright.sync_api import expect
 import pytest
 from sqlalchemy import select
@@ -100,11 +100,26 @@ def contract(html):
     return controls, hooks, labels, links, cells
 
 
+def without_direction_setting(html):
+    """CIV-197 adds period metadata; keep the original binding contract frozen."""
+    doc = fromstring(html)
+    for el in doc.xpath('//*[contains(concat(" ", normalize-space(@class), " "), " indicator-direction-form ") or '
+                        'contains(concat(" ", normalize-space(@class), " "), " indicator-direction-help ")]'):
+        el.getparent().remove(el)
+    for heading in doc.xpath('//h1'):
+        heading.text = (heading.text or '').replace('Gösterge kimlikleri ve yönleri', 'Gösterge kimlikleri')
+    return tostring(doc, encoding='unicode')
+
+
 @pytest.mark.parametrize('name,state', [('bindings','ready'), ('bindings','empty')] +
     [('financial',s) for s in ['ready','errors','stale','frozen','empty']])
 def test_frozen_contract(name, state):
     data = scene(name,state)
     before, after = (render(name,data,old) for old in (True,False))
+    if name == 'bindings':
+        assert len(fromstring(after).xpath('//form[contains(@class,"indicator-direction-form")]')) == sum(
+            row['bound'] for row in data['rows'])
+        after = without_direction_setting(after)
     assert contract(after) == contract(before)
     old, new = (fromstring(h).get_element_by_id('main') for h in (before,after))
     if name == 'bindings':
@@ -235,7 +250,8 @@ def test_binding_save_real_browser(browser,section_client,db,sample,width):
         root.get_by_label('Eşleme gerekçesi').fill('Aynı kavramı temsil eden bağımsız tarihsel kayıt.')
         root.get_by_role('button',name='Açık kimlik ilişkisini kaydet').click()
         expect(root.get_by_text('Sabitlendi',exact=True)).to_be_visible()
-        assert root.locator('form').count()==0
+        assert root.locator('form[action$="/bindings"]').count()==0
+        assert root.locator('form[action$="/directions"]').count()==1
         binding=db.scalar(select(PublicationIndicatorBinding).where(PublicationIndicatorBinding.publication_id==pub.id))
         assert writes==[(f'/activity-reports/publications/{pub.id}/bindings',303,f'/activity-reports/publications/{pub.id}/bindings')]
         assert binding.reason=='Aynı kavramı temsil eden bağımsız tarihsel kayıt.'
