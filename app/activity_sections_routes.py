@@ -317,6 +317,7 @@ def register(app):
         period_id=integer(period_id) if period_id else None
         reports,report_errors=listing(db,user,period_id,section,status)
         return templates.TemplateResponse(request,'activity_sections_index.html',{'user':user,
+            'directorate_finance_info':user.role=='department' and not service.finance(db,user),
             'reports':reports,'report_errors':report_errors,'statuses':service.STATUSES,
             'owners':{'directorate':'Müdürlük','strategy':'Strateji','finance':'Mali Hizmetler'},
             'definitions':db.scalars(select(ARSectionDefinition).order_by(ARSectionDefinition.version.desc(),ARSectionDefinition.position)).all(),
@@ -375,6 +376,7 @@ def register(app):
         event_actor_names=dict(db.execute(select(User.id,User.full_name).where(User.id.in_(actor_ids))).all()) if actor_ids else {}
         return {**financial_context(db,user,doc,report), 'event_actor_names':event_actor_names, 'section_table_keys_json':json.dumps(keys),
             'sunum_code':sunum_code(db,doc,report),
+            'directorate_finance_info':user.role=='department' and not service.finance(db,user),
             'resource_key_map':resource_keys, 'typeset_approvals':approvals, 'user':user,'report':report,'section':section,'statuses':service.STATUSES,
             'reopen_allowed':reopen_allowed,'similarities':ar_similarity.for_report(db,user,report),
             'editable':not report['frozen'] and service.can_edit(db,user,doc,definition),

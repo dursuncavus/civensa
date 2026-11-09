@@ -370,6 +370,7 @@ def register(app):
         scopes={r.department_id:r for r in rows(db,DepartmentScope,period.id)}
         section_copy_audit = db.scalar(select(AuditLog).where(AuditLog.action == 'section_period_copy',
             AuditLog.entity_id == period.id).order_by(AuditLog.id.desc()))
+        from .data.pp_errata import errata_entries
         from .publication_history import publication_history
         department_names = {d.id:period_name(db,period.id,d) for d in period_departments(db,period.id)}
         return templates.TemplateResponse(request,'report_builder.html',dict(user=user,period=period,
@@ -377,6 +378,7 @@ def register(app):
             section_copy_result=getattr(request.state, 'section_copy_result', None) or (json.loads(section_copy_audit.details)['new'] if section_copy_audit else None),
             departments=period_departments(db,period.id),scopes=scopes,reconciliation=cost_reconciliation(db,period.id),
             department_names=department_names, approved_book=approved_book_provenance(db, period.id),
+            pp_errata=errata_entries(period.year),
             sections=rows(db,ReportSection,period.id),catalogue=rows(db,OfficialActivity,period.id),responsibilities={i.id:[r.department_id for r in db.scalars(select(ActivityResponsibility).where(ActivityResponsibility.official_activity_id==i.id)).all()] for i in rows(db,OfficialActivity,period.id)},
             **publication_history(db, period.id, user, department_names)))
 

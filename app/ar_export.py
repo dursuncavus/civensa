@@ -70,6 +70,13 @@ class _ReportContent:
         from .activity_financial_service import EXPENSE_FIELDS, REVENUE_FIELDS, ENTRY_FIELDS
         data = self.payload.get('financial', {})
         if code == 'III.A.1':
+            planned = data.get('pp_planned_figures', [])
+            if planned:
+                self.table(['Müdürlük', 'Yıl', 'Tablo', 'Toplam'], [
+                    [row['department'], row['year'], 'Maliyet' if row['table'] == 'cost' else 'Ekonomik',
+                     '\n'.join([format_number(row['amount'], money=True),
+                                 *(entry['marker'] for entry in row['errata'])])]
+                    for row in planned], 'PP planlanan tutarlar')
             for kind, table in data.get('tables', {}).items():
                 title = {'expenditure': 'Ekonomik Koda Göre Giderler',
                          'programme': 'Program ve Alt Programa Göre Giderler',

@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-{% block page_title %}Faaliyet Raporu · EK-1{% endblock %}
+{% block page_title %}Rapor bölümleri ve beyanlar (EK-1){% endblock %}
 {% block page_subtitle %}Birim ve idare raporları · Bölümler, sahipler ve eksikler{% endblock %}
 {% block content %}
 <link rel="stylesheet" href="/static/design/section-index.css">
@@ -26,8 +26,8 @@
 {% for s in item.matches %}
 <tr><td data-label="Bölüm"><a href="/activity-sections/reports/{{ item.report.id }}?code={{ s.code }}">{{ s.code }} · {{ s.title }}</a></td>
 <td data-label="Durum"><span class="ar-status ar-{{ s.status }}">{{ statuses[s.status] }}</span></td><td data-label="Sahibi">{{ owners[s.owner] }}</td>
-<td data-label="Eksikler">{% for missing in s.missing %}<div>{{ missing }}</div>{% else %}—{% endfor %}
-{% if s.get('warnings') %}<h4>Uyarılar (gönderimi engellemez)</h4>{% for warning in s.warnings %}<p class="ar-warning">{{ warning }}</p>{% endfor %}{% endif %}
+<td data-label="Eksikler">{% if directorate_finance_info and s.owner=='finance' and s.missing %}<p role="status">Bu bölümü Mali Hizmetler dolduracak; gönderiminizi engellemez.</p>{% else %}{% for missing in s.missing %}<div>{{ missing }}</div>{% else %}—{% endfor %}{% endif %}
+{% if s.get('warnings') %}<h4>Uyarılar (gönderimi engellemez)</h4>{% if directorate_finance_info and s.owner=='finance' %}<p role="status">Bu bölümü Mali Hizmetler dolduracak; gönderiminizi engellemez.</p>{% else %}{% for warning in s.warnings %}<p class="ar-warning">{{ warning }}</p>{% endfor %}{% endif %}{% endif %}
 {% set similarity=item.similarities.get(s.code) %}
 {% if similarity %}
 {% if similarity.message %}<p class="ar-warning" role="status" data-ar-similarity>{{ similarity.message }}{% if similarity.source_url %} <a href="{{ similarity.source_url }}">{{ similarity.source_label }}</a>{% endif %}</p>
@@ -40,7 +40,7 @@
 <section class="index-panel"><h2>Word ve PDF çıktıları</h2>
 {% for item in reports %}{% if user.role=='strategy' or (item.report.department_id and item.report.department_id==user.department_id) %}
 <article class="export-report"><h3>{{ item.report.year }} · {{ item.report.department }}</h3>
-<details class="section-export"><summary>Dışa aktar</summary><div class="export-items"><a class="button" href="/activity-sections/reports/{{ item.report.id }}/export.docx">Word olarak indir</a> <a class="button" href="/activity-sections/reports/{{ item.report.id }}/export.pdf">PDF olarak indir</a> <a class="button" href="/activity-sections/reports/{{ item.report.id }}/typeset.json">Dizgi verisi (JSON)</a></div></details>
+<details class="section-export"><summary>Dışa aktar</summary><div class="export-items"><a class="button" href="/activity-sections/reports/{{ item.report.id }}/export.docx">{{ 'Word olarak indir' if item.report.frozen else 'Taslak — Word (onaysız)' }}</a> <a class="button" href="/activity-sections/reports/{{ item.report.id }}/export.pdf">{{ 'PDF olarak indir' if item.report.frozen else 'Taslak — PDF (onaysız)' }}</a> <a class="button" href="/activity-sections/reports/{{ item.report.id }}/typeset.json">Dizgi verisi (JSON)</a></div></details>
 {% if not item.report.department_id %}
 {% if item.report.reopened %}<p class="ar-warning" role="alert">Güncel sürüm gerekçeyle açıldı; düzeltmeden sonra yeni sürüm oluşturun.</p>{% endif %}
 {% for release in item.report.releases %}
