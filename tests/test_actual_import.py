@@ -243,6 +243,13 @@ def test_same_pg_code_cannot_cross_directorates(client, db, sample, scenario):
     assert apply(db, sample, record, p)['counts'] == {'Eşleşmedi': 1}
 
 
+@pytest.mark.parametrize('prefix', ['SH.1.2 / PG.1.3: ', 'P.G.2.1 — '])
+def test_punctuated_leading_codes_still_match_by_name(client, db, sample, scenario, prefix):
+    _, p = preview(db, sample, scenario, [{'name': prefix + 'HİZMET SAYISI'}])
+    assert p['rows'][0]['status'] == 'Eşleşti'
+    assert p['rows'][0]['options'][0]['name'] == 'Hizmet sayısı'
+
+
 def test_browser_upload_confirm_apply(client, db, sample, scenario, tmp_path):
     import os
     from pathlib import Path

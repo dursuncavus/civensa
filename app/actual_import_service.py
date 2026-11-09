@@ -47,7 +47,8 @@ def normalized(value):
 
 def indicator_name(value):
     text = str(value or '').strip()
-    text = re.sub(r'^\s*(?:(?:SH|PG)\s*\d+(?:\s*[.\-/]\s*\d+)*\s*[:.\-–—)]*\s*)+', '', text, flags=re.I)
+    text = re.sub(r'^\s*(?:(?:S\.?\s*H|P\.?\s*G)\s*[.:_\-]?\s*\d+'
+                  r'(?:\s*[.\-/]\s*\d+)*\s*[:.,;/\-–—)]*\s*)+', '', text, flags=re.I)
     return normalized(text)
 
 
