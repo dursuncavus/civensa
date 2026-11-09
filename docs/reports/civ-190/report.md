@@ -42,7 +42,8 @@ Tek uygulama işlevi: `app/data/pp_errata.py::apply_pp_errata`. Tek sürümlü v
 1. `activity_financial_service.pp_references`: bütünlük kodu doğrulanan dondurulmuş PP yayını → FR görünümü. Ekonomik kod referansları aynı görünümden alınır; dağılım bilinmediğinden kategori tutarları değiştirilmez.
 2. `activity_financial_service.financial_data`: birim ve İdare III-A planlanan maliyet/ekonomik toplamları; mevcut finans kontrolleri ve rapor hazırlama/gönderme kontrolleri bu ortak veriyi kullanır.
 3. `/api/activity-sections/reports/{id}/financial`, rapor JSON'u ve `/activity-sections/reports/{id}?code=III.A.1`: aynı finans verisi; düzeltilmiş toplamın yanında `Düzeltildi (K1, s.243)` / `Düzeltildi (K6, s.223)`, başlıkta basılı değer. K6'da başlık ayrıca saklanan kalemler toplamını gösterir.
-4. `activity_sections_service.report_data` → `ar_export._ReportContent.financial`: birim/İdare Word ve PDF ortak üretimi, düzeltilmiş toplam ve işaretle birlikte. Yeni FR onay kopyası bu okunmuş değerleri içerir. Daha önce saklanan FR onay/yayın kopyaları yeniden hesaplanmaz; kendi bütünlük kodları ve tarihsel değerleri korunur.
+4. `ar_typeset_source.enrich`: yeni dizgi JSON’undaki faaliyet/maliyet satırlarının bağlı PP okuması da aynı işlevden geçer. Yalnız toplam düzeltildiğinden faaliyet kalemleri değişmez; toplamlar dizgi sözleşmesinin ortak finans bağlamında korunur. Tarihsel dizgi kopyaları yeniden yazılmaz.
+5. `activity_sections_service.report_data` → `ar_export._ReportContent.financial`: birim/İdare Word ve PDF ortak üretimi, düzeltilmiş toplam ve işaretle birlikte. Yeni FR onay kopyası bu okunmuş değerleri içerir. Daha önce saklanan FR onay/yayın kopyaları yeniden hesaplanmaz; kendi bütünlük kodları ve tarihsel değerleri korunur.
 
 `program_service.cost_reconciliation` ve `publication_checks` mevcut kodda PP kitabının ara toplam/yayın kapılarıdır; FR finans okuma yolu değillerdir. PP kaynak uyarılarının tarihsel anlamını değiştirmemek için basılı veriyle çalışmaya devam ederler. Test, bu kapıların sonuçlarının ve kitap çıktısı bloklarının FR okumasından önce/sonra aynı olduğunu doğrular. `book_snapshot`, PP Word/PDF ve yayın bütünlük denetimine düzeltme uygulanmaz.
 
@@ -53,6 +54,7 @@ Strateji için mevcut `/report-builder?period_id=2026_dönem_kimliği` ekranına
 - `python -m pytest -q --require-postgres tests/test_pp_errata.py`: **5 geçti** (son koşu 102,55 sn). Gerçek 2026 ilk yüklemesi; aynı kitap durumu ve hash; K1–K6 kararları; eksik/uyuşmayan kayıtlar; dosyada bulunmayan madde; birim/İdare; Word/PDF; korunan FR onay kopyası; gerçek tarayıcı listesi ve işaret.
 - `python -m pytest -q --require-postgres tests/test_activity_financial.py tests/test_activity_financial_ui.py tests/test_activity_sections_export.py`: **29 geçti** (46,65 sn).
 - `python -m pytest -q --require-postgres tests/test_approved_book_publication.py tests/test_approved_book_mapping.py tests/test_pp_subtotal_reconciliation.py`: **60 geçti** (296,46 sn).
+- `python -m pytest -q --require-postgres tests/test_ar_typeset_contract.py`: **25 geçti** (42,72 sn); dizgi veri sözleşmesi ve tarihsel kopya kontrolleri.
 - `alembic heads`: tek baş, `c185a1b2c3d4`; migrasyon dosyalarında değişiklik yok.
 - `git diff --check`: temiz.
 
