@@ -23,11 +23,14 @@ def test_committed_guide_contract():
     assert headings == ['Başlamadan önce', 'Giriş ve parola', 'Personel ve Müdür',
                         'Gösterge gerçekleşmesi ve kanıt', 'EK-1 bölümleri ve EK-2',
                         'Gönderme (Müdür)', 'İade ve düzeltme', 'Onay sonrası',
-                        'Yardım', 'Daha sonra eklenecek bölümler']
-    for placeholder in ['[EKLENECEK — faaliyet sonucu girişi, Ali Abi cevabı bekleniyor]',
-                        '[EKLENECEK — gösterge Excel ile toplu giriş]']:
-        assert body.count(placeholder) == 1
-    assert 'Destek kanalı: Strateji Geliştirme Müdürlüğü duyuracak.' in body
+                        'Faaliyet sonuçları', 'Yardım', 'Daha sonra eklenecek bölümler']
+    assert '[EKLENECEK — faaliyet sonucu girişi, Ali Abi cevabı bekleniyor]' not in body
+    assert body.count('[EKLENECEK — gösterge Excel ile toplu giriş]') == 1
+    assert "Sorularınız ve sorunlarınız için Strateji Geliştirme Müdürlüğü'ne ulaşın." in body
+    results = body.split('## Faaliyet sonuçları\n', 1)[1].split('\n## ', 1)[0]
+    assert 'Her faaliyet için ayrı bir sonuç girilmez.' in results
+    assert 'Gösterge gerçekleşmelerini ve kanıtlarını yukarıda anlatıldığı gibi girin.' in results
+    assert "2026 faaliyetlerinden biri için kısa bir açıklama gerekiyorsa ilgili EK-1 bölümünün `Bölüm içeriği` alanına yazın." in results
     sources = [p for p in (ROOT/'app/templates').rglob('*') if p.is_file()]
     sources += [p for p in (ROOT/'app/static').rglob('*.js') if p.is_file()]
     # All quoted UI text must exist verbatim; no normalized/paraphrased labels.
