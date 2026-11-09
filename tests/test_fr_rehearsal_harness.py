@@ -5,9 +5,34 @@ import httpx
 import pytest
 
 from app.security import hash_password
-from scripts.guide_screenshots import local_http
+from scripts.fr_rehearsal import Rehearsal
+from scripts.guide_screenshots import GuideError, local_http
 
 pytestmark = pytest.mark.postgres
+
+
+@pytest.mark.parametrize('result', ['OK', 'SLOW'])
+def test_only_idare_scope_limit_is_expected_blocker(tmp_path, result):
+    rehearsal = Rehearsal('', {}, tmp_path)
+    rehearsal.steps = [
+        {'step': 'Faaliyet gerçekleşmesi girişi ara', 'result': result}
+        for _ in range(3)
+    ] + [{'step': 'İdare raporunu onayla ve dondur denemesi', 'result': 'BLOCKER'}]
+    rehearsal.check_blockers()
+
+
+@pytest.mark.parametrize('blockers', [
+    [],
+    ['Faaliyet gerçekleşmesi girişi ara'],
+    ['İdare raporunu onayla ve dondur denemesi', 'Faaliyet gerçekleşmesi girişi ara'],
+    ['İdare raporunu onayla ve dondur denemesi', 'Birim raporunu gönder'],
+    ['İdare raporunu onayla ve dondur denemesi'] * 2,
+])
+def test_missing_scope_limit_or_additional_blockers_fail(tmp_path, blockers):
+    rehearsal = Rehearsal('', {}, tmp_path)
+    rehearsal.steps = [{'step': step, 'result': 'BLOCKER'} for step in blockers]
+    with pytest.raises(GuideError, match='İdare kapsam sınırı'):
+        rehearsal.check_blockers()
 
 
 @pytest.mark.parametrize('rehearsal', [False, True])
