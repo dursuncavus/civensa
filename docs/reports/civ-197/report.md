@@ -12,6 +12,8 @@ Yüksek değer daha iyiyse gerçekleşen ≥ hedef başarıdır; oran gerçekle�
 
 Son bazda CIV-192 içe aktarma testleri yeniden geçti. Yeni başlığa bağlı eski migrasyon kontrollerinden 17 test, rapor sayfasının bağlantı/form/yerleşim sözleşmesinden 21 test ve metin sütunu envanterinden 1 test ayrıca geçti. Eski başlık beklentileri yeni başlığa güncellendi; işletim amaçlı ilk yükleme şema pini korunur. Yalnız yön ayarının bulunduğu mevcut bölümün başlık metni için tasarım beklentisi güncellendi; bağlantı ve form sözleşmeleri korunur.
 
+Tarihsel ilk yükleme test yardımcısı, bugünkü model envanteriyle çalışabilmek için boş yön tablosunu diğer yardımcı tablolarla birlikte sağlar; işletim şema pini ve üretim korumaları değişmez. Gösterge eşleme ekranının donmuş sözleşme testi yalnız yeni yön formu, açıklaması ve başlığını ayırarak eski eşleme alanlarını aynen karşılaştırır; gerçek tarayıcı akışı eşleme sonrasında yön formunun kullanılabildiğini doğrular.
+
 Ekran görüntülerindeki bütün kayıtlar sentetiktir.
 
 ![Strateji yön ayarı](direction-setting.png)

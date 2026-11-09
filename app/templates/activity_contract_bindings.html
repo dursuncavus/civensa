@@ -8,7 +8,7 @@
     <a class="button" href="/activity-reports">Raporlara dön</a>
   </div>
   <section class="info-panel">
-    <p>Gösterge yönü bu dönem için geçerlidir. Yeni raporlarda hedef karşılaştırmasına uygulanır; daha önce sabitlenen faaliyet raporları değişmez.</p>
+    <p class="indicator-direction-help">Gösterge yönü bu dönem için geçerlidir. Yeni raporlarda hedef karşılaştırmasına uygulanır; daha önce sabitlenen faaliyet raporları değişmez.</p>
     <p>Ad ve kod benzerliğine göre eşleme yapılmaz. Eski yayın içeriği değiştirilmez; açık kimlik ilişkisi ayrı saklanır. Aynı kavramı temsil ettiğini doğrulamadan mevcut kimlik seçmeyin. Eşleme kaydedildikten sonra üzerine yazılmaz.</p>
   </section>
   <div class="reports-panel">
@@ -21,7 +21,7 @@
       <p class="secondary">{{ row.department }} · {{ row.unit }} · {{ row.code or 'Kod belirtilmedi' }}</p>
       {% if row.bound %}
       <p>Kimlik ve tanım sürümü sabitlenmiş.</p>
-      <form class="form-grid" method="post" action="/activity-reports/publications/{{ publication.id }}/directions">
+      <form class="form-grid indicator-direction-form" method="post" action="/activity-reports/publications/{{ publication.id }}/directions">
         <input type="hidden" name="csrf_token" value="{{ request.session.get('csrf_token') }}">
         <input type="hidden" name="snapshot_indicator_id" value="{{ row.id }}">
         <label>Yön
