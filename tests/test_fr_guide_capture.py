@@ -25,7 +25,8 @@ def test_committed_guide_contract():
                         'Gönderme (Müdür)', 'İade ve düzeltme', 'Onay sonrası',
                         'Faaliyet sonuçları', 'Yardım', 'Daha sonra eklenecek bölümler']
     assert '[EKLENECEK — faaliyet sonucu girişi, Ali Abi cevabı bekleniyor]' not in body
-    assert body.count('[EKLENECEK — gösterge Excel ile toplu giriş]') == 1
+    assert '[EKLENECEK — gösterge Excel ile toplu giriş]' not in body
+    assert "`Excel'den içe aktar`" in body
     assert "Sorularınız ve sorunlarınız için Strateji Geliştirme Müdürlüğü'ne ulaşın." in body
     results = body.split('## Faaliyet sonuçları\n', 1)[1].split('\n## ', 1)[0]
     assert 'Her faaliyet için ayrı bir sonuç girilmez.' in results

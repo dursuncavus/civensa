@@ -5,6 +5,8 @@ import subprocess
 import sys
 
 from sqlalchemy import inspect, text
+from alembic.config import Config
+from alembic.script import ScriptDirectory
 import pytest
 
 pytestmark = pytest.mark.postgres
@@ -39,7 +41,7 @@ def test_upgrade_downgrade_preserves_existing_rows(postgres_templates):
         result = migrate('downgrade', 'c184a1b2c3d4', ok=False)
         assert 'veriyi koruyan aktarım' in result.stderr
         with engine.begin() as c:
-            assert c.execute(text('SELECT version_num FROM alembic_version')).scalar_one() == 'c185a1b2c3d4'
+            assert c.execute(text('SELECT version_num FROM alembic_version')).scalar_one() == ScriptDirectory.from_config(Config(str(ROOT/'alembic.ini'))).get_current_head()
             assert c.execute(text('SELECT sentence FROM sunum_highlights')).scalar_one() == 'İş tamamlandı.'
             c.exec_driver_sql('DELETE FROM sunum_photos WHERE id=1')
             assert c.execute(text('SELECT photo_id FROM sunum_highlights')).scalar_one() is None

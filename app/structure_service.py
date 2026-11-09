@@ -490,3 +490,53 @@ def copy_period_work(db, actor, base, period, sub_map):
     missing = unresolved_work(db,base.id,period.year)
     audit_change(db,actor,'structure_period_copy',period,None,{'base_period_id':base.id,'change_ids':used,'untransferred':missing})
     return missing
+
+
+def import_department_map(db, organization_id, year, normalize):
+    """Bulk-load one year's import aliases and effective merger routes.
+
+    Scope names and the live journal are authoritative. Future mergers cannot
+    transfer a reporting year's ownership. The caller reuses this directory for
+    every workbook row instead of querying all departments for every name.
+    """
+    departments = {d.id: d for d in db.scalars(select(Department).where(
+        Department.organization_id == organization_id))}
+    if not departments:
+        return {}
+    names = {did: {normalize(d.name)} for did, d in departments.items()}
+    period_id = db.scalar(select(ReportingPeriod.id).where(ReportingPeriod.year == year))
+    if period_id is not None:
+        for scope in db.scalars(select(DepartmentScope).where(DepartmentScope.period_id == period_id,
+                DepartmentScope.department_id.in_(departments))):
+            if scope.display_name:
+                names[scope.department_id].add(normalize(scope.display_name))
+    changes = live_changes(db)
+    for change in changes:
+        snapshot = json.loads(change.snapshot_json)
+        for side in ('before', 'after'):
+            for did, profile in snapshot[side]['departments'].items():
+                if int(did) in names and profile:
+                    names[int(did)].add(normalize(profile['name']))
+    merge_ids = [change.id for change in changes
+                 if change.change_type == 'MERGED' and change.effective_date.year <= year]
+    edges = {}
+    if merge_ids:
+        for link in db.scalars(select(StructureChangeLink).where(StructureChangeLink.change_id.in_(merge_ids))):
+            if link.from_department_id in names and link.to_department_id in names:
+                edges.setdefault(link.from_department_id, set()).add(link.to_department_id)
+    result = {}
+    for did, aliases in names.items():
+        found = {did}
+        pending = [did]
+        while pending:
+            for receiver in edges.get(pending.pop(), set()) - found:
+                found.add(receiver)
+                pending.append(receiver)
+        for alias in aliases:
+            result.setdefault(alias, set()).update(found)
+    return result
+
+
+def import_department_ids(db, organization_id, year, workbook_name, normalize):
+    """Single-name adapter; workbook imports should build the map once."""
+    return import_department_map(db, organization_id, year, normalize).get(normalize(workbook_name), set())

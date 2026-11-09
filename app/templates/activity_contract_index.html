@@ -36,6 +36,21 @@
   </div>
   {% endif %}
   {% if user.role == 'strategy' %}
+  <section class="reports-panel" id="actual-excel-import">
+    <h2>Excel'den içe aktar</h2>
+    <p>Tüm müdürlüklerin gösterge gerçekleşmelerini içeren ana XLSX dosyasını yükleyin. Önizlemede eşleşmeleri ve yıllık değerleri onaylayın.</p>
+    <form method="post" enctype="multipart/form-data" action="/activity-reports/imports/preview">
+      <input type="hidden" name="csrf_token" value="{{ request.session.get('csrf_token') }}">
+      <label>2026 Faaliyet Raporu revizyonu<select name="revision_id" required>
+        <option value="">Rapor seçin</option>
+        {% for rev in revisions if rev.year == 2026 and 'Güncel' in rev.status_badges %}
+        <option value="{{ rev.id }}">{{ rev.organization }} · 2026 · Revizyon {{ rev.revision }}</option>
+        {% endfor %}
+      </select></label>
+      <label>Ana Excel dosyası (veriler sayfası)<input type="file" name="file" accept=".xlsx" required></label>
+      <button class="button">Excel önizlemesini aç</button>
+    </form>
+  </section>
   <section class="reports-panel">
     <h2>Yeni rapor oluştur</h2>
     {% if publications %}

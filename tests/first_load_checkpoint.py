@@ -15,10 +15,11 @@ def disposable_first_load_database(url):
         with environment(DATABASE_URL=rendered, MIGRATION_DATABASE_URL=rendered):
             command.downgrade(Config(str(live.ROOT / 'alembic.ini')), live.HEAD)
         # These historical CLI tests import today's web application in the same
-        # process. Its metadata-based ownership guards see the new presentation models;
+        # process. Its metadata-based ownership guards see newer auxiliary models;
         # provide their empty auxiliary tables while preserving the operator pin.
         from app.sunum.models import SunumPhoto, SunumHighlight
-        for model in (SunumPhoto, SunumHighlight):
+        from app.models import ActualImport
+        for model in (SunumPhoto, SunumHighlight, ActualImport):
             model.__table__.create(engine, checkfirst=True)
         yield engine
 
