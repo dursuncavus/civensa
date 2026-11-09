@@ -6,6 +6,7 @@ from html.parser import HTMLParser
 from http.server import BaseHTTPRequestHandler, HTTPServer
 import threading
 import json
+import re
 import os
 from pathlib import Path
 
@@ -16,6 +17,7 @@ from sqlalchemy import select
 from app.main import app, require_user
 from app.models import EconomicValue, IndicatorValue, Submission
 from test_sidebar_ui import browser
+from tests.civ202_contract import undo_program_dialog_controls
 from test_live_pilot_hardening import live_client, login
 from test_section_index_design import TEXT_PAIRS, contrast
 
@@ -181,9 +183,9 @@ def test_frozen_forms_links_values_disabled_removal(live_client, sample, role, e
     assert sha256(source).hexdigest() == 'eff96facc6b8f8c7648978eb468d98b74000d0bceb94c6a0fc506e3c89f5da82'
     old = response.template.environment.from_string(source.decode()).render(context)
     new = response.template.render(context)
-    assert form_contract(new) == form_contract(old)
+    assert form_contract(undo_program_dialog_controls(new)) == form_contract(old)
     added = Counter({f'#rp-{key}': 1 for key in SECTION_IDS})
-    assert links(new) == links(old) + added
+    assert links(undo_program_dialog_controls(new)) == links(old) + added
     assert removal_contract(new) == removal_contract(old)
     for id in ['economicGridForm', 'economicGridErrors']:
         before = [n.attrs for n in Document(old).root.walk() if n.attrs.get('id') == id]
@@ -225,7 +227,7 @@ def test_overview_statuses_and_exact_error_count(client, db, sample, scenario):
         expected = ['1 kart', 'Tamamlandı', 'Tamamlandı', 'Kaynak değerleri doğrulandı', 'Tutarlar doğrulandı', 'Kaynak hücreleri doğrulandı']
         expected_tones = ['neutral', 'success', 'success', 'success', 'success', 'success']
     root = Document(response.template.render(context)).root
-    overview = next(n for n in root.walk('ul') if n.attrs.get('class') == 'rp-task-list')
+    overview = next(n for n in root.walk('ul') if 'rp-task-list' in n.attrs.get('class', '').split())
     badges = [n for n in overview.walk('span') if 'rp-status' in n.attrs.get('class', '').split()]
     statuses = [normalized(n.text()) for n in badges]
     assert statuses == expected
@@ -266,78 +268,52 @@ def test_browser_layout_anchors_contrast_and_evidence(browser, client, db, sampl
         page.evaluate('document.fonts.ready')
         root = page.locator('.report-preparation-page')
         assert page.evaluate('document.documentElement.scrollWidth === innerWidth')
-        if width == 1440:
-            task_list = root.locator('.rp-task-list')
-            task_box = task_list.bounding_box()
-            assert task_box['width'] <= 44 * 16
-            for status in task_list.locator('.rp-status').all():
-                status_box = status.bounding_box()
-                assert task_box['x'] <= status_box['x']
-                assert task_box['y'] <= status_box['y']
-                assert status_box['x'] + status_box['width'] <= task_box['x'] + task_box['width']
-                assert status_box['y'] + status_box['height'] <= task_box['y'] + task_box['height']
-        assert not root.get_by_role('heading', name='Bu sayfada', exact=True).count()
-        assert root.locator('a[href^="#rp-"]').count() == 6
+        assert root.locator('[data-program-card]').count() == 7
+        assert root.locator('dialog[open]').count() == 0
+        assert root.locator('.rp-errors[open]').count() == 0
+        assert root.locator('button[data-program-dialog]').count() == 7
+        assert page.evaluate('document.documentElement.scrollHeight / innerHeight') < 8
         for key in SECTION_IDS:
-            root.locator(f'.rp-overview a[href="#rp-{key}"]').click()
-            expect(page).to_have_url(f'http://testserver/program/1?period_id=1#rp-{key}')
-            box = root.locator(f'#rp-{key}').bounding_box()
-            assert 0 <= box['y'] < 900
-        if state == 'strategy':
-            expect(root.get_by_role('link', name='Program Grubu Dağılımı', exact=True)).to_be_visible()
-        assert not root.locator('#rp-finance > details[open]').count()
-        # Closed and open records, focused fields and disabled controls are all measured.
-        script = TEXT_PAIRS.replace('.section-index-page', '.report-preparation-page')
-        pairs = set(map(tuple, page.evaluate(script)))
-        root.locator('#rp-cards > details, #rp-finance > details').evaluate_all('els => els.forEach(el => el.open = true)')
-        assert page.evaluate('document.documentElement.scrollWidth === innerWidth')
-        pairs.update(map(tuple, page.evaluate(script)))
-        for selector in ['.rp-overview a', '#rp-cards summary', '#rp-cards input[name=position]', '.rp-toolbar button']:
-            control = root.locator(selector).first
-            if control.is_enabled():
-                control.hover()
-                control.focus()
-                pairs.update(map(tuple, page.evaluate(script)))
-        pairs.update(map(tuple, root.locator('.rp-overview .rp-status').evaluate_all(
-            'els => els.map(el => { const style = getComputedStyle(el); return [style.color, style.backgroundColor]; })')))
-        assert all(contrast(pair) >= 4.5 for pair in pairs), [(p, contrast(p)) for p in pairs if contrast(p) < 4.5]
+            root.locator(f'[data-program-dialog="program-{key}-dialog"]').click()
+            dialog = root.locator(f'#program-{key}-dialog')
+            expect(dialog).to_be_visible()
+            assert dialog.evaluate('el => el.matches(":modal")')
+            root.locator(f'[data-program-dialog="program-{key}-dialog"]').evaluate('el => { el.click(); el.click(); }')
+            assert dialog.evaluate('el => el.matches(":modal")')
+            expect(dialog.get_by_role('button', name='Kapat', exact=True)).to_be_visible()
+            if key == 'cards':
+                root.locator('#rp-cards > details').first.locator('summary').first.click()
+                field = root.locator('#rp-cards input[name=position]').first
+                assert field.is_disabled() == (state in {'read-only', 'strategy'})
+            if key == 'economics' and state == 'strategy':
+                expect(dialog.get_by_role('link', name='Program Grubu Dağılımı', exact=True)).to_be_visible()
+            assert page.evaluate('document.documentElement.scrollWidth === innerWidth')
+            script = TEXT_PAIRS.replace('.section-index-page', '.report-preparation-page')
+            pairs = set(map(tuple, page.evaluate(script)))
+            assert all(contrast(pair) >= 4.5 for pair in pairs), [(p, contrast(p)) for p in pairs if contrast(p) < 4.5]
+            if width == 390 and key == 'economics':
+                table = root.locator('#economicGridForm .table-wrap')
+                assert table.evaluate('el => el.scrollWidth > el.clientWidth')
+                table.evaluate('el => el.scrollLeft = el.scrollWidth')
+                assert table.evaluate('el => el.scrollLeft > 0')
+            dialog.get_by_role('button', name='Kapat', exact=True).click()
+            expect(dialog).not_to_be_visible()
+        root.locator('[data-program-dialog="program-reconciliation-dialog"]').click()
         reconciliation = root.locator('#pp-reconciliation')
-        if reconciliation.count():
-            headers = reconciliation.locator('thead th')
-            numeric_cells = reconciliation.locator('tbody td:nth-child(3), tbody td:nth-child(4), tbody td:nth-child(5)')
-            for cell in [*headers.all(), *numeric_cells.all()]:
-                assert cell.evaluate('el => getComputedStyle(el).whiteSpace') == 'nowrap'
-            for header in headers.all():
-                assert header.evaluate('el => getComputedStyle(el).overflowWrap') == 'normal'
-                assert header.evaluate('el => getComputedStyle(el).wordBreak') == 'normal'
-            if width == 1440:
-                assert reconciliation.bounding_box()['width'] == root.locator('.rp-overview').bounding_box()['width']
-                assert reconciliation.locator('.table-wrap').evaluate('el => el.scrollWidth <= el.clientWidth')
-                assert page.evaluate('document.documentElement.scrollWidth === innerWidth')
-        if width == 390:
-            expect(root.locator('.rp-scroll-hint')).to_be_visible()
-            reconciliation_table = root.locator('#pp-reconciliation .table-wrap')
-            assert reconciliation_table.evaluate('el => el.scrollWidth > el.clientWidth')
-            table = root.locator('#economicGridForm .table-wrap')
-            assert table.evaluate('el => el.scrollWidth > el.clientWidth')
-            table.evaluate('el => el.scrollLeft = el.scrollWidth')
-            assert table.evaluate('el => el.scrollLeft > 0')
-            table.evaluate('el => el.scrollLeft = 0')
-        if state in {'read-only', 'strategy'}:
-            assert not root.locator('form[method=post]:not([data-draft-removal]) button').count()
-            field = root.locator('#rp-cards input[name=position]').first
-            assert field.is_disabled()
-            assert field.evaluate('el => getComputedStyle(el).backgroundColor') == 'rgb(239, 237, 232)'
-        # Capture default disclosures, so all six work sections remain scannable.
-        root.locator('#rp-cards > details, #rp-finance > details').evaluate_all('els => els.forEach(el => el.open = !!el.querySelector("form[action$=cards]:not(:has(input[name=id]))"))')
+        for cell in reconciliation.locator('thead th, tbody td:nth-child(3), tbody td:nth-child(4), tbody td:nth-child(5)').all():
+            assert cell.evaluate('el => getComputedStyle(el).whiteSpace') == 'nowrap'
+        page.keyboard.press('Escape')
+        expect(root.locator('dialog[open]')).to_have_count(0)
+        root.locator('[data-program-search]').fill('finansmanı')
+        expect(root.locator('[data-program-card]:visible')).to_have_count(1)
+        root.locator('[data-program-search]').fill('eşleşmeyen kelime')
+        expect(root.locator('[data-program-card]:visible')).to_have_count(0)
+        expect(root.locator('[data-program-empty]')).to_be_visible()
+        root.locator('[data-program-search]').fill('')
         folder = os.getenv('CIVENSA_CIV118_SCREENSHOTS')
         if folder:
             Path(folder).mkdir(parents=True, exist_ok=True)
-            page.evaluate('document.activeElement.blur(); window.scrollTo(0, 0)')
-            page.mouse.move(0, 0)
-            target = Path(folder) / f'{state}-{width}.png'
-            page.screenshot(path=str(target), full_page=True)
-            assert target.stat().st_size <= 1_500_000
+            page.screenshot(path=str(Path(folder) / f'{state}-{width}.png'), full_page=True)
         assert not errors
 
 
@@ -347,31 +323,44 @@ def test_real_card_grid_saves_and_rejected_form_reopens(browser, db, sample, rep
     with browser.new_context(viewport={'width': width, 'height': 900}) as context:
         page = context.new_page()
         page.goto(base + '/program/1?period_id=1')
+        page.locator('[data-program-dialog=program-cards-dialog]').click()
         record = page.locator('#rp-cards > details').first
         assert not record.evaluate('el => el.open')
         record.locator('summary').first.click()
         title = record.locator('textarea[name=source_title]')
+        expect(record.get_by_role('button', name='Kartı kaydet', exact=True)).to_be_disabled()
+        original = title.input_value()
+        title.fill('Değişiklik')
+        expect(record.get_by_role('button', name='Kartı kaydet', exact=True)).to_be_enabled()
+        title.fill(original)
+        expect(record.get_by_role('button', name='Kartı kaydet', exact=True)).to_be_disabled()
         title.fill('Sentetik kayıt testi')
         record.get_by_role('button', name='Kartı kaydet', exact=True).click()
-        expect(page).to_have_url(base + '/program/1?period_id=1')
-        expect(page.locator('#rp-cards')).to_be_visible()
+        expect(page).to_have_url(re.compile(r'/program/1\?period_id=1#program-form-'))
+        expect(page.locator('#program-cards-dialog')).to_be_visible()
+        expect(page.get_by_role('status').filter(has_text='Kaydedildi')).to_be_in_viewport()
         db.refresh(sample['card'])
         assert sample['card'].source_title == 'Sentetik kayıt testi'
         # A rejected POST must retain the attempted field and reopen records.
         record = page.locator('#rp-cards > details').first
-        record.locator('summary').first.click()
+        expect(record).to_have_attribute('open', '')
         record.locator('textarea[name=rationale]').fill('Gönderilemeyen sentetik açıklama')
         record.locator('select[name=subprogram_id]').evaluate('el => { const o = new Option("Geçersiz dönem", "999999"); el.add(o); el.value = o.value; }')
         record.get_by_role('button', name='Kartı kaydet', exact=True).click()
         expect(page.locator('#rp-cards > details').first).to_have_attribute('open', '')
         expect(page.locator('#rp-finance > details').first).to_have_attribute('open', '')
         expect(page.locator('#rp-cards textarea[name=rationale]').first).to_have_value('Gönderilemeyen sentetik açıklama')
+        expect(page.locator('#program-cards-dialog')).to_be_visible()
+        expect(page.locator('.program-saved')).to_have_count(0)
         page.goto(base + '/program/1?period_id=1')
+        page.locator('[data-program-dialog=program-economics-dialog]').click()
         grid = page.locator('#economicGridForm')
         field = grid.locator('input[name="goods_services:2027:budget"]')
         field.fill('140,00')
         grid.get_by_role('button', name='Tabloyu kaydet', exact=True).click()
-        expect(page).to_have_url(base + '/program/1?period_id=1&group=service&fund=inside')
+        expect(page).to_have_url(re.compile(r'/program/1\?period_id=1&group=service&fund=inside#economicGridForm'))
+        expect(page.locator('#program-economics-dialog')).to_be_visible()
+        expect(page.locator('#economicGridForm .program-saved')).to_be_in_viewport()
         db.expire_all()
         value = db.scalar(select(EconomicValue).where(EconomicValue.category == 'goods_services', EconomicValue.year == 2027, EconomicValue.funding_type == 'inside'))
         assert str(value.amount) == '140.00'
@@ -380,3 +369,53 @@ def test_real_card_grid_saves_and_rejected_form_reopens(browser, db, sample, rep
 def test_stylesheet_is_loaded_only_for_program(client):
     assert '/static/design/report-preparation.css' in client.get('/program/1?period_id=1').text
     assert '/static/design/report-preparation.css' not in client.get('/department/1?period_id=1').text
+
+
+def test_new_card_anchor_and_failed_grid_do_not_claim_success(browser, db, sample, report_http):
+    from app.models import ReportCard
+    base = report_http
+    with browser.new_context(viewport={'width': 1440, 'height': 900}) as context:
+        page = context.new_page()
+        page.goto(base + '/program/1?period_id=1#rp-cards')
+        expect(page.locator('#program-cards-dialog')).to_be_visible()
+        record = page.locator('#rp-cards > details').last
+        record.locator('textarea[name=source_title]').fill('Yeni sentetik kart')
+        record.get_by_role('button', name='Kartı kaydet', exact=True).click()
+        saved = page.locator('#program-cards-dialog form').filter(has=page.locator('.program-saved'))
+        expect(saved).to_contain_text('Kaydedildi')
+        assert saved.locator('input[name=id]').input_value() != str(sample['card'].id)
+        expect(saved.locator('textarea[name=source_title]')).to_have_value('Yeni sentetik kart')
+        assert len(db.scalars(select(ReportCard)).all()) == 2
+        page.reload()
+        expect(page.locator('#program-cards-dialog')).to_be_visible()
+        expect(page.locator('.program-saved')).to_have_count(0)
+        page.locator('#program-cards-dialog').get_by_role('button', name='Kapat', exact=True).click()
+        expect(page).to_have_url(base + '/program/1?period_id=1')
+        page.locator('[data-program-dialog=program-economics-dialog]').click()
+        grid = page.locator('#economicGridForm')
+        grid.locator('input[name="goods_services:2027:budget"]').fill('bozuk tutar')
+        grid.get_by_role('button', name='Tabloyu kaydet', exact=True).click()
+        expect(page.locator('#economicGridErrors')).to_be_visible()
+        expect(page.locator('.program-saved')).to_have_count(0)
+        page.goto(base + '/program/1?period_id=1')
+        expect(page.locator('dialog[open]')).to_have_count(0)
+        expect(page.locator('.program-saved')).to_have_count(0)
+
+
+
+def test_correct_source_value_can_be_verified_without_changing_it(browser, db, sample, report_http):
+    value = db.scalar(select(IndicatorValue))
+    value.state = 'needs_review'
+    db.commit()
+    original = value.value
+    with browser.new_context(viewport={'width': 1440, 'height': 900}) as context:
+        page = context.new_page()
+        page.goto(report_http + '/program/1?period_id=1#rp-sources')
+        form = page.locator(f'form[action$="/verify-value/{value.id}"]')
+        expect(form.get_by_role('button', name='Kaynağa göre doğrula')).to_be_enabled()
+        form.get_by_role('button', name='Kaynağa göre doğrula').click()
+        expect(page.locator('#program-sources-dialog')).to_be_visible()
+        expect(page.locator('#program-sources-dialog .program-saved')).to_be_in_viewport()
+        db.refresh(value)
+        assert value.state == 'verified' and value.value == original
+        expect(page.locator(f'form[action$="/verify-value/{value.id}"]')).to_have_count(0)

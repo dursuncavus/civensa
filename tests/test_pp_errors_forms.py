@@ -295,6 +295,9 @@ def test_invalid_number_stays_visible_in_browser_and_retry_saves(client, db, sam
         browser=playwright.chromium.launch(**options)
         page=browser.new_page()
         page.set_content(response.text)
+        # set_content does not load the page script; disclose the native dialog
+        # here. CIV-202 browser tests cover automatic error-dialog recovery.
+        page.locator('#program-cards-dialog').evaluate('dialog => dialog.showModal()')
         saved_form=page.locator('form[action="/program/1/cards"]').filter(has=page.locator('input[name="id"][value="1"]'))
         assert saved_form.locator('[name="position"]').input_value()=='sıra?'
         assert saved_form.locator('[name="position"]').get_attribute('aria-invalid')=='true'
