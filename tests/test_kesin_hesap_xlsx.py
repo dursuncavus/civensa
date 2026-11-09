@@ -978,6 +978,7 @@ def test_straddled_code_keeps_invalid_continuations_blocking(tmp_path, invalid):
 
 def truncated_total_pdf(tmp_path, *, invalid=None, deduction=False):
     headers = ['Gelirin Kodu', 'Açıklama', *converter.revenue_labels(2026), 'Oran']
+    headers[5] = 'Toplam\nTahakkuk'  # A separate "Toplam" text object in the column header.
     values = list(map(Decimal, ['11222333.45', '1234567.89', '8765432.11', '10000000',
                                '9876543.21', '123456.78', '9753086.43', '246913.57']))
     extra = list(map(Decimal, ['1000.11', '0.10', '50.20', '50.30', '30.22', '0.11', '30.11', '20.19']))
@@ -1002,6 +1003,10 @@ def truncated_total_pdf(tmp_path, *, invalid=None, deduction=False):
 
 def test_lead_total_with_absent_decimals_is_only_a_prefix_check(tmp_path):
     pdf = truncated_total_pdf(tmp_path)
+    fragments = []
+    converter.PdfReader(pdf).pages[0].extract_text(
+        visitor_text=lambda text, *args: fragments.append(text.strip()))
+    assert sum(converter.norm(text) == 'toplam' for text in fragments) == 2
     result, out = run(tmp_path, '--gelir', pdf)
     assert result.returncode == 0, (out / 'report.md').read_text()
     rows = list(load_workbook(out / 'revenue.xlsx').active.values)[1:]

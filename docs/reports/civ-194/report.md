@@ -306,6 +306,13 @@ basılı ondalık, tam iade ve yüzde farkı; kısmi tam sayı; boş hücre; 6 p
 aşan uzaklık; ek metin ve veri satırının eksik ondalığı dönüşümü durdurur.
 Tam 6 punto, tam tutarlı altbilgi, bütün haneleri açıkça basılmış kaynak
 birleşimi ve ayrık eksili plan kesintisiyle birlikte kullanım da test edilir.
+Lead’in sonraki konum denetimi için aynı fixture’ın sütun başlığında ayrı bir
+`Toplam` metin nesnesi de vardır. Etiket adayı bütün sayfadaki sözcük sayısıyla
+seçilmez: yalnız ayrıştırılmış dokuz altbilgi hücresini, metinlerini ve
+konumlarını eşleyen aday kabul edilir. Böylece başlıktaki `Toplam` dışarıda
+kalır; sıfır veya birden çok uygun altbilgi etiketi yine hatadır. İki tam
+hücrenin etiket satırında, diğerlerinin en fazla 6 punto altında bulunması
+ayrıca denetlenir.
 
 ```sh
 python -m pytest -q --require-postgres tests/test_kesin_hesap_xlsx.py

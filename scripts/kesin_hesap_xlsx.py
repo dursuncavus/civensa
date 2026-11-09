@@ -609,15 +609,20 @@ def total_check_row(page, footer, bounds, where, year):
             y = tm[4] * cm[1] + tm[5] * cm[3] + cm[5]
             fragments.append((text.strip(), x, y))
     page.extract_text(visitor_text=visit)
-    positions = [(x, y) for text, x, y in fragments if norm(text) in {'toplam', 'genel toplam'}]
+    # The column header can itself contain a separate "Toplam" fragment.
+    # Only the label owning the nine already-parsed footer cells is eligible.
+    positions = []
+    for text, label_x, label_y in fragments:
+        if norm(text) not in {'toplam', 'genel toplam'}:
+            continue
+        printed = sorted((x, y, value) for value, x, y in fragments
+                         if x > label_x and y <= label_y + .01 and MONEY_PREFIX.fullmatch(value))
+        if (len(printed) == 9
+                and [compact_sign(value) for _, _, value in printed] == list(map(compact_sign, raw))):
+            positions.append((label_x, label_y, printed))
     if len(positions) != 1:
         raise ConversionError(f'{where}: TOPLAM konumu tekil değil. Kaynak toplam etiketini kontrol edin.')
-    label_x, label_y = positions[0]
-    printed = sorted((x, y, text) for text, x, y in fragments
-                     if x > label_x and y <= label_y + .01 and MONEY_PREFIX.fullmatch(text))
-    if len(printed) != 9 or [compact_sign(text) for _, _, text in printed] != list(map(compact_sign, raw)):
-        raise ConversionError(f'{where}: TOPLAM sütun konumları basılı hücrelerle tekil eşleşmedi. '
-                              'Dokuz toplam hücresini kontrol edin; yerleşim tahmin edilmedi.')
+    _, label_y, printed = positions[0]
     for offset, ((_, y, _), label) in enumerate(zip(printed, labels)):
         if label_y - y > 6.01 or (offset in {5, 8} and abs(label_y - y) > .01):
             raise ConversionError(f'{where}, TOPLAM, {label}: tutar etiket satırında veya en fazla '
