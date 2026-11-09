@@ -1520,3 +1520,19 @@ Decisions (lead):
 4. İç Kontrol archive import waits (FR 2026 first, D-387); İ1/İ2 recorded for it.
 Ask Ali today (owner, meeting): A mapping review · B2 per-activity result · ML1 XLSX template from Mali Hizmetler · İKİY row · directorate user list (name, e-mail, Müdür/Personel) · support channel · directorate name changes (A9).
 Next IDs: task CIV-192, decision D-443.
+
+## D-443 (9 Nov 2026 ~09:55 Istanbul, lead, project thread CV Lider 71) — Ali's attachments read; FR5 Excel findings; FR5 package after today's meeting
+BEYAN (owner 09:41): pasted Ali's answers B–E and uploaded the 3 attachments as a zip in the project thread. DOĞRULANDI: pasted text = D-442 line by line, no new figure; section A (mapping) and the İ2 "İKİY" row still not answered.
+DOĞRULANDI lead read of "2026 Performans Değerlendirme.xlsx" (sheet "veriler", plus ANALİZ and 4 chart sheets):
+- 227 indicator rows, 32 directorates, one master workbook for all directorates (Strateji's sheet, not one file per directorate as D-361 assumed).
+- Columns: Ana hizmet alanı, stratejik hedef + SH kodu, sorumlu müdürlük, PG kodu, gösterge, hesaplama yöntemi (TOPLA 122 / KÜMÜLATİF 105, spelling varies), birim, hedef etkisi, 2025 hedef, 2025 gerçekleşen, 2026 hedef, Q1–Q4 2026, Q4 total, 2026 yıl toplamı, değerlendirme formulas, sapma kodu, açıklama.
+- Q1–Q3 filled (4 Rehberlik ve Teftiş rows blank in Q2/Q3); Q4, "2026 YILI TOPLAMI", sapma kodu and açıklama empty; the evaluation formulas divide the empty year total by the target. Ratios are stored as fractions (1 = %100).
+- PG codes are NOT unique (they restart per stratejik hedef, e.g. SH01/PG01 appears 21 times) → a row key is (müdürlük, SH kodu, PG kodu) or the name, never the PG code alone.
+- Against the loaded 2026 book (226 indicators, CIV-165 list): 155 same name, 7 close name, 17 no match in the same directorate, 48 rows under 4 directorate names that differ from the book (Harita ve Planlama, Sosyal Hizmetler, Basın Yayın ve Halkla İlişkiler, Destek Hizmetler vs book Plan Proje, Yapı Kontrol, Sosyal Destek, Halkla İlişkiler, Destek Hizmetleri); 63 book indicators found no Excel row. Some same-directorate rows also differ in name and target (e.g. Sağlık İşleri "Toplum sağlığı ... eğitim ve seminer sayısı" 5 vs book "... eğitimleri ve danışmanlık hizmetleri sayısı" 7). Matching file (no actual values, PP names/targets only): docs/lead/data/fr5-2026-excel-kitap-eslesme.csv.
+- V2 PDFs: "2025 Bütçe Kesin Gider Hesabı" (19 p., kurum/fonksiyonel/ekonomik kod per directorate, text PDF) and "2025 Yılı Gelir Kesin Hesap" (1 p.). Final accounts, not the ML1 import template (D-442 stands).
+Decisions (lead):
+1. FR5 is an import by Strateji of its master workbook (one upload, all directorates), not per-directorate files; screen entry stays for corrections and evidence. The FR actual is one annual value per indicator → the import reads the year value (TOPLA: sum of quarters; KÜMÜLATİF: last filled quarter) only when Strateji says the year is closed; Q1–Q3 are shown in the preview for checking, not stored as the FR actual.
+2. Rows are bound to Civensa indicators through a reviewed mapping (preview → Strateji confirms → apply), never by PG code alone; the name differences above make an automatic-only match unsafe.
+3. CIV-192 (FR5 import) is packaged after today's meeting, because two Ali answers change it: (a) directorate name changes since 2024 (A9) — 48 rows depend on it; (b) is this Excel the one directorates fill at year end, or do they send their rows to Strateji? The raw workbook is not committed (internal 9-month actuals, rule 24); it stays in the project thread upload.
+Ask Ali today (added): who fills the year-end columns (directorate or Strateji); whether the Excel indicator names or the printed book names are authoritative where they differ.
+Next IDs: task CIV-192, decision D-444.
