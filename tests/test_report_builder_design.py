@@ -12,6 +12,7 @@ from urllib.parse import urlsplit
 from lxml.html import fromstring
 from playwright.sync_api import expect
 import pytest
+from civ199_contract import report_builder_original_order
 from starlette.datastructures import FormData
 
 from app.pp_display import status_label
@@ -116,7 +117,8 @@ def render(env, name, data, before=False):
     source = (FROZEN / name).read_bytes()
     assert sha256(source).hexdigest() == HASHES[name]
     template = env.from_string(source.decode()) if before else env.get_template(name)
-    return template.render(data)
+    html = template.render(data)
+    return html if before or name != 'report_builder.html' else report_builder_original_order(html)  # CIV-199 (3)
 
 
 def contract(html):

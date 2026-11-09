@@ -187,3 +187,105 @@ def test_synthetic_setting_and_scorecard_screenshots(client, db, sample, tmp_pat
         assert page.get_by_text('Sentetik yanıt süresi (düşük daha iyi)', exact=True).is_visible()
         page.screenshot(path=str(folder / 'lower-scorecard.png'), full_page=True, animations='disabled')
         browser.close()
+
+
+@pytest.mark.postgres
+def test_civ199_direction_save_returns_to_row_and_says_saved(client, db, sample):
+    """CIV-199 (8): a successful save must be visible; the page must not silently jump to the top."""
+    from playwright.sync_api import sync_playwright, expect
+    from test_sunum_browser import browser_options
+    sample['indicator'].name = 'Sentetik İşlem yanıt süresi'
+    sample['indicator'].unit = 'Gün'
+    pub = publish(client, db, sample)
+    app.dependency_overrides[require_user] = lambda: sample['strategy']
+    sid = sample['indicator'].id
+    page_url = f'/activity-reports/publications/{pub.id}/bindings'
+    response = client.post(f'/activity-reports/publications/{pub.id}/directions', follow_redirects=False,
+        data=dict(snapshot_indicator_id=sid, direction='lower', reason='Sentetik süre hedefi'))
+    assert response.status_code == 303
+    assert response.headers['location'] == f'{page_url}?saved=direction&row={sid}#gosterge-{sid}'
+    html = client.get(response.headers['location'].split('#')[0]).text
+    assert 'Kaydedildi: yön «Düşük değer daha iyi».' in html
+    assert f'id="gosterge-{sid}"' in html and 'id="bindingSearch"' in html
+    # Without the marker (or with a forged one) nothing claims a save.
+    assert 'Kaydedildi' not in client.get(page_url).text
+    assert 'Kaydedildi' not in client.get(f'{page_url}?saved=other&row={sid}').text
+    assert 'Kaydedildi' not in client.get(f'{page_url}?saved=direction&row=x').text
+    with sync_playwright() as p:
+        browser = p.chromium.launch(**browser_options())
+        context = browser.new_context(viewport=dict(width=1440, height=500))
+        page = context.new_page()
+        errors = []
+        page.on('pageerror', lambda error: errors.append(str(error)))
+        def route(request):
+            path = request.request.url.replace('http://testserver', '')
+            if request.request.method == 'POST':
+                result = client.post(path, content=request.request.post_data_buffer, follow_redirects=False,
+                    headers={'content-type': request.request.headers['content-type']})
+                if result.status_code == 303:
+                    # Chromium does not send the follow-up GET of a fulfilled 303 back through the route
+                    # (it fails with ERR_NAME_NOT_RESOLVED for testserver); hand the browser a plain
+                    # navigation to the same Location, hash included, so the anchor behaviour is tested.
+                    target = 'http://testserver' + result.headers['location']
+                    request.fulfill(status=200, content_type='text/html',
+                        body=f'<meta http-equiv="refresh" content="0;url={target}">')
+                    return
+                request.fulfill(status=result.status_code, headers=dict(result.headers), body=result.content)
+                return
+            result = client.get(path)
+            request.fulfill(status=result.status_code, headers={'content-type': result.headers.get('content-type', 'text/html')}, body=result.content)
+        context.route('http://testserver/**', route)
+        page.goto('http://testserver' + page_url)
+        page.locator('#bindingSearch').fill('yanıt süresi')
+        expect(page.locator('#bindingSearchCount')).to_have_text('1 gösterge bulundu.')
+        # Turkish casing: dotted capital İ must match dotted i (stored text keeps its casing).
+        page.locator('#bindingSearch').fill('işlem YANIT SÜRESİ')
+        expect(page.locator('#bindingSearchCount')).to_have_text('1 gösterge bulundu.')
+        page.locator('#bindingSearch').fill('bulunmayan gösterge')
+        expect(page.locator('#bindingSearchCount')).to_have_text('0 gösterge bulundu.')
+        page.locator('#bindingSearch').fill('')
+        row = page.locator(f'#gosterge-{sid}')
+        save = row.get_by_role('button', name='Gösterge yönünü kaydet')
+        # CIV-199 (14): inactive until the direction changes and a reason is written.
+        expect(save).to_be_disabled()
+        row.locator('textarea[name=reason]').fill('Sentetik düzeltme')
+        expect(save).to_be_disabled()
+        row.locator('select[name=direction]').select_option('higher')
+        expect(save).to_be_enabled()
+        row.locator('select[name=direction]').select_option('lower')
+        expect(save).to_be_disabled()
+        row.locator('select[name=direction]').select_option('higher')
+        expect(save).to_be_enabled()
+        # Wait for the POST -> 303 -> GET round trip itself; CI runners were slower than the 5 s default.
+        with page.expect_navigation(url=f'**{page_url}?saved=direction&row={sid}*', timeout=20000):
+            save.click()
+        assert not errors, errors
+        saved = page.locator(f'#gosterge-{sid} .binding-saved')
+        expect(saved).to_have_text('Kaydedildi: yön «Yüksek değer daha iyi».')
+        expect(saved).to_be_in_viewport()
+        if os.getenv('CIVENSA_CIV199_ARTIFACTS'):
+            page.screenshot(path=str(Path(os.environ['CIVENSA_CIV199_ARTIFACTS']) / 'gosterge-yonu-kaydedildi.png'))
+        browser.close()
+    app.dependency_overrides.pop(require_user, None)
+
+
+def test_civ199_many_directorates_become_cards_with_dialogs(client, db, sample):
+    """CIV-199 (11): more than three directorates -> card grid; indicators open in an in-page <dialog>."""
+    from copy import deepcopy
+    pub = publish(client, db, sample)
+    app.dependency_overrides[require_user] = lambda: sample['strategy']
+    response = client.get(f'/activity-reports/publications/{pub.id}/bindings')
+    rows = response.context['rows']
+    assert 'binding-grid' not in response.text and '<dialog' not in response.text
+    many = []
+    for n in range(4):
+        for row in rows:
+            copy = deepcopy(row)
+            copy['department'] = f'Sentetik Müdürlük {n}'
+            many.append(copy)
+    html = response.template.render({**response.context, 'rows': many})
+    assert 'reports-panel binding-grid' in html
+    assert html.count('<article class="binding-card" data-binding-card>') == 4
+    assert html.count('<dialog class="binding-dialog"') == 4
+    assert html.count('data-open-dialog="binding-dialog-') == 4
+    assert '<details class="binding-dept"' not in html

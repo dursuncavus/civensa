@@ -11,6 +11,7 @@ from urllib.parse import urlsplit
 from lxml.html import fromstring
 from playwright.sync_api import expect
 import pytest
+from civ199_contract import mapping_without_folds, without_mapping_sentence
 
 from test_activity_mapping_gaps import strategy_client
 from test_section_index_design import TEXT_PAIRS, contrast
@@ -28,7 +29,8 @@ def render(response, data, *, before=False):
     source = FROZEN.read_bytes()
     assert sha256(source).hexdigest() == '8a4efb1aa191b39737529b0e5b45ea31b8b888be753c998043d10e98e1370c75'
     template = env.from_string(source.decode()) if before else response.template
-    return template.render(data)
+    html = template.render(data)
+    return html if before else mapping_without_folds(without_mapping_sentence(html))  # CIV-199 (4, 10)
 
 
 def contract(html):
@@ -128,6 +130,16 @@ def capture(page, name, width):
         assert target.stat().st_size <= 1_500_000
 
 
+
+def next_pending(page, pending):
+    """The route callback runs on Playwright's event loop; under parallel load the
+    request can arrive after the button state changed. Wait for it, bounded."""
+    for _ in range(100):
+        if pending:
+            return pending.pop()
+        page.wait_for_timeout(50)
+    raise AssertionError('CSV kontrol isteği 5 saniyede gelmedi.')
+
 def assert_design(page, width, populated):
     root = page.locator('.activity-mapping-page')
     assert page.evaluate('document.documentElement.scrollWidth === innerWidth')
@@ -176,12 +188,19 @@ def assert_design(page, width, populated):
         assert abs(box['height'] - button['height']) <= 1
     bar = root.locator('.sticky-save')
     assert bar.evaluate("el => getComputedStyle(el).position") == 'sticky'
+    # CIV-199 (4b): the floating bar stays hidden until something is selected.
+    expect(bar).to_be_hidden()
+    chosen = root.locator('.mapping-select:enabled').first
+    chosen.select_option(index=1)
+    expect(bar).to_be_visible()
     # The mobile navigation follows the workspace; measure scrolling within this
     # page's content, before the separate navigation region below it.
     end = root.evaluate('el => el.getBoundingClientRect().bottom + scrollY - innerHeight')
     for offset in (0, max(0, end / 2), max(0, end)):
         page.evaluate('(offset) => window.scrollTo(0, offset)', offset)
         expect(bar).to_be_in_viewport(ratio=1)
+    chosen.select_option('')
+    expect(bar).to_be_hidden()
     expect(root.locator('.mapping-select[data-activity="804"]')).to_be_disabled()
 
 
@@ -271,7 +290,7 @@ def test_browser_contract_layout_flows_and_evidence(browser, queue, strategy_cli
         preview.click()
         expect(preview).to_be_disabled()
         assert len(pending) == 1
-        pending.pop().fulfill(status=200, json={'ok': True, 'count': 1})
+        next_pending(page, pending).fulfill(status=200, json={'ok': True, 'count': 1})
         expect(preview).to_be_enabled()
         expect(apply).to_be_enabled()
         expect(page.locator('#mappingCsvResult')).to_contain_text('1 faaliyet eşleştirilmeye hazır.')
@@ -281,13 +300,13 @@ def test_browser_contract_layout_flows_and_evidence(browser, queue, strategy_cli
         expect(apply).to_be_disabled()
         preview.click()
         expect(preview).to_be_disabled()
-        pending.pop().fulfill(status=200, json={'ok': False, 'errors': ['Sentetik satır 2: alt programı düzeltin.']})
+        next_pending(page, pending).fulfill(status=200, json={'ok': False, 'errors': ['Sentetik satır 2: alt programı düzeltin.']})
         expect(preview).to_be_enabled()
         expect(apply).to_be_disabled()
         expect(page.locator('#mappingCsvResult')).to_contain_text('Dosya uygulanamaz.')
         preview.click()
         expect(preview).to_be_disabled()
-        pending.pop().fulfill(status=422, json={'detail': 'Sentetik CSV kontrol edilemedi.'})
+        next_pending(page, pending).fulfill(status=422, json={'detail': 'Sentetik CSV kontrol edilemedi.'})
         expect(preview).to_be_enabled()
         expect(apply).to_be_disabled()
         expect(page.locator('#mappingCsvResult')).to_have_text('Sentetik CSV kontrol edilemedi.')

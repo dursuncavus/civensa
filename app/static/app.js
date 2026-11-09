@@ -408,10 +408,15 @@ document.querySelectorAll('.save-password-reset').forEach(button=>button.addEven
   const count=document.getElementById('selectedMappingCount');
   const filter=document.getElementById('mappingDepartmentFilter');
   const search=document.getElementById('mappingSearch');
+  const dialogSaves=[...document.querySelectorAll('[data-save-mappings]')];
   function updateCount(){
     const n=selects.filter(s=>s.value).length;
     if(count)count.textContent=String(n);
     [topSave,bottomSave].forEach(b=>{if(b)b.disabled=n===0});
+    // CIV-199 (4b): the floating bar only appears once something is selected.
+    const bar=bottomSave?.closest('.sticky-save');if(bar)bar.hidden=n===0;
+    document.querySelectorAll('[data-selected-count]').forEach(el=>{el.textContent=String(n)});
+    dialogSaves.forEach(b=>{b.disabled=n===0});
   }
   selects.forEach(s=>s.addEventListener('change',()=>{s.classList.toggle('changed',!!s.value);updateCount()}));
   document.querySelectorAll('.choose-suggestion').forEach(button=>button.addEventListener('click',()=>{
@@ -444,6 +449,9 @@ document.querySelectorAll('.save-password-reset').forEach(button=>button.addEven
         const ok=groupOk&&(!q||(row.dataset.name||'').includes(q)); row.hidden=!ok;if(ok)visible++;
       });
       group.hidden=visible===0;
+      // CIV-199 (11): a card says how many of its activities match the search.
+      const hits=group.querySelector('[data-mapping-hits]');
+      if(hits)hits.textContent=q&&visible?visible+' faaliyet aramayla eşleşti.':'';
     });
   }
   filter?.addEventListener('change',applyFilter);search?.addEventListener('input',applyFilter);
@@ -451,13 +459,14 @@ document.querySelectorAll('.save-password-reset').forEach(button=>button.addEven
     const assignments=selects.filter(s=>s.value).map(s=>({activity_id:s.dataset.activity,subprogram_id:s.value}));
     if(!assignments.length){toast('Kaydedilecek eşleştirme seçilmedi.');return}
     if(!window.confirm(assignments.length+' faaliyet için seçilen Program / Alt Program bağlantıları kaydedilsin mi?'))return;
-    [topSave,bottomSave].forEach(b=>{if(b){b.disabled=true;b.dataset.old=b.textContent;b.textContent='Kaydediliyor...'}});
+    [topSave,bottomSave,...dialogSaves].forEach(b=>{if(b){b.disabled=true;b.dataset.old=b.textContent;b.textContent='Kaydediliyor...'}});
     const {r,j}=await jsonFetch('/api/activity-mappings/bulk',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({assignments})});
-    if(!r.ok){[topSave,bottomSave].forEach(b=>{if(b){b.disabled=false;b.textContent=b.dataset.old||'Seçimleri Kaydet'}});toast(j.detail||'Eşleştirmeler kaydedilemedi.');return}
+    if(!r.ok){[topSave,bottomSave,...dialogSaves].forEach(b=>{if(b){b.disabled=false;b.textContent=b.dataset.old||'Seçimleri Kaydet'}});toast(j.detail||'Eşleştirmeler kaydedilemedi.');return}
     if(j.errors?.length)toast(`${j.updated} eşleştirme kaydedildi · ${j.errors.length} kayıt kontrol edilmeli.`);else toast(`${j.updated} faaliyet eşleştirildi · ${j.remaining} kayıt kaldı.`);
     setTimeout(()=>location.reload(),800);
   }
-  topSave?.addEventListener('click',saveMappings);bottomSave?.addEventListener('click',saveMappings);updateCount();applyFilter();
+  topSave?.addEventListener('click',saveMappings);bottomSave?.addEventListener('click',saveMappings);
+  dialogSaves.forEach(b=>b.addEventListener('click',saveMappings));updateCount();applyFilter();
 })();
 
 (function(){
@@ -558,3 +567,75 @@ document.querySelectorAll('.save-user-position').forEach(button=>button.addEvent
     }finally{saving=false;button.disabled=false}
   });
 })();
+
+/* CIV-199: one submission per normal POST form. Custom fetch handlers call
+   preventDefault and are left alone; the busy state is applied only after the
+   browser has really started the submission. */
+(function(){
+  if(typeof document==='undefined'||typeof document.addEventListener!=='function'||typeof HTMLFormElement==='undefined')return;
+  const BUSY_TEXT='İşleniyor…';
+  const STATUS_TEXT='İşlem sürüyor, lütfen bekleyin. Sayfayı yenilemeyin ve düğmeye tekrar basmayın.';
+  const SLOW_TEXT='İşlem uzun sürüyor. Tekrar göndermeden önce sayfayı yenileyip sonucun kaydedilip kaydedilmediğini kontrol edin.';
+  const isGuarded=form=>form instanceof HTMLFormElement&&(form.getAttribute('method')||'').toLowerCase()==='post'
+    &&!form.hasAttribute('data-no-busy')&&!(form.target&&form.target!=='_self');
+  const buttons=form=>[...form.querySelectorAll('button:not([type="button"]):not([type="reset"]), input[type="submit"]')]
+    .concat(form.id&&typeof CSS!=='undefined'?[...document.querySelectorAll(`[form="${CSS.escape(form.id)}"]`)].filter(b=>b.matches('button, input[type="submit"]')):[]);
+  const restore=form=>{
+    delete form.dataset.busy;form.removeAttribute('aria-busy');clearTimeout(Number(form.dataset.busyTimer||0));delete form.dataset.busyTimer;
+    buttons(form).forEach(button=>{
+      if(button.dataset.busyLabel!==undefined){button.textContent=button.dataset.busyLabel;delete button.dataset.busyLabel}
+      if(button.dataset.busyDisabled!==undefined){button.disabled=button.dataset.busyDisabled==='1';delete button.dataset.busyDisabled}
+      button.classList.remove('is-busy');
+    });
+    form.querySelector(':scope > .form-busy-status')?.remove();
+  };
+  document.addEventListener('submit',event=>{
+    const form=event.target;
+    if(!isGuarded(form))return;
+    if(form.dataset.busy){event.preventDefault();event.stopImmediatePropagation();return}
+    const submitter=event.submitter;
+    setTimeout(()=>{
+      if(event.defaultPrevented||form.dataset.busy)return;
+      form.dataset.busy='1';form.setAttribute('aria-busy','true');
+      buttons(form).forEach(button=>{button.dataset.busyDisabled=button.disabled?'1':'0';button.disabled=true});
+      const label=submitter&&submitter.tagName==='BUTTON'?submitter:null;
+      if(label){label.dataset.busyLabel=label.textContent;label.textContent=BUSY_TEXT;label.classList.add('is-busy')}
+      const status=document.createElement('p');
+      status.className='form-busy-status muted';status.setAttribute('role','status');status.textContent=STATUS_TEXT;
+      form.appendChild(status);
+      form.dataset.busyTimer=String(setTimeout(()=>{status.textContent=SLOW_TEXT}, 20000));
+    },0);
+  });
+  if(typeof window.addEventListener==='function')window.addEventListener('pageshow',event=>{
+    if(event.persisted)document.querySelectorAll('form[data-busy]').forEach(restore);
+  });
+})();
+
+/* CIV-199 item 8: a normal POST form that returns to the same page brings the
+   user back to where they were instead of the top. Pages that point to the
+   saved row with a #fragment keep the fragment; nothing here claims success. */
+(function(){
+  if(typeof document==='undefined'||typeof window==='undefined'||!window.sessionStorage)return;
+  const KEY='civensa:return-scroll';
+  document.addEventListener('submit',event=>{
+    const form=event.target;
+    if(!(form instanceof HTMLFormElement)||(form.getAttribute('method')||'').toLowerCase()!=='post')return;
+    try{sessionStorage.setItem(KEY,JSON.stringify({path:location.pathname,y:window.scrollY,t:Date.now()}))}catch(e){}
+  });
+  window.addEventListener('load',()=>{
+    let saved=null;
+    try{saved=JSON.parse(sessionStorage.getItem(KEY)||'null');sessionStorage.removeItem(KEY)}catch(e){return}
+    if(!saved||saved.path!==location.pathname||Date.now()-saved.t>120000||location.hash)return;
+    window.scrollTo(0,saved.y);
+  });
+})();
+
+// CIV-199 (11): in-page windows. A button with data-open-dialog opens the named <dialog>;
+// clicking the dimmed area outside it closes it.
+document.addEventListener('click',event=>{
+  const opener=event.target.closest('[data-open-dialog]');
+  if(opener){const dialog=document.getElementById(opener.dataset.openDialog);if(dialog&&typeof dialog.showModal==='function')dialog.showModal();return}
+  const d=event.target;
+  if(d instanceof HTMLDialogElement&&d.open){const r=d.getBoundingClientRect();
+    if(event.clientX<r.left||event.clientX>r.right||event.clientY<r.top||event.clientY>r.bottom)d.close()}
+});

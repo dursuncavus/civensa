@@ -596,6 +596,17 @@ def _run(url, *, guide=False):
                         check(db.scalar(select(func.count()).select_from(model)) == 0, 'Yardımcı prova tablosu boş değil.')
                 for model in (SunumHighlight, SunumPhoto):
                     model.__table__.drop(engine)
+                # CIV-199: the metadata-built schema also carries the later CIV-194/197
+                # auxiliary tables; drop them when present and still empty so their
+                # migrations can recreate them during the upgrade below.
+                from sqlalchemy import inspect as schema_inspect
+                from app.actual_import_models import ActualImport
+                from app.models import IndicatorDirection
+                for model in (ActualImport, IndicatorDirection):
+                    if schema_inspect(engine).has_table(model.__tablename__):
+                        with Session(engine) as db:
+                            check(db.scalar(select(func.count()).select_from(model)) == 0, 'Yardımcı prova tablosu boş değil.')
+                    model.__table__.drop(engine, checkfirst=True)
                 rendered=engine.url.render_as_string(hide_password=False)
                 with environment(DATABASE_URL=rendered,MIGRATION_DATABASE_URL=rendered):
                     command.upgrade(Config(str(ROOT/'alembic.ini')),'head')
