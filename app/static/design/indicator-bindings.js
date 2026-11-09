@@ -3,7 +3,7 @@
   // (11) After a save the row lives in a closed dialog: reopen it and bring the row into view.
   const saved=document.querySelector('.binding-row.is-saved');
   const dialog=saved&&saved.closest('dialog');
-  if(dialog&&typeof dialog.showModal==='function'){dialog.showModal();saved.scrollIntoView({block:'center'});}
+  if(dialog&&typeof dialog.showModal==='function'){if(!dialog.open)dialog.showModal();saved.scrollIntoView({block:'center'});}
   // (14) Owner, 9 Nov: the save button stays inactive until something actually changed.
   document.querySelectorAll('.indicator-direction-form').forEach(form=>{
     const select=form.querySelector('select[name=direction]'),reason=form.querySelector('textarea[name=reason]'),button=form.querySelector('button.primary');

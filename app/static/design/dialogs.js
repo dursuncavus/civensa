@@ -16,6 +16,19 @@
     paragraph.before(details);
     details.append(summary, paragraph);
   });
+  // A #fragment link to a record inside a closed dialog (e.g. a correction
+  // link back to one indicator) opens that dialog and shows the record.
+  const openFragment = () => {
+    let target = null;
+    try { target = location.hash.length > 1 && document.getElementById(decodeURIComponent(location.hash.slice(1))); }
+    catch (_) { return; }
+    const dialog = target && target.closest('dialog');
+    if (!(dialog instanceof HTMLDialogElement)) return;
+    if (!dialog.open) dialog.showModal();
+    target.scrollIntoView({block: 'start'});
+  };
+  window.addEventListener('hashchange', openFragment);
+  openFragment();
   const errorDialog = document.querySelector('dialog[data-dialog-error]');
   if (errorDialog && !errorDialog.open) errorDialog.showModal();
   document.querySelectorAll('[data-directorate-search]').forEach(input => {

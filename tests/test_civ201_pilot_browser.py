@@ -289,3 +289,27 @@ def test_compact_financial_keeps_department_checks_without_planned_figures(pilot
 def markupsafe_escape(value):
     from markupsafe import escape
     return escape(value)
+
+
+def test_indicator_fragment_opens_its_directorate_dialog(browser, pilot_client):
+    """Correction links (#indicator-N) reach records that sit in closed dialogs."""
+    client, _ = pilot_client
+    url = '/activity-reports/revisions/1'
+    with browser.new_context(viewport={'width': 1440, 'height': 900}, device_scale_factor=1) as context:
+        documents = bridge(context, client, [])
+        page = context.new_page()
+        errors = []
+        page.on('pageerror', lambda error: errors.append(str(error)))
+        page.goto('http://testserver' + url, timeout=180000)
+        rows = documents['http://testserver' + url].context['report']['indicators']
+        first, last = rows[0]['report_indicator_id'], rows[-1]['report_indicator_id']
+        page.goto(f'http://testserver{url}#indicator-{last}', timeout=180000)
+        target = page.locator(f'[id="indicator-{last}"]')
+        expect(target).to_be_visible()
+        dialog = target.locator('xpath=ancestor::dialog')
+        assert dialog.evaluate("el => el.matches(':modal')")
+        dialog.get_by_role('button', name='Kapat', exact=True).click()
+        expect(target).not_to_be_visible()
+        page.evaluate(f"location.hash = 'indicator-{first}'")  # Same-page fragment change.
+        expect(page.locator(f'[id="indicator-{first}"]')).to_be_visible()
+        assert not errors, errors

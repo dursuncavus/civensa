@@ -634,7 +634,7 @@ document.querySelectorAll('.save-user-position').forEach(button=>button.addEvent
 // clicking the dimmed area outside it closes it.
 document.addEventListener('click',event=>{
   const opener=event.target.closest('[data-open-dialog]');
-  if(opener){const dialog=document.getElementById(opener.dataset.openDialog);if(dialog&&typeof dialog.showModal==='function')dialog.showModal();return}
+  if(opener){const dialog=document.getElementById(opener.dataset.openDialog);if(dialog&&typeof dialog.showModal==='function'&&!dialog.open)dialog.showModal();return}
   const d=event.target;
   if(d instanceof HTMLDialogElement&&d.open){const r=d.getBoundingClientRect();
     if(event.clientX<r.left||event.clientX>r.right||event.clientY<r.top||event.clientY>r.bottom)d.close()}
