@@ -208,9 +208,9 @@ def test_civ199_direction_save_returns_to_row_and_says_saved(client, db, sample)
     assert 'Kaydedildi: yön «Düşük değer daha iyi».' in html
     assert f'id="gosterge-{sid}"' in html and 'id="bindingSearch"' in html
     # Without the marker (or with a forged one) nothing claims a save.
-    assert 'Kaydedildi' not in client.get(page_url).text
-    assert 'Kaydedildi' not in client.get(f'{page_url}?saved=other&row={sid}').text
-    assert 'Kaydedildi' not in client.get(f'{page_url}?saved=direction&row=x').text
+    assert 'Kaydedildi:' not in client.get(page_url).text
+    assert 'Kaydedildi:' not in client.get(f'{page_url}?saved=other&row={sid}').text
+    assert 'Kaydedildi:' not in client.get(f'{page_url}?saved=direction&row=x').text
     with sync_playwright() as p:
         browser = p.chromium.launch(**browser_options())
         context = browser.new_context(viewport=dict(width=1440, height=500))

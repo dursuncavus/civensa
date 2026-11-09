@@ -1,0 +1,20 @@
+/* Shared CIV-201 directorate overview and native detail dialogs. */
+.directorate-grid { display: grid; grid-template-columns: repeat(auto-fill,minmax(17rem,1fr)); gap: 1rem; margin: 1rem 0; }
+.directorate-grid > .directorate-card { min-width: 0; padding: 0; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); overflow: hidden; }
+.directorate-card > .directorate-head { padding: 1rem; background: var(--accent-soft); }
+.directorate-card .directorate-head h3 { margin: 0; color: var(--accent-hover); font-size: 1rem; line-height: 1.5; }
+.directorate-grid > .directorate-card > p { margin: 1rem; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.directorate-card > button { margin: 0 1rem 1rem; }
+.directorate-search { display: grid; gap: .5rem; max-width: 30rem; margin: 1rem 0; }
+.directorate-search input { width: 100%; padding: .65rem; border: 1px solid var(--border); border-radius: var(--radius); font: inherit; }
+.directorate-dialog { box-sizing: border-box; width: min(76rem,calc(100vw - 2rem)); max-width: calc(100vw - 2rem); max-height: 85vh; padding: 1.5rem; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); color: var(--text); overflow: auto; }
+.directorate-dialog::backdrop { background: rgb(0 0 0 / .45); }
+.directorate-dialog > header { display: flex; justify-content: space-between; align-items: start; gap: 1rem; margin-bottom: 1rem; }
+.directorate-dialog > header h2 { margin: 0; color: var(--accent-hover); font-size: 1.25rem; }
+.directorate-dialog > header form { margin: 0; }
+.directorate-dialog details > summary { cursor: pointer; }
+.directorate-dialog details:not([open]) > summary { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.directorate-dialog :is(p,dd,td) { overflow-wrap: anywhere; }
+.pilot-numeric, .pilot-numeric input, .directorate-dialog :is(.indicator-target,.indicator-actual,.indicator-difference) { text-align: right !important; font-variant-numeric: tabular-nums; }
+#saved-notice { position: sticky; top: .5rem; z-index: 20; width: fit-content; padding: .5rem 1rem; border: 1px solid var(--border); border-radius: var(--radius); background: var(--success-bg); color: var(--success); }
+@media (max-width: 600px) { .directorate-grid { grid-template-columns: minmax(0,1fr); } }
