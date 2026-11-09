@@ -1536,3 +1536,9 @@ Decisions (lead):
 3. CIV-192 (FR5 import) is packaged after today's meeting, because two Ali answers change it: (a) directorate name changes since 2024 (A9) — 48 rows depend on it; (b) is this Excel the one directorates fill at year end, or do they send their rows to Strateji? The raw workbook is not committed (internal 9-month actuals, rule 24); it stays in the project thread upload.
 Ask Ali today (added): who fills the year-end columns (directorate or Strateji); whether the Excel indicator names or the printed book names are authoritative where they differ.
 Next IDs: task CIV-192, decision D-444.
+
+## D-444 (9 Nov 2026 ~09:50 Istanbul, lead, project thread CV Lider 71) — remaining Ali questions sent by e-mail; meeting is for tests
+BEYAN (owner 09:48): send the questions by e-mail; today's meeting with Ali focuses on tests only.
+DOĞRULANDI Gmail: reply sent from the owner's account in thread "Civensa – 2026 Faaliyet Raporu soruları" (1a1a6e279cbc6c77), message 1a1bf10e3e7ba68f, 9 Nov 06:49Z, to alikaya136@gmail.com, "Cevap:" format, 11 questions: S1 2026 mapping (A) · S2 directorate name changes since 2024 (with the 4 Excel/book name pairs) · S3 who fills the year-end columns · S4 Excel vs book indicator names/targets · S5 B2 per-activity result · S6 ML1 Mali Hizmetler XLSX sample · S7 İKİY row · S8 directorate user list · S9 support channel · S10 lower-is-better indicators · S11 photos of completed works.
+CIV-192 (FR5) still waits for S2–S4.
+Next IDs: task CIV-192, decision D-445.
