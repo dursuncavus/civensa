@@ -23,11 +23,11 @@ def test_committed_guide_contract():
     assert headings == ['Başlamadan önce', 'Giriş ve parola', 'Personel ve Müdür',
                         'Gösterge gerçekleşmesi ve kanıt', 'EK-1 bölümleri ve EK-2',
                         'Gönderme (Müdür)', 'İade ve düzeltme', 'Onay sonrası',
-                        'Yardım', 'Daha sonra eklenecek bölümler', 'Faaliyet sonuçları']
+                        'Faaliyet sonuçları', 'Yardım', 'Daha sonra eklenecek bölümler']
     assert '[EKLENECEK — faaliyet sonucu girişi, Ali Abi cevabı bekleniyor]' not in body
     assert body.count('[EKLENECEK — gösterge Excel ile toplu giriş]') == 1
     assert "Sorularınız ve sorunlarınız için Strateji Geliştirme Müdürlüğü'ne ulaşın." in body
-    results = body.split('## Faaliyet sonuçları\n', 1)[1].split('[EKLENECEK', 1)[0]
+    results = body.split('## Faaliyet sonuçları\n', 1)[1].split('\n## ', 1)[0]
     assert 'Her faaliyet için ayrı bir sonuç girilmez.' in results
     assert 'Gösterge gerçekleşmelerini ve kanıtlarını yukarıda anlatıldığı gibi girin.' in results
     assert "2026 faaliyetlerinden biri için kısa bir açıklama gerekiyorsa ilgili EK-1 bölümünün `Bölüm içeriği` alanına yazın." in results
