@@ -86,7 +86,8 @@ def enrich(db, doc, payload):
             publication = db.get(Publication, revision.publication_id)
             if sections.digest(publication.snapshot_json) != publication.sha256:
                 sections.fail('Faaliyetlerin bağlı PP kopyası doğrulanamadı. Strateji ile PP yayınını kontrol edin.', 409)
-            snapshot = json.loads(publication.snapshot_json, parse_float=Decimal)
+            from .data.pp_errata import apply_pp_errata
+            snapshot = apply_pp_errata(json.loads(publication.snapshot_json, parse_float=Decimal))
             for department in snapshot.get('departments', []):
                 if department['department_id'] == doc.department_id:
                     source['activities'].extend({'document_id': doc.id, 'department_id': doc.department_id,

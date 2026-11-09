@@ -50,7 +50,7 @@ def test_definition_order_cover_styles_draft_notes_and_downloads(section_client,
     assert "Sayfa numaraları için Word'de içindekilere sağ tıklayıp Alanı Güncelleştir seçin." in text(word)
     for path in ['/activity-sections', f'/activity-sections/reports/{doc.id}']:
         html = client.get(path).text
-        assert 'Word olarak indir' in html and f'/reports/{doc.id}/export.docx' in html
+        assert 'Taslak — Word (onaysız)' in html and f'/reports/{doc.id}/export.docx' in html
     _, administration = export(client, docs['idare'])
     assert '2027' in text(administration)
     assert [p.text for p in administration.paragraphs if p.style.name.startswith('Civensa Başlık ')] == [s['title'] for s in service.report_data(db, sample['strategy'], docs['idare'].id)['sections']]

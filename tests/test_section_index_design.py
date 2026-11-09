@@ -84,7 +84,10 @@ def assert_frozen(response):
     actual, expected = Contract(response.text), Contract(old)
     assert Counter(actual.controls) == Counter(expected.controls)
     assert actual.bindings == expected.bindings
-    assert Counter(actual.labels) == Counter(expected.labels)
+    # CIV-191 intentionally distinguishes draft export labels; controls stay fixed.
+    draft_labels = {'Taslak — Word (onaysız)': 'Word olarak indir',
+                    'Taslak — PDF (onaysız)': 'PDF olarak indir'}
+    assert Counter((tag, draft_labels.get(label, label)) for tag, label in actual.labels) == Counter(expected.labels)
 
 
 @pytest.fixture
@@ -227,7 +230,7 @@ def test_009_010_grouping_warnings_disclosure_and_mobile(browser, filled_index, 
         summary.focus(); page.keyboard.press('Enter')
         expect(page.locator('.section-export').first).to_have_attribute('open', '')
         page.keyboard.press('Tab')
-        expect(page.get_by_role('link', name='Word olarak indir', exact=True).first).to_be_focused()
+        expect(page.get_by_role('link', name='Taslak — Word (onaysız)', exact=True).first).to_be_focused()
         summary.focus(); page.keyboard.press('Space')
         expect(page.locator('.section-export').first).not_to_have_attribute('open', '')
         assert page.evaluate('document.documentElement.scrollWidth === innerWidth')

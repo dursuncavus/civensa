@@ -12,6 +12,16 @@
 {% block content %}
   <link rel="stylesheet" href="/static/design/report-builder.css">
   <div class="report-builder-page">
+    {% if period.year == 2026 %}
+    <section class="report-panel" aria-label="Basılı kitap düzeltmeleri (2026)">
+      <h2>Basılı kitap düzeltmeleri (2026)</h2>
+      <p>Faaliyet Raporu toplamlarında uygulanır. Onaylı PP kitabı basıldığı haliyle korunur; kalem dağılımları değiştirilmez.</p>
+      <table><thead><tr><th>Madde</th><th>Müdürlük / Tablo / Yıl</th><th>Sayfa</th><th>Basılı</th><th>Düzeltilmiş</th><th>Kaynak</th></tr></thead><tbody>
+      {% for entry in pp_errata %}<tr><td>{{ entry.item_id }}</td><td>{{ entry.department }} / {{ 'Maliyet' if entry.table == 'cost' else 'Ekonomik' }} / {{ entry.value_year }}</td><td>{{ entry.page }}</td><td>{{ entry.printed_value|trmoney }}</td><td>{{ entry.corrected_value|trmoney }}</td><td>{{ entry.source }}</td></tr>{% endfor %}
+      </tbody></table>
+      {% for entry in pp_errata %}<p>{{ entry.item_id }}: {{ entry.reason }}</p>{% endfor %}
+    </section>
+    {% endif %}
     {% include 'pp_reconciliation.html' %}
     <p class="report-actions">
       <a class="button" href="/report-builder/manifest?period_id={{ period.id }}">PP Tamamlanma Listesi</a>

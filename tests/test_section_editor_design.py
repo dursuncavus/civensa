@@ -149,7 +149,7 @@ def test_012_export_audit_focus_and_safe_summary(browser, section_client, db, sa
         trigger.focus(); page.keyboard.press('Enter')
         expect(page.locator('[data-section-export]')).to_have_attribute('open','')
         page.keyboard.press('Tab')
-        expect(page.get_by_role('link',name='Word olarak indir',exact=True)).to_be_focused()
+        expect(page.get_by_role('link',name='Taslak — Word (onaysız)',exact=True)).to_be_focused()
         page.keyboard.press('Escape'); expect(trigger).to_be_focused()
         expect(page.locator('[data-section-audit]').first.locator('[data-section-change]')).to_have_text(
             'Kayıt ayrıntılarını Teknik ayrıntı bölümünde inceleyebilirsiniz.')
