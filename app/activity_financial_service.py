@@ -354,12 +354,13 @@ def totals(rows,kind,missing_sources=0):
     return result
 
 
-def pp_references(db,doc):
+def pp_references(db,doc,*,include_plan=False):
     year=db.get(ReportingPeriod,doc.period_id).year
     pub=db.scalar(select(Publication).where(Publication.period_id==doc.period_id).order_by(Publication.version.desc()).limit(1))
-    if not pub:return {},None
+    if not pub:return ({},None,[]) if include_plan else ({},None)
     if digest(pub.snapshot_json)!=pub.sha256:sections.fail('PP yayınının doğrulama kodu uyuşmuyor. Strateji ile yayını kontrol edin.',409)
-    payload=json.loads(pub.snapshot_json)
+    from .data.pp_errata import apply_pp_errata
+    payload=apply_pp_errata(json.loads(pub.snapshot_json))
     categories={'personnel':'01','sgk':'02','goods_services':'03','interest':'04','current_transfers':'05',
         'capital':'06','capital_transfers':'07','lending':'08','reserve':'09'}
     result={}
@@ -370,6 +371,11 @@ def pp_references(db,doc):
             key=(department['department_id'],code)
             if row.get('amount') is None or row.get('state','verified')!='verified':result[key]=None
             elif key not in result or result[key] is not None:result[key]=result.get(key,Decimal(0))+Decimal(str(row['amount']))
+    if include_plan:
+        planned = [row for row in payload['planned_figures']
+                   if year == 2026 and (row['year'] == year or row['errata'] or row.get('errata_warning'))
+                   and (not doc.department_id or row['department_id'] == doc.department_id)]
+        return result,pub.id,planned
     return result,pub.id
 
 
@@ -400,7 +406,8 @@ def financial_data(db,doc):
         'warnings':{k:[] for k in ('III.A.1','III.A.2','III.A.3','III.A.4')},'statements':[],'entries':{},'imports':[]}
     # Amounts belong to central finance; the unit still owns deviation explanations.
     budget_issues=result['warnings' if doc.department_id else 'missing']['III.A.1']
-    refs,pub_id=pp_references(db,doc)
+    refs,pub_id,planned=pp_references(db,doc,include_plan=True)
+    if planned:result['pp_planned_figures']=planned
     units=db.scalars(select(ARDocument).where(ARDocument.organization_id==doc.organization_id,ARDocument.period_id==doc.period_id,ARDocument.department_id.is_not(None))).all()
     approved=[]
     if not doc.department_id:

@@ -19,6 +19,7 @@ from .value_labels import value_kind_label
 
 
 ACTION_LABELS = {
+    "actual_import_apply": "Gösterge gerçekleşmeleri Excel'den içe aktarıldı",
     "activity_contract_bound": "Faaliyet sözleşme durumu güncellendi",
     "activity_create": "Faaliyet oluşturuldu",
     "activity_delete": "Faaliyet silindi",
@@ -33,6 +34,7 @@ ACTION_LABELS = {
     "activity_source_total_decision": "Faaliyet kaynak toplamı kararı kaydedildi",
     "activity_update": "Faaliyet güncellendi",
     "actual_revision_create": "Gerçekleşme revizyonu kaydedildi",
+    "indicator_direction_set": "Gösterge yönü kaydedildi",
     "budget_reallocation": "Bütçe aktarıldı",
     "card_assign": "Performans kaydı karta atandı",
     "card_remove": "Performans kartı kaldırıldı",
@@ -106,6 +108,7 @@ ACTION_LABELS = {
 }
 
 ENTITY_LABELS = {
+    "actual_import": "Gösterge gerçekleşmeleri Excel aktarımı",
     "activity": "Faaliyet",
     "activity_cost_values": "Faaliyet bütçesi",
     "activity_evidence_file": "Faaliyet kanıtı",
@@ -122,6 +125,7 @@ ENTITY_LABELS = {
     "economic_values": "Ekonomik değer",
     "import_batch": "Veri aktarımı",
     "indicator": "Gösterge",
+    "indicator_direction": "Gösterge yönü",
     "indicator_value": "Gösterge değeri",
     "indicators": "Gösterge",
     "login_throttle": "Giriş denetimi",

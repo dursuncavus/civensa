@@ -1,4 +1,10 @@
 {% extends "base.html" %}
+{% macro target_summary(targets) -%}
+  <p class="indicator-target">{% for target in targets %}
+    {% if target.state == 'verified' and target.value is not none %}Hedef: {{ target.value|trnum }}
+    {% else %}<span data-unverified-target>Hedef doğrulanmadı: basılı PP’deki hedef için doğrulanmış bir sayı yok. Fark hesaplanmaz; Strateji hedefi doğrulayacak.{% if target.raw_text %} Basılı hedef metni: {{ target.raw_text }}{% endif %}</span>{% endif %}
+  {% else %}<span data-unverified-target>Hedef kaydı yok. Fark hesaplanmaz; Strateji basılı PP hedefini kontrol edip doğrulayacak.</span>{% endfor %}</p>
+{%- endmacro %}
 {% block page_title %}{{ report.year }} Faaliyet raporu · Revizyon {{ report.revision }}{% endblock %}
 {% block page_subtitle %}Baz performans programı v{{ report.publication_version }} · {{ 'Nihai onay sonrası iade edildi' if report.returned_after_approval else ('Onaylı' if report.approved else 'Taslak') }}{% endblock %}
 {% block content %}
@@ -151,7 +157,7 @@
               <span class="indicator-unit">{{ row.definition.unit }}</span>
               <span class="status indicator-state {{ latest.state }}">{{ {'verified':'Doğrulanmış','needs_review':'İncelenmeli','missing':'Eksik'}.get(latest.state, latest.state) }}</span>
             </p>
-            <p class="indicator-target">Hedef: {% if row.definition.targets %}{% for target in row.definition.targets %}{{ target.value|trnum if target.state == 'verified' and target.value is not none else 'Doğrulanmalı' }}{% endfor %}{% else %}Kayıt yok{% endif %}</p>
+            {{ target_summary(row.definition.targets) }}
             <p class="indicator-difference">Fark: {{ latest.deviation.delta|trnum if latest.deviation.delta is not none else 'Hesaplanmadı' }}</p>
           </div>
           {% if can_draw_bar %}
@@ -187,7 +193,7 @@
           <div class="actual-summary indicator-value-summary">
             <h3>Son gerçekleşme</h3>
             <p class="indicator-actual"><span class="status indicator-state indicator-state-empty">Kayıt yok</span></p>
-            <p class="indicator-target">Hedef: {% if row.definition.targets %}{% for target in row.definition.targets %}{{ target.value|trnum if target.state == 'verified' and target.value is not none else 'Doğrulanmalı' }}{% endfor %}{% else %}Kayıt yok{% endif %}</p>
+            {{ target_summary(row.definition.targets) }}
           </div>
           {#- Keep the original empty-state text boundary used by the browser contract. -#}
           {%- endif -%}

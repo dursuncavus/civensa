@@ -4,7 +4,7 @@ import logging
 
 from ..numbers import format_number
 from .engine import pages, text
-from .recipes import lines, number, rate
+from .recipes import lines, number, rate, indicator_comparison
 from .meclis import budget_distribution, one_decimal, scorecard
 from .facts import staff_values as staff_facts, budget_values, spending_values
 
@@ -104,7 +104,7 @@ def idare_activity_report(payload, *, photos=(), highlights=()):
             summary=[dict(css=css, count=sum(row['status'] == label for row in scores), label=description)
                      for label, css, description in [('Hedefte', 'ok', 'müdürlük hedefte'),
                          ('Yakın', 'w', 'müdürlük hedefe yakın'), ('Geride', 'bad', 'müdürlük geride')]],
-            source=source('III.B.2.i'), note='Müdürlüklere göre karne. Gerçekleşen ≥ hedef, hedefte sayılır. '
+            source=source('III.B.2.i'), note='Müdürlüklere göre karne. Yüksek değer daha iyi göstergelerde gerçekleşen ≥ hedef, düşük değer daha iyi göstergelerde gerçekleşen ≤ hedef, hedefte sayılır. '
                 'Eşikler: %90 Hedefte, %70 Yakın; Strateji tarafından kesinleştirilecek.'))
         for item in content[-1]['summary']:
             item['display'] = format_number(item['count'])
@@ -119,9 +119,11 @@ def idare_activity_report(payload, *, photos=(), highlights=()):
             verified.append(actual)
             targets = indicator.get('targets', [])
             target = number(targets[0].get('value')) if len(targets) == 1 and targets[0].get('state') == 'verified' else None
-            if target is not None and target > 0:
-                ratios.append(actual / target)
-        summary.append([text(unit.get('department')), format_number(len(indicators) if indicators else None),
+            _, ratio = indicator_comparison(actual, target, indicator.get('direction', 'higher'))
+            if ratio is not None:
+                ratios.append(ratio / 100)
+        has_lower = any(indicator.get('direction') == 'lower' for indicator in indicators)
+        summary.append([text(unit.get('department')) + (' (düşük daha iyi gösterge var)' if has_lower else ''), format_number(len(indicators) if indicators else None),
             format_number(len(verified) if verified else None),
             one_decimal(rate(sum(ratios), Decimal(len(ratios))) if ratios else None)])
     if summary and any(unit.get('core', {}).get('indicators') for unit in payload.get('unit_indicator_sources', [])):
