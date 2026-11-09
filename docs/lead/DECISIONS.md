@@ -1536,3 +1536,67 @@ Decisions (lead):
 3. CIV-192 (FR5 import) is packaged after today's meeting, because two Ali answers change it: (a) directorate name changes since 2024 (A9) — 48 rows depend on it; (b) is this Excel the one directorates fill at year end, or do they send their rows to Strateji? The raw workbook is not committed (internal 9-month actuals, rule 24); it stays in the project thread upload.
 Ask Ali today (added): who fills the year-end columns (directorate or Strateji); whether the Excel indicator names or the printed book names are authoritative where they differ.
 Next IDs: task CIV-192, decision D-444.
+
+## D-444 (9 Nov 2026 ~09:50 Istanbul, lead, project thread CV Lider 71) — remaining Ali questions sent by e-mail; meeting is for tests
+BEYAN (owner 09:48): send the questions by e-mail; today's meeting with Ali focuses on tests only.
+DOĞRULANDI Gmail: reply sent from the owner's account in thread "Civensa – 2026 Faaliyet Raporu soruları" (1a1a6e279cbc6c77), message 1a1bf10e3e7ba68f, 9 Nov 06:49Z, to Ali Abi, "Cevap:" format, 11 questions: S1 2026 mapping (A) · S2 directorate name changes since 2024 (with the 4 Excel/book name pairs) · S3 who fills the year-end columns · S4 Excel vs book indicator names/targets · S5 B2 per-activity result · S6 ML1 Mali Hizmetler XLSX sample · S7 İKİY row · S8 directorate user list · S9 support channel · S10 lower-is-better indicators · S11 photos of completed works.
+CIV-192 (FR5) still waits for S2–S4.
+Next IDs: task CIV-192, decision D-445.
+
+## D-445 (9 Nov 2026 ~10:10 Istanbul, lead, project thread CV Lider 71) — CIV-190 screenshots allowed; no personal e-mail addresses in docs/lead
+BEYAN (owner 10:05): Codex asked (CIV-190) for explicit approval to add strateji.png and fr-marker.png to its PR in the public repo. Lead answer: approve — the package asks for these (≤ 6 PNG), they come from the disposable test DB, and the 2026 PP figures are a published document; the lead checks the images for real names/e-mails/passwords in review.
+DOĞRULANDI: the repo dursuncavus/civensa is PUBLIC. docs/lead has carried Ali Abi's personal e-mail address since D-361-era entries (7 places, also in git history). Decision: from now on docs/lead names people by role ("Ali Abi", "owner"), never by e-mail address; the D-444 line written today is corrected. Older entries stay as written (append-only); removing the address from history is an owner decision and low value now (the address has been public for weeks).
+Next IDs: task CIV-192, decision D-446.
+
+## D-446 (9 Nov 2026 ~10:50 Istanbul, lead, project thread CV Lider 71) — Ali's answers S1–S11 processed
+DOĞRULANDI Gmail: Ali Abi replied 9 Nov 07:29Z in thread "Civensa – 2026 Faaliyet Raporu soruları" (message 1a1bf366166cf6d1), one attachment "Müdürlükler Bütçe Kodları.docx" (not readable from this session; owner uploads it to the thread).
+Answers (BEYAN Ali) → lead decisions:
+- S1 mapping: "the book on the website is final; we have no other data." He does not review the 128 rows. → The draft (built from the approved 2026 book, D-402: 79 Yüksek / 34 Orta / 15 Düşük) is the mapping. Uploading it is a live-data action → owner uploads the CSV during today's test session with Ali (Faaliyet Eşleştirme › CSV yükle › önizleme › uygula); the preview shows the 15 Düşük rows first so Ali sees them; reversible. Then A4 (publish 2026 from the approved book, Onay dayanağı 23.10.2025 / 77) can follow.
+- S2 name changes: directorate list in the attachment; council decision numbers skipped (would need Yazı İşleri one by one). → Name changes are recorded from Ali's list without decision numbers (BEYAN source); read the docx before CIV-192.
+- S3 year-end columns: directorate staff fill them and send to Strateji. → D-443 design stands: Strateji imports the consolidated master workbook; directorates can also enter on screen.
+- S4 Excel vs book names: "use what the Strategic Plan says." → The 2026 PP indicators in Civensa come from the approved book, which derives from the 2025–2029 Strategic Plan. CIV-192 binds Excel rows to the loaded 2026 indicators and shows name/target differences in the preview for Strateji to confirm; it never rewrites indicator definitions. Whether every book name equals the SP text is BELİRSİZ (SP document not in the repo); not blocking.
+- S5 B2: directorates do NOT write a separate result per PP activity; for 2026 an explanation may be added case by case. → B2 closed: per-activity result is optional. The rehearsal's 3 B2 BLOCKERs (D-435) must become non-blocking → small fix task after CIV-190/191 merge (next ID).
+- S6 ML1: Mali Hizmetler has no Excel, only the kesin hesap PDFs; "treat them as Excel." → ML1 source = the final-account PDF (text PDF, kurum/fonksiyonel/ekonomik codes). Lead converts it into Civensa's existing budget XLSX import template when the 2026 final account arrives (Jan–Feb 2027); a converter task is packaged then, tested on the 2025 PDF.
+- S7 İKİY: there are only 2 councils; the third row is a leftover → dropped from the İç Kontrol unit mapping.
+- S8 user list: needs an official letter; waits. → ROLLOUT_CHECKLIST B stays open; the 14 Dec pilot (Bilgi İşlem, Strateji, Fen İşleri) needs at least those three directorates' users by early December — owner raises the letter with Ali.
+- S9 support channel: directorates contact Ali. → ROLLOUT_CHECKLIST E support line = Ali Abi (Strateji).
+- S10 lower-is-better: complaint response time, application completion time; look at the performance sheet. → From the V1 Excel units: lower-is-better = the 4 "Gün" indicators (Zabıta "istek ve şikâyetlerin cevaplandırılma süresi"; Yazı İşleri "evrakın … birime ulaşma süresi", "Nikah işlemlerinin sonuçlandırılma süresi", "4109 … yardım süresi"). BELİRSİZ: Sosyal Hizmetler 2 "Zaman" (sıklık) rows and Gelirler 2 "Oran (Kümülatif Azalan)" rows (one says "artırılması") — ask Ali only when the karne goes to the council.
+- S11 photos: directorates supply them.
+Next IDs: task CIV-192, decision D-447.
+
+## D-447 (9 Nov 2026 ~11:05 Istanbul, lead, project thread CV Lider 71) — directorate list read; name changes resolved; CIV-192 (FR5) dispatched
+BEYAN (owner 10:44): uploaded Ali's attachment "Müdürlükler Bütçe Kodları.docx" to the thread.
+DOĞRULANDI lead read: 36 directorates with current budget codes (02 Özel Kalem … 58 Harita ve Planlama, 74 Ar-Ge, 23 İşletme ve İştirakler; 33 Kadın ve Aile and 42 Kentsel Tasarım marked PASİF). Codes differ from the 2025 final account (e.g. 2025: 25 Halkla İlişkiler, 26 Basın ve Yayın, 43 Plan ve Proje, 47 Sosyal Destek, 56 Yapı Kontrol, 53 Koordinasyon İşleri, 63 Ulaşım Hizmetleri) — budget codes were renumbered; the list gives no old→new pairs or dates (Ali skipped council decisions).
+DOĞRULANDI by indicator content (2026 book vs V1 workbook): Plan Proje → Harita ve Planlama (all 5 indicators identical); Sosyal Destek → Sosyal Hizmetler; Halkla İlişkiler (book chapter) → Basın, Yayın ve Halkla İlişkiler; Yapı Kontrol → merged into İmar ve Şehircilik (its "denetlenen ruhsatlı inşaat" and "kaçak yapı" indicators sit under İmar in the workbook); "Destek Hizmetler" is a spelling of Destek Hizmetleri. With these, the dry run matches 203 same-name + 8 close-name of 227 rows; 16 unmatched; 13 book indicators without a row (docs/lead/data/fr5-2026-excel-kitap-eslesme.csv regenerated).
+Decisions (lead):
+1. These 4 changes are recorded in "Kurum yapısı" on the live system by the owner/Strateji (live data → owner; effective date 1 Jan 2026 as working assumption, decision number blank, source "Strateji müdürlük listesi 9.11.2026"). Not needed before CIV-192 is merged; needed before the first real import.
+2. CIV-192 (Codex, GPT-6.1 Sol, yüksek) — Strateji imports the master workbook through preview → confirm → apply, writes via save_actual, resolves names through Kurum yapısı, blank ≠ zero, no silent ratio scaling. Package tasks/CIV-192.md.
+3. B2 fix (per-activity result optional, D-446) is packaged after CIV-190/191 merge to avoid template overlap.
+Next IDs: task CIV-193, decision D-448.
+
+## D-448 (9 Nov 2026 ~11:20 Istanbul, lead, project thread CV Lider 71) — parallel work after Ali's answers: CIV-193 (B2) + CIV-194 (ML1) dispatched
+BEYAN (owner 10:59): give work to the coding AIs now; recover the time lost waiting for Ali.
+Decisions (lead):
+1. CIV-193 (Codex, GPT-6.1 Sol, orta) — close B2 per D-446: rehearsal stops counting the per-activity form as BLOCKER, guide gets "Faaliyet sonuçları" and the support line (Strateji Geliştirme Müdürlüğü, no personal data). Planned for Gemini/Antigravity (small, self-contained) but the lead's folder access to ~/development was refused in this session → Codex.
+2. CIV-194 (Codex, GPT-6.1 Sol, yüksek) — offline converter kesin hesap PDF → existing financial import XLSX (ML1), blocking reconciliation of every column, synthetic test PDFs only, budget code → department via an operator CSV. Lead validates it locally on the real 2025 PDFs (not committed) before merge.
+3. File overlap check: CIV-192 (activity_contract import + guide FR5 line), CIV-193 (rehearsal script + guide B2/Yardım lines), CIV-194 (new script) — disjoint except adjacent guide lines; merge order 193 → 192.
+4. Not dispatched: Gemini research (no CRITICAL decision open), DeepSeek (backup lead only; Claude active), Copilot (not in the hierarchy's active tools).
+Next IDs: task CIV-195, decision D-449.
+
+## D-449 — Copilot active (HIERARCHY v1.9); Gemini lane reopened with CIV-195 (9 Nov 2026 ~11:20, CV Lider 71)
+Owner 9 Nov 11:12 (BEYAN): "Copilot da aktif olsun. Gemini'ye erişim izni ver. Çok işimiz var ama az zamanımız var."
+- HIERARCHY v1.8 → v1.9: GitHub Copilot moves into LEVEL 2 g — automated reviewer on every task PR (evidence; the lead decides) and coder for small issue-sized tasks packaged by the lead. Gap and acceptance check in the v1.9 change note. Other AI participants: DeepSeek mirror carries v1.9 via GUNCEL-DURUM.md; Codex/Gemini need no change (their packages cite HIERARCHY).
+- Folder access to ~/development on the owner's Mac granted this session (DOĞRULANDI) → Gemini delivery works again.
+- CIV-195 (Strateji kılavuzu, FR 2026 yearly cycle) → Gemini in Antigravity: ROLLOUT_CHECKLIST E1 covers directorates only; Strateji runs accounts, publish, review/return/approve and has no guide before the 14 Dec pilot. Docs + one screenshot mode; no app/ changes; scripts/fr_rehearsal.py and the directorate guide are off-limits because CIV-192/193 edit them.
+- Copilot review requested on #433 (CIV-190). No Copilot coding task yet: every small unblocked item is already packaged (CIV-192/193/194 Codex, CIV-195 Gemini); the next small task goes to Copilot.
+- #432 (CIV-191): backup-security re-run at 08:03Z failed again on the age release download (504, GitHub-side); next check 09:04Z.
+
+## D-450 — DeepSeek coder lane + local lane on the Mac (HIERARCHY v1.10) (9 Nov 2026 ~11:35, CV Lider 71)
+Owner 9 Nov 11:21 (BEYAN): "DeepSeek denetleme yapmadığı zamanlarda senin vereceğin görevleri de yapsın. Nasıl olsa sen onu da denetleyeceksin. Yerelde de bir yapı kuralım. Oradan da işleri yapmaya başlayalım. Takvimin önüne geçmemiz lazım."
+- HIERARCHY v1.9 → v1.10: DeepSeek also codes lead-packaged small tasks (§1 c); LOCAL LANE section added. Gap and acceptance checks in the change note.
+- Checked (DOĞRULANDI 9 Nov): the lead's device shell is a Linux VM with no network (pypi/github 403) → it cannot run tests; real local execution needs a Remote Control session on the Mac. D-198 is partly superseded (no Codex CLI, repo stays the only record).
+- CIV-196 (profile of the 4 SLOW Strateji steps in the CIV-188 rehearsal, 6–11 s; "İdare raporuna geçiş" is a page view at 11.2 s) → DeepSeek, findings only, ~/development/civ196-deepseek/TASK.md. Reason: Render is slower than the rehearsal machine; must be known before the 14 Dec pilot (ROLLOUT_CHECKLIST C4).
+- Prior art checked: the users screen already offers a downloadable account template with Müdürlük ID; validate_account_csv checks it → no converter task for B1.
+- PR #440 (lead): setup-age caches the verified archive and retries the GitHub release download for 5 min; the same action runs in db-backup.yml, so the 504s could also fail a real backup.
+- #433: Copilot's first review (3 MEDIUM: typeset field classes, explicit zero scope, hover-only amounts) checked by the lead and forwarded to Codex.
+
