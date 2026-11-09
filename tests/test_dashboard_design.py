@@ -12,6 +12,7 @@ from test_section_index_design import Contract, TEXT_PAIRS, contrast
 from test_sidebar_ui import browser
 from test_activity_sections import login, PASSWORD
 from app.security import hash_password
+from civ203_contract import dashboard_todo_removed
 
 pytestmark = pytest.mark.postgres
 FROZEN = Path(__file__).parent / 'fixtures/dashboard_021_022.html'
@@ -60,7 +61,7 @@ def assert_frozen(response, context=None):
     context = context or response.context
     html = response.template.render(context)
     old = response.template.environment.from_string(FROZEN.read_text()).render(context)
-    actual, expected = DashboardContract(html), DashboardContract(old)
+    actual, expected = DashboardContract(dashboard_todo_removed(html)), DashboardContract(old)
     if context['user'].role == 'department':
         target = f'/department/{context["department"].id}?period_id={context["period"].id}'
         # The legacy fixture predates clickable cards; only its entry link is exempt.
@@ -75,7 +76,7 @@ def assert_frozen(response, context=None):
         old_labels = {'Veri girişini aç'}
         assert Counter(item for item in actual.labels if item[1] not in new_labels) == Counter(
             item for item in expected.labels if item[1] not in old_labels)
-        assert [item for item in Hooks(html).items if not dict(item[1]).get('id', '').startswith('home-')] == Hooks(old).items
+        assert [item for item in Hooks(dashboard_todo_removed(html)).items if not dict(item[1]).get('id', '').startswith('home-')] == Hooks(old).items
         return html
     new_card_labels = (
         'Dönemdeki müdürlük', 'Bakanlık şablonu', 'Eşleştirme bekleyen faaliyet',
@@ -127,7 +128,7 @@ def assert_frozen(response, context=None):
     assert Counter(unchanged_labels(actual.labels)) == Counter(
         (tag, LABEL_CHANGES.get(text, text)) for tag, text in unchanged_labels(expected.labels)
     )
-    assert unchanged_hooks(Hooks(html).items) == Hooks(old).items
+    assert unchanged_hooks(Hooks(dashboard_todo_removed(html)).items) == Hooks(old).items
     return html
 
 
@@ -245,8 +246,13 @@ def test_021_022_browser_layout_contrast_and_period_actions(browser, dashboard_c
         assert page.evaluate('document.documentElement.scrollWidth === innerWidth'), page.evaluate("[...document.querySelectorAll('*')].filter(el => el.getBoundingClientRect().right > innerWidth).map(el => [el.tagName, el.className, el.getBoundingClientRect().width])")
         assert root.locator('label, th, .card span').evaluate_all("els => els.every(el => getComputedStyle(el).textTransform === 'none')")
         if role == 'strategy':
+            # CIV-203: a numbered to-do list leads; raw counters are folded closed.
+            expect(root.locator('.dashboard-todo')).to_be_visible()
+            assert root.locator('.dashboard-counts-details').count() == 2
+            for details in root.locator('.dashboard-counts-details').all():
+                details.evaluate('el => el.open = true')
             assert root.locator('.dashboard-summary .card').evaluate_all("els => els.every(el => getComputedStyle(el).borderRadius === '0px' && getComputedStyle(el).borderLeftWidth === '0px')")
-        top_cards = root.locator('.dashboard-summary > .cards > *')
+        top_cards = root.locator('.dashboard-summary .cards > *')
 
         def row_sizes(cards):
             rows = {}
@@ -387,6 +393,9 @@ def test_021_progress_card_filters_and_no_javascript_fallback(browser, dashboard
         page = context.new_page()
         page.on('pageerror', lambda error: errors.append(str(error)))
         page.goto(url)
+        # CIV-203: the raw counters are folded; open them before driving the filters.
+        for details in page.locator('.dashboard-counts-details').all():
+            details.evaluate('el => el.open = true')
 
         def capture(name):
             from PIL import Image
@@ -494,6 +503,8 @@ def test_021_progress_card_filters_and_no_javascript_fallback(browser, dashboard
         context.route('http://testserver/**', serve)
         page = context.new_page()
         page.goto(url)
+        for details in page.locator('.dashboard-counts-details').all():
+            details.locator('summary').click()
         assert all(page.locator('.progress-filter').nth(index).get_attribute('role') is None
                    for index in range(page.locator('.progress-filter').count()))
         assert all(page.locator('.progress-filter').nth(index).get_attribute('aria-pressed') is None
@@ -511,7 +522,7 @@ def test_021_html_byte_identical_outside_progress_section_before_civ112(dashboar
     context = synthetic_context(response, filled)
     before = response.template.environment.from_string(
         (Path(__file__).parent / 'fixtures/dashboard_pre_civ112.html').read_text()).render(context)
-    current = response.template.render(context)
+    current = dashboard_todo_removed(response.template.render(context))
 
     def without_progress_section(html):
         start = html.index('<section class="dashboard-panel" id="mudurluk-ilerleme">')
