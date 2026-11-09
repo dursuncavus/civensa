@@ -37,6 +37,7 @@ def apply_pp_errata(payload):
     for department in result.get('departments', []):
         if (department.get('scope') or {}).get('status') == 'excluded':
             continue
+        explicit_zero = (department.get('scope') or {}).get('status') == 'zero'
         # Prefer the publication's period name; it is part of the printed book.
         name = (department.get('scope') or {}).get('display_name') or department['department']
         for value_year in range(year, year + 3):
@@ -51,14 +52,23 @@ def apply_pp_errata(payload):
             # Both components are necessary for a complete cost table total.
             cost_amount = (_sum(costs + personnel)
                            if activities and len(costs) == len(activities) and len(personnel) == 1 else None)
+            # A declared zero scope supplies absent rows, never explicit blanks
+            # or incomplete activities. Preserve contradictory nonzero data too.
+            if explicit_zero and not activities and all(
+                    row.get('amount') is not None and Decimal(str(row['amount'])) == 0 for row in personnel):
+                cost_amount = Decimal(0)
+            economic_amount = Decimal(0) if explicit_zero and not economics else _sum(economics)
             for table, rows, amount in [('cost', costs + personnel, cost_amount),
-                                        ('economic', economics, _sum(economics))]:
+                                        ('economic', economics, economic_amount)]:
                 figure = dict(department_id=department['department_id'], department=name,
                     year=value_year, table=table, amount=amount, stored_amount=amount,
                     errata=[], needs_review=any(row.get('state', 'verified') != 'verified' for row in rows))
                 if table == 'economic':
-                    figure['sources'] = {fund: _sum([row for row in economics if row.get('funding_type') == fund])
-                                         for fund in ('inside', 'outside')}
+                    figure['sources'] = {}
+                    for fund in ('inside', 'outside'):
+                        source_rows = [row for row in economics if row.get('funding_type') == fund]
+                        figure['sources'][fund] = (Decimal(0) if explicit_zero and not source_rows
+                                                   else _sum(source_rows))
                 for entry in entries:
                     if (entry['department'], entry['value_year'], entry['table'], entry['field']) != (name, value_year, table, 'total'):
                         continue
