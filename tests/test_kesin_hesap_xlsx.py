@@ -158,6 +158,28 @@ def pdf_table(path, headers, widths, pages, *, centered=False, scale=1, year=202
     return path
 
 
+def rotate_synthetic(path, rotation):
+    if not rotation:
+        return path
+    from pypdf import PdfWriter
+    from pypdf.generic import NameObject, NumberObject, RectangleObject
+    page = converter.PdfReader(path).pages[0]
+    width, height = float(page.mediabox.width), float(page.mediabox.height)
+    inverse = {90: (0, 1, -1, 0, height, 0),
+               180: (-1, 0, 0, -1, width, height),
+               270: (0, -1, 1, 0, 0, width)}
+    if rotation in inverse:
+        page.add_transformation(inverse[rotation])
+        if rotation in {90, 270}:
+            page.mediabox = RectangleObject((0, 0, height, width))
+    page[NameObject('/Rotate')] = NumberObject(rotation)
+    writer = PdfWriter()
+    writer.add_page(page)
+    path = path.with_name(f'{path.stem}-rotated-{rotation}.pdf')
+    writer.write(path)
+    return path
+
+
 def expense_pdf(tmp_path, *, mismatch=None, blank=False, duplicate=False, centered=False,
                 scale=1, directorate_mismatch=False, fund_split=False, foreign_code=False,
                 lead_layout=False, transfer='Suratiyle', page_shift=0, dotted_first=None,
@@ -999,24 +1021,7 @@ def truncated_total_pdf(tmp_path, *, invalid=None, deduction=False, rotation=0):
         rows[0][2] = rows[0][2][:-1].replace(',', '\n,')
     path = pdf_table(tmp_path / 'truncated-total.pdf', headers, [90, 140] + [65] * 8 + [45], [rows],
                       header_size=5, total_footer=invalid or 'valid')
-    if rotation:
-        from pypdf import PdfWriter
-        from pypdf.generic import NameObject, NumberObject, RectangleObject
-        page = converter.PdfReader(path).pages[0]
-        width, height = float(page.mediabox.width), float(page.mediabox.height)
-        inverse = {90: (0, 1, -1, 0, height, 0),
-                   180: (-1, 0, 0, -1, width, height),
-                   270: (0, -1, 1, 0, 0, width)}
-        if rotation in inverse:
-            page.add_transformation(inverse[rotation])
-            if rotation in {90, 270}:
-                page.mediabox = RectangleObject((0, 0, height, width))
-        page[NameObject('/Rotate')] = NumberObject(rotation)
-        writer = PdfWriter()
-        writer.add_page(page)
-        path = tmp_path / f'rotated-total-{rotation}.pdf'
-        writer.write(path)
-    return path
+    return rotate_synthetic(path, rotation)
 
 
 @pytest.mark.parametrize('rotation', [0, 90, 180, 270])
@@ -1113,3 +1118,78 @@ def test_unsupported_page_rotation_is_a_located_blocking_error(tmp_path, rotatio
     report = (out / 'report.md').read_text()
     assert 'sayfa 1' in report and 'desteklenmeyen sayfa dönüşü' in report
     assert str(rotation) in report
+
+
+def two_line_revenue_pdf(tmp_path, *, rotation=0, first_partial=False, invalid=None):
+    """Every level-I code is 0/N; lower baselines mix prose, suffixes and full cells."""
+    headers = ['Gelirin Kodu', 'Açıklama', *converter.revenue_labels(2026), 'Oran']
+    headers[5] = 'Toplam\nTahakkuk'
+    vectors = [list(map(Decimal, values)) for values in [
+        ['1250.25', '20.25', '1180.50', '1200.75', '1150.25', '10.10', '1140.15', '60.60'],
+        ['100.11', '0.10', '80.20', '80.30', '70.22', '0.11', '70.11', '10.19'],
+        ['200.35', '2.45', '90.10', '92.55', '80.23', '1.12', '79.11', '13.44'],
+        ['50', '0', '10', '10', '8', '0', '8', '2'], ['-5.25', *(['0'] * 7)]]]
+    labels = ['Vergi Gelirleri', 'Teşebbüs ve Mülkiyet\nGelirleri',
+              'Alınan Bağış ve Yardımlar ile\nÖzel Gelirler', 'Alacaklardan Tahsilat',
+              'Red ve İadeler (-)']
+    rows = [[f'0\n{code}', label, *map(money, values),
+             money((values[6] / values[0] * 100).quantize(Decimal('.01'))) if values[0] > 0 else '0,00']
+            for code, label, values in zip(('1', '3', '4', '8', '9'), labels, vectors)]
+    rows[0][6] = '1.150,2\n5'
+    rows[1][2], rows[1][4], rows[1][5] = '100,1\n1', '\n80,20', '80,3\n0'
+    rows[2][2] = '\n200,35'
+    rows[4][2] = '- 5,25'
+    if invalid == 'duplicate_complete':
+        rows[1][3] = '0,10\n0,10'
+    elif invalid == 'continuation_empty':
+        rows[1][4] = '\n,20'
+    elif invalid == 'integer_under_empty':
+        rows[1][4] = '\n80'
+    elif invalid == 'wrong_digit':
+        rows[1][5] = '80,3\n1'
+    elif invalid == 'wrong_code_column':
+        rows[1][0] = '0\n        3'
+    elif invalid == 'unknown_amount_text':
+        rows[1][4] = '\n80,20X'
+    elif invalid == 'unknown_code':
+        rows[1][0] = '0\n2'
+    if first_partial:
+        rows.insert(0, rows.pop(1))
+    total = [sum((v[column] for v in vectors), Decimal(0)) for column in range(8)]
+    rate = (total[6] / total[0] * 100).quantize(Decimal('.01'))
+    rows.append(['', 'TOPLAM', *map(money, total), money(rate)])
+    path = pdf_table(tmp_path / 'two-line.pdf', headers, [90, 140] + [65] * 8 + [45], [rows],
+                     header_size=5, total_footer='valid')
+    return rotate_synthetic(path, rotation)
+
+
+@pytest.mark.parametrize('rotation', [0, 90])
+@pytest.mark.parametrize('first_partial', [False, True])
+def test_lead_two_line_codes_merge_labels_suffixes_and_second_line_full_cells(tmp_path, rotation, first_partial):
+    pdf = two_line_revenue_pdf(tmp_path, rotation=rotation, first_partial=first_partial)
+    result, out = run(tmp_path, '--gelir', pdf)
+    assert result.returncode == 0, (out / 'report.md').read_text()
+    rows = list(load_workbook(out / 'revenue.xlsx').active.values)[1:]
+    assert [row[:4] for row in rows] == [
+        ('01', '1.250,25', '1.150,25', '10,10'), ('03', '100,11', '70,22', '0,11'),
+        ('04', '200,35', '80,23', '1,12'), ('08', '50,00', '8,00', '0,00')]
+    parsed = converter.pdf_rows(pdf, 'revenue', 2026, [])
+    names = {row.text(0): row.text(1) for row in parsed if row.text(0)}
+    assert names['03'] == 'Teşebbüs ve Mülkiyet Gelirleri'
+    assert names['04'] == 'Alınan Bağış ve Yardımlar ile Özel Gelirler'
+    assert names['08'] == 'Alacaklardan Tahsilat' and names['09'] == 'Red ve İadeler (-)'
+
+
+@pytest.mark.parametrize('rotation', [0, 90])
+@pytest.mark.parametrize('invalid', ['duplicate_complete', 'continuation_empty', 'integer_under_empty',
+                                     'wrong_digit', 'wrong_code_column', 'unknown_amount_text', 'unknown_code'])
+def test_two_line_revenue_cells_are_not_guessed_or_added_twice(tmp_path, rotation, invalid):
+    result, out = run(tmp_path, '--gider', expense_pdf(tmp_path),
+                      '--gelir', two_line_revenue_pdf(tmp_path, rotation=rotation, invalid=invalid))
+    assert result.returncode != 0 and not list(out.glob('*.xlsx'))
+    report = (out / 'report.md').read_text()
+    assert 'sayfa 1' in report
+    if invalid == 'wrong_digit':
+        assert '0,01' in report
+    elif invalid == 'unknown_code':
+        assert 'bilinmeyen gelir üst kodu 02' in report

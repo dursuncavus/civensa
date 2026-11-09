@@ -335,6 +335,31 @@ desteklenmeyen açılar da test edilir. Üç dönen başarı senaryosu eski kodd
 başarısızdı. 90 derece dönmüş sayfada yanlış basılı hane, boş hücre, eksik veri
 ondalığı ve 6 puntoyu aşan aralık hâlâ iki XLSX’i de engeller.
 
+`issuecomment-6743575060` için bitişik iki fiziksel satırda `0 / N` olarak
+basılan düzey 1 gelir kodları aynı mantıksal kayıtta tutulur. İkinci satırdaki
+`Gelirleri` veya `Özel Gelirler` gibi açıklama parçası ilkine boşlukla eklenir;
+yeni gelir satırı açılmaz. İkinci satır yalnız kod hanesi de içerebilir.
+Kod parçalarının I düzeyinde ve aynı yatay konumda olması yine zorunludur;
+bilinmeyen üst kod, açıklamadan tahmin edilerek değiştirilmez.
+
+Her parasal sütun ayrı birleştirilir: ilk satırda tam tutar varsa ikinci tutar
+reddedilir; ilk tutar kesikse ikinci parça yalnız uygun `,dd`/`,d` eki veya
+eksik son basamak olabilir. İlk hücre boşsa ikinci satırda yalnız iki ondalığı
+tam bir tutar kabul edilir. Boş hücre altındaki ondalık, eksik tam sayı, yabancı
+metin veya iki tam değer hatadır. Boş hücre sıfıra çevrilmez. Sütun sınırları
+tam tutar satırları ve bölünmüş kaydın basılı parçalarıyla birlikte doğrulanır;
+komşu hücreye taşınmış görünen kısa ekler geçerli hücre birleşimi vermelidir.
+Birleşimden sonra mevcut tahakkuk/net ve genel toplam/önek denetimleri çalışır.
+Kod/açıklama birleştirmesi sayfa ve iki kaynak satır numarasıyla raporlanır.
+
+Yeni sentetik fixture bütün kodları `0 / N` basar; Vergi, Teşebbüs, Alınan
+Bağışlar, Alacaklar ve negatif Red ve İadeler kayıtlarında açıklama devamı,
+aynı satırda hem ondalık eki hem yeni tam hücre, yalnız ikinci satırda tahmin
+ve çıplak kod hanesi bulunur. Kesik TOPLAM, imza ve `/Rotate 90` ile birlikte
+test edilir; ilk veri kaydı da kısmi olabilir. Dört başarı regresyonu önceki
+kodda başarısızdı. İki tam tutar, boş hücre altında ek, yanlış kuruş, farklı
+kod konumu, yabancı metin ve bilinmeyen `02` üst kodu dönüşümü durdurur.
+
 ```sh
 python -m pytest -q --require-postgres tests/test_kesin_hesap_xlsx.py
 ```

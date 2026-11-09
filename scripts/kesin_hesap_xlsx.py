@@ -219,6 +219,63 @@ def code_fragment(line, after):
     return match if match and match.end(1) <= after else None
 
 
+def leading_revenue_digit(line, after):
+    tokens = numeric_spans(line[:after])
+    if (len(tokens) == 1 and re.fullmatch(r'\d', tokens[0].group())
+            and tokens[0].start() == len(line) - len(line.lstrip())):
+        return tokens[0].group()
+    return None
+
+
+def paired_money_parts(first, second):
+    integer = MONEY.pattern.rsplit(',', 1)[0]
+    if first and not re.fullmatch(integer + r'(?:,\d{1,2})?', first):
+        return None
+    if not second:
+        return [first] if first else []
+    if not first:
+        return [second] if MONEY.fullmatch(second) else None
+    if MONEY.fullmatch(first):
+        return None
+    if ((re.fullmatch(integer, first) and re.fullmatch(r',\d{1,2}', second))
+            or (re.fullmatch(integer + r',\d', first) and re.fullmatch(r'\d', second))):
+        return [first, second]
+    return None
+
+
+def paired_revenue_cells(body, bounds, where, year):
+    """Merge only adjacent 0/N rows whose lower line adds prose or a new cell.
+
+    Already-supported suffix-only/bare-code lines keep their existing unique
+    geometric matching. These mixed lines use the validated column bands.
+    """
+    initial, lower_lines = {}, {}
+    labels = (*revenue_labels(year), 'Oran')
+    def cells(line):
+        return [line[left:right].strip() for left, right in
+                zip(bounds, [*bounds[1:], len(line) + 1])]
+    for (upper_no, upper), (lower_no, lower) in zip(body, body[1:]):
+        if upper_no in lower_lines or lower_no != upper_no + 1:
+            continue
+        first, second = cells(upper), cells(lower)
+        if first[0] != '0' or not re.fullmatch(r'\d', second[0]):
+            continue
+        if not second[1] and not any(not a and b for a, b in zip(first[2:], second[2:])):
+            continue
+        values = []
+        for label, a, b in zip(labels, first[2:], second[2:]):
+            located = f'{where}, satırlar {upper_no}–{lower_no}, {label}'
+            parts = paired_money_parts(a, b)
+            if parts is None:
+                raise ConversionError(f'{located}: ikinci satır ilk hücreyi tamamlamıyor veya '
+                                      'aynı hücrede iki tam tutar var. Boş ilk hücreye yalnız tam '
+                                      'tutar gelebilir; kaynak parçalarını kontrol edin, tahmin yapılmadı.')
+            values.append(parts)
+        initial[upper_no] = values
+        lower_lines[lower_no] = upper_no
+    return initial, lower_lines
+
+
 def normalize_revenue_code_prefixes(lines, samples, after, where, notes):
     """Place a lone code above a baseline in that baseline's empty code band.
 
@@ -253,7 +310,7 @@ def normalize_revenue_code_prefixes(lines, samples, after, where, notes):
     return result
 
 
-def normalize_decimal_lines(body, samples, after, where):
+def normalize_decimal_lines(body, samples, after, where, initial=None, lower_lines=None):
     """Join uniquely placed suffixes before geometry or monetary validation.
 
     Baseline amount columns establish provisional position bands. Horizontal
@@ -271,6 +328,14 @@ def normalize_decimal_lines(body, samples, after, where):
     active = None
     integer = MONEY.pattern.rsplit(',', 1)[0]
     for line_no, line in body:
+        if line_no in (lower_lines or {}):
+            result.append((line_no, line))
+            continue
+        if line_no in (initial or {}):
+            values[line_no] = initial[line_no]
+            active = line_no
+            result.append((line_no, line))
+            continue
         spans = baselines.get(line_no)
         if spans is not None:
             values[line_no] = [[span.group()] for span in spans]
@@ -330,7 +395,7 @@ def normalize_decimal_lines(body, samples, after, where):
     return result, values
 
 
-def header_bounds(lines, body, samples, expected, where, code_count, year, amounts=None):
+def header_bounds(lines, body, samples, expected, where, code_count, year, amounts=None, pairing=None):
     """Fit column bands to data-only gutters and the complete header schema.
 
     Centred words need not share an x0 or overlap other header lines. Each
@@ -351,6 +416,7 @@ def header_bounds(lines, body, samples, expected, where, code_count, year, amoun
         raise ConversionError(f'{where}: başlık bloğu veya tutarlı tutar satırı bulunamadı. '
                               'Tam metin PDF kullanın.')
     count = len(samples[0])
+    physical = dict(body)
     groups = [(min(row[i].start() for row in samples), max(row[i].end() for row in samples))
               for i in range(count)]
     first_money = code_count + 1
@@ -398,6 +464,10 @@ def header_bounds(lines, body, samples, expected, where, code_count, year, amoun
             return all(not re.search(r'\d,\d{2}(?:\s|$)', cell) for cell in cells)
         if not (any(cells) and all(not cell or re.fullmatch(r'(?:-[ \t]*)?[\d.,]+', cell) for cell in cells)):
             return False
+        for upper, lower in (pairing or {}).items():
+            if paired_money_parts(physical[upper][left:right].strip(),
+                                  physical[lower][left:right].strip()) is None:
+                return False
         if amounts is not None and column < len(expected) - 1:
             for line_no, _ in data:
                 if line_no in amounts:
@@ -699,6 +769,13 @@ def pdf_rows(path, kind, year, notes=None):
             body = samples[0][0]
             if not expense:
                 lines = normalize_revenue_code_prefixes(lines, samples, after, where, notes)
+                # A partial first row can precede the first full monetary
+                # baseline used to establish column geometry.
+                for index in range(body):
+                    if (leading_revenue_digit(lines[index], after) == '0'
+                            and leading_revenue_digit(lines[index + 1], after) is not None):
+                        body = index
+                        break
             start = read_metadata(lines[:body], where, metadata, year)
             preamble = [' '.join(line.split()) for line in lines[:start] if line.strip()]
             # Short bare form/page counters precede the table, while four-digit
@@ -712,16 +789,41 @@ def pdf_rows(path, kind, year, notes=None):
                               r'\s*Sayfa\s+\d+(?:\s*/\s*\d+)?\s*', line, re.IGNORECASE)]
             located = f'{where}, satırlar {body + 1}–{len(lines)}'
             amounts = None
+            lower_lines = {}
+            pairing = {}
             if not expense:
-                body_lines, amounts = normalize_decimal_lines(body_lines, samples, after, where)
+                for (upper_no, upper), (lower_no, lower) in zip(body_lines, body_lines[1:]):
+                    if (lower_no == upper_no + 1 and leading_revenue_digit(upper, after) == '0'
+                            and leading_revenue_digit(lower, after) is not None
+                            and (re.search(r'[^\W\d_]', lower)
+                                 or any(MONEY.fullmatch(token.group())
+                                        for token in numeric_spans(lower, after)))):
+                        pairing[upper_no] = lower_no
+                geometry = dict((i + 1, lines[i]) for i, _ in samples)
+                geometry.update((i, line) for i, line in body_lines
+                                if re.search(r'[^\W\d_]', line)
+                                or any(MONEY.fullmatch(token.group())
+                                       for token in numeric_spans(line, after)))
+                geometry.update((i, line) for i, line in body_lines
+                                if i in pairing or i in pairing.values())
+                try:
+                    provisional, _ = header_bounds(header, sorted(geometry.items()),
+                        [spans for _, spans in samples],
+                        expected, located, code_count, year, pairing=pairing)
+                except ConversionError as exc:
+                    raise header_error(exc, header, start, where, notes) from None
+                initial, lower_lines = paired_revenue_cells(body_lines, provisional, where, year)
+                body_lines, amounts = normalize_decimal_lines(body_lines, samples, after, where,
+                                                              initial, lower_lines)
             try:
                 bounds, level_one_end = header_bounds(header, body_lines,
-                    [spans for _, spans in samples], expected, located, code_count, year, amounts)
+                    [spans for _, spans in samples], expected, located, code_count, year, amounts, pairing)
             except ConversionError as exc:
                 raise header_error(exc, header, start, where, notes) from None
             previous_header = header
             previous_preamble = preamble
             current = None
+            current_line = None
             for line_no, line in body_lines:
                 first = len(line) - len(line.lstrip())
                 money_start = bounds[description + 1]
@@ -748,6 +850,20 @@ def pdf_rows(path, kind, year, notes=None):
                                           'PDF sütun düzenini kontrol edin.')
                 codes = cells[:code_count]
                 code_positions = [match.start() for match in re.finditer(r'\d+', line[:bounds[1]])]
+                if line_no in lower_lines:
+                    if (current is None or current_line != lower_lines[line_no]
+                            or current.text(0) != '0' or not re.fullmatch(r'\d', cells[0])):
+                        raise ConversionError(f'{where}, satır {line_no}: bölünmüş kodun ilk satırı '
+                                              'tekil değil. Kaynak kod ve açıklama satırlarını kontrol edin.')
+                    current.cells[0].append(cells[0])
+                    if cells[1]:
+                        current.cells[1].append(cells[1])
+                    current.code_positions.append(code_positions)
+                    if notes is not None:
+                        notes.append(f'{where}, satırlar {current_line}–{line_no}: 0 / {cells[0]} '
+                                     'aynı gelir kaydına bağlandı; açıklama parçaları korundu. '
+                                     'Kod konumu ve tutar eşitlikleri ayrıca doğrulanır.')
+                    continue
                 is_total = norm(cells[description]) in {'toplam', 'genel toplam'}
                 if not expense and norm(cells[0]) in {'toplam', 'genel toplam'}:
                     if cells[description] and not is_total:
@@ -762,6 +878,7 @@ def pdf_rows(path, kind, year, notes=None):
                     current = Row([[cell] if cell else [] for cell in cells],
                                   f'{where}, satır {line_no}',
                                   [code_positions] if not expense and cells[0] else [], level_one_end)
+                    current_line = line_no
                     if amounts is not None and line_no in amounts:
                         current.cells[description + 1:] = amounts[line_no]
                     rows.append(current)
