@@ -1,11 +1,12 @@
 # CIVENSA — CURRENT STATE
 
-Updated: 9 Nov 2026 ~15:30 Istanbul (CV Lider 71 project thread, D-443–D-453).
+Updated: 9 Nov 2026 ~16:30 Istanbul (CV Lider 71 project thread, D-443–D-454).
 Rules: AI_WORKING_CONSTITUTION v1.2 (Drive, global) · `HIERARCHY.md` v1.10 (D-450: DeepSeek codes small tasks; local lane on the Mac; D-449: Copilot reviews every task PR and codes small issue tasks; D-408: the lead also codes, Codex reviews its PRs) · `PROJECT_RULES.md` v1.4 (D-271: PRIOR ART field mandatory in every package) · `BACKUP_LEAD.md` v2.
 Backup log ("Civensa Yedek Kaydı", Drive): no entries after 31 Oct (DOĞRULANDI 7 Nov 22:25, no change after 1 Nov).
 Tags: DOĞRULANDI (lead checked) · TARİHSEL (past fact) · BEYAN (owner said) · BELİRSİZ (unknown).
 
 ## Next session — start here (D-253)
+D-454 (9 Nov ~16:30): #448 CIV-198 merged. Ali's test (from ~11 Nov) starts with directorate actuals. 10 Nov order: owner checks/does 2026 mapping CSV + approved-book publish → lead prepares release PR phase5→main + rehearsal → owner merges/deploys → gösterge raporu + 4 'Gün' lower-is-better + one directorate test account. Open: #443 CIV-194 (gelir split-code layout, Codex); CIV-195 Gemini fix round (Mac; or lead finishes on "sen bitir"); İç Kontrol rehearsed OK, live steps after FR. Start a new lead session (thread very long).
 D-453 (9 Nov ~15:30): merged #446 CIV-197 (3aea1f3) and #447 CIV-196 (020d922). Open: CIV-198 (query counts, Codex) → review PR, DeepSeek re-measures on the Mac; #443 CIV-194 → owner pastes the follow-up, lead re-tests on the real PDFs; Gemini CIV-195 running → apply patch via Remote Control. After the next release: Strateji marks the 4 'Gün' indicators lower-is-better. Copilot quota exhausted (not renewed). İç Kontrol plan approval 20.12.2024 (no. 2024/96174-1-1), evaluation base 01.12.2024. Waiting: Ali S13.
 D-452 (9 Nov ~13:50): #438 CIV-192 merged. Open: CIV-197 (indicator direction, Codex) → review PR, rechain migration onto c192 if needed; #443 CIV-194 (two root causes sent) → re-test on the real PDFs; Gemini CIV-195 / DeepSeek CIV-196 running → apply patches via Remote Control. Next lead work: rehearse the 4 Kurum yapısı name changes locally, then guide the owner.
 D-451 (9 Nov ~13:30): merged #440, #442 (CIV-193), #432 (CIV-191), #433 (CIV-190). Open: #438 CIV-192 (validated on the real workbook, lead fix fc12ac4 → merge when green); #443 CIV-194 (fails on the real PDFs → Codex fixing; lead re-tests locally on the real 2025 PDFs before merge). Gemini CIV-195 / DeepSeek CIV-196: owner starts them; apply patches via Remote Control. After CIV-192: rehearse the 4 Kurum yapısı name changes locally, then guide the owner; ask Ali the meclis karar no/date. Real-file imports: lead validates on the real file before merge (D-451).
@@ -44,7 +45,7 @@ CV Lider 61 (4 Nov ~21:25, DOĞRULANDI): no mail from Ali Abi; only open PR #382
 9. Claude account on Max from 4 Nov 2026 (BEYAN; next charge 4 Dec). Extra capacity goes to lead analysis/preparation work (D-400). The "Claude quota" block below is TARİHSEL (Pro era).
 10. Sunum module (D-411/D-412/D-413): reveal.js 6.0.1 + ECharts 6.1.0 via Civensa Jinja templates, Civensa design tokens; animated HTML + 16:9 PDF from the same file. Prototype https://claude.ai/artifact/DMpNp2f68JsogL2eMgJSRD review round 1 done (D-414); full Fen İşleri 2025 presentation with real data = CIV-180 reference (D-415); waits for the owner's hall-computer test + further remarks → CIV-180 (engine + FR müdürlük presentation). Future report modules proposed in D-411 (not accepted; after 1 Jan 2027).
 11. CIV-180–185 live since release #410 (D-428).
-Next IDs: task CIV-199, decision D-454.
+Next IDs: task CIV-199, decision D-455.
 
 ## Claude quota (BEYAN, owner 27 Oct 16:21)
 - Session 11%, week 67%, weekly reset Saturday 00:00 (D-300). Copilot 96 / 1,500 credits, reset 1 Nov.
