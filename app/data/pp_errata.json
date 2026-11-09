@@ -1,0 +1,33 @@
+{
+  "version": 1,
+  "entries": [
+    {
+      "item_id": "K1",
+      "year": 2026,
+      "value_year": 2026,
+      "department": "Bilgi İşlem Müdürlüğü",
+      "table": "economic",
+      "page": 243,
+      "field": "total",
+      "printed_value": "176085750.00",
+      "corrected_value": "176086246.00",
+      "source": "Strateji e-postası 9.11.2026, Dr. Ali KAYA",
+      "reason": "Ekonomik tablo toplamı yanlış; kalem dağılımı bildirilmediği için yalnız toplam düzeltilir."
+    },
+    {
+      "item_id": "K6",
+      "year": 2026,
+      "value_year": 2027,
+      "department": "Fen İşleri Müdürlüğü",
+      "table": "economic",
+      "page": 223,
+      "field": "total",
+      "printed_value": "1290738000.00",
+      "stored_total": "1290738800.00",
+      "printed_context": "0,00 / 1.290.738.000",
+      "corrected_value": "1290738000.00",
+      "source": "Strateji e-postası 9.11.2026, Dr. Ali KAYA",
+      "reason": "2027 basılı toplamı kaynak bağlamında mevcut; saklanan kalemler 800 TL fazla toplandığından yalnız toplam uygulanır. Kalem dağılımı bilinmiyor."
+    }
+  ]
+}

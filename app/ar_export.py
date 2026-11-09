@@ -70,6 +70,16 @@ class _ReportContent:
         from .activity_financial_service import EXPENSE_FIELDS, REVENUE_FIELDS, ENTRY_FIELDS
         data = self.payload.get('financial', {})
         if code == 'III.A.1':
+            planned = data.get('pp_planned_figures', [])
+            if planned:
+                self.table(['Müdürlük', 'Yıl', 'Tablo', 'Toplam', 'Açıklama'], [
+                    [row['department'], row['year'], 'Maliyet' if row['table'] == 'cost' else 'Ekonomik',
+                     format_number(row['amount'], money=True),
+                     '; '.join([*(entry['marker'] for entry in row['errata']),
+                                *(['Kaynak kalemleri doğrulanmalı.'] if row['needs_review'] else []),
+                                *([row['errata_warning']] if row.get('errata_warning') else [])])]
+                    for row in planned], 'PP planlanan tutarlar')
+                self.paragraph('Toplam düzeltmeleri kalemlere ve kaynaklara dağıtılmaz; ekonomik kod satırları basılı dağılımı korur.', NOTE)
             for kind, table in data.get('tables', {}).items():
                 title = {'expenditure': 'Ekonomik Koda Göre Giderler',
                          'programme': 'Program ve Alt Programa Göre Giderler',

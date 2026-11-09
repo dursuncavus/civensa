@@ -8,6 +8,13 @@
 {% else %}<input name="{{ key }}_{{ i }}" aria-label="{{ label }} {{ i+1 }}" {% if key=='report_date' %}type="date"{% endif %} {% if key in ['initial','added','deducted','entered_final','actual','cancelled','carried','estimate','refunds','amount','previous'] %}inputmode="decimal"{% endif %} value="{{ value if value is not none else '' }}">{% endif %}
 {% endmacro %}
 {% if section.code in ['III.A','III.A.1'] %}
+{% if financial.get('pp_planned_figures') %}
+<section class="panel ar-panel" aria-label="PP planlanan tutarlar"><h3>PP planlanan tutarlar</h3>
+<p>Toplam düzeltmeleri kalemlere ve kaynaklara dağıtılmaz. Ekonomik kod satırları basılı dağılımı korur; kaynak doğrulama uyarıları geçerlidir.</p>
+<div class="ar-scroll"><table class="ar-table"><thead><tr><th>Müdürlük</th><th>Yıl</th><th>Tablo</th><th>Toplam</th></tr></thead><tbody>
+{% for figure in financial.pp_planned_figures %}<tr><td>{{ figure.department }}</td><td>{{ figure.year }}</td><td>{{ 'Maliyet' if figure.table == 'cost' else 'Ekonomik' }}</td><td>{{ figure.amount|trmoney }} {% for entry in figure.errata %}<small title="Basılı: {{ entry.printed_value|trmoney }} TL{% if entry.get('stored_total') %}; saklanan kalemler toplamı: {{ entry.stored_total|trmoney }} TL{% endif %}">{{ entry.marker }}</small>{% endfor %}{% if figure.needs_review %}<small> Kaynak kalemleri doğrulanmalı.</small>{% endif %}{% if figure.get('errata_warning') %}<small>{{ figure.errata_warning }}</small>{% endif %}</td></tr>{% endfor %}
+</tbody></table></div></section>
+{% endif %}
 <section class="panel ar-panel"><h2>Bütçe Uygulama Sonuçları</h2><p>Boş tutar bilinmiyor demektir; sıfır için 0 girin. İdare toplamları müdürlük satırlarından hesaplanır. Ekonomik kod ve program tabloları aynı giderleri ayrı sınıflandırır.</p>
 {% if report.department_id %}<p>Tutarları Mali Hizmetler idare raporunda yönetir. Aşağıda kendi birim satırlarınız ve sapma açıklamalarınız yer alır.</p>{% endif %}
 <details><summary>Ekonomik kod listesi ve giriş bilgileri</summary><p>Düzey 1 veya isteğe bağlı düzey 2 (ör. 01.01) girin. Üst toplam ve alt kodları birlikte girmeyin.</p>{% for code,label in expense_codes.items() %}<p>{{ code }} · {{ label }}</p>{% endfor %}<p>Gelir kodları:</p>{% for code,label in revenue_codes.items() %}<p>{{ code }} · {{ label }}</p>{% endfor %}<p>İçe aktarma için müdürlük numaraları:</p>{% for dep in financial_departments %}<p>{{ dep.id }} · {{ financial_department_names[dep.id] }}</p>{% endfor %}<p>Program / alt program numaraları:</p>{% for p in financial_programs %}<p>{{ p.id }} · {{ p.name }}</p>{% endfor %}{% for p in financial_subprograms %}<p>{{ p.id }} · {{ p.name }} (Program {{ p.program_id }})</p>{% endfor %}</details>
