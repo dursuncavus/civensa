@@ -1,4 +1,5 @@
 """CIV-199: Strateji screens are scannable and safe against double submission."""
+from copy import deepcopy
 import re
 from html import unescape
 from pathlib import Path
@@ -167,6 +168,24 @@ def test_completion_page_shows_hint_once_and_groups(section_client, sample):
     # every report still links every section exactly as before
     for doc in docs.values():
         assert f'href="/activity-sections/reports/{doc.id}?code=I.A"' in html
+
+
+def test_long_completion_page_folds_directorate_reports(section_client, sample):
+    """(10) More than three reports: directorate reports and the export list start closed; idare stays open."""
+    client, docs, _, _ = section_client
+    response = client.get(f'/activity-sections?period_id={sample["period"].id}')
+    reports = response.context['reports']
+    short = response.template.render({**response.context, 'reports': reports[:2]})
+    assert 'id="reportSearch"' not in short and 'exports-fold' not in short
+    assert short.count('<details class="report-fold" open>') == 2    # few reports: everything open
+    unit = next(item for item in reports if item['report']['department_id'])
+    many = reports + [deepcopy(unit) for _ in range(3)]
+    html = response.template.render({**response.context, 'reports': many})
+    folds = re.findall(r'<details class="report-fold"( open)?>', html)
+    idare = sum(1 for item in many if not item['report']['department_id'])
+    assert folds.count(' open') == idare and len(folds) == len(many)
+    assert 'id="reportSearch"' in html
+    assert f'<details class="exports-fold"><summary>{len(many)} raporun Word ve PDF dosyalarını göster</summary>' in html
 
 
 # (6) error page ------------------------------------------------------------------------

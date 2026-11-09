@@ -139,12 +139,13 @@
                 <h2>{{ department_names[g.department.id] }}</h2>
                 <p class="muted">{{ g.activities|length }} faaliyet eşleştirme bekliyor · {{ g.choices|length }} Program / Alt Program seçeneği</p>
               </div>
-              <a class="button small" href="/department/{{ g.department.id }}?period_id={{ period.id }}">Müdürlüğü Aç</a>
-              <a class="button small" data-program-link href="/program/{{ g.department.id }}?period_id={{ period.id }}">Performans kartlarını aç</a>
+              <span class="group-actions"><a class="button small" href="/department/{{ g.department.id }}?period_id={{ period.id }}">Müdürlüğü Aç</a>
+              <a class="button small" data-program-link href="/program/{{ g.department.id }}?period_id={{ period.id }}">Performans kartlarını aç</a></span>
             </div>
             {% if not g.choices %}
               <div class="issue-list">Bu müdürlük için performans göstergelerinden türetilebilen Program / Alt Program bulunamadı. Önce gösterge yapısını kontrol edin.</div>
             {% endif %}
+            <details class="mapping-fold"{% if groups|length <= 3 %} open{% endif %}><summary>{{ g.activities|length }} faaliyeti göster</summary>
             <div class="mapping-list">
               {% for a in g.activities %}
                 {% set suggestion=g.suggestions[a.id] %}
@@ -198,6 +199,7 @@
                 </article>
               {% endfor %}
             </div>
+            </details>
           </section>
         {% endfor %}
       </div>

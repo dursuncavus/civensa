@@ -77,3 +77,13 @@
 .section-index-page .single-organization{display:grid;min-width:0;gap:var(--space-2);font-size:var(--text-sm);font-weight:var(--font-medium)}
 .section-index-page .single-organization b{display:flex;align-items:center;min-height:var(--control-height);font-size:var(--text-base);font-weight:var(--font-semibold)}
 .section-index-page .owner-group .group-problems{color:var(--warning)}
+/* CIV-199: the checkbox sits on the same line as the select and the button, not on the label line. */
+.section-index-page .index-filters > label:has(input[type=checkbox]) { align-self: end; min-height: var(--control-height); gap: var(--space-2); }
+/* CIV-199 (10): long completion page — one closed line per directorate report. */
+.section-index-page .report-fold > summary { cursor: pointer; list-style: none; }
+.section-index-page .report-fold > summary::-webkit-details-marker { display: none; }
+.section-index-page .report-fold > summary .fold-hint { color: var(--accent); font-weight: var(--font-medium); }
+.section-index-page .report-fold[open] > summary .fold-hint { display: none; }
+.section-index-page .report-search { max-width: 32rem; margin: 0 0 var(--space-4); }
+.section-index-page .report-search input { display: block; width: 100%; min-height: var(--control-height); padding: var(--space-2) var(--space-3); border: 1px solid var(--text-secondary); border-radius: var(--radius); font: inherit; }
+.section-index-page .exports-fold > summary { cursor: pointer; color: var(--accent); font-weight: var(--font-medium); margin-bottom: var(--space-3); }

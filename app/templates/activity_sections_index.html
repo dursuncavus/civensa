@@ -18,13 +18,16 @@
 <label>Durum<select name="status"><option value="">Tümü</option>{% for k,v in statuses.items() %}<option value="{{ k }}" {% if selected_status==k %}selected{% endif %}>{{ v }}</option>{% endfor %}</select></label><button class="button">Filtrele</button></form>
 {% for error in report_errors %}<p class="ar-warning" role="status">{{ error.year }} yılı · Rapor {{ error.document_id }}: {{ error.message }}</p>{% endfor %}
 {% macro folded(items, css='') %}{% for entry in items %}{% if entry.text %}<div{% if css %} class="{{ css }}"{% endif %}>{{ entry.text }}</div>{% else %}<div class="folded-problem{% if css %} {{ css }}{% endif %}"><b>{{ entry.departments|length }} müdürlükte:</b> {{ entry.problem }}<details class="folded-departments"><summary>Müdürlükleri göster</summary><ul>{% for name in entry.departments %}<li>{{ name }}</li>{% endfor %}</ul></details></div>{% endif %}{% endfor %}{% endmacro %}
+{% if reports|length > 3 %}<div class="report-search"><label>Müdürlük ara<input type="search" id="reportSearch" placeholder="Müdürlük adının bir kısmını yazın" autocomplete="off"></label><p class="muted" id="reportSearchCount" role="status"></p></div>{% endif %}
 {% if reports %}<p class="completion-hint muted">Durumu “Boş” veya “Taslak” olan bölümlerde yapılacak iş aynı: bölüm içeriğini gözden geçirip Hazır veya gerekçeli Uygulanamaz seçin. Aşağıda yalnız bölüme özgü eksikler listelenir.</p>{% endif %}
 {% for item in reports %}
 <article class="report-group" aria-labelledby="report-{{ item.report.id }}">
 <header class="report-heading"><div><h3 id="report-{{ item.report.id }}">{{ item.report.year }} · {{ item.report.department }}</h3></div>
 <div class="report-badges">{% if item.report.workflow %}<span class="workflow-badge workflow-{{ item.report.workflow.status }}">{{ item.report.workflow.label }}</span>{% endif %}{% if item.report.frozen %}<span class="approved-badge">Onaylı kopya</span>{% endif %}</div></header>
 {% if user.role=='strategy' and not item.report.department_id %}<p><a class="button" href="/activity-sections/reports/{{ item.report.id }}/photos">Meclis sunumu fotoğrafları</a> <a class="button" href="/activity-sections/reports/{{ item.report.id }}/highlights">Meclis sunumu öne çıkanlar</a></p>{% endif %}
-<p class="completion-summary" data-completion-summary>{{ item.matches|length }} bölüm ·{% for key,label in statuses.items() if item.view.status_counts.get(key) %} <span class="ar-status ar-{{ key }}">{{ label }} {{ item.view.status_counts[key] }}</span>{% endfor %} · {% for group in item.view.owner_groups %}{{ owners[group.owner] }} {{ group.rows|length }}{% if not loop.last %} · {% endif %}{% endfor %}</p>
+{% set fold_open = reports|length <= 3 or not item.report.department_id %}
+<details class="report-fold"{% if fold_open %} open{% endif %}><summary class="report-fold-summary">
+<p class="completion-summary" data-completion-summary>{{ item.matches|length }} bölüm ·{% for key,label in statuses.items() if item.view.status_counts.get(key) %} <span class="ar-status ar-{{ key }}">{{ label }} {{ item.view.status_counts[key] }}</span>{% endfor %} · {% for group in item.view.owner_groups %}{{ owners[group.owner] }} {{ group.rows|length }}{% if not loop.last %} · {% endif %}{% endfor %}<span class="fold-hint"> · Bölümleri göster</span></p></summary>
 {% for group in item.view.owner_groups %}
 <details class="owner-group" data-owner="{{ group.owner }}" {% if group.open %}open{% endif %}><summary><b>{{ owners[group.owner] }}</b> · {{ group.rows|length }} bölüm ·{% for key,label in statuses.items() if group.status_counts.get(key) %} {{ label }} {{ group.status_counts[key] }}{% endfor %}{% if group.problem_rows %} · <span class="group-problems">{{ group.problem_rows }} bölümde özel eksik</span>{% endif %}</summary>
 <table class="ar-table index-table"><thead><tr><th scope="col">Bölüm</th><th scope="col">Durum</th><th scope="col">Sahibi</th><th scope="col">Eksikler</th></tr></thead><tbody>
@@ -41,10 +44,12 @@
 {% endfor %}
 </tbody></table></details>
 {% endfor %}
+</details>
 </article>
 {% else %}<p class="empty-state">Bu filtrelerle rapor bulunamadı. Yıl raporlarını oluşturun veya filtreleri değiştirin.</p>{% endfor %}
 </section>
 <section class="index-panel"><h2>Word ve PDF çıktıları</h2>
+{% if reports|length > 3 %}<details class="exports-fold"><summary>{{ reports|length }} raporun Word ve PDF dosyalarını göster</summary>{% endif %}
 {% for item in reports %}{% if user.role=='strategy' or (item.report.department_id and item.report.department_id==user.department_id) %}
 <article class="export-report"><h3>{{ item.report.year }} · {{ item.report.department }}</h3>
 <details class="section-export"><summary>Dışa aktar</summary><div class="export-items"><a class="button" href="/activity-sections/reports/{{ item.report.id }}/export.docx">{{ 'Word olarak indir' if item.report.frozen else 'Taslak — Word (onaysız)' }}</a> <a class="button" href="/activity-sections/reports/{{ item.report.id }}/export.pdf">{{ 'PDF olarak indir' if item.report.frozen else 'Taslak — PDF (onaysız)' }}</a> <a class="button" href="/activity-sections/reports/{{ item.report.id }}/typeset.json">Dizgi verisi (JSON)</a></div></details>
@@ -55,6 +60,18 @@
 {% for format,label in [('docx','Word'),('pdf','PDF'),('json','JSON')] %} · <a href="/activity-sections/reports/{{ item.report.id }}/export.{{ format }}?version={{ release.version }}">Sürüm {{ release.version }} {{ label }} indir</a>{% endfor %} · <a href="/activity-sections/reports/{{ item.report.id }}/typeset.json?version={{ release.version }}">Dizgi verisi (JSON)</a></p>
 {% if release.reopen %}<p>Gerekçeyle açıldı · {{ release.reopen.actor_name or ("Kullanıcı " ~ release.reopen.actor_id) }} · {{ release.reopen.created_at|ar_time }}</p><p class="ar-paragraph">{{ release.reopen.reason }}</p>{% endif %}
 {% endfor %}{% endif %}
-</article>{% endif %}{% endfor %}</section>
+</article>{% endif %}{% endfor %}{% if reports|length > 3 %}</details>{% endif %}</section>
 </div>
+<script>
+(function(){
+  const input=document.getElementById('reportSearch'),count=document.getElementById('reportSearchCount');
+  if(!input)return;
+  const groups=[...document.querySelectorAll('.report-group')],fold=t=>t.toLocaleLowerCase('tr-TR');
+  input.addEventListener('input',()=>{
+    const q=fold(input.value.trim());let shown=0;
+    groups.forEach(g=>{const hit=!q||fold(g.querySelector('h3')?.textContent||'').includes(q);g.hidden=!hit;if(hit){shown++;if(q)g.querySelector('.report-fold')?.setAttribute('open','')}});
+    count.textContent=q?`${shown} rapor bulundu.`:'';
+  });
+})();
+</script>
 {% endblock %}

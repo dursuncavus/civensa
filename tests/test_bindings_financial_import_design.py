@@ -11,7 +11,7 @@ from sqlalchemy import select
 from starlette.requests import Request
 
 from app.main import templates
-from civ199_contract import bindings_without_search_and_saved
+from civ199_contract import bindings_without_department_folds, bindings_without_search_and_saved
 from test_activity_sections import section_client, login
 from test_section_index_design import TEXT_PAIRS, contrast
 from test_sidebar_ui import browser
@@ -103,7 +103,7 @@ def contract(html):
 
 def without_direction_setting(html):
     """CIV-197 adds period metadata; keep the original binding contract frozen."""
-    doc = fromstring(bindings_without_search_and_saved(html))
+    doc = fromstring(bindings_without_department_folds(bindings_without_search_and_saved(html)))
     for el in doc.xpath('//*[contains(concat(" ", normalize-space(@class), " "), " indicator-direction-form ") or '
                         'contains(concat(" ", normalize-space(@class), " "), " indicator-direction-help ")]'):
         el.getparent().remove(el)

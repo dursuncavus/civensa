@@ -24,6 +24,7 @@ def without_mapping_sentence(html):
     html = re.sub(r'<details class="mapping-counts-details"><summary>Bütün sayılar</summary>\s*(<dl class="mapping-counts">.*?</dl>)\s*</details>',
                   r'\1', html, flags=re.S)
     html = re.sub(r'\s*<a class="button small" data-program-link href="[^"]*">Performans kartlarını aç</a>', '', html)
+    html = re.sub(r'<span class="group-actions">(<a class="button small" href="[^"]*">Müdürlüğü Aç</a>)</span>', r'\1', html)
     return html.replace('Kart ve katalog bağlantıları müdürlüğün “Performans kartlarını aç” bağlantısındaki sayfada yapılır.',
                         'Kart ve katalog bağlantıları için “Performans Kartlarını Aç” adımını kullanın.')
 
@@ -65,3 +66,27 @@ def bindings_without_search_and_saved(html):
                   '<section class="binding-row">', html)
     return re.sub(r'<script>\s*\(function\(\)\{\s*const input=document.getElementById\(\'bindingSearch\'\).*?</script>\s*',
                   '', html, flags=re.S)
+
+
+def sections_without_folds(html):
+    """(10) EK-1 completion: per-report fold, directorate search and folded exports are new."""
+    html = re.sub(r'<div class="report-search">.*?</div>\s*', '', html, count=1, flags=re.S)
+    html = re.sub(r'<details class="report-fold"(?: open)?><summary class="report-fold-summary">\s*', '', html)
+    html = html.replace('<span class="fold-hint"> · Bölümleri göster</span></p></summary>', '</p>')
+    html = re.sub(r'</details>\s*</article>', '</article>', html)
+    html = re.sub(r'<details class="exports-fold"><summary>\d+ raporun Word ve PDF dosyalarını göster</summary>\s*', '', html)
+    html = html.replace('</details></section>', '</section>')
+    return re.sub(r'<script>\s*\(function\(\)\{\s*const input=document.getElementById\(\'reportSearch\'\).*?</script>\s*',
+                  '', html, flags=re.S)
+
+
+def mapping_without_folds(html):
+    """(10) Each directorate's activities fold under its heading."""
+    html = re.sub(r'<details class="mapping-fold"(?: open)?><summary>\d+ faaliyeti göster</summary>\s*', '', html)
+    return re.sub(r'</div>\s*</details>(\s*</section>)', r'</div>\1', html)
+
+
+def bindings_without_department_folds(html):
+    """(10) Indicator rows fold per directorate."""
+    html = re.sub(r'<details class="binding-dept"(?: open)?>\s*<summary>.*?</summary>\s*', '', html, flags=re.S)
+    return re.sub(r'</section>\s*</details>', '</section>', html)

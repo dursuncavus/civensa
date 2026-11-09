@@ -18,7 +18,11 @@
     <p class="secondary" id="bindingSearchCount" role="status"></p>
   </div>
   <div class="reports-panel">
-    {% for row in rows %}
+    {% for dep, items in rows|groupby('department') %}
+    {% set pending = items|rejectattr('bound')|list|length %}
+    <details class="binding-dept"{% if rows|length <= 10 or items|selectattr('id', 'equalto', saved_row)|list %} open{% endif %}>
+    <summary><b>{{ dep }}</b> · {{ items|length }} gösterge{% if pending %} · <span class="binding-pending">{{ pending }} eşleme bekliyor</span>{% endif %}</summary>
+    {% for row in items %}
     <section class="binding-row{% if saved_row == row.id %} is-saved{% endif %}" id="gosterge-{{ row.id }}" data-search="{{ (row.name ~ ' ' ~ row.department ~ ' ' ~ (row.code or ''))|lower }}">
       {% if saved_row == row.id %}
       <p class="status success binding-saved" role="status">Kaydedildi{% if saved_kind == 'direction' %}: yön «{{ 'Düşük değer daha iyi' if row.direction == 'lower' else 'Yüksek değer daha iyi' }}»{% else %}: kimlik ilişkisi sabitlendi{% endif %}.</p>
@@ -66,6 +70,8 @@
       {% endif %}
     </section>
     {% endfor %}
+    </details>
+    {% endfor %}
   </div>
 </div>
 <script>
@@ -78,6 +84,7 @@
     const q=fold(input.value.trim());
     let shown=0;
     rows.forEach(r=>{const hit=!q||fold(r.dataset.search||'').includes(q);r.hidden=!hit;if(hit)shown++;});
+    document.querySelectorAll('.binding-dept').forEach(d=>{const any=[...d.querySelectorAll('.binding-row')].some(r=>!r.hidden);d.hidden=!any;if(q&&any)d.open=true;});
     count.textContent=q?`${shown} gösterge bulundu.`:'';
   });
 })();

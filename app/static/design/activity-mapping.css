@@ -83,3 +83,6 @@
 .activity-mapping-page .mapping-todo .todo-done { color: var(--text-secondary); }
 .activity-mapping-page .mapping-counts-details > summary { cursor: pointer; color: var(--text-secondary); font-size: var(--text-sm); margin-top: var(--space-2); }
 .activity-mapping-page .sticky-save[hidden] { display: none; }
+/* CIV-199 (10): each directorate's activities fold under its heading. */
+.activity-mapping-page .mapping-fold > summary { cursor: pointer; color: var(--accent); font-weight: var(--font-medium); margin: var(--space-2) 0; }
+.activity-mapping-page .group-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }

@@ -432,6 +432,7 @@ document.querySelectorAll('.save-password-reset').forEach(button=>button.addEven
       if(!select||select.value)return;
       select.value=button.dataset.subprogram||'';
       select.classList.toggle('changed',!!select.value);
+      select.closest('.mapping-fold')?.setAttribute('open','');
       selected++;
     });
     updateCount();
@@ -446,6 +447,8 @@ document.querySelectorAll('.save-password-reset').forEach(button=>button.addEven
         const ok=groupOk&&(!q||(row.dataset.name||'').includes(q)); row.hidden=!ok;if(ok)visible++;
       });
       group.hidden=visible===0;
+      // CIV-199 (10): a filtered group opens so its matches are visible.
+      if((did||q)&&visible)group.querySelector('.mapping-fold')?.setAttribute('open','');
     });
   }
   filter?.addEventListener('change',applyFilter);search?.addEventListener('input',applyFilter);
