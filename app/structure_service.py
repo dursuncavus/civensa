@@ -52,10 +52,18 @@ def structure_read_scope(function):
 def _read_cache(db):
     # A mutation made inside a read scope must be visible even before a query
     # would normally trigger autoflush. Flushing also clears cached absence.
+    cache = db.info.get('structure_read_context')
+    if cache is None:
+        return None
     if any(isinstance(row, JOURNAL + (Department, DepartmentScope, ReportingPeriod))
            for row in list(db.new) + list(db.dirty) + list(db.deleted)):
+        cache.clear()
+        # Keep the original readers' no_autoflush behavior. Until the caller
+        # flushes, use uncached queries rather than caching a partial view.
+        if not db.autoflush:
+            return None
         db.flush()
-    return db.info.get('structure_read_context')
+    return cache
 
 
 @event.listens_for(Session, 'before_flush')

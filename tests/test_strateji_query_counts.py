@@ -153,3 +153,15 @@ def test_period_snapshot_reads_do_not_scale_per_indicator_or_activity(db, sample
             name=f'Sentetik faaliyet {number}'))
     db.commit()
     assert reads() <= baseline + 2
+
+
+def test_name_reads_respect_no_autoflush(db, sample, backend):
+    pending = Department(organization_id=sample['department'].organization_id, name='Bekleyen Birim')
+    db.add(pending)
+    with db.no_autoflush:
+        assert structure.period_name(db, sample['period'].id, sample['department']) == 'Test Müdürlüğü'
+        assert pending.id is None
+        with structure.structure_read_context(db):
+            assert structure.period_name(db, sample['period'].id, sample['department']) == 'Test Müdürlüğü'
+            assert pending.id is None
+    assert 'structure_read_context' not in db.info

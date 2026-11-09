@@ -234,6 +234,11 @@ def _load_snapshot_values(db, owners, model, foreign_key, relationship):
     concatenate the results in one round trip (bounded for SQLite's UNION
     limit). Already-loaded collections keep their original session semantics.
     """
+    if db.dispatch.do_orm_execute:
+        # A caller's ORM adapter may defer columns or inject loader criteria.
+        # A fixed UNION projection cannot honor those rewrites: leave the
+        # original relationship loader in charge in such sessions.
+        return
     pending = [owner for owner in owners if relationship in inspect(owner).unloaded]
     for offset in range(0, len(pending), 200):
         batch = pending[offset:offset + 200]

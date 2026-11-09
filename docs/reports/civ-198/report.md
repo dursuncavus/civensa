@@ -9,7 +9,7 @@ CIV-196 (`fa55cdba`, PR #447) profil dosyaları görev dalına alındı; bu dosy
 - **step3:** `ar_section_contents` yazan servis **`activity_sections_service.py`**. Bölüm tanımları sürüm başına bir kez okunuyor; içerik satırları belge başına executemany ile yazılıyor. Önceki yıl kopyası, kaynak kimlikleri, audit ve tablo anahtarı üretimi korunuyor.
 - **step4:** `structure_service.py` ad çözümlemesinde dönem/kapsam/müdürlük satırlarını, etkin yapı kararlarını ve açılmış JSON içeriğini yalnız servis çağrısının yığını boyunca tutuyor. `report_data` ve diğer toplu okuyucular bu kapsamı kullanıyor. `finally` her çıkışta kapsamı siliyor; yapı/kapsam/ad yazıları flush sırasında temizliyor. İstekler arasında cache yok.
 
-**Sıra koruması:** PostgreSQL üzerinde düz `selectinload`, aynı yıla ait değerlerin sırasını değiştirdi. Bu yüzden çocuk değerler, eski `WHERE owner_id / ORDER BY year` alt sorgularını `UNION ALL` ile en fazla 200 sahiplik gruplar halinde birleştirerek okunuyor. Mevcut yüklenmiş koleksiyonlar korunuyor. Dict anahtarları ve çıktı sıraları değiştirilmedi.
+**Sıra koruması:** PostgreSQL üzerinde düz `selectinload`, aynı yıla ait değerlerin sırasını değiştirdi. Bu yüzden çocuk değerler, eski `WHERE owner_id / ORDER BY year` alt sorgularını `UNION ALL` ile en fazla 200 sahiplik gruplar halinde birleştirerek okunuyor. Mevcut yüklenmiş koleksiyonlar korunuyor. Özel ORM okuma adaptörü olan oturumlarda özgün ilişki okuyucusu korunuyor (tarihsel migration testlerindeki ertelenmiş sütunlar dahil). Dict anahtarları ve çıktı sıraları değiştirilmedi.
 
 ## Profil
 
@@ -48,20 +48,20 @@ CIV-196 (`fa55cdba`, PR #447) profil dosyaları görev dalına alındı; bu dosy
 ```text
 ## step1 — 2026 onaylı kitap yayın hazırlığı
   route: /report-builder  | status: [200]
-  wall (s): [3.676, 2.31, 2.332]
-  SQL sayısı: [1139, 1138, 1138]  | SQL süresi (s): [0.055, 0.044, 0.044]
+  wall (s): [3.463, 2.785, 2.652]
+  SQL sayısı: [1139, 1138, 1138]  | SQL süresi (s): [0.062, 0.056, 0.053]
 ## step2 — Onaylı kitaptan yayınla
   route: /report-builder/publish-approved-book  | status: [303]
-  wall (s): [4.593, 5.437, 4.744]
-  SQL sayısı: [2010, 2010, 2010]  | SQL süresi (s): [0.137, 0.168, 0.158]
+  wall (s): [5.459, 5.719, 4.864]
+  SQL sayısı: [2010, 2010, 2010]  | SQL süresi (s): [0.171, 0.168, 0.161]
 ## step3 — 2026 EK-1 raporlarını oluştur
   route: /activity-sections/years  | status: [303]
-  wall (s): [0.139, 0.117, 0.119]
-  SQL sayısı: [113, 112, 112]  | SQL süresi (s): [0.006, 0.008, 0.008]
+  wall (s): [0.221, 0.123, 0.106]
+  SQL sayısı: [113, 112, 112]  | SQL süresi (s): [0.013, 0.008, 0.008]
 ## step4 — İdare raporuna geçiş
   route: /activity-sections  | status: [200]
-  wall (s): [1.078, 0.58, 0.603]
-  SQL sayısı: [1150, 1048, 1048]  | SQL süresi (s): [0.035, 0.034, 0.038]
+  wall (s): [1.265, 0.668, 0.644]
+  SQL sayısı: [1151, 1048, 1048]  | SQL süresi (s): [0.041, 0.043, 0.043]
 ```
 
 Dört hedef de üç koşuda sağlandı. İlk soğuk step1 duvar süresi artabiliyor: sıralamayı koruyan toplu sorguların derleme maliyeti var. Amaç ağ gidiş-dönüşlerini azaltmak; SQLite süreleri Render gecikmesi/SLA ölçümü değildir.
@@ -69,5 +69,5 @@ Dört hedef de üç koşuda sağlandı. İlk soğuk step1 duvar süresi artabili
 ## Doğrulama
 
 - `tests/reference/civ198_snapshots.py`: değişiklik öncesi `fa55cdba` okuyucularının yalnız testte tutulan kopyası. Küçük sentetik veri; yapı değişikliği, kapsam dışı müdürlük ve tarihsel yıl içeriyor. `json.dumps(..., sort_keys=False)` ile kitap, her müdürlük, paket ve tarihsel/güncel maliyet mutabakatı byte eşitliği PostgreSQL 18 ve SQLite üzerinde doğrulandı.
-- Yeni regresyonlar: aynı çağrıda ad değişikliği ve karar iptali hemen görünür; hata/normal dönüşte cache silinir; gösterge/faaliyet sayısı artınca snapshot sorguları satır başına artmaz. **10 geçti.**
+- Yeni regresyonlar: aynı çağrıda ad değişikliği ve karar iptali hemen görünür; hata/normal dönüşte cache silinir; gösterge/faaliyet sayısı artınca snapshot sorguları satır başına artmaz. **12 geçti** (`no_autoflush` davranışı dahil). Tarihsel migration regresyonlarıyla birlikte **19 geçti**; profil/yapı değişikliği/faaliyet bölümü odaklı takım **56 geçti**.
 - PostgreSQL 18 üzerinde mevcut program, yayın kapıları, faaliyet sözleşmesi ve mutabakat testleri çalıştırıldı. Tarayıcı testleri sistem Chromium ile çalıştırılıyor (`CIVENSA_CHROMIUM_PATH=/usr/bin/chromium`). Tam test takımı ve PR CI sonucu PR açıklamasında kaydedilir.
