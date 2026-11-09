@@ -185,7 +185,7 @@ def test_frozen_forms_links_values_disabled_removal(live_client, sample, role, e
     new = response.template.render(context)
     assert form_contract(undo_program_dialog_controls(new)) == form_contract(old)
     added = Counter({f'#rp-{key}': 1 for key in SECTION_IDS})
-    assert links(new) == links(old) + added
+    assert links(undo_program_dialog_controls(new)) == links(old) + added
     assert removal_contract(new) == removal_contract(old)
     for id in ['economicGridForm', 'economicGridErrors']:
         before = [n.attrs for n in Document(old).root.walk() if n.attrs.get('id') == id]
@@ -271,7 +271,7 @@ def test_browser_layout_anchors_contrast_and_evidence(browser, client, db, sampl
         assert root.locator('[data-program-card]').count() == 7
         assert root.locator('dialog[open]').count() == 0
         assert root.locator('.rp-errors[open]').count() == 0
-        assert root.locator('a[href^="#rp-"]').count() == 6
+        assert root.locator('button[data-program-dialog]').count() == 7
         assert page.evaluate('document.documentElement.scrollHeight / innerHeight') < 8
         for key in SECTION_IDS:
             root.locator(f'[data-program-dialog="program-{key}-dialog"]').click()
@@ -338,7 +338,7 @@ def test_real_card_grid_saves_and_rejected_form_reopens(browser, db, sample, rep
         record.get_by_role('button', name='Kartı kaydet', exact=True).click()
         expect(page).to_have_url(re.compile(r'/program/1\?period_id=1#program-form-'))
         expect(page.locator('#program-cards-dialog')).to_be_visible()
-        expect(page.get_by_role('status').filter(has_text='Kaydedildi')).to_be_visible()
+        expect(page.get_by_role('status').filter(has_text='Kaydedildi')).to_be_in_viewport()
         db.refresh(sample['card'])
         assert sample['card'].source_title == 'Sentetik kayıt testi'
         # A rejected POST must retain the attempted field and reopen records.
@@ -360,7 +360,7 @@ def test_real_card_grid_saves_and_rejected_form_reopens(browser, db, sample, rep
         grid.get_by_role('button', name='Tabloyu kaydet', exact=True).click()
         expect(page).to_have_url(re.compile(r'/program/1\?period_id=1&group=service&fund=inside#economicGridForm'))
         expect(page.locator('#program-economics-dialog')).to_be_visible()
-        expect(page.locator('#economicGridForm .program-saved')).to_be_visible()
+        expect(page.locator('#economicGridForm .program-saved')).to_be_in_viewport()
         db.expire_all()
         value = db.scalar(select(EconomicValue).where(EconomicValue.category == 'goods_services', EconomicValue.year == 2027, EconomicValue.funding_type == 'inside'))
         assert str(value.amount) == '140.00'

@@ -114,7 +114,10 @@
       notice.className = 'program-saved'; notice.role = 'status'; notice.textContent = 'Kaydedildi';
       (form?.querySelector('button') || dialog.querySelector('h2')).after(notice);
       history.replaceState(null, '', `#${form?.getAttribute('id') || dialog.id}`);
-      reveal(dialog, form);
+      reveal(dialog, notice);
+      // The browser follows the inherited POST fragment after deferred scripts.
+      // Finish at the confirmation once that initial navigation has settled.
+      window.addEventListener('load', () => notice.scrollIntoView({block: 'center'}), {once: true});
     }
   } else fromHash();
 })();
