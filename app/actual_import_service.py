@@ -22,12 +22,14 @@ from .models import ActualImport, ActualRevision, AuditLog
 
 MAX_FILE = attachment_max_bytes()
 TTL = timedelta(hours=24)
+PREVIEW_VERSION = 2
 HEADERS = {
     'department': ('Sorumlu Müdürlük', 'Müdürlük'),
-    'name': ('Gösterge Adı', 'Performans Göstergesi', 'Performans Gösterge Adı'),
+    'name': ('Gösterge Adı', 'Performans Göstergesi', 'Performans Gösterge Adı', 'PERFORMANS \nGÖSTERLERİ'),
     'method': ('Hesaplama Yöntemi',),
-    'unit': ('Birim', 'Birimi', 'Ölçü Birimi'),
-    'annual': ('2026 YILI TOPLAMI',),
+    'unit': ('Birim', 'Birimi', 'Ölçü Birimi', 'GÖST.\nBİRİMİ'),
+    'q4_total': ('2026 YILI 4. ÇEYREK GERÇEKLEŞEN TOPLAMI', 'Q4 Gerçekleşen Toplamı'),
+    'strategy_ratio': ('2026 YILI TOPLAMI',),
     **{f'q{i}': (f'2026 Q{i}', f'2026 {i}. Çeyrek', f'2026 {i}. Çeyrek Gerçekleşen',
                    f'2026 {i}. Çeyrek Gerçekleşme', f'2026 Yılı {i}. Çeyrek',
                    f'{i}. Çeyrek', f'{i}. Çeyrek Gerçekleşen') for i in range(1, 5)},
@@ -60,6 +62,33 @@ def numeric(value):
     return result if result.is_finite() else None
 
 
+def workbook_rows(data, data_only):
+    book = load_workbook(io.BytesIO(data), read_only=True, data_only=data_only, keep_links=False)
+    try:
+        if 'veriler' not in book.sheetnames:
+            fail('Excel içinde veriler sayfası yok. Ana çalışma kitabının veriler sayfasını koruyup yeniden yükleyin.')
+        sheet = book['veriler']
+        if (sheet.max_row or 0) > 5001 or (sheet.max_column or 0) > 100:
+            fail('veriler sayfası çok büyük. En fazla 5.000 satır ve 100 sütunla yeniden yükleyin.')
+        rows = list(islice(sheet.iter_rows(values_only=data_only), 5002))
+        if len(rows) > 5001 or any(len(r) > 100 for r in rows):
+            fail('veriler sayfası çok büyük. En fazla 5.000 satır ve 100 sütunla yeniden yükleyin.')
+        return rows
+    finally:
+        book.close()
+
+
+def header_matches(key, value, labels):
+    if normalized(value) in {normalized(label) for label in labels}:
+        return True
+    if re.fullmatch(r'q[1-4]', key):
+        # Only a bare year/quarter heading may lose its month annotation. The
+        # Q4 total and performance-evaluation headings must remain distinct.
+        bare = normalized(re.sub(r'\([^)]*\)', '', str(value or '')))
+        return bare in {f'2026 yili {key[1]} çeyrek', f'2026 {key[1]} çeyrek'}
+    return False
+
+
 def read_rows(data):
     if len(data) > MAX_FILE:
         fail(f'Excel dosyası çok büyük. En fazla {MAX_FILE // (1024*1024)} MB XLSX yükleyin.')
@@ -67,37 +96,32 @@ def read_rows(data):
         with ZipFile(io.BytesIO(data)) as archive:
             if sum(item.file_size for item in archive.infolist()) > 50*1024*1024:
                 fail('Excel açılmış boyutu çok büyük. Daha küçük bir XLSX dosyası yükleyin.')
-        book = load_workbook(io.BytesIO(data), read_only=True, data_only=True, keep_links=False)
-        try:
-            if 'veriler' not in book.sheetnames:
-                fail('Excel içinde veriler sayfası yok. Ana çalışma kitabının veriler sayfasını koruyup yeniden yükleyin.')
-            sheet = book['veriler']
-            if (sheet.max_row or 0) > 5001 or (sheet.max_column or 0) > 100:
-                fail('veriler sayfası çok büyük. En fazla 5.000 satır ve 100 sütunla yeniden yükleyin.')
-            rows = list(islice(sheet.iter_rows(values_only=True), 5002))
-            if len(rows) > 5001 or any(len(r) > 100 for r in rows):
-                fail('veriler sayfası çok büyük. En fazla 5.000 satır ve 100 sütunla yeniden yükleyin.')
-        finally:
-            book.close()
+        rows = workbook_rows(data, True)
+        formula_rows = workbook_rows(data, False)
     except (BadZipFile, ValueError, KeyError, TypeError, OSError, ParseError, XMLSyntaxError, InvalidFileException):
         fail('Excel dosyası okunamadı. Geçerli XLSX dosyasını seçip yeniden yükleyin.')
-    headers = [normalized(v) for v in rows[0]] if rows else []
+    headers = rows[0] if rows else []
     columns = {}
     for key, labels in HEADERS.items():
-        matches = [i for i, h in enumerate(headers) if h in {normalized(v) for v in labels}]
-        if not matches and key == 'explanation':
+        matches = [i for i, h in enumerate(headers) if header_matches(key, h, labels)]
+        if not matches and key in {'explanation', 'strategy_ratio'}:
             continue
         if len(matches) != 1:
             fail(f'veriler sayfasında {labels[0]} başlığı eksik veya yinelenmiş. Başlığı düzeltip yeniden yükleyin.')
         columns[key] = matches[0]
-    return [(line, {k: row[i] if i < len(row) else None for k, i in columns.items()})
-            for line, row in enumerate(rows[1:], 2) if any(v is not None for v in row)]
+    result = []
+    for line, (row, cells) in enumerate(zip(rows[1:], formula_rows[1:], strict=True), 2):
+        if not any(v is not None for v in row) and not any(c.data_type == 'f' for c in cells):
+            continue
+        values = {k: row[i] if i < len(row) else None for k, i in columns.items()}
+        values['formulas'] = {key: {'formula': cells[i].value,
+            'cached_numeric': numeric(values[key]) is not None}
+            for key, i in columns.items() if i < len(cells) and cells[i].data_type == 'f'}
+        result.append((line, values))
+    return result
 
 
-def annual_value(row):
-    annual = numeric(row['annual'])
-    if annual is not None:
-        return annual, '2026 YILI TOPLAMI'
+def method_value(row):
     quarters = [numeric(row[f'q{i}']) for i in range(1, 5)]
     method = normalized(row['method'])
     if method == 'topla' and all(v is not None for v in quarters):
@@ -107,7 +131,26 @@ def annual_value(row):
     return None, 'Yıllık değer hesaplanamadı; yöntemi ve dört çeyreği kontrol edin.'
 
 
-def option(indicator, raw, workbook_unit):
+def annual_readings(row):
+    # "2026 YILI TOPLAMI" is an achievement ratio, including cached zeros.
+    # It is context only and must never become an actual or a fallback value.
+    total = numeric(row.get('q4_total'))
+    calculated, rule = method_value(row)
+    readings = []
+    if total is not None:
+        readings.append({'key':'q4_total', 'value':total, 'rule':'2026 YILI 4. ÇEYREK GERÇEKLEŞEN TOPLAMI'})
+    if calculated is not None and (total is None or calculated != total):
+        readings.append({'key':'method', 'value':calculated, 'rule':rule})
+    return readings
+
+
+def annual_value(row):
+    readings = annual_readings(row)
+    return (readings[0]['value'], readings[0]['rule']) if readings else (None, method_value(row)[1])
+
+
+def option(indicator, reading, workbook_unit):
+    raw = reading['value']
     definition = indicator['definition']
     previous = indicator['actuals'][-1] if indicator['actuals'] else None
     scale = 'raw'
@@ -121,7 +164,7 @@ def option(indicator, raw, workbook_unit):
             scale = 'choose'
     value = raw * 100 if raw is not None and scale == 'percent' else raw
     return {'id': indicator['report_indicator_id'], 'name': definition['name'], 'department': indicator['department'],
-        'scale': scale, 'value': value, 'raw_value': raw,
+        'reading': reading['key'], 'rule': reading['rule'], 'scale': scale, 'value': value, 'raw_value': raw,
         'percent_value': raw * 100 if raw is not None else None,
         'current': previous['value'] if previous else None,
         'expected_revision': previous['revision'] if previous else 0}
@@ -140,6 +183,8 @@ def preview_import(db, user, revision_id, data):
     claimed = set()
     department_cache = {}
     for line, source in read_rows(data):
+        readings = annual_readings(source)
+        conflict = len(readings) > 1
         raw, rule = annual_value(source)
         department_key = normalized(source['department'])
         if department_key not in department_cache:
@@ -152,7 +197,8 @@ def preview_import(db, user, revision_id, data):
         candidates = exact or sorted([i for i in pool if name and SequenceMatcher(None, name,
             indicator_name(i['definition']['name'])).ratio() >= .6], key=lambda i: (-SequenceMatcher(None, name,
                 indicator_name(i['definition']['name'])).ratio(), i['report_indicator_id']))[:3]
-        options = [option(i, raw, source['unit']) for i in candidates[:3]]
+        available = readings or [{'key':'missing', 'value':None, 'rule':rule}]
+        options = [option(i, reading, source['unit']) for i in candidates[:3] for reading in available]
         match = len(exact) == 1
         status = 'Eşleşti' if match else 'Onay gerekiyor' if options else 'Eşleşmedi'
         message = ''
@@ -162,17 +208,25 @@ def preview_import(db, user, revision_id, data):
                 status = 'Hata'; message = 'Bu gösterge ikinci kez isteniyor. Yinelenen satırı düzeltip yeniden yükleyin.'
             else:
                 claimed.add(selected['id'])
-                if selected['scale'] != 'raw':
+                if conflict or selected['scale'] != 'raw':
                     status = 'Onay gerekiyor'
                 elif raw is not None and selected['current'] is not None and raw == Decimal(selected['current']):
                     status = 'Değişmedi'
         if raw is None and status != 'Hata':
             status = 'Eksik'; message = 'Sayısal yıllık değer yok. Eksik çeyrekleri veya yıllık toplamı tamamlayın; boş sıfır değildir.'
-        rows.append({'line': line, 'source': {k: str(v) if v is not None else '' for k, v in source.items()},
+            if any(k != 'strategy_ratio' and not f['cached_numeric'] for k, f in source['formulas'].items()):
+                message += " Formülün sayısal önbelleği yok. Excel'de hesaplatıp kaydederek yeniden yükleyin."
+        elif conflict and status != 'Hata':
+            message = 'Q4 toplamı ile hesaplama yöntemi farklı. Aktarılacak yıllık değeri seçerek onaylayın.'
+        ratio = source.get('strategy_ratio')
+        rows.append({'line': line, 'source': {k: str(v) if v is not None else '' for k, v in source.items() if k != 'formulas'},
+            'strategy_ratio': ratio if ratio is None or numeric(ratio) is not None else str(ratio),
+            'formulas': source['formulas'], 'readings': readings, 'conflict': conflict,
             'quarters': [source[f'q{i}'] if source[f'q{i}'] is None or numeric(source[f'q{i}']) is not None
                          else str(source[f'q{i}']) for i in range(1, 5)], 'rule': rule, 'raw_value': raw,
             'options': options, 'exact': match, 'status': status, 'message': message})
-    preview = {'revision_id': revision_id, 'expected_revision': report['revision'], 'rows': rows, 'counts': summary(rows)}
+    preview = {'schema_version':PREVIEW_VERSION, 'revision_id': revision_id,
+        'expected_revision': report['revision'], 'rows': rows, 'counts': summary(rows)}
     record = ActualImport(report_revision_id=revision_id, actor_id=user.id,
         source_sha256=hashlib.sha256(data).hexdigest(), preview_json=contract.canonical(preview))
     db.add(record); db.flush()
@@ -189,7 +243,10 @@ def import_preview(db, user, import_id, lock=False):
         fail('İçe aktarma önizlemesi bulunamadı. Dosyayı yeniden yükleyin.', 404)
     if not record.result_json and datetime.now(UTC).replace(tzinfo=None) > record.created_at + TTL:
         fail('İçe aktarma önizlemesinin 24 saatlik süresi doldu. Dosyayı yeniden yükleyin.', 410)
-    return record, json.loads(record.preview_json)
+    preview = json.loads(record.preview_json)
+    if not record.result_json and preview.get('schema_version') != PREVIEW_VERSION:
+        fail('Yıllık değer kuralları güncellendi. Eski önizleme uygulanamaz; Excel dosyasını yeniden yükleyin.', 409)
+    return record, preview
 
 
 def apply_import(db, user, import_id, expected_revision, choices):
@@ -211,7 +268,8 @@ def apply_import(db, user, import_id, expected_revision, choices):
             continue
         if not isinstance(choice, dict) or choice.get('confirmed') is not True:
             fail(f"{row['line']}. satır onaylanmadı. Seçimi ve yıllık değeri açıkça onaylayın.")
-        selected = next((o for o in row['options'] if o['id'] == choice.get('indicator_id')), None)
+        selected = next((o for o in row['options'] if o['id'] == choice.get('indicator_id')
+            and o['reading'] == choice.get('reading')), None)
         if not selected or row['status'] in {'Hata', 'Eksik', 'Eşleşmedi'}:
             fail(f"{row['line']}. satır seçimi geçersiz. Eşleşen, sayısal değeri olan satırı seçin.")
         scale = choice.get('scale')
@@ -239,12 +297,16 @@ def apply_import(db, user, import_id, expected_revision, choices):
                 if previous and previous.value == value:
                     item.update(status='Değişmedi', message='Mevcut değer aynı; yeni revizyon yazılmadı.')
                 else:
+                    explanation = row['source'].get('explanation', '')
+                    if not explanation.strip():
+                        explanation = previous.explanation if previous else ''
                     actual = contract.save_actual(db, user, selected['id'], selected['expected_revision'],
                         format(value, 'f'), 'verified', json.loads(previous.evidence_json) if previous else [],
-                        row['source'].get('explanation', ''), json.loads(previous.deviation_json) if previous else {})
+                        explanation, json.loads(previous.deviation_json) if previous else {})
                     db.flush()
                     item.update(status='Yazıldı', message='Yeni gerçekleşme revizyonu kaydedildi.',
-                        report_indicator_id=selected['id'], actual_revision_id=actual.id)
+                        report_indicator_id=selected['id'], actual_revision_id=actual.id,
+                        annual_reading=selected['reading'], annual_rule=selected['rule'], scale=scale, value=format(value, 'f'))
         except HTTPException as error:
             detail = error.detail.get('message', str(error.detail)) if isinstance(error.detail, dict) else str(error.detail)
             item.update(status='Hata', message=detail)

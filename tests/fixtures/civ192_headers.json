@@ -1,0 +1,13 @@
+{
+  "source": "PR #438 lead follow-up: supplied raw headers, including spelling and line breaks; no municipal values",
+  "headers": [
+    "Ana Hizmet Alanı", "Alan kodu", "Stratejik Hedef", "SH kodu",
+    "SORUMLU MÜDÜRLÜK", "PERFORMANS GÖSTERGESİ KODU", "PERFORMANS \nGÖSTERLERİ",
+    "HESAPLAMA\nYÖNTEMİ", "GÖST.\nBİRİMİ", "Hedef etkisi", "2025\nHEDEF \nDEĞERİ",
+    "2025 Gerçekleşen", "2026\nHEDEF \nDEĞERİ", "2026 yılı\n1. Çeyrek\n(Ocak-Mart)",
+    "2026 yılı\n2. Çeyrek\n(Nisan-Haziran)", "2026 yılı\n3. Çeyrek\n(Temmuz-Eylül)",
+    "2026 YILI\n4. Çeyrek\n(Ekim - Aralık)", "2026 YILI 4. ÇEYREK\nGERÇEKLEŞEN TOPLAMI",
+    "2026 YILI \nTOPLAMI", "2026 YILI 1.ÇEYREK \nPERF. DEGERLENDİRME", "Ortalama",
+    "GERÇEKLEŞEN %", "Sapma Kodu", "Açıklama"
+  ]
+}

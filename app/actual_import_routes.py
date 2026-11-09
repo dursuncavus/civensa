@@ -51,8 +51,9 @@ def register(app):
                 selected = form.get(f'choice_{line}', '')
                 if selected:
                     try:
-                        indicator_id, scale = selected.split(':')
-                        choices[str(line)] = {'indicator_id': int(indicator_id), 'scale': scale, 'confirmed': True}
+                        indicator_id, scale, reading = selected.split(':')
+                        choices[str(line)] = {'indicator_id': int(indicator_id), 'scale': scale,
+                            'reading': reading, 'confirmed': True}
                     except (ValueError, TypeError):
                         service.fail(f'{line}. satır seçimi okunamadı. Önizlemeden yeniden seçin.')
             try:

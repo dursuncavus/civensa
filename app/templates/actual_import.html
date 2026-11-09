@@ -10,7 +10,7 @@
 <p>{% for status, count in (result.counts if result else preview.counts).items() %}<span class="badge">{{ status }}: {{ count }}</span> {% endfor %}</p>
 {% if result %}
 <p>Onaylanan satırlar işlendi. Hatalı satırların nedenlerini aşağıda inceleyin; düzeltmelerden sonra yeniden yükleyebilirsiniz.</p>
-<ul>{% for row in result.rows %}<li>Excel {{ row.line }}. satır · <strong>{{ row.status }}</strong> · {{ row.message }}</li>{% endfor %}</ul>
+<ul>{% for row in result.rows %}<li>Excel {{ row.line }}. satır · <strong>{{ row.status }}</strong> · {{ row.message }}{% if row.value is defined %} · {{ row.value|trnum }} · {{ row.annual_rule }}{% endif %}</li>{% endfor %}</ul>
 {% else %}
 <p>Henüz gerçekleşme yazılmadı. Her satır için eşleşmeyi ve sayı yorumunu seçerek onaylayın. Aktarma seçili satırlar yazılmaz. Önizleme 24 saat geçerlidir.</p>
 <p>Doğrulanmış gerçekleşme için önceki kaydın kanıtı korunur; kanıtı olmayan veya iş akışının izin vermediği kayıtlar nedenleriyle sonuçta gösterilir.</p>
@@ -18,21 +18,22 @@
 <input type="hidden" name="csrf_token" value="{{ request.session.get('csrf_token') }}">
 <input type="hidden" name="expected_revision" value="{{ preview.expected_revision }}">
 <div class="actual-import-scroll" tabindex="0" aria-label="Excel önizleme tablosu">
-<table class="data-table actual-import-table"><caption>Excel satırları ve aktarım seçimleri</caption><thead><tr><th>Satır</th><th>Müdürlük (Excel / Civensa)</th><th>Gösterge (Excel / Civensa)</th><th>Yöntem</th><th class="quarter">Q1</th><th class="quarter">Q2</th><th class="quarter">Q3</th><th class="quarter">Q4</th><th>Yıllık değer</th><th>Mevcut değer</th><th>Durum</th><th>Seçim</th></tr></thead>
+<table class="data-table actual-import-table"><caption>Excel satırları ve aktarım seçimleri</caption><thead><tr><th>Satır</th><th>Müdürlük (Excel / Civensa)</th><th>Gösterge (Excel / Civensa)</th><th>Yöntem</th><th class="quarter">Q1</th><th class="quarter">Q2</th><th class="quarter">Q3</th><th class="quarter">Q4</th><th>Strateji oranı</th><th>Yıllık değer</th><th>Mevcut değer</th><th>Durum</th><th>Seçim</th></tr></thead>
 <tbody>{% for row in preview.rows %}
-<tr><td>{{ row.line }}</td><td class="department">{{ row.source.department }}<br>{% for o in row.options %}{{ o.department }}{% if not loop.last %}<br>{% endif %}{% endfor %}</td>
-<td class="indicator">{{ row.source.name }}<br>{% for o in row.options %}{{ o.name }}{% if not loop.last %}<br>{% endif %}{% endfor %}</td>
+<tr><td>{{ row.line }}</td><td class="department">{{ row.source.department }}<br>{% for o in row.options|unique(attribute='id') %}{{ o.department }}{% if not loop.last %}<br>{% endif %}{% endfor %}</td>
+<td class="indicator">{{ row.source.name }}<br>{% for o in row.options|unique(attribute='id') %}{{ o.name }}{% if not loop.last %}<br>{% endif %}{% endfor %}</td>
 <td>{{ row.source.method }}<br>{{ row.rule }}</td>
-{% for q in row.quarters %}<td class="quarter">{{ q|trnum if q is number else (q if q is not none else '—') }}</td>{% endfor %}
-<td>{{ row.raw_value|trnum }}{% for o in row.options %}{% if o.scale != 'raw' %}<p>{{ o.percent_value|trnum }} · ×100 (oran kesirden yüzdeye)</p>{% endif %}{% endfor %}</td>
-<td>{% for o in row.options %}{{ o.current|trnum }}{% if not loop.last %}<br>{% endif %}{% endfor %}</td><td>{{ row.status }}<p>{{ row.message }}</p></td>
+{% for q in row.quarters %}<td class="quarter">{{ q|trnum if q is number else (q if q is not none else '—') }}{% set formula = row.formulas.get('q'~loop.index) %}{% if formula %}<br><small>Formül · {{ 'sayısal önbellekli' if formula.cached_numeric else 'sayısal önbellek yok' }}</small>{% endif %}</td>{% endfor %}
+<td>{{ row.strategy_ratio|trnum if row.strategy_ratio is number else (row.strategy_ratio if row.strategy_ratio is not none else '—') }}<p>Bağlamdır; gerçekleşme olarak aktarılmaz.</p>{% if row.formulas.get('strategy_ratio') %}<small>Formül · {{ 'sayısal önbellekli' if row.formulas.strategy_ratio.cached_numeric else 'sayısal önbellek yok' }}</small>{% endif %}</td>
+<td>{% for reading in row.readings %}<p>{{ reading.rule }}: <strong>{{ reading.value|trnum }}</strong></p>{% else %}—{% endfor %}{% for o in row.options %}{% if o.scale != 'raw' %}<p>{{ o.rule }}: {{ o.percent_value|trnum }} · ×100 (oran kesirden yüzdeye)</p>{% endif %}{% endfor %}{% if row.formulas.get('q4_total') %}<small>Q4 toplamı formülü · {{ 'sayısal önbellekli' if row.formulas.q4_total.cached_numeric else 'sayısal önbellek yok' }}</small>{% endif %}</td>
+<td>{% for o in row.options|unique(attribute='id') %}{{ o.current|trnum }}{% if not loop.last %}<br>{% endif %}{% endfor %}</td><td>{{ row.status }}<p>{{ row.message }}</p></td>
 <td class="selection">{% if row.status not in ['Hata', 'Eksik', 'Eşleşmedi'] %}<label>Satır {{ row.line }} onayı<select name="choice_{{ row.line }}"><option value="">Aktarma</option>
 {% for o in row.options %}
-{% if o.scale in ['raw','choose'] %}<option value="{{ o.id }}:raw">Onayla: {{ o.name }} · {{ o.raw_value|trnum }} (olduğu gibi)</option>{% endif %}
-{% if o.scale in ['percent','choose'] %}<option value="{{ o.id }}:percent">Onayla: {{ o.name }} · {{ o.percent_value|trnum }} · ×100 (oran kesirden yüzdeye)</option>{% endif %}
+{% if o.scale in ['raw','choose'] %}<option value="{{ o.id }}:raw:{{ o.reading }}">Onayla: {{ o.name }} · {{ o.rule }} · {{ o.raw_value|trnum }} (olduğu gibi)</option>{% endif %}
+{% if o.scale in ['percent','choose'] %}<option value="{{ o.id }}:percent:{{ o.reading }}">Onayla: {{ o.name }} · {{ o.rule }} · {{ o.percent_value|trnum }} · ×100 (oran kesirden yüzdeye)</option>{% endif %}
 {% endfor %}</select></label>{% else %}Aktarılmaz{% endif %}</td></tr>
 {% endfor %}</tbody></table></div>
-<p>Seçimlerimle gösterge eşleştirmelerini ve varsa ×100 dönüşümünü onaylıyorum.</p>
+<p>Seçimlerimle gösterge eşleştirmelerini, yıllık değerin kaynağını ve varsa ×100 dönüşümünü onaylıyorum.</p>
 <button class="button primary">Onaylanan satırları uygula</button></form>
 {% endif %}
 <a class="button" href="/activity-reports">Faaliyet raporlarına dön</a>

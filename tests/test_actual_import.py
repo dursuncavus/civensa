@@ -41,7 +41,8 @@ def workbook(rows, headers=None, reverse=False):
     for row in rows:
         values = ['', '', '', 'SH1', row.get('department', 'Test Müdürlüğü'), 'PG1', row['name'],
             row.get('method', 'TOPLA'), row.get('unit', 'Adet'), '', '', '', '',
-            *row.get('q', [1, 2, 3, 4]), '', row.get('annual'), '', '', '', '', row.get('explanation', 'Sentetik açıklama')]
+            *row.get('q', [None]*4 if 'annual' in row else [1,2,3,4]), row.get('annual'), row.get('strategy_ratio'),
+            '', '', '', '', row.get('explanation', 'Sentetik açıklama')]
         sheet.append(list(reversed(values)) if reverse else values)
     book.create_sheet('ANALİZ').append(['Bu sayfa yok sayılır', 999])
     data = io.BytesIO(); book.save(data); return data.getvalue()
@@ -87,7 +88,8 @@ def confirmed(p, selection=None):
     for row in p['rows']:
         if row['options'] and row['status'] not in {'Hata', 'Eksik', 'Eşleşmedi'}:
             o = row['options'][0]
-            result[str(row['line'])] = {'indicator_id': o['id'], 'scale': selection or o['scale'], 'confirmed': True}
+            result[str(row['line'])] = {'indicator_id': o['id'], 'scale': selection or o['scale'],
+                'reading': o['reading'], 'confirmed': True}
     return result
 
 
@@ -179,7 +181,7 @@ def test_structure_rename_and_merge(client, db, sample, scenario):
 
 def test_missing_text_zero_annual_precedence_and_cumulative_variants(client, db, sample, scenario):
     for source, expected, rule in [
-        ({'annual': 0, 'method': 'TOPLA', 'q': [1,2,3,None]}, Decimal(0), '2026 YILI TOPLAMI'),
+        ({'annual': 0, 'method': 'TOPLA', 'q': [1,2,3,None]}, Decimal(0), '2026 YILI 4. ÇEYREK GERÇEKLEŞEN TOPLAMI'),
         ({'annual': '%', 'method': 'T.KÜMÜLATİF', 'q': [1,2,3,9]}, Decimal(9), 'KÜMÜLATİF: Q4'),
         ({'method': 'TOPLA', 'q': [1,2,'%',4]}, None, None),
         ({'method': 'kÜMÜLATİF', 'q': [1,2,3,None]}, None, None),
@@ -259,9 +261,11 @@ def test_browser_upload_confirm_apply(client, db, sample, scenario, tmp_path):
     original_db = app.dependency_overrides[get_db]
     data = {'rehearsal': True, 'accounts': {'strategy': 'synthetic@example.invalid'}, '_server_errors': []}
     app.dependency_overrides[require_user] = lambda: sample['strategy']
-    rows = [{'name':'Hizmet sayısı'}, {'name':'Memnuniyet oranı', 'unit':'Oran (%)', 'annual':.8},
-        {'name':'Tamamlanan eğitimlerin sayısı', 'method':'T.KÜMÜLATİF', 'q':[1,2,3,12]},
-        {'name':'Eksik hizmet sayısı', 'q':[1,2,3,None]}, {'name':'Kanıtsız sayı', 'annual':13}]
+    rows = [{'name':'Hizmet sayısı', 'q':[1,2,3,4], 'annual':14, 'strategy_ratio':.28},
+        {'name':'Memnuniyet oranı', 'unit':'Oran (%)', 'annual':.8, 'strategy_ratio':.6},
+        {'name':'Tamamlanan eğitimlerin sayısı', 'method':'T.KÜMÜLATİF', 'q':[1,2,3,12], 'strategy_ratio':.24},
+        {'name':'Eksik hizmet sayısı', 'q':[1,2,3,None], 'strategy_ratio':0}, {'name':'Kanıtsız sayı', 'annual':13}]
+    headers = json.loads((Path(__file__).parent/'fixtures/civ192_headers.json').read_text())['headers']
     try:
         with local_http(db.get_bind(), data) as base, sync_playwright() as pw:
             options = {'headless':True}
@@ -274,21 +278,26 @@ def test_browser_upload_confirm_apply(client, db, sample, scenario, tmp_path):
             page.goto(base + '/activity-reports')
             page.select_option('select[name=revision_id]', str(scenario['revision_id']))
             page.set_input_files('input[name=file]', {'name':'synthetic.xlsx', 'mimeType':
-                'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'buffer':workbook(rows)})
+                'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'buffer':workbook(rows, headers=headers)})
             page.get_by_role('button', name='Excel önizlemesini aç').click()
             expect(page.get_by_role('heading', name='Excel önizlemesi')).to_be_visible()
+            expect(page.get_by_role('columnheader', name='Strateji oranı')).to_be_visible()
             assert page.locator('select[name=choice_3]').input_value() == ''
             output = Path(os.environ['CIV192_SCREENSHOTS']) if os.getenv('CIV192_SCREENSHOTS') else tmp_path
             output.mkdir(parents=True, exist_ok=True)
             page.screenshot(path=str(output/'preview.png'), full_page=True)
             for line in (2,3,4,6):
                 select = page.locator(f'select[name=choice_{line}]')
-                choice = select.locator('option').nth(1).get_attribute('value')
+                choice = (select.locator('option[value$=":raw:method"]').get_attribute('value') if line == 2
+                    else select.locator('option').nth(1).get_attribute('value'))
                 select.select_option(choice)
+            page.locator('.actual-import-scroll').evaluate('el => el.scrollLeft = el.scrollWidth')
+            page.screenshot(path=str(output/'preview-selections.png'), full_page=True)
             page.get_by_role('button', name='Onaylanan satırları uygula').click()
             expect(page.get_by_role('heading', name='İçe aktarma sonucu')).to_be_visible()
             assert 'Yazıldı: 3' in page.locator('main').inner_text()
             assert 'kaynak bulunmuyor' in page.locator('main').inner_text()
+            assert 'TOPLA: Q1 + Q2 + Q3 + Q4' in page.locator('main').inner_text()
             page.screenshot(path=str(output/'result.png'), full_page=True)
             assert not errors and not data['_server_errors']
             browser.close()
