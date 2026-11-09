@@ -17,9 +17,9 @@ from .models import (Activity, ActivityCostValue, Department, DepartmentCostValu
                      EconomicValue, ImportBatch, Indicator, IndicatorValue,
                      ReportSection, User, BudgetOperation, BudgetOperationLine)
 from .numbers import format_number, source_cell
-from .program_service import (cost_reconciliation, department_snapshot, period_departments,
+from .program_service import (cost_reconciliation, department_snapshots, period_departments,
                               ECONOMIC_CATEGORIES, PROGRAM_GROUPS)
-from .structure_service import period_name
+from .structure_service import period_name, structure_read_scope
 from .value_labels import value_kind_label, funding_label
 
 UNKNOWN = 'Bilinmiyor'
@@ -45,13 +45,14 @@ def _legacy_bindings(db, batch, payload):
     return result
 
 
+@structure_read_scope
 def source_comparison(db, period_id, department_id=None):
     departments = {d.id: period_name(db, period_id, d) for d in db.scalars(select(Department))
                    if department_id is None or d.id == department_id}
     # Same calculator as CIV-069; a department's aggregate is restricted before
     # calculation, so programme parent rows cannot expose other departments.
-    snapshots = [department_snapshot(db, period_id, d.id) for d in period_departments(db, period_id)
-                 if department_id is None or d.id == department_id]
+    snapshots = department_snapshots(db, period_id, [d for d in period_departments(db, period_id)
+                 if department_id is None or d.id == department_id])
     reconciliation = cost_reconciliation(db, period_id, snapshots=snapshots, include_historical=True)
     records = []
     covered = set()

@@ -3,13 +3,13 @@ import json
 from datetime import datetime, UTC
 from decimal import Decimal, InvalidOperation
 from fastapi import HTTPException
-from sqlalchemy import select
+from sqlalchemy import select, insert
 from .models import (ARSectionDefinition, ARDocument, ARSectionContent, ARResourceRow,
     ARDocumentFreeze, ARContentEvent, Department, DepartmentScope, Organization,
     ReportingPeriod, User, ActivityReport, ActivityReportRevision, ReportIndicator,
     ActualRevision, PublicationIndicatorBinding, IndicatorDefinitionRevision)
 from .activity_contract_service import canonical, digest
-from .structure_service import period_name
+from .structure_service import period_name, structure_read_scope
 from .pp_errors import pp_error
 
 STATUSES = {'empty':'Boş', 'draft':'Taslak', 'ready':'Hazır', 'not_applicable':'Uygulanamaz'}
@@ -196,6 +196,10 @@ def create_year(db,user,organization_id,period_id,copy_previous=False):
     result=list(existing)
     previous_period=db.scalar(select(ReportingPeriod).where(ReportingPeriod.year==period.year-1))
     created_ids=[]
+    section_definitions = db.scalars(select(ARSectionDefinition).where(
+        ARSectionDefinition.version == version).order_by(ARSectionDefinition.position)).all()
+    definitions_by_kind = {kind: [definition for definition in section_definitions
+        if definition.applies_to in {'both', kind}] for kind in ('birim', 'idare')}
     for dep_id in scopes:
         scope=f'birim:{dep_id}' if dep_id else 'idare'
         if scope in existing_scopes:
@@ -223,14 +227,17 @@ def create_year(db,user,organization_id,period_id,copy_previous=False):
         elif previous_approval:
             from .ar_unit_workflow_service import verified_payload
             prior=verified_payload(previous_approval)
-        for definition in definitions(db,doc):
+        content_rows = []
+        for definition in definitions_by_kind['birim' if dep_id else 'idare']:
             old=next((s for s in prior.get('sections',[]) if s['code']==definition.code),None)
             copied=bool(old and definition.code!=CORE)
-            db.add(ARSectionContent(document_id=doc.id,definition_id=definition.id,
+            content_rows.append(dict(document_id=doc.id,definition_id=definition.id,
                 blocks_json=canonical(old['blocks']) if copied else '[]',status='draft' if copied else 'empty',
                 reason=old['reason'] if copied else '',copied_from_id=previous.id if copied and previous else None,
                 copied_from_approval_id=previous_approval.id if copied and previous_approval else None,
                 copied_needs_review=copied,edited_by=user.id if copied else None,edited_at=datetime.now(UTC) if copied else None))
+        if content_rows:
+            db.execute(insert(ARSectionContent), content_rows, execution_options={'render_nulls': True})
         from .activity_financial_service import seed_statements
         seed_statements(db,doc)
         if dep_id:
@@ -243,11 +250,9 @@ def create_year(db,user,organization_id,period_id,copy_previous=False):
         result.append(doc)
     db.flush()
     from .ar_typeset_keys import save_section_keys
-    for created in result:
-        if created.id not in created_ids:continue
-        for content in db.scalars(select(ARSectionContent).where(ARSectionContent.document_id==created.id)):
-            if any(b['type']=='table' for b in json.loads(content.blocks_json)):
-                save_section_keys(db,content,json.loads(content.blocks_json))
+    for content in db.scalars(select(ARSectionContent).where(ARSectionContent.document_id.in_(created_ids))):
+        if any(b['type']=='table' for b in json.loads(content.blocks_json)):
+            save_section_keys(db,content,json.loads(content.blocks_json))
     return result
 
 
@@ -465,6 +470,7 @@ def core_summary(db,doc):
         'message':f'{len(items)} göstergenin {verified} tanesinde doğrulanmış, kaynaklı gerçekleşme var.'}
 
 
+@structure_read_scope
 def report_data(db,user,document_id,use_freeze=True,version=None,include_typeset=False):
     doc=document(db,user,document_id)
     freeze=latest_release(db,doc,version) if version is not None else frozen(db,doc)
