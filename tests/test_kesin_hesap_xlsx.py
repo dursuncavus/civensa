@@ -43,7 +43,8 @@ def vector(scale=1):
 
 def pdf_table(path, headers, widths, pages, *, centered=False, scale=1, year=2026,
               lead_layout=False, page_shift=0, dates=None, date_overrides=None, date_prefix=False,
-              table_marker=False, header_size=6, amount_size=6, continuation_shift=0):
+              table_marker=False, header_size=6, amount_size=6, continuation_shift=0,
+              closing_page=None):
     """Separate PDF text objects, proportional Turkish font and right-aligned money."""
     if 'Civ194Test' not in pdfmetrics.getRegisteredFontNames():
         pdfmetrics.registerFont(TTFont('Civ194Test', str(ROOT / 'app/fonts/DejaVuSans.ttf')))
@@ -74,6 +75,8 @@ def pdf_table(path, headers, widths, pages, *, centered=False, scale=1, year=202
         canvas.setFont('Civ194Test', header_size)
         x = 20
         for column, (label, width) in enumerate(zip(headers, widths)):
+            if closing_page == 'bad_header' and page_no == 2 and column == 0:
+                label = label.replace('Kurum', 'Bilinmeyen')
             fragments = label.split('\n') if lead_layout else simpleSplit(label, 'Civ194Test', header_size, width - 10)
             for n, line in enumerate(fragments):
                 if table_marker and column == 8 and n == 0:
@@ -86,6 +89,19 @@ def pdf_table(path, headers, widths, pages, *, centered=False, scale=1, year=202
         if len(headers) == 11 and not lead_layout:
             canvas.drawString(23, 738, 'I   II   III   IV   V')
         y = 710
+        if closing_page and page_no == 2:
+            signatures = [('Düzenleyen', 'Muhasebe Yetkilisi'),
+                          ('Adı Soyadı :', 'Adı Soyadı :'),
+                          ('Tarih :', 'Tarih :'), ('İmza :', 'İmza :')]
+            if closing_page == 'missing_label':
+                signatures.pop()
+            for left, right in signatures if closing_page != 'header_only' else []:
+                canvas.drawString(23, y, left)
+                canvas.drawString(1030, y, right)
+                y -= 16
+            if closing_page in {'extra_text', 'amount', 'code'}:
+                canvas.drawString(23, y, {'extra_text': 'Bilinmeyen ek bilgi',
+                                         'amount': '1,00', 'code': '46 34 14 10'}[closing_page])
         for row in rows:
             x = 20
             height = 1
@@ -113,7 +129,7 @@ def expense_pdf(tmp_path, *, mismatch=None, blank=False, duplicate=False, center
                 scale=1, directorate_mismatch=False, fund_split=False, foreign_code=False,
                 lead_layout=False, transfer='Suratiyle', page_shift=0, dotted_first=None,
                 year=2026, dates=None, date_overrides=None, bad_header=None, date_prefix=False,
-                table_marker=False):
+                table_marker=False, closing_page=None):
     def row(kurum='', function='', fund='', economic='', name='', amounts=None):
         values = list(map(money, vector() if amounts is None else amounts))
         return [kurum, function, fund, economic, name, *values]
@@ -183,17 +199,23 @@ def expense_pdf(tmp_path, *, mismatch=None, blank=False, duplicate=False, center
         headers[10:15] = ['Net\nÖdenek\nToplamı\nTL', 'Bütçe\nGideri\nToplamı\nTL',
                           'Ödenen\nBütçe\nGideri\nTL', 'Ödenek\nÜstü\nHarcama\nTL',
                           'İptal\nEdilen\nÖdenek\nTL']
+    pages = [first, second]
+    if closing_page:
+        pages.append([])
+        if closing_page == 'not_last':
+            pages.append([])
     return pdf_table(tmp_path / 'gider.pdf', headers, [65, 55, 45, 50, 120] + [65] * 11,
-                     [first, second], centered=centered, scale=scale, year=year,
+                     pages, centered=centered, scale=scale, year=year,
                      lead_layout=lead_layout, page_shift=page_shift, dates=dates,
-                     date_overrides=date_overrides, date_prefix=date_prefix, table_marker=table_marker)
+                     date_overrides=date_overrides, date_prefix=date_prefix, table_marker=table_marker,
+                     closing_page=closing_page)
 
 
 def revenue_pdf(tmp_path, *, ambiguous=False, total=True, mismatch=False, unproved=False,
                 year=2026, centered=False, total_in_code=False, lead_layout=False,
                 integer_wrap=False, split_code=False, dates=None, orphan=None,
                 detail_first=False, unplaced=False, misplaced_code=False, carry_mismatch=False,
-                misplaced_root=False, wrapped_description=False):
+                misplaced_root=False, wrapped_description=False, deduction=None, deduction_error=None):
     headers = ['Gelirin Kodu', 'Açıklama', 'Bütçe ile Tahmin Edilen',
                f'{year - 1} Yılından Devreden Gelir', f'{year} Yılı Tahakkuku',
                'Toplam Tahakkuk', f'{year} Yılı Tahsilatı', 'Red ve İadeler',
@@ -212,6 +234,21 @@ def revenue_pdf(tmp_path, *, ambiguous=False, total=True, mismatch=False, unprov
         rows.append(['TOPLAM' if total_in_code else '', '' if total_in_code else 'GENEL TOPLAM',
                      '1.350,00', '20,00', '1.260,00', '1.280,00',
                      '1.220,25', '10,00', '1.210,25', '69,75', '89,65'])
+    if deduction is not None:
+        rows.insert(3, ['09', 'Red ve İadeler (-)', deduction, *(['0,00'] * 8)])
+        if total:
+            rows[-1][2] = '1.099,75'
+        if deduction_error == 'code':
+            rows[3][0] = '04'
+        elif deduction_error == 'label':
+            rows[3][1] = 'SENTETİK NEGATİF GELİR'
+        elif deduction_error == 'actual':
+            rows[3][6] = rows[3][8] = '1,00'
+            rows[-1][6], rows[-1][8] = '1.221,25', '1.211,25'
+        elif deduction_error == 'blank':
+            rows[3][9] = ''
+        elif deduction_error == 'total':
+            rows[-1][2] = '1.099,76'
     if mismatch:
         rows[-1][2] = '1.351,00'
     if carry_mismatch:
@@ -385,6 +422,13 @@ def test_existing_preview_import_accepts_workbook(tmp_path, db, sample):
                                      (out / 'expenditure.xlsx').read_bytes(), doc.revision)
     assert preview['errors'] == []
     assert len(preview['rows']) == 3
+    result, out = run(tmp_path, '--gelir', revenue_pdf(tmp_path, deduction='- 250,25'),
+                      csv_path=csv_path, out=tmp_path / 'revenue-out')
+    assert result.returncode == 0, (out / 'report.md').read_text()
+    preview = finance.preview_import(db, sample['strategy'], doc.id, 'revenue',
+                                     (out / 'revenue.xlsx').read_bytes(), doc.revision)
+    assert preview['errors'] == []
+    assert len(preview['rows']) == 2
 
 
 def test_converter_does_not_import_application_or_use_network(tmp_path, monkeypatch):
@@ -726,3 +770,93 @@ def test_form_marker_filter_preserves_four_digit_year_evidence(tmp_path):
     result, out = run(tmp_path, '--gider', expense_pdf(tmp_path, lead_layout=True, table_marker='2025'))
     assert result.returncode != 0 and not list(out.glob('*.xlsx'))
     assert '2025' in (out / 'report.md').read_text()
+
+
+@pytest.mark.parametrize('centered', [False, True])
+def test_lead_signature_only_last_expenditure_page_is_reported_and_skipped(tmp_path, centered):
+    pdf = expense_pdf(tmp_path, lead_layout=True, table_marker=True, closing_page='valid',
+                      centered=centered, page_shift=-9)
+    result, out = run(tmp_path, '--gider', pdf)
+    assert result.returncode == 0, (out / 'report.md').read_text()
+    assert len(list(load_workbook(out / 'expenditure.xlsx').active.values)) == 4
+    report = (out / 'report.md').read_text()
+    assert 'sayfa 3' in report and 'imza kapanış sayfası atlandı' in report
+
+
+@pytest.mark.parametrize('invalid', ['header_only', 'missing_label', 'extra_text', 'amount',
+                                     'code', 'not_last', 'bad_header'])
+def test_other_dataless_expenditure_pages_stay_blocking(tmp_path, invalid):
+    result, out = run(tmp_path, '--gider', expense_pdf(tmp_path, lead_layout=True,
+                      table_marker=True, closing_page=invalid), '--gelir', revenue_pdf(tmp_path))
+    assert result.returncode != 0 and not list(out.glob('*.xlsx'))
+    assert 'kodlu veri satırı bulunamadı' in (out / 'report.md').read_text()
+
+
+@pytest.mark.parametrize('amount', ['-250,25', '- 250,25', '-   250,25', '- 250\n,25'])
+def test_lead_signed_planned_deduction_reconciles_without_positive_revenue(tmp_path, amount):
+    result, out = run(tmp_path, '--gelir', revenue_pdf(tmp_path, lead_layout=True, deduction=amount))
+    assert result.returncode == 0, (out / 'report.md').read_text()
+    rows = list(load_workbook(out / 'revenue.xlsx').active.values)[1:]
+    assert [row[0] for row in rows] == ['01', '03']
+    assert sum(parse_number(row[1]) for row in rows) == Decimal('1350')
+    assert sum(parse_number(row[2]) - parse_number(row[3]) for row in rows) == Decimal('1210.25')
+    report = (out / 'report.md').read_text()
+    assert 'Gelir düzey 1 toplamı' in report
+    assert '1.350,00 + (-250,25) = 1.099,75' in report
+    assert 'XLSX brüt tahmin' in report and 'XLSX satırı üretilmedi' in report
+
+
+def test_planned_deduction_requires_independent_pdf_total(tmp_path):
+    result, out = run(tmp_path, '--gelir', revenue_pdf(tmp_path, deduction='- 250,25', total=False))
+    assert result.returncode != 0 and not list(out.glob('*.xlsx'))
+
+
+@pytest.mark.parametrize('invalid', ['code', 'label', 'actual', 'blank', 'total'])
+def test_planned_deduction_exception_does_not_weaken_validation(tmp_path, invalid):
+    result, out = run(tmp_path, '--gider', expense_pdf(tmp_path, closing_page='valid'),
+                      '--gelir', revenue_pdf(tmp_path, deduction='- 250,25', deduction_error=invalid))
+    assert result.returncode != 0 and not list(out.glob('*.xlsx'))
+    if invalid == 'total':
+        assert '0,01' in (out / 'report.md').read_text()
+
+
+@pytest.mark.parametrize('amount', ['--250,25', '- -250,25', '+250,25', '- 250 ,25',
+                                   '250,25 -', '- 250,25X'])
+def test_only_detached_leading_minus_is_normalized(tmp_path, amount):
+    result, out = run(tmp_path, '--gelir', revenue_pdf(tmp_path, deduction=amount))
+    assert result.returncode != 0 and not list(out.glob('*.xlsx'))
+
+
+def test_signature_only_closing_page_dates_still_have_to_match(tmp_path):
+    pdf = expense_pdf(tmp_path, closing_page='valid', date_overrides={2: {'end': '30/12/2026'}})
+    result, out = run(tmp_path, '--gider', pdf)
+    assert result.returncode != 0 and not list(out.glob('*.xlsx'))
+    assert 'Tarihi sayfalar arasında tutarsız' in (out / 'report.md').read_text()
+
+
+def test_both_lead_blockers_together_keep_all_reconciliations_exact(tmp_path):
+    result, out = run(tmp_path, '--gider', expense_pdf(tmp_path, lead_layout=True,
+                      table_marker=True, closing_page='valid'),
+                      '--gelir', revenue_pdf(tmp_path, lead_layout=True, deduction='- 250,25'))
+    assert result.returncode == 0, (out / 'report.md').read_text()
+    assert {path.name for path in out.iterdir()} == {'expenditure.xlsx', 'revenue.xlsx', 'report.md'}
+    # Every reconciliation table's last (difference) cell must stay zero.
+    lines = (out / 'report.md').read_text().splitlines()
+    differences = [line.rsplit('|', 2)[1].strip() for line in lines
+                   if line.startswith('|') and line.count('|') == 5
+                   and re.fullmatch(r'-?[\d.]+,\d{2}', line.rsplit('|', 2)[1].strip())]
+    assert len(differences) == 42
+    assert set(differences) == {'0,00'}
+
+
+def test_detached_minus_with_grouped_millions_stays_in_its_column(tmp_path):
+    headers = ['Gelirin Kodu', 'Açıklama', *converter.revenue_labels(2026), 'Oran']
+    rows = [['01', 'SENTETİK GELİR', '5.000.000,00', *(['0,00'] * 8)],
+            ['09', 'Red ve İadeler (-)', '- 2.345.678,91', *(['0,00'] * 8)],
+            ['', 'GENEL TOPLAM', '2.654.321,09', *(['0,00'] * 8)]]
+    pdf = pdf_table(tmp_path / 'large-synthetic.pdf', headers, [90, 140] + [90] * 8 + [45], [rows])
+    result, out = run(tmp_path, '--gelir', pdf)
+    assert result.returncode == 0, (out / 'report.md').read_text()
+    assert list(load_workbook(out / 'revenue.xlsx').active.values)[1] == (
+        '01', '5.000.000,00', '0,00', '0,00', None)
+    assert '5.000.000,00 + (-2.345.678,91) = 2.654.321,09' in (out / 'report.md').read_text()

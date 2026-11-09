@@ -39,7 +39,7 @@ EXPENSE_HEADERS = ('Müdürlük No', 'Ekonomik Kod', 'Başlangıç Ödeneği', '
 REVENUE_HEADERS = ('Ekonomik Kod', 'Bütçe Tahmini', 'Tahsilat (Gerçekleşme)',
                    'Red ve İadeler', 'Sapma Açıklaması')
 REVENUE_CODES = {'01', '03', '04', '05', '06', '08', '09'}
-MONEY = re.compile(r'-?(?:0|[1-9]\d*|[1-9]\d{0,2}(?:\.\d{3})*),\d{2}\Z')
+MONEY = re.compile(r'(?:-[ \t]*)?(?:0|[1-9]\d*|[1-9]\d{0,2}(?:\.\d{3})*),\d{2}\Z')
 WRAPPED_MONEY = re.compile(MONEY.pattern.replace(r'\d{2}\Z', r'\d{1,2}\Z'))
 
 MAPPING = """## Sütun eşlemesi
@@ -64,6 +64,9 @@ Gider düzey 1 tutarları fonksiyonel/finansal dallar üzerinden toplanır.
 Alt ekonomik düzeyler ve ara toplamlar yeniden eklenmez.
 Tutarlar kuruş kaybını önlemek için XLSX'e Türkçe sayı metni olarak yazılır;
 mevcut XLSX önizlemesi bu biçimi okur. Boş hücre sıfır sayılmaz.
+09 Red ve İadeler (-) plan kesintisi varsa eksi işareti kaynak mutabakatında
+korunur; XLSX brüt tahmin içerir. Kesinti ve brüt/net köprüsü aşağıdaki kaynak
+izlerinde ayrıca açıklanır; plan kesintisi gerçekleşen iade alanına taşınmaz.
 """
 
 
@@ -113,7 +116,7 @@ class Row:
                     raise ConversionError(f'{self.where}, {label}: bölünmüş tutar bağımsız '
                                           'satır eşitliğiyle doğrulanamıyor. Kaynak PDF düzenini kontrol edin.')
                 wrapped.append((offset, label, parts, raw))
-            value = Decimal(raw.replace('.', '').replace(',', '.'))
+            value = Decimal(compact_sign(raw).replace('.', '').replace(',', '.'))
             values.append(value)
         if revenue:
             for label, actual, expected in (
@@ -161,11 +164,16 @@ def header_matches(actual, expected, year):
             and header_key(actual) == header_key(expected))
 
 
-NUMBER_FRAGMENT = re.compile(r'-?(?:\d{1,3}(?:\.\d{3})+|\d+)(?:,\d{1,2})?\Z|,\d{1,2}\Z')
+NUMBER_FRAGMENT = re.compile(r'(?:-[ \t]*)?(?:\d{1,3}(?:\.\d{3})+|\d+)(?:,\d{1,2})?\Z|,\d{1,2}\Z')
+
+
+def compact_sign(value):
+    """Only whitespace immediately following a leading minus is ignorable."""
+    return re.sub(r'^-[ \t]+', '-', value)
 
 
 def numeric_spans(line, after=0):
-    return [match for match in re.finditer(r'\S+', line)
+    return [match for match in re.finditer(r'-[ \t]*\d[\d.,]*(?=\s|$)|\S+', line)
             if match.start() >= after and NUMBER_FRAGMENT.fullmatch(match.group())]
 
 
@@ -341,7 +349,7 @@ def header_bounds(lines, body, samples, expected, where, code_count, year, amoun
                        for cell in cells)
         if column == code_count:
             return all(not re.search(r'\d,\d{2}(?:\s|$)', cell) for cell in cells)
-        if not (any(cells) and all(not cell or re.fullmatch(r'-?[\d.,]+', cell) for cell in cells)):
+        if not (any(cells) and all(not cell or re.fullmatch(r'(?:-[ \t]*)?[\d.,]+', cell) for cell in cells)):
             return False
         if amounts is not None and column < len(expected) - 1:
             for line_no, _ in data:
@@ -456,6 +464,38 @@ def header_error(error, header, start, where, notes):
     return ConversionError(f'{error} Başlık adayı: {safe(" / ".join(header))}')
 
 
+def signature_closing_page(lines, previous_header, previous_preamble, where, metadata, year):
+    """Accept only the documented two-column signature block after a known header.
+
+    A data-less page cannot establish new column geometry. Its complete header
+    must therefore repeat the preceding validated page's header text/order.
+    """
+    signatures = [('duzenleyen', 'muhasebe yetkilisi'),
+                  ('adi soyadi', 'adi soyadi'), ('tarih', 'tarih'), ('imza', 'imza')]
+    content = [line for line in lines if line.strip() and not re.fullmatch(
+        r'\s*Sayfa\s+\d+(?:\s*/\s*\d+)?\s*', line, re.IGNORECASE)]
+    if not previous_header or len(content) < len(signatures):
+        return False
+    for index, (line, expected) in enumerate(zip(content[-4:], signatures)):
+        cells = re.split(r'[ \t]{2,}', line.strip())
+        if len(cells) != 2 or tuple(map(norm, cells)) != expected:
+            return False
+        # Reject digits, amounts, filled-in names, and unrecognised punctuation.
+        for cell in cells:
+            if (not re.fullmatch(r'[^\W\d_]+(?: [^\W\d_]+)*' + (r'\s*:' if index else ''),
+                                 cell)):
+                return False
+    prefix = content[:-4]
+    start = read_metadata(prefix, where, metadata, year)
+    validate_metadata(metadata, where, True, None)
+    if start and [' '.join(line.split()) for line in prefix[:start]] != previous_preamble:
+        return False
+    while start < len(prefix) and re.fullmatch(r'\s*\d{1,3}\s*', prefix[start]):
+        start += 1
+    return ([' '.join(line.split()) for line in prefix[start:]]
+            == [' '.join(line.split()) for line in previous_header if line.strip()])
+
+
 def pdf_rows(path, kind, year, notes=None):
     expense = kind == 'expenditure'
     expected = (('Kurum Kodu', 'Fonksiyonel Kodu', 'Finansal Kodu', 'Ekonomik Kodu',
@@ -464,6 +504,8 @@ def pdf_rows(path, kind, year, notes=None):
     code_count = 4 if expense else 1
     description = code_count
     rows = []
+    previous_header = None
+    previous_preamble = None
     metadata = {'start': [], 'end': [], 'period': []}
     with path.open('rb') as source:
         reader = PdfReader(source)
@@ -477,11 +519,19 @@ def pdf_rows(path, kind, year, notes=None):
                 after = description_anchor(lines, where)
                 samples = financial_samples(lines, 11 if expense else 9, after)
                 if not samples:
+                    if (expense and page_no == len(reader.pages) and rows
+                            and signature_closing_page(lines, previous_header, previous_preamble,
+                                                       where, metadata, year)):
+                        if notes is not None:
+                            notes.append(f'{where}: doğrulanmış başlık ve yalnız iki sütunlu imza '
+                                         'bloğu içeren imza kapanış sayfası atlandı; kod/tutar yok.')
+                        continue
                     raise ConversionError(f'{where}: kodlu veri satırı bulunamadı. PDF tablosunu kontrol edin.')
             except ConversionError as exc:
                 raise header_error(exc, lines[:12], 0, where, notes) from None
             body = samples[0][0]
             start = read_metadata(lines[:body], where, metadata, year)
+            preamble = [' '.join(line.split()) for line in lines[:start] if line.strip()]
             # Short bare form/page counters precede the table, while four-digit
             # revenue year labels remain part of the actual header block.
             while start < body and (not lines[start].strip()
@@ -500,6 +550,8 @@ def pdf_rows(path, kind, year, notes=None):
                     [spans for _, spans in samples], expected, located, code_count, year, amounts)
             except ConversionError as exc:
                 raise header_error(exc, header, start, where, notes) from None
+            previous_header = header
+            previous_preamble = preamble
             current = None
             for line_no, line in body_lines:
                 first = len(line) - len(line.lstrip())
@@ -708,6 +760,7 @@ def revenue(rows, year, notes, errors):
     total = None
     details = []
     pending = []
+    planned_deduction = None
     for row in rows:
         code = codes(row.text(0))
         if code and code[0] not in REVENUE_CODES:
@@ -729,6 +782,14 @@ def revenue(rows, year, notes, errors):
             raise ConversionError(f'{row.where}: gelir kodu bilinmiyor veya yinelenmiş ({code[0]}). '
                                   'Düzey 1 kodlarını kontrol edin.')
         emitted[code[0]] = row.amounts(2, labels, revenue=True, notes=notes)
+        v = emitted[code[0]]
+        if v[0] < 0:
+            if (code[0] != '09' or norm(row.text(1)) != 'red ve iadeler'
+                    or not re.search(r'\(\s*-\s*\)', row.text(1)) or any(v[1:])):
+                raise ConversionError(f'{row.where}: negatif gelir tahmini yalnız 09 Red ve İadeler (-) '
+                                      'plan kesintisinde, diğer yedi parasal alan açık sıfırken desteklenir. '
+                                      'Kaynak satırı kontrol edin; tutar pozitif gelire çevrilmedi.')
+            planned_deduction = row
     if not emitted:
         raise ConversionError('Gelir: düzey 1 satır bulunamadı. Tam gelir cetvelini kullanın.')
     for parent, where in details:
@@ -744,6 +805,9 @@ def revenue(rows, year, notes, errors):
                 notes.append(f'{where}, {labels[offset]}: {safe(" / ".join(parts))} → '
                              f'{"".join(parts)}; bağımsız genel toplam sütunuyla doğrulandı.')
     else:
+        if planned_deduction is not None:
+            errors.append(f'{planned_deduction.where}: negatif plan kesintisi bağımsız genel toplam '
+                          'olmadan doğrulanamaz. Genel toplamı içeren tam gelir PDF kullanın.')
         for offset, where, parts in pending:
             errors.append(f'{where}, {labels[offset]}: bölünmüş tutar '
                           f'({safe(" / ".join(parts))}) satır eşitliği veya genel toplamla '
@@ -752,8 +816,24 @@ def revenue(rows, year, notes, errors):
                      'Düzey 1 satırlarının tahakkuk ve net tahsilat eşitlikleri doğrulandı.')
     output = []
     for code, v in sorted(emitted.items()):
+        if code == '09' and planned_deduction is not None:
+            continue
         validate_output([v[0], v[4], v[5]], f'Gelir {code}')
         output.append([code, money(v[0]), money(v[4]), money(v[5]), ''])
+    if planned_deduction is not None:
+        gross = sum((v[0] for code, v in emitted.items() if code != '09'), Decimal(0))
+        deduction = emitted['09'][0]
+        if total is not None:
+            reconcile('Gelir XLSX brüt tahmin + plan kesintisi', [gross + deduction],
+                      total[:1], labels[:1], notes, errors)
+        notes.append(f'{planned_deduction.where}: 09 Red ve İadeler (-) kaynak plan kesintisi '
+                     f'{money(deduction)}; XLSX satırı üretilmedi. Mevcut önizleme negatif tahmini '
+                     'desteklemediğinden XLSX brüt tahmin içerir; net bütçe tahmini içermez. '
+                     f'XLSX brüt tahmin + kaynak plan kesintisi = PDF net tahmini: '
+                     f'{money(gross)} + ({money(deduction)}) = {money(gross + deduction)}. '
+                     'Kesinti kaynak mutabakatına eksi işaretiyle dahil edildi; pozitif gelir, '
+                     'tahsilat veya gerçekleşen Red ve İadeler alanına aktarılmadı. '
+                     'Net bütçe tahmininin uygulamada temsili ayrı bir app/ değişikliği gerektirir.')
     return output
 
 

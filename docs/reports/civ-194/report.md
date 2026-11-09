@@ -75,7 +75,8 @@ toplanmaz.
 | Ertesi Yıla Devreden Ödenek | Gelecek Yıla Devrolan Ödenek |
 | Sapma Açıklaması | Boş |
 
-Gelirde her düzey 1 kod için tek satır üretilir; alt düzeyler tekrar toplanmaz.
+Gelirde her gelir düzey 1 kod için tek satır üretilir; alt düzeyler tekrar
+toplanmaz. Aşağıdaki belgelenmiş plan kesintisi istisnası ayrıca raporlanır.
 
 | XLSX sütunu | PDF kaynağı |
 | --- | --- |
@@ -87,6 +88,25 @@ Gelirde her düzey 1 kod için tek satır üretilir; alt düzeyler tekrar toplan
 
 Net tahsilat, brüt tahsilat yerine aktarılmaz; mevcut uygulama neti tahsilattan
 red ve iadeyi düşerek hesaplar.
+
+**Negatif plan kesintisi:** `09`, açıklaması `Red ve İadeler (-)` olan düzey 1
+satırda bütçe tahmini negatif, diğer yedi parasal alanın tamamı açıkça sıfırsa
+bu satır planlanan gelir kesintisidir. `-250,25`, `- 250,25` ve eksi işaretinden
+sonra birden çok boşluk aynı negatif tutar olarak okunur; rakamların arasındaki
+boşluklar veya başka işaret dizilimleri kabul edilmez. Satırın negatif tutarı
+sekiz sütunluk kaynak mutabakatına aynen katılır; bağımsız PDF genel toplamı
+zorunludur. Bir kuruş fark bile dönüşümü durdurur.
+
+Mevcut uygulama negatif bütçe tahminini kabul etmediğinden bu kesinti için XLSX
+satırı üretilmez. XLSX **brüt gelir tahminlerini** içerir; PDF'nin kesinti sonrası
+net bütçe tahminiyle aynı toplamı içermez. Raporda kaynak sayfa/satır, kesinti
+tutarı ve `XLSX brüt tahmin + negatif plan kesintisi = PDF net tahmini` köprüsü
+ayrı mutabakatla gösterilir. Kesinti pozitif gelire çevrilmez, diğer kodlara
+dağıtılmaz veya gerçekleşen `Red ve İadeler` alanına taşınmaz. Tahsilat ve
+gerçekleşen iadeler değişmeden aktarılır. Net bütçe tahminini uygulamada da
+temsil etmek ayrı bir `app/` değişikliği gerektirir; bu görevde yapılmaz.
+Başka kod/açıklamadaki negatif tahmin, boş veya sıfır dışı ek parasal alan,
+eksik genel toplam ve yinelenen kod hâlâ hatadır.
 
 ## Mutabakat ve durdurma kuralları
 
@@ -156,6 +176,14 @@ yazılamıyorsa veya girdiyle çakışıyorsa hata standart hata akışına yaz�
   ayıklanır; dört basamaklı mali yıl etiketleri ve başlığın içindeki parçalar
   korunur. `Finan / sal / Kodu` ve iki aktarma sütununa yayılan `Aktarma
   Suratiyle` başlığı bu düzenle birlikte test edilir.
+  Dar istisna: giderin yalnız son sayfası, önceki doğrulanmış sayfanın tam
+  başlığını aynı metin/sırayla tekrar edip ardından yalnız iki sütunlu
+  `Düzenleyen / Muhasebe Yetkilisi`, iki adet `Adı Soyadı :`, `Tarih :`,
+  `İmza :` satırlarını içeriyorsa atlanır ve sayfa numarası rapora yazılır.
+  Standart `Sayfa N` altbilgisi dışında ek metin, doldurulmuş imza alanı,
+  tutar veya kod kabul edilmez. Başlıksız, yalnız başlıklı, değişmiş başlıklı,
+  eksik imzalı veya arada kalan verisiz sayfa yine dönüşümü durdurur.
+  Kapanış sayfasındaki tarih bilgileri de belge genelindeki denetime katılır.
 - Giderde `46` kurum hiyerarşisi, üç parçalı tek belediye toplamı, dört
   parçalı müdürlük kodu ve ekonomik satır için dört parçalı fonksiyon/tek
   parçalı finansman bağlamı gerekir. Sayfa geçişinde bağlam korunur.
@@ -216,6 +244,16 @@ yan yana tutar sütunlarında `tam kısım / ,dd` ile `…,d / d` biçimindeki
 ondalık devamları. Bu altı test eski commit’te başarısızdı; yeni akışta geçer.
 Yanlış son basamak mutabakat hatasıdır; eksik ek, önünde `,d` bulunmayan
 tek basamak ve yanlış dört basamaklı yıl kanıtı kabul edilmez.
+
+Lead’in `3e37776` tekrar koşusundaki iki engel için altı yeni regresyon önce
+aynı commit üzerinde başarısız oldu: iki başlık hizasıyla imza kapanış sayfası
+ve bitişik/ayrık/çok boşluklu/bölünmüş negatif plan kesintisi. Düzeltme sonrası
+geçerler. Diğer verisiz sayfalar, değişmiş başlık/tarih, eksik imza, fazladan
+metin/kod/tutar, desteklenmeyen negatif satır, bozuk işaret, eksik genel toplam
+ve bir kuruşluk fark için engelleyici testler vardır. Üretilen gelir XLSX’i de
+mevcut `preview_import` ile geçici PostgreSQL üzerinde doğrulanır. Gerçek
+PDF’lerde çıkış kodunun sıfır olduğunun doğrulaması lead’in yerel tekrar
+koşusuna bırakılır; gerçek dosyalar bu çalışmada kullanılmadı.
 
 ```sh
 python -m pytest -q --require-postgres tests/test_kesin_hesap_xlsx.py
