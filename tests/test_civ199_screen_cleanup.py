@@ -170,22 +170,27 @@ def test_completion_page_shows_hint_once_and_groups(section_client, sample):
         assert f'href="/activity-sections/reports/{doc.id}?code=I.A"' in html
 
 
-def test_long_completion_page_folds_directorate_reports(section_client, sample):
-    """(10) More than three reports: directorate reports and the export list start closed; idare stays open."""
+def test_long_completion_page_uses_card_grid_and_dialogs(section_client, sample):
+    """(10) More than three reports: directorate reports become cards whose sections open in a dialog;
+    idare is a card too (12); the year prefix is shown only when several years are listed."""
     client, docs, _, _ = section_client
     response = client.get(f'/activity-sections?period_id={sample["period"].id}')
     reports = response.context['reports']
     short = response.template.render({**response.context, 'reports': reports[:2]})
-    assert 'id="reportSearch"' not in short and 'exports-fold' not in short
-    assert short.count('<details class="report-fold" open>') == 2    # few reports: everything open
+    assert 'id="reportSearch"' not in short and 'exports-fold' not in short and '<dialog' not in short
     unit = next(item for item in reports if item['report']['department_id'])
     many = reports + [deepcopy(unit) for _ in range(3)]
     html = response.template.render({**response.context, 'reports': many})
-    folds = re.findall(r'<details class="report-fold"( open)?>', html)
-    idare = sum(1 for item in many if not item['report']['department_id'])
-    assert folds.count(' open') == idare and len(folds) == len(many)
-    assert 'id="reportSearch"' in html
-    assert f'<details class="exports-fold"><summary>{len(many)} raporun Word ve PDF dosyalarını göster</summary>' in html
+    cards = len(many)
+    assert html.count('class="report-group report-card"') == cards
+    assert html.count('<dialog class="report-dialog"') == cards
+    assert html.count('data-open-dialog=') == cards
+    assert '<div class="report-list report-grid">' in html and 'id="reportSearch"' in html
+    assert f'<details class="exports-fold"><summary>{sum(1 for i in many if i["report"]["department_id"])} müdürlük raporunun Word ve PDF dosyalarını göster</summary>' in html
+    year = unit['report']['year']
+    assert f'>{unit["report"]["department"]}</h3>' in html and f'{year} · {unit["report"]["department"]}' not in html
+    other = deepcopy(unit); other['report']['year'] = year + 1
+    assert f'{year} · {unit["report"]["department"]}' in response.template.render({**response.context, 'reports': many + [other]})
 
 
 # (6) error page ------------------------------------------------------------------------

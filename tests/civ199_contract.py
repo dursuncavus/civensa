@@ -64,26 +64,33 @@ def bindings_without_search_and_saved(html):
     html = re.sub(r'<p class="status success binding-saved" role="status">.*?</p>\s*', '', html, flags=re.S)
     html = re.sub(r'<section class="binding-row(?: is-saved)?" id="gosterge-[^"]*" data-search="[^"]*">',
                   '<section class="binding-row">', html)
-    return re.sub(r'<script>\s*\(function\(\)\{\s*const input=document.getElementById\(\'bindingSearch\'\).*?</script>\s*',
-                  '', html, flags=re.S)
+    return re.sub(r'<script src="/static/design/indicator-bindings.js" defer></script>\s*', '', html)
 
 
 def sections_without_folds(html):
-    """(10) EK-1 completion: per-report fold, directorate search and folded exports are new."""
+    """(10) EK-1 completion: directorate search, card grid with a sections dialog, folded exports are new."""
     html = re.sub(r'<div class="report-search">.*?</div>\s*', '', html, count=1, flags=re.S)
-    html = re.sub(r'<details class="report-fold"(?: open)?><summary class="report-fold-summary">\s*', '', html)
-    html = html.replace('<span class="fold-hint"> · Bölümleri göster</span></p></summary>', '</p>')
-    html = re.sub(r'</details>\s*</article>', '</article>', html)
-    html = re.sub(r'<details class="exports-fold"><summary>\d+ raporun Word ve PDF dosyalarını göster</summary>\s*', '', html)
-    html = html.replace('</details></section>', '</section>')
-    return re.sub(r'<script>\s*\(function\(\)\{\s*const input=document.getElementById\(\'reportSearch\'\).*?</script>\s*',
-                  '', html, flags=re.S)
+    html = re.sub(r'<div class="report-list(?: report-grid)?">\s*', '', html, count=1)
+    html = re.sub(r'</div>\s*</section>(\s*<section class="index-panel"><h2>Word ve PDF)', r'</section>\1', html, count=1)
+    html = re.sub(r'<button type="button" class="button report-open" data-open-dialog="[^"]*">Bölümleri aç</button>\s*'
+                  r'<dialog class="report-dialog"[^>]*><div class="report-dialog-head"><h3[^>]*>.*?</h3><form method="dialog">'
+                  r'<button class="button">Kapat</button></form></div>', '', html, flags=re.S)
+    html = re.sub(r'</dialog>\s*</article>', '</article>', html)
+    html = re.sub(r'<details class="exports-fold"><summary>\d+ müdürlük raporunun Word ve PDF dosyalarını göster</summary>\s*', '', html)
+    html = re.sub(r'</details>\s*</section>', '</section>', html)
+    # (12) owners on their own line; row warnings fold to one line.
+    html = re.sub(r'<span class="summary-owners">(.*?)</span></p>', r' · \1</p>', html)
+    html = re.sub(r'<details class="row-warnings"><summary>(<h4>.*?</h4>)(?: · \d+)?</summary>(.*?)</details>', r'\1\2', html, flags=re.S)
+    return re.sub(r'<script src="/static/design/section-index.js" defer></script>\s*', '', html)
 
 
 def mapping_without_folds(html):
-    """(10) Each directorate's activities fold under its heading."""
-    html = re.sub(r'<details class="mapping-fold"(?: open)?><summary>\d+ faaliyeti göster</summary>\s*', '', html)
-    return re.sub(r'</div>\s*</details>(\s*</section>)', r'</div>\1', html)
+    """(10, 11) Many directorates become cards; each card opens its activities in a <dialog>."""
+    html = html.replace('mapping-groups mapping-grid', 'mapping-groups').replace('mapping-group mapping-card', 'mapping-group')
+    html = re.sub(r'\s*<button type="button" class="button small primary mapping-open" data-open-dialog="[^"]*">Faaliyetleri aç</button>', '', html)
+    html = re.sub(r'<p class="muted mapping-hits" data-mapping-hits role="status"></p>\s*', '', html)
+    html = re.sub(r'<dialog class="app-dialog mapping-dialog".*?</form></div>\s*', '', html, flags=re.S)
+    return re.sub(r'\s*<div class="app-dialog-foot">.*?</dialog>', '', html, flags=re.S)
 
 
 def bindings_without_department_folds(html):

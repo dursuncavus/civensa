@@ -84,5 +84,21 @@
 .activity-mapping-page .mapping-counts-details > summary { cursor: pointer; color: var(--text-secondary); font-size: var(--text-sm); margin-top: var(--space-2); }
 .activity-mapping-page .sticky-save[hidden] { display: none; }
 /* CIV-199 (10): each directorate's activities fold under its heading. */
-.activity-mapping-page .mapping-fold > summary { cursor: pointer; color: var(--accent); font-weight: var(--font-medium); margin: var(--space-2) 0; }
 .activity-mapping-page .group-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+
+/* CIV-199 (11): many directorates become a card grid; each card opens its activities in an in-page window. */
+.activity-mapping-page .mapping-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(18rem, 1fr)); gap: var(--space-4); align-items: stretch; }
+.activity-mapping-page .mapping-grid .mapping-card { margin: 0; display: flex; flex-direction: column; }
+.activity-mapping-page .mapping-card .section-head { display: flex; flex-direction: column; align-items: stretch; gap: var(--space-3); }
+.activity-mapping-page .mapping-card h2 { font-size: var(--text-card); margin: 0; }
+.activity-mapping-page .mapping-card .issue-list { font-size: var(--text-sm); }
+.activity-mapping-page .mapping-hits:empty { display: none; }
+.activity-mapping-page .mapping-dialog { width: min(72rem, calc(100% - 32px)); max-height: calc(100vh - 48px); overflow: auto; padding: var(--space-6); border: 1px solid var(--text-secondary); border-radius: var(--radius); background: var(--surface); color: var(--text); }
+.activity-mapping-page .mapping-dialog::backdrop { background: color-mix(in srgb, var(--text) 40%, transparent); }
+.activity-mapping-page .app-dialog-head { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); margin-bottom: var(--space-4); }
+.activity-mapping-page .app-dialog-head h2 { margin: 0; }
+.activity-mapping-page .app-dialog-head form { margin: 0; }
+.activity-mapping-page .app-dialog-foot { position: sticky; bottom: calc(-1 * var(--space-6)); display: flex; align-items: center; justify-content: flex-end; gap: var(--space-3); margin: var(--space-4) calc(-1 * var(--space-6)) calc(-1 * var(--space-6)); padding: var(--space-3) var(--space-6); background: var(--surface); border-top: 1px solid var(--border); }
+/* CIV-199 (12): coloured card heads, same as EK-1, so neighbouring directorates stand apart. */
+.activity-mapping-page .mapping-card .section-head > div:first-child { padding: var(--space-3); border-radius: var(--radius); background: var(--accent-soft); }
+.activity-mapping-page .mapping-card h2 { color: var(--accent-hover); }

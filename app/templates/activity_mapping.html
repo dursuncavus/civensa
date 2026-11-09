@@ -131,21 +131,24 @@
           <input id="mappingSearch" placeholder="Faaliyet adında ara">
         </label>
       </div>
-      <div id="mappingGroups" class="mapping-groups">
+      {% set use_dialog = groups|length > 3 %}
+      <div id="mappingGroups" class="mapping-groups{% if use_dialog %} mapping-grid{% endif %}">
         {% for g in groups %}
-          <section class="mapping-group" data-department="{{ g.department.id }}">
+          <section class="mapping-group{% if use_dialog %} mapping-card{% endif %}" data-department="{{ g.department.id }}">
             <div class="section-head">
               <div>
                 <h2>{{ department_names[g.department.id] }}</h2>
                 <p class="muted">{{ g.activities|length }} faaliyet eşleştirme bekliyor · {{ g.choices|length }} Program / Alt Program seçeneği</p>
               </div>
               <span class="group-actions"><a class="button small" href="/department/{{ g.department.id }}?period_id={{ period.id }}">Müdürlüğü Aç</a>
-              <a class="button small" data-program-link href="/program/{{ g.department.id }}?period_id={{ period.id }}">Performans kartlarını aç</a></span>
+              <a class="button small" data-program-link href="/program/{{ g.department.id }}?period_id={{ period.id }}">Performans kartlarını aç</a>{% if use_dialog %}
+              <button type="button" class="button small primary mapping-open" data-open-dialog="mapping-dialog-{{ g.department.id }}">Faaliyetleri aç</button>{% endif %}</span>
             </div>
+            {% if use_dialog %}<p class="muted mapping-hits" data-mapping-hits role="status"></p>{% endif %}
             {% if not g.choices %}
               <div class="issue-list">Bu müdürlük için performans göstergelerinden türetilebilen Program / Alt Program bulunamadı. Önce gösterge yapısını kontrol edin.</div>
             {% endif %}
-            <details class="mapping-fold"{% if groups|length <= 3 %} open{% endif %}><summary>{{ g.activities|length }} faaliyeti göster</summary>
+            {% if use_dialog %}<dialog class="app-dialog mapping-dialog" id="mapping-dialog-{{ g.department.id }}" aria-labelledby="mapping-dialog-title-{{ g.department.id }}"><div class="app-dialog-head"><h2 id="mapping-dialog-title-{{ g.department.id }}">{{ department_names[g.department.id] }}</h2><form method="dialog"><button class="button">Kapat</button></form></div>{% endif %}
             <div class="mapping-list">
               {% for a in g.activities %}
                 {% set suggestion=g.suggestions[a.id] %}
@@ -199,7 +202,7 @@
                 </article>
               {% endfor %}
             </div>
-            </details>
+            {% if use_dialog %}<div class="app-dialog-foot"><span><b data-selected-count>0</b> faaliyet seçildi</span><button type="button" class="button primary" data-save-mappings>Seçimleri Kaydet</button></div></dialog>{% endif %}
           </section>
         {% endfor %}
       </div>

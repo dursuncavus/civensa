@@ -408,12 +408,15 @@ document.querySelectorAll('.save-password-reset').forEach(button=>button.addEven
   const count=document.getElementById('selectedMappingCount');
   const filter=document.getElementById('mappingDepartmentFilter');
   const search=document.getElementById('mappingSearch');
+  const dialogSaves=[...document.querySelectorAll('[data-save-mappings]')];
   function updateCount(){
     const n=selects.filter(s=>s.value).length;
     if(count)count.textContent=String(n);
     [topSave,bottomSave].forEach(b=>{if(b)b.disabled=n===0});
     // CIV-199 (4b): the floating bar only appears once something is selected.
     const bar=bottomSave?.closest('.sticky-save');if(bar)bar.hidden=n===0;
+    document.querySelectorAll('[data-selected-count]').forEach(el=>{el.textContent=String(n)});
+    dialogSaves.forEach(b=>{b.disabled=n===0});
   }
   selects.forEach(s=>s.addEventListener('change',()=>{s.classList.toggle('changed',!!s.value);updateCount()}));
   document.querySelectorAll('.choose-suggestion').forEach(button=>button.addEventListener('click',()=>{
@@ -432,7 +435,6 @@ document.querySelectorAll('.save-password-reset').forEach(button=>button.addEven
       if(!select||select.value)return;
       select.value=button.dataset.subprogram||'';
       select.classList.toggle('changed',!!select.value);
-      select.closest('.mapping-fold')?.setAttribute('open','');
       selected++;
     });
     updateCount();
@@ -447,8 +449,9 @@ document.querySelectorAll('.save-password-reset').forEach(button=>button.addEven
         const ok=groupOk&&(!q||(row.dataset.name||'').includes(q)); row.hidden=!ok;if(ok)visible++;
       });
       group.hidden=visible===0;
-      // CIV-199 (10): a filtered group opens so its matches are visible.
-      if((did||q)&&visible)group.querySelector('.mapping-fold')?.setAttribute('open','');
+      // CIV-199 (11): a card says how many of its activities match the search.
+      const hits=group.querySelector('[data-mapping-hits]');
+      if(hits)hits.textContent=q&&visible?visible+' faaliyet aramayla eşleşti.':'';
     });
   }
   filter?.addEventListener('change',applyFilter);search?.addEventListener('input',applyFilter);
@@ -456,13 +459,14 @@ document.querySelectorAll('.save-password-reset').forEach(button=>button.addEven
     const assignments=selects.filter(s=>s.value).map(s=>({activity_id:s.dataset.activity,subprogram_id:s.value}));
     if(!assignments.length){toast('Kaydedilecek eşleştirme seçilmedi.');return}
     if(!window.confirm(assignments.length+' faaliyet için seçilen Program / Alt Program bağlantıları kaydedilsin mi?'))return;
-    [topSave,bottomSave].forEach(b=>{if(b){b.disabled=true;b.dataset.old=b.textContent;b.textContent='Kaydediliyor...'}});
+    [topSave,bottomSave,...dialogSaves].forEach(b=>{if(b){b.disabled=true;b.dataset.old=b.textContent;b.textContent='Kaydediliyor...'}});
     const {r,j}=await jsonFetch('/api/activity-mappings/bulk',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({assignments})});
-    if(!r.ok){[topSave,bottomSave].forEach(b=>{if(b){b.disabled=false;b.textContent=b.dataset.old||'Seçimleri Kaydet'}});toast(j.detail||'Eşleştirmeler kaydedilemedi.');return}
+    if(!r.ok){[topSave,bottomSave,...dialogSaves].forEach(b=>{if(b){b.disabled=false;b.textContent=b.dataset.old||'Seçimleri Kaydet'}});toast(j.detail||'Eşleştirmeler kaydedilemedi.');return}
     if(j.errors?.length)toast(`${j.updated} eşleştirme kaydedildi · ${j.errors.length} kayıt kontrol edilmeli.`);else toast(`${j.updated} faaliyet eşleştirildi · ${j.remaining} kayıt kaldı.`);
     setTimeout(()=>location.reload(),800);
   }
-  topSave?.addEventListener('click',saveMappings);bottomSave?.addEventListener('click',saveMappings);updateCount();applyFilter();
+  topSave?.addEventListener('click',saveMappings);bottomSave?.addEventListener('click',saveMappings);
+  dialogSaves.forEach(b=>b.addEventListener('click',saveMappings));updateCount();applyFilter();
 })();
 
 (function(){
@@ -625,3 +629,13 @@ document.querySelectorAll('.save-user-position').forEach(button=>button.addEvent
     window.scrollTo(0,saved.y);
   });
 })();
+
+// CIV-199 (11): in-page windows. A button with data-open-dialog opens the named <dialog>;
+// clicking the dimmed area outside it closes it.
+document.addEventListener('click',event=>{
+  const opener=event.target.closest('[data-open-dialog]');
+  if(opener){const dialog=document.getElementById(opener.dataset.openDialog);if(dialog&&typeof dialog.showModal==='function')dialog.showModal();return}
+  const d=event.target;
+  if(d instanceof HTMLDialogElement&&d.open){const r=d.getBoundingClientRect();
+    if(event.clientX<r.left||event.clientX>r.right||event.clientY<r.top||event.clientY>r.bottom)d.close()}
+});

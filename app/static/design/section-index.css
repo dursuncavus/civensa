@@ -79,11 +79,45 @@
 .section-index-page .owner-group .group-problems{color:var(--warning)}
 /* CIV-199: the checkbox sits on the same line as the select and the button, not on the label line. */
 .section-index-page .index-filters > label:has(input[type=checkbox]) { align-self: end; min-height: var(--control-height); gap: var(--space-2); }
-/* CIV-199 (10): long completion page — one closed line per directorate report. */
-.section-index-page .report-fold > summary { cursor: pointer; list-style: none; }
-.section-index-page .report-fold > summary::-webkit-details-marker { display: none; }
-.section-index-page .report-fold > summary .fold-hint { color: var(--accent); font-weight: var(--font-medium); }
-.section-index-page .report-fold[open] > summary .fold-hint { display: none; }
+/* CIV-199 (10): long completion page — directorate reports as a card grid; sections open in a dialog. */
+.section-index-page .report-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(17rem, 1fr)); gap: var(--space-3); }
+.section-index-page .report-grid > .report-group:not(.report-card) { grid-column: 1 / -1; }
+.section-index-page .report-card { display: flex; flex-direction: column; gap: var(--space-2); padding: 0 var(--space-4) var(--space-4); overflow: hidden; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); }
+.section-index-page .report-card .report-heading { display: flex; flex-wrap: wrap; align-items: start; justify-content: space-between; gap: var(--space-2); margin: 0; max-width: none; }
+.section-index-page .report-card h3 { font-size: var(--text-base); }
+.section-index-page .report-card .completion-summary { margin: 0; flex: 1; align-content: start; }
+.section-index-page .report-card .report-open { align-self: flex-start; }
+.section-index-page .report-dialog { width: min(64rem, calc(100% - 32px)); max-height: calc(100vh - 48px); overflow: auto; padding: var(--space-6); border: 1px solid var(--text-secondary); border-radius: var(--radius); background: var(--surface); color: var(--text); }
+.section-index-page .report-dialog::backdrop { background: color-mix(in srgb, var(--text) 40%, transparent); }
+.section-index-page .report-dialog-head { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); margin-bottom: var(--space-4); }
+.section-index-page .report-dialog-head form { margin: 0; }
+.section-index-page summary::before { display: inline-flex; align-items: center; justify-content: center; width: 1em; height: 1em; line-height: 1; }
 .section-index-page .report-search { max-width: 32rem; margin: 0 0 var(--space-4); }
 .section-index-page .report-search input { display: block; width: 100%; min-height: var(--control-height); padding: var(--space-2) var(--space-3); border: 1px solid var(--text-secondary); border-radius: var(--radius); font: inherit; }
 .section-index-page .exports-fold > summary { cursor: pointer; color: var(--accent); font-weight: var(--font-medium); margin-bottom: var(--space-3); }
+/* CIV-199 (11): create and filter panels side by side; year boxes only as wide as a year. */
+.section-index-page .index-top { display: grid; grid-template-columns: minmax(0,2fr) minmax(0,3fr); gap: var(--space-6); align-items: stretch; margin-bottom: var(--space-6); }
+.section-index-page .index-top > .index-panel { margin-bottom: 0; }
+.section-index-page .index-top > .index-panel:only-child { grid-column: 1 / -1; }
+.section-index-page .index-top .index-filters { margin-bottom: 0; }
+.section-index-page .index-create .index-filters { grid-template-columns: 8rem minmax(0,1fr); }
+.section-index-page .index-create .index-filters > .button { grid-column: 1 / -1; justify-self: start; }
+.section-index-page .index-filter .index-filters { grid-template-columns: 7rem minmax(0,1fr) 9rem auto; }
+@media (max-width: 1100px) {
+  .section-index-page .index-top { grid-template-columns: minmax(0,1fr); }
+}
+@media (max-width: 640px) {
+  .section-index-page .index-filter .index-filters,
+  .section-index-page .index-create .index-filters { grid-template-columns: minmax(0,1fr); }
+}
+.section-index-page .index-filter .report-search { max-width: none; margin: var(--space-4) 0 0; }
+.section-index-page .index-filter .report-search p:empty { display: none; }
+/* CIV-199 (12): coloured card heads so neighbouring directorates stand apart; owners on their own line. */
+.section-index-page .report-card .report-heading { margin: 0 calc(-1 * var(--space-4)) var(--space-1); padding: var(--space-3) var(--space-4); background: var(--accent-soft); border-bottom: 1px solid var(--border); }
+.section-index-page .report-card .report-heading h3 { color: var(--accent-hover); margin: 0; }
+.section-index-page .summary-owners { display: block; margin-top: var(--space-1); }
+.section-index-page .summary-owners::before { content: 'Dolduran: '; color: var(--text-secondary); }
+.section-index-page .report-card > p:not(.completion-summary) { display: flex; flex-wrap: wrap; gap: var(--space-2); margin: 0; }
+.section-index-page .row-warnings > summary { display: flex; align-items: center; gap: var(--space-2); cursor: pointer; font-size: var(--text-sm); }
+.section-index-page .row-warnings > summary h4 { display: inline; margin: 0; font-size: inherit; }
+.section-index-page .row-warnings[open] > summary { margin-bottom: var(--space-2); }
