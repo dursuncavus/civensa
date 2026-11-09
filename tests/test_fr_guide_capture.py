@@ -31,6 +31,11 @@ def test_committed_guide_contract():
     assert 'Her faaliyet için ayrı bir sonuç girilmez.' in results
     assert 'Gösterge gerçekleşmelerini ve kanıtlarını yukarıda anlatıldığı gibi girin.' in results
     assert "2026 faaliyetlerinden biri için kısa bir açıklama gerekiyorsa ilgili EK-1 bölümünün `Bölüm içeriği` alanına yazın." in results
+    for label in ['Rapor bölümleri ve beyanlar (EK-1)', 'Gösterge gerçekleşmeleri',
+                  'Taslak — Word (onaysız)', 'Taslak — PDF (onaysız)']:
+        assert '`' + label + '`' in body
+    for old in ['Faaliyet Raporu · EK-1', 'Faaliyet raporları']:
+        assert '`' + old + '`' not in body
     sources = [p for p in (ROOT/'app/templates').rglob('*') if p.is_file()]
     sources += [p for p in (ROOT/'app/static').rglob('*.js') if p.is_file()]
     # All quoted UI text must exist verbatim; no normalized/paraphrased labels.

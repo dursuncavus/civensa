@@ -7,7 +7,9 @@ from playwright.sync_api import expect, sync_playwright
 
 from test_activity_sections import section_client
 from test_activity_financial import expenditure, programme
-from test_activity_financial_warnings import prepare, SUFFIX
+from test_activity_financial_warnings import prepare
+
+INFO = 'Bu bölümü Mali Hizmetler dolduracak; gönderiminizi engellemez.'
 
 pytestmark = pytest.mark.postgres
 
@@ -41,21 +43,17 @@ def test_unit_finance_warning_index_and_submitted_count(section_client, db, samp
         page.goto(url)
         warning_panel = page.get_by_role('region', name='Malî bilgi uyarıları')
         expect(warning_panel.get_by_role('heading', name='Uyarılar (gönderimi engellemez)')).to_be_visible()
-        expect(warning_panel.locator('.ar-warning')).to_have_count(1)
-        expect(warning_panel).to_contain_text('fark -50')
-        expect(warning_panel).to_contain_text(SUFFIX.strip())
+        expect(warning_panel.get_by_role('status')).to_have_text(INFO)
+        expect(warning_panel.locator('.ar-warning')).to_have_count(0)
         assert page.evaluate('document.documentElement.scrollWidth <= innerWidth')
-        # Existing D-224 warning colors, verified from the rendered UI.
-        assert warning_panel.locator('.ar-warning').evaluate(
-            '(el) => [getComputedStyle(el).color, getComputedStyle(el).backgroundColor]'
-        ) == ['rgb(138, 90, 0)', 'rgb(255, 244, 214)']
         warning_panel.evaluate('(el) => { el.scrollIntoView(); window.scrollBy(0, -24); }')
         page.screenshot(path=str(folder / f'unit-financial-warning-{width}.png'))
 
         page.goto('http://testserver/activity-sections?section=III.A.1')
         completion = page.locator(f'.report-group[aria-labelledby="report-{doc.id}"]')
         expect(completion.get_by_role('heading', name='Uyarılar (gönderimi engellemez)')).to_be_visible()
-        expect(completion.locator('.ar-warning')).to_contain_text(SUFFIX.strip())
+        expect(completion.get_by_role('status')).to_have_text(INFO)
+        expect(completion.locator('.ar-warning')).to_have_count(0)
         assert page.evaluate('document.documentElement.scrollWidth <= innerWidth')
         completion.evaluate('(el) => { el.scrollIntoView(); window.scrollBy(0, -24); }')
         page.screenshot(path=str(folder / f'unit-section-warning-{width}.png'))

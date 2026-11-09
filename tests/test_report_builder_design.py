@@ -5,6 +5,7 @@ import json
 import os
 from pathlib import Path
 import re
+from time import monotonic
 from types import SimpleNamespace as Record
 from urllib.parse import urlsplit
 
@@ -295,6 +296,14 @@ def test_browser_flows_layout_and_evidence(browser, scenes, strategy_client, wid
         context.set_default_timeout(5000)
         pending, writes, errors = [], [], []
 
+        def wait_for_pending():
+            # Disabled state changes before the async fetch reaches the route.
+            # Pump Playwright events until that route is actually queued.
+            deadline = monotonic() + 5
+            while not pending and monotonic() < deadline:
+                page.wait_for_timeout(10)
+            assert len(pending) == 1, 'Import request did not reach the route'
+
         def serve(route):
             request = route.request
             current = urlsplit(request.url).path
@@ -341,7 +350,7 @@ def test_browser_flows_layout_and_evidence(browser, scenes, strategy_client, wid
             button = page.locator('#applySections' if scene == 'apply' else '#revertSections')
             button.click()
             expect(button).to_be_disabled()
-            assert len(pending) == 1
+            wait_for_pending()
             assert urlsplit(writes[0].url).path == '/api/import-batches/1101/' + action
             assert urlsplit(writes[0].url).query == ''
             pending.pop().fulfill(status=422, json={'detail': 'Sentetik içe aktarma uygulanamadı; hedef bölümü kontrol edin.'})
@@ -349,6 +358,7 @@ def test_browser_flows_layout_and_evidence(browser, scenes, strategy_client, wid
             expect(page.locator('#toast')).to_contain_text('Sentetik içe aktarma uygulanamadı')
             button.click()
             expect(button).to_be_disabled()
+            wait_for_pending()
             pending.pop().fulfill(status=200, json={'ok': True})
             expect(page).to_have_url(f"http://testserver/report-builder/manifest?period_id={data['period'].id}")
         else:
