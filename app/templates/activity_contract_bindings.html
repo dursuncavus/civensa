@@ -34,7 +34,7 @@
     <summary><b>{{ dep }}</b> · {{ items|length }} gösterge{% if pending %} · <span class="binding-pending">{{ pending }} eşleme bekliyor</span>{% endif %}</summary>
     {% endif %}
     {% for row in items %}
-    <section class="binding-row{% if saved_row == row.id %} is-saved{% endif %}" id="gosterge-{{ row.id }}" data-search="{{ (row.name ~ ' ' ~ row.department ~ ' ' ~ (row.code or ''))|lower }}">
+    <section class="binding-row{% if saved_row == row.id %} is-saved{% endif %}" id="gosterge-{{ row.id }}" data-search="{{ (row.name ~ ' ' ~ row.department ~ ' ' ~ (row.code or '')) }}">
       {% if saved_row == row.id %}
       <p class="status success binding-saved" role="status">Kaydedildi{% if saved_kind == 'direction' %}: yön «{{ 'Düşük değer daha iyi' if row.direction == 'lower' else 'Yüksek değer daha iyi' }}»{% else %}: kimlik ilişkisi sabitlendi{% endif %}.</p>
       {% endif %}

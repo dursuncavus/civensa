@@ -194,7 +194,7 @@ def test_civ199_direction_save_returns_to_row_and_says_saved(client, db, sample)
     """CIV-199 (8): a successful save must be visible; the page must not silently jump to the top."""
     from playwright.sync_api import sync_playwright, expect
     from test_sunum_browser import browser_options
-    sample['indicator'].name = 'Sentetik yanıt süresi'
+    sample['indicator'].name = 'Sentetik İşlem yanıt süresi'
     sample['indicator'].unit = 'Gün'
     pub = publish(client, db, sample)
     app.dependency_overrides[require_user] = lambda: sample['strategy']
@@ -226,6 +226,9 @@ def test_civ199_direction_save_returns_to_row_and_says_saved(client, db, sample)
         page.route('http://testserver/**', route)
         page.goto('http://testserver' + page_url)
         page.locator('#bindingSearch').fill('yanıt süresi')
+        expect(page.locator('#bindingSearchCount')).to_have_text('1 gösterge bulundu.')
+        # Turkish casing: dotted capital İ must match dotted i (stored text keeps its casing).
+        page.locator('#bindingSearch').fill('işlem YANIT SÜRESİ')
         expect(page.locator('#bindingSearchCount')).to_have_text('1 gösterge bulundu.')
         page.locator('#bindingSearch').fill('bulunmayan gösterge')
         expect(page.locator('#bindingSearchCount')).to_have_text('0 gösterge bulundu.')
