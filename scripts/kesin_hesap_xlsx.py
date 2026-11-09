@@ -12,6 +12,7 @@ import csv
 from dataclasses import dataclass
 from datetime import date
 from decimal import Decimal, InvalidOperation
+from functools import lru_cache
 import hashlib
 import io
 import os
@@ -160,12 +161,42 @@ def header_matches(actual, expected, year):
             and header_key(actual) == header_key(expected))
 
 
-def header_bounds(lines, body, expected, where, code_count, year):
-    """Find column gutters in pypdf's position-preserving fixed-width layout.
+NUMBER_FRAGMENT = re.compile(r'-?(?:\d{1,3}(?:\.\d{3})+|\d+)(?:,\d{1,2})?\Z|,\d{1,2}\Z')
 
-    Text inside a cell can span several baselines. Intersecting horizontal
-    spans connect those lines without flattening adjacent monetary columns.
-    Unknown/overlapping headers are rejected instead of assuming coordinates.
+
+def numeric_spans(line, after=0):
+    return [match for match in re.finditer(r'\S+', line)
+            if match.start() >= after and NUMBER_FRAGMENT.fullmatch(match.group())]
+
+
+def description_anchor(lines, where):
+    for line in lines:
+        for word in re.finditer(r'\S+', line):
+            if norm(word.group()) == 'aciklama':
+                return word.start()
+    raise ConversionError(f'{where}: Açıklama başlığı bulunamadı. Başlıklı metin PDF kullanın.')
+
+
+def financial_samples(lines, count, after):
+    """Only complete amount-bearing baselines establish monetary column order.
+
+    Code/date/title lines and text-only continuations provide no geometry.
+    Partial monetary continuations are checked against the resulting bands.
+    """
+    result = []
+    for i, line in enumerate(lines):
+        spans = numeric_spans(line, after)
+        if len(spans) >= count:
+            result.append((i, spans[-count:]))
+    return result
+
+
+def header_bounds(lines, body, samples, expected, where, code_count, year):
+    """Fit column bands to data-only gutters and the complete header schema.
+
+    Centred words need not share an x0 or overlap other header lines. Each
+    word is assigned by majority overlap with its band. Header whitespace
+    never constrains the data gutters, and text-only wraps never enter them.
     """
     fragments = []
     level_one_end = None
@@ -173,66 +204,102 @@ def header_bounds(lines, body, expected, where, code_count, year):
         numerals = list(re.finditer(r'\b(?:III|II|IV|I|V)\b', line))
         if code_count == 1 and [match.group() for match in numerals] == ['I', 'II', 'III', 'IV', 'V']:
             level_one_end = numerals[1].start()
-        chunks = list(re.finditer(r'\S+(?: \S+)*', line))
-        roman = [chunk for chunk in chunks if re.fullmatch(r'[IV ]+', chunk.group())]
-        if norm(' '.join(chunk.group() for chunk in roman)) == 'i ii iii iv v':
-            fragments.append((roman[0].start(), roman[-1].end(), 'I II III IV V'))
-            chunks = [chunk for chunk in chunks if chunk not in roman]
-        for chunk in chunks:
-            # An optional spanner can cover both transfer columns. Their
-            # mandatory Eklenen/Düşülen labels still identify them uniquely.
-            if set(norm(chunk.group()).split()) <= {'aktarma', 'suratiyle', 'suretiyle'}:
+        for word in re.finditer(r'\S+', line):
+            if norm(word.group()) in {'tl', 'aktarma', 'suratiyle', 'suretiyle'}:
                 continue
-            fragments.append((chunk.start(), chunk.end(), chunk.group()))
-    spans = sorted((left, right) for left, right, _ in fragments)
-    groups = []
-    for left, right in spans:
-        if groups and left <= groups[-1][1] + 1:
-            groups[-1][1] = max(groups[-1][1], right)
+            fragments.append((word.start(), word.end(), word.group()))
+    if not fragments or not samples:
+        raise ConversionError(f'{where}: başlık bloğu veya tutarlı tutar satırı bulunamadı. '
+                              'Tam metin PDF kullanın.')
+    count = len(samples[0])
+    groups = [(min(row[i].start() for row in samples), max(row[i].end() for row in samples))
+              for i in range(count)]
+    first_money = code_count + 1
+    # Exclude prose crossing numeric columns. Keep full records, numeric-only
+    # suffix baselines, and partial records whose monetary tail is numeric.
+    after = description_anchor(lines, where)
+    data = [line for line in body if numeric_spans(line, after)
+            and not re.search(r'[^\W\d_]', line[groups[0][0]:])]
+    if not data:
+        raise ConversionError(f'{where}: tutar taşıyan veri satırı yok. PDF tutarlarını kontrol edin.')
+    # Complete baselines identify right-aligned amount columns. Short suffix
+    # baselines can extend slightly farther in pypdf's virtual character grid;
+    # include their unambiguous right-edge bucket before selecting gutters.
+    anchors = [(min(row[i].end() for row in samples) + max(row[i].end() for row in samples)) / 2
+               for i in range(count)]
+    expanded = [list(group) for group in groups]
+    for line in data:
+        for fragment in numeric_spans(line, after):
+            if fragment.end() < groups[0][0]:
+                continue
+            distances = [abs(fragment.end() - anchor) for anchor in anchors]
+            closest = min(distances)
+            if distances.count(closest) != 1:
+                raise ConversionError(f'{where}: tutar parçasının sütunu belirsiz. PDF hücrelerini kontrol edin.')
+            i = distances.index(closest)
+            expanded[i][0] = min(expanded[i][0], fragment.start())
+            expanded[i][1] = max(expanded[i][1], fragment.end())
+    groups = expanded
+    width = max([len(line) for line in data] + [right for _, right, _ in fragments]) + 1
+
+    def gutter(position):
+        return all(not line[position - 1:position + 1].strip() for line in data)
+
+    candidates = []
+    for column in range(len(expected) - 1):
+        if column < first_money:
+            low, high = 1, groups[0][0]
         else:
-            groups.append([left, right])
-    labels = [' '.join(text for start, end, text in fragments if left <= start and end <= right)
-              for left, right in groups]
-    if len(labels) != len(expected) or any(not header_matches(a, b, year)
-                                          for a, b in zip(labels, expected)):
-        raise ConversionError(f'{where}: sütun başlıkları veya rapor yılı doğrulanamadı. '
-                              'Belirtilen yıla ait metin PDF ve desteklenen sütun düzenini kullanın. '
-                              f'Okunan başlıklar: {safe(" | ".join(labels))}')
-    bounds = [0]
-    for column, (a, b) in enumerate(zip(groups, groups[1:])):
-        # Right-aligned numbers can extend beyond their left-aligned header.
-        # A boundary must also remain a gutter throughout the data rows.
-        candidates = []
-        for position in range(a[1], b[0] + 1):
-            if any(line[position - 1:position + 1].strip() for line in body):
+            i = column - first_money
+            low, high = groups[i][1], groups[i + 1][0]
+        candidates.append(tuple(position for position in range(low, high + 1) if gutter(position)))
+
+    @lru_cache(maxsize=None)
+    def label(left, right):
+        words = [word for start, end, word in fragments
+                 if 2 * max(0, min(end, right) - max(start, left)) > end - start]
+        return ' '.join(words)
+
+    @lru_cache(maxsize=None)
+    def valid(column, left, right):
+        if not header_matches(label(left, right), expected[column], year):
+            return False
+        cells = [line[left:right].strip() for line in data]
+        if column < code_count:
+            pattern = (r'\d{1,2}(?:[ .]+\d{1,2}){0,4}' if code_count == 1 else
+                       (r'46(?:[ .]+\d{1,2}){0,3}',
+                        r'\d{2}(?:[ .]+\d{1,2}){0,3}', r'\d',
+                        r'\d{2}(?:[ .]+\d{1,2}){0,3}')[column])
+            return all(not cell or re.fullmatch(pattern, cell)
+                       or (code_count == 1 and norm(cell) in {'toplam', 'genel toplam'})
+                       for cell in cells)
+        if column == code_count:
+            return all(not re.search(r'\d,\d{2}(?:\s|$)', cell) for cell in cells)
+        return any(cells) and all(not cell or re.fullmatch(r'-?[\d.,]+', cell) for cell in cells)
+
+    @lru_cache(maxsize=None)
+    def solve(column, left):
+        if column == len(expected) - 1:
+            return () if valid(column, left, width) else None
+        for right in candidates[column]:
+            if right <= left or not valid(column, left, right):
                 continue
-            cells = [line[bounds[-1]:position].strip() for line in body]
-            if column < code_count:
-                pattern = (r'\d{1,2}(?:[ .]+\d{1,2}){0,4}' if code_count == 1 else
-                           (r'46(?:[ .]+\d{1,2}){0,3}',
-                            r'\d{2}(?:[ .]+\d{1,2}){0,3}', r'\d',
-                            r'\d{2}(?:[ .]+\d{1,2}){0,3}')[column])
-                valid = all(not cell or re.fullmatch(pattern, cell)
-                            or (code_count == 1 and norm(cell) in {'toplam', 'genel toplam'})
-                            for cell in cells)
-            elif column == code_count:
-                valid = all(not re.search(r'\d,\d{2}(?:\s|$)', cell) for cell in cells)
-            else:
-                valid = (any(cells) and all(not cell or re.fullmatch(r'-?[\d.,]+', cell)
-                                            for cell in cells))
-            if valid:
-                candidates.append(position)
-        if not candidates:
-            raise ConversionError(f'{where}: sütunlar arasında ortak boşluk yok. '
-                                  'PDF hücre sınırlarını ve veri satırlarını kontrol edin.')
-        # Use the last contiguous gutter: earlier whitespace can be inside
-        # this column, before its right-aligned monetary value.
-        run = [candidates[-1]]
-        for position in reversed(candidates[:-1]):
-            if position != run[-1] - 1:
-                break
-            run.append(position)
-        bounds.append(run[len(run) // 2])
+            tail = solve(column + 1, right)
+            if tail is not None:
+                return (right, *tail)
+        return None
+
+    solution = solve(0, 0)
+    if solution is None:
+        raise ConversionError(f'{where}: sütun başlıkları, veri hücreleri veya rapor yılı doğrulanamadı. '
+                              'Başlık adayını ve PDF sütunlarını kontrol edin; belirsiz eşleme yapılmadı.')
+    bounds = [0, *solution]
+    for start, end, word in fragments:
+        matches = [column for column, (left, right) in enumerate(zip(bounds, [*bounds[1:], width]))
+                   if 2 * max(0, min(end, right) - max(start, left)) > end - start]
+        if len(matches) != 1:
+            raise ConversionError(f'{where}: başlık parçası yerleştirilemedi ({safe(word)}). '
+                                  'PDF başlık hücrelerini kontrol edin.')
     return bounds, level_one_end
 
 
@@ -307,6 +374,13 @@ def joined_revenue_code(row):
     return ' '.join(result)
 
 
+def header_error(error, header, start, where, notes):
+    candidate = '\n'.join(f'    {i}: {line}' for i, line in enumerate(header, start + 1))
+    if notes is not None:
+        notes.append(f'\n### Başlık adayı — {safe(where)}\n\n{candidate}\n')
+    return ConversionError(f'{error} Başlık adayı: {safe(" / ".join(header))}')
+
+
 def pdf_rows(path, kind, year, notes=None):
     expense = kind == 'expenditure'
     expected = (('Kurum Kodu', 'Fonksiyonel Kodu', 'Finansal Kodu', 'Ekonomik Kodu',
@@ -324,20 +398,41 @@ def pdf_rows(path, kind, year, notes=None):
             where = f'{path.name}, sayfa {page_no}'
             lines = page.extract_text(extraction_mode='layout',
                                       layout_mode_space_vertically=False).splitlines()
-            body = next((i for i, line in enumerate(lines)
-                         if re.match(r'^\s*\d{1,2}(?=[ .\s]|$)', line)), None)
-            if body is None:
-                raise ConversionError(f'{where}: kodlu veri satırı bulunamadı. PDF tablosunu kontrol edin.')
+            try:
+                after = description_anchor(lines, where)
+                samples = financial_samples(lines, 11 if expense else 9, after)
+                if not samples:
+                    raise ConversionError(f'{where}: kodlu veri satırı bulunamadı. PDF tablosunu kontrol edin.')
+            except ConversionError as exc:
+                raise header_error(exc, lines[:12], 0, where, notes) from None
+            body = samples[0][0]
             start = read_metadata(lines[:body], where, metadata, year)
             header = lines[start:body]
             body_lines = [(i, line) for i, line in enumerate(lines[body:], body + 1)
                           if line.strip() and not re.fullmatch(
                               r'\s*Sayfa\s+\d+(?:\s*/\s*\d+)?\s*', line, re.IGNORECASE)]
             located = f'{where}, satırlar {body + 1}–{len(lines)}'
-            bounds, level_one_end = header_bounds(header, [line for _, line in body_lines], expected,
-                                                  located, code_count, year)
+            try:
+                bounds, level_one_end = header_bounds(header, [line for _, line in body_lines],
+                    [spans for _, spans in samples], expected, located, code_count, year)
+            except ConversionError as exc:
+                raise header_error(exc, header, start, where, notes) from None
             current = None
             for line_no, line in body_lines:
+                first = len(line) - len(line.lstrip())
+                money_start = bounds[description + 1]
+                # A description-only continuation may overflow all monetary
+                # bands. Its starting position still belongs to Açıklama.
+                if (bounds[description] <= first < money_start
+                        and not any(line[left:right].strip() for left, right in
+                                    zip(bounds[:description], bounds[1:description + 1]))
+                        and not re.search(r'\d,\d{1,2}(?:\s|$)|,\d{1,2}(?:\s|$)', line[money_start:])
+                        and not (numeric_spans(line, money_start)
+                                 and not re.search(r'[^\W\d_]', line[money_start:]))):
+                    if current is None:
+                        raise ConversionError(f'{where}, satır {line_no}: sahipsiz açıklama. PDF satırını kontrol edin.')
+                    current.cells[description].append(line[bounds[description]:].strip())
+                    continue
                 cells = [line[left:right].strip()
                          for left, right in zip(bounds, [*bounds[1:], len(line) + 1])]
                 # Reject text crossing a detected gutter; silently shifting a

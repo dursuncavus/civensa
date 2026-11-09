@@ -42,7 +42,7 @@ def vector(scale=1):
 
 
 def pdf_table(path, headers, widths, pages, *, centered=False, scale=1, year=2026,
-              lead_layout=False, page_shift=0, dates=None, date_overrides=None):
+              lead_layout=False, page_shift=0, dates=None, date_overrides=None, date_prefix=False):
     """Separate PDF text objects, proportional Turkish font and right-aligned money."""
     if 'Civ194Test' not in pdfmetrics.getRegisteredFontNames():
         pdfmetrics.registerFont(TTFont('Civ194Test', str(ROOT / 'app/fonts/DejaVuSans.ttf')))
@@ -63,6 +63,9 @@ def pdf_table(path, headers, widths, pages, *, centered=False, scale=1, year=202
             canvas.drawRightString(1130, 800, 'Bitiş Tarihi : ' + metadata['end'])
         if len(headers) == 11 and metadata['period'] is not None:
             canvas.drawString(20, 800, 'Dönemi : ' + metadata['period'])
+        if date_prefix:
+            # Dotted title dates resemble code prefixes, but carry no amounts.
+            canvas.drawString(20, 800, f'01.01.{year}')
         x = 20
         for label, width in zip(headers, widths):
             fragments = label.split('\n') if lead_layout else simpleSplit(label, 'Civ194Test', 6, width - 10)
@@ -98,7 +101,7 @@ def pdf_table(path, headers, widths, pages, *, centered=False, scale=1, year=202
 def expense_pdf(tmp_path, *, mismatch=None, blank=False, duplicate=False, centered=False,
                 scale=1, directorate_mismatch=False, fund_split=False, foreign_code=False,
                 lead_layout=False, transfer='Suratiyle', page_shift=0, dotted_first=None,
-                year=2026, dates=None, date_overrides=None, bad_header=None):
+                year=2026, dates=None, date_overrides=None, bad_header=None, date_prefix=False):
     def row(kurum='', function='', fund='', economic='', name='', amounts=None):
         values = list(map(money, vector() if amounts is None else amounts))
         return [kurum, function, fund, economic, name, *values]
@@ -167,14 +170,14 @@ def expense_pdf(tmp_path, *, mismatch=None, blank=False, duplicate=False, center
     return pdf_table(tmp_path / 'gider.pdf', headers, [65, 55, 45, 50, 120] + [65] * 11,
                      [first, second], centered=centered, scale=scale, year=year,
                      lead_layout=lead_layout, page_shift=page_shift, dates=dates,
-                     date_overrides=date_overrides)
+                     date_overrides=date_overrides, date_prefix=date_prefix)
 
 
 def revenue_pdf(tmp_path, *, ambiguous=False, total=True, mismatch=False, unproved=False,
                 year=2026, centered=False, total_in_code=False, lead_layout=False,
                 integer_wrap=False, split_code=False, dates=None, orphan=None,
                 detail_first=False, unplaced=False, misplaced_code=False, carry_mismatch=False,
-                misplaced_root=False):
+                misplaced_root=False, wrapped_description=False):
     headers = ['Gelirin Kodu', 'Açıklama', 'Bütçe ile Tahmin Edilen',
                f'{year - 1} Yılından Devreden Gelir', f'{year} Yılı Tahakkuku',
                'Toplam Tahakkuk', f'{year} Yılı Tahsilatı', 'Red ve İadeler',
@@ -216,6 +219,8 @@ def revenue_pdf(tmp_path, *, ambiguous=False, total=True, mismatch=False, unprov
         rows[0][0] = '        0\n        1'
     if unplaced:
         rows[0][6] += '\nX'
+    if wrapped_description:
+        rows[0][1] += '\n\n' + 'SENTETİK UZUN HESAP ADININ DEVAMI ' * 6
     if lead_layout:
         headers = ['\n\nI   II   III   IV   V', '\n\nAçıklama',
                    '\nBütçe ile\nTahmin Edilen\nTL',
@@ -591,3 +596,49 @@ def test_lead_layout_reconciliation_stays_blocking_for_both_outputs(tmp_path, er
     assert 'Hatalar' in report
     if error in {'expenditure', 'revenue', 'carry'}:
         assert '0,01' in report
+
+
+@pytest.mark.parametrize('centered', [False, True])
+def test_lead_retest_title_date_is_not_the_expenditure_body(tmp_path, centered):
+    pdf = expense_pdf(tmp_path, lead_layout=True, centered=centered, date_prefix=True, page_shift=-9)
+    result, out = run(tmp_path, '--gider', pdf)
+    assert result.returncode == 0, (out / 'report.md').read_text()
+    assert len(list(load_workbook(out / 'expenditure.xlsx').active.values)) == 4
+
+
+@pytest.mark.parametrize('centered', [False, True])
+def test_lead_retest_centered_header_fragments_use_column_bands(tmp_path, centered):
+    pdf = expense_pdf(tmp_path, lead_layout=True, centered=centered, page_shift=11)
+    result, out = run(tmp_path, '--gider', pdf)
+    assert result.returncode == 0, (out / 'report.md').read_text()
+
+
+@pytest.mark.parametrize('layout', [False, True])
+def test_lead_retest_text_only_description_can_cross_amount_columns(tmp_path, layout):
+    pdf = revenue_pdf(tmp_path, lead_layout=layout, integer_wrap=layout,
+                      split_code=layout, wrapped_description=True)
+    result, out = run(tmp_path, '--gelir', pdf)
+    assert result.returncode == 0, (out / 'report.md').read_text()
+    source_rows = converter.pdf_rows(pdf, 'revenue', 2026)
+    assert source_rows[0].text(1).count('SENTETİK UZUN HESAP ADININ DEVAMI') == 6
+    rows = list(load_workbook(out / 'revenue.xlsx').active.values)[1:]
+    assert rows[0][0] == '01' and parse_number(rows[0][2]) == Decimal('1150.25')
+
+
+@pytest.mark.parametrize('column', [4, 10])
+def test_failed_header_reports_the_candidate_block(tmp_path, column):
+    pdf = expense_pdf(tmp_path, lead_layout=True, centered=True, date_prefix=True,
+                      bad_header=(column, 'Bilinmeyen Tutar'))
+    result, out = run(tmp_path, '--gider', pdf)
+    assert result.returncode != 0
+    report = (out / 'report.md').read_text()
+    assert 'Başlık adayı' in report and 'Bilinmeyen' in report and 'Geçen' in report
+    assert not list(out.glob('*.xlsx'))
+
+
+def test_text_only_continuation_does_not_bypass_reconciliation(tmp_path):
+    pdf = revenue_pdf(tmp_path, lead_layout=True, integer_wrap=True, split_code=True,
+                      wrapped_description=True, ambiguous=True)
+    result, out = run(tmp_path, '--gider', expense_pdf(tmp_path), '--gelir', pdf)
+    assert result.returncode != 0 and not list(out.glob('*.xlsx'))
+    assert '0,01' in (out / 'report.md').read_text()

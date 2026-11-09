@@ -133,8 +133,11 @@ yazılamıyorsa veya girdiyle çakışıyorsa hata standart hata akışına yaz�
 - Desteklenen kaynak, görev paketindeki sütun adları ve sırası bulunan metin
   PDF’dir. pypdf’nin konumu koruyan `layout` çıkarımı kullanılır; sabit sayfa
   koordinatı veya düzleştirilmiş metin üzerinde tutar arama kullanılmaz.
-  Sütun sınırları çok satırlı başlıklar ve veri satırlarındaki ortak
-  boşluklarla **her sayfada yeniden** doğrulanır. Sola/ortaya hizalı başlıklar,
+  Sütun sınırları yalnız tutar taşıyan veri satırlarındaki boşluklardan
+  **her sayfada yeniden** çıkarılır. Çok satırlı başlıkların sözcükleri,
+  aynı başlangıç konumunda olmaları gerekmeden, sütun bantlarıyla çoğunluk
+  örtüşmesine göre atanır. Başlık boşlukları veri boşluklarıyla ortak olmak
+  zorunda değildir. Sola/ortaya hizalı başlıklar,
   sağa hizalı tutarlar, ölçeklenmiş/kaymış sayfalar ve çok sayfalı gider test edilir.
 - Başlık bloğu, Kurum sözcüğünden önce başlayan tutar başlıkları dahil bütün
   satırları kapsar. Dört satırlı başlık, `Finan / sal Kodu`, `TL` birimi,
@@ -145,6 +148,9 @@ yazılamıyorsa veya girdiyle çakışıyorsa hata standart hata akışına yaz�
 - Her sayfada tablo başlığı gerekir. Başlıkların örtüşmesi, değişik sütun
   düzeni, şifreli/taranmış PDF veya belirsiz hücre sınırı dönüştürmeyi durdurur.
   OCR, raster okuma, ağ üzerinden dönüştürme ve yeni bağımlılık yoktur.
+  Kod biçimine benzeyen başlık tarihleri (`01.01.2026` gibi) veri başlangıcı
+  sayılmaz; başlangıç için tutar taşıyan kayıt aranır. Başlık çözümlemesi
+  başarısız olduğunda aday blok satır numaraları ve boşluklarıyla rapora yazılır.
 - Giderde `46` kurum hiyerarşisi, üç parçalı tek belediye toplamı, dört
   parçalı müdürlük kodu ve ekonomik satır için dört parçalı fonksiyon/tek
   parçalı finansman bağlamı gerekir. Sayfa geçişinde bağlam korunur.
@@ -156,6 +162,9 @@ yazılamıyorsa veya girdiyle çakışıyorsa hata standart hata akışına yaz�
   II veya sonraki sütundaki parçalar I düzeyi olarak yorumlanmaz. Tutarın tam kısmından sonraki
   `,dd` veya `,d` eki aynı tutar sütununda birleştirilir; eksik rakam eklenmez.
   Birleşim satır eşitliği veya bağımsız genel toplamla kanıtlanmalıdır.
+  Tutar içermeyen açıklama devam satırları açıklama alanına eklenir; metin
+  tutar sütunlarının üzerine uzasa da sütun boşluğu hesabına katılmaz.
+  Açıklama sütununda başlamayan sahipsiz metin tutar olarak tahmin edilmez.
 - Bölünmemiş parasal değerler Türkçe, iki ondalıklı biçimde olmalıdır. Eksik
   rakam tahmini, belirsiz sıra değişimi ve bağımsız olarak kanıtlanamayan sayı
   birleşimi desteklenmez. Negatif veya mevcut içe aktarmanın sayı/satır
@@ -182,6 +191,13 @@ yetim/bilinmeyen gelir üst kodu, sonradan gelen geçerli üst satır ve noktal�
 kodla başlayan devam sayfası senaryolarını da kapsar. Yeni yerleşimde
 mutabakat tablolarının tüm farklarının `0,00` olduğu; kasıtlı farkta iki XLSX’in
 de engellendiği doğrulanır.
+
+Lead’in `46617e4` üzerindeki yerel tekrar koşusundan gelen iki ek yerleşim
+de testlerde yeniden üretilmiştir: veri gibi görünen başlık tarihiyle birlikte
+dört satırlı ortalanmış başlık ve tutar alanlarına taşan, yalnız metin içeren
+hesap adı devamı. Bu senaryolar eski commit’te başarısızdır. Yeni ayrıştırıcıda
+başlıklar sütun bantlarına atanır; açıklama devamı korunur ve aynı dosyada
+kasıtlı tutar farkı varsa iki XLSX de engellenir.
 
 ```sh
 python -m pytest -q --require-postgres tests/test_kesin_hesap_xlsx.py
