@@ -185,8 +185,8 @@ class SavedNoticeMiddleware:
                         request.session["saved_notice"] = target.path + ("?" + target.query if target.query else "")
             elif message["type"] == "http.response.body" and reveal:
                 message = dict(message, body=message.get("body", b"").replace(
-                    b'<p id="saved-notice" role="status" hidden>',
-                    b'<p id="saved-notice" role="status"       >', 1))
+                    b'<div id="saved-notice" role="status" hidden>',
+                    b'<div id="saved-notice" role="status"       >', 1))
             await send(message)
 
         await self.app(scope, receive, notice_send)

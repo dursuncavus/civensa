@@ -169,6 +169,18 @@ def test_full_seed_cards_dialogs_search_and_height(browser, pilot_client, name, 
             expect(page.locator('#financial-central')).to_be_visible()
             assert page.locator('#financial-central form[method="post"]').count() > 0
             page.locator('#financial-central').get_by_role('button', name='Kapat', exact=True).click()
+            # A validation response reopens its dialog with the attempted value
+            # and the error inside the modal, where it remains accessible.
+            page.get_by_role('button', name='İdare bütçesi, malî tablolar ve ortak kontrolleri aç').click()
+            policy = page.locator('#financial-central form[action$="/financial/policy"]')
+            policy.locator('[name="lower_rate"]').fill('geçersiz')
+            with page.expect_navigation():
+                policy.get_by_role('button').click()
+            expect(page.locator('#financial-central')).to_be_visible()
+            expect(page.locator('#financial-central [role="alert"]')).to_be_visible()
+            expect(page.locator('#financial-central [name="lower_rate"]')).to_have_value('geçersiz')
+            expect(page.locator('#saved-notice')).to_be_hidden()
+            page.locator('#financial-central').get_by_role('button', name='Kapat', exact=True).click()
         # Numeric output is readable in both comparison and financial tables.
         numeric = page.locator('.pilot-numeric, .amount, .directorate-dialog .indicator-target')
         assert numeric.count()

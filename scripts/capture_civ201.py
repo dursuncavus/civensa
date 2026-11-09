@@ -108,6 +108,17 @@ def capture(output):
                             if phase == 'after':
                                 assert height < 7200, (name, height)
                             measurements[phase][name] = height
+                            # Capture the changed section rather than the common
+                            # report editor that precedes the financial overview.
+                            if name.startswith('financial'):
+                                target = page.get_by_role('region', name='PP planlanan tutarlar')
+                            elif name == 'operations':
+                                target = page.locator('#pp-release-checklist')
+                            elif name == 'indicator-report':
+                                target = page.locator('.indicator-report-summary')
+                            else:
+                                target = page.locator('#source-comparison' if phase == 'before' else '#comparison-directorates')
+                            target.evaluate("el => el.scrollIntoView({block: 'start'})")
                             page.screenshot(path=str(output / 'shots' / f'{name}-{phase}.png'))
                             print(f'{phase} {name}: {height} px', flush=True)
                 browser.close()

@@ -10,7 +10,7 @@ Kaynak karşılaştırması tüm kaynak satırlarını ve mutabakat satırların
 
 ## 1440 × 900 ölçümleri
 
-Chromium 151, deviceScaleFactor=1, fontlar yüklendikten sonra `document.documentElement.scrollHeight`; ekran sayısı yükseklik / 900. Eşik: **7.200 px**. Fotoğraflar 1440×900 görünüm görüntüleridir, tam sayfa birleştirmesi değildir.
+Chromium 151, deviceScaleFactor=1, fontlar yüklendikten sonra `document.documentElement.scrollHeight`; ekran sayısı yükseklik / 900. Eşik: **7.200 px**. Fotoğraflar değişen kaynak/kontrol/gösterge/malî tutar bölümüne kaydırılmış 1440×900 görünüm görüntüleridir, tam sayfa birleştirmesi değildir. Ortak bölüm editörü yerine değişen içerik karşılaştırılır.
 
 | Sayfa | Önce (px) | Sonra (px) | Sonra (ekran) | Önce / sonra |
 | --- | ---: | ---: | ---: | --- |
@@ -29,7 +29,7 @@ Tekrarlama: `CIVENSA_CHROMIUM_PATH=/usr/bin/chromium python scripts/capture_civ2
 - `tests/test_civ201_pilot_browser.py`: atılabilir PostgreSQL üzerinde aynı tam seed; beş sayfanın kart sayıları, benzersiz diyalog hedefleri, açma/kapatma ve odak iadesi, Türkçe arama, yatay taşma, yükseklik, sayısal hizalama, CSP ve script/olay öznitelikleri. Kaynak ve mutabakat satır sayıları, kontrol sayıları ve gösterge form sayıları korunur.
 - Gerçek localhost HTTP sunucusunda Chromium submit: `/structure` müdürlük adı kaydı ve `/operations` sentetik teyit geri çekmesi; 303, görünür `role=status`, korunan scroll ve yenilemede tek kullanımlık bildirim. Geçersiz operasyon maddesinde 422 ve gizli başarı bildirimi.
 - `tests/test_civ201_saved_notice.py`: 13 sunucu regresyonu; 4xx/422/500 hedefleri, fetch/JSON/API ayrımı, hedef URL, Content-Length ve tek kullanımlık gösterim.
-- Donmuş fixture dosyaları değiştirilmedi. `tests/civ199_contract.py` bu tabanda bulunmadığı için aynı yaklaşım yeni `tests/civ201_contract.py` içinde sayısal başlık sınıfını eski sözleşme karşılaştırmasında geri alır.
+- Donmuş fixture dosyaları değiştirilmedi. `tests/civ199_contract.py` bu tabanda bulunmadığı için aynı yaklaşım yeni `tests/civ201_contract.py` içinde sayısal başlık sınıfını eski sözleşme karşılaştırmasında geri alır. Tarihsel düzeltme işareti tarayıcı kontrolü de aynı tutarları ilgili diyalogu açtıktan sonra doğrular.
 - CIV-199 için ayrılan dosyalara dokunulmadı. `ACTIVITY_REFERENCE_SUCCESSORS` değiştirilmedi; migration veya yetkilendirme/yayın kapısı değişikliği yoktur.
 
 Tam PostgreSQL süiti ve PR CI sonuçları PR açıklamasında kaydedilir. İnceleme: Claude; birleştirme ve dağıtım yapılmaz.

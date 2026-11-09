@@ -73,6 +73,7 @@
 <p><button type="button" class="button primary" data-open-dialog="financial-central" aria-haspopup="dialog">İdare bütçesi, malî tablolar ve ortak kontrolleri aç</button></p>
 <dialog class="directorate-dialog" id="financial-central" aria-labelledby="financial-central-title"{% if financial_attempt_kind|default('') %} data-dialog-error{% endif %}>
 <header><h2 id="financial-central-title">İdare malî bilgileri</h2><form method="dialog"><button class="button">Kapat</button></form></header>
+{% if financial_attempt_kind|default('') and form_error %}<p class="ar-error" role="alert">{{ form_error }} Girdiğiniz alanlar aşağıda korunmuştur.</p>{% endif %}
 {{ central_content }}
 </dialog>
 {% else %}{{ central_content }}{% endif %}

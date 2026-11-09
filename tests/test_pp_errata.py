@@ -8,6 +8,7 @@ import os
 from docx import Document
 from pypdf import PdfReader
 import pytest
+from tests.civ201_contract import open_containing_dialog
 from sqlalchemy import select
 
 from app.data import pp_errata
@@ -201,6 +202,7 @@ def test_strategy_readonly_list_and_fr_marker_in_browser(walk, browser, width):
         idare = next(d for d in docs if d.department_id is None)
         page.goto(f'http://testserver/activity-sections/reports/{idare.id}?code=III.A.1')
         k6 = page.get_by_text('Düzeltildi (K6, s.223)', exact=True)
+        open_containing_dialog(k6)
         k6.scroll_into_view_if_needed()
         cell = k6.locator('..')
         assert 'Basılı: 1.290.738.000,00 TL' in cell.inner_text()

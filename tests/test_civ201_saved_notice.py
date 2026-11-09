@@ -7,7 +7,7 @@ from starlette.middleware.sessions import SessionMiddleware
 
 from app.main import SavedNoticeMiddleware
 
-NOTICE = '<p id="saved-notice" role="status" hidden>Kaydedildi.</p>'
+NOTICE = '<div id="saved-notice" role="status" hidden>Kaydedildi.</div>'
 
 
 @pytest.fixture
