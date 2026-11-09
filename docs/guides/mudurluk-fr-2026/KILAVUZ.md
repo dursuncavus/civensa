@@ -136,4 +136,7 @@ Sorularınız ve sorunlarınız için Strateji Geliştirme Müdürlüğü'ne ula
 
 ## Daha sonra eklenecek bölümler
 
-[EKLENECEK — gösterge Excel ile toplu giriş]
+Müdürlükler gösterge gerçekleşmelerini bugün olduğu gibi kendi Excel satırlarını doldurarak Stratejiye gönderir.
+Strateji, ana çalışma kitabını gösterge gerçekleşmeleri ekranındaki `Excel'den içe aktar` alanından yükler, eşleşmeleri ve yıllık değerleri önizlemede onaylayarak içe aktarır.
+Müdürlükler aktarım sonrasında kendi gerçekleşmelerini ekranda kontrol eder ve gerektiğinde yeni gerçekleşme revizyonuyla düzeltir.
+Kanıtları müdürlük kullanıcıları ekrandan ekler; eksik veya aktarılmayan satırlar ilgili gerekçeye göre tamamlanır.

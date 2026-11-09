@@ -3,6 +3,11 @@
 # CIV-086 stable_key columns: String(36) UUID text, never base64.
 # CIV-085: question/answer text, department IDs and audit labels; no binary/base64 file payloads.
 # CIV-160: plain narrative text snapshots and workflow/actor/reason labels; no image or base64 file payloads.
+# CIV-192: SHA-256 and parsed annual-actual preview/result JSON; no file bytes or base64.
+# CIV-197: persistent UUID, higher/lower label and direction reason; plain text, no base64.
+actual_imports.preview_json
+actual_imports.result_json
+actual_imports.source_sha256
 activities.code
 activities.explanation
 activities.name
@@ -214,6 +219,9 @@ import_batches.status
 indicator_definition_revisions.definition_json
 indicator_definition_revisions.indicator_id
 indicator_definition_revisions.sha256
+indicator_directions.direction
+indicator_directions.indicator_id
+indicator_directions.reason
 indicator_identities.indicator_id
 indicator_values.raw_text
 indicator_values.state

@@ -3,6 +3,7 @@ from datetime import datetime, timezone
 from hashlib import sha256
 from html.parser import HTMLParser
 import os
+import re
 from pathlib import Path
 from urllib.parse import urlsplit
 
@@ -14,6 +15,12 @@ from test_section_index_design import Contract, TEXT_PAIRS, contrast
 from test_sidebar_ui import browser
 
 FROZEN = Path(__file__).parent / 'fixtures/activity_contract_index_start.html'
+
+
+def without_excel_import(html):
+    # CIV-192 deliberately adds one separately tested form. Keep the entire
+    # pre-existing link/form contract frozen outside that exact new section.
+    return re.sub(r'<section\b[^>]*\bid="actual-excel-import"[^>]*>.*?</section>', '', html, flags=re.S)
 
 
 class HiddenInputs(HTMLParser):
@@ -85,10 +92,13 @@ def assert_contract(ctx):
     assert sha256(source).hexdigest() == 'ba26b6a53cb7000bb123174bdd35668c7b26d1f7a8c30e4fe605def1053305ab'
     old = templates.env.from_string(source.decode()).render(ctx)
     new = templates.env.get_template('activity_contract_index.html').render(ctx)
-    before, after = Contract(old), Contract(new)
+    legacy = without_excel_import(new)
+    before, after = Contract(old), Contract(legacy)
     assert after.controls == before.controls
     assert after.bindings == before.bindings
-    assert HiddenInputs(new).inputs == HiddenInputs(old).inputs
+    assert HiddenInputs(legacy).inputs == HiddenInputs(old).inputs
+    role = ctx['user']['role'] if isinstance(ctx['user'], dict) else ctx['user'].role
+    assert ('id="actual-excel-import"' in new) == (role == 'strategy')
     # Line-per-element formatting adds whitespace between nested select options.
     def labels(contract):
         return [(tag, ''.join(value.split()) if tag == 'label' else value)
@@ -107,13 +117,15 @@ def test_frozen_links_form_options_required_and_revision_badges(scenario):
     assert '<style>' not in new
     assert 'Gösterge gerçekleşmeleri</h1>' in new
     assert 'activity-reports.css' in new
-    # The title is the only wording change, including all explanatory prose.
+    # CIV-197 names the existing binding section for its new direction setting;
+    # outside that heading and the Excel block, the original prose stays frozen.
     def text(html):
         import re
-        main = html.split('<main ', 1)[1].split('</main>', 1)[0]
+        main = without_excel_import(html).split('<main ', 1)[1].split('</main>', 1)[0]
         main = re.sub(r'<style>.*?</style>', '', main, flags=re.S)
         return ''.join(re.sub(r'<[^>]*>', '', main).split())
-    assert text(new) == text(old).replace('FaaliyetRaporları', 'Göstergegerçekleşmeleri', 1)
+    assert text(new) == text(old).replace('FaaliyetRaporları', 'Göstergegerçekleşmeleri', 1).replace(
+        'Eskiyayınkimlikeşlemeleri', 'Göstergekimlikleriveyönleri', 1)
 
 
 @pytest.mark.postgres

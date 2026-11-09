@@ -37,6 +37,23 @@ def rate(actual, target):
     return (actual / target * 100).quantize(Decimal('.01')) if actual is not None and target is not None and target > 0 else None
 
 
+def indicator_comparison(actual, target, direction='higher'):
+    """Compare verified numbers using the direction stored in the report facts.
+
+    Older frozen payloads default to higher. Keep ratios unrounded here so an
+    average retains the existing precision; each presentation formats its rate.
+    """
+    if actual is None or target is None:
+        return None, None
+    if direction == 'lower':
+        return actual <= target, target / actual * 100 if actual > 0 else None
+    return actual >= target, actual / target * 100 if target > 0 else None
+
+
+def indicator_name(indicator):
+    return text(indicator.get('name')) + (' (düşük daha iyi)' if indicator.get('direction') == 'lower' else '')
+
+
 def activity_report(payload):
     """Return slide dictionaries; skipped sources are recorded only in the log."""
     report = f"{payload['year']} Faaliyet Raporu · {payload['department']}"
@@ -156,7 +173,9 @@ def activity_report(payload):
             target = verified[0] if len(verified) == 1 else None
             actual = number(indicator.get('actual')) if indicator.get('actual_state') == 'verified' else None
             target_text = '; '.join(format_number(value) for value in verified) or '—'
-            body.append([text(indicator.get('name')), target_text, format_number(actual), format_number(rate(actual, target))])
+            _, ratio = indicator_comparison(actual, target, indicator.get('direction', 'higher'))
+            body.append([indicator_name(indicator), target_text, format_number(actual),
+                format_number(ratio.quantize(Decimal('.01')) if ratio is not None else None)])
         content.append(dict(type='table', title='Gösterge gerçekleşmeleri',
             headers=['Gösterge', 'Hedef', 'Gerçekleşen', 'Oran (%)'], rows=body, source=source('III.B.2.i')))
     else:
