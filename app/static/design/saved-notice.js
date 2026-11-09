@@ -13,7 +13,11 @@
     if (notice && !notice.hidden && previous && previous.at > Date.now() - 300000) {
       if (previous.dialog) {
         const dialog = document.getElementById(previous.dialog);
-        if (dialog instanceof HTMLDialogElement && !dialog.open) dialog.showModal();
+        if (dialog instanceof HTMLDialogElement) {
+          if (!dialog.open) dialog.showModal();
+          // Long dialogs scroll inside themselves; return to the saved form there too.
+          requestAnimationFrame(() => { dialog.scrollTop = previous.dialogTop || 0; });
+        }
       }
       requestAnimationFrame(() => window.scrollTo(previous.x, previous.y));
     }
@@ -24,7 +28,8 @@
         || event.defaultPrevented || new URL(form.action, location.href).origin !== location.origin) return;
     try {
       sessionStorage.setItem(key, JSON.stringify({x: scrollX, y: scrollY,
-        dialog: form.closest('dialog')?.id || '', at: Date.now()}));
+        dialog: form.closest('dialog')?.id || '', dialogTop: form.closest('dialog')?.scrollTop || 0,
+        at: Date.now()}));
     } catch (_) { /* A storage restriction must never prevent saving. */ }
   });
 })();

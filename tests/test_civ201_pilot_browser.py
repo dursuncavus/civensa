@@ -313,3 +313,28 @@ def test_indicator_fragment_opens_its_directorate_dialog(browser, pilot_client):
         page.evaluate(f"location.hash = 'indicator-{first}'")  # Same-page fragment change.
         expect(page.locator(f'[id="indicator-{first}"]')).to_be_visible()
         assert not errors, errors
+
+
+def test_saved_form_inside_dialog_returns_to_its_scroll_position(browser, native_server):
+    """A save far down a long dialog reopens that dialog where the form was."""
+    origin, cookies = native_server
+    with browser.new_context(viewport={'width': 1440, 'height': 900}) as context:
+        context.add_cookies(cookies)
+        page = context.new_page()
+        page.goto(origin + '/activity-sections/reports/1?code=III.A.1', timeout=180000)
+        page.get_by_role('button', name='İdare bütçesi, malî tablolar ve ortak kontrolleri aç').click()
+        dialog = page.locator('#financial-central')
+        form = dialog.locator('form[action$="/financial/policy"]')
+        # Re-save the thresholds as they are; no fixture content changes.
+        form.get_by_role('button').scroll_into_view_if_needed()
+        before = dialog.evaluate('el => el.scrollTop')
+        assert before > 300
+        with page.expect_navigation():
+            form.get_by_role('button').click()
+        expect(dialog).to_be_visible()
+        expect(page.locator('#saved-notice')).to_be_visible()
+        for _ in range(40):  # The restore runs on the next animation frame.
+            if abs(dialog.evaluate('el => el.scrollTop') - before) <= 60:
+                break
+            page.wait_for_timeout(50)
+        assert abs(dialog.evaluate('el => el.scrollTop') - before) <= 60
