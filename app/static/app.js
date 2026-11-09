@@ -601,3 +601,22 @@ document.querySelectorAll('.save-user-position').forEach(button=>button.addEvent
     if(event.persisted)document.querySelectorAll('form[data-busy]').forEach(restore);
   });
 })();
+
+/* CIV-199 item 8: a normal POST form that returns to the same page brings the
+   user back to where they were instead of the top. Pages that point to the
+   saved row with a #fragment keep the fragment; nothing here claims success. */
+(function(){
+  if(typeof document==='undefined'||typeof window==='undefined'||!window.sessionStorage)return;
+  const KEY='civensa:return-scroll';
+  document.addEventListener('submit',event=>{
+    const form=event.target;
+    if(!(form instanceof HTMLFormElement)||(form.getAttribute('method')||'').toLowerCase()!=='post')return;
+    try{sessionStorage.setItem(KEY,JSON.stringify({path:location.pathname,y:window.scrollY,t:Date.now()}))}catch(e){}
+  });
+  window.addEventListener('load',()=>{
+    let saved=null;
+    try{saved=JSON.parse(sessionStorage.getItem(KEY)||'null');sessionStorage.removeItem(KEY)}catch(e){return}
+    if(!saved||saved.path!==location.pathname||Date.now()-saved.t>120000||location.hash)return;
+    window.scrollTo(0,saved.y);
+  });
+})();

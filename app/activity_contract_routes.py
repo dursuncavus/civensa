@@ -110,6 +110,11 @@ def register(app):
     def ui_error(request, user, error, back):
         return render_error(request, user, error, back)
 
+    def saved_url(back, kind, snapshot_id):
+        """CIV-199 item 8: return to the saved row and say that it was saved."""
+        row = int(snapshot_id)  # already validated by the service call
+        return f'{back}?saved={kind}&row={row}#gosterge-{row}'
+
     def integer(value, field='expected_revision'):
         try:
             parsed = int(value)
@@ -335,9 +340,16 @@ def register(app):
                 metadata = json.loads(definition.definition_json)
                 identities.append({'indicator_id': identity.indicator_id, 'organization_id': identity.organization_id,
                     'label': f"{metadata['name']} · {metadata['unit']} · {metadata['year']} · Tanım sürümü {definition.revision}"})
+        saved_kind = request.query_params.get('saved')
+        try:
+            saved_row = int(request.query_params.get('row', ''))
+        except ValueError:
+            saved_row = None
+        if saved_kind not in {'direction', 'binding'}:
+            saved_kind = saved_row = None
         return templates.TemplateResponse(request, 'activity_contract_bindings.html', {'user': user,
             'publication': pub, 'year': payload['period'], 'rows': rows,
-            'identities': identities})
+            'identities': identities, 'saved_kind': saved_kind, 'saved_row': saved_row})
 
     @router.post('/activity-reports/publications/{publication_id}/bindings')
     async def bind_form(publication_id: int, request: Request, db: Session = Depends(get_db), user=Depends(require_user)):
@@ -347,7 +359,7 @@ def register(app):
             transact(db, user, 'publication_indicator_bind', 'publication_indicator_binding',
                 lambda: service.bind_legacy_indicator(db, user, publication_id, integer(data.get('snapshot_indicator_id'), 'snapshot_indicator_id'),
                     data.get('indicator_id') or None, data.get('reason', '')))
-            return RedirectResponse(back, 303)
+            return RedirectResponse(saved_url(back, 'binding', data.get('snapshot_indicator_id')), 303)
         except HTTPException as error:
             return ui_error(request, user, error, back)
 
@@ -363,7 +375,7 @@ def register(app):
                     data.get('direction', ''), data.get('reason', '')),
                 audit_details=service.canonical({'direction': data.get('direction', ''),
                     'reason': data.get('reason', '').strip(), 'publication_id': publication_id}))
-            return RedirectResponse(back, 303)
+            return RedirectResponse(saved_url(back, 'direction', data.get('snapshot_indicator_id')), 303)
         except HTTPException as error:
             return ui_error(request, user, error, back)
 

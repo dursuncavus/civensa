@@ -48,3 +48,13 @@ def report_builder_original_order(html):
         html, flags=re.S)
     html = re.sub(r'(</table></div>)\s*</details>(\s*</section>)', r'\1\2', html)
     return html
+
+
+def bindings_without_search_and_saved(html):
+    """(8) Search box, row anchors and the one-row "Kaydedildi" note are new on the bindings page."""
+    html = re.sub(r'<div class="binding-search">.*?</div>\s*', '', html, count=1, flags=re.S)
+    html = re.sub(r'<p class="status success binding-saved" role="status">.*?</p>\s*', '', html, flags=re.S)
+    html = re.sub(r'<section class="binding-row(?: is-saved)?" id="gosterge-[^"]*" data-search="[^"]*">',
+                  '<section class="binding-row">', html)
+    return re.sub(r'<script>\s*\(function\(\)\{\s*const input=document.getElementById\(\'bindingSearch\'\).*?</script>\s*',
+                  '', html, flags=re.S)

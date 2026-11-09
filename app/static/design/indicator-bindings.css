@@ -14,3 +14,9 @@
 .indicator-bindings-page textarea { min-height: calc(var(--control-height) + var(--space-8)); resize: vertical; }
 .indicator-bindings-page .form-grid > button { justify-self: start; }
 .indicator-bindings-page :is(select, textarea):focus { outline: var(--focus); outline-offset: var(--focus-offset); box-shadow: none; }
+/* CIV-199 item 8: find a row, and see that the last save landed on it. */
+.indicator-bindings-page .binding-search { max-width: 44rem; margin: 0 0 var(--space-6); }
+.indicator-bindings-page .binding-search input { display: block; width: 100%; min-height: var(--control-height); padding: var(--space-2) var(--space-3); border: 1px solid var(--text-secondary); border-radius: var(--radius); font: inherit; }
+.indicator-bindings-page .binding-row { scroll-margin-top: var(--space-8); }
+.indicator-bindings-page .binding-row.is-saved { outline: 2px solid var(--success); outline-offset: var(--space-2); }
+.indicator-bindings-page .binding-saved { display: inline-block; margin: 0 0 var(--space-3); }

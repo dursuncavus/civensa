@@ -11,9 +11,18 @@
     <p class="indicator-direction-help">Gösterge yönü bu dönem için geçerlidir. Yeni raporlarda hedef karşılaştırmasına uygulanır; daha önce sabitlenen faaliyet raporları değişmez.</p>
     <p>Ad ve kod benzerliğine göre eşleme yapılmaz. Eski yayın içeriği değiştirilmez; açık kimlik ilişkisi ayrı saklanır. Aynı kavramı temsil ettiğini doğrulamadan mevcut kimlik seçmeyin. Eşleme kaydedildikten sonra üzerine yazılmaz.</p>
   </section>
+  <div class="binding-search">
+    <label>Gösterge ara
+      <input type="search" id="bindingSearch" placeholder="Gösterge adı veya müdürlük yazın" autocomplete="off">
+    </label>
+    <p class="secondary" id="bindingSearchCount" role="status"></p>
+  </div>
   <div class="reports-panel">
     {% for row in rows %}
-    <section class="binding-row">
+    <section class="binding-row{% if saved_row == row.id %} is-saved{% endif %}" id="gosterge-{{ row.id }}" data-search="{{ (row.name ~ ' ' ~ row.department ~ ' ' ~ (row.code or ''))|lower }}">
+      {% if saved_row == row.id %}
+      <p class="status success binding-saved" role="status">Kaydedildi{% if saved_kind == 'direction' %}: yön «{{ 'Düşük değer daha iyi' if row.direction == 'lower' else 'Yüksek değer daha iyi' }}»{% else %}: kimlik ilişkisi sabitlendi{% endif %}.</p>
+      {% endif %}
       <div class="binding-heading">
         <h2>{{ row.name }}</h2>
         <span class="status {{ 'success' if row.bound else 'warning' }}">{{ 'Sabitlendi' if row.bound else 'Eşleme bekliyor' }}</span>
@@ -59,4 +68,18 @@
     {% endfor %}
   </div>
 </div>
+<script>
+(function(){
+  const input=document.getElementById('bindingSearch'), count=document.getElementById('bindingSearchCount');
+  if(!input)return;
+  const rows=[...document.querySelectorAll('.binding-row')];
+  const fold=t=>t.toLocaleLowerCase('tr-TR');
+  input.addEventListener('input',()=>{
+    const q=fold(input.value.trim());
+    let shown=0;
+    rows.forEach(r=>{const hit=!q||fold(r.dataset.search||'').includes(q);r.hidden=!hit;if(hit)shown++;});
+    count.textContent=q?`${shown} gösterge bulundu.`:'';
+  });
+})();
+</script>
 {% endblock %}

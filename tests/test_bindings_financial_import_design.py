@@ -11,6 +11,7 @@ from sqlalchemy import select
 from starlette.requests import Request
 
 from app.main import templates
+from civ199_contract import bindings_without_search_and_saved
 from test_activity_sections import section_client, login
 from test_section_index_design import TEXT_PAIRS, contrast
 from test_sidebar_ui import browser
@@ -102,7 +103,7 @@ def contract(html):
 
 def without_direction_setting(html):
     """CIV-197 adds period metadata; keep the original binding contract frozen."""
-    doc = fromstring(html)
+    doc = fromstring(bindings_without_search_and_saved(html))
     for el in doc.xpath('//*[contains(concat(" ", normalize-space(@class), " "), " indicator-direction-form ") or '
                         'contains(concat(" ", normalize-space(@class), " "), " indicator-direction-help ")]'):
         el.getparent().remove(el)
@@ -253,7 +254,10 @@ def test_binding_save_real_browser(browser,section_client,db,sample,width):
         assert root.locator('form[action$="/bindings"]').count()==0
         assert root.locator('form[action$="/directions"]').count()==1
         binding=db.scalar(select(PublicationIndicatorBinding).where(PublicationIndicatorBinding.publication_id==pub.id))
-        assert writes==[(f'/activity-reports/publications/{pub.id}/bindings',303,f'/activity-reports/publications/{pub.id}/bindings')]
+        # CIV-199 (8): the save returns to the saved row and says so.
+        row_id=writes[0][2].rsplit('#gosterge-',1)[-1]
+        assert writes==[(f'/activity-reports/publications/{pub.id}/bindings',303,f'/activity-reports/publications/{pub.id}/bindings?saved=binding&row={row_id}#gosterge-{row_id}')]
+        expect(root.locator(f'#gosterge-{row_id} .binding-saved')).to_have_text('Kaydedildi: kimlik ilişkisi sabitlendi.')
         assert binding.reason=='Aynı kavramı temsil eden bağımsız tarihsel kayıt.'
         assert pub.snapshot_json==raw
 
