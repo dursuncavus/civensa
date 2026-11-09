@@ -1,0 +1,22 @@
+[
+  {
+    "department": 1,
+    "before": 42646,
+    "after": 900
+  },
+  {
+    "department": 3,
+    "before": 48398,
+    "after": 900
+  },
+  {
+    "department": 11,
+    "before": 62679,
+    "after": 900
+  },
+  {
+    "department": 22,
+    "before": 54533,
+    "after": 900
+  }
+]

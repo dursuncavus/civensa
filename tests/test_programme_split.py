@@ -297,6 +297,7 @@ def test_strategy_browser_walkthrough(browser,client,db,sample,split_rows,tmp_pa
         page=context.new_page(); errors=[]
         page.on('pageerror',lambda error:errors.append(str(error)))
         page.goto('http://testserver/program/1?period_id=1')
+        page.locator('[data-program-dialog=program-economics-dialog]').click()
         page.get_by_role('link',name='Program Grubu Dağılımı',exact=True).click()
         expect(page.get_by_role('heading',name='Test Müdürlüğü — Program Grubu Dağılımı')).to_be_visible()
         expect(page.get_by_text('Referans: Müdürlüğün Program Kartları')).to_be_visible()
