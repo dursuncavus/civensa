@@ -1573,3 +1573,12 @@ Decisions (lead):
 2. CIV-192 (Codex, GPT-6.1 Sol, yüksek) — Strateji imports the master workbook through preview → confirm → apply, writes via save_actual, resolves names through Kurum yapısı, blank ≠ zero, no silent ratio scaling. Package tasks/CIV-192.md.
 3. B2 fix (per-activity result optional, D-446) is packaged after CIV-190/191 merge to avoid template overlap.
 Next IDs: task CIV-193, decision D-448.
+
+## D-448 (9 Nov 2026 ~11:20 Istanbul, lead, project thread CV Lider 71) — parallel work after Ali's answers: CIV-193 (B2) + CIV-194 (ML1) dispatched
+BEYAN (owner 10:59): give work to the coding AIs now; recover the time lost waiting for Ali.
+Decisions (lead):
+1. CIV-193 (Codex, GPT-6.1 Sol, orta) — close B2 per D-446: rehearsal stops counting the per-activity form as BLOCKER, guide gets "Faaliyet sonuçları" and the support line (Strateji Geliştirme Müdürlüğü, no personal data). Planned for Gemini/Antigravity (small, self-contained) but the lead's folder access to ~/development was refused in this session → Codex.
+2. CIV-194 (Codex, GPT-6.1 Sol, yüksek) — offline converter kesin hesap PDF → existing financial import XLSX (ML1), blocking reconciliation of every column, synthetic test PDFs only, budget code → department via an operator CSV. Lead validates it locally on the real 2025 PDFs (not committed) before merge.
+3. File overlap check: CIV-192 (activity_contract import + guide FR5 line), CIV-193 (rehearsal script + guide B2/Yardım lines), CIV-194 (new script) — disjoint except adjacent guide lines; merge order 193 → 192.
+4. Not dispatched: Gemini research (no CRITICAL decision open), DeepSeek (backup lead only; Claude active), Copilot (not in the hierarchy's active tools).
+Next IDs: task CIV-195, decision D-449.
