@@ -78,8 +78,8 @@ def test_pdf_cover_turkish_section_order_draft_and_buttons(section_client, db, s
             cursor = rendered.index(compact(f"Bölüm sırası {section['position']}:"), cursor)
     for path in ['/activity-sections', f'/activity-sections/reports/{doc.id}']:
         html = client.get(path).text
-        assert f'/reports/{doc.id}/export.pdf' in html and 'PDF olarak indir' in html
-        assert f'/reports/{doc.id}/export.docx' in html and 'Word olarak indir' in html
+        assert f'/reports/{doc.id}/export.pdf' in html and 'Taslak — PDF (onaysız)' in html
+        assert f'/reports/{doc.id}/export.docx' in html and 'Taslak — Word (onaysız)' in html
     artifact(tmp_path, f'{scope}-taslak.pdf', response.content)
 
 
@@ -141,7 +141,7 @@ def test_pdf_button_download_in_browser(section_client, sample, tmp_path):
             page.goto(f'http://testserver/activity-sections/reports/{doc.id}')
             page.locator('[data-section-export] > summary').click()
             with page.expect_download() as pending:
-                page.get_by_role('link', name='PDF olarak indir', exact=True).click()
+                page.get_by_role('link', name='Taslak — PDF (onaysız)', exact=True).click()
             download = pending.value
             assert download.suggested_filename == '2027-faaliyet-raporu-test-mudurlugu-taslak.pdf'
             destination = tmp_path / download.suggested_filename
