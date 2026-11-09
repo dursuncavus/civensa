@@ -314,6 +314,27 @@ kalır; sıfır veya birden çok uygun altbilgi etiketi yine hatadır. İki tam
 hücrenin etiket satırında, diğerlerinin en fazla 6 punto altında bulunması
 ayrıca denetlenir.
 
+`issuecomment-6742814796` için `/Rotate` metaverisi de uygulanır. Ziyaretçi
+metin matrisi ve CTM ile bulunan ham nokta, mediabox başlangıcı çıkarıldıktan
+sonra görüntülenen sayfanın sol-alt koordinat sistemine dönüştürülür. `u=x−sol`,
+`v=y−alt`, genişlik `W`, yükseklik `H` için dönüşümler sırasıyla
+`0: (u,v)`, `90: (v,W−u)`, `180: (W−u,H−v)`, `270: (H−v,u)` olur.
+Başka açı kabul edilmez; sayfa numaralı hata verilir. Böylece sağ/sol ve
+en fazla 6 punto aşağıda olma denetimleri ham eksenlerde yapılmaz.
+
+pypdf yerleşim kipi `/Rotate` uygulamadığından aynı dönüşüm yerleşim çıkarımı
+için bellekteki bağımsız sayfa kopyasının içeriğine uygulanır. Ziyaretçi ise
+orijinal sayfadan okunup aynı görüntüleme uzayına taşınır. Kaynak PDF üzerine
+yazılmaz. Dokuz hücreyle tekil etiket eşleşmesi, tam sayı/ondalık öneki, tam
+iade/yüzde ve boş hücre denetimleri değişmez.
+
+Döndürülmemiş fixture korunur; aynı yatay içerik portre mediabox ve `/Rotate 90`
+ile de üretilir. Başlıktaki ayrı `Toplam`, kesik TOPLAM altbilgisi ve imza bloğu
+vardır. 180/270 derece, mediabox başlangıç kayması, örnek eksen dönüşümü ve
+desteklenmeyen açılar da test edilir. Üç dönen başarı senaryosu eski kodda
+başarısızdı. 90 derece dönmüş sayfada yanlış basılı hane, boş hücre, eksik veri
+ondalığı ve 6 puntoyu aşan aralık hâlâ iki XLSX’i de engeller.
+
 ```sh
 python -m pytest -q --require-postgres tests/test_kesin_hesap_xlsx.py
 ```

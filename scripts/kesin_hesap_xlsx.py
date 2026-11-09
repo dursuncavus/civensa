@@ -8,6 +8,7 @@ if __name__ == '__main__':
 
 import argparse
 from collections import defaultdict
+from copy import copy
 import csv
 from dataclasses import dataclass
 from datetime import date
@@ -22,7 +23,7 @@ import tempfile
 import unicodedata
 
 from openpyxl import Workbook
-from pypdf import PdfReader
+from pypdf import PdfReader, Transformation
 from pypdf.errors import PyPdfError
 
 
@@ -577,6 +578,22 @@ def revenue_total_footer(lines, where):
     return [*lines[:start], *([''] * (len(lines) - start))], tail
 
 
+def display_transform(page, where):
+    """Map unrotated PDF user space to displayed bottom-left page space."""
+    left, bottom, right, top = map(float, page.mediabox)
+    rotation = page.rotation
+    matrices = {
+        0: (1, 0, 0, 1, -left, -bottom),
+        90: (0, -1, 1, 0, -bottom, right),
+        180: (-1, 0, 0, -1, right, top),
+        270: (0, 1, -1, 0, top, -left),
+    }
+    if rotation not in matrices:
+        raise ConversionError(f'{where}: desteklenmeyen sayfa dönüşü {rotation}. '
+                              '0, 90, 180 veya 270 derece dönüşlü PDF kullanın.')
+    return Transformation(matrices[rotation])
+
+
 def total_check_row(page, footer, bounds, where, year):
     """Bucket printed prefixes with the validated data bands, then verify y."""
     labels = (*revenue_labels(year), 'Oran')
@@ -603,10 +620,12 @@ def total_check_row(page, footer, bounds, where, year):
         raw.append(parts[0])
 
     fragments = []
+    transform = display_transform(page, where)
     def visit(text, cm, tm, font, size):
         if text.strip():
             x = tm[4] * cm[0] + tm[5] * cm[2] + cm[4]
             y = tm[4] * cm[1] + tm[5] * cm[3] + cm[5]
+            x, y = transform.apply_on((x, y))
             fragments.append((text.strip(), x, y))
     page.extract_text(visitor_text=visit)
     # The column header can itself contain a separate "Toplam" fragment.
@@ -651,7 +670,14 @@ def pdf_rows(path, kind, year, notes=None):
             raise ConversionError(f'{path.name}: şifreli PDF okunamadı. Şifresiz metin PDF kullanın.')
         for page_no, page in enumerate(reader.pages, 1):
             where = f'{path.name}, sayfa {page_no}'
-            lines = page.extract_text(extraction_mode='layout',
+            # pypdf layout extraction ignores /Rotate. Give it the same frame
+            # as the visitor checks without modifying the reader's source page.
+            transform = display_transform(page, where)
+            layout_page = copy(page)
+            layout_page.indirect_reference = None
+            layout_page.add_transformation(transform)
+            layout_page.rotation = 0
+            lines = layout_page.extract_text(extraction_mode='layout',
                                       layout_mode_space_vertically=False).splitlines()
             footer = None
             if not expense:

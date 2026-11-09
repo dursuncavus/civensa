@@ -976,7 +976,7 @@ def test_straddled_code_keeps_invalid_continuations_blocking(tmp_path, invalid):
         assert 'kayıtlar arasında kod tahmin edilmedi' in report
 
 
-def truncated_total_pdf(tmp_path, *, invalid=None, deduction=False):
+def truncated_total_pdf(tmp_path, *, invalid=None, deduction=False, rotation=0):
     headers = ['Gelirin Kodu', 'Açıklama', *converter.revenue_labels(2026), 'Oran']
     headers[5] = 'Toplam\nTahakkuk'  # A separate "Toplam" text object in the column header.
     values = list(map(Decimal, ['11222333.45', '1234567.89', '8765432.11', '10000000',
@@ -997,18 +997,43 @@ def truncated_total_pdf(tmp_path, *, invalid=None, deduction=False):
         rows[0][2] = rows[0][2].replace(',', '\n,')
     elif invalid == 'unproved_one_decimal_data':
         rows[0][2] = rows[0][2][:-1].replace(',', '\n,')
-    return pdf_table(tmp_path / 'truncated-total.pdf', headers, [90, 140] + [65] * 8 + [45], [rows],
-                     header_size=5, total_footer=invalid or 'valid')
+    path = pdf_table(tmp_path / 'truncated-total.pdf', headers, [90, 140] + [65] * 8 + [45], [rows],
+                      header_size=5, total_footer=invalid or 'valid')
+    if rotation:
+        from pypdf import PdfWriter
+        from pypdf.generic import NameObject, NumberObject, RectangleObject
+        page = converter.PdfReader(path).pages[0]
+        width, height = float(page.mediabox.width), float(page.mediabox.height)
+        inverse = {90: (0, 1, -1, 0, height, 0),
+                   180: (-1, 0, 0, -1, width, height),
+                   270: (0, -1, 1, 0, 0, width)}
+        if rotation in inverse:
+            page.add_transformation(inverse[rotation])
+            if rotation in {90, 270}:
+                page.mediabox = RectangleObject((0, 0, height, width))
+        page[NameObject('/Rotate')] = NumberObject(rotation)
+        writer = PdfWriter()
+        writer.add_page(page)
+        path = tmp_path / f'rotated-total-{rotation}.pdf'
+        writer.write(path)
+    return path
 
 
-def test_lead_total_with_absent_decimals_is_only_a_prefix_check(tmp_path):
-    pdf = truncated_total_pdf(tmp_path)
+@pytest.mark.parametrize('rotation', [0, 90, 180, 270])
+def test_lead_total_with_absent_decimals_is_only_a_prefix_check(tmp_path, rotation):
+    pdf = truncated_total_pdf(tmp_path, rotation=rotation)
+    page = converter.PdfReader(pdf).pages[0]
+    assert page.rotation == rotation
+    if rotation in {90, 270}:
+        assert page.mediabox.width < page.mediabox.height
     fragments = []
     converter.PdfReader(pdf).pages[0].extract_text(
         visitor_text=lambda text, *args: fragments.append(text.strip()))
     assert sum(converter.norm(text) == 'toplam' for text in fragments) == 2
+    original = pdf.read_bytes()
     result, out = run(tmp_path, '--gelir', pdf)
     assert result.returncode == 0, (out / 'report.md').read_text()
+    assert pdf.read_bytes() == original
     rows = list(load_workbook(out / 'revenue.xlsx').active.values)[1:]
     assert [row[0] for row in rows] == ['01', '05']
     assert sum(parse_number(row[1]) for row in rows) == Decimal('11223333.56')
@@ -1025,15 +1050,16 @@ def test_lead_truncated_total_integer_mismatch_blocks_both_workbooks(tmp_path):
     assert 'TOPLAM öneki uyuşmuyor' in report
 
 
+@pytest.mark.parametrize('rotation', [0, 90])
 @pytest.mark.parametrize('invalid,label', [
     ('short_integer', 'Bütçe ile Tahmin Edilen'), ('decimal_mismatch', 'Yılından Devreden Gelir'),
     ('refund_mismatch', 'Red ve İadeler'), ('rate_mismatch', 'Oran'),
     ('truncated_refund', 'Red ve İadeler'), ('missing_cell', 'Yılından Devreden Gelir'),
     ('distant', '6 punto'), ('extra_text', 'TOPLAM'), ('body_truncation', 'sütun'),
     ('unproved_one_decimal_data', 'önekten rakam tahmin edilmedi')])
-def test_total_prefix_exception_keeps_other_checks_blocking(tmp_path, invalid, label):
+def test_total_prefix_exception_keeps_other_checks_blocking(tmp_path, invalid, label, rotation):
     result, out = run(tmp_path, '--gider', expense_pdf(tmp_path),
-                      '--gelir', truncated_total_pdf(tmp_path, invalid=invalid))
+                      '--gelir', truncated_total_pdf(tmp_path, invalid=invalid, rotation=rotation))
     assert result.returncode != 0 and not list(out.glob('*.xlsx'))
     report = (out / 'report.md').read_text()
     assert 'sayfa 1' in report and label in report
@@ -1057,3 +1083,33 @@ def test_truncated_total_keeps_detached_minus_deduction_signed(tmp_path):
     report = (out / 'report.md').read_text()
     assert '11.223.333,56 + (-250,25) = 11.223.083,31' in report
     assert 'hesaplanan net tahmin (PDF TOPLAM önek kontrolü)' in report
+
+
+@pytest.mark.parametrize('rotation,expected', [
+    (0, (100, 200)), (90, (200, 495)), (180, (495, 642)), (270, (642, 100))])
+def test_display_transform_uses_mediabox_origin_and_quarter_turn(rotation, expected):
+    from pypdf import PageObject
+    from pypdf.generic import RectangleObject
+    page = PageObject.create_blank_page(width=595, height=842)
+    page.mediabox = RectangleObject((17, 29, 612, 871))
+    page.rotation = rotation
+    assert converter.display_transform(page, 'sentetik sayfa').apply_on((117, 229)) == expected
+
+
+def test_real_layout_masked_coordinate_example_uses_displayed_axes():
+    from pypdf import PageObject
+    page = PageObject.create_blank_page(width=595, height=842)
+    page.rotation = 90
+    transform = converter.display_transform(page, 'sentetik sayfa')
+    assert transform.apply_on((448, 16)) == (16, 147)
+    assert transform.apply_on((452.7, 231)) == pytest.approx((231, 142.3))
+
+
+@pytest.mark.parametrize('rotation', [45, 91, -90, 360])
+def test_unsupported_page_rotation_is_a_located_blocking_error(tmp_path, rotation):
+    result, out = run(tmp_path, '--gider', expense_pdf(tmp_path),
+                      '--gelir', truncated_total_pdf(tmp_path, rotation=rotation))
+    assert result.returncode != 0 and not list(out.glob('*.xlsx'))
+    report = (out / 'report.md').read_text()
+    assert 'sayfa 1' in report and 'desteklenmeyen sayfa dönüşü' in report
+    assert str(rotation) in report
