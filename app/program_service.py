@@ -3,7 +3,9 @@ from datetime import datetime, UTC
 from .serialization import json_dumps
 from decimal import Decimal
 from collections import defaultdict
-from sqlalchemy import select, or_
+from sqlalchemy import select, or_, union_all, inspect
+from sqlalchemy.orm import joinedload
+from sqlalchemy.orm.attributes import set_committed_value
 from fastapi import HTTPException
 from .pp_errors import pp_error
 from .models import (ReportCard, Indicator, IndicatorValue, Activity, ActivityCostValue,
@@ -13,6 +15,7 @@ from .models import (ReportCard, Indicator, IndicatorValue, Activity, ActivityCo
 from .numbers import parse_number, format_number
 from .value_labels import value_kind_label, funding_label
 import json
+from .structure_service import structure_read_scope
 
 ECONOMIC_CATEGORIES = {
     'personnel': 'Personel Giderleri', 'sgk': 'Sosyal Güvenlik Kurumuna Devlet Primi Giderleri',
@@ -223,35 +226,93 @@ def record(obj):
     return result
 
 
-def department_snapshot(db, period_id, department_id):
+def _load_snapshot_values(db, owners, model, foreign_key, relationship):
+    """Batch the original per-owner SELECTs without changing year ties.
+
+    A selectinload's single ORDER BY year can reorder equal-year values on
+    PostgreSQL. Keep each legacy WHERE/ORDER BY in its own subquery, then
+    concatenate the results in one round trip (bounded for SQLite's UNION
+    limit). Already-loaded collections keep their original session semantics.
+    """
+    pending = [owner for owner in owners if relationship in inspect(owner).unloaded]
+    for offset in range(0, len(pending), 200):
+        batch = pending[offset:offset + 200]
+        statements = [select(select(model).where(getattr(model, foreign_key) == owner.id)
+            .order_by(model.year).subquery()) for owner in batch]
+        grouped = defaultdict(list)
+        for value in db.scalars(select(model).from_statement(union_all(*statements))):
+            grouped[getattr(value, foreign_key)].append(value)
+        for owner in batch:
+            set_committed_value(owner, relationship, grouped[owner.id])
+
+
+@structure_read_scope
+def department_snapshots(db, period_id, departments):
+    """Load each period collection once, preserving the legacy row/key order."""
     from .structure_service import period_name
-    dept = db.get(Department, department_id)
-    scope = db.scalar(select(DepartmentScope).where(DepartmentScope.period_id == period_id, DepartmentScope.department_id == department_id))
-    cards = rows(db, ReportCard, period_id, department_id)
-    indicators = rows(db, Indicator, period_id, department_id)
-    activities = rows(db, Activity, period_id, department_id)
+    departments = list(departments)
+    ids = [department.id for department in departments]
+    period = db.get(ReportingPeriod, period_id)
+    scopes = {scope.department_id: scope for scope in db.scalars(select(DepartmentScope).where(
+        DepartmentScope.period_id == period_id, DepartmentScope.department_id.in_(ids)))}
+    grouped = {}
+    for model in (ReportCard, Indicator, Activity, DepartmentCostValue, EconomicValue):
+        stmt = select(model).where(model.period_id == period_id, model.department_id.in_(ids)).order_by(model.id)
+        items = db.scalars(stmt).all()
+        if model is Indicator:
+            _load_snapshot_values(db, items, IndicatorValue, 'indicator_id', 'values')
+        elif model is Activity:
+            _load_snapshot_values(db, items, ActivityCostValue, 'activity_id', 'cost_values')
+        by_department = defaultdict(list)
+        for row in items:
+            by_department[row.department_id].append(row)
+        grouped[model] = by_department
+    subprogram_ids = {row.subprogram_id for model in (ReportCard, Indicator, Activity)
+                      for items in grouped[model].values() for row in items if row.subprogram_id}
+    subprograms = {sp.id: sp for sp in db.scalars(select(SubProgram).where(
+        SubProgram.id.in_(subprogram_ids)).options(joinedload(SubProgram.program)))}
+    links = defaultdict(list)
+    for aid, oid in db.execute(select(ActivityCatalogueLink.activity_id,
+            ActivityCatalogueLink.official_activity_id).join(Activity).where(
+                Activity.period_id == period_id, Activity.department_id.in_(ids))):
+        links[aid].append(oid)
+
     def named(row):
         data = record(row)
-        sp = db.get(SubProgram, row.subprogram_id) if row.subprogram_id else None
+        sp = subprograms.get(row.subprogram_id)
         data['subprogram'] = sp.name if sp else ''
         data['program'] = sp.program.name if sp else ''
         return data
-    return {'department_id': department_id, 'department': period_name(db, period_id, dept),
-        'scope': record(scope) if scope else None,
-        'period': db.get(ReportingPeriod, period_id).year,
-        'cards': [named(c) for c in sorted(cards, key=lambda c: (c.position, c.id))],
-        'indicators': [dict(named(i), values=[record(v) for v in i.values]) for i in indicators],
-        'activities': [dict(named(a), costs=[record(v) for v in a.cost_values], official_ids=list(db.scalars(select(ActivityCatalogueLink.official_activity_id).where(ActivityCatalogueLink.activity_id==a.id)).all())) for a in activities],
-        'department_costs': [record(v) for v in rows(db, DepartmentCostValue, period_id, department_id)],
-        'economics': [record(v) for v in rows(db, EconomicValue, period_id, department_id)]}
+
+    result = []
+    for dept in departments:
+        did = dept.id
+        scope = scopes.get(did)
+        result.append({'department_id': did, 'department': period_name(db, period_id, dept),
+            'scope': record(scope) if scope else None, 'period': period.year,
+            'cards': [named(c) for c in sorted(grouped[ReportCard][did], key=lambda c: (c.position, c.id))],
+            'indicators': [dict(named(i), values=[record(v) for v in i.values]) for i in grouped[Indicator][did]],
+            'activities': [dict(named(a), costs=[record(v) for v in a.cost_values], official_ids=links[a.id])
+                           for a in grouped[Activity][did]],
+            'department_costs': [record(v) for v in grouped[DepartmentCostValue][did]],
+            'economics': [record(v) for v in grouped[EconomicValue][did]]})
+    return result
+
+
+def department_snapshot(db, period_id, department_id):
+    return department_snapshots(db, period_id, [db.get(Department, department_id)])[0]
 
 
 def validate_department(db, period_id, department_id):
     """Legacy live-row adapter; business rules are shared with package snapshots."""
     period = db.get(ReportingPeriod, period_id)
     scope = db.scalar(select(DepartmentScope).where(DepartmentScope.period_id == period_id, DepartmentScope.department_id == department_id))
-    indicators = rows(db, Indicator, period_id, department_id)
-    activities = rows(db, Activity, period_id, department_id)
+    indicators = db.scalars(select(Indicator).where(Indicator.period_id == period_id,
+        Indicator.department_id == department_id).options(joinedload(Indicator.card)).order_by(Indicator.id)).all()
+    activities = db.scalars(select(Activity).where(Activity.period_id == period_id,
+        Activity.department_id == department_id).options(joinedload(Activity.card)).order_by(Activity.id)).all()
+    _load_snapshot_values(db, indicators, IndicatorValue, 'indicator_id', 'values')
+    _load_snapshot_values(db, activities, ActivityCostValue, 'activity_id', 'cost_values')
     cards = rows(db, ReportCard, period_id, department_id)
     economics = rows(db, EconomicValue, period_id, department_id)
     personnel_rows = rows(db, DepartmentCostValue, period_id, department_id)
@@ -386,6 +447,7 @@ def _validate_department_records(period_id, department_id, year, scope, indicato
     return errors, warnings
 
 
+@structure_read_scope
 def period_departments(db, period_id):
     """Active departments plus inactive departments with history in this period."""
     historical = [Department.id.in_(select(model.department_id).where(model.period_id == period_id))
@@ -398,6 +460,7 @@ def period_departments(db, period_id):
             if department_in_year(db, d, period.year)]
 
 
+@structure_read_scope
 def cost_reconciliation(db, period_id, snapshots=None, *, include_historical=False):
     """One live-row calculation for screens, publication gates and frozen exports.
 
@@ -409,7 +472,7 @@ def cost_reconciliation(db, period_id, snapshots=None, *, include_historical=Fal
     from types import SimpleNamespace
     period = db.get(ReportingPeriod, period_id)
     if snapshots is None:
-        snapshots = [department_snapshot(db, period_id, d.id) for d in period_departments(db, period_id)]
+        snapshots = department_snapshots(db, period_id, period_departments(db, period_id))
     snapshots = sorted(snapshots, key=lambda d: ((d['scope'] or {}).get('position', 0), d['department_id']))
     departments = {d['department_id']: d for d in snapshots
                    if not d['scope'] or d['scope']['status'] != 'excluded'}
@@ -536,6 +599,7 @@ def cost_reconciliation(db, period_id, snapshots=None, *, include_historical=Fal
     return result
 
 
+@structure_read_scope
 def publication_checks(db, period_id):
     """Read-only gates shared by publication and the release checklist."""
     checks = []
@@ -579,15 +643,20 @@ def publication_checks(db, period_id):
     return checks
 
 
+@structure_read_scope
 def book_snapshot(db, period_id):
     period = db.get(ReportingPeriod, period_id)
     departments = period_departments(db, period_id)
-    snapshots = [department_snapshot(db,period_id,d.id) for d in departments]
+    snapshots = department_snapshots(db, period_id, departments)
     snapshots.sort(key=lambda d: ((d['scope'] or {}).get('position',0),d['department_id']))
     catalogue = []
+    responsibilities = defaultdict(list)
+    for oid, did in db.execute(select(ActivityResponsibility.official_activity_id,
+            ActivityResponsibility.department_id).join(OfficialActivity).where(OfficialActivity.period_id == period_id)):
+        responsibilities[oid].append(did)
     for item in rows(db, OfficialActivity, period_id):
         item_data = record(item)
-        item_data['departments'] = [r.department_id for r in db.scalars(select(ActivityResponsibility).where(ActivityResponsibility.official_activity_id==item.id)).all()]
+        item_data['departments'] = responsibilities[item.id]
         catalogue.append(item_data)
     groups = defaultdict(Decimal); economic = defaultdict(Decimal)
     for d in snapshots:

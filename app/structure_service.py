@@ -3,7 +3,9 @@
 All mutations are synchronous. Callers read request bodies before acquiring locks.
 """
 import json
+from contextlib import contextmanager
 from datetime import date
+from functools import wraps
 
 from fastapi import HTTPException
 from sqlalchemy import event, select, inspect
@@ -20,8 +22,47 @@ JOURNAL = (StructureChange, StructureChangeLink, StructureChangeTransfer, Struct
 PROFILE_FIELDS = ('display_name', 'status', 'reason', 'budget_code', 'active_from', 'active_to')
 
 
+@contextmanager
+def structure_read_context(db):
+    """Share reads only on the current call stack; always discard on return.
+
+    The session carries the context to nested readers (including finance and
+    template adapters). It is never retained for the next service call/request.
+    """
+    key = 'structure_read_context'
+    if key in db.info:
+        yield db.info[key]
+        return
+    cache = {}
+    db.info[key] = cache
+    try:
+        yield cache
+    finally:
+        db.info.pop(key, None)
+
+
+def structure_read_scope(function):
+    @wraps(function)
+    def wrapped(db, *args, **kwargs):
+        with structure_read_context(db):
+            return function(db, *args, **kwargs)
+    return wrapped
+
+
+def _read_cache(db):
+    # A mutation made inside a read scope must be visible even before a query
+    # would normally trigger autoflush. Flushing also clears cached absence.
+    if any(isinstance(row, JOURNAL + (Department, DepartmentScope, ReportingPeriod))
+           for row in list(db.new) + list(db.dirty) + list(db.deleted)):
+        db.flush()
+    return db.info.get('structure_read_context')
+
+
 @event.listens_for(Session, 'before_flush')
 def immutable_decisions(db, context, instances):
+    if any(isinstance(row, JOURNAL + (Department, DepartmentScope, ReportingPeriod))
+           for row in list(db.new) + list(db.dirty) + list(db.deleted)):
+        db.info.get('structure_read_context', {}).clear()
     for row in list(db.dirty) + list(db.deleted):
         if isinstance(row, JOURNAL) and (row in db.deleted or db.is_modified(row)):
             raise HTTPException(409, f'Kurum yapısı kaydı #{row.id} değiştirilemez veya silinemez. Kurum Yapısı ekranında gerekçeli iptal kaydı oluşturun.')
@@ -52,10 +93,23 @@ def profile_data(scope):
 
 
 def period_name(db, period_id, department):
-    scope = db.scalar(select(DepartmentScope).where(DepartmentScope.period_id == period_id, DepartmentScope.department_id == department.id))
+    cache = _read_cache(db)
+    if cache is not None:
+        key = ('period', period_id)
+        if key not in cache:
+            # Keep strong references: SQLAlchemy's identity map is weak.
+            cache[key] = (db.get(ReportingPeriod, period_id), {
+                scope.department_id: scope for scope in db.scalars(
+                    select(DepartmentScope).where(DepartmentScope.period_id == period_id))},
+                db.scalars(select(Department)).all())
+        period, scopes, _departments = cache[key]
+        scope = scopes.get(department.id)
+    else:
+        scope = db.scalar(select(DepartmentScope).where(DepartmentScope.period_id == period_id, DepartmentScope.department_id == department.id))
+        period = None
     if scope and scope.display_name:
         return scope.display_name
-    period = db.get(ReportingPeriod, period_id)
+    period = period or db.get(ReportingPeriod, period_id)
     return name_for_year(db, period.year, department)
 
 
@@ -75,25 +129,48 @@ def display_name_for_year(db, year, department):
 def name_for_year(db, year, department):
     """Resolve a year's name from live structure decisions, without a period scope."""
     for change in live_changes(db):
-        old = json.loads(change.snapshot_json)['before']['departments'].get(str(department.id))
+        old = _change_before(db, change).get(str(department.id))
         if old and year < change.effective_date.year:
             return old['name']
     return department.name
 
 
 def live_changes(db):
-    return db.scalars(select(StructureChange).where(~StructureChange.id.in_(select(StructureChangeCancellation.change_id))).order_by(StructureChange.effective_date, StructureChange.id)).all()
+    cache = _read_cache(db)
+    if cache is not None and 'changes' in cache:
+        return cache['changes']
+    changes = db.scalars(select(StructureChange).where(~StructureChange.id.in_(select(StructureChangeCancellation.change_id))).order_by(StructureChange.effective_date, StructureChange.id)).all()
+    if cache is not None:
+        cache['changes'] = changes
+    return changes
+
+
+def _change_before(db, change):
+    cache = _read_cache(db)
+    if cache is None:
+        return json.loads(change.snapshot_json)['before']['departments']
+    key = ('before', change.id)
+    if key not in cache:
+        cache[key] = json.loads(change.snapshot_json)['before']['departments']
+    return cache[key]
 
 
 def links_for(db, change_id):
-    return db.scalars(select(StructureChangeLink).where(StructureChangeLink.change_id == change_id).order_by(StructureChangeLink.id)).all()
+    cache = _read_cache(db)
+    key = ('links', change_id)
+    if cache is not None and key in cache:
+        return cache[key]
+    links = db.scalars(select(StructureChangeLink).where(StructureChangeLink.change_id == change_id).order_by(StructureChangeLink.id)).all()
+    if cache is not None:
+        cache[key] = links
+    return links
 
 
 def department_in_year(db, department, year):
     """Exclude future creations and prior closures, while retaining closure-year AR."""
     for change in live_changes(db):
         links = links_for(db, change.id)
-        before = json.loads(change.snapshot_json)['before']['departments']
+        before = _change_before(db, change)
         if str(department.id) in before and before[str(department.id)] is None and change.effective_date.year > year:
             return False
         if change.change_type in {'MERGED', 'SPLIT', 'CLOSED'} and change.effective_date.year < year:

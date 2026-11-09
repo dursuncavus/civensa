@@ -6,7 +6,7 @@ from decimal import Decimal, InvalidOperation
 from uuid import uuid4
 
 from fastapi import HTTPException
-from sqlalchemy import select, func, update, inspect
+from sqlalchemy import select, func, update, inspect, insert
 
 from .models import (Indicator, Department, ReportingPeriod, Publication, IndicatorIdentity,
                      IndicatorDefinitionRevision, IndicatorDirection, PublicationIndicatorBinding, ActivityReport,
@@ -147,20 +147,23 @@ def definition_payload(row, year, contract_version='1.0'):
     return data
 
 
-def make_definition(db, identity_id, period_id, row, year, user, contract_version='1.0'):
+def make_definition(db, identity_id, period_id, row, year, user, contract_version='1.0', *, state=None):
     # Identity lock serializes numbering across publications of different periods.
-    identity = db.scalar(select(IndicatorIdentity).where(IndicatorIdentity.indicator_id == identity_id).with_for_update())
+    identity = (state['identities'].get(identity_id) if state is not None else
+        db.scalar(select(IndicatorIdentity).where(IndicatorIdentity.indicator_id == identity_id).with_for_update()))
     if identity is None:
         raise HTTPException(422, 'Kalıcı gösterge kimliği bulunamadı.')
     text = canonical(definition_payload(row, year, contract_version))
-    previous = db.scalar(select(IndicatorDefinitionRevision).where(
+    previous = (state['previous'].get((identity_id, digest(text))) if state is not None else
+        db.scalar(select(IndicatorDefinitionRevision).where(
         IndicatorDefinitionRevision.indicator_id == identity_id,
         IndicatorDefinitionRevision.period_id == period_id,
-        IndicatorDefinitionRevision.sha256 == digest(text)).order_by(IndicatorDefinitionRevision.revision.desc()))
+        IndicatorDefinitionRevision.sha256 == digest(text)).order_by(IndicatorDefinitionRevision.revision.desc())))
     if previous:
         return previous
-    number = (db.scalar(select(func.max(IndicatorDefinitionRevision.revision)).where(
-        IndicatorDefinitionRevision.indicator_id == identity_id)) or 0) + 1
+    number = ((state['numbers'].get(identity_id) if state is not None else
+        db.scalar(select(func.max(IndicatorDefinitionRevision.revision)).where(
+            IndicatorDefinitionRevision.indicator_id == identity_id))) or 0) + 1
     definition = IndicatorDefinitionRevision(indicator_id=identity_id, revision=number,
         period_id=period_id, definition_json=text, sha256=digest(text), created_by=user.id)
     db.add(definition); db.flush()
@@ -170,15 +173,50 @@ def make_definition(db, identity_id, period_id, row, year, user, contract_versio
 def freeze_program_payload(db, period_id, user):
     from .program_service import book_snapshot
     payload = book_snapshot(db, period_id)
+    snapshot_indicators = snapshot_rows(payload)
+    live_rows = {row.id: row for row in db.scalars(select(Indicator).where(
+        Indicator.id.in_(snapshot_indicators)))}
+    departments = {dept.id: dept for dept in db.scalars(select(Department).where(
+        Department.id.in_({row.department_id for row in live_rows.values()})))}
+    identities = []
+    for sid in snapshot_indicators:
+        live = live_rows[sid]
+        if not live.persistent_indicator_id:
+            identity_id = str(uuid4())
+            identities.append(dict(indicator_id=identity_id,
+                organization_id=departments[live.department_id].organization_id))
+            live.persistent_indicator_id = identity_id
+    if identities:
+        # Insert parents before the period-row FK updates; the caller still
+        # owns the transaction and all publication checks have already run.
+        with db.no_autoflush:
+            db.execute(insert(IndicatorIdentity), identities)
+        db.flush()
+    identity_ids = {live.persistent_indicator_id for live in live_rows.values()}
+    # The same identity locks, previous-definition lookup and global revision
+    # maxima as make_definition, read in batches and held until caller commit.
+    state = dict(identities={identity.indicator_id: identity for identity in db.scalars(
+        select(IndicatorIdentity).where(IndicatorIdentity.indicator_id.in_(identity_ids))
+        .order_by(IndicatorIdentity.indicator_id).with_for_update())}, previous={},
+        numbers=dict(db.execute(select(IndicatorDefinitionRevision.indicator_id,
+            func.max(IndicatorDefinitionRevision.revision)).where(
+                IndicatorDefinitionRevision.indicator_id.in_(identity_ids))
+            .group_by(IndicatorDefinitionRevision.indicator_id)).all()))
+    for previous in db.scalars(select(IndicatorDefinitionRevision).where(
+            IndicatorDefinitionRevision.indicator_id.in_(identity_ids),
+            IndicatorDefinitionRevision.period_id == period_id)
+            .order_by(IndicatorDefinitionRevision.revision.desc())):
+        state['previous'].setdefault((previous.indicator_id, previous.sha256), previous)
     definitions = {}
     seen = set()
-    for row in snapshot_rows(payload).values():
-        live = db.get(Indicator, row['id'])
-        identity_id = ensure_identity(db, live)
+    for row in snapshot_indicators.values():
+        live = live_rows[row['id']]
+        identity_id = live.persistent_indicator_id
         if identity_id in seen:
             raise HTTPException(409, 'Aynı kalıcı gösterge kimliği bu dönemde birden fazla kayda bağlı.')
         seen.add(identity_id)
-        definition = make_definition(db, identity_id, period_id, row, payload['period'], user, CURRENT_DEFINITION_CONTRACT)
+        definition = make_definition(db, identity_id, period_id, row, payload['period'], user,
+            CURRENT_DEFINITION_CONTRACT, state=state)
         definitions[row['id']] = definition
     for department in payload['departments']:
         for row in department.get('indicators', []):
