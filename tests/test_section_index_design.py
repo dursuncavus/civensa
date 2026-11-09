@@ -5,6 +5,7 @@ from html.parser import HTMLParser
 from pathlib import Path
 
 import pytest
+from civ199_contract import single_organization_as_select
 
 from app import activity_sections_service as sections
 from test_activity_sections import section_client, login, ready_and_freeze
@@ -81,7 +82,7 @@ class Contract(HTMLParser):
 def assert_frozen(response):
     assert response.status_code == 200
     old = response.template.environment.from_string(FROZEN.read_text()).render(response.context)
-    actual, expected = Contract(response.text), Contract(old)
+    actual, expected = Contract(single_organization_as_select(response.text)), Contract(old)  # CIV-199 (2)
     assert Counter(actual.controls) == Counter(expected.controls)
     assert actual.bindings == expected.bindings
     # CIV-191 intentionally distinguishes draft export labels; controls stay fixed.
@@ -190,7 +191,7 @@ def test_009_010_grouping_warnings_disclosure_and_mobile(browser, filled_index, 
         source_url=f'/activity-sections/reports/{item["report"]["id"]}?code={section["code"]}', source_label='Önceki yıl')
     html = response.template.render({**response.context, **context})
     old = response.template.environment.from_string(FROZEN.read_text()).render({**response.context, **context})
-    assert Counter(Contract(html).controls) == Counter(Contract(old).controls)
+    assert Counter(Contract(single_organization_as_select(html)).controls) == Counter(Contract(old).controls)  # CIV-199 (2)
     with browser.new_context(viewport={'width': width, 'height': 900}) as browser_context:
         errors = []
         def serve(route):

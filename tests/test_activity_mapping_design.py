@@ -11,6 +11,7 @@ from urllib.parse import urlsplit
 from lxml.html import fromstring
 from playwright.sync_api import expect
 import pytest
+from civ199_contract import without_mapping_sentence
 
 from test_activity_mapping_gaps import strategy_client
 from test_section_index_design import TEXT_PAIRS, contrast
@@ -28,7 +29,8 @@ def render(response, data, *, before=False):
     source = FROZEN.read_bytes()
     assert sha256(source).hexdigest() == '8a4efb1aa191b39737529b0e5b45ea31b8b888be753c998043d10e98e1370c75'
     template = env.from_string(source.decode()) if before else response.template
-    return template.render(data)
+    html = template.render(data)
+    return html if before else without_mapping_sentence(html)  # CIV-199 (4)
 
 
 def contract(html):

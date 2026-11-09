@@ -8,7 +8,7 @@
 <section class="index-panel"><h2>Yıl raporlarını oluştur</h2><p>Kapsamdaki müdürlüklere birer birim raporu ve kuruma bir idare raporu açılır. Mevcut kayıtlar korunur.</p>
 <form method="post" action="/activity-sections/years" class="index-filters">
 <input type="hidden" name="csrf_token" value="{{ request.session.get('csrf_token') }}">
-<label>Kurum<select name="organization_id">{% for org in organizations %}<option value="{{ org.id }}">{{ org.name }}</option>{% endfor %}</select></label>
+{% if organizations|length == 1 %}<div class="single-organization"><span>Kurum</span><b>{{ organizations[0].name }}</b><input type="hidden" name="organization_id" value="{{ organizations[0].id }}"></div>{% else %}<label>Kurum<select name="organization_id">{% for org in organizations %}<option value="{{ org.id }}">{{ org.name }}</option>{% endfor %}</select></label>{% endif %}
 <label>Raporlama yılı<select name="period_id">{% for period in periods %}<option value="{{ period.id }}">{{ period.year }}</option>{% endfor %}</select></label>
 <label><input type="checkbox" name="copy_previous"> Önceki yılın onaylı kopyasından doldur</label><button class="button primary">Raporları oluştur</button></form></section>
 {% endif %}
@@ -17,24 +17,31 @@
 <label>Bölüm<select name="section"><option value="">Tüm bölümler</option>{% for d in definitions %}<option value="{{ d.code }}" {% if selected_section==d.code %}selected{% endif %}>{{ d.code }} · {{ d.title }}</option>{% endfor %}</select></label>
 <label>Durum<select name="status"><option value="">Tümü</option>{% for k,v in statuses.items() %}<option value="{{ k }}" {% if selected_status==k %}selected{% endif %}>{{ v }}</option>{% endfor %}</select></label><button class="button">Filtrele</button></form>
 {% for error in report_errors %}<p class="ar-warning" role="status">{{ error.year }} yılı · Rapor {{ error.document_id }}: {{ error.message }}</p>{% endfor %}
+{% macro folded(items, css='') %}{% for entry in items %}{% if entry.text %}<div{% if css %} class="{{ css }}"{% endif %}>{{ entry.text }}</div>{% else %}<div class="folded-problem{% if css %} {{ css }}{% endif %}"><b>{{ entry.departments|length }} müdürlükte:</b> {{ entry.problem }}<details class="folded-departments"><summary>Müdürlükleri göster</summary><ul>{% for name in entry.departments %}<li>{{ name }}</li>{% endfor %}</ul></details></div>{% endif %}{% endfor %}{% endmacro %}
+{% if reports %}<p class="completion-hint muted">Durumu “Boş” veya “Taslak” olan bölümlerde yapılacak iş aynı: bölüm içeriğini gözden geçirip Hazır veya gerekçeli Uygulanamaz seçin. Aşağıda yalnız bölüme özgü eksikler listelenir.</p>{% endif %}
 {% for item in reports %}
 <article class="report-group" aria-labelledby="report-{{ item.report.id }}">
 <header class="report-heading"><div><h3 id="report-{{ item.report.id }}">{{ item.report.year }} · {{ item.report.department }}</h3></div>
 <div class="report-badges">{% if item.report.workflow %}<span class="workflow-badge workflow-{{ item.report.workflow.status }}">{{ item.report.workflow.label }}</span>{% endif %}{% if item.report.frozen %}<span class="approved-badge">Onaylı kopya</span>{% endif %}</div></header>
 {% if user.role=='strategy' and not item.report.department_id %}<p><a class="button" href="/activity-sections/reports/{{ item.report.id }}/photos">Meclis sunumu fotoğrafları</a> <a class="button" href="/activity-sections/reports/{{ item.report.id }}/highlights">Meclis sunumu öne çıkanlar</a></p>{% endif %}
+<p class="completion-summary" data-completion-summary>{{ item.matches|length }} bölüm ·{% for key,label in statuses.items() if item.view.status_counts.get(key) %} <span class="ar-status ar-{{ key }}">{{ label }} {{ item.view.status_counts[key] }}</span>{% endfor %} · {% for group in item.view.owner_groups %}{{ owners[group.owner] }} {{ group.rows|length }}{% if not loop.last %} · {% endif %}{% endfor %}</p>
+{% for group in item.view.owner_groups %}
+<details class="owner-group" data-owner="{{ group.owner }}" {% if group.open %}open{% endif %}><summary><b>{{ owners[group.owner] }}</b> · {{ group.rows|length }} bölüm ·{% for key,label in statuses.items() if group.status_counts.get(key) %} {{ label }} {{ group.status_counts[key] }}{% endfor %}{% if group.problem_rows %} · <span class="group-problems">{{ group.problem_rows }} bölümde özel eksik</span>{% endif %}</summary>
 <table class="ar-table index-table"><thead><tr><th scope="col">Bölüm</th><th scope="col">Durum</th><th scope="col">Sahibi</th><th scope="col">Eksikler</th></tr></thead><tbody>
-{% for s in item.matches %}
+{% for row in group.rows %}{% set s = row.section %}
 <tr><td data-label="Bölüm"><a href="/activity-sections/reports/{{ item.report.id }}?code={{ s.code }}">{{ s.code }} · {{ s.title }}</a></td>
 <td data-label="Durum"><span class="ar-status ar-{{ s.status }}">{{ statuses[s.status] }}</span></td><td data-label="Sahibi">{{ owners[s.owner] }}</td>
-<td data-label="Eksikler">{% if directorate_finance_info and s.owner=='finance' and s.missing %}<p role="status">Bu bölümü Mali Hizmetler dolduracak; gönderiminizi engellemez.</p>{% else %}{% for missing in s.missing %}<div>{{ missing }}</div>{% else %}—{% endfor %}{% endif %}
-{% if s.get('warnings') %}<h4>Uyarılar (gönderimi engellemez)</h4>{% if directorate_finance_info and s.owner=='finance' %}<p role="status">Bu bölümü Mali Hizmetler dolduracak; gönderiminizi engellemez.</p>{% else %}{% for warning in s.warnings %}<p class="ar-warning">{{ warning }}</p>{% endfor %}{% endif %}{% endif %}
+<td data-label="Eksikler">{% if directorate_finance_info and s.owner=='finance' and s.missing %}<p role="status">Bu bölümü Mali Hizmetler dolduracak; gönderiminizi engellemez.</p>{% elif row.problems %}{{ folded(row.problems) }}{% elif row.needs_review %}<span class="muted">Gözden geçirilmeli</span>{% else %}—{% endif %}
+{% if s.get('warnings') %}<h4>Uyarılar (gönderimi engellemez)</h4>{% if directorate_finance_info and s.owner=='finance' %}<p role="status">Bu bölümü Mali Hizmetler dolduracak; gönderiminizi engellemez.</p>{% else %}{{ folded(row.warnings, 'ar-warning') }}{% endif %}{% endif %}
 {% set similarity=item.similarities.get(s.code) %}
 {% if similarity %}
 {% if similarity.message %}<p class="ar-warning" role="status" data-ar-similarity>{{ similarity.message }}{% if similarity.source_url %} <a href="{{ similarity.source_url }}">{{ similarity.source_label }}</a>{% endif %}</p>
 {% elif similarity.percent is not none %}<p class="muted" data-ar-similarity-percent>Önceki yıl benzerliği: %{{ similarity.percent }}</p>{% endif %}
 {% endif %}</td></tr>
 {% endfor %}
-</tbody></table></article>
+</tbody></table></details>
+{% endfor %}
+</article>
 {% else %}<p class="empty-state">Bu filtrelerle rapor bulunamadı. Yıl raporlarını oluşturun veya filtreleri değiştirin.</p>{% endfor %}
 </section>
 <section class="index-panel"><h2>Word ve PDF çıktıları</h2>

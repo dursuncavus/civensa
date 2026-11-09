@@ -22,6 +22,78 @@
       {% for entry in pp_errata %}<p>{{ entry.item_id }}: {{ entry.reason }}</p>{% endfor %}
     </section>
     {% endif %}
+    {% if approved_book %}
+      <section class="report-panel" id="approved-book-publication">
+        <h2>Onaylı kitaptan yayınla</h2>
+        <p>{{ period.year }} onaylı kitabı ilk yüklemeden sonra değiştirilmedi. Kaynak kitaptaki kontrol uyarıları yayın arşivinde saklanır.</p>
+        {% filter pp_form(request) %}
+          <form class="report-fields" method="post" action="/report-builder/publish-approved-book">
+            {{ token() }}
+            <label for="approval-reference">Onay dayanağı</label>
+            <input id="approval-reference" name="approval_reference" required maxlength="2000" placeholder="Meclis kararı, 16.10.2025">
+            <button class="button primary">Onaylı kitaptan yayınla</button>
+          </form>
+        {% endfilter %}
+      </section>
+    {% endif %}
+    <section class="report-panel report-publish">
+      <h2>Nihai Sürüm</h2>
+      <p>Yayın öncesinde bütün müdürlük onayları, kapsam ve mali mutabakat yeniden kontrol edilir. Oluşturulan sürüm sonraki düzenlemelerden etkilenmez.</p>
+      {% filter pp_form(request) %}
+        <form class="report-fields" method="post" action="/report-builder/publish">
+          {{ token() }}
+          <button class="button primary">Kontrol Et ve Nihai Sürümü Oluştur</button>
+        </form>
+      {% endfilter %}
+    </section>
+    <section aria-label="Yayın sürümleri" id="publication-history" class="report-panel">
+      <h2>Yayın sürümleri</h2>
+      {% if stale_departments %}
+        <p class="bad report-warning" role="alert">Güncel sürümden sonra şu müdürlüklerin paketi gerekçeyle açıldı: {{ stale_departments|join(', ') }}. Yeniden onaydan sonra yeni sürüm oluşturun.</p>
+      {% endif %}
+      {% for publication in publications %}
+        <article class="record publication-row" data-publication-version="{{ publication.version }}">
+          <h3>
+            <span>Sürüm {{ publication.version }}</span>
+            {% if loop.first %}
+              <span class="status success">Güncel sürüm</span>
+            {% else %}
+              <span class="status neutral">Önceki sürüm</span>
+              <span class="replaced-by">· Sürüm {{ superseded_by[publication.id] }} ile değiştirildi</span>
+            {% endif %}
+          </h3>
+          <p>{{ publication.created_at|turkey_time }} · {{ publication.creator|actor_label }}</p>
+          {% if publication.id in approved_book_publications %}
+            {% set book = approved_book_publications[publication.id] %}
+            <p>Onaylı kitaptan yayın · Onay dayanağı: {{ book.approval_reference }} · Kaynak kitap uyarıları: {{ book.warning_count|trnum }}</p>
+          {% endif %}
+          <p class="publication-links">
+            <a href="/publications/{{ publication.id }}.docx">Word</a>
+            ·
+            <a href="/publications/{{ publication.id }}.pdf">PDF</a>
+            ·
+            <a href="/publications/{{ publication.id }}.json">Veri Arşivi</a>
+          </p>
+          {% if publication_reopens[publication.id] %}
+            <div class="publication-reopens">
+              <h4>Önceki sürümden sonra düzeltme için açılan paketler</h4>
+              <ul>
+                {% for item in publication_reopens[publication.id] %}
+                  <li>
+                    <p>
+                      <b>{{ item.department_name }}</b>
+                      · {{ item.event.actor|actor_label }} · {{ item.event.created_at|turkey_time }}
+                    </p>
+                    <p>{{ item.event.note }}</p>
+                  </li>
+                {% endfor %}
+              </ul>
+            </div>
+          {% endif %}
+        </article>
+      {% endfor %}
+    </section>
+    {% set reconciliation_collapsed = true %}
     {% include 'pp_reconciliation.html' %}
     <p class="report-actions">
       <a class="button" href="/report-builder/manifest?period_id={{ period.id }}">PP Tamamlanma Listesi</a>
@@ -189,78 +261,8 @@
         </details>
       {% endfor %}
     </section>
-    {% if approved_book %}
-      <section class="report-panel" id="approved-book-publication">
-        <h2>Onaylı kitaptan yayınla</h2>
-        <p>{{ period.year }} onaylı kitabı ilk yüklemeden sonra değiştirilmedi. Kaynak kitaptaki kontrol uyarıları yayın arşivinde saklanır.</p>
-        {% filter pp_form(request) %}
-          <form class="report-fields" method="post" action="/report-builder/publish-approved-book">
-            {{ token() }}
-            <label for="approval-reference">Onay dayanağı</label>
-            <input id="approval-reference" name="approval_reference" required maxlength="2000" placeholder="Meclis kararı, 16.10.2025">
-            <button class="button primary">Onaylı kitaptan yayınla</button>
-          </form>
-        {% endfilter %}
-      </section>
-    {% endif %}
-    <section class="report-panel report-publish">
-      <h2>Nihai Sürüm</h2>
-      <p>Yayın öncesinde bütün müdürlük onayları, kapsam ve mali mutabakat yeniden kontrol edilir. Oluşturulan sürüm sonraki düzenlemelerden etkilenmez.</p>
-      {% filter pp_form(request) %}
-        <form class="report-fields" method="post" action="/report-builder/publish">
-          {{ token() }}
-          <button class="button primary">Kontrol Et ve Nihai Sürümü Oluştur</button>
-        </form>
-      {% endfilter %}
-    </section>
+    {# Must follow every pp_form on the page: it renders only unmatched attempts. #}
     {% include 'pp_form_fallback.html' %}
-    <section aria-label="Yayın sürümleri" id="publication-history" class="report-panel">
-      <h2>Yayın sürümleri</h2>
-      {% if stale_departments %}
-        <p class="bad report-warning" role="alert">Güncel sürümden sonra şu müdürlüklerin paketi gerekçeyle açıldı: {{ stale_departments|join(', ') }}. Yeniden onaydan sonra yeni sürüm oluşturun.</p>
-      {% endif %}
-      {% for publication in publications %}
-        <article class="record publication-row" data-publication-version="{{ publication.version }}">
-          <h3>
-            <span>Sürüm {{ publication.version }}</span>
-            {% if loop.first %}
-              <span class="status success">Güncel sürüm</span>
-            {% else %}
-              <span class="status neutral">Önceki sürüm</span>
-              <span class="replaced-by">· Sürüm {{ superseded_by[publication.id] }} ile değiştirildi</span>
-            {% endif %}
-          </h3>
-          <p>{{ publication.created_at|turkey_time }} · {{ publication.creator|actor_label }}</p>
-          {% if publication.id in approved_book_publications %}
-            {% set book = approved_book_publications[publication.id] %}
-            <p>Onaylı kitaptan yayın · Onay dayanağı: {{ book.approval_reference }} · Kaynak kitap uyarıları: {{ book.warning_count|trnum }}</p>
-          {% endif %}
-          <p class="publication-links">
-            <a href="/publications/{{ publication.id }}.docx">Word</a>
-            ·
-            <a href="/publications/{{ publication.id }}.pdf">PDF</a>
-            ·
-            <a href="/publications/{{ publication.id }}.json">Veri Arşivi</a>
-          </p>
-          {% if publication_reopens[publication.id] %}
-            <div class="publication-reopens">
-              <h4>Önceki sürümden sonra düzeltme için açılan paketler</h4>
-              <ul>
-                {% for item in publication_reopens[publication.id] %}
-                  <li>
-                    <p>
-                      <b>{{ item.department_name }}</b>
-                      · {{ item.event.actor|actor_label }} · {{ item.event.created_at|turkey_time }}
-                    </p>
-                    <p>{{ item.event.note }}</p>
-                  </li>
-                {% endfor %}
-              </ul>
-            </div>
-          {% endif %}
-        </article>
-      {% endfor %}
-    </section>
   </div>
 {% endblock %}
 {% block scripts %}

@@ -67,3 +67,9 @@ progress{width:140px;height:12px;accent-color:#287a57}.status.not_started{backgr
 
 /* The source comparison keeps wide evidence tables inside their scroll region. */
 #source-comparison code{overflow-wrap:anywhere}
+/* CIV-199 busy state */
+.is-busy::before{content:"";display:inline-block;width:.9em;height:.9em;margin-right:.45em;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:civ-busy-spin .8s linear infinite;vertical-align:-.12em}
+@keyframes civ-busy-spin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.is-busy::before{animation:none;border-right-color:currentColor;opacity:.6}}
+.form-busy-status{margin:8px 0 0}
+.single-organization{display:grid;gap:var(--space-2);min-width:0}.single-organization span{font-size:var(--text-sm);font-weight:var(--font-medium)}.single-organization b{display:flex;align-items:center;min-height:var(--control-height);font-weight:var(--font-semibold);overflow-wrap:anywhere}

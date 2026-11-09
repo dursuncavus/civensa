@@ -63,3 +63,17 @@
   .section-index-page td::before { content: attr(data-label); display: block; margin-bottom: var(--space-1); color: var(--text-secondary); font-weight: var(--font-medium); }
   .section-index-page .export-items { display: grid; grid-template-columns: minmax(0,1fr); }
 }
+/* CIV-199: completion view summary, owner groups and folded repeated problems */
+.completion-hint{margin:var(--space-1) 0 var(--space-4)}
+.completion-summary{display:flex;flex-wrap:wrap;gap:var(--space-2) var(--space-3);align-items:center;margin:var(--space-2) 0 var(--space-3);font-size:var(--text-sm)}
+.owner-group{margin:var(--space-2) 0;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface)}
+.owner-group>summary{cursor:pointer;padding:var(--space-3) var(--space-4)}
+.owner-group[open]>summary{border-bottom:1px solid var(--border)}
+.owner-group>.index-table{margin:0}
+.folded-problem{margin:var(--space-1) 0 var(--space-2)}
+.folded-departments>summary{cursor:pointer;font-size:var(--text-sm);color:var(--accent)}
+.folded-departments ul{margin:var(--space-1) 0 0;padding-left:var(--space-4);font-size:var(--text-sm)}
+.section-index-page .owner-group>summary{display:flex;align-items:center;gap:var(--space-2);width:auto}
+.section-index-page .single-organization{display:grid;min-width:0;gap:var(--space-2);font-size:var(--text-sm);font-weight:var(--font-medium)}
+.section-index-page .single-organization b{display:flex;align-items:center;min-height:var(--control-height);font-size:var(--text-base);font-weight:var(--font-semibold)}
+.section-index-page .owner-group .group-problems{color:var(--warning)}

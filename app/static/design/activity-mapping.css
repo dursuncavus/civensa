@@ -75,3 +75,6 @@
   .activity-mapping-page :is(section,.mapping-summary) { padding: var(--space-4); }
   .activity-mapping-page .sticky-save { width: 100%; max-width: 100%; padding: var(--space-3); }
 }
+/* CIV-199: plain-language summary first, counters secondary */
+.mapping-sentence{margin:0 0 var(--space-3);font-size:var(--text-card);line-height:var(--line-height)}
+.mapping-sentence+.mapping-counts{font-size:var(--text-sm);color:var(--text-secondary)}

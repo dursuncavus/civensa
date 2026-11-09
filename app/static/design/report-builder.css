@@ -61,3 +61,7 @@
 @media (max-width: 700px) {
   :is(.report-builder-page,.section-import-page) section { padding: var(--space-4); }
 }
+/* CIV-199: reconciliation table collapsed under the publication actions */
+.pp-reconciliation-table>summary{cursor:pointer;font-weight:var(--font-semibold);padding:var(--space-3) var(--space-4);border:1px solid var(--border);border-radius:var(--radius);background:var(--surface)}
+.pp-reconciliation-table>summary .pp-reconciliation-alert{color:var(--warning)}
+.pp-reconciliation-table[open]>summary{margin-bottom:var(--space-3)}

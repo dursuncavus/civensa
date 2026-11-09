@@ -5,6 +5,18 @@
   <link rel="stylesheet" href="/static/design/activity-mapping.css">
   <div class="activity-mapping-page">
     <div class="mapping-summary">
+      {% set mapping_ns = namespace(subprogram_departments=0, missing=false) %}
+      {% for g in groups %}{% set mapping_ns.missing = false %}{% for a in g.activities %}{% if not mapping_states[a.id].subprogram %}{% set mapping_ns.missing = true %}{% endif %}{% endfor %}{% if mapping_ns.missing %}{% set mapping_ns.subprogram_departments = mapping_ns.subprogram_departments + 1 %}{% endif %}{% endfor %}
+      <p class="mapping-sentence" data-mapping-sentence>
+        {% if not unresolved_count %}
+          Bütün faaliyetlerin alt program, kart ve resmî katalog bağlantıları tamam.
+        {% elif mapping_counts.subprogram %}
+          <b>{{ mapping_ns.subprogram_departments }} müdürlükte {{ mapping_counts.subprogram }} faaliyetin alt programı seçilmeli</b>{% if strong_suggestion_count %}; {{ strong_suggestion_count }} faaliyet için güçlü öneri var{% endif %}.
+          {% if mapping_counts.card or mapping_counts.catalogue %}Ayrıca {{ mapping_counts.card }} faaliyette kart, {{ mapping_counts.catalogue }} faaliyette resmî katalog bağlantısı eksik; bunlar “Performans Kartlarını Aç” adımıyla tamamlanır.{% endif %}
+        {% else %}
+          <b>Alt program seçimi tamam.</b> {{ mapping_counts.card }} faaliyette kart, {{ mapping_counts.catalogue }} faaliyette resmî katalog bağlantısı eksik; bunlar “Performans Kartlarını Aç” adımıyla tamamlanır.
+        {% endif %}
+      </p>
       <dl class="mapping-counts">
         <div>
           <dt>Eşleştirme bekleyen faaliyet</dt>

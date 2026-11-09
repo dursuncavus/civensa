@@ -38,7 +38,14 @@ def error_detail(error):
     return {**detail, 'message': message} if isinstance(detail, dict) else message
 
 
-def render_error(request, user, error, back, attempted=None):
+# CIV-199: identifier fields come from selects or hidden inputs; show them as
+# read-only text (with a human label when the caller can resolve one) instead of
+# editable textareas holding raw database ids.
+ID_FIELDS = {'publication_id', 'organization_id', 'report_id', 'revision_id', 'report_indicator_id',
+             'snapshot_indicator_id', 'indicator_id', 'period_indicator_id', 'expected_revision'}
+
+
+def render_error(request, user, error, back, attempted=None, *, display_values=None, existing=None):
     from .main import templates
     detail = error_detail(error)
     # Files and CSRF tokens must never be replayed as text or stale hidden values.
@@ -51,6 +58,7 @@ def render_error(request, user, error, back, attempted=None):
         'user': user, 'message': detail.get('message') if isinstance(detail, dict) else detail,
         'blockers': detail.get('blockers', []) if isinstance(detail, dict) else [],
         'back': back, 'attempted_items': items, 'field_labels': LABELS, 'had_files': had_files,
+        'id_fields': ID_FIELDS, 'display_values': display_values or {}, 'existing': existing,
     }, status_code=error.status_code)
 
 

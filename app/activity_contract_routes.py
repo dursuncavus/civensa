@@ -164,7 +164,35 @@ def register(app):
                     integer(data.get('expected_revision', 0)), data.get('revision_reason', '')))
             return RedirectResponse(f'/activity-reports/revisions/{result.id}', 303)
         except HTTPException as error:
-            return ui_error(request, user, error, '/activity-reports')
+            display, existing = create_form_context(db, data)
+            return render_error(request, user, error, '/activity-reports', display_values=display, existing=existing)
+
+    def create_form_context(db, data):
+        """CIV-199: human labels for the selected ids and, when a report for the
+        same organization and year already exists, a link to its current revision."""
+        def as_int(value):
+            try:
+                return int(value)
+            except (TypeError, ValueError):
+                return None
+        display, existing = {}, None
+        organization = db.get(Organization, as_int(data.get('organization_id'))) if as_int(data.get('organization_id')) else None
+        publication = db.get(Publication, as_int(data.get('publication_id'))) if as_int(data.get('publication_id')) else None
+        if organization:
+            display['organization_id'] = organization.name
+        if publication:
+            period = db.get(ReportingPeriod, publication.period_id)
+            display['publication_id'] = f'{period.year if period else "?"} · v{publication.version}'
+        if organization and publication and not data.get('report_id'):
+            report = db.scalar(select(ActivityReport).where(ActivityReport.organization_id == organization.id,
+                                                            ActivityReport.period_id == publication.period_id))
+            revision = db.scalar(select(ActivityReportRevision).where(
+                ActivityReportRevision.report_id == report.id,
+                ActivityReportRevision.revision == report.current_revision)) if report else None
+            if revision:
+                existing = dict(url=f'/activity-reports/revisions/{revision.id}',
+                                label=f'{organization.name} · {display.get("publication_id", "").split(" · ")[0]} · Rapor revizyon {revision.revision}')
+        return display, existing
 
     @router.get('/activity-reports/revisions/{revision_id}')
     def detail(revision_id: int, request: Request, db: Session = Depends(get_db), user=Depends(require_user)):
