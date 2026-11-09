@@ -3,7 +3,10 @@
 <section id="pp-reconciliation" aria-labelledby="pp-reconciliation-title">
 <h2 id="pp-reconciliation-title">Maliyet Ara Toplamları ve Kaynak Mutabakatı</h2>
 <p>Güncel faaliyet maliyetleri program → alt program → müdürlük sırasıyla toplanır. Bağlantısı veya tutarı eksik kayıt varsa kısmi toplam gösterilmez ve yayın durur. Kaynak toplamı, bütün alt kayıtların saklanan kaynak tutarlarından oluşur; bulunmaması uyarıdır. Personel ve SGK giderleri kitabın ortak maliyet tablosunda ayrıca gösterilir.</p>
-{% if publication_block_rows %}<p class="warning-panel pp-reconciliation-alert">{{ publication_block_rows }} satırda yayın engeli var. Ayrıntıyı ilgili satırdaki “Ayrıntı” bağlantısından açın.</p>{% endif %}
+{% if reconciliation_collapsed %}
+<p class="muted pp-reconciliation-scope">Bu tablodaki yayın engelleri yalnız “Nihai Sürüm” için geçerlidir. “Onaylı kitaptan yayınla” bu eksikleri yayın arşivine kaynak kitap uyarısı olarak yazar ve yayını durdurmaz.</p>
+<details class="pp-reconciliation-table"><summary>{% if publication_block_rows %}<span class="pp-reconciliation-alert">{{ publication_block_rows }} satırda yayın engeli var</span> · {% endif %}Tabloyu göster ({{ reconciliation|length }} satır)</summary>
+{% elif publication_block_rows %}<p class="warning-panel pp-reconciliation-alert">{{ publication_block_rows }} satırda yayın engeli var. Ayrıntıyı ilgili satırdaki “Ayrıntı” bağlantısından açın.</p>{% endif %}
 <div class="table-wrap"><table>
 <thead><tr><th>Program / Alt Program / Müdürlük</th><th>Yıl / Değer Türü</th><th>Hesaplanan (TL)</th><th>Kaynak (TL)</th><th>Fark (TL)</th><th>Durum / Yapılacak İşlem</th></tr></thead>
 <tbody>{% for row in reconciliation %}
@@ -13,5 +16,6 @@
 {% if row.errors or row.warnings %}<p class="pp-reconciliation-count">{% if row.errors %}{{ row.errors|length }} hata{% endif %}{% if row.errors and row.warnings %} · {% endif %}{% if row.warnings %}{{ row.warnings|length }} uyarı{% endif %}</p>
 <details class="pp-reconciliation-details"><summary>Ayrıntı</summary>{% for message in row.errors %}<p class="field-error">{{ message }}</p>{% endfor %}{% for message in row.warnings %}<p class="muted">{{ message }}</p>{% endfor %}</details>{% endif %}</td></tr>
 {% endfor %}</tbody></table></div>
+{% if reconciliation_collapsed %}</details>{% endif %}
 </section>
 {% endif %}

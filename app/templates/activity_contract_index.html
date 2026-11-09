@@ -57,6 +57,10 @@
     <form method="post" action="/activity-reports/revisions">
       <input type="hidden" name="csrf_token" value="{{ request.session.get('csrf_token') }}">
       <div class="form-grid">
+        {% if organizations|length == 1 %}
+        <div class="single-organization" hidden><span>Kurum</span><b>{{ organizations[0].name }}</b>
+          <input type="hidden" name="organization_id" value="{{ organizations[0].id }}"></div>
+        {% else %}
         <label>Kurum
           <select name="organization_id" required>
             {% for org in organizations %}
@@ -64,6 +68,7 @@
             {% endfor %}
           </select>
         </label>
+        {% endif %}
         <label>Baz program yayını
           <select name="publication_id" required>
             <option value="">Yıl ve yayın sürümünü seçin</option>

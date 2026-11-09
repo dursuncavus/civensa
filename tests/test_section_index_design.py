@@ -5,6 +5,7 @@ from html.parser import HTMLParser
 from pathlib import Path
 
 import pytest
+from civ199_contract import sections_without_folds, single_organization_as_select
 
 from app import activity_sections_service as sections
 from test_activity_sections import section_client, login, ready_and_freeze
@@ -81,7 +82,7 @@ class Contract(HTMLParser):
 def assert_frozen(response):
     assert response.status_code == 200
     old = response.template.environment.from_string(FROZEN.read_text()).render(response.context)
-    actual, expected = Contract(response.text), Contract(old)
+    actual, expected = Contract(sections_without_folds(single_organization_as_select(response.text))), Contract(old)  # CIV-199 (2)
     assert Counter(actual.controls) == Counter(expected.controls)
     assert actual.bindings == expected.bindings
     # CIV-191 intentionally distinguishes draft export labels; controls stay fixed.
@@ -190,7 +191,7 @@ def test_009_010_grouping_warnings_disclosure_and_mobile(browser, filled_index, 
         source_url=f'/activity-sections/reports/{item["report"]["id"]}?code={section["code"]}', source_label='Önceki yıl')
     html = response.template.render({**response.context, **context})
     old = response.template.environment.from_string(FROZEN.read_text()).render({**response.context, **context})
-    assert Counter(Contract(html).controls) == Counter(Contract(old).controls)
+    assert Counter(Contract(sections_without_folds(single_organization_as_select(html))).controls) == Counter(Contract(old).controls)  # CIV-199 (2)
     with browser.new_context(viewport={'width': width, 'height': 900}) as browser_context:
         errors = []
         def serve(route):
@@ -208,14 +209,18 @@ def test_009_010_grouping_warnings_disclosure_and_mobile(browser, filled_index, 
         groups = page.locator('.report-group')
         assert groups.count() == len(context['reports'])
         status_edges = []
-        for heading in page.locator('.report-heading').all():
+        # CIV-199 (10): directorate cards sit in grid columns; only full-width headings share one edge.
+        for heading in page.locator('.report-group:not(.report-card) .report-heading').all():
             box, badges = heading.bounding_box(), heading.locator('.report-badges').bounding_box()
             assert box['width'] <= 44 * 16
             assert badges['x'] + badges['width'] <= box['x'] + box['width'] + 1
             status_edges.append(round(badges['x']))
         assert len(set(status_edges)) <= 1
         for group, expected in zip(groups.all(), context['reports']):
-            expect(group.locator('h3')).to_have_text(f'{expected["report"]["year"]} · {expected["report"]["department"]}')
+            # CIV-199 (10): the year prefix only appears when several years are listed.
+            years = {r['report']['year'] for r in context['reports']}
+            prefix = f'{expected["report"]["year"]} · ' if len(years) > 1 else ''
+            expect(group.locator('.report-heading h3')).to_have_text(f'{prefix}{expected["report"]["department"]}')
             expect(group.locator('.report-heading > div > p')).to_have_count(0)
             assert group.locator('tbody tr').count() == len(expected['matches'])
         assert page.evaluate("""() => {
@@ -226,6 +231,9 @@ def test_009_010_grouping_warnings_disclosure_and_mobile(browser, filled_index, 
               .map(el => getComputedStyle(el, '::before').textTransform));
           return transforms.every(value => value !== 'uppercase');
         }""")
+        # CIV-199 (10): with more than three reports the export list is folded first.
+        if page.locator('.exports-fold').count():
+            page.locator('.exports-fold > summary').click()
         summary = page.locator('.section-export > summary').first
         summary.focus(); page.keyboard.press('Enter')
         expect(page.locator('.section-export').first).to_have_attribute('open', '')
@@ -246,10 +254,25 @@ def test_009_010_grouping_warnings_disclosure_and_mobile(browser, filled_index, 
         if width == 1440: assert len({round(box['y']) for box in boxes}) == 1
         else:
             assert boxes[0]['y'] < boxes[1]['y'] < boxes[2]['y']
-            for table in page.locator('.index-table').all():
+            # CIV-199 (10): card sections live in closed dialogs; check the inline ones, then one dialog.
+            for table in page.locator('.index-table').filter(visible=True).all():
                 assert table.bounding_box()['width'] <= groups.first.bounding_box()['width']
                 assert table.locator('tr').last.bounding_box()['width'] <= table.bounding_box()['width']
-            assert page.locator('.section-index-page .shell-table-scroll').evaluate_all('els => els.every(el => el.scrollWidth === el.clientWidth)')
+            if page.locator('.report-open').count():
+                page.locator('.report-open').first.click()
+                dialog = page.locator('dialog.report-dialog[open]')
+                expect(dialog).to_be_visible()
+                assert dialog.bounding_box()['width'] <= width
+                assert dialog.evaluate('el => el.scrollWidth <= el.clientWidth + 1')
+                dialog.get_by_role('button', name='Kapat').click()
+                expect(dialog).to_have_count(0)
+            # Layout settles a frame after the modal closes; wait instead of sampling once.
+            scrolls = page.locator('.section-index-page .shell-table-scroll')
+            for _ in range(20):
+                if scrolls.evaluate_all('els => els.every(el => el.scrollWidth === el.clientWidth)'): break
+                page.wait_for_timeout(100)
+            else:
+                raise AssertionError(scrolls.evaluate_all('els => els.map(el => [el.scrollWidth, el.clientWidth])'))
         page.goto('http://testserver/activity-sections?section=I.A&status=not_applicable')
         expect(page.locator('.empty-state')).to_contain_text('Bu filtrelerle rapor bulunamadı.')
         expect(page.locator('form[method=get] [name=section]')).to_have_value('I.A')
