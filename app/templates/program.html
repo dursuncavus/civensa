@@ -12,7 +12,9 @@
 {% endmacro %}
 {% block content %}
 <link rel="stylesheet" href="/static/design/report-preparation.css">
-<div class="report-preparation-page">
+<link rel="stylesheet" href="/static/design/program-cards.css">
+<script src="/static/design/program-cards.js" defer></script>
+<div class="report-preparation-page" data-program-page="/program/{{ department.id }}">
 {% set progress = namespace(unassigned=0, unlinked=0, source=0, finance=0, economic=0, cards=0) %}
 {% for card in cards %}
 {% if not card.rationale|trim or not card.goal|trim or not card.responsible|trim %}
@@ -82,20 +84,28 @@ Bu sayfadaki işler
 Salt okunur · Bu ekranda kayıt yapılamaz.
 </p>
 {% endif %}
-<ul class="rp-task-list">
+<label class="program-search">Bu sayfadaki işlerde ara<input type="search" data-program-search placeholder="Kart, kaynak, finansman…"></label>
+<ul class="rp-task-list program-card-grid">
 {% for id, title, status, tone in sections %}
-<li>
-<a href="#rp-{{ id }}">
-{{ title }}
+<li class="program-card" data-program-card>
+<div class="program-card-head"><h3>{{ title }}</h3></div>
+<span class="rp-status {{ tone }}">{{ status }}</span>
+<a class="button" href="#rp-{{ id }}" data-program-dialog="program-{{ id }}-dialog">
+Ayrıntıyı aç
 </a>
-<span class="rp-status {{ tone }}">
-{{ status }}
-</span>
 </li>
 {% endfor %}
+{% if reconciliation %}
+<li class="program-card program-reconciliation-card" data-program-card>
+<div class="program-card-head"><h3>Maliyet ve kaynak mutabakatı</h3></div>
+<p>{{ reconciliation|selectattr('errors')|list|length }} satırda yayın engeli</p>
+<button type="button" class="button" data-program-dialog="program-reconciliation-dialog">Ayrıntıyı aç</button>
+</li>
+{% endif %}
 </ul>
+<p data-program-empty hidden>Aramanıza uygun iş bulunamadı.</p>
 {% if errors %}
-<details class="return-note rp-errors" open>
+<details class="return-note rp-errors program-secondary">
 <summary>
 {{ errors|length }} eksik / tutarsız kayıt
 </summary>
@@ -113,7 +123,7 @@ Kart ve mali tablo kontrolleri tamamlandı.
 </p>
 {% endif %}
 {% if warnings %}
-<details>
+<details class="program-secondary">
 <summary>
 İncelenecek birim uyarıları
 </summary>
@@ -132,8 +142,13 @@ Gösterge ve faaliyet girişi
 </a>
 </p>
 </section>
+<dialog id="program-reconciliation-dialog" class="program-dialog" aria-labelledby="program-reconciliation-title">
+<header class="program-dialog-head"><h2 id="program-reconciliation-title">Maliyet ve kaynak mutabakatı</h2><form method="dialog"><button class="button">Kapat</button></form></header>
 {% include 'pp_reconciliation.html' %}
+</dialog>
 {% set labels={'source_title':'Bütçe yılı / kart başlığı','administration':'İdare / birim adı','responsible':'Sorumlu İdare','rationale':'Gerekçe ve Açıklamalar','goal':'Alt Programın Hedefi','explanation':'Göstergeye ilişkin ortak açıklama','calculation_method':'Ortak hesaplama yöntemi','data_source':'Verinin Kaynağı','footnote':'Dipnot','source_page':'Kaynak sayfa','service_area':'Hizmet alanı','strategic_link':'Stratejik plan / PH bağlantısı'} %}
+<dialog id="program-cards-dialog" class="program-dialog" aria-labelledby="program-cards-title">
+<header class="program-dialog-head"><h2 id="program-cards-title">Performans Kartları</h2><form method="dialog"><button class="button">Kapat</button></form></header>
 <section class="rp-panel" id="rp-cards" aria-labelledby="rp-cards-title">
 <h2 id="rp-cards-title">
 1. Performans Kartları
@@ -200,6 +215,9 @@ Kartı kaydet
 </details>
 {% endfor %}
 </section>
+</dialog>
+<dialog id="program-assignments-dialog" class="program-dialog" aria-labelledby="program-assignments-title">
+<header class="program-dialog-head"><h2 id="program-assignments-title">Gösterge ve faaliyetlerin kartlara atanması</h2><form method="dialog"><button class="button">Kapat</button></form></header>
 <section class="rp-panel" id="rp-assignments" aria-labelledby="rp-assignments-title">
 <h2 id="rp-assignments-title">
 2. Gösterge ve faaliyetlerin kartlara atanması
@@ -298,6 +316,9 @@ Gösterge ekle
 </details>
 {% endif %}
 </section>
+</dialog>
+<dialog id="program-catalogue-dialog" class="program-dialog" aria-labelledby="program-catalogue-title">
+<header class="program-dialog-head"><h2 id="program-catalogue-title">Sorumlu harcama birimleri kataloğu bağlantısı</h2><form method="dialog"><button class="button">Kapat</button></form></header>
 <section class="rp-panel" id="rp-catalogue" aria-labelledby="rp-catalogue-title">
 <h2 id="rp-catalogue-title">
 3. Sorumlu harcama birimleri kataloğu bağlantısı
@@ -335,6 +356,9 @@ Bağlantıyı kaydet
 {% endfilter %}
 {% endfor %}
 </section>
+</dialog>
+<dialog id="program-sources-dialog" class="program-dialog" aria-labelledby="program-sources-title">
+<header class="program-dialog-head"><h2 id="program-sources-title">Kaynak değerlerini doğrulama</h2><form method="dialog"><button class="button">Kapat</button></form></header>
 <section class="rp-panel" id="rp-sources" aria-labelledby="rp-sources-title">
 <h2 id="rp-sources-title">
 4. Kaynak değerlerini doğrulama
@@ -416,6 +440,9 @@ Tutarı doğrula
 {% endfor %}
 {% endfor %}
 </section>
+</dialog>
+<dialog id="program-finance-dialog" class="program-dialog" aria-labelledby="program-finance-title">
+<header class="program-dialog-head"><h2 id="program-finance-title">Faaliyet finansmanı</h2><form method="dialog"><button class="button">Kapat</button></form></header>
 <section class="rp-panel" id="rp-finance" aria-labelledby="rp-finance-title">
 <h2 id="rp-finance-title">
 5. Faaliyet finansmanı
@@ -468,6 +495,9 @@ Finansmanı kaydet
 </details>
 {% endfor %}
 </section>
+</dialog>
+<dialog id="program-economics-dialog" class="program-dialog" aria-labelledby="program-economics-title">
+<header class="program-dialog-head"><h2 id="program-economics-title">Ekonomik tablo</h2><form method="dialog"><button class="button">Kapat</button></form></header>
 <section class="rp-panel" id="rp-economics" aria-labelledby="rp-economics-title">
 <h2 id="rp-economics-title">
 6. Ekonomik tablo
@@ -733,6 +763,7 @@ Tutarı kaydet
 {% endfilter %}
 {% endif %}
 </section>
-{% include 'pp_form_fallback.html' %}
+</dialog>
+<div data-program-recovery>{% include 'pp_form_fallback.html' %}</div>
 </div>
 {% endblock %}
