@@ -1,11 +1,12 @@
 # CIVENSA — CURRENT STATE
 
-Updated: 9 Nov 2026 ~09:55 Istanbul (CV Lider 71 project thread, D-443).
+Updated: 9 Nov 2026 ~09:55 Istanbul (CV Lider 71 project thread, D-443/D-444).
 Rules: AI_WORKING_CONSTITUTION v1.2 (Drive, global) · `HIERARCHY.md` v1.8 (D-408: the lead also codes; Codex reviews its PRs) · `PROJECT_RULES.md` v1.4 (D-271: PRIOR ART field mandatory in every package) · `BACKUP_LEAD.md` v2.
 Backup log ("Civensa Yedek Kaydı", Drive): no entries after 31 Oct (DOĞRULANDI 7 Nov 22:25, no change after 1 Nov).
 Tags: DOĞRULANDI (lead checked) · TARİHSEL (past fact) · BEYAN (owner said) · BELİRSİZ (unknown).
 
 ## Next session — start here (D-253)
+D-444 (9 Nov ~09:50, DOĞRULANDI): remaining 11 Ali questions (S1–S11: mapping, name changes, year-end columns, Excel vs book names, B2, ML1 XLSX, İKİY, user list, support channel, lower-is-better, photos) sent by e-mail in thread "Civensa – 2026 Faaliyet Raporu soruları"; today's meeting with Ali is for tests only. Next session: Gmail check for his answers → CIV-192 (FR5).
 D-443 (9 Nov ~09:55, DOĞRULANDI): Ali's 3 attachments read (zip in the project thread). V1 Excel = one Strateji master sheet, 227 indicators / 32 directorates, Q1–Q3 filled, year columns empty; PG codes not unique; vs 2026 book 155 same name, 48 rows under 4 renamed directorates, 63 book indicators unmatched (docs/lead/data/fr5-2026-excel-kitap-eslesme.csv). FR5 = Strateji imports the master workbook through a reviewed mapping. CIV-192 packaged after today's meeting: ask Ali directorate name changes, who fills the year-end columns, Excel names vs book names. V2 = 2025 final-account PDFs, ML1 template still needed.
 D-442 (9 Nov ~09:40, DOĞRULANDI): Ali answered by e-mail (K1–K6, V1 Excel, V2 PDFs, O1 dates, O2 paper, İç Kontrol) — mapping (A) NOT answered. CIV-190 (2026 PP errata, read-time file) and CIV-191 (screen texts) dispatched → review their PRs. Owner puts Ali's 3 attachments in Drive → lead reads V1 Excel → FR5 import package. Ask Ali in today's meeting: mapping, B2, ML1 XLSX, İKİY, user list, support channel, name changes.
 CV Lider 70 (7 Nov ~22:30, DOĞRULANDI, D-438): Gmail now works in the project thread — no mail from Ali Abi. Rollout checklist docs/lead/ROLLOUT_CHECKLIST.md v1.0: calendar (pilot 14 Dec week: Bilgi İşlem, Strateji, Fen İşleri; all directorates 4 Jan 2027) and January deploy freeze APPROVED by the owner (D-439); support channel still open (owner + Ali). CIV-189 directorate guide (stable sections) merged 8a2019b (D-441): docs/guides/mudurluk-fr-2026/KILAVUZ.md; B2/FR5 sections + support line after Ali; 4 LOW screen-text findings collected for one text task. Owner meets Ali Mon 9 Nov (calendar reminder 10:00/11:00 with all questions). 9 Nov: Ali's answers fill section A/B (B2, FR5 Excel, 2026 mapping, ML1, PR2, user list).
@@ -35,7 +36,7 @@ CV Lider 61 (4 Nov ~21:25, DOĞRULANDI): no mail from Ali Abi; only open PR #382
 9. Claude account on Max from 4 Nov 2026 (BEYAN; next charge 4 Dec). Extra capacity goes to lead analysis/preparation work (D-400). The "Claude quota" block below is TARİHSEL (Pro era).
 10. Sunum module (D-411/D-412/D-413): reveal.js 6.0.1 + ECharts 6.1.0 via Civensa Jinja templates, Civensa design tokens; animated HTML + 16:9 PDF from the same file. Prototype https://claude.ai/artifact/DMpNp2f68JsogL2eMgJSRD review round 1 done (D-414); full Fen İşleri 2025 presentation with real data = CIV-180 reference (D-415); waits for the owner's hall-computer test + further remarks → CIV-180 (engine + FR müdürlük presentation). Future report modules proposed in D-411 (not accepted; after 1 Jan 2027).
 11. CIV-180–185 live since release #410 (D-428).
-Next IDs: task CIV-192, decision D-443.
+Next IDs: task CIV-192, decision D-446.
 
 ## Claude quota (BEYAN, owner 27 Oct 16:21)
 - Session 11%, week 67%, weekly reset Saturday 00:00 (D-300). Copilot 96 / 1,500 credits, reset 1 Nov.
