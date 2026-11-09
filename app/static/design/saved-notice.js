@@ -1,6 +1,12 @@
 (() => {
   const key = 'civensa-form-position';
   const notice = document.getElementById('saved-notice');
+  // A page that already says what was saved (and scrolls to that row itself)
+  // keeps its own notice; the generic one would repeat it and fight its scroll.
+  const ownNotice = notice && !notice.hidden && [...document.querySelectorAll('[role="status"]')]
+    .some(el => el !== notice && el.offsetParent !== null
+      && /(^|\s)kaydedildi/.test(el.textContent.toLocaleLowerCase('tr-TR')));
+  if (ownNotice) notice.hidden = true;
   try {
     const previous = JSON.parse(sessionStorage.getItem(key) || 'null');
     sessionStorage.removeItem(key);
