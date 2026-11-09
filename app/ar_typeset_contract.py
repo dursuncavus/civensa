@@ -18,8 +18,9 @@ SECTION_FIELDS = ('code', 'title', 'position', 'parent_id', 'depth', 'owner', 'c
 NUMBER_FIELDS = {'value', 'actual', 'amount', 'previous', 'initial', 'added', 'deducted', 'entered_final',
     'cancelled', 'carried', 'estimate', 'refunds', 'final', 'net', 'rate', 'pp_budget', 'lower_rate',
     'upper_rate', 'count', 'area', 'total', 'verified', 'missing', 'number', 'percentage',
-    'delta', 'achievement_percent'}
-REFERENCE_FIELDS = {'id', 'department_id', 'organization_id', 'period_id', 'year', 'document_id',
+    'delta', 'achievement_percent', 'stored_amount', 'inside', 'outside',
+    'printed_value', 'corrected_value', 'stored_total'}
+REFERENCE_FIELDS = {'id', 'department_id', 'organization_id', 'period_id', 'year', 'value_year', 'document_id',
     'publication_id', 'pp_publication_id', 'import_id', 'program_id', 'subprogram_id', 'card_id',
     'parent_id', 'definition_version', 'revision_id', 'approval_id', 'copied_from_id',
     'copied_from_approval_id', 'edited_by', 'source_revision', 'revision', 'position', 'depth'}
