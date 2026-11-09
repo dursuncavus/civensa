@@ -385,7 +385,7 @@ class Rehearsal:
             check('gönderimi engellemez' in warnings,'Mali Hizmetler uyarısı bulunamadı.')
             self.steps[-1]['note']=warnings
             self.goto(page,role,f'/activity-report?year=2026&period_id={pid}','Faaliyet gerçekleşmesi girişi ara',
-                      'BLOCKER','Kaynak kayıt inceleme pilotu salt okunur; faaliyet başına gerçekleşme giriş formu sunulmuyor.')
+                      'OK','Faaliyet başına sonuç girişi beklenmiyor (Strateji kararı 9.11.2026); açıklama EK-1 bölüm metnine yazılır.')
             director_role=unit['key']+'_director'; director=self.login(director_role)
             self.goto(director,director_role,document,'Sapma açıklaması boşken gönderim kontrolü')
             row=self.click(director,director_role,director.get_by_role('button',name='Strateji’ye gönder',exact=True),
@@ -441,9 +441,12 @@ class Rehearsal:
         self.data['approvals']=approvals
         expected_units = [unit['key'] for unit in self.data['units']]
         check(approvals==expected_units,'Prova müdürlüklerinin bağımsız onayı tamamlanamadı.')
-        blockers=[step for step in self.steps if step['result']=='BLOCKER']
-        check(len(blockers)==len(expected_units)+1 and sum(step['step']=='Faaliyet gerçekleşmesi girişi ara' for step in blockers)==len(expected_units),
-              'B2 ve beklenen İdare kapsam sınırı dışında engel kaldı.')
+        self.check_blockers()
+
+    def check_blockers(self):
+        blockers=[step['step'] for step in self.steps if step['result']=='BLOCKER']
+        check(blockers==['İdare raporunu onayla ve dondur denemesi'],
+              'Beklenen İdare kapsam sınırı dışında engel kaldı veya kapsam engeli bulunamadı.')
 
     def downloads(self,page,unit,status,role='strategy'):
         if page.locator('[data-section-export]').get_attribute('open') is None:
