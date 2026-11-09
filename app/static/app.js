@@ -185,7 +185,7 @@ const drafts=(()=>{
       event.preventDefault();event.stopImmediatePropagation();confirm(()=>link.click());
     },true);
     document.addEventListener('submit',event=>{
-      if(event.defaultPrevented||event.target.matches('[data-actual-form]')||navigationApproved||!hasUnsaved())return;
+      if(event.defaultPrevented||event.target.matches('[data-actual-form]')||event.target.method==='dialog'||navigationApproved||!hasUnsaved())return;
       event.preventDefault();const form=event.target,button=event.submitter;confirm(()=>form.requestSubmit(button));
     });
   }

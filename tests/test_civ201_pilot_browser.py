@@ -338,3 +338,25 @@ def test_saved_form_inside_dialog_returns_to_its_scroll_position(browser, native
                 break
             page.wait_for_timeout(50)
         assert abs(dialog.evaluate('el => el.scrollTop') - before) <= 60
+
+
+def test_closing_a_dialog_keeps_the_unsaved_change_guard(browser, pilot_client):
+    """'Kapat' only closes the dialog; it neither asks to leave nor disarms the guard."""
+    client, _ = pilot_client
+    url = '/activity-reports/revisions/1'
+    with browser.new_context(viewport={'width': 1440, 'height': 900}, device_scale_factor=1) as context:
+        bridge(context, client, [])
+        page = context.new_page()
+        page.goto('http://testserver' + url, timeout=180000)
+        trigger = page.locator('[data-directorate-card]').first.get_by_role('button', name='Ayrıntıyı aç')
+        dialog = page.locator('[id="' + trigger.get_attribute('data-open-dialog') + '"]')
+        trigger.click()
+        field = dialog.locator('[data-actual-form] textarea, [data-actual-form] input[type="text"], [data-actual-form] input:not([type])').first
+        field.fill('SENTETİK kaydedilmemiş değişiklik')
+        confirm = page.locator('dialog.draft-confirm')
+        dialog.get_by_role('button', name='Kapat', exact=True).click()
+        expect(dialog).not_to_be_visible()
+        expect(confirm).not_to_be_visible()
+        # The guard is still armed: leaving through a link asks first.
+        page.locator('a[href="/modules"], nav a[href^="/"]').first.click()
+        expect(confirm).to_be_visible()
