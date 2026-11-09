@@ -28,6 +28,11 @@ def test_committed_guide_contract():
                         '[EKLENECEK — gösterge Excel ile toplu giriş]']:
         assert body.count(placeholder) == 1
     assert 'Destek kanalı: Strateji Geliştirme Müdürlüğü duyuracak.' in body
+    for label in ['Rapor bölümleri ve beyanlar (EK-1)', 'Gösterge gerçekleşmeleri',
+                  'Taslak — Word (onaysız)', 'Taslak — PDF (onaysız)']:
+        assert '`' + label + '`' in body
+    for old in ['Faaliyet Raporu · EK-1', 'Faaliyet raporları']:
+        assert '`' + old + '`' not in body
     sources = [p for p in (ROOT/'app/templates').rglob('*') if p.is_file()]
     sources += [p for p in (ROOT/'app/static').rglob('*.js') if p.is_file()]
     # All quoted UI text must exist verbatim; no normalized/paraphrased labels.

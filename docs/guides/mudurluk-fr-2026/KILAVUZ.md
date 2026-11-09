@@ -8,6 +8,7 @@ Hesabınızı başkasıyla paylaşmayın. Veri girişinin son gününü Strateji
 
 2026 kayıtlarınızı, gerçekleşmeleri destekleyen belgeleri ve belge sürümü veya kayıt numaralarını hazırlayın.
 Aşağıdaki ekranlar **SENTETİK** deneme verisi içerir. Örnek değerleri kendi raporunuza kopyalamayın.
+CIV-189 görsellerinde eski ekran adları bulunabilir; güncel adlar bu metinde, dört metin değişikliğinin güncel görüntüleri [CIV-191 raporundadır](../../reports/civ-191/report.md).
 
 ## Giriş ve parola
 
@@ -38,7 +39,7 @@ Girişten sonra `Gösterge gerçekleşmelerine gir` bağlantısıyla göstergele
 
 ## Gösterge gerçekleşmesi ve kanıt
 
-1. `Gösterge gerçekleşmelerine gir` bağlantısını açın. `Faaliyet raporları` ekranında 2026 yılına ait rapor bağlantısını seçin. Rapor görünmüyorsa Stratejiye bildirin.
+1. `Gösterge gerçekleşmelerine gir` bağlantısını açın. `Gösterge gerçekleşmeleri` ekranında 2026 yılına ait rapor bağlantısını seçin. Rapor görünmüyorsa Stratejiye bildirin.
 
    ![2026 gösterge raporunu seçme](img/06-gosterge-raporlari.png)
 
@@ -67,11 +68,11 @@ Girişten sonra `Gösterge gerçekleşmelerine gir` bağlantısıyla göstergele
 
 ## EK-1 bölümleri ve EK-2
 
-1. `Faaliyet Raporu · EK-1` ekranına geçin. `Tamamlanma görünümü` altında `Yıl` alanından 2026'yı seçip `Filtrele` düğmesine basın. Müdürlüğünüzün bölüm bağlantısını açın. `Sahibi` ve `Eksikler` sütunlarını inceleyin.
+1. `Rapor bölümleri ve beyanlar (EK-1)` ekranına geçin. `Tamamlanma görünümü` altında `Yıl` alanından 2026'yı seçip `Filtrele` düğmesine basın. Müdürlüğünüzün bölüm bağlantısını açın. `Sahibi` ve `Eksikler` sütunlarını inceleyin.
 
    ![Birim raporları ve bölümler](img/11-birim-raporlari.png)
 
-2. Müdürlüğünüzün sorumlu olduğu bölümde `Bölüm içeriği` alanını doldurun. Tamamlanan içerik için `Durum` alanından `Hazır` seçin. `Bölümü kaydet` düğmesine basın. Diğer bölümler için aynı işlemi yapın.
+2. Müdürlüğünüzün sorumlu olduğu bölümde `Bölüm içeriği` alanını doldurun. Tamamlanan içerik için `Durum` alanından `Hazır` seçin. `Bölümü kaydet` düğmesine basın. Program, alt program ve faaliyet bilgileri ile Stratejik Plan değerlendirme bölümlerinde de mevcut açıklamanızı bu alana yazabilirsiniz. Diğer bölümler için aynı işlemi yapın.
 
    ![Bölüm içeriğini kaydetme](img/12-bolum.png)
 
@@ -83,7 +84,7 @@ Girişten sonra `Gösterge gerçekleşmelerine gir` bağlantısıyla göstergele
 
    ![EK-2 güvence beyanı](img/14-ek2.png)
 
-Mali Hizmetlerin sorumlu olduğu malî bölümleri Mali Hizmetler doldurur. Bu bölümlerin uyarıları müdürlük raporunun gönderimini durdurmaz. Uyarıları Stratejiye ve Mali Hizmetlere bildirin; müdürlüğünüzün eksikleriyle karıştırmayın.
+Mali Hizmetlerin sorumlu olduğu malî bölümlerde “Bu bölümü Mali Hizmetler dolduracak; gönderiminizi engellemez.” bilgisini görürsünüz. Bu bölümlerin uyarıları müdürlük raporunun gönderimini durdurmaz. Uyarıları Stratejiye ve Mali Hizmetlere bildirin; müdürlüğünüzün eksikleriyle karıştırmayın.
 
 ![Mali Hizmetler uyarıları](img/15-mali-uyarilar.png)
 
@@ -119,7 +120,7 @@ Mali Hizmetlerin sorumlu olduğu malî bölümleri Mali Hizmetler doldurur. Bu b
 
 Birim raporunda `Onaylandı` durumunu kontrol edin. `Dışa aktar` menüsünü açın.
 `Word olarak indir` veya `PDF olarak indir` bağlantısını seçin.
-İndirme bağlantılarının görünmesi tek başına onay anlamına gelmez; önce raporun durumuna bakın.
+Onay öncesinde de `Taslak — Word (onaysız)` veya `Taslak — PDF (onaysız)` bağlantısıyla çıktı alabilirsiniz. Bu çıktılar TASLAK damgalıdır; onaylı rapor yerine kullanmayın. Civensa’da onay zinciri Strateji onayıyla biter; Başkan Yardımcıları ve Üst Yönetici imzaları kâğıt üzerinde tamamlanır.
 
 ![Onaylı raporda Word ve PDF indirme](img/22-onayli-indirme.png)
 

@@ -105,7 +105,7 @@ def assert_contract(ctx):
 def test_frozen_links_form_options_required_and_revision_badges(scenario):
     old, new = assert_contract(context(scenario))
     assert '<style>' not in new
-    assert 'Faaliyet raporları</h1>' in new
+    assert 'Gösterge gerçekleşmeleri</h1>' in new
     assert 'activity-reports.css' in new
     # The title is the only wording change, including all explanatory prose.
     def text(html):
@@ -113,7 +113,7 @@ def test_frozen_links_form_options_required_and_revision_badges(scenario):
         main = html.split('<main ', 1)[1].split('</main>', 1)[0]
         main = re.sub(r'<style>.*?</style>', '', main, flags=re.S)
         return ''.join(re.sub(r'<[^>]*>', '', main).split())
-    assert text(new) == text(old).replace('FaaliyetRaporları', 'Faaliyetraporları', 1)
+    assert text(new) == text(old).replace('FaaliyetRaporları', 'Göstergegerçekleşmeleri', 1)
 
 
 @pytest.mark.postgres
