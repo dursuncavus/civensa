@@ -18,8 +18,8 @@ def disposable_first_load_database(url):
         # process. Its metadata-based ownership guards see newer auxiliary models;
         # provide their empty auxiliary tables while preserving the operator pin.
         from app.sunum.models import SunumPhoto, SunumHighlight
-        from app.models import ActualImport
-        for model in (SunumPhoto, SunumHighlight, ActualImport):
+        from app.models import ActualImport, IndicatorDirection
+        for model in (SunumPhoto, SunumHighlight, ActualImport, IndicatorDirection):
             model.__table__.create(engine, checkfirst=True)
         yield engine
 

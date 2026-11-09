@@ -147,5 +147,5 @@ def test_populated_migration_roundtrip(postgres_templates):
         from alembic.config import Config
         from alembic.script import ScriptDirectory
         scripts = ScriptDirectory.from_config(Config(str(ROOT / 'alembic.ini')))
-        assert scripts.get_heads() == ['c192a1b2c3d4']
+        assert scripts.get_heads() == ['c197a1b2c3d4']
         assert scripts.get_revision(NEW).down_revision == OLD

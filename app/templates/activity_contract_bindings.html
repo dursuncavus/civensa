@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block page_title %}{{ year }} · Program v{{ publication.version }} · Gösterge kimlikleri{% endblock %}
+{% block page_title %}{{ year }} · Program v{{ publication.version }} · Gösterge kimlikleri ve yönleri{% endblock %}
 {% block content %}
 <link rel="stylesheet" href="/static/design/activity-reports.css">
 <link rel="stylesheet" href="/static/design/indicator-bindings.css">
@@ -8,6 +8,7 @@
     <a class="button" href="/activity-reports">Raporlara dön</a>
   </div>
   <section class="info-panel">
+    <p class="indicator-direction-help">Gösterge yönü bu dönem için geçerlidir. Yeni raporlarda hedef karşılaştırmasına uygulanır; daha önce sabitlenen faaliyet raporları değişmez.</p>
     <p>Ad ve kod benzerliğine göre eşleme yapılmaz. Eski yayın içeriği değiştirilmez; açık kimlik ilişkisi ayrı saklanır. Aynı kavramı temsil ettiğini doğrulamadan mevcut kimlik seçmeyin. Eşleme kaydedildikten sonra üzerine yazılmaz.</p>
   </section>
   <div class="reports-panel">
@@ -20,6 +21,20 @@
       <p class="secondary">{{ row.department }} · {{ row.unit }} · {{ row.code or 'Kod belirtilmedi' }}</p>
       {% if row.bound %}
       <p>Kimlik ve tanım sürümü sabitlenmiş.</p>
+      <form class="form-grid indicator-direction-form" method="post" action="/activity-reports/publications/{{ publication.id }}/directions">
+        <input type="hidden" name="csrf_token" value="{{ request.session.get('csrf_token') }}">
+        <input type="hidden" name="snapshot_indicator_id" value="{{ row.id }}">
+        <label>Yön
+          <select name="direction" required>
+            <option value="higher" {% if row.direction == 'higher' %}selected{% endif %}>Yüksek değer daha iyi</option>
+            <option value="lower" {% if row.direction == 'lower' %}selected{% endif %}>Düşük değer daha iyi</option>
+          </select>
+        </label>
+        <label>Yön değişikliği gerekçesi
+          <textarea name="reason" required></textarea>
+        </label>
+        <button class="button primary">Gösterge yönünü kaydet</button>
+      </form>
       {% else %}
       <form class="form-grid" method="post" action="/activity-reports/publications/{{ publication.id }}/bindings">
         <input type="hidden" name="csrf_token" value="{{ request.session.get('csrf_token') }}">
