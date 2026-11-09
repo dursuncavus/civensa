@@ -34,12 +34,12 @@ excel_satir,excel_mudurluk,sh_kodu,pg_kodu,excel_gosterge,hesaplama,birim,excel_
 34,FEN İŞLERİ MÜDÜRLÜĞÜ,SH08,SH08/PG01,Kent genelinde farklı ihtiyaçlar için yapılacak olan kamu binası sayısı,TOPLA,Adet,1,ad_ayni,Fen İşleri Müdürlüğü,Kent genelinde farklı ihtiyaçlar için yapılacak olan kamu binası sayısı,116,*1
 35,FEN İŞLERİ MÜDÜRLÜĞÜ,SH08,SH08/PG02,Diğer kamu binalarının yenileme ve tadilat yapım işi sayısı,TOPLA,Adet,60,ad_ayni,Fen İşleri Müdürlüğü,Diğer kamu binalarının yenileme ve tadilat yapım işi sayısı,116,*60
 36,FEN İŞLERİ MÜDÜRLÜĞÜ,SH08,SH08/PG03,Kent genelinde yapılan parke taş ile yol yapım bakım ve onarım işi,TOPLA,M2,70000,ad_yakin,Fen İşleri Müdürlüğü,Kent genelinde yapılacak olan alt yapı bakım ve onarım işi,117,60
-37,FEN İŞLERİ MÜDÜRLÜĞÜ,SH08,SH08/PG04,Kent genelinde yapılacak olan asfaltlama bakım ve onarım işi,TOPLA,TON,60000,ad_yakin,Fen İşleri Müdürlüğü,Kent genelinde yapılacak olan alt yapı bakım ve onarım işi,117,60
+37,FEN İŞLERİ MÜDÜRLÜĞÜ,SH08,SH08/PG04,Kent genelinde yapılacak olan asfaltlama bakım ve onarım işi,TOPLA,TON,60000,yok,,,,
 38,FEN İŞLERİ MÜDÜRLÜĞÜ,SH08,SH08/PG05,"Yıl içinde elektrik ve aydınlatma bakım, onarım, yapım işi",TOPLA,Adet,60,yok,,,,
-39,İMAR VE ŞEHİRCİLİK MÜDÜRLÜĞÜ,SH09,SH09/PG01,Yıllık olarak tespit edilen ve yasal işlem başlatılan kaçak yapı sayısı,TOPLA,Adet,400,yok,,,,
-40,İMAR VE ŞEHİRCİLİK MÜDÜRLÜĞÜ,SH09,SH09/PG02,Yıllık olarak denetlenen ruhsatlı inşaat sayısı,TOPLA,Adet,2500,yok,,,,
+39,İMAR VE ŞEHİRCİLİK MÜDÜRLÜĞÜ,SH09,SH09/PG01,Yıllık olarak tespit edilen ve yasal işlem başlatılan kaçak yapı sayısı,TOPLA,Adet,400,ad_ayni,Yapı Kontrol Müdürlüğü,Yıllık olarak tespit edilen ve yasal işlem başlatılan kaçak yapı sayısı,128,400
+40,İMAR VE ŞEHİRCİLİK MÜDÜRLÜĞÜ,SH09,SH09/PG02,Yıllık olarak denetlenen ruhsatlı inşaat sayısı,TOPLA,Adet,2500,ad_ayni,Yapı Kontrol Müdürlüğü,Yıllık olarak denetlenen ruhsatlı inşaat sayısı,128,2500
 41,İMAR VE ŞEHİRCİLİK MÜDÜRLÜĞÜ,SH09,SH09/PG03,Meri mevzuat kapsamında yıllık olarak alınan yapı ruhsatı başvuru sayısı,TOPLA,Adet,1250,ad_ayni,İmar ve Şehircilik Müdürlüğü,Meri mevzuat kapsamında yıllık olarak alınan yapı ruhsatı başvuru sayısı,119,1250
-42,İMAR VE ŞEHİRCİLİK MÜDÜRLÜĞÜ,SH09,SH09/PG04,Şikâyetleri çözüme kavuşturulan vatandaşların memnuniyet oranı,KÜMÜLATİF,Oran (%),0.94,ad_ayni,İmar ve Şehircilik Müdürlüğü,Şikâyetleri çözüme kavuşturulan vatandaşların memnuniyet oranı,119,94
+42,İMAR VE ŞEHİRCİLİK MÜDÜRLÜĞÜ,SH09,SH09/PG04,Şikâyetleri çözüme kavuşturulan vatandaşların memnuniyet oranı,KÜMÜLATİF,Oran (%),0.94,ad_ayni,Yapı Kontrol Müdürlüğü,Şikâyetleri çözüme kavuşturulan vatandaşların memnuniyet oranı,128,94
 43,PARK VE BAHÇELER MÜDÜRLÜĞÜ,SH10,SH10/PG01,Bitkisel ve yapısal peyzaj düzenlemelerinin yapımı,TOPLA,M2,50000,ad_ayni,Park ve Bahçeler Müdürlüğü,Bitkisel ve yapısal peyzaj düzenlemelerinin yapımı,120,50.000
 44,PARK VE BAHÇELER MÜDÜRLÜĞÜ,SH10,SH10/PG02,Bölge geneli bitkisel ve yapısal peyzaj alanlarının bakımı ve onarımı,KÜMÜLATİF,M2,12000000,ad_ayni,Park ve Bahçeler Müdürlüğü,Bölge geneli bitkisel ve yapısal peyzaj alanlarının bakımı ve onarımı,120,12.000.000
 45,PARK VE BAHÇELER MÜDÜRLÜĞÜ,SH10,SH10/PG03,"Kullanıma sunulan ve bakım onarımı yapılan kent mobilyası sayısı (Bank, spor, çocuk oyun elemanı, heykel vb.)",TOPLA,Adet,2000,ad_ayni,Park ve Bahçeler Müdürlüğü,"Kullanıma sunulan ve bakım onarımı yapılan kent mobilyası sayısı (Bank, spor, çocuk oyun elemanı, heykel vb.)",120,2.000
@@ -60,11 +60,11 @@ excel_satir,excel_mudurluk,sh_kodu,pg_kodu,excel_gosterge,hesaplama,birim,excel_
 60,ETÜD PROJE MÜDÜRLÜĞÜ,SH13,SH13/PG03,2029 yılı sonuna kadar yapılacak olan etkileşimli kamusal alan projesi sayısı,TOPLA,Adet,,yok,,,,
 61,ETÜD PROJE MÜDÜRLÜĞÜ,SH13,SH13/PG04,Erişilebilirlik odaklı plan/proje sayısı,TOPLA,Adet,1,ad_ayni,Etüd Proje Müdürlüğü,Erişilebilirlik odaklı plan/proje sayısı,124,1
 62,ETÜD PROJE MÜDÜRLÜĞÜ,SH13,SH13/PG05,Erişilebilir Kamusal Alan Oranı,KÜMÜLATİF,Oran (%),1,yok,,,,
-63,HARİTA VE PLANLAMA MÜDÜRLÜĞÜ,SH14,SH14/PG01,Çalışması Yürütülen Plan sayısı,KÜMÜLATİF,Adet,6,mudurluk_adi_farkli,,,,
-64,HARİTA VE PLANLAMA MÜDÜRLÜĞÜ,SH14,SH14/PG02,Çalışması Yürütülen Plan Değişikliği sayısı,KÜMÜLATİF,Adet,10,mudurluk_adi_farkli,,,,
-65,HARİTA VE PLANLAMA MÜDÜRLÜĞÜ,SH14,SH14/PG03,Çalışması Yürütülen Parselasyon Çalışmaları sayısı,KÜMÜLATİF,Adet,7,mudurluk_adi_farkli,,,,
-66,HARİTA VE PLANLAMA MÜDÜRLÜĞÜ,SH14,SH14/PG04,"Plana ilişkin hazırlanan imar durum belgesi, inşaat istikamet belgesi ve kot kesit belgesi sayısı",TOPLA,Adet,5000,mudurluk_adi_farkli,,,,
-67,HARİTA VE PLANLAMA MÜDÜRLÜĞÜ,SH14,SH14/PG05,Vatandaşların memnuniyet oranı,KÜMÜLATİF,Oran (%),0.97,mudurluk_adi_farkli,,,,
+63,HARİTA VE PLANLAMA MÜDÜRLÜĞÜ,SH14,SH14/PG01,Çalışması Yürütülen Plan sayısı,KÜMÜLATİF,Adet,6,ad_ayni,Plan Proje Müdürlüğü,Çalışması Yürütülen Plan sayısı,126,*6
+64,HARİTA VE PLANLAMA MÜDÜRLÜĞÜ,SH14,SH14/PG02,Çalışması Yürütülen Plan Değişikliği sayısı,KÜMÜLATİF,Adet,10,ad_ayni,Plan Proje Müdürlüğü,Çalışması Yürütülen Plan Değişikliği sayısı,126,*10
+65,HARİTA VE PLANLAMA MÜDÜRLÜĞÜ,SH14,SH14/PG03,Çalışması Yürütülen Parselasyon Çalışmaları sayısı,KÜMÜLATİF,Adet,7,ad_ayni,Plan Proje Müdürlüğü,Çalışması Yürütülen Parselasyon Çalışmaları sayısı,126,*7
+66,HARİTA VE PLANLAMA MÜDÜRLÜĞÜ,SH14,SH14/PG04,"Plana ilişkin hazırlanan imar durum belgesi, inşaat istikamet belgesi ve kot kesit belgesi sayısı",TOPLA,Adet,5000,ad_ayni,Plan Proje Müdürlüğü,"Plana ilişkin hazırlanan imar durum belgesi, inşaat istikamet belgesi ve kot kesit belgesi sayısı",126,*5000
+67,HARİTA VE PLANLAMA MÜDÜRLÜĞÜ,SH14,SH14/PG05,Vatandaşların memnuniyet oranı,KÜMÜLATİF,Oran (%),0.97,ad_ayni,Plan Proje Müdürlüğü,Vatandaşların memnuniyet oranı,126,*95
 68,KENTSEL DÖNÜŞÜM MÜDÜRLÜĞÜ,SH15,SH15/PG01,2029 yılı sonuna kadar yeni yapılan binalarda yağmur suyu hasadı sisteminin kurulması oranı,KÜMÜLATİF,Oran (%),1,ad_ayni,Kentsel Dönüşüm Müdürlüğü,2029 yılı sonuna kadar yeni yapılan binalarda yağmur suyu hasadı sisteminin kurulması oranı,132,100
 69,KENTSEL DÖNÜŞÜM MÜDÜRLÜĞÜ,SH15,SH15/PG02,Roman vatandaşların yaşadığı bölgede kültürel dokuya uygun mimariyle tamamlanan kentsel dönüşüm projelerinin tamamlanma oranı,KÜMÜLATİF,Oran (%),0.2,ad_ayni,Kentsel Dönüşüm Müdürlüğü,Roman vatandaşların yaşadığı bölgede kültürel dokuya uygun mimariyle tamamlanan kentsel dönüşüm projelerinin tamamlanma oranı,132,20
 70,KENTSEL DÖNÜŞÜM MÜDÜRLÜĞÜ,SH15,SH15/PG03,Vatandaş Katılımıyla Başlatılan Kentsel Dönüşüm Projesi Sayısı,TOPLA,Adet,220,ad_ayni,Kentsel Dönüşüm Müdürlüğü,Vatandaş Katılımıyla Başlatılan Kentsel Dönüşüm Projesi Sayısı,132,210
@@ -125,45 +125,45 @@ excel_satir,excel_mudurluk,sh_kodu,pg_kodu,excel_gosterge,hesaplama,birim,excel_
 125,GENÇLİK VE SPOR İŞLERİ MÜDÜRLÜĞÜ,SH26,SH02/PG03,"Belediye spor tesislerinde eğitim verilen (çocuk, genç, yetişkin, yaşlı ve kırılgan gruplar) spor branşı sayısı",KÜMÜLATİF,Adet,31,ad_ayni,Gençlik ve Spor İşleri Müdürlüğü,"Belediye spor tesislerinde eğitim verilen (çocuk, genç, yetişkin, yaşlı ve kırılgan gruplar) spor branşı sayısı",163,31
 126,GENÇLİK VE SPOR İŞLERİ MÜDÜRLÜĞÜ,SH26,SH02/PG04,"Kırılgan gruplara yönelik (otizm, down sendromu, fiziksel engelliler vb.) spor etkinliklerine katılım sayısı",KÜMÜLATİF,Adet,28,ad_ayni,Gençlik ve Spor İşleri Müdürlüğü,"Kırılgan gruplara yönelik (otizm, down sendromu, fiziksel engelliler vb.) spor etkinliklerine katılım sayısı",164,28
 127,GENÇLİK VE SPOR İŞLERİ MÜDÜRLÜĞÜ,SH26,SH02/PG05,Etkinliklere katılan tüm kesimlerin memnuniyet oranı,KÜMÜLATİF,Oran (%),1,yok,,,,
-128,SOSYAL HİZMETLER MÜDÜRLÜĞÜ,SH27,SH01/PG01,"Gıda, giyim gibi temel ihtiyaçları ayni olarak karşılanan hane sayısı",TOPLA,Adet,37000,mudurluk_adi_farkli,,,,
-129,SOSYAL HİZMETLER MÜDÜRLÜĞÜ,SH27,SH01/PG02,Nakdi destek hizmetlerinden yararlanan aile sayısı,TOPLA,Adet,32000,mudurluk_adi_farkli,,,,
-130,SOSYAL HİZMETLER MÜDÜRLÜĞÜ,SH27,SH01/PG03,Sosyal tespit çalışması kapsamında değerlendirilen hane sayısı,TOPLA,Adet,32720,mudurluk_adi_farkli,,,,
-131,SOSYAL HİZMETLER MÜDÜRLÜĞÜ,SH27,SH01/PG04,2029 yılı sonuna kadar sosyal doku çalışmasının yapılması oranı,KÜMÜLATİF,Oran (%),0.2,mudurluk_adi_farkli,,,,
-132,SOSYAL HİZMETLER MÜDÜRLÜĞÜ,SH27,SH01/PG05,Vatandaş şikayet ve önerilerinin değerlendirilme oranı,KÜMÜLATİF,Oran (%),0.9,mudurluk_adi_farkli,,,,
-133,SOSYAL HİZMETLER MÜDÜRLÜĞÜ,SH28,SH02/PG01,"2026 yılı sonuna kadar kentte yaşayan mülteci, sığınmacı ve göçmelere ait hazırlanan veri seti sayısı",TOPLA,Adet,1,mudurluk_adi_farkli,,,,
-134,SOSYAL HİZMETLER MÜDÜRLÜĞÜ,SH28,SH02/PG02,Veri setlerinin güncelleme sıklığı,KÜMÜLATİF,Zaman,6,mudurluk_adi_farkli,,,,
-135,SOSYAL HİZMETLER MÜDÜRLÜĞÜ,SH28,SH02/PG03,Veri setlerinin analiz edilerek raporlama yapma sıklığı,KÜMÜLATİF,Zaman,6,mudurluk_adi_farkli,,,,
-136,SOSYAL HİZMETLER MÜDÜRLÜĞÜ,SH28,SH02/PG04,".Mülteci, sığınmacı ve göçmenler ile yüz yüze yapılan görüşme oranı",KÜMÜLATİF,Oran (%),0.5,mudurluk_adi_farkli,,,,
-137,SOSYAL HİZMETLER MÜDÜRLÜĞÜ,SH28,SH02/PG05,Gerçekleştirilen görüşmelerden duyulan memnuniyet oranı,KÜMÜLATİF,Oran (%),0.86,mudurluk_adi_farkli,,,,
+128,SOSYAL HİZMETLER MÜDÜRLÜĞÜ,SH27,SH01/PG01,"Gıda, giyim gibi temel ihtiyaçları ayni olarak karşılanan hane sayısı",TOPLA,Adet,37000,ad_ayni,Sosyal Destek Müdürlüğü,"Gıda, giyim gibi temel ihtiyaçları ayni olarak karşılanan hane sayısı",166,37.000
+129,SOSYAL HİZMETLER MÜDÜRLÜĞÜ,SH27,SH01/PG02,Nakdi destek hizmetlerinden yararlanan aile sayısı,TOPLA,Adet,32000,ad_ayni,Sosyal Destek Müdürlüğü,Nakdi destek hizmetlerinden yararlanan aile sayısı,166,3.200
+130,SOSYAL HİZMETLER MÜDÜRLÜĞÜ,SH27,SH01/PG03,Sosyal tespit çalışması kapsamında değerlendirilen hane sayısı,TOPLA,Adet,32720,ad_ayni,Sosyal Destek Müdürlüğü,Sosyal tespit çalışması kapsamında değerlendirilen hane sayısı,166,32.720
+131,SOSYAL HİZMETLER MÜDÜRLÜĞÜ,SH27,SH01/PG04,2029 yılı sonuna kadar sosyal doku çalışmasının yapılması oranı,KÜMÜLATİF,Oran (%),0.2,ad_ayni,Sosyal Destek Müdürlüğü,2029 yılı sonuna kadar sosyal doku çalışmasının yapılması oranı,166,%20
+132,SOSYAL HİZMETLER MÜDÜRLÜĞÜ,SH27,SH01/PG05,Vatandaş şikayet ve önerilerinin değerlendirilme oranı,KÜMÜLATİF,Oran (%),0.9,ad_yakin,Sosyal Destek Müdürlüğü,Vatandaş şikâyet ve önerilerinin değerlendirilme oranı,166,90
+133,SOSYAL HİZMETLER MÜDÜRLÜĞÜ,SH28,SH02/PG01,"2026 yılı sonuna kadar kentte yaşayan mülteci, sığınmacı ve göçmelere ait hazırlanan veri seti sayısı",TOPLA,Adet,1,ad_ayni,Sosyal Destek Müdürlüğü,"2026 yılı sonuna kadar kentte yaşayan mülteci, sığınmacı ve göçmelere ait hazırlanan veri seti sayısı",167,1
+134,SOSYAL HİZMETLER MÜDÜRLÜĞÜ,SH28,SH02/PG02,Veri setlerinin güncelleme sıklığı,KÜMÜLATİF,Zaman,6,ad_ayni,Sosyal Destek Müdürlüğü,Veri setlerinin güncelleme sıklığı,167,6 Ay
+135,SOSYAL HİZMETLER MÜDÜRLÜĞÜ,SH28,SH02/PG03,Veri setlerinin analiz edilerek raporlama yapma sıklığı,KÜMÜLATİF,Zaman,6,ad_ayni,Sosyal Destek Müdürlüğü,Veri setlerinin analiz edilerek raporlama yapma sıklığı,167,6 Ay
+136,SOSYAL HİZMETLER MÜDÜRLÜĞÜ,SH28,SH02/PG04,".Mülteci, sığınmacı ve göçmenler ile yüz yüze yapılan görüşme oranı",KÜMÜLATİF,Oran (%),0.5,ad_ayni,Sosyal Destek Müdürlüğü,"Mülteci, sığınmacı ve göçmenler ile yüz yüze yapılan görüşme oranı",167,50
+137,SOSYAL HİZMETLER MÜDÜRLÜĞÜ,SH28,SH02/PG05,Gerçekleştirilen görüşmelerden duyulan memnuniyet oranı,KÜMÜLATİF,Oran (%),0.86,ad_ayni,Sosyal Destek Müdürlüğü,Gerçekleştirilen görüşmelerden duyulan memnuniyet oranı,167,86
 138,DIŞ İLİŞKİLER MÜDÜRLÜĞÜ,SH29,SH01/PG01,Düzenlenen ve/veya katılım sağlanan etkinlikler ile vatandaşı bilinçlendirmeye yönelik faaliyet sayısı,TOPLA,Adet,30,ad_ayni,Dış İlişkiler Müdürlüğü,Düzenlenen ve/veya katılım sağlanan etkinlikler ile vatandaşı bilinçlendirmeye yönelik faaliyet sayısı,172,30
 139,DIŞ İLİŞKİLER MÜDÜRLÜĞÜ,SH29,SH01/PG02,"Ulusal ve/veya uluslararası hibe, ödül ve proje başvurular ile bu kapsamda düzenlenen çalıştay ve seminerlere katılım sayısı",TOPLA,Adet,30,ad_ayni,Dış İlişkiler Müdürlüğü,"Ulusal ve/veya uluslararası hibe, ödül ve proje başvurular ile bu kapsamda düzenlenen çalıştay ve seminerlere katılım sayısı",172,30
 140,DIŞ İLİŞKİLER MÜDÜRLÜĞÜ,SH29,SH01/PG03,İmzalanan iş birliği protokolü ve anlaşmalar sayısı,TOPLA,Adet,6,ad_ayni,Dış İlişkiler Müdürlüğü,İmzalanan iş birliği protokolü ve anlaşmalar sayısı,173,6
 141,DIŞ İLİŞKİLER MÜDÜRLÜĞÜ,SH29,SH01/PG04,Büyükçekmece'de düzenlenen uluslararası etkinliklere katılan yabancı ziyaretçi sayısı,TOPLA,Adet,230,ad_ayni,Dış İlişkiler Müdürlüğü,Büyükçekmece'de düzenlenen uluslararası etkinliklere katılan yabancı ziyaretçi sayısı,173,230
 142,DIŞ İLİŞKİLER MÜDÜRLÜĞÜ,SH29,SH01/PG05,Düzenlenen faaliyet ve etkinliklerden memnuniyet oranı,KÜMÜLATİF,Oran (%),1,ad_ayni,Dış İlişkiler Müdürlüğü,Düzenlenen faaliyet ve etkinliklerden memnuniyet oranı,173,100
-143,BASIN YAYIN VE HALKLA İLİŞKİLER MÜDÜRLÜĞÜ,SH30,SH30/PG01,"CİMER’den Gelen Talep, Şikâyet ve Öneri Sayısı",TOPLA,Adet,4240,mudurluk_adi_farkli,,,,
-144,BASIN YAYIN VE HALKLA İLİŞKİLER MÜDÜRLÜĞÜ,SH30,SH30/PG02,Çözüm masasının hizmet kalitesini değerlendirmek için yapılan vatandaş memnuniyeti anketine katılım sayısı,TOPLA,Adet,88263,mudurluk_adi_farkli,,,,
-145,BASIN YAYIN VE HALKLA İLİŞKİLER MÜDÜRLÜĞÜ,SH30,SH30/PG03,Çözüm masası personelinin performansını düzenli olarak değerlendirmek için yapılan eğitim sayısı,TOPLA,Adet,5,mudurluk_adi_farkli,,,,
-146,BASIN YAYIN VE HALKLA İLİŞKİLER MÜDÜRLÜĞÜ,SH30,SH30/PG04,Çözüm masasından hizmet alan vatandaşların memnuniyet oranını %95'in üzerine çıkarmak,KÜMÜLATİF,Oran (%),0.87,mudurluk_adi_farkli,,,,
-147,BASIN YAYIN VE HALKLA İLİŞKİLER MÜDÜRLÜĞÜ,SH30,SH30/PG05,"Ulak. bel sistemine gelen ve karşılanan istek, talep ve şikayetlerin memnuniyet oranı",KÜMÜLATİF,Oran (%),0.85,mudurluk_adi_farkli,,,,
-148,BASIN YAYIN VE HALKLA İLİŞKİLER MÜDÜRLÜĞÜ,SH31,SH31/PG01,"Belediye hizmetlerinin tanıtımı için kullanılan farklı dış mekan reklam mecralarının (billboard, raket, megalight vb.) sayısı",TOPLA,Adet,22950,mudurluk_adi_farkli,,,,
-149,BASIN YAYIN VE HALKLA İLİŞKİLER MÜDÜRLÜĞÜ,SH31,SH02/PG02,"Tanıtım ve duyuru amaçlı üretilen toplam materyal sayısı (Poster, El İlanı vb…)",TOPLA,Adet,6470,mudurluk_adi_farkli,,,,
-150,BASIN YAYIN VE HALKLA İLİŞKİLER MÜDÜRLÜĞÜ,SH31,SH02/PG03,Desteklenen kurum içi ve kurum dışı organizasyon sayısı,TOPLA,Adet,56,mudurluk_adi_farkli,,,,
-151,BASIN YAYIN VE HALKLA İLİŞKİLER MÜDÜRLÜĞÜ,SH31,SH02/PG04,Yıl içinde bilgilendirme amaçlı atılan SMS Sayısı,TOPLA,Adet,4221514,mudurluk_adi_farkli,,,,
-152,BASIN YAYIN VE HALKLA İLİŞKİLER MÜDÜRLÜĞÜ,SH31,SH02/PG05,Yapılan hizmetlerden vatandaş memnuniyeti oranı,KÜMÜLATİF,Oran (%),0.85,mudurluk_adi_farkli,,,,
-153,BASIN YAYIN VE HALKLA İLİŞKİLER MÜDÜRLÜĞÜ,SH32,SH01/PG01,Yıl boyunca yerel medyada çıkan haber sayısı,TOPLA,Adet,5500,mudurluk_adi_farkli,,,,
-154,BASIN YAYIN VE HALKLA İLİŞKİLER MÜDÜRLÜĞÜ,SH32,SH01/PG02,Yıl boyunca Ulusal –yazılı basında çıkan haber sayısı,TOPLA,Adet,2450,mudurluk_adi_farkli,,,,
-155,BASIN YAYIN VE HALKLA İLİŞKİLER MÜDÜRLÜĞÜ,SH32,SH01/PG03,Yıl boyunca Ulusal-Görsel basında çıkan haber sayısı,TOPLA,Adet,3200,mudurluk_adi_farkli,,,,
-156,BASIN YAYIN VE HALKLA İLİŞKİLER MÜDÜRLÜĞÜ,SH32,SH01/PG04,Belediye sosyal medya hesaplarında yapılan canlı yayınların izlenme sayısı,TOPLA,Adet,830462,mudurluk_adi_farkli,,,,
-157,BASIN YAYIN VE HALKLA İLİŞKİLER MÜDÜRLÜĞÜ,SH32,SH01/PG05,Sosyal medya paylaşımlarının erişim ve etkileşim oranları,KÜMÜLATİF,Oran (%),0.93,mudurluk_adi_farkli,,,,
-158,BASIN YAYIN VE HALKLA İLİŞKİLER MÜDÜRLÜĞÜ,SH33,SH02/PG01,Belediyemiz hizmetlerinin Ulusal (görsel – yazılı) basın ve yerel basında aylık yayınlanma sayısı,TOPLA,Adet,908666,mudurluk_adi_farkli,,,,
-159,BASIN YAYIN VE HALKLA İLİŞKİLER MÜDÜRLÜĞÜ,SH33,SH02/PG02,"Ulusal-Görsel ve Yerel basında çıkan haberlerin olumlu, nötr veya olumsuz olma oranı",KÜMÜLATİF,Oran (%),0.08,mudurluk_adi_farkli,,,,
-160,BASIN YAYIN VE HALKLA İLİŞKİLER MÜDÜRLÜĞÜ,SH33,SH02/PG03,"Belediyenin birimlerinin hizmet ve projelerini içeren, kurumsal kimliğe uygun ve yayınlanabilir nitelikte video içerik üretmek.",TOPLA,Adet,4600,mudurluk_adi_farkli,,,,
-161,BASIN YAYIN VE HALKLA İLİŞKİLER MÜDÜRLÜĞÜ,SH33,SH02/PG04,Yıl içinde düzenlenen basın toplantısı sayısı,TOPLA,Adet,10,mudurluk_adi_farkli,,,,
-162,BASIN YAYIN VE HALKLA İLİŞKİLER MÜDÜRLÜĞÜ,SH33,SH02/PG05,"Basın mensuplarına yönelik düzenlenen etkinliklere (kahvaltı, gezi, bilgilendirme toplantısı vb.) katılım oranı",KÜMÜLATİF,Oran (%),0.95,mudurluk_adi_farkli,,,,
-163,BASIN YAYIN VE HALKLA İLİŞKİLER MÜDÜRLÜĞÜ,SH34,SH01/PG01,İlçe Muhtarları ve STK’lar ile yapılan çalıştay ve toplantı sayısı,TOPLA,Adet,4,mudurluk_adi_farkli,,,,
-164,BASIN YAYIN VE HALKLA İLİŞKİLER MÜDÜRLÜĞÜ,SH34,SH01/PG02,İlçe Muhtarları ve STK’lar ile ortak programlar ve işbirlikleri yapılması,TOPLA,Adet,4,mudurluk_adi_farkli,,,,
-165,BASIN YAYIN VE HALKLA İLİŞKİLER MÜDÜRLÜĞÜ,SH34,SH01/PG03,İlçe Muhtarları ve STK’ların talep ve şikayetlerinin alınması,TOPLA,Adet,1700,mudurluk_adi_farkli,,,,
-166,BASIN YAYIN VE HALKLA İLİŞKİLER MÜDÜRLÜĞÜ,SH34,SH01/PG04,Mahalle Temsilciliklerinin kurulması,TOPLA,Adet,0,mudurluk_adi_farkli,,,,
+143,BASIN YAYIN VE HALKLA İLİŞKİLER MÜDÜRLÜĞÜ,SH30,SH30/PG01,"CİMER’den Gelen Talep, Şikâyet ve Öneri Sayısı",TOPLA,Adet,4240,ad_ayni,Halkla İlişkiler Müdürlüğü,"CİMER’den Gelen Talep, Şikâyet ve Öneri Sayısı",175,4.240
+144,BASIN YAYIN VE HALKLA İLİŞKİLER MÜDÜRLÜĞÜ,SH30,SH30/PG02,Çözüm masasının hizmet kalitesini değerlendirmek için yapılan vatandaş memnuniyeti anketine katılım sayısı,TOPLA,Adet,88263,ad_ayni,Halkla İlişkiler Müdürlüğü,Çözüm masasının hizmet kalitesini değerlendirmek için yapılan vatandaş memnuniyeti anketine katılım sayısı,175,88.263
+145,BASIN YAYIN VE HALKLA İLİŞKİLER MÜDÜRLÜĞÜ,SH30,SH30/PG03,Çözüm masası personelinin performansını düzenli olarak değerlendirmek için yapılan eğitim sayısı,TOPLA,Adet,5,ad_ayni,Halkla İlişkiler Müdürlüğü,Çözüm masası personelinin performansını düzenli olarak değerlendirmek için yapılan eğitim sayısı,175,5
+146,BASIN YAYIN VE HALKLA İLİŞKİLER MÜDÜRLÜĞÜ,SH30,SH30/PG04,Çözüm masasından hizmet alan vatandaşların memnuniyet oranını %95'in üzerine çıkarmak,KÜMÜLATİF,Oran (%),0.87,ad_ayni,Halkla İlişkiler Müdürlüğü,Çözüm masasından hizmet alan vatandaşların memnuniyet oranını %95'in üzerine çıkarmak,175,87
+147,BASIN YAYIN VE HALKLA İLİŞKİLER MÜDÜRLÜĞÜ,SH30,SH30/PG05,"Ulak. bel sistemine gelen ve karşılanan istek, talep ve şikayetlerin memnuniyet oranı",KÜMÜLATİF,Oran (%),0.85,ad_ayni,Halkla İlişkiler Müdürlüğü,"Ulak. bel sistemine gelen ve karşılanan istek, talep ve şikayetlerin memnuniyet oranı",175,"85,4"
+148,BASIN YAYIN VE HALKLA İLİŞKİLER MÜDÜRLÜĞÜ,SH31,SH31/PG01,"Belediye hizmetlerinin tanıtımı için kullanılan farklı dış mekan reklam mecralarının (billboard, raket, megalight vb.) sayısı",TOPLA,Adet,22950,ad_ayni,Halkla İlişkiler Müdürlüğü,"Belediye hizmetlerinin tanıtımı için kullanılan farklı dış mekan reklam mecralarının (billboard, raket, megalight vb.) sayısı",176,22.950
+149,BASIN YAYIN VE HALKLA İLİŞKİLER MÜDÜRLÜĞÜ,SH31,SH02/PG02,"Tanıtım ve duyuru amaçlı üretilen toplam materyal sayısı (Poster, El İlanı vb…)",TOPLA,Adet,6470,ad_ayni,Halkla İlişkiler Müdürlüğü,"Tanıtım ve duyuru amaçlı üretilen toplam materyal sayısı (Poster, El İlanı vb…):",176,6.470
+150,BASIN YAYIN VE HALKLA İLİŞKİLER MÜDÜRLÜĞÜ,SH31,SH02/PG03,Desteklenen kurum içi ve kurum dışı organizasyon sayısı,TOPLA,Adet,56,ad_ayni,Halkla İlişkiler Müdürlüğü,Desteklenen kurum içi ve kurum dışı organizasyon sayısı,176,56
+151,BASIN YAYIN VE HALKLA İLİŞKİLER MÜDÜRLÜĞÜ,SH31,SH02/PG04,Yıl içinde bilgilendirme amaçlı atılan SMS Sayısı,TOPLA,Adet,4221514,ad_ayni,Halkla İlişkiler Müdürlüğü,Yıl içinde bilgilendirme amaçlı atılan SMS Sayısı,176,4.221.514
+152,BASIN YAYIN VE HALKLA İLİŞKİLER MÜDÜRLÜĞÜ,SH31,SH02/PG05,Yapılan hizmetlerden vatandaş memnuniyeti oranı,KÜMÜLATİF,Oran (%),0.85,ad_ayni,Halkla İlişkiler Müdürlüğü,Yapılan hizmetlerden vatandaş memnuniyeti oranı,176,85
+153,BASIN YAYIN VE HALKLA İLİŞKİLER MÜDÜRLÜĞÜ,SH32,SH01/PG01,Yıl boyunca yerel medyada çıkan haber sayısı,TOPLA,Adet,5500,ad_ayni,Halkla İlişkiler Müdürlüğü,Yıl boyunca yerel medyada çıkan haber sayısı,177,5.550
+154,BASIN YAYIN VE HALKLA İLİŞKİLER MÜDÜRLÜĞÜ,SH32,SH01/PG02,Yıl boyunca Ulusal –yazılı basında çıkan haber sayısı,TOPLA,Adet,2450,ad_ayni,Halkla İlişkiler Müdürlüğü,Yıl boyunca Ulusal –yazılı basında çıkan haber sayısı,177,2.450
+155,BASIN YAYIN VE HALKLA İLİŞKİLER MÜDÜRLÜĞÜ,SH32,SH01/PG03,Yıl boyunca Ulusal-Görsel basında çıkan haber sayısı,TOPLA,Adet,3200,ad_ayni,Halkla İlişkiler Müdürlüğü,Yıl boyunca Ulusal-Görsel basında çıkan haber sayısı,177,3.200
+156,BASIN YAYIN VE HALKLA İLİŞKİLER MÜDÜRLÜĞÜ,SH32,SH01/PG04,Belediye sosyal medya hesaplarında yapılan canlı yayınların izlenme sayısı,TOPLA,Adet,830462,ad_ayni,Halkla İlişkiler Müdürlüğü,Belediye sosyal medya hesaplarında yapılan canlı yayınların izlenme sayısı,177,830.462
+157,BASIN YAYIN VE HALKLA İLİŞKİLER MÜDÜRLÜĞÜ,SH32,SH01/PG05,Sosyal medya paylaşımlarının erişim ve etkileşim oranları,KÜMÜLATİF,Oran (%),0.93,ad_ayni,Halkla İlişkiler Müdürlüğü,Sosyal medya paylaşımlarının erişim ve etkileşim oranları,177,93
+158,BASIN YAYIN VE HALKLA İLİŞKİLER MÜDÜRLÜĞÜ,SH33,SH02/PG01,Belediyemiz hizmetlerinin Ulusal (görsel – yazılı) basın ve yerel basında aylık yayınlanma sayısı,TOPLA,Adet,908666,ad_yakin,Halkla İlişkiler Müdürlüğü,Belediyemizin hizmetlerini Ulusal (görsel – yazılı) basın ve yerel basında aylık yayınlanma sayısı,178,908.666
+159,BASIN YAYIN VE HALKLA İLİŞKİLER MÜDÜRLÜĞÜ,SH33,SH02/PG02,"Ulusal-Görsel ve Yerel basında çıkan haberlerin olumlu, nötr veya olumsuz olma oranı",KÜMÜLATİF,Oran (%),0.08,ad_ayni,Halkla İlişkiler Müdürlüğü,"Ulusal-Görsel ve Yerel basında çıkan haberlerin olumlu, nötr veya olumsuz olma oranı",178,%8
+160,BASIN YAYIN VE HALKLA İLİŞKİLER MÜDÜRLÜĞÜ,SH33,SH02/PG03,"Belediyenin birimlerinin hizmet ve projelerini içeren, kurumsal kimliğe uygun ve yayınlanabilir nitelikte video içerik üretmek.",TOPLA,Adet,4600,ad_ayni,Halkla İlişkiler Müdürlüğü,"Belediyenin birimlerinin hizmet ve projelerini içeren, kurumsal kimliğe uygun ve yayınlanabilir nitelikte video içerik üretmek.",178,4.600
+161,BASIN YAYIN VE HALKLA İLİŞKİLER MÜDÜRLÜĞÜ,SH33,SH02/PG04,Yıl içinde düzenlenen basın toplantısı sayısı,TOPLA,Adet,10,ad_ayni,Halkla İlişkiler Müdürlüğü,Yıl içinde düzenlenen basın toplantısı sayısı,178,10
+162,BASIN YAYIN VE HALKLA İLİŞKİLER MÜDÜRLÜĞÜ,SH33,SH02/PG05,"Basın mensuplarına yönelik düzenlenen etkinliklere (kahvaltı, gezi, bilgilendirme toplantısı vb.) katılım oranı",KÜMÜLATİF,Oran (%),0.95,ad_ayni,Halkla İlişkiler Müdürlüğü,"Basın mensuplarına yönelik düzenlenen etkinliklere (kahvaltı, gezi, bilgilendirme toplantısı vb.) katılım oranı.",178,%95
+163,BASIN YAYIN VE HALKLA İLİŞKİLER MÜDÜRLÜĞÜ,SH34,SH01/PG01,İlçe Muhtarları ve STK’lar ile yapılan çalıştay ve toplantı sayısı,TOPLA,Adet,4,ad_ayni,Halkla İlişkiler Müdürlüğü,İlçe Muhtarları ve STK’lar ile yapılan çalıştay ve toplantı sayısı,179,4
+164,BASIN YAYIN VE HALKLA İLİŞKİLER MÜDÜRLÜĞÜ,SH34,SH01/PG02,İlçe Muhtarları ve STK’lar ile ortak programlar ve işbirlikleri yapılması,TOPLA,Adet,4,ad_ayni,Halkla İlişkiler Müdürlüğü,İlçe Muhtarları ve STK’lar ile ortak programlar ve işbirlikleri yapılması,179,4
+165,BASIN YAYIN VE HALKLA İLİŞKİLER MÜDÜRLÜĞÜ,SH34,SH01/PG03,İlçe Muhtarları ve STK’ların talep ve şikayetlerinin alınması,TOPLA,Adet,1700,ad_ayni,Halkla İlişkiler Müdürlüğü,İlçe Muhtarları ve STK’ların talep ve şikayetlerinin alınması,179,1700
+166,BASIN YAYIN VE HALKLA İLİŞKİLER MÜDÜRLÜĞÜ,SH34,SH01/PG04,Mahalle Temsilciliklerinin kurulması,TOPLA,Adet,0,ad_ayni,Halkla İlişkiler Müdürlüğü,Mahalle Temsilciliklerinin kurulması,179,0
 167,ÖZEL KALEM MÜDÜRLÜĞÜ,SH35,SH01/PG01,Yıl içinde yapılan koordinasyon toplantısı sayısı,TOPLA,Adet,30,ad_ayni,Özel Kalem Müdürlüğü,Yıl içinde yapılan koordinasyon toplantısı sayısı,184,30
 168,ÖZEL KALEM MÜDÜRLÜĞÜ,SH35,SH01/PG02,Vatandaşlar tarafından yıl içinde gerçekleştirilen ziyaret sayısı,TOPLA,Adet,490,ad_ayni,Özel Kalem Müdürlüğü,Vatandaşlar tarafından yıl içinde gerçekleştirilen ziyaret sayısı,184,490
 169,ÖZEL KALEM MÜDÜRLÜĞÜ,SH35,SH01/PG03,Yıl gerçekleştirilen organizasyon sayısı,TOPLA,Adet,25,ad_ayni,Özel Kalem Müdürlüğü,Yıl gerçekleştirilen organizasyon sayısı,184,25
@@ -197,15 +197,15 @@ excel_satir,excel_mudurluk,sh_kodu,pg_kodu,excel_gosterge,hesaplama,birim,excel_
 197,STRATEJİ GELİŞTİRME MÜDÜRLÜĞÜ,SH42,SH01/PG03,2029 yılına kadar hayata geçirilen stratejik planlardaki hedeflere ulaşma oranı :,KÜMÜLATİF,Oran (%),0.85,ad_ayni,Strateji Geliştirme Müdürlüğü,2029 yılına kadar hayata geçirilen stratejik planlardaki hedeflere ulaşma oranı,197,85
 198,STRATEJİ GELİŞTİRME MÜDÜRLÜĞÜ,SH42,SH01/PG04,İç Kontrol sistemi değerlendirme raporunda alınan düzeltme eylem sayısı ve tamamlanma oranı,KÜMÜLATİF,Oran (%),1,ad_ayni,Strateji Geliştirme Müdürlüğü,İç Kontrol sistemi değerlendirme raporunda alınan düzeltme eylem sayısı ve tamamlanma oranı,198,100
 199,STRATEJİ GELİŞTİRME MÜDÜRLÜĞÜ,SH42,SH01/PG05,Hazırlanan planlardan vatandaşların memnuniyet oranı,KÜMÜLATİF,Oran (%),1,ad_ayni,Strateji Geliştirme Müdürlüğü,Hazırlanan planlardan vatandaşların memnuniyet oranı,198,100
-200,DESTEK HİZMETLER MÜDÜRLÜĞÜ,SH43,SH01/PG01,Kiralanan araç sayısı,KÜMÜLATİF,Adet,257,mudurluk_adi_farkli,,,,
-201,DESTEK HİZMETLER MÜDÜRLÜĞÜ,SH43,SH01/PG02,Toplam akaryakıt tüketimi,TOPLA,Litre,2200000,mudurluk_adi_farkli,,,,
-202,DESTEK HİZMETLER MÜDÜRLÜĞÜ,SH43,SH01/PG03,Görsel tasarımlar için kullanılan ham madde miktarı,TOPLA,M2,100000,mudurluk_adi_farkli,,,,
-203,DESTEK HİZMETLER MÜDÜRLÜĞÜ,SH43,SH01/PG04,Hizmet binalarının Temizliğinden duyulan memnuniyet oranı,KÜMÜLATİF,Oran (%),0.92,mudurluk_adi_farkli,,,,
-204,DESTEK HİZMETLER MÜDÜRLÜĞÜ,SH43,SH01/PG05,Hizmet binalarında verilen güvenlik hizmetlerinden duyulan memnuniyet oranı,KÜMÜLATİF,Oran (%),0.93,mudurluk_adi_farkli,,,,
-205,DESTEK HİZMETLER MÜDÜRLÜĞÜ,SH44,SH01/PG01,Hizmetin İcra edilmesi gerekli olan araç/iş makinası ihtiyacının zamanında gerçekleşme oranı (%),KÜMÜLATİF,Oran (%),1,mudurluk_adi_farkli,,,,
-206,DESTEK HİZMETLER MÜDÜRLÜĞÜ,SH44,SH01/PG02,Araç ve İş makinelerinin akaryakıt ihtiyaçlarının karşılanma oranı (%),KÜMÜLATİF,Oran (%),1,mudurluk_adi_farkli,,,,
-207,DESTEK HİZMETLER MÜDÜRLÜĞÜ,SH44,SH01/PG03,Satın alma iş ve işlemlerinin gerçekleştirilme oranı (%),KÜMÜLATİF,Oran (%),0.93,mudurluk_adi_farkli,,,,
-208,DESTEK HİZMETLER MÜDÜRLÜĞÜ,SH44,SH01/PG04,"Dış paydaşlardan gelen taleplerin (masa, sandalye vs.) memnuniyet oranı (%)",KÜMÜLATİF,Oran (%),0.94,mudurluk_adi_farkli,,,,
+200,DESTEK HİZMETLER MÜDÜRLÜĞÜ,SH43,SH01/PG01,Kiralanan araç sayısı,KÜMÜLATİF,Adet,257,ad_ayni,Destek Hizmetleri Müdürlüğü,Kiralanan araç sayısı,200,257
+201,DESTEK HİZMETLER MÜDÜRLÜĞÜ,SH43,SH01/PG02,Toplam akaryakıt tüketimi,TOPLA,Litre,2200000,ad_ayni,Destek Hizmetleri Müdürlüğü,Toplam akaryakıt tüketimi,200,2.200.000
+202,DESTEK HİZMETLER MÜDÜRLÜĞÜ,SH43,SH01/PG03,Görsel tasarımlar için kullanılan ham madde miktarı,TOPLA,M2,100000,ad_ayni,Destek Hizmetleri Müdürlüğü,Görsel tasarımlar için kullanılan ham madde miktarı,200,100.000
+203,DESTEK HİZMETLER MÜDÜRLÜĞÜ,SH43,SH01/PG04,Hizmet binalarının Temizliğinden duyulan memnuniyet oranı,KÜMÜLATİF,Oran (%),0.92,ad_ayni,Destek Hizmetleri Müdürlüğü,Hizmet binalarının Temizliğinden duyulan memnuniyet oranı,200,92
+204,DESTEK HİZMETLER MÜDÜRLÜĞÜ,SH43,SH01/PG05,Hizmet binalarında verilen güvenlik hizmetlerinden duyulan memnuniyet oranı,KÜMÜLATİF,Oran (%),0.93,ad_ayni,Destek Hizmetleri Müdürlüğü,Hizmet binalarında verilen güvenlik hizmetlerinden duyulan memnuniyet oranı,200,93
+205,DESTEK HİZMETLER MÜDÜRLÜĞÜ,SH44,SH01/PG01,Hizmetin İcra edilmesi gerekli olan araç/iş makinası ihtiyacının zamanında gerçekleşme oranı (%),KÜMÜLATİF,Oran (%),1,ad_ayni,Destek Hizmetleri Müdürlüğü,Hizmetin İcra edilmesi gerekli olan araç/iş makinası ihtiyacının zamanında gerçekleşme oranı (%),201,100
+206,DESTEK HİZMETLER MÜDÜRLÜĞÜ,SH44,SH01/PG02,Araç ve İş makinelerinin akaryakıt ihtiyaçlarının karşılanma oranı (%),KÜMÜLATİF,Oran (%),1,ad_ayni,Destek Hizmetleri Müdürlüğü,Araç ve İş makinelerinin akaryakıt ihtiyaçlarının karşılanma oranı (%),201,100
+207,DESTEK HİZMETLER MÜDÜRLÜĞÜ,SH44,SH01/PG03,Satın alma iş ve işlemlerinin gerçekleştirilme oranı (%),KÜMÜLATİF,Oran (%),0.93,ad_ayni,Destek Hizmetleri Müdürlüğü,Satın alma iş ve işlemlerinin gerçekleştirilme oranı (%):,201,93
+208,DESTEK HİZMETLER MÜDÜRLÜĞÜ,SH44,SH01/PG04,"Dış paydaşlardan gelen taleplerin (masa, sandalye vs.) memnuniyet oranı (%)",KÜMÜLATİF,Oran (%),0.94,ad_ayni,Destek Hizmetleri Müdürlüğü,"Dış paydaşlardan gelen taleplerin (masa, sandalye vs.) memnuniyet oranı (%)",201,94
 209,MALİ HİZMETLER MÜDÜRLÜĞÜ,SH45,SH01/PG01,Mali Tabloların Yayınlanması,KÜMÜLATİF,Oran (%),1,ad_ayni,Mali Hizmetler Müdürlüğü,Mali Tabloların Yayınlanması,203,100
 210,MALİ HİZMETLER MÜDÜRLÜĞÜ,SH45,SH01/PG02,Mali tabloların zamanında hazırlanması,KÜMÜLATİF,Oran (%),1,ad_ayni,Mali Hizmetler Müdürlüğü,Mali tabloların zamanında hazırlanması,203,100
 211,YAZI İŞLERİ MÜDÜRLÜĞÜ,SH46,SH01/PG01,Alınan tüm encümen ve meclis kararlarının belirlenen kalite standartlarına uygun olarak ve belirlenen süre içinde resmi kayıtlara geçirilme oranı.,KÜMÜLATİF,Oran (%),1,ad_ayni,Yazı İşleri Müdürlüğü,Alınan tüm encümen ve meclis kararlarının belirlenen kalite standartlarına uygun olarak ve belirlenen süre içinde resmi kayıtlara geçirilme oranı.,205,100
@@ -230,62 +230,12 @@ excel_satir,excel_mudurluk,sh_kodu,pg_kodu,excel_gosterge,hesaplama,birim,excel_
 ,,,,,,,,kitapta_var_excelde_eslesmedi,Veteriner İşleri Müdürlüğü,2026 yılı sonuna kadar hayvan barınağı inşaatının tamamlanması,106,*1
 ,,,,,,,,kitapta_var_excelde_eslesmedi,Veteriner İşleri Müdürlüğü,4 Ekim dünya hayvanlar gününde çeşitli etkinlikler düzenlemek,108,1
 ,,,,,,,,kitapta_var_excelde_eslesmedi,Fen İşleri Müdürlüğü,"Kent genelinde yapılan parke taş ile yol yapım bakım ve onarım işi ile asfaltlama yapım, bakım, onarım işi",116,70000
-,,,,,,,,kitapta_var_excelde_eslesmedi,Plan Proje Müdürlüğü,Çalışması Yürütülen Plan sayısı,126,*6
-,,,,,,,,kitapta_var_excelde_eslesmedi,Plan Proje Müdürlüğü,Çalışması Yürütülen Plan Değişikliği sayısı,126,*10
-,,,,,,,,kitapta_var_excelde_eslesmedi,Plan Proje Müdürlüğü,Çalışması Yürütülen Parselasyon Çalışmaları sayısı,126,*7
-,,,,,,,,kitapta_var_excelde_eslesmedi,Plan Proje Müdürlüğü,"Plana ilişkin hazırlanan imar durum belgesi, inşaat istikamet belgesi ve kot kesit belgesi sayısı",126,*5000
-,,,,,,,,kitapta_var_excelde_eslesmedi,Plan Proje Müdürlüğü,Vatandaşların memnuniyet oranı,126,*95
-,,,,,,,,kitapta_var_excelde_eslesmedi,Yapı Kontrol Müdürlüğü,Yıllık olarak tespit edilen ve yasal işlem başlatılan kaçak yapı sayısı,128,400
-,,,,,,,,kitapta_var_excelde_eslesmedi,Yapı Kontrol Müdürlüğü,Yıllık olarak denetlenen ruhsatlı inşaat sayısı,128,2500
-,,,,,,,,kitapta_var_excelde_eslesmedi,Yapı Kontrol Müdürlüğü,Şikâyetleri çözüme kavuşturulan vatandaşların memnuniyet oranı,128,94
+,,,,,,,,kitapta_var_excelde_eslesmedi,İmar ve Şehircilik Müdürlüğü,Şikâyetleri çözüme kavuşturulan vatandaşların memnuniyet oranı,119,94
 ,,,,,,,,kitapta_var_excelde_eslesmedi,Çevre Koruma ve Kontrol Müdürlüğü,Marmara Denizi ve Büyükçekmece Gölü'nün ekolojik dengesi için farkındalık kampanyaları düzenlemek.,143,7
 ,,,,,,,,kitapta_var_excelde_eslesmedi,Çevre Koruma ve Kontrol Müdürlüğü,İklim değişikliği farkındalığı yaratmak için paydaşlara yönelik bilgilendirme etkinlikleri düzenlemek.,143,14
 ,,,,,,,,kitapta_var_excelde_eslesmedi,İklim Değişikliği ve Sıfır Atık Müdürlüğü,İklim değişikliği ve sürdürülebilirlik hedefleri için sürdürülebilir Enerji ve İklim Eylem Planını takip etmek.,151,12
 ,,,,,,,,kitapta_var_excelde_eslesmedi,İklim Değişikliği ve Sıfır Atık Müdürlüğü,İlçe genelinde Sıfır Atık Uygulamalarının Artırlması,152,10
 ,,,,,,,,kitapta_var_excelde_eslesmedi,Gençlik ve Spor İşleri Müdürlüğü,Geri bildirimlere göre etkinlikleri geliştirmek ve memnuniyeti artırmak.,164,100
-,,,,,,,,kitapta_var_excelde_eslesmedi,Sosyal Destek Müdürlüğü,"Gıda, giyim gibi temel ihtiyaçları ayni olarak karşılanan hane sayısı",166,37.000
-,,,,,,,,kitapta_var_excelde_eslesmedi,Sosyal Destek Müdürlüğü,Nakdi destek hizmetlerinden yararlanan aile sayısı,166,3.200
-,,,,,,,,kitapta_var_excelde_eslesmedi,Sosyal Destek Müdürlüğü,Sosyal tespit çalışması kapsamında değerlendirilen hane sayısı,166,32.720
-,,,,,,,,kitapta_var_excelde_eslesmedi,Sosyal Destek Müdürlüğü,Vatandaş şikâyet ve önerilerinin değerlendirilme oranı,166,90
-,,,,,,,,kitapta_var_excelde_eslesmedi,Sosyal Destek Müdürlüğü,2029 yılı sonuna kadar sosyal doku çalışmasının yapılması oranı,166,%20
-,,,,,,,,kitapta_var_excelde_eslesmedi,Sosyal Destek Müdürlüğü,"2026 yılı sonuna kadar kentte yaşayan mülteci, sığınmacı ve göçmelere ait hazırlanan veri seti sayısı",167,1
-,,,,,,,,kitapta_var_excelde_eslesmedi,Sosyal Destek Müdürlüğü,Veri setlerinin güncelleme sıklığı,167,6 Ay
-,,,,,,,,kitapta_var_excelde_eslesmedi,Sosyal Destek Müdürlüğü,Veri setlerinin analiz edilerek raporlama yapma sıklığı,167,6 Ay
-,,,,,,,,kitapta_var_excelde_eslesmedi,Sosyal Destek Müdürlüğü,"Mülteci, sığınmacı ve göçmenler ile yüz yüze yapılan görüşme oranı",167,50
-,,,,,,,,kitapta_var_excelde_eslesmedi,Sosyal Destek Müdürlüğü,Gerçekleştirilen görüşmelerden duyulan memnuniyet oranı,167,86
 ,,,,,,,,kitapta_var_excelde_eslesmedi,Sosyal Destek Müdürlüğü,"İlköğretim çağındaki öğrenciler için beslenme projesinin devam ettirilmesi ve öğrencilere okul çantası, okul kıyafeti ve diğer ihtiyaçların sağlanması",168,1100
-,,,,,,,,kitapta_var_excelde_eslesmedi,Halkla İlişkiler Müdürlüğü,"CİMER’den Gelen Talep, Şikâyet ve Öneri Sayısı",175,4.240
-,,,,,,,,kitapta_var_excelde_eslesmedi,Halkla İlişkiler Müdürlüğü,Çözüm masasının hizmet kalitesini değerlendirmek için yapılan vatandaş memnuniyeti anketine katılım sayısı,175,88.263
-,,,,,,,,kitapta_var_excelde_eslesmedi,Halkla İlişkiler Müdürlüğü,Çözüm masası personelinin performansını düzenli olarak değerlendirmek için yapılan eğitim sayısı,175,5
-,,,,,,,,kitapta_var_excelde_eslesmedi,Halkla İlişkiler Müdürlüğü,Çözüm masasından hizmet alan vatandaşların memnuniyet oranını %95'in üzerine çıkarmak,175,87
-,,,,,,,,kitapta_var_excelde_eslesmedi,Halkla İlişkiler Müdürlüğü,"Ulak. bel sistemine gelen ve karşılanan istek, talep ve şikayetlerin memnuniyet oranı",175,"85,4"
-,,,,,,,,kitapta_var_excelde_eslesmedi,Halkla İlişkiler Müdürlüğü,"Belediye hizmetlerinin tanıtımı için kullanılan farklı dış mekan reklam mecralarının (billboard, raket, megalight vb.) sayısı",176,22.950
-,,,,,,,,kitapta_var_excelde_eslesmedi,Halkla İlişkiler Müdürlüğü,"Tanıtım ve duyuru amaçlı üretilen toplam materyal sayısı (Poster, El İlanı vb…):",176,6.470
-,,,,,,,,kitapta_var_excelde_eslesmedi,Halkla İlişkiler Müdürlüğü,Desteklenen kurum içi ve kurum dışı organizasyon sayısı,176,56
-,,,,,,,,kitapta_var_excelde_eslesmedi,Halkla İlişkiler Müdürlüğü,Yıl içinde bilgilendirme amaçlı atılan SMS Sayısı,176,4.221.514
-,,,,,,,,kitapta_var_excelde_eslesmedi,Halkla İlişkiler Müdürlüğü,Yapılan hizmetlerden vatandaş memnuniyeti oranı,176,85
-,,,,,,,,kitapta_var_excelde_eslesmedi,Halkla İlişkiler Müdürlüğü,Yıl boyunca yerel medyada çıkan haber sayısı,177,5.550
-,,,,,,,,kitapta_var_excelde_eslesmedi,Halkla İlişkiler Müdürlüğü,Yıl boyunca Ulusal –yazılı basında çıkan haber sayısı,177,2.450
-,,,,,,,,kitapta_var_excelde_eslesmedi,Halkla İlişkiler Müdürlüğü,Yıl boyunca Ulusal-Görsel basında çıkan haber sayısı,177,3.200
-,,,,,,,,kitapta_var_excelde_eslesmedi,Halkla İlişkiler Müdürlüğü,Belediye sosyal medya hesaplarında yapılan canlı yayınların izlenme sayısı,177,830.462
-,,,,,,,,kitapta_var_excelde_eslesmedi,Halkla İlişkiler Müdürlüğü,Sosyal medya paylaşımlarının erişim ve etkileşim oranları,177,93
-,,,,,,,,kitapta_var_excelde_eslesmedi,Halkla İlişkiler Müdürlüğü,Belediyemizin hizmetlerini Ulusal (görsel – yazılı) basın ve yerel basında aylık yayınlanma sayısı,178,908.666
-,,,,,,,,kitapta_var_excelde_eslesmedi,Halkla İlişkiler Müdürlüğü,"Ulusal-Görsel ve Yerel basında çıkan haberlerin olumlu, nötr veya olumsuz olma oranı",178,%8
-,,,,,,,,kitapta_var_excelde_eslesmedi,Halkla İlişkiler Müdürlüğü,"Belediyenin birimlerinin hizmet ve projelerini içeren, kurumsal kimliğe uygun ve yayınlanabilir nitelikte video içerik üretmek.",178,4.600
-,,,,,,,,kitapta_var_excelde_eslesmedi,Halkla İlişkiler Müdürlüğü,Yıl içinde düzenlenen basın toplantısı sayısı,178,10
-,,,,,,,,kitapta_var_excelde_eslesmedi,Halkla İlişkiler Müdürlüğü,"Basın mensuplarına yönelik düzenlenen etkinliklere (kahvaltı, gezi, bilgilendirme toplantısı vb.) katılım oranı.",178,%95
-,,,,,,,,kitapta_var_excelde_eslesmedi,Halkla İlişkiler Müdürlüğü,İlçe Muhtarları ve STK’lar ile yapılan çalıştay ve toplantı sayısı,179,4
-,,,,,,,,kitapta_var_excelde_eslesmedi,Halkla İlişkiler Müdürlüğü,İlçe Muhtarları ve STK’lar ile ortak programlar ve işbirlikleri yapılması,179,4
-,,,,,,,,kitapta_var_excelde_eslesmedi,Halkla İlişkiler Müdürlüğü,İlçe Muhtarları ve STK’ların talep ve şikayetlerinin alınması,179,1700
-,,,,,,,,kitapta_var_excelde_eslesmedi,Halkla İlişkiler Müdürlüğü,Mahalle Temsilciliklerinin kurulması,179,0
 ,,,,,,,,kitapta_var_excelde_eslesmedi,Bilgi İşlem Müdürlüğü,Şehir Yönetimini İyileştirmek İçin Veri Platformunun Yönetimi ve Geliştirilmesi.,190,20
 ,,,,,,,,kitapta_var_excelde_eslesmedi,Hukuk İşleri Müdürlüğü,Vatandaş şikâyet ve önerilerinin değerlendirilme oranı,195,90
-,,,,,,,,kitapta_var_excelde_eslesmedi,Destek Hizmetleri Müdürlüğü,Kiralanan araç sayısı,200,257
-,,,,,,,,kitapta_var_excelde_eslesmedi,Destek Hizmetleri Müdürlüğü,Toplam akaryakıt tüketimi,200,2.200.000
-,,,,,,,,kitapta_var_excelde_eslesmedi,Destek Hizmetleri Müdürlüğü,Görsel tasarımlar için kullanılan ham madde miktarı,200,100.000
-,,,,,,,,kitapta_var_excelde_eslesmedi,Destek Hizmetleri Müdürlüğü,Hizmet binalarının Temizliğinden duyulan memnuniyet oranı,200,92
-,,,,,,,,kitapta_var_excelde_eslesmedi,Destek Hizmetleri Müdürlüğü,Hizmet binalarında verilen güvenlik hizmetlerinden duyulan memnuniyet oranı,200,93
-,,,,,,,,kitapta_var_excelde_eslesmedi,Destek Hizmetleri Müdürlüğü,Hizmetin İcra edilmesi gerekli olan araç/iş makinası ihtiyacının zamanında gerçekleşme oranı (%),201,100
-,,,,,,,,kitapta_var_excelde_eslesmedi,Destek Hizmetleri Müdürlüğü,Araç ve İş makinelerinin akaryakıt ihtiyaçlarının karşılanma oranı (%),201,100
-,,,,,,,,kitapta_var_excelde_eslesmedi,Destek Hizmetleri Müdürlüğü,Satın alma iş ve işlemlerinin gerçekleştirilme oranı (%):,201,93
-,,,,,,,,kitapta_var_excelde_eslesmedi,Destek Hizmetleri Müdürlüğü,"Dış paydaşlardan gelen taleplerin (masa, sandalye vs.) memnuniyet oranı (%)",201,94

@@ -1563,3 +1563,13 @@ Answers (BEYAN Ali) → lead decisions:
 - S10 lower-is-better: complaint response time, application completion time; look at the performance sheet. → From the V1 Excel units: lower-is-better = the 4 "Gün" indicators (Zabıta "istek ve şikâyetlerin cevaplandırılma süresi"; Yazı İşleri "evrakın … birime ulaşma süresi", "Nikah işlemlerinin sonuçlandırılma süresi", "4109 … yardım süresi"). BELİRSİZ: Sosyal Hizmetler 2 "Zaman" (sıklık) rows and Gelirler 2 "Oran (Kümülatif Azalan)" rows (one says "artırılması") — ask Ali only when the karne goes to the council.
 - S11 photos: directorates supply them.
 Next IDs: task CIV-192, decision D-447.
+
+## D-447 (9 Nov 2026 ~11:05 Istanbul, lead, project thread CV Lider 71) — directorate list read; name changes resolved; CIV-192 (FR5) dispatched
+BEYAN (owner 10:44): uploaded Ali's attachment "Müdürlükler Bütçe Kodları.docx" to the thread.
+DOĞRULANDI lead read: 36 directorates with current budget codes (02 Özel Kalem … 58 Harita ve Planlama, 74 Ar-Ge, 23 İşletme ve İştirakler; 33 Kadın ve Aile and 42 Kentsel Tasarım marked PASİF). Codes differ from the 2025 final account (e.g. 2025: 25 Halkla İlişkiler, 26 Basın ve Yayın, 43 Plan ve Proje, 47 Sosyal Destek, 56 Yapı Kontrol, 53 Koordinasyon İşleri, 63 Ulaşım Hizmetleri) — budget codes were renumbered; the list gives no old→new pairs or dates (Ali skipped council decisions).
+DOĞRULANDI by indicator content (2026 book vs V1 workbook): Plan Proje → Harita ve Planlama (all 5 indicators identical); Sosyal Destek → Sosyal Hizmetler; Halkla İlişkiler (book chapter) → Basın, Yayın ve Halkla İlişkiler; Yapı Kontrol → merged into İmar ve Şehircilik (its "denetlenen ruhsatlı inşaat" and "kaçak yapı" indicators sit under İmar in the workbook); "Destek Hizmetler" is a spelling of Destek Hizmetleri. With these, the dry run matches 203 same-name + 8 close-name of 227 rows; 16 unmatched; 13 book indicators without a row (docs/lead/data/fr5-2026-excel-kitap-eslesme.csv regenerated).
+Decisions (lead):
+1. These 4 changes are recorded in "Kurum yapısı" on the live system by the owner/Strateji (live data → owner; effective date 1 Jan 2026 as working assumption, decision number blank, source "Strateji müdürlük listesi 9.11.2026"). Not needed before CIV-192 is merged; needed before the first real import.
+2. CIV-192 (Codex, GPT-6.1 Sol, yüksek) — Strateji imports the master workbook through preview → confirm → apply, writes via save_actual, resolves names through Kurum yapısı, blank ≠ zero, no silent ratio scaling. Package tasks/CIV-192.md.
+3. B2 fix (per-activity result optional, D-446) is packaged after CIV-190/191 merge to avoid template overlap.
+Next IDs: task CIV-193, decision D-448.
