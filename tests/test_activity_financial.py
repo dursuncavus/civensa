@@ -11,6 +11,7 @@ from app.models import (ARBudgetRow, ARContentEvent, ARDocumentFreeze, ARFinanci
 from app import activity_financial_service as finance
 from app import activity_sections_service as sections
 from test_activity_sections import section_client, login, save, ready_and_freeze
+from tests.civ201_contract import undo_numeric_headers
 
 pytestmark=pytest.mark.postgres
 
@@ -93,7 +94,7 @@ def test_blank_zero_revenue_and_final_consistency(section_client,sample):
     assert data[0]['net']==800 and data[0]['rate']==80
     assert data[1]['net'] is None and data[1]['actual']==0
     page=client.get(f'/activity-sections/reports/{doc.id}?code=III.A.1')
-    assert page.status_code==200 and '12.500,23' in page.text and '<th>Net tahsilat</th>' in page.text
+    assert page.status_code==200 and '12.500,23' in page.text and '<th>Net tahsilat</th>' in undo_numeric_headers(page.text)
 
 
 def test_thresholds_and_own_explanations(section_client,sample):

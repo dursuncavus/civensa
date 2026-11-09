@@ -17,3 +17,8 @@ def open_containing_dialog(locator):
         dialog = locator.page.locator('[id="' + target + '"]')
         if not dialog.evaluate('el => el.open'):
             locator.page.locator('[data-open-dialog="' + target + '"]').click()
+
+
+def legacy_status(root):
+    """Select an existing page status independently of the shared notice."""
+    return root.locator('[role=status]:not(#saved-notice)')

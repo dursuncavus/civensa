@@ -18,6 +18,7 @@ from app.pp_display import status_label
 from test_activity_mapping_gaps import strategy_client
 from test_section_index_design import TEXT_PAIRS, contrast
 from test_sidebar_ui import browser
+from tests.civ201_contract import legacy_status
 
 pytestmark = pytest.mark.postgres
 FROZEN = Path(__file__).parent / 'fixtures/report_builder_start'
@@ -435,7 +436,7 @@ def test_native_forms_save_and_publish_gate_in_real_handlers(browser, strategy_c
         copy.locator('[name=base_period_id]').select_option(str(source.id))
         with page.expect_navigation():
             copy.get_by_role('button', name='Genel Bölümleri Kopyala', exact=True).click()
-        expect(page.locator('[role=status]')).to_contain_text('1 bölüm kopyalandı')
+        expect(legacy_status(page)).to_contain_text('1 bölüm kopyalandı')
         db.expire_all()
         assert db.scalar(select(ReportSection.id).where(ReportSection.title == 'Sentetik kaynak bölüm',
                                                         ReportSection.period_id == period_id))
