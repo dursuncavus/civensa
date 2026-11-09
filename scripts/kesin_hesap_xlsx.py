@@ -10,6 +10,7 @@ import argparse
 from collections import defaultdict
 import csv
 from dataclasses import dataclass
+from datetime import date
 from decimal import Decimal, InvalidOperation
 import hashlib
 import io
@@ -38,6 +39,7 @@ REVENUE_HEADERS = ('Ekonomik Kod', 'Bütçe Tahmini', 'Tahsilat (Gerçekleşme)'
                    'Red ve İadeler', 'Sapma Açıklaması')
 REVENUE_CODES = {'01', '03', '04', '05', '06', '08', '09'}
 MONEY = re.compile(r'-?(?:0|[1-9]\d*|[1-9]\d{0,2}(?:\.\d{3})*),\d{2}\Z')
+WRAPPED_MONEY = re.compile(MONEY.pattern.replace(r'\d{2}\Z', r'\d{1,2}\Z'))
 
 MAPPING = """## Sütun eşlemesi
 
@@ -88,6 +90,7 @@ def safe(value):
 class Row:
     cells: list[list[str]]
     where: str
+    code_positions: list[list[int]] | None = None
 
     def text(self, column):
         return ' '.join(self.cells[column])
@@ -98,15 +101,16 @@ class Row:
         for offset, label in enumerate(labels):
             parts = self.cells[start + offset]
             raw = ''.join(parts)
-            if not MONEY.fullmatch(raw):
+            pattern = WRAPPED_MONEY if revenue and len(parts) > 1 else MONEY
+            if not pattern.fullmatch(raw):
                 raise ConversionError(f'{self.where}, {label}: tutar boş veya okunamadı '
                                       f'({safe(" / ".join(parts)) or "boş"}). '
                                       'PDF hücresini kontrol edip dosyayı yeniden dönüştürün.')
             if len(parts) > 1:
-                if not revenue or offset not in {1, 2, 3, 4, 5, 6}:
+                if not revenue:
                     raise ConversionError(f'{self.where}, {label}: bölünmüş tutar bağımsız '
                                           'satır eşitliğiyle doğrulanamıyor. Kaynak PDF düzenini kontrol edin.')
-                wrapped.append((label, parts, raw))
+                wrapped.append((offset, label, parts, raw))
             value = Decimal(raw.replace('.', '').replace(',', '.'))
             values.append(value)
         if revenue:
@@ -118,9 +122,10 @@ class Row:
                     raise ConversionError(f'{self.where}: {label} tutarsız; PDF {money(actual)}, '
                                           f'hesaplanan {money(expected)}, fark {money(actual - expected)}. '
                                           'Bölünmüş rakamları ve kaynak satırı kontrol edin; tahmin yapılmadı.')
-            for label, parts, raw in wrapped:
-                notes.append(f'{self.where}, {label}: {safe(" / ".join(parts))} → {raw}; '
-                             'ilgili satır eşitliği doğrulandı.')
+            for offset, label, parts, raw in wrapped:
+                if offset in {1, 2, 3, 4, 5, 6}:
+                    notes.append(f'{self.where}, {label}: {safe(" / ".join(parts))} → {raw}; '
+                                 'ilgili satır eşitliği doğrulandı.')
         return values
 
 
@@ -130,24 +135,60 @@ def revenue_labels(year):
             'Red ve İadeler', 'Yılı Net Tahsilatı', f'{year + 1} Yılına Devreden Tahakkuk')
 
 
-def header_bounds(lines, body, expected, where, code_count):
+def header_key(label):
+    """Only documented spelling, unit, split-word and heading variants."""
+    words = norm(label).split()
+    words = [word for word in words if word != 'tl'
+             and not re.fullmatch(r'\d{4}', word)]
+    roman = ['i', 'ii', 'iii', 'iv', 'v']
+    if words == roman or words == ['gelirin', 'kodu', *roman]:
+        return 'gelirinkodu'
+    key = ''.join(words)
+    for transfer in ('eklenen', 'dusulen'):
+        if key in {f'aktarma{transfer}', f'aktarmasuretiyle{transfer}', f'aktarmasuratiyle{transfer}'}:
+            return transfer
+    if key == 'tahsilattanredveiadeler':
+        return 'redveiadeler'
+    return key
+
+
+def header_matches(actual, expected, year):
+    years = re.findall(r'\b\d{4}\b', actual)
+    expected_years = re.findall(r'\b\d{4}\b', expected) or [str(year)]
+    return (all(value in expected_years for value in years)
+            and header_key(actual) == header_key(expected))
+
+
+def header_bounds(lines, body, expected, where, code_count, year):
     """Find column gutters in pypdf's position-preserving fixed-width layout.
 
     Text inside a cell can span several baselines. Intersecting horizontal
     spans connect those lines without flattening adjacent monetary columns.
     Unknown/overlapping headers are rejected instead of assuming coordinates.
     """
-    spans = sorted((match.start(), match.end()) for line in lines
-                   for match in re.finditer(r'\S(?:.*?\S)?(?= {2,}|$)', line))
+    fragments = []
+    for line in lines:
+        chunks = list(re.finditer(r'\S+(?: \S+)*', line))
+        roman = [chunk for chunk in chunks if re.fullmatch(r'[IV ]+', chunk.group())]
+        if norm(' '.join(chunk.group() for chunk in roman)) == 'i ii iii iv v':
+            fragments.append((roman[0].start(), roman[-1].end(), 'I II III IV V'))
+            chunks = [chunk for chunk in chunks if chunk not in roman]
+        for chunk in chunks:
+            # An optional spanner can cover both transfer columns. Their
+            # mandatory Eklenen/Düşülen labels still identify them uniquely.
+            if set(norm(chunk.group()).split()) <= {'aktarma', 'suratiyle', 'suretiyle'}:
+                continue
+            fragments.append((chunk.start(), chunk.end(), chunk.group()))
+    spans = sorted((left, right) for left, right, _ in fragments)
     groups = []
     for left, right in spans:
         if groups and left <= groups[-1][1] + 1:
             groups[-1][1] = max(groups[-1][1], right)
         else:
             groups.append([left, right])
-    labels = [' '.join(line[left:right].strip() for line in lines).strip()
+    labels = [' '.join(text for start, end, text in fragments if left <= start and end <= right)
               for left, right in groups]
-    if len(labels) != len(expected) or any(norm(a) != norm(b)
+    if len(labels) != len(expected) or any(not header_matches(a, b, year)
                                           for a, b in zip(labels, expected)):
         raise ConversionError(f'{where}: sütun başlıkları veya rapor yılı doğrulanamadı. '
                               'Belirtilen yıla ait metin PDF ve desteklenen sütun düzenini kullanın. '
@@ -162,7 +203,7 @@ def header_bounds(lines, body, expected, where, code_count):
                 continue
             cells = [line[bounds[-1]:position].strip() for line in body]
             if column < code_count:
-                pattern = (r'\d{2}(?:[ .]+\d{1,2}){0,4}' if code_count == 1 else
+                pattern = (r'\d{1,2}(?:[ .]+\d{1,2}){0,4}' if code_count == 1 else
                            (r'46(?:[ .]+\d{1,2}){0,3}',
                             r'\d{2}(?:[ .]+\d{1,2}){0,3}', r'\d',
                             r'\d{2}(?:[ .]+\d{1,2}){0,3}')[column])
@@ -178,7 +219,7 @@ def header_bounds(lines, body, expected, where, code_count):
                 candidates.append(position)
         if not candidates:
             raise ConversionError(f'{where}: sütunlar arasında ortak boşluk yok. '
-                                  'PDF hücre sınırlarını kontrol edin.')
+                                  'PDF hücre sınırlarını ve veri satırlarını kontrol edin.')
         # Use the last contiguous gutter: earlier whitespace can be inside
         # this column, before its right-aligned monetary value.
         run = [candidates[-1]]
@@ -190,7 +231,74 @@ def header_bounds(lines, body, expected, where, code_count):
     return bounds
 
 
-def pdf_rows(path, kind, year):
+def read_metadata(lines, where, metadata, year):
+    """Return the end of the title block, retaining every later header line."""
+    end = -1
+    for i, line in enumerate(lines):
+        text = norm(line)
+        if 'kesin hesap' in text:
+            end = i
+        for key, label in (('start', 'baslangic tarihi'), ('end', 'bitis tarihi')):
+            if label not in text:
+                continue
+            end = i
+            match = re.search(r'\b' + label + r' (\d{2}) (\d{2}) (\d{4})\b', text)
+            try:
+                if match is None:
+                    raise ValueError()
+                day, month, source_year = map(int, match.groups())
+                value = date(source_year, month, day)
+                if value.year != year:
+                    raise ValueError()
+            except ValueError:
+                display = 'Başlangıç Tarihi' if key == 'start' else 'Bitiş Tarihi'
+                raise ConversionError(f'{where}, satır {i + 1}: {display} okunamadı veya '
+                                      f'--year {year} ile uyuşmuyor. Kaynak tarihini ve yılı kontrol edin.') from None
+            metadata[key].append((value, f'{where}, satır {i + 1}'))
+        if 'donemi' in text:
+            end = i
+            match = re.search(r'\bdonemi (\d{4})\b', text)
+            if match is None or int(match[1]) != year:
+                raise ConversionError(f'{where}, satır {i + 1}: Dönemi ile --year {year} '
+                                      'uyuşmuyor. Kaynak dönemini kontrol edin.')
+            metadata['period'].append((year, where))
+    return end + 1
+
+
+def validate_metadata(metadata, where, expense, notes):
+    for key, label in (('start', 'Başlangıç Tarihi'), ('end', 'Bitiş Tarihi')):
+        if not metadata[key]:
+            raise ConversionError(f'{where}: {label} eksik. Tarihleri içeren tam kesin hesap PDF kullanın.')
+        if len({value for value, _ in metadata[key]}) != 1:
+            raise ConversionError(f'{metadata[key][-1][1]}: {label} sayfalar arasında tutarsız. '
+                                  'Kaynak tarihlerini kontrol edin.')
+    start, end = metadata['start'][0][0], metadata['end'][0][0]
+    if start > end:
+        raise ConversionError(f'{where}: Başlangıç Tarihi, Bitiş Tarihi sonrasında. Kaynak tarihlerini düzeltin.')
+    if not expense and not metadata['period']:
+        raise ConversionError(f'{where}: Dönemi eksik. Dönem bilgisi içeren tam gelir PDF kullanın.')
+    if notes is not None:
+        notes.append(f'{safe(where)}: Başlangıç Tarihi {start:%d/%m/%Y}, Bitiş Tarihi {end:%d/%m/%Y}; '
+                     'kaynak yılı ve dönem doğrulandı.')
+
+
+def joined_revenue_code(row):
+    parts = [codes(part) for part in row.cells[0]]
+    if len(parts) == 1:
+        return row.text(0)
+    if not parts or len({len(part) for part in parts}) != 1:
+        raise ConversionError(f'{row.where}: bölünmüş gelir kodunun sütunları belirsiz. PDF kodlarını kontrol edin.')
+    if row.code_positions is None or any(max(column) - min(column) > 1
+                                         for column in zip(*row.code_positions)):
+        raise ConversionError(f'{row.where}: gelir kodu parçaları aynı alt sütunda değil. '
+                              'PDF kod konumlarını kontrol edin.')
+    result = [''.join(column) for column in zip(*parts)]
+    if not all(re.fullmatch(r'\d{2}', part) for part in result):
+        raise ConversionError(f'{row.where}: bölünmüş gelir kodu doğrulanamadı. PDF kodlarını kontrol edin.')
+    return ' '.join(result)
+
+
+def pdf_rows(path, kind, year, notes=None):
     expense = kind == 'expenditure'
     expected = (('Kurum Kodu', 'Fonksiyonel Kodu', 'Finansal Kodu', 'Ekonomik Kodu',
                  'Açıklama', *EXPENSE_SOURCE) if expense else
@@ -198,6 +306,7 @@ def pdf_rows(path, kind, year):
     code_count = 4 if expense else 1
     description = code_count
     rows = []
+    metadata = {'start': [], 'end': [], 'period': []}
     with path.open('rb') as source:
         reader = PdfReader(source)
         if reader.is_encrypted:
@@ -206,21 +315,19 @@ def pdf_rows(path, kind, year):
             where = f'{path.name}, sayfa {page_no}'
             lines = page.extract_text(extraction_mode='layout',
                                       layout_mode_space_vertically=False).splitlines()
-            marker = 'kurum' if expense else 'gelirin'
-            start = next((i for i, line in enumerate(lines) if marker in norm(line)), None)
-            if start is None:
-                raise ConversionError(f'{where}: tablo başlığı bulunamadı. Her sayfada başlıklı '
-                                      'metin PDF kullanın; taranmış PDF için önce metin kaynağını edinin.')
-            body = next((i for i in range(start + 1, len(lines))
-                         if re.match(r'^\s*\d{1,2}\s', lines[i])), None)
+            body = next((i for i, line in enumerate(lines)
+                         if re.match(r'^\s*\d{1,2}(?=[ .\s]|$)', line)), None)
             if body is None:
                 raise ConversionError(f'{where}: kodlu veri satırı bulunamadı. PDF tablosunu kontrol edin.')
-            header = [line for line in lines[start:body]
-                      if not re.fullmatch(r'[\sIV]+', line)]
+            start = read_metadata(lines[:body], where, metadata, year)
+            header = lines[start:body]
             body_lines = [(i, line) for i, line in enumerate(lines[body:], body + 1)
                           if line.strip() and not re.fullmatch(
                               r'\s*Sayfa\s+\d+(?:\s*/\s*\d+)?\s*', line, re.IGNORECASE)]
-            bounds = header_bounds(header, [line for _, line in body_lines], expected, where, code_count)
+            located = f'{where}, satırlar {body + 1}–{len(lines)}'
+            bounds = header_bounds(header, [line for _, line in body_lines], expected,
+                                   located, code_count, year)
+            current = None
             for line_no, line in body_lines:
                 cells = [line[left:right].strip()
                          for left, right in zip(bounds, [*bounds[1:], len(line) + 1])]
@@ -232,6 +339,7 @@ def pdf_rows(path, kind, year):
                     raise ConversionError(f'{where}, satır {line_no}: hücre sınırı belirsiz. '
                                           'PDF sütun düzenini kontrol edin.')
                 codes = cells[:code_count]
+                code_positions = [match.start() for match in re.finditer(r'\d+', line[:bounds[1]])]
                 is_total = norm(cells[description]) in {'toplam', 'genel toplam'}
                 if not expense and norm(cells[0]) in {'toplam', 'genel toplam'}:
                     if cells[description] and not is_total:
@@ -239,20 +347,31 @@ def pdf_rows(path, kind, year):
                                               'PDF toplam satırını kontrol edin.')
                     cells[description], cells[0] = cells[0], ''
                     codes, is_total = [''], True
-                if any(codes) or is_total:
-                    if any(code and not re.fullmatch(r'\d+(?:[ .]+\d+)*', code) for code in codes):
-                        raise ConversionError(f'{where}, satır {line_no}: kod okunamadı '
-                                              f'({safe(" / ".join(codes))}). PDF kod alanlarını kontrol edin.')
-                    rows.append(Row([[cell] if cell else [] for cell in cells],
-                                    f'{where}, satır {line_no}'))
-                elif rows:
+                new_row = (any(codes) or is_total) if expense else bool(cells[description] or is_total)
+                if new_row:
+                    if not expense and not any(codes) and not is_total:
+                        raise ConversionError(f'{where}, satır {line_no}: gelir kodu eksik. PDF satırını kontrol edin.')
+                    current = Row([[cell] if cell else [] for cell in cells],
+                                  f'{where}, satır {line_no}',
+                                  [code_positions] if not expense and cells[0] else [])
+                    rows.append(current)
+                elif current is not None:
                     for index, cell in enumerate(cells):
                         if cell:
-                            rows[-1].cells[index].append(cell)
+                            current.cells[index].append(cell)
+                    if not expense and cells[0]:
+                        current.code_positions.append(code_positions)
                 else:
                     raise ConversionError(f'{where}, satır {line_no}: sahipsiz hücre. PDF düzenini kontrol edin.')
     if not rows:
         raise ConversionError(f'{path.name}: veri bulunamadı. Metin PDF kullanın.')
+    validate_metadata(metadata, path.name, expense, notes)
+    for row in rows:
+        if not expense and row.cells[0]:
+            row.cells[0] = [joined_revenue_code(row)]
+        if any(row.text(i) and not re.fullmatch(r'\d+(?:[ .]+\d+)*', row.text(i))
+               for i in range(code_count)):
+            raise ConversionError(f'{row.where}: kod okunamadı. PDF kod alanlarını kontrol edin.')
     return rows
 
 
@@ -398,14 +517,24 @@ def revenue(rows, year, notes, errors):
     labels = revenue_labels(year)
     emitted = {}
     total = None
+    details = []
+    pending = []
     for row in rows:
         code = codes(row.text(0))
+        if code and code[0] not in REVENUE_CODES:
+            raise ConversionError(f'{row.where}: bilinmeyen gelir üst kodu {code[0]}. '
+                                  'Geçerli düzey 1 üst kodunu ve satırını kontrol edin.')
+        if len(code) > 1:
+            details.append((code[0], row.where))
+            continue
+        for offset in (0, 7):
+            parts = row.cells[2 + offset]
+            if len(parts) > 1:
+                pending.append((offset, row.where, parts))
         if not code:
             if total is not None:
                 raise ConversionError(f'{row.where}: gelir toplamı yinelenmiş. Tek toplamlı PDF kullanın.')
             total = row.amounts(2, labels, revenue=True, notes=notes)
-            continue
-        if len(code) > 1:
             continue
         if code[0] not in REVENUE_CODES or code[0] in emitted:
             raise ConversionError(f'{row.where}: gelir kodu bilinmiyor veya yinelenmiş ({code[0]}). '
@@ -413,10 +542,23 @@ def revenue(rows, year, notes, errors):
         emitted[code[0]] = row.amounts(2, labels, revenue=True, notes=notes)
     if not emitted:
         raise ConversionError('Gelir: düzey 1 satır bulunamadı. Tam gelir cetvelini kullanın.')
+    for parent, where in details:
+        if parent not in emitted:
+            raise ConversionError(f'{where}: gelir alt kodunun {parent} düzey 1 üst satırı eksik. '
+                                  'Üst satırı içeren tam gelir PDF kullanın; alt gelir atılmadı.')
     notes.append('Gelir Oran sütunu yüzde olduğu için toplanmaz; sekiz parasal kaynak sütunu karşılaştırılır.')
     if total is not None:
-        reconcile('Gelir düzey 1 toplamı', sum_vectors(emitted.values(), 8), total, labels, notes, errors)
+        summed = sum_vectors(emitted.values(), 8)
+        reconcile('Gelir düzey 1 toplamı', summed, total, labels, notes, errors)
+        for offset, where, parts in pending:
+            if summed[offset] == total[offset]:
+                notes.append(f'{where}, {labels[offset]}: {safe(" / ".join(parts))} → '
+                             f'{"".join(parts)}; bağımsız genel toplam sütunuyla doğrulandı.')
     else:
+        for offset, where, parts in pending:
+            errors.append(f'{where}, {labels[offset]}: bölünmüş tutar '
+                          f'({safe(" / ".join(parts))}) satır eşitliği veya genel toplamla '
+                          'doğrulanamıyor. Genel toplamı içeren kaynak PDF kullanın.')
         notes.append('Gelir PDF toplam satırı yok; genel toplam karşılaştırması yapılamadı. '
                      'Düzey 1 satırlarının tahakkuk ve net tahsilat eşitlikleri doğrulandı.')
     output = []
@@ -536,7 +678,7 @@ def main(argv=None):
                 continue
             try:
                 notes.append(f'{safe(path.name)} SHA-256: {hashlib.sha256(path.read_bytes()).hexdigest()}')
-                rows = pdf_rows(path, kind, args.year)
+                rows = pdf_rows(path, kind, args.year, notes)
                 output = (expenditure(rows, departments, notes, errors) if kind == 'expenditure'
                           else revenue(rows, args.year, notes, errors))
                 if len(output) > 5000:

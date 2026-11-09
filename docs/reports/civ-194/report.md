@@ -21,9 +21,12 @@ python scripts/kesin_hesap_xlsx.py \
 
 `--gider` ve `--gelir` seçeneklerinden biri veya ikisi verilir. `--year`,
 `--departments` ve `--out` zorunludur. 2026 kesin hesabı 2027’de geldiğinde de
-`--year 2026` kullanılır. Gelir başlıklarındaki önceki yıl, hesap yılı ve sonraki
-yıl bu seçenekle doğrulanır. Giderde yıl sütunu bulunmadığından kaynak dosyanın
-yılını operatör ayrıca kontrol etmelidir.
+`--year 2026` kullanılır. Her iki PDF’deki **Başlangıç Tarihi** ve **Bitiş
+Tarihi** zorunludur; ikisinin yılı da `--year` ile eşleşmelidir. Başlangıç
+bitişten sonra olamaz, tekrar edilen tarihler sayfalar arasında değişemez.
+Gelirde **Dönemi** de zorunludur ve aynı yıla ait olmalıdır. Gelir başlıklarında
+bulunan önceki/hesap/sonraki yıl etiketleri ayrıca ilgili sütuna göre doğrulanır.
+Yıl başlıkta tekrar yazılmamışsa doğrulanmış tarih/dönem kullanılır.
 
 CSV, operatörün Civensa kurum yapısından **kesin hesap yılı için** dışa aktardığı
 eşlemedir. UTF-8 veya UTF-8 BOM, virgül ayracı ve şu üç başlık kullanılır
@@ -98,8 +101,9 @@ red ve iadeyi düşerek hesaplar.
 4. Her gelir düzey 1 ve toplam satırında `Toplam Tahakkuk = Devreden + Yılı
    Tahakkuku` ve `Net = Tahsilat − Red` eşitlikleri aranır. Bölünmüş tutar ancak
    ilgili eşitlik doğrulanırsa birleştirilir; önceki parçalar ve birleşim
-   rapora yazılır. Tahmin ve devreden gelecek yıl tutarları bu iki eşitlikle
-   kanıtlanamadığından bunlardaki bölünmeler hatadır.
+   rapora yazılır. Tahmin ve gelecek yıla devreden tutarların birleşimi,
+   bağımsız genel toplam sütunuyla doğrulanabilir. Bu alanlar bölünmüşse ve
+   genel toplam yoksa dönüşüm durur; doğrulanmamış birleşim kabul edilmez.
 5. Gelir genel toplam satırı varsa sekiz parasal sütun düzey 1 satırlarıyla
    karşılaştırılır. Yüzde olan Oran toplanmaz. Toplam satırı yoksa bu denetimin
    yapılamadığı raporda açıkça belirtilir; satır eşitlikleri yine zorunludur.
@@ -107,6 +111,10 @@ red ve iadeyi düşerek hesaplar.
    düzeltme yoktur. Eksik/boş tutar sıfıra çevrilmez. Bilinmeyen bütçe kodları
    PDF’deki müdürlük adlarıyla raporlanır; satırlar sessizce atılmaz veya
    başka müdürlükle birleştirilmez. Yinelenen ekonomik dallar da hatadır.
+   Her gelir alt kodu, dosyada tutarları ve eşitlikleri doğrulanmış düzey 1
+   üst satırına sahip olmalıdır; üst satırın dosyadaki sırası önemli değildir.
+   Bilinmeyen üst kod, üst satır yokluğu ve genel toplam bulunmaması halinde
+   bile alt gelirlerin sessizce atılması engellenir.
 
 Her mutabakat tablosunda PDF tutarı, hesaplanan tutar ve fark bulunur. Kaynak
 sayfa/satır bilgileri hatalarda, dosya ve CSV SHA-256 özetleri raporda yer
@@ -126,23 +134,38 @@ yazılamıyorsa veya girdiyle çakışıyorsa hata standart hata akışına yaz�
   PDF’dir. pypdf’nin konumu koruyan `layout` çıkarımı kullanılır; sabit sayfa
   koordinatı veya düzleştirilmiş metin üzerinde tutar arama kullanılmaz.
   Sütun sınırları çok satırlı başlıklar ve veri satırlarındaki ortak
-  boşluklarla doğrulanır. Sola/ortaya hizalı başlıklar, sağa hizalı tutarlar,
-  ölçeklenmiş sayfalar ve çok sayfalı gider test edilir.
+  boşluklarla **her sayfada yeniden** doğrulanır. Sola/ortaya hizalı başlıklar,
+  sağa hizalı tutarlar, ölçeklenmiş/kaymış sayfalar ve çok sayfalı gider test edilir.
+- Başlık bloğu, Kurum sözcüğünden önce başlayan tutar başlıkları dahil bütün
+  satırları kapsar. Dört satırlı başlık, `Finan / sal Kodu`, `TL` birimi,
+  `Aktarma Suratiyle`/`Aktarma Suretiyle`/yalnız `Eklenen (+)`, `Tahsilattan
+  Red ve İadeler` ve `Gelirin Kodu` olmadan `I II III IV V` desteklenir.
+  Belgelenen varyantlar dışında başlık eşlemesi tahmin edilmez; eksik,
+  bilinmeyen ve yinelenen sütunlar reddedilir.
 - Her sayfada tablo başlığı gerekir. Başlıkların örtüşmesi, değişik sütun
   düzeni, şifreli/taranmış PDF veya belirsiz hücre sınırı dönüştürmeyi durdurur.
   OCR, raster okuma, ağ üzerinden dönüştürme ve yeni bağımlılık yoktur.
 - Giderde `46` kurum hiyerarşisi, üç parçalı tek belediye toplamı, dört
   parçalı müdürlük kodu ve ekonomik satır için dört parçalı fonksiyon/tek
   parçalı finansman bağlamı gerekir. Sayfa geçişinde bağlam korunur.
+  Boşluk veya nokta ayracı, sayfanın ilk veri satırı dahil desteklenir.
   Tekrarlanan belediye/müdürlük toplamları otomatik birleştirilmez.
+- Gelirde fiziksel satırlar açıklama başlangıcına göre mantıksal satırlara
+  toplanır. Kodun `0 / 1` olarak iki satıra bölünmesi, yalnız aynı alt sütun
+  konumu korunuyorsa `01` olarak okunur. Tutarın tam kısmından sonraki
+  `,dd` veya `,d` eki aynı tutar sütununda birleştirilir; eksik rakam eklenmez.
+  Birleşim satır eşitliği veya bağımsız genel toplamla kanıtlanmalıdır.
 - Kaynak parasal değerler Türkçe, iki ondalıklı biçimde olmalıdır. Eksik
-  rakam tahmini, belirsiz sıra değişimi ve eşitlikle kanıtlanamayan sayı
+  rakam tahmini, belirsiz sıra değişimi ve bağımsız olarak kanıtlanamayan sayı
   birleşimi desteklenmez. Negatif veya mevcut içe aktarmanın sayı/satır
   sınırlarını aşan çıktılar reddedilir.
 - Gerçek belediye PDF’leri ve gerçek tutarlar kullanılmadı, depoya eklenmedi.
   Gerçek OpenPDF üretiminin bütün yerleşim çeşitleri bu çalışma kapsamında
   doğrulanamaz. Operatör gerçek dosyada ilk çalıştırmanın mutabakat raporunu
   incelemelidir; desteklenmeyen yerleşim veri tahminiyle aşılmaz.
+  Lead’in yorumunda verdiği yedi yerleşim farkı sentetik olarak yeniden
+  üretilmiştir. Gerçek dosyaların yerel tekrar koşusu lead tarafından yapılır;
+  gerçek verinin mutabakatının geçtiği bu çalışma adına iddia edilmez.
 
 ## Doğrulama
 
@@ -151,6 +174,13 @@ PDF veya XLSX ikili dosyası depoya eklenmez. Kabul ve hata senaryoları
 `tests/test_kesin_hesap_xlsx.py` içindedir. Başlık/sayfa adı uygulamanın gerçek
 `template()` çıktısıyla karşılaştırılır; üretilen gider dosyası mevcut
 `preview_import` ile geçici PostgreSQL üzerinde doğrulanır.
+
+Lead’in 1–7 maddeleri için adlandırılmış regresyon testleri; eksik/yanlış/
+tutarsız tarih, bilinmeyen başlık, doğrulanamayan tahmin/devreden birleşimi,
+yetim/bilinmeyen gelir üst kodu, sonradan gelen geçerli üst satır ve noktalı
+kodla başlayan devam sayfası senaryolarını da kapsar. Yeni yerleşimde
+mutabakat tablolarının tüm farklarının `0,00` olduğu; kasıtlı farkta iki XLSX’in
+de engellendiği doğrulanır.
 
 ```sh
 python -m pytest -q --require-postgres tests/test_kesin_hesap_xlsx.py
