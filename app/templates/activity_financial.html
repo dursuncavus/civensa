@@ -16,22 +16,27 @@
 {% else %}<input name="{{ key }}_{{ i }}" aria-label="{{ label }} {{ i+1 }}" {% if key=='report_date' %}type="date"{% endif %} {% if key in ['initial','added','deducted','entered_final','actual','cancelled','carried','estimate','refunds','amount','previous'] %}inputmode="decimal"{% endif %} value="{{ value if value is not none else '' }}">{% endif %}
 {% endmacro %}
 {% if section.code in ['III.A','III.A.1'] %}
-{% if financial.get('pp_planned_figures') %}
-<section class="panel ar-panel" aria-label="PP planlanan tutarlar"><h3>PP planlanan tutarlar</h3>
-<p>Toplam düzeltmeleri kalemlere ve kaynaklara dağıtılmaz. Ekonomik kod satırları basılı dağılımı korur; kaynak doğrulama uyarıları geçerlidir.</p>
+{% set planned = financial.get('pp_planned_figures') %}
 {% if compact %}
+{# Department checks live in the cards, so the cards render even when a year has no PP planned figures. #}
+<section class="panel ar-panel" aria-label="{{ 'PP planlanan tutarlar' if planned else 'Müdürlük kontrolleri' }}"><h3>{{ 'PP planlanan tutarlar' if planned else 'Müdürlük kontrolleri' }}</h3>
+{% if planned %}<p>Toplam düzeltmeleri kalemlere ve kaynaklara dağıtılmaz. Ekonomik kod satırları basılı dağılımı korur; kaynak doğrulama uyarıları geçerlidir.</p>{% endif %}
   {{ cards.search('financial-directorates') }}
   <div class="directorate-grid" id="financial-directorates">
   {% for group in directorates.departments %}
     {% set name = group.name %}{% set figures = group.figures %}
-    {% call cards.detail('financial-department-' ~ loop.index, name, figures|length ~ ' tutar · ' ~ group.missing|length ~ ' eksik') %}
-      {{ planned_table(figures) }}
+    {% call cards.detail('financial-department-' ~ loop.index, name, (figures|length ~ ' tutar · ' if planned else '') ~ group.missing|length ~ ' eksik') %}
+      {% if figures %}{{ planned_table(figures) }}{% endif %}
       <h3>Eksikler ve kontroller</h3>
       {% for message in group.missing %}<p class="ar-warning">{{ message }}</p>{% else %}<p>Eksik veya tutarsızlık bulunmadı.</p>{% endfor %}
     {% endcall %}
   {% endfor %}
   </div>
-{% else %}{{ planned_table(financial.pp_planned_figures) }}{% endif %}
+</section>
+{% elif planned %}
+<section class="panel ar-panel" aria-label="PP planlanan tutarlar"><h3>PP planlanan tutarlar</h3>
+<p>Toplam düzeltmeleri kalemlere ve kaynaklara dağıtılmaz. Ekonomik kod satırları basılı dağılımı korur; kaynak doğrulama uyarıları geçerlidir.</p>
+{{ planned_table(planned) }}
 </section>
 {% endif %}
 {% endif %}

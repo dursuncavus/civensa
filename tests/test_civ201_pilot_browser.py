@@ -264,3 +264,28 @@ def test_real_browser_submit_saved_notice_scroll_and_error(browser, native_serve
                 form.locator('button').click()
             assert writes[-1][1] == 422
             expect(page.locator('#saved-notice')).to_be_hidden()
+
+
+def test_compact_financial_keeps_department_checks_without_planned_figures(pilot_client, monkeypatch):
+    """Years without PP planned figures still show every directorate's checks."""
+    from app import activity_financial_service as service
+    original = service.pp_references
+    monkeypatch.setattr(service, 'pp_references',
+        lambda *a, **k: (lambda r: (r[0], r[1], []) if k.get('include_plan') else r)(original(*a, **k)))
+    client, _ = pilot_client
+    response = client.get('/activity-sections/reports/1?code=III.A.1')
+    assert response.status_code == 200
+    financial = response.context['financial']
+    assert 'pp_planned_figures' not in financial
+    names = response.context['financial_department_names'].values()
+    department_missing = [m for m in financial['missing']['III.A.1'] if any(m.startswith(n + ':') for n in names)]
+    assert department_missing  # The seed has directorate-specific budget gaps.
+    html = response.text
+    assert 'id="financial-directorates"' in html and 'Müdürlük kontrolleri' in html
+    for message in department_missing:
+        assert str(markupsafe_escape(message)) in html, message
+
+
+def markupsafe_escape(value):
+    from markupsafe import escape
+    return escape(value)
