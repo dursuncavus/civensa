@@ -1591,3 +1591,12 @@ Owner 9 Nov 11:12 (BEYAN): "Copilot da aktif olsun. Gemini'ye erişim izni ver. 
 - Copilot review requested on #433 (CIV-190). No Copilot coding task yet: every small unblocked item is already packaged (CIV-192/193/194 Codex, CIV-195 Gemini); the next small task goes to Copilot.
 - #432 (CIV-191): backup-security re-run at 08:03Z failed again on the age release download (504, GitHub-side); next check 09:04Z.
 
+## D-450 — DeepSeek coder lane + local lane on the Mac (HIERARCHY v1.10) (9 Nov 2026 ~11:35, CV Lider 71)
+Owner 9 Nov 11:21 (BEYAN): "DeepSeek denetleme yapmadığı zamanlarda senin vereceğin görevleri de yapsın. Nasıl olsa sen onu da denetleyeceksin. Yerelde de bir yapı kuralım. Oradan da işleri yapmaya başlayalım. Takvimin önüne geçmemiz lazım."
+- HIERARCHY v1.9 → v1.10: DeepSeek also codes lead-packaged small tasks (§1 c); LOCAL LANE section added. Gap and acceptance checks in the change note.
+- Checked (DOĞRULANDI 9 Nov): the lead's device shell is a Linux VM with no network (pypi/github 403) → it cannot run tests; real local execution needs a Remote Control session on the Mac. D-198 is partly superseded (no Codex CLI, repo stays the only record).
+- CIV-196 (profile of the 4 SLOW Strateji steps in the CIV-188 rehearsal, 6–11 s; "İdare raporuna geçiş" is a page view at 11.2 s) → DeepSeek, findings only, ~/development/civ196-deepseek/TASK.md. Reason: Render is slower than the rehearsal machine; must be known before the 14 Dec pilot (ROLLOUT_CHECKLIST C4).
+- Prior art checked: the users screen already offers a downloadable account template with Müdürlük ID; validate_account_csv checks it → no converter task for B1.
+- PR #440 (lead): setup-age caches the verified archive and retries the GitHub release download for 5 min; the same action runs in db-backup.yml, so the 504s could also fail a real backup.
+- #433: Copilot's first review (3 MEDIUM: typeset field classes, explicit zero scope, hover-only amounts) checked by the lead and forwarded to Codex.
+
