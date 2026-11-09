@@ -5,6 +5,25 @@
   <link rel="stylesheet" href="/static/design/activity-mapping.css">
   <div class="activity-mapping-page">
     <div class="mapping-summary">
+      {% set mapping_ns = namespace(subprogram_departments=0, missing=false) %}
+      {% for g in groups %}{% set mapping_ns.missing = false %}{% for a in g.activities %}{% if not mapping_states[a.id].subprogram %}{% set mapping_ns.missing = true %}{% endif %}{% endfor %}{% if mapping_ns.missing %}{% set mapping_ns.subprogram_departments = mapping_ns.subprogram_departments + 1 %}{% endif %}{% endfor %}
+      <p class="mapping-sentence" data-mapping-sentence>
+        {% if not unresolved_count %}
+          Bütün faaliyetlerin alt program, kart ve resmî katalog bağlantıları tamam.
+        {% elif mapping_counts.subprogram %}
+          <b>{{ mapping_ns.subprogram_departments }} müdürlükte {{ mapping_counts.subprogram }} faaliyetin alt programı seçilmeli</b>{% if strong_suggestion_count %}; {{ strong_suggestion_count }} faaliyet için güçlü öneri var{% endif %}.
+        {% else %}
+          <b>Alt program seçimi tamam.</b> {{ mapping_counts.card }} faaliyette kart, {{ mapping_counts.catalogue }} faaliyette resmî katalog bağlantısı eksik; bunlar müdürlüğün performans kartları sayfasında tamamlanır.
+        {% endif %}
+      </p>
+      {% if unresolved_count %}
+      <ol class="mapping-todo" data-mapping-todo>
+        <li class="{{ 'todo-done' if not mapping_counts.subprogram else 'todo-open' }}"><b>Alt program seçimi</b> — {% if mapping_counts.subprogram %}{{ mapping_counts.subprogram }} faaliyet. Bu sayfada, aşağıdaki listede seçip “Seçimleri Kaydet”e basın.{% if strong_suggestion_count %} {{ strong_suggestion_count }} faaliyet için güçlü öneri var: “Güçlü önerileri seç” düğmesi bunları forma taşır.{% endif %}{% else %}tamam.{% endif %}</li>
+        <li class="{{ 'todo-done' if not mapping_counts.card else 'todo-open' }}"><b>Kart bağlantısı</b> — {% if mapping_counts.card %}{{ mapping_counts.card }} faaliyet. Müdürlük başlığındaki “Performans kartlarını aç” bağlantısından yapılır.{% else %}tamam.{% endif %}</li>
+        <li class="{{ 'todo-done' if not mapping_counts.catalogue else 'todo-open' }}"><b>Resmî katalog bağlantısı</b> — {% if mapping_counts.catalogue %}{{ mapping_counts.catalogue }} faaliyet. Kart bağlantısıyla aynı sayfada yapılır.{% else %}tamam.{% endif %}</li>
+      </ol>
+      {% endif %}
+      <details class="mapping-counts-details"><summary>Bütün sayılar</summary>
       <dl class="mapping-counts">
         <div>
           <dt>Eşleştirme bekleyen faaliyet</dt>
@@ -41,13 +60,14 @@
           </dd>
         </div>
       </dl>
+      </details>
     </div>
     {% if groups %}
       <section class="mapping-help">
         <div class="mapping-info">
           <h2>Nasıl kullanılır?</h2>
           <p class="muted">Civensa yalnız güvenli kaynak ilişkilerini otomatik bağlar. Buradaki kayıtlar için tahmin zorlamaz. Uygun Program / Alt Programı seçip topluca kaydedebilirsiniz.</p>
-          <p class="muted">Toplam, en az bir bağlantısı eksik faaliyetleri sayar; aynı faaliyette birden fazla eksik olabilir. Kart ve katalog bağlantıları için “Performans Kartlarını Aç” adımını kullanın. CSV ve toplu kayıt yalnız alt program bağlantısını değiştirir.</p>
+          <p class="muted">Toplam, en az bir bağlantısı eksik faaliyetleri sayar; aynı faaliyette birden fazla eksik olabilir. Kart ve katalog bağlantıları müdürlüğün “Performans kartlarını aç” bağlantısındaki sayfada yapılır. CSV ve toplu kayıt yalnız alt program bağlantısını değiştirir.</p>
           <p class="muted">Öneriler hiçbir zaman kendiliğinden seçilmez veya kaydedilmez. “Güçlü önerileri seç” yalnız güveni en az %50 olan önerileri forma taşır; kaydetmeden önce kullanıcı onayı gerekir.</p>
         </div>
         <div class="rowbuttons">
@@ -111,19 +131,24 @@
           <input id="mappingSearch" placeholder="Faaliyet adında ara">
         </label>
       </div>
-      <div id="mappingGroups" class="mapping-groups">
+      {% set use_dialog = groups|length > 3 %}
+      <div id="mappingGroups" class="mapping-groups{% if use_dialog %} mapping-grid{% endif %}">
         {% for g in groups %}
-          <section class="mapping-group" data-department="{{ g.department.id }}">
+          <section class="mapping-group{% if use_dialog %} mapping-card{% endif %}" data-department="{{ g.department.id }}">
             <div class="section-head">
               <div>
                 <h2>{{ department_names[g.department.id] }}</h2>
                 <p class="muted">{{ g.activities|length }} faaliyet eşleştirme bekliyor · {{ g.choices|length }} Program / Alt Program seçeneği</p>
               </div>
-              <a class="button small" href="/department/{{ g.department.id }}?period_id={{ period.id }}">Müdürlüğü Aç</a>
+              <span class="group-actions"><a class="button small" href="/department/{{ g.department.id }}?period_id={{ period.id }}">Müdürlüğü Aç</a>
+              <a class="button small" data-program-link href="/program/{{ g.department.id }}?period_id={{ period.id }}">Performans kartlarını aç</a>{% if use_dialog %}
+              <button type="button" class="button small primary mapping-open" data-open-dialog="mapping-dialog-{{ g.department.id }}">Faaliyetleri aç</button>{% endif %}</span>
             </div>
+            {% if use_dialog %}<p class="muted mapping-hits" data-mapping-hits role="status"></p>{% endif %}
             {% if not g.choices %}
               <div class="issue-list">Bu müdürlük için performans göstergelerinden türetilebilen Program / Alt Program bulunamadı. Önce gösterge yapısını kontrol edin.</div>
             {% endif %}
+            {% if use_dialog %}<dialog class="app-dialog mapping-dialog" id="mapping-dialog-{{ g.department.id }}" aria-labelledby="mapping-dialog-title-{{ g.department.id }}"><div class="app-dialog-head"><h2 id="mapping-dialog-title-{{ g.department.id }}">{{ department_names[g.department.id] }}</h2><form method="dialog"><button class="button">Kapat</button></form></div>{% endif %}
             <div class="mapping-list">
               {% for a in g.activities %}
                 {% set suggestion=g.suggestions[a.id] %}
@@ -177,6 +202,7 @@
                 </article>
               {% endfor %}
             </div>
+            {% if use_dialog %}<div class="app-dialog-foot"><span><b data-selected-count>0</b> faaliyet seçildi</span><button type="button" class="button primary" data-save-mappings>Seçimleri Kaydet</button></div></dialog>{% endif %}
           </section>
         {% endfor %}
       </div>
