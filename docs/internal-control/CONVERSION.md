@@ -29,7 +29,13 @@ Result (DOĞRULANDI): 49/49 actions found in the PDF, 7/7 columns equal for all 
 6. Unit names otherwise as in the source; mapping happens in the import screen (aliases are permanent).
 7. Bilgi: title "Büyükçekmece Belediye Başkanlığı 2024-2026 İç Kontrol Uyum Eylem Planı", 2024–2026, "V. Versiyon", Onay Tarihi empty (not in the PDF).
 
-## Open (owner / Ali Abi) — checklist page https://claude.ai/artifact/QzL9iNZkfzmgssdCYunZXF
+## Answered by Ali Abi (D-386, D-446 S7, D-453) — applied 9 Nov 2026
+- 6 actions without a responsible unit stay condition-only (Q1). RDS 6.2.1 table dates kept (Q2). KFS 10.1 first text correct (Q4). Codes may contain source mistakes; kept as printed (Q3).
+- KOS 1.1.8: Üst Yönetim and İç Kontrol İzleme ve Yönlendirme Kurulu are two separate responsibles (Q6) → Plan!H9 = "1-Üst Yönetim 2-İç Kontrol İzleme ve Yönlendirme Kurulu". Cooperating "İKİY" is a leftover, there are only two councils (S7) → Plan!I9 emptied.
+- Bilgi!B6 Onay Tarihi = 20.12.2024 (Başkanlık Makamı onayı no. 2024/96174-1-1; Ali's evaluation base date 01.12.2024).
+- Import-screen mappings (aliases are permanent): İÇKEP Hazırlama Grubu → kurul "İç Kontrol Eylem Planı Hazırlama ve Çalışma Ekipleri"; İKİYK Kurulu → kurul "İç Kontrol İzleme ve Yönlendirme Kurulu"; Teftiş Kurulu Müdürlüğü → Rehberlik ve Teftiş Kurulu Müdürlüğü; Detsek Hizmetler Müdürlüğü → Destek Hizmetleri Müdürlüğü; İnsan Kaynakları Eğitim Müdürlüğü → İnsan Kaynakları ve Eğitim Müdürlüğü; Afet İşleri Müdürlüğü → Afet İşleri ve Risk Yönetimi Müdürlüğü. Üst Yönetim and İç Kontrol İzleme ve Yönlendirme Kurulu are recognised kurul names.
+
+## Open (historical, before the answers above) — checklist page https://claude.ai/artifact/QzL9iNZkfzmgssdCYunZXF
 - 6 actions without a responsible unit: keep as condition-only?
 - RDS 6.2.1 dates: table 01.03.2023–01.03.2023 vs summary 02.06.2025–30.01.2026.
 - RDS 6.3 and KFS 11.2 missing from the tables; PDF's RDS 6.2 text resembles the official 6.3 text (BELİRSİZ, lead's knowledge).
