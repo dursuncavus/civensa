@@ -7,6 +7,7 @@ import pytest
 from fastapi import HTTPException
 from openpyxl import Workbook
 from sqlalchemy import select, func
+from sqlalchemy.orm import Session
 from starlette.datastructures import FormData
 from app import actual_import_service as imp, activity_contract_service as contract, structure_service
 from app.models import (ActualRevision, ActualImport, AuditLog, Indicator, IndicatorValue,
@@ -23,6 +24,15 @@ HEADERS = ['Ana Hizmet Alanı', 'Alan kodu', 'Stratejik Hedef', 'SH kodu', 'Soru
     '2025 Gerçekleşen', '2026 Hedef', '2026 Q1', '2026 Q2', '2026 Q3', '2026 Q4',
     'Q4 Gerçekleşen Toplamı', '2026 YILI TOPLAMI', 'Değerlendirme 1', 'Değerlendirme 2',
     'Değerlendirme 3', 'Değerlendirme 4', 'Açıklama']
+
+
+@pytest.fixture
+def db(postgres_templates):
+    # Use real migrated search_path so workflow ownership guards inspect exactly
+    # the same schema as the application's SQL, including candidate/release tables.
+    with postgres_templates.clone('head') as engine:
+        with Session(engine, expire_on_commit=False) as session:
+            yield session
 
 
 def workbook(rows, headers=None, reverse=False):
@@ -103,12 +113,16 @@ def test_matching_annual_rules_and_no_preview_writes(client, db, sample, scenari
     assert p['rows'][1]['raw_value'] == '12'
     assert len(p['rows'][1]['options']) <= 3
     definitions = list(db.execute(select(IndicatorDefinitionRevision.id, IndicatorDefinitionRevision.definition_json)))
+    targets = list(db.execute(select(IndicatorValue.id, IndicatorValue.value)))
+    names = list(db.execute(select(Indicator.id, Indicator.name, Indicator.unit)))
     pub = db.get(Publication, scenario['publication_id']); original = pub.snapshot_json
     evidence = db.scalar(select(ActualRevision).order_by(ActualRevision.id)).evidence_json
     result = apply(db, sample, record, p)
     assert result['counts'] == {'Yazıldı': 2, 'Eşleşmedi': 1, 'Hata': 2, 'Eksik': 1}
     assert 'kaynak bulunmuyor' in result['rows'][5]['message']
     assert list(db.execute(select(IndicatorDefinitionRevision.id, IndicatorDefinitionRevision.definition_json))) == definitions
+    assert list(db.execute(select(IndicatorValue.id, IndicatorValue.value))) == targets
+    assert list(db.execute(select(Indicator.id, Indicator.name, Indicator.unit))) == names
     assert pub.snapshot_json == original
     assert db.scalar(select(ActualRevision).order_by(ActualRevision.id.desc())).evidence_json == evidence
     assert db.scalar(select(func.count()).select_from(ActualRevision)) == count + 2
@@ -144,7 +158,7 @@ def test_scale_requires_confirmation_and_shows_both_readings(client, db, sample,
     assert db.scalar(select(ActualRevision).order_by(ActualRevision.id.desc())).value == 100
 
 
-def test_structure_rename_merge_and_cancelled_alias(client, db, sample, scenario):
+def test_structure_rename_and_merge(client, db, sample, scenario):
     dep = sample['department']
     renamed = structure_service.save_change(db, sample['strategy'], FormData({
         'organization_id': str(dep.organization_id), 'period_id': str(sample['period'].id),
@@ -244,8 +258,8 @@ def test_browser_upload_confirm_apply(client, db, sample, scenario, tmp_path):
     try:
         with local_http(db.get_bind(), data) as base, sync_playwright() as pw:
             options = {'headless':True}
-            if os.getenv('CIVENSA_BROWSER_EXECUTABLE'):
-                options['executable_path'] = os.environ['CIVENSA_BROWSER_EXECUTABLE']
+            if os.getenv('CIVENSA_CHROMIUM_PATH'):
+                options['executable_path'] = os.environ['CIVENSA_CHROMIUM_PATH']
             browser = pw.chromium.launch(**options)
             page = browser.new_page(viewport={'width':1920, 'height':1080}, extra_http_headers={'X-Guide-Account':'strategy'})
             errors = []
@@ -273,3 +287,48 @@ def test_browser_upload_confirm_apply(client, db, sample, scenario, tmp_path):
             browser.close()
     finally:
         app.dependency_overrides[get_db] = original_db
+
+
+def test_cancelled_structure_alias_is_not_used(client, db, sample, scenario):
+    dep = sample['department']
+    change = structure_service.save_change(db, sample['strategy'], FormData({
+        'organization_id': str(dep.organization_id), 'period_id': str(sample['period'].id),
+        'change_type': 'RENAMED', 'effective_date': '2026-02-01', 'council_decision_date': '2026-01-01',
+        'council_decision_no': 'SENTETIK-3', 'from_department_ids': str(dep.id), 'new_name': 'İptal Edilen Ad'}))
+    db.flush()
+    structure_service.cancel_change(db, sample['strategy'], change.id, 'Sentetik iptal')
+    db.commit()
+    _, p = preview(db, sample, scenario, [{'name':'Hizmet sayısı', 'department':'İptal Edilen Ad'}])
+    assert p['rows'][0]['status'] == 'Eşleşmedi'
+
+
+@pytest.mark.parametrize('scale,expected', [('raw', Decimal('.25')), ('percent', Decimal('25'))])
+def test_ambiguous_scale_uses_only_selected_reading(client, db, sample, scenario, scale, expected):
+    record, p = preview(db, sample, scenario, [{'name':'Belirsiz oran', 'unit':'Oran', 'annual':.25}])
+    assert p['rows'][0]['options'][0]['scale'] == 'choose'
+    assert apply(db, sample, record, p, confirmed(p, scale))['counts'] == {'Yazıldı':1}
+    assert db.scalar(select(ActualRevision).order_by(ActualRevision.id.desc())).value == expected
+
+
+def test_uncached_formula_is_not_evaluated(client, db, sample, scenario):
+    record, p = preview(db, sample, scenario, [{'name':'Hizmet sayısı', 'annual':'=SUM(N2:Q2)', 'q':[1,2,3,None]}])
+    assert p['rows'][0]['status'] == 'Eksik'
+    assert apply(db, sample, record, p)['counts'] == {'Eksik':1}
+
+
+def test_candidate_owned_report_stays_closed(client, db, sample, scenario):
+    from app.report_workflow_service import hash_content
+    record, p = preview(db, sample, scenario, [{'name':'Hizmet sayısı', 'annual':43}])
+    candidate = ReportCandidate(organization_id=sample['department'].organization_id,
+        period_id=sample['period'].id, resource_scope='activity_report', report_key=str(scenario['report_id']),
+        sequence=1, activity_revision_id=scenario['revision_id'], payload_json='{}', payload_sha256=contract.digest('{}'),
+        manifest_json='{}', sha256=hash_content('{}', '{}'), created_by=sample['strategy'].id)
+    # Ownership must already prevent writes inside the candidate's transaction;
+    # the minimal candidate is rolled back before deferred completeness checks.
+    db.add(candidate); db.flush()
+    before = db.scalar(select(func.count()).select_from(ActualRevision))
+    result = imp.apply_import(db, sample['strategy'], record.id, p['expected_revision'], confirmed(p))
+    assert result['counts'] == {'Hata':1}
+    assert 'nihai rapor adayına bağlı' in result['rows'][0]['message']
+    assert db.scalar(select(func.count()).select_from(ActualRevision)) == before
+    db.rollback()

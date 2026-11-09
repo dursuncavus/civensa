@@ -36,8 +36,8 @@ Uygulama önizleme kaydını kilitler; tekrar gönderimde saklanan sonucu dönd�
 - `tests/test_actual_import.py`: tam/yakın/eşleşmeyen ad, aynı PG kodları, ikinci gösterge talebi, ad değişikliği/birleşme, TOPLA/KÜMÜLATİF, boş Q4, metin hücre, sayısal sıfır önceliği, yüzde ve belirsiz ölçek, onaysız satırın yazılmaması, idempotent tekrar, servis reddi, eşzamanlı actual değişikliği, önizleme süresi, başlıklar ve üç uçta 403.
 - Önizleme sonrası `actual_revisions` sayısının değişmediği; uygulama sonrası sabit tanımların ve yayın içeriğinin aynı kaldığı; kanıtın korunduğu test edildi.
 - `tests/test_actual_import_migration.py`: gerçek upgrade/boş downgrade/upgrade ve dolu tabloda veri koruyan ret; tek head.
-- Odaklı doğrulama: 12 test geçti (içe aktarma, tarayıcı ve yeni/eski migration testleri).
-- İlgili mevcut sözleşme, kanıt, Türkçe hata ve kılavuz testleri çalıştırıldı; kılavuz etiket sözleşmesi geçti. Yeni head nedeniyle mevcut migration testlerinin head beklentileri güncellendi.
+- Son odaklı doğrulama: 16 test geçti (14 içe aktarma/tarayıcı senaryosu, yeni migration ve kılavuz etiket sözleşmesi). İptal edilen yapı adı, belirsiz ölçeğin iki seçeneği, önbelleksiz formül ve aday sahipliğinin işlem içindeki yazma reddi ayrıca kapsandı.
+- İlgili mevcut sözleşme, kanıt, Türkçe hata ve kılavuz testleri çalıştırıldı; kılavuz etiket sözleşmesi geçti. Yeni head nedeniyle mevcut migration testlerinin head beklentileri güncellendi. Eski operasyon şemasına sabit test yardımcısına boş yardımcı önizleme tablosu eklendi; operasyon kodu ve şema sabitlemesi değiştirilmedi. İlgili temizleme senaryosu yeniden geçti.
 - Tam PostgreSQL takımı ve PR CI sonucu tamamlandığında bu rapora eklenecek.
 - `compileall` ve `git diff --check` geçti.
 
