@@ -1609,4 +1609,10 @@ Owner 9 Nov 11:21 (BEYAN): "DeepSeek denetleme yapmadığı zamanlarda senin ver
 - CIV-194 #443: head 46617e4 still fails on both real 2025 PDFs (gider multi-line header block; gelir wrapped description lines break the gap search) → sent to Codex with structure only, no figures.
 - The Codex GitHub connector cannot act on "@codex" PR comments here ("create an environment") → the owner pastes each follow-up into the Codex task; the lead writes the paste line.
 - Local lane live: Remote Control on the Mac, test PostgreSQL 18.6 on 5433 (pg_ctl per session). Gemini CIV-195 and DeepSeek CIV-196 not yet started (only TASK.md present, 9 Nov 13:17) → owner starts them.
-Next IDs: task CIV-197, decision D-452.
+
+## D-452 — CIV-192 merged; CIV-197 (indicator direction) dispatched; CIV-194 root causes (9 Nov 2026 ~13:50, CV Lider 71)
+- #438 CIV-192 merged → 413a7b9 (CI green, behind 0, Copilot "approval recommended"; lead fix fc12ac4 for Copilot round 3). Strateji can now import the master workbook; actuals come only from "2026 YILI 4. ÇEYREK GERÇEKLEŞEN TOPLAMI" or the method rule.
+- CIV-197 (Codex, GPT-6.1 Sol, Yüksek) — indicator direction "Düşük değer daha iyi": append-only Strateji-set table, frozen into core_summary, one comparison helper for the karne and the two ratio tables (lower: met if actual ≤ target, ratio target ÷ actual). Closes the D-424 risk; the 4 'Gün' indicators (Ali S10) are set by Strateji in the live system after release, no seeding. Package tasks/CIV-197.md. Started before #438 merged → the lead rechains its migration onto c192a1b2c3d4 if needed.
+- CIV-194 #443 (b77cac8) still fails on the real PDFs; lead instrumented the converter: gider = a bare "11" line above the header joins the header block; gelir = wrapped decimal continuation lines break the gutter search. Both sent to Codex with exact layout, no figures.
+- Gemini CLI personal sign-in is refused (Google moved individuals to Antigravity) → Gemini runs only in Antigravity. Dispatches to Gemini/DeepSeek name model + thinking level (Gemini 4 Argon High; DeepSeek V4 Pro High).
+Next IDs: task CIV-198, decision D-453.
