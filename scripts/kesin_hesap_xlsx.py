@@ -211,6 +211,45 @@ def financial_samples(lines, count, after):
     return result
 
 
+def code_fragment(line, after):
+    match = re.fullmatch(r'\s*(\d{1,2})\s*', line)
+    return match if match and match.end(1) <= after else None
+
+
+def normalize_revenue_code_prefixes(lines, samples, after, where, notes):
+    """Place a lone code above a baseline in that baseline's empty code band.
+
+    Keep all original line indexes and x positions, so the normal code-column
+    checks still prove I-level placement, alignment and the final two digits.
+    """
+    result = list(lines)
+    baselines = {index for index, _ in samples}
+    for index, spans in samples:
+        if not index or numeric_spans(lines[index][:after]):
+            continue
+        if norm(lines[index][:spans[0].start()]) in {'toplam', 'genel toplam'}:
+            continue
+        fragment = code_fragment(lines[index - 1], after)
+        if fragment is None:
+            continue
+        if lines[index][:fragment.end(1)].strip():
+            continue
+        previous = numeric_spans(result[index - 2][:after]) if index - 2 in baselines else []
+        if index - 2 in baselines and (not previous or any(
+                not re.fullmatch(r'\d{2}', token.group()) for token in previous)):
+            raise ConversionError(f'{where}, satır {index}: kod parçası önceki ve sonraki '
+                                  'tutar satırına aynı yakınlıkta. Kaynak kod konumlarını kontrol '
+                                  'edin; kayıtlar arasında kod tahmin edilmedi.')
+        left, right = fragment.span(1)
+        result[index] = lines[index][:left] + fragment[1] + lines[index][right:]
+        result[index - 1] = ''
+        if notes is not None:
+            notes.append(f'{where}, satır {index}: üst kod parçası {fragment[1]}, x={left}; '
+                         f'satır {index + 1} tutar kaydının boş kod alanına aynı konumda bağlandı. '
+                         'Alt parça ve I düzeyi konumu ayrıca doğrulanır.')
+    return result
+
+
 def normalize_decimal_lines(body, samples, after, where):
     """Join uniquely placed suffixes before geometry or monetary validation.
 
@@ -233,6 +272,11 @@ def normalize_decimal_lines(body, samples, after, where):
         if spans is not None:
             values[line_no] = [[span.group()] for span in spans]
             active = line_no
+            result.append((line_no, line))
+            continue
+        if code_fragment(line, after):
+            # The lower code digit can sit between the amounts and suffixes.
+            # It remains a code fragment; it neither ends nor supplies money.
             result.append((line_no, line))
             continue
         suffixes = decimal_fragments(line, after)
@@ -530,6 +574,8 @@ def pdf_rows(path, kind, year, notes=None):
             except ConversionError as exc:
                 raise header_error(exc, lines[:12], 0, where, notes) from None
             body = samples[0][0]
+            if not expense:
+                lines = normalize_revenue_code_prefixes(lines, samples, after, where, notes)
             start = read_metadata(lines[:body], where, metadata, year)
             preamble = [' '.join(line.split()) for line in lines[:start] if line.strip()]
             # Short bare form/page counters precede the table, while four-digit

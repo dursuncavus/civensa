@@ -860,3 +860,84 @@ def test_detached_minus_with_grouped_millions_stays_in_its_column(tmp_path):
     assert list(load_workbook(out / 'revenue.xlsx').active.values)[1] == (
         '01', '5.000.000,00', '0,00', '0,00', None)
     assert '5.000.000,00 + (-2.345.678,91) = 2.654.321,09' in (out / 'report.md').read_text()
+
+
+def straddled_code_pdf(tmp_path, *, first=True, centered=False, invalid=None):
+    """Code above/below the amount baseline; suffixes follow the lower digit."""
+    headers = ['Gelirin Kodu', 'Açıklama', *converter.revenue_labels(2026), 'Oran']
+    v = list(map(Decimal, ['1250.25', '20.25', '1180.50', '1200.75',
+                           '1150.25', '10.10', '1140.15', '60.60']))
+    extra = list(map(Decimal, ['100', '0', '80', '80', '70', '0', '70', '10']))
+    wrapped = []
+    for column, value in enumerate(v):
+        raw = money(value)
+        if column == 5:
+            wrapped.append('\n' + raw)
+        elif column in {4, 7}:
+            wrapped.append('\n' + raw[:-1] + '\n\n' + raw[-1])
+        else:
+            whole, decimals = raw.split(',')
+            wrapped.append('\n' + whole + '\n\n,' + decimals)
+    if invalid == 'wrong_digit':
+        wrapped[4] = wrapped[4][:-1] + '6'
+    elif invalid == 'missing_suffix':
+        wrapped[0] = wrapped[0].split('\n\n')[0]
+    elif invalid == 'misaligned_suffix':
+        # Right-aligned drawing: trailing spaces displace the visible suffix.
+        wrapped[0] += ' ' * 80
+    code = '0\n\n5'
+    if invalid == 'wrong_code_column':
+        code = '0\n\n        5'
+    elif invalid == 'extra_code':
+        code = '0\n\n5 1'
+    elif invalid == 'intervening_text':
+        code = '0\n\nX'
+    elif invalid == 'missing_lower_code':
+        code = '0'
+    elif invalid == 'ambiguous_code':
+        wrapped = ['\n' + money(value) for value in v]
+    rows = [[code, '\nDiğer Gelirler', *wrapped, '\n91,22'],
+            ['0\n\n6', '\nSermaye Gelirleri', *['\n' + money(value) for value in extra], '\n70,00']]
+    if invalid == 'ambiguous_code':
+        rows[1][0] = ''
+    total = [a + b for a, b in zip(v, extra)]
+    if not first:
+        rows.insert(0, ['01', 'SENTETİK ÖNCEKİ GELİR', *map(money, extra), '70,00'])
+        total = [a + b for a, b in zip(total, extra)]
+    rows.append(['', 'GENEL TOPLAM', *map(money, total), '89,00'])
+    return pdf_table(tmp_path / 'straddled.pdf', headers, [90, 140] + [90] * 8 + [45], [rows],
+                     centered=centered)
+
+
+@pytest.mark.parametrize('first', [False, True])
+@pytest.mark.parametrize('centered', [False, True])
+def test_lead_code_straddles_amount_baseline_and_decimal_follows_two_lines_later(tmp_path, first, centered):
+    pdf = straddled_code_pdf(tmp_path, first=first, centered=centered)
+    lines = converter.PdfReader(pdf).pages[0].extract_text(extraction_mode='layout',
+                                                         layout_mode_space_vertically=False).splitlines()
+    baseline = next(i for i, line in enumerate(lines) if 'Diğer Gelirler' in line)
+    assert lines[baseline - 1].strip() == '0'
+    assert lines[baseline + 1].strip() == '5'
+    assert lines[baseline + 2].strip().startswith(',25')
+    result, out = run(tmp_path, '--gelir', pdf)
+    assert result.returncode == 0, (out / 'report.md').read_text()
+    rows = list(load_workbook(out / 'revenue.xlsx').active.values)[1:]
+    assert [row[0] for row in rows] == (['05', '06'] if first else ['01', '05', '06'])
+    row = next(row for row in rows if row[0] == '05')
+    assert list(map(parse_number, row[1:4])) == list(map(Decimal, ['1250.25', '1150.25', '10.10']))
+    assert 'bağımsız genel toplam sütunuyla doğrulandı' in (out / 'report.md').read_text()
+
+
+@pytest.mark.parametrize('invalid', ['wrong_digit', 'missing_suffix', 'misaligned_suffix',
+                                     'wrong_code_column', 'extra_code', 'intervening_text',
+                                     'missing_lower_code', 'ambiguous_code'])
+def test_straddled_code_keeps_invalid_continuations_blocking(tmp_path, invalid):
+    result, out = run(tmp_path, '--gider', expense_pdf(tmp_path),
+                      '--gelir', straddled_code_pdf(tmp_path, invalid=invalid))
+    assert result.returncode != 0 and not list(out.glob('*.xlsx'))
+    report = (out / 'report.md').read_text()
+    assert 'sayfa 1' in report
+    if invalid == 'wrong_digit':
+        assert '0,01' in report
+    elif invalid == 'ambiguous_code':
+        assert 'kayıtlar arasında kod tahmin edilmedi' in report

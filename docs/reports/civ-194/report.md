@@ -201,6 +201,16 @@ yazılamıyorsa veya girdiyle çakışıyorsa hata standart hata akışına yaz�
   basamak eklenebilir. Parçaların yatay sırası ve geçici sütun bantları tek
   bir eşleme vermelidir; belirsiz/sahipsiz parçalar reddedilir. Ayrı konumdaki
   `0 / 1` kod parçaları korunur. Ham tutar parçaları raporda izlenebilir.
+  Kod tutar satırının üzerinde ve altında iki haneye ayrılmışsa, üstteki
+  yalnız 1–2 basamaklı parça hemen sonraki tutar kaydının boş kod alanına
+  özgün yatay konumuyla bağlanır. İlk kayıt üstündeki kod başlığa katılmaz;
+  sonraki kayıt üstündeki kod önceki kayda eklenmez. Özgün satır numaraları
+  korunur ve bağlama raporlanır. I düzeyi, iki hane ve iki parçanın aynı alt
+  sütunda bulunması yine doğrulanır; iki kayıt arasında belirsiz kalan kod
+  kabul edilmez. Araya giren yalnız kod hanesi satırı, etkin tutar kaydını
+  bitirmez: iki satır sonra gelen ondalık eki aynı sütunda tekil eşlenmeli,
+  desteklenen tutar biçimini tamamlamalı ve mevcut satır/genel toplam
+  eşitlikleriyle doğrulanmalıdır. Eksik rakam veya başka kayıttan tutar alınmaz.
   Tutar içermeyen açıklama devam satırları açıklama alanına eklenir; metin
   tutar sütunlarının üzerine uzasa da sütun boşluğu hesabına katılmaz.
   Açıklama sütununda başlamayan sahipsiz metin tutar olarak tahmin edilmez.
@@ -254,6 +264,14 @@ ve bir kuruşluk fark için engelleyici testler vardır. Üretilen gelir XLSX’
 mevcut `preview_import` ile geçici PostgreSQL üzerinde doğrulanır. Gerçek
 PDF’lerde çıkış kodunun sıfır olduğunun doğrulaması lead’in yerel tekrar
 koşusuna bırakılır; gerçek dosyalar bu çalışmada kullanılmadı.
+
+Lead’in `8f4d2ae` yerel tekrar koşusunda bildirdiği `üst kod hanesi / tutarlar /
+alt kod hanesi / ondalık ekleri` düzeni de sentetik PDF’lerde yeniden üretilir.
+İlk ve sonraki kayıtlar, sola/ortaya hizalı başlıklar, hem `,dd` hem tek son
+basamak ve kodu dikey bölünmüş fakat tutarları bölünmemiş komşu kayıt test edilir.
+İlk iki regresyon düzeltmeden önce başarısızdı. Yanlış/eksik/kaymış ondalık,
+eksik/ek/farklı sütundaki kod hanesi, araya giren yabancı metin ve iki kayıt
+arasındaki belirsiz kod dönüşümü durdurur; iki XLSX birlikte engellenir.
 
 ```sh
 python -m pytest -q --require-postgres tests/test_kesin_hesap_xlsx.py
