@@ -2300,6 +2300,377 @@ def ui_main(args, url):
     return 0
 
 
+STRATEJI_GUIDE_OUT = ROOT / 'docs/reports/civ-195'
+STRATEJI_GUIDE_SCREENS = ROOT / 'docs/guides/strateji-fr-2026/img'
+
+STRATEJI_GUIDE_SHOTS = {
+    'Giriş ekranı': '01-giris',
+    'Hesapla giriş': '02-moduller',
+    'Tekil hesap oluşturma': '03-kullanici-ekle',
+    'Toplu CSV önizleme hatası': '04-toplu-hesap-hata',
+    'Toplu CSV geçerli önizleme': '05-toplu-hesap-onizleme',
+    'Toplu hesap oluşturma ve parola dosyası': '06-parola-dosyasi',
+    'Hatalı hesap grubunu pasifleştirme': '07-toplu-pasiflestirme',
+    'Parola sıfırlama': '08-parola-sifirla',
+    'Faaliyet eşleştirme kuyruğu': '09-faaliyet-eslestirme-kuyrugu',
+    'Faaliyet eşleştirme CSV önizleme': '10-faaliyet-eslestirme-onizleme',
+    'Faaliyet eşleştirme uygulama ve geri alma': '11-faaliyet-eslestirme-geri-al',
+    '2026 onaylı kitap yayın hazırlığı': '12-onayli-kitaptan-yayinla',
+    'Onaylı kitaptan yayınla': '13-yayin-surumleri',
+    '2026 gösterge raporu oluşturma': '14-gosterge-raporu-olustur',
+    'Yayına bağlı 2026 FR revizyonu oluştur': '15-gosterge-rapor-revizyonu',
+    'Rapor revizyonu ve dondurma alanı': '16-yeni-rapor-revizyonu',
+    '2026 birim ve idare raporları oluşturma': '17-ek1-raporlarini-olustur',
+    '2026 EK-1 raporlarını oluştur': '18-tamamlanma-gorunumu',
+    'Strateji birim incelemesi': '19-birim-incelemesi',
+    'Gerekçeli iade': '20-gerekceli-iade',
+    'Strateji yeniden inceleme': '21-yeniden-inceleme',
+    'Strateji bağımsız birim onayı': '22-bagimsiz-birim-onayi',
+    'Onaylı Word olarak indir · Fen İşleri Müdürlüğü': '23-disa-aktarma',
+}
+
+
+def strateji_guide_filename(role, title):
+    if role != 'strategy':
+        return None
+    name = STRATEJI_GUIDE_SHOTS.get(title)
+    return name + '.png' if name else None
+
+
+def _build_strateji_guide_rehearsal():
+    from scripts import fr_rehearsal as fr
+
+    class StratejiGuideRehearsal(fr.Rehearsal):
+        def login(self, role):
+            page = super().login(role)
+            if role == 'strategy':
+                self._strateji_pre_publish_steps(page)
+            return page
+
+        def _strateji_pre_publish_steps(self, page):
+            import csv
+            import io
+            from playwright.sync_api import expect
+
+            pid = self.data['period']
+            page.on('dialog', lambda dialog: dialog.accept())
+            self.goto(page, 'strategy', f'/users?period_id={pid}', 'Kullanıcılar ekranını aç')
+            with page.expect_download(timeout=30000) as download_info:
+                page.get_by_role('link', name='Şablonu indir', exact=True).click()
+            template_text = Path(download_info.value.path()).read_bytes().decode('utf-8-sig')
+            template_reader = csv.DictReader(io.StringIO(template_text))
+            fieldnames = list(template_reader.fieldnames or [])
+            template_rows = list(template_reader)
+            excluded = {
+                'Fen İşleri Müdürlüğü',
+                'Afet İşleri ve Risk Yönetimi Müdürlüğü',
+                'Afet İşleri ve Risk Değerlendirme Müdürlüğü',
+                'Özel Kalem Müdürlüğü',
+                'Strateji Geliştirme Müdürlüğü',
+            }
+            target_dep = next(row for row in template_rows if row['Müdürlük'] not in excluded)
+            fen_dep = next(row for row in template_rows if row['Müdürlük'] == 'Fen İşleri Müdürlüğü')
+
+            start = self.begin()
+            page.locator('#newUserBtn').click()
+            expect(page.locator('#newUserForm')).to_be_visible()
+            page.locator('#userName').fill(f"{target_dep['Müdürlük']} Personel (SENTETİK)")
+            page.locator('#userEmail').fill('civ195.tekil@example.invalid')
+            page.locator('#userRole').select_option('department')
+            page.locator('#userDepartment').select_option(target_dep['Müdürlük ID'])
+            page.locator('#userPosition').select_option('staff')
+            page.locator('#userPassword').fill('Sentetik!2026A')
+            page.locator('#newUserForm').evaluate("el => el.scrollIntoView({block: 'center'})")
+            self.capture(page, 'strategy', 'Tekil hesap oluşturma', start)
+            with page.expect_navigation(wait_until='networkidle', timeout=30000):
+                with page.expect_response(
+                    lambda r: r.request.method == 'POST' and urlsplit(r.url).path == '/api/users',
+                    timeout=30000,
+                ) as create_resp:
+                    page.locator('#saveUser').click()
+            check(create_resp.value.status == 200, 'Tekil kullanıcı oluşturulamadı.')
+
+            bad_csv = self.folder / 'hatali-hesaplar.csv'
+            with bad_csv.open('w', encoding='utf-8-sig', newline='') as handle:
+                writer = csv.DictWriter(handle, fieldnames=fieldnames)
+                writer.writeheader()
+                writer.writerow({
+                    'Müdürlük ID': fen_dep['Müdürlük ID'],
+                    'Müdürlük': fen_dep['Müdürlük'],
+                    'Ad Soyad': 'Fen İşleri İkinci Müdür (SENTETİK)',
+                    'E-posta': 'civ195.ikinci.mudur@example.invalid',
+                    'Görev': 'Müdür',
+                })
+            start = self.begin()
+            page.locator('#bulkUserFile').set_input_files(str(bad_csv))
+            with page.expect_response(
+                lambda r: r.request.method == 'POST' and urlsplit(r.url).path == '/api/users/bulk-preview',
+                timeout=30000,
+            ):
+                page.locator('#previewBulkUsers').click()
+            expect(page.locator('#bulkUserResult')).to_contain_text('Dosya uygulanamaz.')
+            page.locator('.bulk-user-import').evaluate("el => el.scrollIntoView({block: 'center'})")
+            self.capture(page, 'strategy', 'Toplu CSV önizleme hatası', start)
+
+            good_csv = self.folder / 'gecerli-hesaplar.csv'
+            with good_csv.open('w', encoding='utf-8-sig', newline='') as handle:
+                writer = csv.DictWriter(handle, fieldnames=fieldnames)
+                writer.writeheader()
+                writer.writerow({
+                    'Müdürlük ID': target_dep['Müdürlük ID'],
+                    'Müdürlük': target_dep['Müdürlük'],
+                    'Ad Soyad': f"{target_dep['Müdürlük']} Müdür (SENTETİK)",
+                    'E-posta': 'civ195.toplu.mudur@example.invalid',
+                    'Görev': 'Müdür',
+                })
+                writer.writerow({
+                    'Müdürlük ID': target_dep['Müdürlük ID'],
+                    'Müdürlük': target_dep['Müdürlük'],
+                    'Ad Soyad': f"{target_dep['Müdürlük']} Toplu Personel (SENTETİK)",
+                    'E-posta': 'civ195.toplu.personel@example.invalid',
+                    'Görev': 'Personel',
+                })
+            start = self.begin()
+            page.locator('#bulkUserFile').set_input_files(str(good_csv))
+            with page.expect_response(
+                lambda r: r.request.method == 'POST' and urlsplit(r.url).path == '/api/users/bulk-preview',
+                timeout=30000,
+            ):
+                page.locator('#previewBulkUsers').click()
+            expect(page.locator('#bulkUserResult')).to_contain_text('kişisel hesap oluşturulmaya hazır.')
+            page.locator('.bulk-user-import').evaluate("el => el.scrollIntoView({block: 'center'})")
+            self.capture(page, 'strategy', 'Toplu CSV geçerli önizleme', start)
+
+            start = self.begin()
+            with page.expect_response(
+                lambda r: r.request.method == 'POST' and urlsplit(r.url).path == '/api/users/bulk-import',
+                timeout=30000,
+            ) as import_resp:
+                page.locator('#applyBulkUsers').click()
+            check(import_resp.value.status == 200, 'Toplu hesap oluşturulamadı.')
+            expect(page.locator('#downloadBulkCredentials')).to_be_visible()
+            page.locator('.bulk-user-import').evaluate("el => el.scrollIntoView({block: 'center'})")
+            self.capture(page, 'strategy', 'Toplu hesap oluşturma ve parola dosyası', start)
+            with page.expect_download(timeout=30000):
+                page.locator('#downloadBulkCredentials').click()
+
+            self.goto(page, 'strategy', f'/users?period_id={pid}', 'Toplu hesap sonrası liste')
+            start = self.begin()
+            for email in ('civ195.toplu.mudur@example.invalid', 'civ195.toplu.personel@example.invalid'):
+                row = page.locator('tr[data-user]').filter(has_text=email)
+                row.locator('input.retire-user').check()
+            page.locator('#retireUsersReason').fill(
+                'SENTETİK: Yanlış yüklenen toplu hesap grubu pasifleştirildi.'
+            )
+            page.locator('.users-retire').evaluate("el => el.scrollIntoView({block: 'center'})")
+            self.capture(page, 'strategy', 'Hatalı hesap grubunu pasifleştirme', start)
+            with page.expect_navigation(wait_until='networkidle', timeout=30000):
+                with page.expect_response(
+                    lambda r: r.request.method == 'POST' and urlsplit(r.url).path == '/api/users/bulk-deactivate',
+                    timeout=30000,
+                ) as deact_resp:
+                    page.locator('#retireSelectedUsers').click()
+            check(deact_resp.value.status == 200, 'Seçilen hesaplar pasifleştirilemedi.')
+
+            start = self.begin()
+            single_row = page.locator('tr[data-user]').filter(has_text='civ195.tekil@example.invalid')
+            single_row.locator('.show-password-reset').click()
+            reset_box = single_row.locator('.password-reset')
+            expect(reset_box).to_be_visible()
+            reset_box.locator('input[type="password"]').fill('Sentetik!2026B')
+            single_row.evaluate("el => el.scrollIntoView({block: 'center'})")
+            self.capture(page, 'strategy', 'Parola sıfırlama', start)
+            with page.expect_response(
+                lambda r: r.request.method == 'POST' and urlsplit(r.url).path.endswith('/reset-password'),
+                timeout=30000,
+            ) as reset_resp:
+                reset_box.locator('.save-password-reset').click()
+            check(reset_resp.value.status == 200, 'Parola sıfırlanamadı.')
+
+            self.goto(page, 'strategy', f'/activity-mapping?period_id={pid}', 'Faaliyet eşleştirme kuyruğu')
+            with page.expect_download(timeout=30000) as map_dl_info:
+                page.get_by_role('link', name='Kuyruğu CSV indir', exact=True).click()
+            map_csv_text = Path(map_dl_info.value.path()).read_bytes().decode('utf-8-sig')
+            map_reader = csv.DictReader(io.StringIO(map_csv_text))
+            map_fields = list(map_reader.fieldnames or [])
+            map_rows = list(map_reader)
+            first_select = page.locator('select.mapping-select:not([disabled])').first
+            target_aid = first_select.get_attribute('data-activity')
+            target_choice = first_select.locator('option:not([value=""])').first.inner_text().strip()
+            target_map_row = next(row for row in map_rows if row['Faaliyet ID'].strip() == str(target_aid))
+            target_map_row['Seçilecek Program / Alt Program'] = target_choice
+            filled_map_csv = self.folder / 'eslestirme.csv'
+            with filled_map_csv.open('w', encoding='utf-8-sig', newline='') as handle:
+                writer = csv.DictWriter(handle, fieldnames=map_fields)
+                writer.writeheader()
+                writer.writerow(target_map_row)
+
+            start = self.begin()
+            page.locator('#mappingCsvFile').set_input_files(str(filled_map_csv))
+            with page.expect_response(
+                lambda r: r.request.method == 'POST' and urlsplit(r.url).path == '/api/activity-mappings/import-preview',
+                timeout=30000,
+            ) as map_prev_resp:
+                page.locator('#previewMappingCsv').click()
+            check(map_prev_resp.value.status == 200, 'Faaliyet eşleştirme CSV önizlemesi başarısız.')
+            expect(page.locator('#mappingCsvResult')).to_contain_text('faaliyet eşleştirilmeye hazır.')
+            page.locator('.mapping-csv-import').evaluate("el => el.scrollIntoView({block: 'center'})")
+            self.capture(page, 'strategy', 'Faaliyet eşleştirme CSV önizleme', start)
+
+            start = self.begin()
+            with page.expect_navigation(wait_until='networkidle', timeout=30000):
+                with page.expect_response(
+                    lambda r: r.request.method == 'POST' and urlsplit(r.url).path == '/api/activity-mappings/import-apply',
+                    timeout=30000,
+                ) as map_apply_resp:
+                    page.locator('#applyMappingCsv').click()
+            check(map_apply_resp.value.status == 200, 'Faaliyet eşleştirme CSV uygulanamadı.')
+            expect(page.locator('section.mapping-batches')).to_be_visible()
+            page.locator('section.mapping-batches').evaluate("el => el.scrollIntoView({block: 'center'})")
+            self.capture(page, 'strategy', 'Faaliyet eşleştirme uygulama ve geri alma', start)
+
+        def capture(self, page, role, title, start, result='OK', note=''):
+            if role == 'strategy':
+                if title == '2026 onaylı kitap yayın hazırlığı':
+                    form = page.locator('form[action="/report-builder/publish-approved-book"]')
+                    if form.count():
+                        form.locator('[name=approval_reference]').fill(
+                            'SENTETİK CIV-188 prova onay dayanağı; gerçek meclis kararı değildir.'
+                        )
+                        page.locator('#approved-book-publication').evaluate(
+                            "el => el.scrollIntoView({block: 'center'})"
+                        )
+                elif title == 'Onaylı kitaptan yayınla':
+                    if page.locator('#publication-history').count():
+                        page.locator('#publication-history').evaluate(
+                            "el => el.scrollIntoView({block: 'center'})"
+                        )
+                elif title == '2026 gösterge raporu oluşturma':
+                    option = page.locator('select[name=publication_id] option').filter(has_text='2026').first
+                    if option.count():
+                        page.locator('select[name=publication_id]').select_option(option.get_attribute('value'))
+                elif title == '2026 birim ve idare raporları oluşturma':
+                    period_select = page.locator('form[action="/activity-sections/years"] select[name=period_id]')
+                    if period_select.count():
+                        period_select.select_option(str(self.data['period']))
+                elif title == '2026 EK-1 raporlarını oluştur':
+                    comp_heading = page.get_by_role('heading', name='Tamamlanma görünümü', exact=True)
+                    if comp_heading.count():
+                        comp_heading.evaluate("el => el.closest('section').scrollIntoView({block: 'start'})")
+                elif title == 'Strateji birim incelemesi':
+                    workflow_panel = page.locator('section[aria-label="Birim raporu iş akışı"]')
+                    if workflow_panel.count():
+                        page.get_by_label('İade gerekçesi').fill(
+                            'SENTETİK: Faaliyet anlatımına tamamlanma bilgisini ekleyin.'
+                        )
+                        workflow_panel.evaluate("el => el.scrollIntoView({block: 'start'})")
+            row = super().capture(page, role, title, start, result, note)
+            if role == 'strategy' and title == 'Yayına bağlı 2026 FR revizyonu oluştur':
+                rev_start = self.begin()
+                rev_heading = page.get_by_role('heading', name='Rapor revizyonu', exact=True)
+                if rev_heading.count():
+                    rev_heading.evaluate("el => el.closest('section').scrollIntoView({block: 'center'})")
+                super().capture(page, 'strategy', 'Rapor revizyonu ve dondurma alanı', rev_start)
+            return row
+
+    return StratejiGuideRehearsal
+
+
+def write_strateji_guide_index(rehearsal, failed):
+    rows = [row for row in rehearsal.steps if row['screenshot_retained']]
+    expected = {name + '.png' for name in STRATEJI_GUIDE_SHOTS.values()}
+    actual = {row['screenshot'] for row in rows}
+    if not failed:
+        check(actual == expected, 'Strateji kılavuz ekran listesi tamamlanmadı.')
+    commit = subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=ROOT, text=True).strip()
+    lines = [
+        '# CIV-195 · Strateji FR 2026 · ekran görüntüleri', '',
+        'Yenileme: `python scripts/guide_screenshots.py --strateji-guide`.', '',
+        'Yalnız yerel PostgreSQL 16+ için `CIVENSA_TEST_POSTGRES_URL` kullanılır. '
+        'Geçici veritabanı koşu sonunda silinir. Canlı veritabanına bağlanılmaz.', '',
+        f'Kaynak kod: `{commit}`. Chromium: `{rehearsal.data.get("browser", "?")}`.',
+        f'2026 kitap SHA-256: `{rehearsal.data["book_sha256"]}`.', '',
+        'Veri notu: **SENTETİK**. Kurumsal başlık ve hedefler test kitabından; hesaplar, '
+        'eşleştirmeler, gerçekleşmeler, kanıt, beyan, iade ve onay deneme verisidir. '
+        'Gerçek kişi adı ve gerçek e-posta adresi yoktur. '
+        'Parolalar rastgele üretilir, görsellere ve dosyalara yazılmaz.', '',
+        '1440×900 · deviceScaleFactor 1 · tr-TR · Europe/Istanbul · açık tema. '
+        'Tarih ve kayıt kimlikleri değişebilir; bayt eşitliği beklenmez. '
+        'Adım listesi sabittir. Her PNG ≤ 1.500.000 bayt; toplam ≤ 30.', '',
+        '| Dosya | Harness adımı | Hesap | URL | Viewport |',
+        '| --- | --- | --- | --- | --- |',
+    ]
+    for row in sorted(rows, key=lambda r: r['screenshot']):
+        lines.append(
+            f"| [{row['screenshot']}](img/{row['screenshot']}) | {row['step']} | "
+            f"{row['role']} | `{row['route']}` | {row['viewport']['width']}×900 |"
+        )
+    (STRATEJI_GUIDE_SCREENS.parent / 'INDEX.md').write_text('\n'.join(lines) + '\n', encoding='utf-8')
+
+
+def strateji_guide_run(url):
+    from scripts import fr_rehearsal as fr
+
+    previous = (
+        fr.OUT,
+        fr.SCREENS,
+        fr.Rehearsal,
+        fr.guide_filename,
+        fr.write_guide_index,
+        fr.setup,
+    )
+    old_chromium = os.environ.get('CIVENSA_CHROMIUM_PATH')
+    if not old_chromium:
+        for candidate in (
+            '/usr/bin/chromium',
+            '/usr/bin/chromium-browser',
+            '/Applications/Chromium.app/Contents/MacOS/Chromium',
+            '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
+        ):
+            if Path(candidate).is_file():
+                os.environ['CIVENSA_CHROMIUM_PATH'] = candidate
+                break
+    orig_setup = fr.setup
+
+    def _setup_and_drop_newer_aux(engine, *, guide=False):
+        from sqlalchemy import func, select
+        from sqlalchemy.orm import Session
+        from app.models import ActualImport, IndicatorDirection
+
+        data = orig_setup(engine, guide=guide)
+        with Session(engine) as db:
+            for model in (ActualImport, IndicatorDirection):
+                check(
+                    db.scalar(select(func.count()).select_from(model)) == 0,
+                    'Yardımcı prova tablosu boş değil.',
+                )
+        for model in (IndicatorDirection, ActualImport):
+            model.__table__.drop(engine, checkfirst=True)
+        return data
+
+    fr.OUT = STRATEJI_GUIDE_OUT
+    fr.SCREENS = STRATEJI_GUIDE_SCREENS
+    fr.Rehearsal = _build_strateji_guide_rehearsal()
+    fr.guide_filename = strateji_guide_filename
+    fr.write_guide_index = write_strateji_guide_index
+    fr.setup = _setup_and_drop_newer_aux
+    try:
+        return fr._run(url, guide=True)
+    finally:
+        if old_chromium is None:
+            os.environ.pop('CIVENSA_CHROMIUM_PATH', None)
+        else:
+            os.environ['CIVENSA_CHROMIUM_PATH'] = old_chromium
+        (
+            fr.OUT,
+            fr.SCREENS,
+            fr.Rehearsal,
+            fr.guide_filename,
+            fr.write_guide_index,
+            fr.setup,
+        ) = previous
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
@@ -2312,6 +2683,7 @@ def main():
         help="CIV-093: bütün HTML ekranları ve DOM öğeleri",
     )
     modes.add_argument('--fr-guide', action='store_true', help='CIV-189: müdürlük kılavuzu ekranları (sentetik prova)')
+    modes.add_argument('--strateji-guide', action='store_true', help='CIV-195: Strateji kılavuzu ekranları (sentetik prova)')
     modes.add_argument('--fr-rehearsal', action='store_true', help='CIV-187: 2026 FR müdürlük UI provası')
     parser.add_argument('--viewport-width', type=int, choices=(1440, 390), default=1440,
                         help='UI haritası görünüm genişliği (varsayılan: 1440).')
@@ -2346,6 +2718,8 @@ def main():
 
     if args.ui_map:
         return ui_main(args, url)
+    if args.strateji_guide:
+        return strateji_guide_run(url)
     if args.fr_rehearsal or args.fr_guide:
         from scripts.fr_rehearsal import run
         return run(url, guide=args.fr_guide)

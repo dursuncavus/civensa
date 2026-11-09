@@ -1,0 +1,462 @@
+[
+  {
+    "role": "strategy",
+    "step": "Giriş ekranı",
+    "result": "OK",
+    "route": "/login",
+    "screenshot": "01-giris.png",
+    "load_ms": 649,
+    "note": "",
+    "technical": [],
+    "screenshot_retained": true,
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "strategy",
+    "step": "Hesapla giriş",
+    "result": "OK",
+    "route": "/modules",
+    "screenshot": "02-moduller.png",
+    "load_ms": 715,
+    "note": "",
+    "technical": [],
+    "screenshot_retained": true,
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "strategy",
+    "step": "Tekil hesap oluşturma",
+    "result": "OK",
+    "route": "/users?period_id=2",
+    "screenshot": "03-kullanici-ekle.png",
+    "load_ms": 59,
+    "note": "",
+    "technical": [],
+    "screenshot_retained": true,
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "strategy",
+    "step": "Toplu CSV önizleme hatası",
+    "result": "OK",
+    "route": "/users?period_id=2",
+    "screenshot": "04-toplu-hesap-hata.png",
+    "load_ms": 80,
+    "note": "",
+    "technical": [],
+    "screenshot_retained": true,
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "strategy",
+    "step": "Toplu CSV geçerli önizleme",
+    "result": "OK",
+    "route": "/users?period_id=2",
+    "screenshot": "05-toplu-hesap-onizleme.png",
+    "load_ms": 54,
+    "note": "",
+    "technical": [],
+    "screenshot_retained": true,
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "strategy",
+    "step": "Toplu hesap oluşturma ve parola dosyası",
+    "result": "OK",
+    "route": "/users?period_id=2",
+    "screenshot": "06-parola-dosyasi.png",
+    "load_ms": 99,
+    "note": "",
+    "technical": [],
+    "screenshot_retained": true,
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "strategy",
+    "step": "Hatalı hesap grubunu pasifleştirme",
+    "result": "OK",
+    "route": "/users?period_id=2",
+    "screenshot": "07-toplu-pasiflestirme.png",
+    "load_ms": 69,
+    "note": "",
+    "technical": [],
+    "screenshot_retained": true,
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "strategy",
+    "step": "Parola sıfırlama",
+    "result": "OK",
+    "route": "/users?period_id=2",
+    "screenshot": "08-parola-sifirla.png",
+    "load_ms": 63,
+    "note": "",
+    "technical": [],
+    "screenshot_retained": true,
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "strategy",
+    "step": "Faaliyet eşleştirme kuyruğu",
+    "result": "OK",
+    "route": "/activity-mapping?period_id=2",
+    "screenshot": "09-faaliyet-eslestirme-kuyrugu.png",
+    "load_ms": 760,
+    "note": "",
+    "technical": [],
+    "screenshot_retained": true,
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "strategy",
+    "step": "Faaliyet eşleştirme CSV önizleme",
+    "result": "OK",
+    "route": "/activity-mapping?period_id=2",
+    "screenshot": "10-faaliyet-eslestirme-onizleme.png",
+    "load_ms": 64,
+    "note": "",
+    "technical": [],
+    "screenshot_retained": true,
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "strategy",
+    "step": "Faaliyet eşleştirme uygulama ve geri alma",
+    "result": "OK",
+    "route": "/activity-mapping?period_id=2",
+    "screenshot": "11-faaliyet-eslestirme-geri-al.png",
+    "load_ms": 1671,
+    "note": "",
+    "technical": [],
+    "screenshot_retained": true,
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "strategy",
+    "step": "2026 onaylı kitap yayın hazırlığı",
+    "result": "SLOW",
+    "route": "/report-builder?period_id=2",
+    "screenshot": "12-onayli-kitaptan-yayinla.png",
+    "load_ms": 3108,
+    "note": "",
+    "technical": [],
+    "screenshot_retained": true,
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "strategy",
+    "step": "Onaylı kitaptan yayınla",
+    "result": "SLOW",
+    "route": "/report-builder?period_id=2",
+    "screenshot": "13-yayin-surumleri.png",
+    "load_ms": 5234,
+    "note": "",
+    "technical": [],
+    "screenshot_retained": true,
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "strategy",
+    "step": "2026 gösterge raporu oluşturma",
+    "result": "OK",
+    "route": "/activity-reports",
+    "screenshot": "14-gosterge-raporu-olustur.png",
+    "load_ms": 787,
+    "note": "",
+    "technical": [],
+    "screenshot_retained": true,
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "strategy",
+    "step": "Yayına bağlı 2026 FR revizyonu oluştur",
+    "result": "OK",
+    "route": "/activity-reports/revisions/1",
+    "screenshot": "15-gosterge-rapor-revizyonu.png",
+    "load_ms": 1509,
+    "note": "",
+    "technical": [],
+    "screenshot_retained": true,
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "strategy",
+    "step": "Rapor revizyonu ve dondurma alanı",
+    "result": "OK",
+    "route": "/activity-reports/revisions/1",
+    "screenshot": "16-yeni-rapor-revizyonu.png",
+    "load_ms": 52,
+    "note": "",
+    "technical": [],
+    "screenshot_retained": true,
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "strategy",
+    "step": "2026 birim ve idare raporları oluşturma",
+    "result": "OK",
+    "route": "/activity-sections",
+    "screenshot": "17-ek1-raporlarini-olustur.png",
+    "load_ms": 635,
+    "note": "",
+    "technical": [],
+    "screenshot_retained": true,
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "strategy",
+    "step": "2026 EK-1 raporlarını oluştur",
+    "result": "SLOW",
+    "route": "/activity-sections",
+    "screenshot": "18-tamamlanma-gorunumu.png",
+    "load_ms": 8631,
+    "note": "",
+    "technical": [],
+    "screenshot_retained": true,
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "strategy",
+    "step": "Strateji birim incelemesi",
+    "result": "OK",
+    "route": "/activity-sections/reports/8",
+    "screenshot": "19-birim-incelemesi.png",
+    "load_ms": 675,
+    "note": "",
+    "technical": [],
+    "screenshot_retained": true,
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "strategy",
+    "step": "Gerekçeli iade",
+    "result": "OK",
+    "route": "/activity-sections/reports/8",
+    "screenshot": "20-gerekceli-iade.png",
+    "load_ms": 906,
+    "note": "",
+    "technical": [],
+    "screenshot_retained": true,
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "strategy",
+    "step": "Strateji yeniden inceleme",
+    "result": "OK",
+    "route": "/activity-sections/reports/8",
+    "screenshot": "21-yeniden-inceleme.png",
+    "load_ms": 640,
+    "note": "",
+    "technical": [],
+    "screenshot_retained": true,
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "strategy",
+    "step": "Strateji bağımsız birim onayı",
+    "result": "OK",
+    "route": "/activity-sections/reports/8",
+    "screenshot": "22-bagimsiz-birim-onayi.png",
+    "load_ms": 691,
+    "note": "",
+    "technical": [],
+    "screenshot_retained": true,
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  },
+  {
+    "role": "strategy",
+    "step": "Onaylı Word olarak indir · Fen İşleri Müdürlüğü",
+    "result": "OK",
+    "route": "/activity-sections/reports/8",
+    "screenshot": "23-disa-aktarma.png",
+    "load_ms": 209,
+    "note": "43516 bayt; SHA256: 443672b5d379e7d8410291714778c0711223cffd7116df51084c906f5c9490bf; dosya başlığı doğrulandı.",
+    "technical": [],
+    "screenshot_retained": true,
+    "server_errors": [],
+    "http": [],
+    "js": [],
+    "warnings": [],
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "document_width": 1440
+  }
+]
