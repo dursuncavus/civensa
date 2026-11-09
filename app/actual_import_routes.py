@@ -2,6 +2,7 @@
 import json
 from fastapi import Depends, HTTPException, Request
 from fastapi.responses import RedirectResponse
+from starlette.concurrency import run_in_threadpool
 from sqlalchemy.exc import IntegrityError, OperationalError
 from .db import get_db
 from . import actual_import_service as service
@@ -23,8 +24,14 @@ def register(app):
             file = form.get('file')
             if not hasattr(file, 'read'):
                 service.fail('Excel dosyası seçilmedi. XLSX dosyasını seçip yeniden yükleyin.')
-            record = service.preview_import(db, user, revision_id, await file.read(service.MAX_FILE + 1))
-            db.commit()
+            data = await file.read(service.MAX_FILE + 1)
+
+            def stage():
+                # Workbook parsing and database work are synchronous; keep them off the event loop.
+                staged = service.preview_import(db, user, revision_id, data)
+                db.commit()
+                return staged
+            record = await run_in_threadpool(stage)
             return RedirectResponse(f'/activity-reports/imports/{record.id}', 303)
         except HTTPException as error:
             db.rollback()
@@ -44,7 +51,7 @@ def register(app):
         try:
             service.contract.strategy(user)
             form = await request.form()
-            _, preview = service.import_preview(db, user, import_id)
+            _, preview = await run_in_threadpool(service.import_preview, db, user, import_id)
             choices = {}
             for row in preview['rows']:
                 line = row['line']
@@ -60,8 +67,11 @@ def register(app):
                 expected = int(form.get('expected_revision', ''))
             except (TypeError, ValueError):
                 service.fail('Rapor sürümü okunamadı. Dosyayı yeniden önizleyin.')
-            service.apply_import(db, user, import_id, expected, choices)
-            db.commit()
+
+            def write():
+                service.apply_import(db, user, import_id, expected, choices)
+                db.commit()
+            await run_in_threadpool(write)
             return RedirectResponse(f'/activity-reports/imports/{import_id}', 303)
         except (IntegrityError, OperationalError):
             db.rollback()

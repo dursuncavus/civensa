@@ -215,7 +215,7 @@ def preview_import(db, user, revision_id, data):
                 indicator_name(i['definition']['name'])).ratio(), i['report_indicator_id']))[:3]
         available = readings or [{'key':'missing', 'value':None, 'rule':rule}]
         options = [option(i, reading, source['unit'], book_rows[i['snapshot_indicator_id']])
-                   for i in candidates[:3] for reading in available]
+                   for i in candidates for reading in available]
         match = len(exact) == 1
         status = 'Eşleşti' if match else 'Onay gerekiyor' if options else 'Eşleşmedi'
         message = ''
