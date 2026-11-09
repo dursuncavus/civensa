@@ -124,12 +124,16 @@ Onay öncesinde de `Taslak — Word (onaysız)` veya `Taslak — PDF (onaysız)`
 
 ![Onaylı raporda Word ve PDF indirme](img/22-onayli-indirme.png)
 
+## Faaliyet sonuçları
+
+Her faaliyet için ayrı bir sonuç girilmez.
+Gösterge gerçekleşmelerini ve kanıtlarını yukarıda anlatıldığı gibi girin.
+2026 faaliyetlerinden biri için kısa bir açıklama gerekiyorsa ilgili EK-1 bölümünün `Bölüm içeriği` alanına yazın.
+
 ## Yardım
 
-Destek kanalı: Strateji Geliştirme Müdürlüğü duyuracak.
+Sorularınız ve sorunlarınız için Strateji Geliştirme Müdürlüğü'ne ulaşın.
 
 ## Daha sonra eklenecek bölümler
-
-[EKLENECEK — faaliyet sonucu girişi, Ali Abi cevabı bekleniyor]
 
 [EKLENECEK — gösterge Excel ile toplu giriş]
