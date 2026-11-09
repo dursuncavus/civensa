@@ -19,6 +19,7 @@ from .value_labels import value_kind_label
 
 
 ACTION_LABELS = {
+    "actual_import_apply": "Gösterge gerçekleşmeleri Excel'den içe aktarıldı",
     "activity_contract_bound": "Faaliyet sözleşme durumu güncellendi",
     "activity_create": "Faaliyet oluşturuldu",
     "activity_delete": "Faaliyet silindi",
@@ -106,6 +107,7 @@ ACTION_LABELS = {
 }
 
 ENTITY_LABELS = {
+    "actual_import": "Gösterge gerçekleşmeleri Excel aktarımı",
     "activity": "Faaliyet",
     "activity_cost_values": "Faaliyet bütçesi",
     "activity_evidence_file": "Faaliyet kanıtı",
