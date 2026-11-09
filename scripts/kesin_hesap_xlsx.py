@@ -1,0 +1,570 @@
+#!/usr/bin/env python3
+"""Offline, fail-closed final-account PDF to Civensa financial import converter."""
+import sys
+
+# CLI execution must not leave import caches outside --out or load app/db.py.
+if __name__ == '__main__':
+    sys.dont_write_bytecode = True
+
+import argparse
+from collections import defaultdict
+import csv
+from dataclasses import dataclass
+from decimal import Decimal, InvalidOperation
+import hashlib
+import io
+import os
+from pathlib import Path
+import re
+import tempfile
+import unicodedata
+
+from openpyxl import Workbook
+from pypdf import PdfReader
+from pypdf.errors import PyPdfError
+
+
+EXPENSE_SOURCE = (
+    'Geçen Yıldan Devreden Ödenek', 'Bütçe İle Verilen Ödenek',
+    'Ek Ve Olağanüstü Verilen Ödenek', 'Aktarma Suretiyle Eklenen (+)',
+    'Düşülen (-)', 'Net Ödenek Toplamı', 'Bütçe Gideri Toplamı',
+    'Ödenen Bütçe Gideri', 'Ödenek Üstü Harcama', 'İptal Edilen Ödenek',
+    'Gelecek Yıla Devrolan Ödenek',
+)
+EXPENSE_HEADERS = ('Müdürlük No', 'Ekonomik Kod', 'Başlangıç Ödeneği', 'Eklenen Ödenek',
+                   'Düşülen Ödenek', 'Bildirilen Yıl Sonu Ödeneği', 'Harcama (Gerçekleşme)',
+                   'İptal Edilen Ödenek', 'Ertesi Yıla Devreden Ödenek', 'Sapma Açıklaması')
+REVENUE_HEADERS = ('Ekonomik Kod', 'Bütçe Tahmini', 'Tahsilat (Gerçekleşme)',
+                   'Red ve İadeler', 'Sapma Açıklaması')
+REVENUE_CODES = {'01', '03', '04', '05', '06', '08', '09'}
+MONEY = re.compile(r'-?(?:0|[1-9]\d*|[1-9]\d{0,2}(?:\.\d{3})*),\d{2}\Z')
+
+MAPPING = """## Sütun eşlemesi
+
+| XLSX alanı | PDF kaynağı |
+| --- | --- |
+| Müdürlük No | CSV department_id; budget_code ile eşleşir |
+| Ekonomik Kod | Yalnız düzey 1; gider 01–09 |
+| Başlangıç Ödeneği | Geçen Yıldan Devreden Ödenek + Bütçe İle Verilen Ödenek |
+| Eklenen Ödenek | Ek Ve Olağanüstü Verilen Ödenek + Aktarma Suretiyle Eklenen (+) |
+| Düşülen Ödenek | Aktarma Düşülen (-) |
+| Bildirilen Yıl Sonu Ödeneği | Net Ödenek Toplamı |
+| Harcama (Gerçekleşme) | Bütçe Gideri Toplamı |
+| İptal Edilen Ödenek | İptal Edilen Ödenek |
+| Ertesi Yıla Devreden Ödenek | Gelecek Yıla Devrolan Ödenek |
+| Bütçe Tahmini (gelir) | Bütçe ile Tahmin Edilen |
+| Tahsilat (Gerçekleşme, gelir) | Yılı Tahsilatı (brüt) |
+| Red ve İadeler (gelir) | Red ve İadeler |
+| Sapma Açıklaması | Boş; operatör önizlemede tamamlar |
+
+Gider düzey 1 tutarları fonksiyonel/finansal dallar üzerinden toplanır.
+Alt ekonomik düzeyler ve ara toplamlar yeniden eklenmez.
+Tutarlar kuruş kaybını önlemek için XLSX'e Türkçe sayı metni olarak yazılır;
+mevcut XLSX önizlemesi bu biçimi okur. Boş hücre sıfır sayılmaz.
+"""
+
+
+class ConversionError(ValueError):
+    """An operator-actionable blocking conversion error."""
+
+
+def norm(value):
+    value = value.translate(str.maketrans('ıİ', 'iI')).lower()
+    value = ''.join(c for c in unicodedata.normalize('NFKD', value)
+                    if not unicodedata.combining(c))
+    return ' '.join(re.findall(r'[a-z0-9]+', value))
+
+
+def money(value):
+    return f'{value:,.2f}'.translate(str.maketrans(',.', '.,'))
+
+
+def safe(value):
+    """Keep source text inside one Markdown table cell."""
+    return str(value).replace('|', '\\|').replace('\n', ' ').replace('\r', ' ')
+
+
+@dataclass
+class Row:
+    cells: list[list[str]]
+    where: str
+
+    def text(self, column):
+        return ' '.join(self.cells[column])
+
+    def amounts(self, start, labels, *, revenue=False, notes=None):
+        values = []
+        wrapped = []
+        for offset, label in enumerate(labels):
+            parts = self.cells[start + offset]
+            raw = ''.join(parts)
+            if not MONEY.fullmatch(raw):
+                raise ConversionError(f'{self.where}, {label}: tutar boş veya okunamadı '
+                                      f'({safe(" / ".join(parts)) or "boş"}). '
+                                      'PDF hücresini kontrol edip dosyayı yeniden dönüştürün.')
+            if len(parts) > 1:
+                if not revenue or offset not in {1, 2, 3, 4, 5, 6}:
+                    raise ConversionError(f'{self.where}, {label}: bölünmüş tutar bağımsız '
+                                          'satır eşitliğiyle doğrulanamıyor. Kaynak PDF düzenini kontrol edin.')
+                wrapped.append((label, parts, raw))
+            value = Decimal(raw.replace('.', '').replace(',', '.'))
+            values.append(value)
+        if revenue:
+            for label, actual, expected in (
+                ('Toplam Tahakkuk = Devreden + Yılı Tahakkuku', values[3], values[1] + values[2]),
+                ('Net = Tahsilat − Red', values[6], values[4] - values[5]),
+            ):
+                if actual != expected:
+                    raise ConversionError(f'{self.where}: {label} tutarsız; PDF {money(actual)}, '
+                                          f'hesaplanan {money(expected)}, fark {money(actual - expected)}. '
+                                          'Bölünmüş rakamları ve kaynak satırı kontrol edin; tahmin yapılmadı.')
+            for label, parts, raw in wrapped:
+                notes.append(f'{self.where}, {label}: {safe(" / ".join(parts))} → {raw}; '
+                             'ilgili satır eşitliği doğrulandı.')
+        return values
+
+
+def revenue_labels(year):
+    return ('Bütçe ile Tahmin Edilen', f'{year - 1} Yılından Devreden Gelir',
+            f'{year} Yılı Tahakkuku', 'Toplam Tahakkuk', f'{year} Yılı Tahsilatı',
+            'Red ve İadeler', 'Yılı Net Tahsilatı', f'{year + 1} Yılına Devreden Tahakkuk')
+
+
+def header_bounds(lines, body, expected, where, code_count):
+    """Find column gutters in pypdf's position-preserving fixed-width layout.
+
+    Text inside a cell can span several baselines. Intersecting horizontal
+    spans connect those lines without flattening adjacent monetary columns.
+    Unknown/overlapping headers are rejected instead of assuming coordinates.
+    """
+    spans = sorted((match.start(), match.end()) for line in lines
+                   for match in re.finditer(r'\S(?:.*?\S)?(?= {2,}|$)', line))
+    groups = []
+    for left, right in spans:
+        if groups and left <= groups[-1][1] + 1:
+            groups[-1][1] = max(groups[-1][1], right)
+        else:
+            groups.append([left, right])
+    labels = [' '.join(line[left:right].strip() for line in lines).strip()
+              for left, right in groups]
+    if len(labels) != len(expected) or any(norm(a) != norm(b)
+                                          for a, b in zip(labels, expected)):
+        raise ConversionError(f'{where}: sütun başlıkları veya rapor yılı doğrulanamadı. '
+                              'Belirtilen yıla ait metin PDF ve desteklenen sütun düzenini kullanın. '
+                              f'Okunan başlıklar: {safe(" | ".join(labels))}')
+    bounds = [0]
+    for column, (a, b) in enumerate(zip(groups, groups[1:])):
+        # Right-aligned numbers can extend beyond their left-aligned header.
+        # A boundary must also remain a gutter throughout the data rows.
+        candidates = []
+        for position in range(a[1], b[0] + 1):
+            if any(line[position - 1:position + 1].strip() for line in body):
+                continue
+            cells = [line[bounds[-1]:position].strip() for line in body]
+            if column < code_count:
+                pattern = (r'\d{2}(?:[ .]+\d{1,2}){0,4}' if code_count == 1 else
+                           (r'46(?:[ .]+\d{1,2}){0,3}',
+                            r'\d{2}(?:[ .]+\d{1,2}){0,3}', r'\d',
+                            r'\d{2}(?:[ .]+\d{1,2}){0,3}')[column])
+                valid = all(not cell or re.fullmatch(pattern, cell)
+                            or (code_count == 1 and norm(cell) in {'toplam', 'genel toplam'})
+                            for cell in cells)
+            elif column == code_count:
+                valid = all(not re.search(r'\d,\d{2}(?:\s|$)', cell) for cell in cells)
+            else:
+                valid = (any(cells) and all(not cell or re.fullmatch(r'-?[\d.,]+', cell)
+                                            for cell in cells))
+            if valid:
+                candidates.append(position)
+        if not candidates:
+            raise ConversionError(f'{where}: sütunlar arasında ortak boşluk yok. '
+                                  'PDF hücre sınırlarını kontrol edin.')
+        # Use the last contiguous gutter: earlier whitespace can be inside
+        # this column, before its right-aligned monetary value.
+        run = [candidates[-1]]
+        for position in reversed(candidates[:-1]):
+            if position != run[-1] - 1:
+                break
+            run.append(position)
+        bounds.append(run[len(run) // 2])
+    return bounds
+
+
+def pdf_rows(path, kind, year):
+    expense = kind == 'expenditure'
+    expected = (('Kurum Kodu', 'Fonksiyonel Kodu', 'Finansal Kodu', 'Ekonomik Kodu',
+                 'Açıklama', *EXPENSE_SOURCE) if expense else
+                ('Gelirin Kodu', 'Açıklama', *revenue_labels(year), 'Oran'))
+    code_count = 4 if expense else 1
+    description = code_count
+    rows = []
+    with path.open('rb') as source:
+        reader = PdfReader(source)
+        if reader.is_encrypted:
+            raise ConversionError(f'{path.name}: şifreli PDF okunamadı. Şifresiz metin PDF kullanın.')
+        for page_no, page in enumerate(reader.pages, 1):
+            where = f'{path.name}, sayfa {page_no}'
+            lines = page.extract_text(extraction_mode='layout',
+                                      layout_mode_space_vertically=False).splitlines()
+            marker = 'kurum' if expense else 'gelirin'
+            start = next((i for i, line in enumerate(lines) if marker in norm(line)), None)
+            if start is None:
+                raise ConversionError(f'{where}: tablo başlığı bulunamadı. Her sayfada başlıklı '
+                                      'metin PDF kullanın; taranmış PDF için önce metin kaynağını edinin.')
+            body = next((i for i in range(start + 1, len(lines))
+                         if re.match(r'^\s*\d{1,2}\s', lines[i])), None)
+            if body is None:
+                raise ConversionError(f'{where}: kodlu veri satırı bulunamadı. PDF tablosunu kontrol edin.')
+            header = [line for line in lines[start:body]
+                      if not re.fullmatch(r'[\sIV]+', line)]
+            body_lines = [(i, line) for i, line in enumerate(lines[body:], body + 1)
+                          if line.strip() and not re.fullmatch(
+                              r'\s*Sayfa\s+\d+(?:\s*/\s*\d+)?\s*', line, re.IGNORECASE)]
+            bounds = header_bounds(header, [line for _, line in body_lines], expected, where, code_count)
+            for line_no, line in body_lines:
+                cells = [line[left:right].strip()
+                         for left, right in zip(bounds, [*bounds[1:], len(line) + 1])]
+                # Reject text crossing a detected gutter; silently shifting a
+                # digit between cells would invalidate the monetary evidence.
+                if any(len(line) > b and line[b - 1:b + 1].strip()
+                       and not line[b - 1].isspace() and not line[b].isspace()
+                       for b in bounds[1:]):
+                    raise ConversionError(f'{where}, satır {line_no}: hücre sınırı belirsiz. '
+                                          'PDF sütun düzenini kontrol edin.')
+                codes = cells[:code_count]
+                is_total = norm(cells[description]) in {'toplam', 'genel toplam'}
+                if not expense and norm(cells[0]) in {'toplam', 'genel toplam'}:
+                    if cells[description] and not is_total:
+                        raise ConversionError(f'{where}, satır {line_no}: toplam etiketi belirsiz. '
+                                              'PDF toplam satırını kontrol edin.')
+                    cells[description], cells[0] = cells[0], ''
+                    codes, is_total = [''], True
+                if any(codes) or is_total:
+                    if any(code and not re.fullmatch(r'\d+(?:[ .]+\d+)*', code) for code in codes):
+                        raise ConversionError(f'{where}, satır {line_no}: kod okunamadı '
+                                              f'({safe(" / ".join(codes))}). PDF kod alanlarını kontrol edin.')
+                    rows.append(Row([[cell] if cell else [] for cell in cells],
+                                    f'{where}, satır {line_no}'))
+                elif rows:
+                    for index, cell in enumerate(cells):
+                        if cell:
+                            rows[-1].cells[index].append(cell)
+                else:
+                    raise ConversionError(f'{where}, satır {line_no}: sahipsiz hücre. PDF düzenini kontrol edin.')
+    if not rows:
+        raise ConversionError(f'{path.name}: veri bulunamadı. Metin PDF kullanın.')
+    return rows
+
+
+def load_departments(path):
+    result = {}
+    ids = set()
+    columns = ('budget_code', 'department_id', 'department_name')
+    with path.open(encoding='utf-8-sig', newline='') as source:
+        reader = csv.DictReader(source)
+        if not reader.fieldnames or len(reader.fieldnames) != 3 or set(reader.fieldnames) != set(columns):
+            raise ConversionError('Müdürlük CSV başlıkları geçersiz. '
+                                  'budget_code,department_id,department_name sütunlarını kullanın.')
+        for line, row in enumerate(reader, 2):
+            if None in row or any(value is None for value in row.values()):
+                raise ConversionError(f'CSV {line}. satır: sütun sayısı geçersiz. Üç alanı doldurun.')
+            code, dep_id, name = (row[key].strip() for key in columns)
+            if not re.fullmatch(r'\d{1,2}', code) or not re.fullmatch(r'[1-9]\d*', dep_id) or not name:
+                raise ConversionError(f'CSV {line}. satır: müdürlük eşlemesi geçersiz. '
+                                      'Bütçe kodunu, pozitif müdürlük numarasını ve adını kontrol edin.')
+            code = code.zfill(2)
+            if code in result or int(dep_id) in ids:
+                raise ConversionError(f'CSV {line}. satır: yinelenen bütçe kodu veya müdürlük numarası '
+                                      f'({code}). Tek ve açık bir eşleme sağlayın; birleşim yapılmadı.')
+            result[code] = (int(dep_id), name)
+            ids.add(int(dep_id))
+    if not result:
+        raise ConversionError('Müdürlük CSV boş. Rapor yılına ait kurum yapısı eşlemesini dışa aktarın.')
+    return result
+
+
+def codes(text):
+    return tuple(re.split(r'[ .]+', text)) if text else ()
+
+
+def sum_vectors(vectors, size):
+    result = [Decimal(0)] * size
+    for vector in vectors:
+        result = [a + b for a, b in zip(result, vector)]
+    return result
+
+
+def reconcile(label, actual, expected, labels, notes, errors):
+    notes.append(f'\n### {safe(label)}\n\n| Sütun | PDF | Hesaplanan | Fark (hesaplanan − PDF) |\n'
+                 '| --- | ---: | ---: | ---: |')
+    for name, value, target in zip(labels, actual, expected):
+        diff = value - target
+        notes.append(f'| {name} | {money(target)} | {money(value)} | {money(diff)} |')
+        if diff:
+            errors.append(f'{label}, {name}: PDF {money(target)}, hesaplanan {money(value)}, '
+                          f'fark {money(diff)}. Kaynak toplamları ve tüm kod dallarını kontrol edin.')
+
+
+def expenditure(rows, departments, notes, errors):
+    totals = {}
+    names = {}
+    emitted = defaultdict(list)
+    municipality = None
+    prefix = None
+    department = None
+    function = ()
+    fund = ()
+    seen = set()
+    for row in rows:
+        institution, new_function, new_fund, economic = [codes(row.text(i)) for i in range(4)]
+        if institution:
+            if len(institution) not in {1, 2, 3, 4} or institution[0] != '46':
+                raise ConversionError(f'{row.where}: kurum kodu desteklenmiyor. 46 kurum hiyerarşisini kontrol edin.')
+            if len(institution) == 3:
+                if municipality is not None:
+                    raise ConversionError(f'{row.where}: birden çok belediye toplamı var. Tek belediye PDF kullanın.')
+                municipality = row.amounts(5, EXPENSE_SOURCE)
+                prefix = institution
+            if prefix and institution[:min(3, len(institution))] != prefix[:len(institution)]:
+                raise ConversionError(f'{row.where}: kurum kodu belediye kapsamıyla uyuşmuyor. '
+                                      'Tek belediyeye ait kurum kodlarını kontrol edin.')
+            if len(institution) < 4:
+                department, function, fund = None, (), ()
+            if len(institution) == 4 and not any((new_function, new_fund, economic)):
+                if prefix != institution[:3]:
+                    raise ConversionError(f'{row.where}: müdürlük belediye toplamına bağlı değil. Kurum kodlarını kontrol edin.')
+                department = institution[-1].zfill(2)
+                if department in totals:
+                    raise ConversionError(f'{row.where}: {department} müdürlük toplamı yinelenmiş. '
+                                          'Tekrarlanan sayfa/satırı kaynakta kontrol edin.')
+                totals[department] = row.amounts(5, EXPENSE_SOURCE)
+                names[department] = row.text(4)
+                function, fund = (), ()
+            elif len(institution) == 4 and institution[-1].zfill(2) != department:
+                raise ConversionError(f'{row.where}: müdürlük üst toplamı eksik. PDF hiyerarşisini kontrol edin.')
+            elif len(institution) < 3 and (new_function or new_fund or economic):
+                raise ConversionError(f'{row.where}: kurum hiyerarşisi belirsiz. PDF düzenini kontrol edin.')
+        if new_function:
+            function, fund = new_function, ()
+        if new_fund:
+            fund = new_fund
+        if not economic:
+            continue
+        if len(economic) > 1:
+            continue
+        code = economic[0]
+        if code not in {f'{n:02}' for n in range(1, 10)}:
+            raise ConversionError(f'{row.where}: bilinmeyen gider ekonomik kodu {code}. Düzey 1 kodunu kontrol edin.')
+        if department is None or len(function) != 4 or len(fund) != 1:
+            raise ConversionError(f'{row.where}, ekonomik kod {code}: müdürlük/fonksiyon/finansman '
+                                  'bağlamı eksik. PDF hiyerarşisini kontrol edin.')
+        key = department, function, fund, code
+        if key in seen:
+            raise ConversionError(f'{row.where}: yinelenen ekonomik dal {safe(key)}. '
+                                  'Tekrarlanan satırı kontrol edin; sessiz birleşim yapılmadı.')
+        seen.add(key)
+        emitted[department, code].append(row.amounts(5, EXPENSE_SOURCE))
+    if municipality is None or not totals or not emitted:
+        raise ConversionError('Gider: belediye/müdürlük toplamı veya ekonomik satırlar eksik. Tam PDF kullanın.')
+    for department, expected in totals.items():
+        vectors = [v for (dep, _), group in emitted.items() if dep == department for v in group]
+        if not vectors:
+            errors.append(f'Müdürlük {department} {names[department]}: ekonomik satır yok. Tam PDF kullanın.')
+        if department not in departments:
+            errors.append(f'Bilinmeyen bütçe kodu {department}: {names[department]}. '
+                          'Rapor yılına ait CSV eşlemesini tamamlayın; satır atılmadı.')
+        else:
+            dep_id, dep_name = departments[department]
+            notes.append(f'Müdürlük {department}: {safe(names[department])} → '
+                         f'{dep_id} ({safe(dep_name)}).')
+        reconcile(f'Müdürlük {department} {names[department]}', sum_vectors(vectors, 11),
+                  expected, EXPENSE_SOURCE, notes, errors)
+    reconcile('Belediye ' + ' '.join(prefix), sum_vectors(totals.values(), 11), municipality,
+              EXPENSE_SOURCE, notes, errors)
+    output = []
+    for (dep, code), vectors in sorted(emitted.items()):
+        v = sum_vectors(vectors, 11)
+        mapped = [v[0] + v[1], v[2] + v[3], v[4], v[5], v[6], v[9], v[10]]
+        validate_output(mapped, f'Müdürlük {dep}, ekonomik kod {code}')
+        if mapped[0] + mapped[1] - mapped[2] != mapped[3]:
+            errors.append(f'Müdürlük {dep}, ekonomik kod {code}: yıl sonu ödeneği '
+                          'başlangıç + eklenen − düşülen ile uyuşmuyor. Kaynak ödenekleri kontrol edin.')
+        if dep in departments:
+            output.append([departments[dep][0], code, *map(money, mapped), ''])
+    return output
+
+
+def revenue(rows, year, notes, errors):
+    labels = revenue_labels(year)
+    emitted = {}
+    total = None
+    for row in rows:
+        code = codes(row.text(0))
+        if not code:
+            if total is not None:
+                raise ConversionError(f'{row.where}: gelir toplamı yinelenmiş. Tek toplamlı PDF kullanın.')
+            total = row.amounts(2, labels, revenue=True, notes=notes)
+            continue
+        if len(code) > 1:
+            continue
+        if code[0] not in REVENUE_CODES or code[0] in emitted:
+            raise ConversionError(f'{row.where}: gelir kodu bilinmiyor veya yinelenmiş ({code[0]}). '
+                                  'Düzey 1 kodlarını kontrol edin.')
+        emitted[code[0]] = row.amounts(2, labels, revenue=True, notes=notes)
+    if not emitted:
+        raise ConversionError('Gelir: düzey 1 satır bulunamadı. Tam gelir cetvelini kullanın.')
+    notes.append('Gelir Oran sütunu yüzde olduğu için toplanmaz; sekiz parasal kaynak sütunu karşılaştırılır.')
+    if total is not None:
+        reconcile('Gelir düzey 1 toplamı', sum_vectors(emitted.values(), 8), total, labels, notes, errors)
+    else:
+        notes.append('Gelir PDF toplam satırı yok; genel toplam karşılaştırması yapılamadı. '
+                     'Düzey 1 satırlarının tahakkuk ve net tahsilat eşitlikleri doğrulandı.')
+    output = []
+    for code, v in sorted(emitted.items()):
+        validate_output([v[0], v[4], v[5]], f'Gelir {code}')
+        output.append([code, money(v[0]), money(v[4]), money(v[5]), ''])
+    return output
+
+
+def validate_output(values, where):
+    if any(v < 0 or v >= Decimal('1e16') for v in values):
+        raise ConversionError(f'{where}: tutar mevcut XLSX içe aktarma sınırının dışında '
+                              '(negatif veya 16 basamak). Kaynak tutarları kontrol edin.')
+
+
+def workbook(kind, rows):
+    book = Workbook()
+    sheet = book.active
+    sheet.title = 'Malî Bilgiler'
+    sheet.freeze_panes = 'A2'
+    sheet.append(EXPENSE_HEADERS if kind == 'expenditure' else REVENUE_HEADERS)
+    for row in rows:
+        sheet.append(row)
+    for column in sheet.columns:
+        sheet.column_dimensions[column[0].column_letter].width = 28
+        for cell in column[1:]:
+            if isinstance(cell.value, str):
+                cell.number_format = '@'
+    result = io.BytesIO()
+    book.save(result)
+    book.close()
+    return result.getvalue()
+
+
+def write_outputs(out, outputs, report):
+    """Stage inside --out, publish exclusively, roll back on an I/O failure.
+
+    Even with a BytesIO destination, openpyxl uses temporary worksheet files.
+    Its standard-library temporary directory is scoped here to our staging
+    directory so the CLI never writes worksheet XML into the system /tmp.
+    """
+    created = []
+    with tempfile.TemporaryDirectory(prefix='.civ194-', dir=out) as scratch:
+        scratch = Path(scratch)
+        previous_tempdir = tempfile.tempdir
+        try:
+            tempfile.tempdir = str(scratch)
+            for kind, rows in outputs.items():
+                (scratch / f'{kind}.xlsx').write_bytes(workbook(kind, rows))
+        finally:
+            tempfile.tempdir = previous_tempdir
+        (scratch / 'report.md').write_text(report + '\n', encoding='utf-8')
+        try:
+            for kind in outputs:
+                destination = out / f'{kind}.xlsx'
+                # Same-filesystem hard link is atomic and refuses every existing
+                # destination, including a symlink created after preflight.
+                os.link(scratch / destination.name, destination)
+                created.append(destination)
+            os.replace(scratch / 'report.md', out / 'report.md')
+        except OSError:
+            for destination in created:
+                destination.unlink()
+            raise
+
+
+def render_report(year, notes, errors):
+    report = (f'# Kesin hesap dönüştürme raporu — {year}\n\n'
+              + ('Durum: Hata — XLSX üretilmedi.\n' if errors else 'Durum: Başarılı.\n')
+              + '\n' + MAPPING + '\n## Kontroller ve kaynak izleri\n\n' + '\n'.join(notes))
+    if errors:
+        report += '\n\n## Hatalar\n\n' + '\n'.join(f'- {error}' for error in errors)
+    return report
+
+
+def main(argv=None):
+    parser = argparse.ArgumentParser(
+        description='Kesin hesap metin PDF → Civensa malî bilgiler XLSX (çevrimdışı).', add_help=False)
+    parser.add_argument('-h', '--help', action='help', help='Kullanımı göster ve çık')
+    parser._optionals.title = 'Seçenekler'
+    parser.add_argument('--gider', type=Path, help='Bütçe Gider Kesin Hesap PDF')
+    parser.add_argument('--gelir', type=Path, help='Gelir Cetveli Kesin Hesap PDF')
+    parser.add_argument('--year', type=int, required=True, help='Kesin hesap yılı')
+    parser.add_argument('--departments', type=Path, required=True, help='Rapor yılı müdürlük eşlemesi CSV')
+    parser.add_argument('--out', type=Path, required=True, help='Çıktı dizini; mevcut XLSX üzerine yazılmaz')
+    args = parser.parse_args(argv)
+    if not (args.gider or args.gelir) or not 1900 <= args.year <= 9998:
+        parser.error('--gider ve/veya --gelir ile 1900–9998 arası --year belirtin.')
+    notes = ['Eşleme CSV’si kesin hesap yılına ait olmalıdır; kod değişiklikleri CSV dışında tahmin edilmez.']
+    errors = []
+    outputs = {}
+    try:
+        args.out.mkdir(parents=True, exist_ok=True)
+        # Unsafe report targets cannot receive even an error report.
+        report_path = args.out / 'report.md'
+        if report_path.is_symlink() or (report_path.exists() and not report_path.is_file()):
+            raise ConversionError('report.md normal dosya değil. Yeni bir çıktı dizini kullanın.')
+        targets = {(args.out / name).resolve() for name in ('report.md', 'expenditure.xlsx', 'revenue.xlsx')}
+        inputs = [path for path in (args.departments, args.gider, args.gelir) if path]
+        if any(path.resolve() in targets for path in inputs):
+            raise ConversionError('Girdi ile çıktı yolu çakışıyor. Ayrı bir çıktı dizini kullanın.')
+    except ConversionError as exc:
+        print(safe(exc), file=sys.stderr)
+        return 1
+    except OSError:
+        print('Çıktı dizini hazırlanamadı. --out yolunu ve dizin izinlerini kontrol edin.', file=sys.stderr)
+        return 1
+    try:
+        for kind, path in (('expenditure', args.gider), ('revenue', args.gelir)):
+            destination = args.out / f'{kind}.xlsx'
+            if path and (destination.exists() or destination.is_symlink()):
+                raise ConversionError(f'{kind}.xlsx zaten var. Mevcut dosya korunuyor; yeni çıktı dizini kullanın.')
+        departments = load_departments(args.departments)
+        notes.append(f'Müdürlük CSV SHA-256: {hashlib.sha256(args.departments.read_bytes()).hexdigest()}')
+        for kind, path in (('expenditure', args.gider), ('revenue', args.gelir)):
+            if not path:
+                continue
+            try:
+                notes.append(f'{safe(path.name)} SHA-256: {hashlib.sha256(path.read_bytes()).hexdigest()}')
+                rows = pdf_rows(path, kind, args.year)
+                output = (expenditure(rows, departments, notes, errors) if kind == 'expenditure'
+                          else revenue(rows, args.year, notes, errors))
+                if len(output) > 5000:
+                    raise ConversionError(f'{path.name}: 5.000 XLSX satır sınırı aşıldı. Kaynak kapsamını kontrol edin.')
+                outputs[kind] = output
+                notes.append(f'{path.name}: {len(rows)} kaynak satır → {len(output)} düzey 1 XLSX satırı.')
+            except ConversionError as exc:
+                errors.append(f'{path.name}: {safe(exc)}')
+            except (PyPdfError, OSError, ValueError, InvalidOperation) as exc:
+                errors.append(f'{path.name}: PDF okunamadı ({safe(exc)}). '
+                              'Dosyanın erişilebilir, bozulmamış metin PDF olduğunu kontrol edin.')
+    except ConversionError as exc:
+        errors.append(safe(exc))
+    except (OSError, UnicodeError, csv.Error) as exc:
+        errors.append(f'Müdürlük CSV okunamadı ({safe(exc)}). Dosya yolunu, UTF-8 kodlamasını '
+                      've virgülle ayrılmış üç sütunu kontrol edin.')
+    try:
+        write_outputs(args.out, {} if errors else outputs, render_report(args.year, notes, errors))
+    except (OSError, ValueError):
+        print('Çıktı dosyaları yazılamadı. --out dizininin yazma izinlerini ve boş disk alanını '
+              'kontrol edip yeni çıktı diziniyle tekrar deneyin.', file=sys.stderr)
+        return 1
+    if errors:
+        print('Dönüştürme durduruldu. Hatalar ve düzeltme adımları: ' + str(args.out / 'report.md'), file=sys.stderr)
+        return 1
+    print('Dönüştürme tamamlandı: ' + str(args.out / 'report.md'))
+    return 0
+
+
+if __name__ == '__main__':
+    raise SystemExit(main())
