@@ -44,7 +44,7 @@ def vector(scale=1):
 def pdf_table(path, headers, widths, pages, *, centered=False, scale=1, year=2026,
               lead_layout=False, page_shift=0, dates=None, date_overrides=None, date_prefix=False,
               table_marker=False, header_size=6, amount_size=6, continuation_shift=0,
-              closing_page=None):
+              closing_page=None, total_footer=None):
     """Separate PDF text objects, proportional Turkish font and right-aligned money."""
     if 'Civ194Test' not in pdfmetrics.getRegisteredFontNames():
         pdfmetrics.registerFont(TTFont('Civ194Test', str(ROOT / 'app/fonts/DejaVuSans.ttf')))
@@ -103,6 +103,39 @@ def pdf_table(path, headers, widths, pages, *, centered=False, scale=1, year=202
                 canvas.drawString(23, y, {'extra_text': 'Bilinmeyen ek bilgi',
                                          'amount': '1,00', 'code': '46 34 14 10'}[closing_page])
         for row in rows:
+            if total_footer and row[1] == 'TOPLAM':
+                canvas.setFont('Civ194Test', 6)
+                canvas.drawString(20 + widths[0] + 3, y, 'TOPLAM')
+                x = 20 + sum(widths[:2])
+                for column, (value, width) in enumerate(zip(row[2:], widths[2:])):
+                    raw = str(value)
+                    complete = column in {5, 8} or total_footer == 'complete'
+                    if not complete:
+                        raw = raw[:-1] if column % 2 else raw.split(',')[0]
+                    if total_footer == 'integer_mismatch' and column == 0:
+                        raw = money(parse_number(value) + 1000).split(',')[0]
+                    elif total_footer == 'short_integer' and column == 0:
+                        raw = raw.rsplit('.', 1)[0]
+                    elif total_footer == 'decimal_mismatch' and column == 1:
+                        raw = raw[:-1] + '8'
+                    elif total_footer in {'refund_mismatch', 'rate_mismatch'} and column == (
+                            5 if total_footer == 'refund_mismatch' else 8):
+                        raw = money(parse_number(value) + Decimal('.01'))
+                    elif total_footer == 'truncated_refund' and column == 5:
+                        raw = raw.split(',')[0]
+                    if total_footer != 'missing_cell' or column != 1:
+                        gap = 7 if total_footer == 'distant' else 6 if total_footer == 'six_points' else 4.7
+                        canvas.drawRightString(x + width - 5, y if column in {5, 8} else y - gap, raw)
+                    x += width
+                if total_footer == 'extra_text':
+                    canvas.drawString(23, y - 10, 'Bilinmeyen ek kayıt')
+                for left, right in [('Düzenleyen', 'Muhasebe Yetkilisi'),
+                                    ('Adı Soyadı :', 'Adı Soyadı :'),
+                                    ('Tarih :', 'Tarih :'), ('İmza :', 'İmza :')]:
+                    y -= 20
+                    canvas.drawString(23, y, left)
+                    canvas.drawString(900, y, right)
+                continue
             x = 20
             height = 1
             for index, (value, width) in enumerate(zip(row, widths)):
@@ -941,3 +974,81 @@ def test_straddled_code_keeps_invalid_continuations_blocking(tmp_path, invalid):
         assert '0,01' in report
     elif invalid == 'ambiguous_code':
         assert 'kayıtlar arasında kod tahmin edilmedi' in report
+
+
+def truncated_total_pdf(tmp_path, *, invalid=None, deduction=False):
+    headers = ['Gelirin Kodu', 'Açıklama', *converter.revenue_labels(2026), 'Oran']
+    values = list(map(Decimal, ['11222333.45', '1234567.89', '8765432.11', '10000000',
+                               '9876543.21', '123456.78', '9753086.43', '246913.57']))
+    extra = list(map(Decimal, ['1000.11', '0.10', '50.20', '50.30', '30.22', '0.11', '30.11', '20.19']))
+    summed = [a + b for a, b in zip(values, extra)]
+    if deduction:
+        summed[0] -= Decimal('250.25')
+    rate = (summed[6] / summed[0] * 100).quantize(Decimal('.01'))
+    rows = [['01', 'SENTETİK GELİR', *map(money, values), '86,91'],
+            ['05', 'SENTETİK EK GELİR', *map(money, extra), '3,01'],
+            ['', 'TOPLAM', *map(money, summed), money(rate)]]
+    if deduction:
+        rows.insert(2, ['09', 'Red ve İadeler (-)', '- 250,25', *(['0,00'] * 8)])
+    if invalid == 'body_truncation':
+        rows[0][2] = rows[0][2].split(',')[0]
+    elif invalid == 'wrapped_data':
+        rows[0][2] = rows[0][2].replace(',', '\n,')
+    elif invalid == 'unproved_one_decimal_data':
+        rows[0][2] = rows[0][2][:-1].replace(',', '\n,')
+    return pdf_table(tmp_path / 'truncated-total.pdf', headers, [90, 140] + [65] * 8 + [45], [rows],
+                     header_size=5, total_footer=invalid or 'valid')
+
+
+def test_lead_total_with_absent_decimals_is_only_a_prefix_check(tmp_path):
+    pdf = truncated_total_pdf(tmp_path)
+    result, out = run(tmp_path, '--gelir', pdf)
+    assert result.returncode == 0, (out / 'report.md').read_text()
+    rows = list(load_workbook(out / 'revenue.xlsx').active.values)[1:]
+    assert [row[0] for row in rows] == ['01', '05']
+    assert sum(parse_number(row[1]) for row in rows) == Decimal('11223333.56')
+    report = (out / 'report.md').read_text()
+    assert 'TOPLAM önek kontrolü' in report and 'eksik haneler tahmin edilmedi' in report
+
+
+def test_lead_truncated_total_integer_mismatch_blocks_both_workbooks(tmp_path):
+    result, out = run(tmp_path, '--gider', expense_pdf(tmp_path),
+                      '--gelir', truncated_total_pdf(tmp_path, invalid='integer_mismatch'))
+    assert result.returncode != 0 and not list(out.glob('*.xlsx'))
+    report = (out / 'report.md').read_text()
+    assert 'sayfa 1' in report and 'Bütçe ile Tahmin Edilen' in report
+    assert 'TOPLAM öneki uyuşmuyor' in report
+
+
+@pytest.mark.parametrize('invalid,label', [
+    ('short_integer', 'Bütçe ile Tahmin Edilen'), ('decimal_mismatch', 'Yılından Devreden Gelir'),
+    ('refund_mismatch', 'Red ve İadeler'), ('rate_mismatch', 'Oran'),
+    ('truncated_refund', 'Red ve İadeler'), ('missing_cell', 'Yılından Devreden Gelir'),
+    ('distant', '6 punto'), ('extra_text', 'TOPLAM'), ('body_truncation', 'sütun'),
+    ('unproved_one_decimal_data', 'önekten rakam tahmin edilmedi')])
+def test_total_prefix_exception_keeps_other_checks_blocking(tmp_path, invalid, label):
+    result, out = run(tmp_path, '--gider', expense_pdf(tmp_path),
+                      '--gelir', truncated_total_pdf(tmp_path, invalid=invalid))
+    assert result.returncode != 0 and not list(out.glob('*.xlsx'))
+    report = (out / 'report.md').read_text()
+    assert 'sayfa 1' in report and label in report
+
+
+@pytest.mark.parametrize('shape', ['six_points', 'complete', 'wrapped_data'])
+def test_total_footer_boundaries_and_source_digits_are_preserved(tmp_path, shape):
+    result, out = run(tmp_path, '--gelir', truncated_total_pdf(tmp_path, invalid=shape))
+    assert result.returncode == 0, (out / 'report.md').read_text()
+    rows = list(load_workbook(out / 'revenue.xlsx').active.values)[1:]
+    assert len(rows) == 2 and rows[0][1] == '11.222.333,45'
+    if shape == 'wrapped_data':
+        assert 'TOPLAM’da bulunmayan ondalıklar bağımsız doğrulanamadı' in (out / 'report.md').read_text()
+
+
+def test_truncated_total_keeps_detached_minus_deduction_signed(tmp_path):
+    result, out = run(tmp_path, '--gelir', truncated_total_pdf(tmp_path, deduction=True))
+    assert result.returncode == 0, (out / 'report.md').read_text()
+    rows = list(load_workbook(out / 'revenue.xlsx').active.values)[1:]
+    assert [row[0] for row in rows] == ['01', '05']
+    report = (out / 'report.md').read_text()
+    assert '11.223.333,56 + (-250,25) = 11.223.083,31' in report
+    assert 'hesaplanan net tahmin (PDF TOPLAM önek kontrolü)' in report

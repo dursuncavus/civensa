@@ -127,6 +127,32 @@ eksik genel toplam ve yinelenen kod hâlâ hatadır.
 5. Gelir genel toplam satırı varsa sekiz parasal sütun düzey 1 satırlarıyla
    karşılaştırılır. Yüzde olan Oran toplanmaz. Toplam satırı yoksa bu denetimin
    yapılamadığı raporda açıkça belirtilir; satır eşitlikleri yine zorunludur.
+   Lead’in belgelediği kesik **TOPLAM altbilgisi** dar bir istisnadır: etiket
+   satırında tam `Red ve İadeler` ve `Oran`, aynı satırda veya en fazla 6 punto
+   aşağıda diğer yedi hücre bulunabilir. Sütunlar veri satırlarından belirlenir;
+   bu altbilgi sütun geometrisine veya gelir verisine katılmaz. pypdf metin
+   konumları ayrıca kontrol edilir; hücre eksikliği/yinelenmesi, belirsiz sütun,
+   yabancı altbilgi metni ve daha uzak tutarlar reddedilir. Ardından gelen
+   belgelenmiş imza bloğu gelir satırına eklenmez.
+
+   Her kontrol hücresinde tam sayı kısmı tamamen basılmış olmalıdır. Düzey 1
+   toplamı Türkçe biçimlenir; PDF’deki tam sayı kısmı aynı olmalı ve yazılı
+   ondalıklar bu gösterimin öneki olmalıdır. Örneğin sentetik `11.223.333`
+   ve `11.223.333,5`, hesaplanan `11.223.333,56` için geçerlidir; `11.223`
+   tam sayı kısmını tamamlamadığı için geçersizdir. Tam basılan tutarlarda
+   kuruş eşitliği, tam basılan yüzdede `net tahsilat / bütçe tahmini × 100`
+   hesabının iki ondalığa yuvarlanmış değeri aranır. Pozitif toplam tahmin
+   yoksa yüzde doğrulanamaz ve dönüşüm durur. Bir kuruş veya tek basılı rakam
+   farkı sayfa/sütun belirtilerek hatadır; hiçbir eksik hane tamamlanmaz.
+
+   Rapor bu denetimi **TOPLAM önek kontrolü** olarak ayrı gösterir: basılı
+   önek, hesaplanan düzey 1 toplamı ve kontrol sonucu yer alır. Basılmayan
+   ondalıklar için sıfır fark veya tam bağımsız mutabakat iddia edilmez.
+   TOPLAM metninden hiçbir tutar XLSX’e yazılmaz. Veri satırlarının tutar,
+   satır eşitliği ve tekil konum denetimleri korunur. Tahmin/devreden kaynak
+   birleşimi iki ondalıkla tamamlanmamışsa, eksik TOPLAM ondalığı ona kanıt
+   sayılamaz; bu durum yine hatadır. Negatif plan kesintisi kaynak toplamında
+   eksi kalır; brüt/net köprüsü bu durumda hesaplanan net olarak etiketlenir.
 6. Hesaplamalar tam kuruşla `Decimal` kullanır; tolerans veya otomatik
    düzeltme yoktur. Eksik/boş tutar sıfıra çevrilmez. Bilinmeyen bütçe kodları
    PDF’deki müdürlük adlarıyla raporlanır; satırlar sessizce atılmaz veya
@@ -272,6 +298,14 @@ basamak ve kodu dikey bölünmüş fakat tutarları bölünmemiş komşu kayıt 
 İlk iki regresyon düzeltmeden önce başarısızdı. Yanlış/eksik/kaymış ondalık,
 eksik/ek/farklı sütundaki kod hanesi, araya giren yabancı metin ve iki kayıt
 arasındaki belirsiz kod dönüşümü durdurur; iki XLSX birlikte engellenir.
+
+`issuecomment-6741296912` için sentetik TOPLAM etiket satırında iki tam hücre,
+4,7 punto aşağıda devamı PDF’de hiç bulunmayan yedi kesik hücre ve ardından
+imza bloğu üretilir. Başarı regresyonu `146df9f` üzerinde başarısızdı. Tam sayı,
+basılı ondalık, tam iade ve yüzde farkı; kısmi tam sayı; boş hücre; 6 puntoyu
+aşan uzaklık; ek metin ve veri satırının eksik ondalığı dönüşümü durdurur.
+Tam 6 punto, tam tutarlı altbilgi, bütün haneleri açıkça basılmış kaynak
+birleşimi ve ayrık eksili plan kesintisiyle birlikte kullanım da test edilir.
 
 ```sh
 python -m pytest -q --require-postgres tests/test_kesin_hesap_xlsx.py

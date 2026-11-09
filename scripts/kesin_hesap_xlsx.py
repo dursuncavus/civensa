@@ -41,6 +41,7 @@ REVENUE_HEADERS = ('Ekonomik Kod', 'Bütçe Tahmini', 'Tahsilat (Gerçekleşme)'
 REVENUE_CODES = {'01', '03', '04', '05', '06', '08', '09'}
 MONEY = re.compile(r'(?:-[ \t]*)?(?:0|[1-9]\d*|[1-9]\d{0,2}(?:\.\d{3})*),\d{2}\Z')
 WRAPPED_MONEY = re.compile(MONEY.pattern.replace(r'\d{2}\Z', r'\d{1,2}\Z'))
+MONEY_PREFIX = re.compile(MONEY.pattern.replace(r',\d{2}\Z', r'(?:,\d{1,2})?\Z'))
 
 MAPPING = """## Sütun eşlemesi
 
@@ -96,6 +97,7 @@ class Row:
     where: str
     code_positions: list[list[int]] | None = None
     level_one_end: int | None = None
+    check_prefixes: bool = False
 
     def text(self, column):
         return ' '.join(self.cells[column])
@@ -508,19 +510,12 @@ def header_error(error, header, start, where, notes):
     return ConversionError(f'{error} Başlık adayı: {safe(" / ".join(header))}')
 
 
-def signature_closing_page(lines, previous_header, previous_preamble, where, metadata, year):
-    """Accept only the documented two-column signature block after a known header.
-
-    A data-less page cannot establish new column geometry. Its complete header
-    must therefore repeat the preceding validated page's header text/order.
-    """
+def signature_block(lines):
     signatures = [('duzenleyen', 'muhasebe yetkilisi'),
                   ('adi soyadi', 'adi soyadi'), ('tarih', 'tarih'), ('imza', 'imza')]
-    content = [line for line in lines if line.strip() and not re.fullmatch(
-        r'\s*Sayfa\s+\d+(?:\s*/\s*\d+)?\s*', line, re.IGNORECASE)]
-    if not previous_header or len(content) < len(signatures):
+    if len(lines) != 4:
         return False
-    for index, (line, expected) in enumerate(zip(content[-4:], signatures)):
+    for index, (line, expected) in enumerate(zip(lines, signatures)):
         cells = re.split(r'[ \t]{2,}', line.strip())
         if len(cells) != 2 or tuple(map(norm, cells)) != expected:
             return False
@@ -529,6 +524,19 @@ def signature_closing_page(lines, previous_header, previous_preamble, where, met
             if (not re.fullmatch(r'[^\W\d_]+(?: [^\W\d_]+)*' + (r'\s*:' if index else ''),
                                  cell)):
                 return False
+    return True
+
+
+def signature_closing_page(lines, previous_header, previous_preamble, where, metadata, year):
+    """Accept only the documented two-column signature block after a known header.
+
+    A data-less page cannot establish new column geometry. Its complete header
+    must therefore repeat the preceding validated page's header text/order.
+    """
+    content = [line for line in lines if line.strip() and not re.fullmatch(
+        r'\s*Sayfa\s+\d+(?:\s*/\s*\d+)?\s*', line, re.IGNORECASE)]
+    if not previous_header or not signature_block(content[-4:]):
+        return False
     prefix = content[:-4]
     start = read_metadata(prefix, where, metadata, year)
     validate_metadata(metadata, where, True, None)
@@ -538,6 +546,87 @@ def signature_closing_page(lines, previous_header, previous_preamble, where, met
         start += 1
     return ([' '.join(line.split()) for line in prefix[start:]]
             == [' '.join(line.split()) for line in previous_header if line.strip()])
+
+
+def revenue_total_footer(lines, where):
+    """Isolate the documented truncated check row before fitting data columns.
+
+    Ordinary exact totals and their decimal continuations retain the existing
+    path. No footer text is discarded unless its whole shape is recognised.
+    """
+    label = re.compile(r'^\s*(?:GENEL\s+)?TOPLAM(?:\s|$)', re.IGNORECASE)
+    indexes = [i for i, line in enumerate(lines) if label.match(line)]
+    if len(indexes) > 1:
+        raise ConversionError(f'{where}: gelir toplamı yinelenmiş. Tek toplamlı PDF kullanın.')
+    if not indexes:
+        return lines, None
+    start = indexes[0]
+    tail = [(i + 1, line) for i, line in enumerate(lines) if i >= start and line.strip()
+            and not re.fullmatch(r'\s*Sayfa\s+\d+(?:\s*/\s*\d+)?\s*', line, re.IGNORECASE)]
+    signatures = signature_block([line for _, line in tail[-4:]])
+    if signatures:
+        tail = tail[:-4]
+    text = label.sub('', tail[0][1]) + ' ' + ' '.join(line for _, line in tail[1:])
+    tokens = re.findall(r'(?:-[ \t]*)?\S+', text)
+    truncated = len(tokens) == 9 and any(not MONEY.fullmatch(raw) for raw in tokens[:8])
+    if not signatures and not truncated:
+        return lines, None
+    if any(not MONEY_PREFIX.fullmatch(raw) for raw in tokens):
+        raise ConversionError(f'{where}, satır {start + 1}: TOPLAM altbilgisinde tanınmayan '
+                              'metin veya tutar var. Kaynak toplamını ve imza bloğunu kontrol edin.')
+    return [*lines[:start], *([''] * (len(lines) - start))], tail
+
+
+def total_check_row(page, footer, bounds, where, year):
+    """Bucket printed prefixes with the validated data bands, then verify y."""
+    labels = (*revenue_labels(year), 'Oran')
+    columns = [[] for _ in labels]
+    total_labels = []
+    for line_no, line in footer:
+        cells = [line[left:right].strip() for left, right in
+                 zip(bounds, [*bounds[1:], len(line) + 1])]
+        if any(len(line) > b and line[b - 1:b + 1].strip()
+               and not line[b - 1].isspace() and not line[b].isspace() for b in bounds[1:]):
+            raise ConversionError(f'{where}, satır {line_no}: TOPLAM hücre sınırı belirsiz. '
+                                  'Kaynak toplam sütunlarını kontrol edin.')
+        total_labels.extend(cell for cell in cells[:2] if cell)
+        for column, cell in zip(columns, cells[2:]):
+            if cell:
+                column.append(cell)
+    if len(total_labels) != 1 or norm(total_labels[0]) not in {'toplam', 'genel toplam'}:
+        raise ConversionError(f'{where}: TOPLAM etiketi veya kod alanı belirsiz. Kaynak altbilgisini kontrol edin.')
+    raw = []
+    for label, parts in zip(labels, columns):
+        if len(parts) != 1 or not MONEY_PREFIX.fullmatch(parts[0]):
+            raise ConversionError(f'{where}, TOPLAM, {label}: basılı tutar eksik veya yinelenmiş. '
+                                  'Kaynak toplam hücresini kontrol edin; boş sıfır sayılmadı.')
+        raw.append(parts[0])
+
+    fragments = []
+    def visit(text, cm, tm, font, size):
+        if text.strip():
+            x = tm[4] * cm[0] + tm[5] * cm[2] + cm[4]
+            y = tm[4] * cm[1] + tm[5] * cm[3] + cm[5]
+            fragments.append((text.strip(), x, y))
+    page.extract_text(visitor_text=visit)
+    positions = [(x, y) for text, x, y in fragments if norm(text) in {'toplam', 'genel toplam'}]
+    if len(positions) != 1:
+        raise ConversionError(f'{where}: TOPLAM konumu tekil değil. Kaynak toplam etiketini kontrol edin.')
+    label_x, label_y = positions[0]
+    printed = sorted((x, y, text) for text, x, y in fragments
+                     if x > label_x and y <= label_y + .01 and MONEY_PREFIX.fullmatch(text))
+    if len(printed) != 9 or [compact_sign(text) for _, _, text in printed] != list(map(compact_sign, raw)):
+        raise ConversionError(f'{where}: TOPLAM sütun konumları basılı hücrelerle tekil eşleşmedi. '
+                              'Dokuz toplam hücresini kontrol edin; yerleşim tahmin edilmedi.')
+    for offset, ((_, y, _), label) in enumerate(zip(printed, labels)):
+        if label_y - y > 6.01 or (offset in {5, 8} and abs(label_y - y) > .01):
+            raise ConversionError(f'{where}, TOPLAM, {label}: tutar etiket satırında veya en fazla '
+                                  '6 punto altında değil. Kaynak toplam yerleşimini kontrol edin.')
+        if offset in {5, 8} and not MONEY.fullmatch(raw[offset]):
+            raise ConversionError(f'{where}, TOPLAM, {label}: bu hücre tam iki ondalıkla basılmalı. '
+                                  'Tam toplamı içeren PDF kullanın.')
+    return Row([[], ['TOPLAM'], *[[value] for value in raw]],
+               f'{where}, satır {footer[0][0]}, TOPLAM', check_prefixes=True)
 
 
 def pdf_rows(path, kind, year, notes=None):
@@ -559,6 +648,9 @@ def pdf_rows(path, kind, year, notes=None):
             where = f'{path.name}, sayfa {page_no}'
             lines = page.extract_text(extraction_mode='layout',
                                       layout_mode_space_vertically=False).splitlines()
+            footer = None
+            if not expense:
+                lines, footer = revenue_total_footer(lines, where)
             try:
                 after = description_anchor(lines, where)
                 samples = financial_samples(lines, 11 if expense else 9, after)
@@ -650,6 +742,8 @@ def pdf_rows(path, kind, year, notes=None):
                         current.code_positions.append(code_positions)
                 else:
                     raise ConversionError(f'{where}, satır {line_no}: sahipsiz hücre. PDF düzenini kontrol edin.')
+            if footer is not None:
+                rows.append(total_check_row(page, footer, bounds, where, year))
     if not rows:
         raise ConversionError(f'{path.name}: veri bulunamadı. Metin PDF kullanın.')
     validate_metadata(metadata, path.name, expense, notes)
@@ -800,14 +894,49 @@ def expenditure(rows, departments, notes, errors):
     return output
 
 
+def check_total_prefixes(row, summed, year, notes, errors):
+    if summed[0] <= 0:
+        raise ConversionError(f'{row.where}, Oran: toplam bütçe tahmini pozitif değil; '
+                              'yüzde doğrulanamıyor. Kaynak toplam ve tahminleri kontrol edin.')
+    expected = [*summed, (summed[6] / summed[0] * 100).quantize(Decimal('.01'))]
+    labels = (*revenue_labels(year), 'Oran')
+    matches = set()
+    notes.extend(['\n### TOPLAM önek kontrolü\n',
+                  'Bu satır kontrol altbilgisidir; XLSX verisi yapılmadı, eksik haneler tahmin edilmedi. '
+                  'Basılmayan ondalıklar bağımsız olarak doğrulanamaz. Oran = net tahsilat / bütçe tahmini × 100.',
+                  '\n| Sütun | Basılı PDF | Düzey 1 toplamı | Kontrol |', '| --- | --- | --- | --- |'])
+    for offset, (label, value) in enumerate(zip(labels, expected)):
+        raw = compact_sign(row.text(2 + offset))
+        formatted = money(value)
+        complete = bool(MONEY.fullmatch(raw))
+        matched = (Decimal(raw.replace('.', '').replace(',', '.')) == value if complete else
+                   raw.split(',')[0] == formatted.split(',')[0] and formatted.startswith(raw))
+        status = 'tam tutar eşit' if complete else 'basılı önek eşit; kalan haneler PDF’de yok'
+        if not matched:
+            status = 'UYUŞMAZLIK'
+            errors.append(f'{row.where}, {label}: TOPLAM öneki uyuşmuyor; basılı PDF {raw}, '
+                          f'düzey 1 toplamı {formatted}. Tam sayı kısmını ve basılı ondalıkları '
+                          'kontrol edin; eksik rakam tahmin edilmedi.')
+        else:
+            matches.add(offset)
+        notes.append(f'| {label} | {raw} | {formatted} | {status} |')
+    return matches
+
+
 def revenue(rows, year, notes, errors):
     labels = revenue_labels(year)
     emitted = {}
     total = None
+    prefix_total = None
     details = []
     pending = []
     planned_deduction = None
     for row in rows:
+        if row.check_prefixes:
+            if total is not None or prefix_total is not None:
+                raise ConversionError(f'{row.where}: gelir toplamı yinelenmiş. Tek toplamlı PDF kullanın.')
+            prefix_total = row
+            continue
         code = codes(row.text(0))
         if code and code[0] not in REVENUE_CODES:
             raise ConversionError(f'{row.where}: bilinmeyen gelir üst kodu {code[0]}. '
@@ -820,7 +949,7 @@ def revenue(rows, year, notes, errors):
             if len(parts) > 1:
                 pending.append((offset, row.where, parts))
         if not code:
-            if total is not None:
+            if total is not None or prefix_total is not None:
                 raise ConversionError(f'{row.where}: gelir toplamı yinelenmiş. Tek toplamlı PDF kullanın.')
             total = row.amounts(2, labels, revenue=True, notes=notes)
             continue
@@ -843,8 +972,20 @@ def revenue(rows, year, notes, errors):
             raise ConversionError(f'{where}: gelir alt kodunun {parent} düzey 1 üst satırı eksik. '
                                   'Üst satırı içeren tam gelir PDF kullanın; alt gelir atılmadı.')
     notes.append('Gelir Oran sütunu yüzde olduğu için toplanmaz; sekiz parasal kaynak sütunu karşılaştırılır.')
-    if total is not None:
-        summed = sum_vectors(emitted.values(), 8)
+    summed = sum_vectors(emitted.values(), 8)
+    if prefix_total is not None:
+        matched = check_total_prefixes(prefix_total, summed, year, notes, errors)
+        for offset, where, parts in pending:
+            if (not MONEY.fullmatch(''.join(parts))
+                    and not MONEY.fullmatch(prefix_total.text(2 + offset))):
+                errors.append(f'{where}, {labels[offset]}: bölünmüş tutar iki ondalıkla '
+                              'tamamlanmadı ve TOPLAM’da da tam ondalık yok. Kaynak hücredeki '
+                              'eksik rakamları kontrol edin; önekten rakam tahmin edilmedi.')
+            elif offset in matched:
+                notes.append(f'{where}, {labels[offset]}: {safe(" / ".join(parts))} → '
+                             f'{"".join(parts)}; açık kaynak parçaları korundu, TOPLAM basılı öneğiyle '
+                             'karşılaştırıldı. TOPLAM’da bulunmayan ondalıklar bağımsız doğrulanamadı.')
+    elif total is not None:
         reconcile('Gelir düzey 1 toplamı', summed, total, labels, notes, errors)
         for offset, where, parts in pending:
             if summed[offset] == total[offset]:
@@ -872,10 +1013,12 @@ def revenue(rows, year, notes, errors):
         if total is not None:
             reconcile('Gelir XLSX brüt tahmin + plan kesintisi', [gross + deduction],
                       total[:1], labels[:1], notes, errors)
+        net_label = ('hesaplanan net tahmin (PDF TOPLAM önek kontrolü)' if prefix_total is not None
+                     else 'PDF net tahmini')
         notes.append(f'{planned_deduction.where}: 09 Red ve İadeler (-) kaynak plan kesintisi '
                      f'{money(deduction)}; XLSX satırı üretilmedi. Mevcut önizleme negatif tahmini '
                      'desteklemediğinden XLSX brüt tahmin içerir; net bütçe tahmini içermez. '
-                     f'XLSX brüt tahmin + kaynak plan kesintisi = PDF net tahmini: '
+                     f'XLSX brüt tahmin + kaynak plan kesintisi = {net_label}: '
                      f'{money(gross)} + ({money(deduction)}) = {money(gross + deduction)}. '
                      'Kesinti kaynak mutabakatına eksi işaretiyle dahil edildi; pozitif gelir, '
                      'tahsilat veya gerçekleşen Red ve İadeler alanına aktarılmadı. '
