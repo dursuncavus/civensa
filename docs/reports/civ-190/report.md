@@ -60,4 +60,4 @@ Koşular yalnız `CIVENSA_TEST_POSTGRES_URL` ile yerel PostgreSQL 18 üzerinde y
 
 CI kabulü PR baş commit'i üzerinde izlenir; tam test grubunun sonucu PR denetimlerinde bulunur. Canlı verinin yerel provayla birebir eşliği kontrol edilmedi; görev gereği canlı bağlantı kurulmadı. Eşleşmeyen çalışma zamanı toplamları düzeltilmez ve BELİRSİZ gösterilir.
 
-Ekran görüntüleri yerelde hazır: `strateji.png`, `fr-marker.png` (yerel test hesabı ve geçici veritabanı; gerçek uygulama şablonları ve oturum açma yolu). PNG’lerin herkese açık PR’a yüklenmesi otomatik onay incelemesince durduruldu; kullanıcı onayı soruldu. Kod ve rapor PR’ı bu görüntülerden bağımsızdır.
+Ekran görüntüleri: `strateji.png`, `fr-marker.png` (yerel test hesabı ve geçici veritabanı; gerçek uygulama şablonları ve oturum açma yolu). İki PNG kullanıcı tarafından herkese açık PR’a eklenmek üzere açıkça onaylandı.
