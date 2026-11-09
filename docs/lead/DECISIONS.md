@@ -1503,3 +1503,20 @@ CI on 13343c1: test (18,0) + test (18,1), secrets, backup-security success; full
 Screen-text findings from the report (LOW, no task now; collect for one small text task after Ali's answers): "Faaliyet Raporu · EK-1" vs "Faaliyet raporları" menu names look alike; Dışa aktar Word/PDF links visible on drafts; the Mali Hizmetler warning "giriş veya XLSX içe aktarma yapın" is shown to directorate users; "Bu bölümün yapılandırılmış verileri daha sonra eklenecek" note in some EK-1 sections.
 ROLLOUT_CHECKLIST E1: stable sections done; B2/FR5 sections and the support-channel line follow Ali's answers (9 Nov).
 Next IDs: task CIV-190, decision D-442.
+
+## D-442 (9 Nov 2026 ~09:40 Istanbul, lead, chat session CV Lider 68 — owner on the road, no project thread running) — Ali's answers processed; CIV-190 + CIV-191 dispatched
+DOĞRULANDI Gmail: reply from Dr. Ali KAYA (alikaya136@gmail.com) 9 Nov 08:46 in thread "Civensa – 2026 Faaliyet Raporu soruları" (1a1a6e279cbc6c77), 3 attachments: "2026 Performans Değerlendirme.xlsx", "2025 Bütçe Kesin Gider Hesabı.pdf", "2025 Yılı Gelir Kesin Hesap.pdf". Attachments not readable from this session (no attachment download tool) → owner puts them in Drive.
+Answers (BEYAN Ali):
+- A (2026 mapping, 128 rows) — NOT answered. Ask in today's meeting; still blocks A4 (publish 2026 from the approved book).
+- K1 176.086.246,00 (cost table right) · K2 10.841.775,00 · K3 27.702.989,00 (economic right) · K4 Ruhsat ve Denetim total 11.623.833,00 · K5 Zabıta/Veteriner "Diğer Bütçe Dışı Kaynak" row is a clerical error, disregard · K6 1.290.738.000,00 and 1.677.960.440,00 correct.
+- V1: sent "2026 Performans Değerlendirme.xlsx" (9-month data) → FR5 bulk import sample (A3). V2: sent 2025 final-account PDFs (gider/gelir kesin hesap), not an Excel template → ML1 still needs Mali Hizmetler's XLSX; ask today.
+- O1 Onay dayanağı: 2026 PP — 23.10.2025 tarih ve 77 sayılı meclis kararı; 2027 PP — 23.10.2026 tarih ve 96 sayılı meclis kararı (entered by Strateji at "Onaylı kitaptan yayınla").
+- O2 (PR2): Başkan Yardımcısı and Üst Yönetici approvals stay on paper → in Civensa the FR chain ends with Strateji approval (checklist A6 closed).
+- İ1: 2024–2026 İç Kontrol Eylem Planı in force 01.11.2024 – 01.11.2026 (start date, approval date itself not given). İ2: İKİYK = İzleme ve Yönlendirme Kurulu (meets every 6 months, report); İÇKEP = Eylem Planı Hazırlama ve Çalışma Ekipleri (plan preparation only); third row "İKİY" not answered → ask. İ3: new plan starts this month; whether directorate-level plans are in 2027 or together is open.
+Decisions (lead):
+1. K1–K6 via a read-time errata file, the loaded book stays as printed (provenance hash, D-401/D-406) → CIV-190 (Codex, GPT-6.1 Sol, yüksek).
+2. CIV-189 screen-text LOW items + O2 consequence (report whether the İdare FR export has a paper-signature page) → CIV-191 (Codex, GPT-6.1 Sol, orta). No file overlap with CIV-190 by package.
+3. FR5 import task is packaged after the lead reads the V1 Excel; ML1 waits for the real XLSX template.
+4. İç Kontrol archive import waits (FR 2026 first, D-387); İ1/İ2 recorded for it.
+Ask Ali today (owner, meeting): A mapping review · B2 per-activity result · ML1 XLSX template from Mali Hizmetler · İKİY row · directorate user list (name, e-mail, Müdür/Personel) · support channel · directorate name changes (A9).
+Next IDs: task CIV-192, decision D-443.

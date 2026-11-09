@@ -27,12 +27,12 @@ Gerekçe: pilot, gerçek kişilerle yolu bir kez dener; tam açılışı tatil �
 | --- | --- | --- | --- |
 | A1 | CIV-188 (Mali Hizmetler bölümleri birim gönderimini engellemez) canlıda | Lider → sahip yayını birleştirir | phase5'te birleşti 891f9ee (DOĞRULANDI); bir sonraki yayınla canlı |
 | A2 | B2: müdürlük göstergenin yanında faaliyet başına sonuç da girecek mi? | Ali (9 Kas sorusu) | BELİRSİZ; "evet" ise Codex görevi, pilottan önce |
-| A3 | Gösterge gerçekleşmelerinin Excel ile toplu girişi (FR5) | Ali bir güncel müdürlük Excel'i gönderir → lider paket → Codex | Örnek bekleniyor |
-| A4 | 2026 eşleştirmesi uygulandı, 2026 "Onaylı kitaptan yayınla" ile yayımlandı ("Onay dayanağı" meclis kararı metni) | Ali + Strateji | Bekliyor (D-401/D-406) |
-| A5 | Mali Hizmetler bütçe gerçekleşme şablonu (ML1) mevcut mali XLSX içe aktarımla yükleniyor | Ali → Mali Hizmetler örneği | Örnek bekleniyor |
-| A6 | Onay sırası (PR2): Başkan Yardımcısı ve Üst Yönetici adımları sistemde mi, kâğıtta mı? | Ali | BELİRSİZ; cevap gelene kadar sistemde: müdür gönderir → Strateji onaylar |
+| A3 | Gösterge gerçekleşmelerinin Excel ile toplu girişi (FR5) | Ali bir güncel müdürlük Excel'i gönderir → lider paket → Codex | Örnek geldi 9 Kas (2026 Performans Değerlendirme.xlsx, D-442); lider okuyunca paket |
+| A4 | 2026 eşleştirmesi uygulandı, 2026 "Onaylı kitaptan yayınla" ile yayımlandı ("Onay dayanağı" meclis kararı metni) | Ali + Strateji | Onay dayanağı geldi (2026: 23.10.2025/77; 2027: 23.10.2026/96, D-442); eşleştirme cevabı bekliyor |
+| A5 | Mali Hizmetler bütçe gerçekleşme şablonu (ML1) mevcut mali XLSX içe aktarımla yükleniyor | Ali → Mali Hizmetler örneği | 9 Kas'ta kesin hesap PDF'leri geldi, XLSX şablon değil (D-442); XLSX isteniyor |
+| A6 | Onay sırası (PR2): Başkan Yardımcısı ve Üst Yönetici adımları sistemde mi, kâğıtta mı? | Ali | KARAR 9 Kas (D-442): BY ve Üst Yönetici onayı kâğıtta; sistemde zincir Strateji onayıyla biter |
 | A7 | Uygulanamaz seçilen Mali Hizmetler bölümüne gerekçe yazılıyor (gerekçesiz hâli birim gönderimini engeller, D-436) | Mali Hizmetler + pilot provada kontrol | İzlenecek |
-| A8 | Basılı 2026 kitap tutarsızlıkları (D-375) düzeltilmiş rakamlar | Ali | Bekliyor |
+| A8 | Basılı 2026 kitap tutarsızlıkları (D-375) düzeltilmiş rakamlar | Ali → Codex | Cevap geldi 9 Kas (D-442); CIV-190 ile uygulanıyor |
 | A9 | Müdürlük ad değişiklikleri "Kurum yapısı" ekranında kayıtlı (D-359) | Ali listesi → lider + sahip | Bekliyor |
 
 ## B. Hesaplar ve roller
