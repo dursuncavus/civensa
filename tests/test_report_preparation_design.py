@@ -400,3 +400,22 @@ def test_new_card_anchor_and_failed_grid_do_not_claim_success(browser, db, sampl
         page.goto(base + '/program/1?period_id=1')
         expect(page.locator('dialog[open]')).to_have_count(0)
         expect(page.locator('.program-saved')).to_have_count(0)
+
+
+
+def test_correct_source_value_can_be_verified_without_changing_it(browser, db, sample, report_http):
+    value = db.scalar(select(IndicatorValue))
+    value.state = 'needs_review'
+    db.commit()
+    original = value.value
+    with browser.new_context(viewport={'width': 1440, 'height': 900}) as context:
+        page = context.new_page()
+        page.goto(report_http + '/program/1?period_id=1#rp-sources')
+        form = page.locator(f'form[action$="/verify-value/{value.id}"]')
+        expect(form.get_by_role('button', name='Kaynağa göre doğrula')).to_be_enabled()
+        form.get_by_role('button', name='Kaynağa göre doğrula').click()
+        expect(page.locator('#program-sources-dialog')).to_be_visible()
+        expect(page.locator('#program-sources-dialog .program-saved')).to_be_in_viewport()
+        db.refresh(value)
+        assert value.state == 'verified' and value.value == original
+        expect(page.locator(f'form[action$="/verify-value/{value.id}"]')).to_have_count(0)

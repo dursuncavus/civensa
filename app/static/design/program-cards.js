@@ -11,7 +11,9 @@
   const saving = new Set();
   const buttons = form => [...form.querySelectorAll('button:not([type]), button[type="submit"], input[type="submit"]')];
   const update = form => {
-    const unchanged = initial.get(form) === values(form);
+    // Verification changes review state even when the displayed value is correct.
+    const verifiesSource = /\/verify-(value|money)\//.test(new URL(form.action).pathname);
+    const unchanged = !verifiesSource && initial.get(form) === values(form);
     buttons(form).forEach(button => { button.disabled = saving.has(form) || unchanged; });
   };
   forms.forEach((form, index) => {
