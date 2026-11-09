@@ -152,10 +152,11 @@ yazılamıyorsa veya girdiyle çakışıyorsa hata standart hata akışına yaz�
   Tekrarlanan belediye/müdürlük toplamları otomatik birleştirilmez.
 - Gelirde fiziksel satırlar açıklama başlangıcına göre mantıksal satırlara
   toplanır. Kodun `0 / 1` olarak iki satıra bölünmesi, yalnız aynı alt sütun
-  konumu korunuyorsa `01` olarak okunur. Tutarın tam kısmından sonraki
+  konumu korunuyorsa `01` olarak okunur. İlk parça I sütununda bulunmalıdır;
+  II veya sonraki sütundaki parçalar I düzeyi olarak yorumlanmaz. Tutarın tam kısmından sonraki
   `,dd` veya `,d` eki aynı tutar sütununda birleştirilir; eksik rakam eklenmez.
   Birleşim satır eşitliği veya bağımsız genel toplamla kanıtlanmalıdır.
-- Kaynak parasal değerler Türkçe, iki ondalıklı biçimde olmalıdır. Eksik
+- Bölünmemiş parasal değerler Türkçe, iki ondalıklı biçimde olmalıdır. Eksik
   rakam tahmini, belirsiz sıra değişimi ve bağımsız olarak kanıtlanamayan sayı
   birleşimi desteklenmez. Negatif veya mevcut içe aktarmanın sayı/satır
   sınırlarını aşan çıktılar reddedilir.

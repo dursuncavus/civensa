@@ -91,6 +91,7 @@ class Row:
     cells: list[list[str]]
     where: str
     code_positions: list[list[int]] | None = None
+    level_one_end: int | None = None
 
     def text(self, column):
         return ' '.join(self.cells[column])
@@ -167,7 +168,11 @@ def header_bounds(lines, body, expected, where, code_count, year):
     Unknown/overlapping headers are rejected instead of assuming coordinates.
     """
     fragments = []
+    level_one_end = None
     for line in lines:
+        numerals = list(re.finditer(r'\b(?:III|II|IV|I|V)\b', line))
+        if code_count == 1 and [match.group() for match in numerals] == ['I', 'II', 'III', 'IV', 'V']:
+            level_one_end = numerals[1].start()
         chunks = list(re.finditer(r'\S+(?: \S+)*', line))
         roman = [chunk for chunk in chunks if re.fullmatch(r'[IV ]+', chunk.group())]
         if norm(' '.join(chunk.group() for chunk in roman)) == 'i ii iii iv v':
@@ -228,7 +233,7 @@ def header_bounds(lines, body, expected, where, code_count, year):
                 break
             run.append(position)
         bounds.append(run[len(run) // 2])
-    return bounds
+    return bounds, level_one_end
 
 
 def read_metadata(lines, where, metadata, year):
@@ -283,6 +288,10 @@ def validate_metadata(metadata, where, expense, notes):
 
 
 def joined_revenue_code(row):
+    if row.level_one_end is not None and any(positions and positions[0] >= row.level_one_end
+                                            for positions in row.code_positions or []):
+        raise ConversionError(f'{row.where}: gelir kodunda I düzeyi eksik; parçalar sonraki alt sütunda. '
+                              'Kaynak PDF kod sütunlarını kontrol edin; üst kod tahmin edilmedi.')
     parts = [codes(part) for part in row.cells[0]]
     if len(parts) == 1:
         return row.text(0)
@@ -325,8 +334,8 @@ def pdf_rows(path, kind, year, notes=None):
                           if line.strip() and not re.fullmatch(
                               r'\s*Sayfa\s+\d+(?:\s*/\s*\d+)?\s*', line, re.IGNORECASE)]
             located = f'{where}, satırlar {body + 1}–{len(lines)}'
-            bounds = header_bounds(header, [line for _, line in body_lines], expected,
-                                   located, code_count, year)
+            bounds, level_one_end = header_bounds(header, [line for _, line in body_lines], expected,
+                                                  located, code_count, year)
             current = None
             for line_no, line in body_lines:
                 cells = [line[left:right].strip()
@@ -353,7 +362,7 @@ def pdf_rows(path, kind, year, notes=None):
                         raise ConversionError(f'{where}, satır {line_no}: gelir kodu eksik. PDF satırını kontrol edin.')
                     current = Row([[cell] if cell else [] for cell in cells],
                                   f'{where}, satır {line_no}',
-                                  [code_positions] if not expense and cells[0] else [])
+                                  [code_positions] if not expense and cells[0] else [], level_one_end)
                     rows.append(current)
                 elif current is not None:
                     for index, cell in enumerate(cells):

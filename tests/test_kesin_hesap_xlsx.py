@@ -173,7 +173,8 @@ def expense_pdf(tmp_path, *, mismatch=None, blank=False, duplicate=False, center
 def revenue_pdf(tmp_path, *, ambiguous=False, total=True, mismatch=False, unproved=False,
                 year=2026, centered=False, total_in_code=False, lead_layout=False,
                 integer_wrap=False, split_code=False, dates=None, orphan=None,
-                detail_first=False, unplaced=False, misplaced_code=False, carry_mismatch=False):
+                detail_first=False, unplaced=False, misplaced_code=False, carry_mismatch=False,
+                misplaced_root=False):
     headers = ['Gelirin Kodu', 'Açıklama', 'Bütçe ile Tahmin Edilen',
                f'{year - 1} Yılından Devreden Gelir', f'{year} Yılı Tahakkuku',
                'Toplam Tahakkuk', f'{year} Yılı Tahsilatı', 'Red ve İadeler',
@@ -211,6 +212,8 @@ def revenue_pdf(tmp_path, *, ambiguous=False, total=True, mismatch=False, unprov
         rows[0][0] = '0\n1'
     if misplaced_code:
         rows[0][0] = '0\n        1'
+    if misplaced_root:
+        rows[0][0] = '        0\n        1'
     if unplaced:
         rows[0][6] += '\nX'
     if lead_layout:
@@ -566,6 +569,13 @@ def test_vertical_code_fragments_must_share_the_same_subcolumn(tmp_path):
     result, out = run(tmp_path, '--gelir', revenue_pdf(tmp_path, lead_layout=True, misplaced_code=True))
     assert result.returncode != 0
     assert 'alt sütun' in (out / 'report.md').read_text()
+    assert not list(out.glob('*.xlsx'))
+
+
+def test_revenue_root_cannot_start_in_level_ii(tmp_path):
+    result, out = run(tmp_path, '--gelir', revenue_pdf(tmp_path, lead_layout=True, misplaced_root=True))
+    assert result.returncode != 0
+    assert 'I düzeyi' in (out / 'report.md').read_text()
     assert not list(out.glob('*.xlsx'))
 
 
