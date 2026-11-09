@@ -1,46 +1,12 @@
 {% extends "base.html" %}
 {% block page_title %}PP kaynak karşılaştırması{% endblock %}
 {% block page_subtitle %}{{ period.year }} dönemi · Word kaynak hücreleri ve güncel kayıtlar · Salt okunur{% endblock %}
-{% block content %}
-<link rel="stylesheet" href="/static/design/source-comparison.css">
-<section class="source-comparison-page">
-  <div class="page-actions">
-    <a class="button secondary" href="/source-comparison.csv?period_id={{ period.id }}{% if department_id %}&amp;department_id={{ department_id }}{% endif %}">CSV indir</a>
-    <a class="button link-button" href="/dashboard?period_id={{ period.id }}">Genel bakış</a>
-  </div>
-  <div class="info-panel">
-    <p>Her satır özgün kaynak hücresini güncel kayıtla karşılaştırır. Bilinmeyen konumlar “Bilinmiyor” olarak gösterilir. Boş hücre sıfır değildir. Geri alınmış içe aktarmalar karşılaştırmaya katılmaz.</p>
-    <dl aria-label="Durumlar">
-      <dt>Eşleşiyor</dt>
-      <dd>Kaynak hücresi ve güncel kayıt eşleşiyor.</dd>
-      <dt>Kararla değişti</dt>
-      <dd>Güncel kayıt kararla değişti.</dd>
-      <dt>Fark var</dt>
-      <dd>Kaynak hücresi ve güncel kayıt arasında fark var.</dd>
-      <dt>Kaynakta yok</dt>
-      <dd>Kaynak hücresinde yok.</dd>
-      <dt>Kayıtta yok</dt>
-      <dd>Güncel kayıtta yok.</dd>
-    </dl>
-  </div>
-  {% for notice in comparison.notices %}
-  <p class="return-note warning-panel">{{ notice }}</p>
-  {% endfor %}
-  {% set statuses = ['Eşleşiyor', 'Kararla değişti', 'Fark var', 'Kaynakta yok', 'Kayıtta yok'] %}
-  <p class="comparison-summary">{{ comparison.rows|length }} satır · {{ comparison.rows|selectattr('status', 'equalto', 'Eşleşiyor')|list|length }} eşleşiyor · {{ comparison.rows|selectattr('status', 'equalto', 'Kararla değişti')|list|length }} kararla değişti · {{ comparison.rows|selectattr('status', 'equalto', 'Fark var')|list|length }} fark var · {{ comparison.rows|selectattr('status', 'equalto', 'Kaynakta yok')|list|length }} kaynakta yok · {{ comparison.rows|selectattr('status', 'equalto', 'Kayıtta yok')|list|length }} kayıtta yok</p>
-  <div class="status-filter" role="group" aria-label="Duruma göre filtrele" hidden>
-    <button type="button" class="button" data-filter-status="">Tümü ({{ comparison.rows|length }})</button>
-    {% for status in statuses %}
-    {% set count = comparison.rows|selectattr('status', 'equalto', status)|list|length %}
-    {% if count %}
-    <button type="button" class="button" data-filter-status="{{ status }}">{{ status }} ({{ count }})</button>
-    {% endif %}
-    {% endfor %}
-  </div>
-  <p class="filter-empty" role="status" hidden>Bu durumda satır yok.</p>
-  <p class="scroll-hint" id="comparison-scroll-hint">Tablonun devamını görmek için yatay kaydırın.</p>
-  <div class="table-wrap" tabindex="0" role="region" aria-label="Kaynak karşılaştırma tablosu" aria-describedby="comparison-scroll-hint">
-    <table id="source-comparison">
+{% import "directorate_cards.html" as cards %}
+{% macro comparison_table(rows, table_id, compact=false) %}
+  {% set hint_id = "comparison-scroll-hint" if table_id == "source-comparison" else table_id ~ "-scroll-hint" %}
+  <p class="scroll-hint" id="{{ hint_id }}">Tablonun devamını görmek için yatay kaydırın.</p>
+  <div class="table-wrap" tabindex="0" role="region" aria-label="Kaynak karşılaştırma tablosu" aria-describedby="{{ hint_id }}">
+    <table id="{{ table_id }}" class="source-comparison-table">
       <thead>
         <tr>
           <th scope="col">Müdürlük / kayıt</th>
@@ -52,11 +18,11 @@
         </tr>
       </thead>
       <tbody>
-        {% for row in comparison.rows %}
+        {% for row in rows %}
         <tr data-status="{{ row.status }}" data-model="{{ row.model }}">
           <td>
             <strong>{{ row.department }}</strong>
-            <p>{{ row.record }}</p>
+            {% if compact %}<details><summary>{{ row.record }}</summary><p>{{ row.record }}</p></details>{% else %}<p>{{ row.record }}</p>{% endif %}
             {{ row.year or 'Bilinmiyor' }} {{ row.kind }} {{ row.funding }}
           </td>
           <td>
@@ -80,7 +46,7 @@
             <p>Karar: {{ row.decision }}</p>
             {% endif %}
             {% if row.note %}
-            <p>{{ row.note }}</p>
+            {% if compact %}<details><summary>{{ row.note }}</summary><p>{{ row.note }}</p></details>{% else %}<p>{{ row.note }}</p>{% endif %}
             {% endif %}
           </td>
         </tr>
@@ -92,7 +58,66 @@
       </tbody>
     </table>
   </div>
-  {% include "pp_reconciliation.html" %}
+{% endmacro %}
+{% block content %}
+<link rel="stylesheet" href="/static/design/source-comparison.css">
+<section class="source-comparison-page">
+  {% set groups = comparison.rows|groupby('department') %}
+  <div class="page-actions">
+    <a class="button secondary" href="/source-comparison.csv?period_id={{ period.id }}{% if department_id %}&amp;department_id={{ department_id }}{% endif %}">CSV indir</a>
+    <a class="button link-button" href="/dashboard?period_id={{ period.id }}">Genel bakış</a>
+  </div>
+  <div class="info-panel">
+    <p>Her satır özgün kaynak hücresini güncel kayıtla karşılaştırır. Bilinmeyen konumlar “Bilinmiyor” olarak gösterilir. Boş hücre sıfır değildir. Geri alınmış içe aktarmalar karşılaştırmaya katılmaz.</p>
+    {% if groups|length > 3 %}<details><summary>Durumların anlamı</summary>{% endif %}
+    <dl aria-label="Durumlar">
+      <dt>Eşleşiyor</dt>
+      <dd>Kaynak hücresi ve güncel kayıt eşleşiyor.</dd>
+      <dt>Kararla değişti</dt>
+      <dd>Güncel kayıt kararla değişti.</dd>
+      <dt>Fark var</dt>
+      <dd>Kaynak hücresi ve güncel kayıt arasında fark var.</dd>
+      <dt>Kaynakta yok</dt>
+      <dd>Kaynak hücresinde yok.</dd>
+      <dt>Kayıtta yok</dt>
+      <dd>Güncel kayıtta yok.</dd>
+    </dl>
+    {% if groups|length > 3 %}</details>{% endif %}
+  </div>
+  {% if groups|length > 3 and comparison.notices %}<details class="comparison-notices"><summary>Kaynak uyarıları · {{ comparison.notices|length }} kayıt</summary>{% endif %}
+  {% for notice in comparison.notices %}
+  <p class="return-note warning-panel">{{ notice }}</p>
+  {% endfor %}
+  {% if groups|length > 3 and comparison.notices %}</details>{% endif %}
+  {% set statuses = ['Eşleşiyor', 'Kararla değişti', 'Fark var', 'Kaynakta yok', 'Kayıtta yok'] %}
+  <p class="comparison-summary">{{ comparison.rows|length }} satır · {{ comparison.rows|selectattr('status', 'equalto', 'Eşleşiyor')|list|length }} eşleşiyor · {{ comparison.rows|selectattr('status', 'equalto', 'Kararla değişti')|list|length }} kararla değişti · {{ comparison.rows|selectattr('status', 'equalto', 'Fark var')|list|length }} fark var · {{ comparison.rows|selectattr('status', 'equalto', 'Kaynakta yok')|list|length }} kaynakta yok · {{ comparison.rows|selectattr('status', 'equalto', 'Kayıtta yok')|list|length }} kayıtta yok</p>
+  <div class="status-filter" role="group" aria-label="Duruma göre filtrele" hidden>
+    <button type="button" class="button" data-filter-status="">Tümü ({{ comparison.rows|length }})</button>
+    {% for status in statuses %}
+    {% set count = comparison.rows|selectattr('status', 'equalto', status)|list|length %}
+    {% if count %}
+    <button type="button" class="button" data-filter-status="{{ status }}">{{ status }} ({{ count }})</button>
+    {% endif %}
+    {% endfor %}
+  </div>
+  <p class="filter-empty" role="status" hidden>Bu durumda satır yok.</p>
+  {% if groups|length > 3 %}
+    {{ cards.search('comparison-directorates') }}
+    <div class="directorate-grid" id="comparison-directorates">
+    {% for name, rows in groups %}
+      {% call cards.detail('comparison-department-' ~ loop.index, name, rows|length ~ ' kaynak satırı') %}
+        {{ comparison_table(rows, 'source-comparison-' ~ loop.index, true) }}
+        {% with reconciliation = reconciliation|selectattr('department_id', 'equalto', rows[0].department_id)|list, reconciliation_id = 'reconciliation-' ~ loop.index %}{% include "pp_reconciliation.html" %}{% endwith %}
+      {% endcall %}
+    {% endfor %}
+    </div>
+    <details><summary>Program ve alt program ara toplamları</summary>
+      {% with reconciliation = reconciliation|rejectattr('department_id', 'in', comparison.rows|map(attribute='department_id')|unique|list)|list %}{% include "pp_reconciliation.html" %}{% endwith %}
+    </details>
+  {% else %}
+    {{ comparison_table(comparison.rows, 'source-comparison') }}
+    {% include "pp_reconciliation.html" %}
+  {% endif %}
 </section>
 <script src="/static/design/source-comparison.js" defer></script>
 {% endblock %}

@@ -1,6 +1,25 @@
 {% extends "base.html" %}
 {% block page_title %}Sistem durumu{% endblock %}
 {% block page_subtitle %}Civensa {{ operations.version }} · {{ period.year }} döneminin operasyon özeti{% endblock %}
+{% import "directorate_cards.html" as cards %}
+{% macro automatic_checks(items, compact=false) %}
+{% for item in items %}
+      <article class="pp-release-item" data-check-id="{{ item.id }}">
+        <h4>{{ item.label }} ·
+          <span class="status {{ 'success' if item.status=='Geçti' else 'warning' }}">{{ item.status }}</span>
+        </h4>
+        <p class="muted">Sorumlu: {{ item.owner }}</p>
+        {% if item.next_step %}
+        {% if compact %}<details><summary>{{ item.next_step }}</summary><p class="muted">{{ item.next_step }}</p></details>{% else %}<p class="muted">{{ item.next_step }}</p>{% endif %}
+        {% endif %}
+        <details>
+          <summary>Kontrol ve kanıt</summary>
+          <p>Kontrol kaynağı: {{ item.source }}</p>
+          <pre tabindex="0">{{ item.evidence|tojson(indent=2) }}</pre>
+        </details>
+      </article>
+{% endfor %}
+{% endmacro %}
 {% block content %}
 <link rel="stylesheet" href="/static/design/operations.css">
 <div class="operations-page">
@@ -70,25 +89,25 @@
       <b>PP-19 canlı rol gözlemi: {{ readiness.release.live_role_verification.status }}</b> · Sistem canlı rol kontrolü yapmaz. Yetkili kişinin manuel kanıtı aşağıda ayrıca gösterilir.
     </p>
     <h3>Otomatik yayın kapıları</h3>
-    <div class="pp-release-items">
-      {% for item in readiness.release.automatic %}
-      <article class="pp-release-item" data-check-id="{{ item.id }}">
-        <h4>{{ item.label }} ·
-          <span class="status {{ 'success' if item.status=='Geçti' else 'warning' }}">{{ item.status }}</span>
-        </h4>
-        <p class="muted">Sorumlu: {{ item.owner }}</p>
-        {% if item.next_step %}
-        <p class="muted">{{ item.next_step }}</p>
-        {% endif %}
-        <details>
-          <summary>Kontrol ve kanıt</summary>
-          <p>Kontrol kaynağı: {{ item.source }}</p>
-          <pre tabindex="0">{{ item.evidence|tojson(indent=2) }}</pre>
-        </details>
-      </article>
+    {% set release = readiness.release.automatic|release_groups %}
+    {% if release.departments|length > 3 %}
+      {{ cards.search('operations-directorates') }}
+      <div class="directorate-grid" id="operations-directorates">
+      {% for group in release.departments %}
+        {% set blocked = group['items']|rejectattr('status', 'equalto', 'Geçti')|list|length %}
+        {% call cards.detail('operations-department-' ~ group.id, group.name, group['items']|length ~ ' kontrol · ' ~ blocked ~ ' engelli') %}
+          {{ automatic_checks(group['items'], true) }}
+        {% endcall %}
       {% endfor %}
-    </div>
+      </div>
+      <details class="operations-shared-checks"><summary>Ortak kontroller ve program ara toplamları · {{ release.shared|length }} kontrol</summary>
+        {{ automatic_checks(release.shared, true) }}
+      </details>
+    {% else %}
+      <div class="pp-release-items">{{ automatic_checks(readiness.release.automatic) }}</div>
+    {% endif %}
     <h3>D1–D8 ve manuel yayın onayları</h3>
+    {% if release.departments|length > 3 %}<details><summary>Manuel yayın onaylarının ayrıntıları · {{ readiness.release.manual|length }} madde</summary>{% endif %}
     <div class="pp-release-items">
       {% for item in readiness.release.manual %}
       <article class="pp-release-item" data-check-id="{{ item.id }}">
@@ -116,6 +135,7 @@
       </article>
       {% endfor %}
     </div>
+    {% if release.departments|length > 3 %}</details>{% endif %}
     <h3>Manuel teyit kaydet</h3>
     <p>Adınız ve kayıt zamanı sistem tarafından eklenir. Önceki kayıt değiştirilemez veya silinemez; düzeltme ve geri çekme yeni kayıt oluşturur. Kanıta sorumlu kişinin onayını, belge/sürüm bağlantısını ve kabul kapsamını yazın.</p>
     {% if confirmation_error %}
@@ -200,55 +220,55 @@
         <thead>
           <tr>
             <th>Kaynak</th>
-            <th>Kayıt</th>
+            <th class="pilot-numeric">Kayıt</th>
           </tr>
         </thead>
         <tbody>
           <tr>
             <td>Müdürlükler</td>
-            <td>
+            <td class="pilot-numeric">
               <b>{{ operations.records.departments }}</b>
             </td>
           </tr>
           <tr>
             <td>Müdürlük kullanıcı hesapları</td>
-            <td>
+            <td class="pilot-numeric">
               <b>{{ operations.records.department_accounts }}</b>
             </td>
           </tr>
           <tr>
             <td>Kullanıcı hesabı olmayan müdürlükler</td>
-            <td>
+            <td class="pilot-numeric">
               <b class="status {{ 'warning' if operations.records.missing_department_accounts else 'success' }}">{{ operations.records.missing_department_accounts }}</b>
             </td>
           </tr>
           <tr>
             <td>Performans göstergeleri</td>
-            <td>
+            <td class="pilot-numeric">
               <b>{{ operations.records.indicators }}</b>
             </td>
           </tr>
           <tr>
             <td>Faaliyetler</td>
-            <td>
+            <td class="pilot-numeric">
               <b>{{ operations.records.activities }}</b>
             </td>
           </tr>
           <tr>
             <td>Eşleştirme bekleyen faaliyetler</td>
-            <td>
+            <td class="pilot-numeric">
               <b class="status {{ 'warning' if operations.records.unresolved_activities else 'success' }}">{{ operations.records.unresolved_activities }}</b>
             </td>
           </tr>
           <tr>
             <td>Metin benzerliği önerisi bulunanlar</td>
-            <td>
+            <td class="pilot-numeric">
               <b>{{ operations.records.mapping_suggestions }}</b>
             </td>
           </tr>
           <tr>
             <td>Güçlü öneriler (en az %50)</td>
-            <td>
+            <td class="pilot-numeric">
               <b class="status success">{{ operations.records.strong_mapping_suggestions }}</b>
             </td>
           </tr>

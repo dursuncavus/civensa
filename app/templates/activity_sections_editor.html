@@ -42,6 +42,7 @@
 {% macro display_table_headers(content) -%}
 {% set display = namespace(html=content) %}
 {% for before,after in table_headers.items() %}{% set display.html = display.html|replace(('<th>'~before~'</th>')|safe, ('<th>'~after~'</th>')|safe) %}{% endfor %}
+{% for before,after in table_headers.items() %}{% set display.html = display.html|replace(('<th class="pilot-numeric">'~before~'</th>')|safe, ('<th class="pilot-numeric">'~after~'</th>')|safe) %}{% endfor %}
 {{ display.html }}
 {%- endmacro %}
 <div class="section-editor-page report-{{ report.workflow.status if report.workflow else 'idare' }}">

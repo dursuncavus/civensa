@@ -13,6 +13,7 @@ from app.activity_contract_service import digest
 from app.models import ARContentEvent, ARUnitWorkflowEvent
 from test_activity_sections import section_client, login
 from test_sidebar_ui import browser
+from tests.civ201_contract import undo_numeric_headers
 
 pytestmark = pytest.mark.postgres
 CONTRACT = Path(__file__).parent / 'fixtures' / 'section_editor_012_contract.json'
@@ -253,7 +254,7 @@ def test_012_sentence_case_preserves_excel_and_export_headers(section_client, db
     for code in ('I.C.1','I.C.3','I.C.4','III.A','III.A.1','III.A.2','III.A.3','III.A.4'):
         response = client.get(f'/activity-sections/reports/{doc.id}?code={code}')
         assert response.status_code == 200
-        labels = re.findall(r'<th>(.*?)</th>', response.text)
+        labels = re.findall(r'<th>(.*?)</th>', undo_numeric_headers(response.text))
         assert not set(labels) & expected.keys()
         seen.update(labels)
         # Classification names and accessible form labels remain verbatim.
@@ -267,5 +268,5 @@ def test_012_sentence_case_preserves_excel_and_export_headers(section_client, db
     own = docs['birim:'+str(sample['department'].id)]
     response = client.get(f'/activity-sections/reports/{own.id}?code=III.A.1')
     assert response.status_code == 200
-    seen.update(re.findall(r'<th>(.*?)</th>', response.text))
+    seen.update(re.findall(r'<th>(.*?)</th>', undo_numeric_headers(response.text)))
     assert set(expected.values()) <= seen
