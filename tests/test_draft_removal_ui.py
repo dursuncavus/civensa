@@ -32,6 +32,9 @@ def test_inline_confirm_before_removal(browser, client, db, sample, fresh, kind,
         page = context.new_page()
         page.on('dialog', lambda dialog: (dialogs.append(dialog.type), dialog.dismiss()))
         page.goto(f'http://testserver{path}?period_id=1')
+        if path.startswith('/program'):
+            section = 'cards' if kind == 'card' else 'assignments'
+            page.locator(f'[data-program-dialog=program-{section}-dialog]').click()
         if path.startswith('/department') and role == 'department':
             # The inline warning covers discarding unsaved edits too; removal
             # must not invoke the browser's native beforeunload confirmation.
@@ -70,6 +73,7 @@ def test_inline_refusal_keeps_record(browser, client, db, sample):
         context.route('http://testserver/**', serve)
         page = context.new_page()
         page.goto('http://testserver/program/1?period_id=1')
+        page.locator('[data-program-dialog=program-cards-dialog]').click()
         panel = page.locator(f'[data-removal="card-{sample["card"].id}"]')
         panel.locator('..').locator(':scope > summary').click()
         panel.locator('summary').click()

@@ -1,0 +1,65 @@
+/* CIV-202: this page owns its cards and native modal dialogs. */
+.report-preparation-page .rp-overview { padding: var(--space-4); }
+.report-preparation-page .program-search { max-width: 32rem; }
+.report-preparation-page .program-card-grid {
+  display: grid; grid-template-columns: repeat(auto-fill,minmax(17rem,1fr));
+  gap: var(--space-4); max-width: none; margin-bottom: var(--space-4);
+}
+.report-preparation-page .program-card-grid .program-card {
+  display: flex; flex-direction: column; align-items: stretch; gap: var(--space-3);
+  min-width: 0; padding: 0 0 var(--space-3); border: 1px solid var(--border);
+  border-radius: var(--radius); overflow: hidden;
+}
+.report-preparation-page .program-card-head { background: var(--accent-soft); padding: var(--space-3); }
+.report-preparation-page .program-card-head h3 { color: var(--accent-hover); margin: 0; font-size: var(--text-sm); }
+.report-preparation-page .program-card > :not(.program-card-head) { margin: 0 var(--space-3); }
+.report-preparation-page .program-card > .button { margin-top: auto; align-self: start; }
+.report-preparation-page .program-card > .rp-status { align-self: start; }
+.report-preparation-page .program-secondary > summary { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.report-preparation-page .program-dialog {
+  width: min(76rem, calc(100% - 2rem)); max-width: calc(100% - 2rem);
+  max-height: calc(100dvh - 2rem); padding: var(--space-4); border: 1px solid var(--border);
+  border-radius: var(--radius); background: var(--surface); color: var(--text); overflow: auto;
+}
+.report-preparation-page .program-dialog::backdrop { background: rgb(0 0 0 / 45%); }
+.report-preparation-page .program-dialog-head {
+  position: sticky; top: calc(-1 * var(--space-4)); z-index: 1;
+  display: flex; align-items: center; justify-content: space-between; gap: var(--space-4);
+  padding: var(--space-3) 0; background: var(--surface);
+}
+.report-preparation-page .program-dialog-head h2 { margin: 0; }
+.report-preparation-page .program-dialog .rp-panel { margin-bottom: 0; }
+.report-preparation-page .program-saved { color: var(--success); margin-left: var(--space-3); }
+.report-preparation-page button:disabled { cursor: default; opacity: .65; }
+.report-preparation-page [hidden] { display: none !important; }
+@media (max-width: 600px) {
+  .report-preparation-page .program-card-grid { grid-template-columns: minmax(0,1fr); }
+  .report-preparation-page .program-dialog { padding: var(--space-3); }
+}
+@media (min-width: 1000px) {
+  /* The long Strateji navigation scrolls within its own column on this page. */
+  .app-shell:has([data-program-page]) > .sidebar {
+    height: 100dvh; overflow-y: auto; position: sticky; top: 0;
+  }
+  .report-preparation-page .rp-overview {
+    display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); column-gap: var(--space-4);
+  }
+  .report-preparation-page .rp-overview > * { grid-column: 1 / -1; }
+  .report-preparation-page .rp-overview > h2 { grid-column: 1 / 3; grid-row: 1; }
+  .report-preparation-page .rp-overview > .rp-readonly {
+    grid-column: 1 / 3; grid-row: 2; padding: 0; background: none;
+  }
+  .report-preparation-page .program-search { grid-column: 3; grid-row: 1 / 3; }
+  .report-preparation-page .program-card-grid .program-card { gap: var(--space-2); }
+  .report-preparation-page .program-card-head { padding: var(--space-2) var(--space-3); }
+  .report-preparation-page .program-card .button { min-height: 2rem; padding: var(--space-1) var(--space-3); }
+  .report-preparation-page .rp-overview > .rp-errors { grid-column: 1; grid-row: 4; }
+  .report-preparation-page .rp-overview > details:not(.rp-errors) { grid-column: 2; grid-row: 4; }
+  .report-preparation-page .rp-overview > p:last-child { grid-column: 3; grid-row: 4; margin-bottom: 0; }
+  .report-preparation-page .program-card-grid .program-reconciliation-card {
+    grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 1fr auto;
+    align-items: center; padding: 0; gap: var(--space-3);
+  }
+  .report-preparation-page .program-reconciliation-card .program-card-head { align-content: center; height: 100%; }
+  .report-preparation-page .program-reconciliation-card > .button { margin: var(--space-2) var(--space-3); }
+}

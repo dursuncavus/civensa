@@ -152,6 +152,7 @@ def test_reconciliation_details_browser_layout_and_evidence(
         context.route('http://testserver/**', serve)
         page = context.new_page()
         page.goto(f"http://testserver/program/{sample['department'].id}?period_id={sample['period'].id}")
+        page.locator('[data-program-dialog=program-reconciliation-dialog]').click()
         section = page.locator('#pp-reconciliation')
         expect(section).to_be_visible()
         details = section.locator('details')
