@@ -102,8 +102,14 @@ def test_delegate_only_authority_recorded(foundation_db,people,package):
 @pytest.mark.parametrize('termination',['expiry','revocation','inactive','removed'])
 def test_delegate_termination(foundation_db,people,package,termination):
     db=foundation_db;x=people;p=package;now=auth.server_now(db)
-    g=grant(db,x,end=now+timedelta(seconds=1) if termination=='expiry' else None);submit(db,x,p)
-    if termination=='expiry':db.execute(text('SELECT pg_sleep(1.1)'))
+    # Same race as test_delegation_expires_after_initial_check: a 1 s window let a
+    # slow runner reach create_delegation after end_at (422). Grant a wider window
+    # and sleep until the server clock has passed it.
+    window=timedelta(seconds=4)
+    g=grant(db,x,end=now+window if termination=='expiry' else None);submit(db,x,p)
+    if termination=='expiry':
+        remaining=(now+window-auth.server_now(db)).total_seconds()
+        db.execute(text('SELECT pg_sleep(:s)'),{'s':max(remaining,0)+0.2})
     elif termination=='revocation':auth.revoke_delegation(db,x['director'],g.id,'İptal');db.commit()
     elif termination=='inactive':x['user'].is_active=False;db.commit()
     else:
