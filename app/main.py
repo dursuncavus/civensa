@@ -137,6 +137,62 @@ class FirstPasswordMiddleware:
         await self.app(scope, receive, send)
 
 
+class SavedNoticeMiddleware:
+    """One-shot POST/Redirect/GET feedback for native HTML forms.
+
+    Runs inside SessionMiddleware. The base template owns an inert placeholder;
+    reveal it only after the response status/content type are known, so templates
+    reused by validation/error responses cannot accidentally claim success.
+    Equal-length replacement preserves Content-Length without buffering responses.
+    """
+    def __init__(self, app):
+        self.app = app
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] != "http":
+            return await self.app(scope, receive, send)
+        from urllib.parse import urljoin, urlsplit
+        from starlette.datastructures import Headers, MutableHeaders
+        request = Request(scope)
+        headers = Headers(scope=scope)
+        native = (headers.get("sec-fetch-mode", "navigate") == "navigate"
+                  and "application/json" not in headers.get("accept", "")
+                  and not headers.get("x-requested-with"))
+        path = scope.get("path", "")
+        navigation = (native and scope["method"] == "GET"
+                      and not path.startswith(("/static/", "/api/")))
+        pending = request.session.pop("saved_notice", None) if navigation else None
+        current = request.url.path + ("?" + request.url.query if request.url.query else "")
+        reveal = False
+
+        async def notice_send(message):
+            nonlocal reveal
+            if message["type"] == "http.response.start":
+                response_headers = Headers(raw=message["headers"])
+                status = message["status"]
+                reveal = (pending == current and status == 200
+                          and response_headers.get("content-type", "").startswith("text/html"))
+                if reveal:
+                    MutableHeaders(scope=message)["Cache-Control"] = "no-store"
+                if (native and scope["method"] == "POST" and status == 303
+                        and path not in {"/login", "/logout"}
+                        and not path.startswith("/api/")
+                        and headers.get("content-type", "").split(";", 1)[0]
+                        in {"application/x-www-form-urlencoded", "multipart/form-data"}):
+                    target = urlsplit(urljoin(str(request.url), response_headers.get("location", "")))
+                    origin = urlsplit(str(request.url))
+                    if (target.scheme, target.netloc) == (origin.scheme, origin.netloc) and target.path not in {"/login", "/change-password"}:
+                        request.session["saved_notice"] = target.path + ("?" + target.query if target.query else "")
+            elif message["type"] == "http.response.body" and reveal:
+                message = dict(message, body=message.get("body", b"").replace(
+                    b'<div id="saved-notice" role="status" hidden>',
+                    b'<div id="saved-notice" role="status"       >', 1))
+            await send(message)
+
+        await self.app(scope, receive, notice_send)
+
+
+app.add_middleware(SavedNoticeMiddleware)
 app.add_middleware(FirstPasswordMiddleware)
 app.add_middleware(
     SessionMiddleware,
@@ -167,6 +223,9 @@ from .structure_service import period_name
 from .book_export import display_catalogue_keys
 
 templates = Jinja2Templates(directory=BASE_DIR / "templates")
+from .pilot_layout import release_groups, financial_groups
+templates.env.filters["release_groups"] = release_groups
+templates.env.filters["financial_groups"] = financial_groups
 from .pp_errors import install as install_pp_errors, pp_error, payload as pp_error_payload
 install_pp_errors(app, templates)
 

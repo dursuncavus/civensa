@@ -45,6 +45,55 @@ class Reopen(Freeze):
     reason: StrictStr = ''
 
 
+
+GENERIC_SECTION_HINT = 'Bölüm içeriğini gözden geçirip Hazır veya gerekçeli Uygulanamaz seçin.'
+OWNER_ORDER = ('strategy', 'finance', 'directorate')
+SMALL_GROUP = 3  # filtered or short lists stay open; folding them only hides content
+
+
+def fold_department_messages(messages, department_names):
+    """CIV-199: show "<Müdürlük>: <sorun>" lines once per problem.
+
+    Messages whose prefix is not a known department name stay as they are, in
+    their original order. A problem repeated for two or more departments is
+    returned as one entry with the department list for a toggle."""
+    folded, groups = [], {}
+    for message in messages:
+        name, sep, problem = message.partition(': ')
+        if sep and (name in department_names or name.endswith('Müdürlüğü')):
+            if problem not in groups:
+                groups[problem] = {'problem': problem, 'departments': []}
+                folded.append(groups[problem])
+            groups[problem]['departments'].append(name)
+        else:
+            folded.append({'text': message})
+    return [item if 'text' in item or len(item['departments']) > 1
+            else {'text': f"{item['departments'][0]}: {item['problem']}"} for item in folded]
+
+
+def completion_view(matches, department_names):
+    """CIV-199: per-report summary and owner groups for the completion view."""
+    status_counts, owner_counts, groups = {}, {}, {}
+    for section in matches:
+        status_counts[section['status']] = status_counts.get(section['status'], 0) + 1
+        owner_counts[section['owner']] = owner_counts.get(section['owner'], 0) + 1
+        missing = [m for m in section['missing'] if m != GENERIC_SECTION_HINT]
+        row = dict(section=section, needs_review=len(missing) != len(section['missing']),
+                   problems=fold_department_messages(missing, department_names),
+                   warnings=fold_department_messages([w.replace(GENERIC_SECTION_HINT, 'bölümü gözden geçirmeli.') for w in section.get('warnings') or []], department_names))
+        groups.setdefault(section['owner'], []).append(row)
+    ordered = [owner for owner in OWNER_ORDER if owner in groups] + [o for o in groups if o not in OWNER_ORDER]
+    owner_groups = []
+    for owner in ordered:
+        rows = groups[owner]
+        counts = {}
+        for row in rows:
+            counts[row['section']['status']] = counts.get(row['section']['status'], 0) + 1
+        problem_rows = sum(1 for row in rows if row['problems'] or row['warnings'])
+        owner_groups.append(dict(owner=owner, rows=rows, status_counts=counts, problem_rows=problem_rows,
+                                 open=len(counts) > 1 or len(rows) <= SMALL_GROUP))
+    return dict(status_counts=status_counts, owner_counts=owner_counts, owner_groups=owner_groups)
+
 def transact(db, operation):
     try:
         result=operation();db.commit();return result
@@ -297,6 +346,8 @@ def register(app):
         query=select(ARDocument).order_by(ARDocument.period_id,ARDocument.id)
         if period_id:query=query.where(ARDocument.period_id==period_id)
         reports=[];report_errors=[];baseline_cache={}
+        from .models import Department
+        names={d.name for d in db.scalars(select(Department))}
         for doc in db.scalars(query):
             if user.role!='strategy' and doc.department_id not in {None,user.department_id}:continue
             try:report=service.report_data(db,user,doc.id)
@@ -309,7 +360,8 @@ def register(app):
                 raise
             matches=[s for s in report['sections'] if (not section or s['code']==section) and (not status or s['status']==status)]
             if matches:reports.append({'report':report,'matches':matches,'similarities':ar_similarity.for_report(
-                db,user,report,visible_sections=matches,baseline_cache=baseline_cache)})
+                db,user,report,visible_sections=matches,baseline_cache=baseline_cache),
+                'view':completion_view(matches,names)})
         return reports,report_errors
 
     @router.get('/activity-sections')

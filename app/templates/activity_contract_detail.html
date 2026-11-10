@@ -7,142 +7,9 @@
 {%- endmacro %}
 {% block page_title %}{{ report.year }} Faaliyet raporu · Revizyon {{ report.revision }}{% endblock %}
 {% block page_subtitle %}Baz performans programı v{{ report.publication_version }} · {{ 'Nihai onay sonrası iade edildi' if report.returned_after_approval else ('Onaylı' if report.approved else 'Taslak') }}{% endblock %}
-{% block content %}
-  <link rel="stylesheet" href="/static/design/activity-reports.css">
-  <link rel="stylesheet" href="/static/design/activity-report-detail.css">
-  <div class="activity-report-detail-page activity-reports-page activity-contract-content">
-    {% for closure in report.closure_notes %}
-      <section class="warning-panel" data-closure-note>
-        <h2>{{ closure.department }}</h2>
-        <p>{{ closure.message }}</p>
-      </section>
-    {% endfor %}
-    <section class="reports-panel">
-      {% if report.revision_reason %}
-        <p class="report-meta">
-          <strong>Revizyon gerekçesi:</strong> {{ report.revision_reason }}
-        </p>
-      {% endif %}
-      {% if report.approval %}
-        <p class="report-meta">Onaylayan: {{ report.approval.name }} · {{ report.approval.created_at|turkey_time }}</p>
-      {% endif %}
-      <p>Hedef ve tanım bu raporun seçilmiş yayın sürümünden okunur. Gerçekleşme, kanıt ve açıklama her kayıtta yeni revizyon oluşturur.</p>
-      {% if report.newer_publication_available %}
-        <div class="info-panel">
-          <p>
-            <strong>Yeni program yayını var.</strong> Bu rapor v{{ report.publication_version }} sürümüne bağlı kalıyor.
-          </p>
-          <a class="button" href="/activity-reports/revisions/{{ report.revision_id }}?compare=newer#newer-comparison">Yeni program v{{ report.latest_publication_version }} ile hedef ve tanım farklarını gör</a>
-        </div>
-      {% endif %}
-      {% if report.revision != report.current_revision %}
-        <p class="secondary">Geçmiş revizyonu inceliyorsunuz. Bu revizyona yeni gerçekleşme yazılamaz.</p>
-      {% endif %}
-      {% if report.previous_revision_id %}
-        <a class="button" href="/activity-reports/revisions/{{ report.previous_revision_id }}">Önceki rapor revizyonunu aç</a>
-        <p class="secondary">Gerçekleşmeler önceki rapordan otomatik taşınmadı; bu revizyonda kaynaklarıyla yeniden kontrol edin.</p>
-      {% endif %}
-    </section>
-    {% set summary = namespace(verified=0, needs_review=0, missing=0, no_record=0, explanation=0) %}
-    {% for row in report.indicators %}
-      {% set latest = row.actuals[-1] if row.actuals else none %}
-      {% if latest %}
-        {% if latest.state == 'verified' %}{% set summary.verified = summary.verified + 1 %}
-        {% elif latest.state == 'needs_review' %}{% set summary.needs_review = summary.needs_review + 1 %}
-        {% elif latest.state == 'missing' %}{% set summary.missing = summary.missing + 1 %}
-        {% endif %}
-        {% if latest.needs_deviation_explanation %}{% set summary.explanation = summary.explanation + 1 %}{% endif %}
-      {% else %}
-        {% set summary.no_record = summary.no_record + 1 %}
-      {% endif %}
-    {% endfor %}
-    <p class="indicator-report-summary">
-      <span class="status">{{ report.indicators|length }} gösterge</span>
-      {% set summary_statuses = namespace(first=true) %}
-      {% for count, label, state in [(summary.verified, 'Doğrulanmış', 'verified'), (summary.needs_review, 'İncelenmeli', 'needs_review'), (summary.missing, 'Eksik', 'missing'), (summary.no_record, 'Kayıt yok', 'no-record'), (summary.explanation, 'açıklama bekliyor', 'needs_review')] %}
-        {% if count %}
-          {% if not summary_statuses.first %}<span class="indicator-summary-separator">·</span>{% endif %}
-          <span class="status indicator-state {{ state }}">{{ count }} {{ label }}</span>
-          {% set summary_statuses.first = false %}
-        {% endif %}
-      {% endfor %}
-    </p>
-    {% if report.previous_revision_id %}
-      <section class="reports-panel">
-        <h2>Önceki baza göre farklar</h2>
-        {% if report.differences %}
-          {% for diff in report.differences %}
-            <article>
-              <h3>{{ (diff.after or diff.before).name }}</h3>
-              <p>{{ 'Yeni gösterge' if not diff.before else ('Kaldırılan gösterge' if not diff.after else 'Tanım veya hedef değişti') }}</p>
-              <div class="table-wrap">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Alan</th>
-                      <th>Önceki</th>
-                      <th>Yeni</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {% for field, label in [('name','Ad'),('code','Kod'),('unit','Birim'),('year','Yıl'),('explanation','Açıklama'),('calculation_method','Hesaplama yöntemi'),('data_source','Kaynak'),('department_id','Müdürlük'),('targets','Hedef kayıtları')] %}
-                      {% if (diff.before or {}).get(field) != (diff.after or {}).get(field) %}
-                        <tr>
-                          <td>{{ label }}</td>
-                          <td>{% if field == 'targets' %}{{ (diff.before or {}).get(field, [])|contract_targets }}{% else %}{{ (diff.before or {}).get(field, '—') }}{% endif %}</td>
-                          <td>{% if field == 'targets' %}{{ (diff.after or {}).get(field, [])|contract_targets }}{% else %}{{ (diff.after or {}).get(field, '—') }}{% endif %}</td>
-                        </tr>
-                      {% endif %}
-                    {% endfor %}
-                  </tbody>
-                </table>
-              </div>
-            </article>
-          {% endfor %}
-        {% else %}
-          <p>Gösterge tanımı ve hedeflerde fark yok.</p>
-        {% endif %}
-      </section>
-    {% endif %}
-    {% if comparison %}
-      <section class="reports-panel" id="newer-comparison" data-newer-comparison>
-        <h2>Baz program v{{ report.publication_version }} → Yeni program v{{ comparison.version }}</h2>
-        <p>Salt okunur hedef ve tanım karşılaştırması. Raporun baz yayını değişmez. Yeni baza geçmek için elle yeni rapor revizyonu oluşturun.</p>
-        {% if comparison.differences %}
-          {% for diff in comparison.differences %}
-            <article>
-              <h3>{{ (diff.after or diff.before).name }}</h3>
-              <p>{{ 'Yeni gösterge' if not diff.before else ('Kaldırılan gösterge' if not diff.after else 'Tanım veya hedef değişti') }}</p>
-              <div class="table-wrap">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Alan</th>
-                      <th>Önceki</th>
-                      <th>Yeni</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {% for field, label in [('name','Ad'),('code','Kod'),('unit','Birim'),('year','Yıl'),('explanation','Açıklama'),('calculation_method','Hesaplama yöntemi'),('data_source','Kaynak'),('department_id','Müdürlük'),('targets','Hedef kayıtları')] %}
-                      {% if (diff.before or {}).get(field) != (diff.after or {}).get(field) %}
-                        <tr>
-                          <td>{{ label }}</td>
-                          <td>{% if field == 'targets' %}{{ (diff.before or {}).get(field, [])|contract_targets }}{% else %}{{ (diff.before or {}).get(field, '—') }}{% endif %}</td>
-                          <td>{% if field == 'targets' %}{{ (diff.after or {}).get(field, [])|contract_targets }}{% else %}{{ (diff.after or {}).get(field, '—') }}{% endif %}</td>
-                        </tr>
-                      {% endif %}
-                    {% endfor %}
-                  </tbody>
-                </table>
-              </div>
-            </article>
-          {% endfor %}
-        {% else %}
-          <p>Gösterge tanımı ve hedeflerde fark yok.</p>
-        {% endif %}
-      </section>
-    {% endif %}
-    {% for row in report.indicators %}
+{% import "directorate_cards.html" as cards %}
+{% macro indicator_rows(rows) %}
+    {% for row in rows %}
       {% set latest = row.actuals[-1] if row.actuals else none %}
       <section class="reports-panel" id="indicator-{{ row.report_indicator_id }}" {% if not report.approved and report.revision == report.current_revision %}data-draft-record{% endif %}>
         <h2>{{ row.definition.name }}</h2>
@@ -288,6 +155,153 @@
         {% endif %}
       </section>
     {% endfor %}
+{% endmacro %}
+{% block content %}
+  <link rel="stylesheet" href="/static/design/activity-reports.css">
+  <link rel="stylesheet" href="/static/design/activity-report-detail.css">
+  <div class="activity-report-detail-page activity-reports-page activity-contract-content">
+    {% for closure in report.closure_notes %}
+      <section class="warning-panel" data-closure-note>
+        <h2>{{ closure.department }}</h2>
+        <p>{{ closure.message }}</p>
+      </section>
+    {% endfor %}
+    <section class="reports-panel">
+      {% if report.revision_reason %}
+        <p class="report-meta">
+          <strong>Revizyon gerekçesi:</strong> {{ report.revision_reason }}
+        </p>
+      {% endif %}
+      {% if report.approval %}
+        <p class="report-meta">Onaylayan: {{ report.approval.name }} · {{ report.approval.created_at|turkey_time }}</p>
+      {% endif %}
+      <p>Hedef ve tanım bu raporun seçilmiş yayın sürümünden okunur. Gerçekleşme, kanıt ve açıklama her kayıtta yeni revizyon oluşturur.</p>
+      {% if report.newer_publication_available %}
+        <div class="info-panel">
+          <p>
+            <strong>Yeni program yayını var.</strong> Bu rapor v{{ report.publication_version }} sürümüne bağlı kalıyor.
+          </p>
+          <a class="button" href="/activity-reports/revisions/{{ report.revision_id }}?compare=newer#newer-comparison">Yeni program v{{ report.latest_publication_version }} ile hedef ve tanım farklarını gör</a>
+        </div>
+      {% endif %}
+      {% if report.revision != report.current_revision %}
+        <p class="secondary">Geçmiş revizyonu inceliyorsunuz. Bu revizyona yeni gerçekleşme yazılamaz.</p>
+      {% endif %}
+      {% if report.previous_revision_id %}
+        <a class="button" href="/activity-reports/revisions/{{ report.previous_revision_id }}">Önceki rapor revizyonunu aç</a>
+        <p class="secondary">Gerçekleşmeler önceki rapordan otomatik taşınmadı; bu revizyonda kaynaklarıyla yeniden kontrol edin.</p>
+      {% endif %}
+    </section>
+    {% set summary = namespace(verified=0, needs_review=0, missing=0, no_record=0, explanation=0) %}
+    {% for row in report.indicators %}
+      {% set latest = row.actuals[-1] if row.actuals else none %}
+      {% if latest %}
+        {% if latest.state == 'verified' %}{% set summary.verified = summary.verified + 1 %}
+        {% elif latest.state == 'needs_review' %}{% set summary.needs_review = summary.needs_review + 1 %}
+        {% elif latest.state == 'missing' %}{% set summary.missing = summary.missing + 1 %}
+        {% endif %}
+        {% if latest.needs_deviation_explanation %}{% set summary.explanation = summary.explanation + 1 %}{% endif %}
+      {% else %}
+        {% set summary.no_record = summary.no_record + 1 %}
+      {% endif %}
+    {% endfor %}
+    <p class="indicator-report-summary">
+      <span class="status">{{ report.indicators|length }} gösterge</span>
+      {% set summary_statuses = namespace(first=true) %}
+      {% for count, label, state in [(summary.verified, 'Doğrulanmış', 'verified'), (summary.needs_review, 'İncelenmeli', 'needs_review'), (summary.missing, 'Eksik', 'missing'), (summary.no_record, 'Kayıt yok', 'no-record'), (summary.explanation, 'açıklama bekliyor', 'needs_review')] %}
+        {% if count %}
+          {% if not summary_statuses.first %}<span class="indicator-summary-separator">·</span>{% endif %}
+          <span class="status indicator-state {{ state }}">{{ count }} {{ label }}</span>
+          {% set summary_statuses.first = false %}
+        {% endif %}
+      {% endfor %}
+    </p>
+    {% if report.previous_revision_id %}
+      <section class="reports-panel">
+        <h2>Önceki baza göre farklar</h2>
+        {% if report.differences %}
+          {% for diff in report.differences %}
+            <article>
+              <h3>{{ (diff.after or diff.before).name }}</h3>
+              <p>{{ 'Yeni gösterge' if not diff.before else ('Kaldırılan gösterge' if not diff.after else 'Tanım veya hedef değişti') }}</p>
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Alan</th>
+                      <th>Önceki</th>
+                      <th>Yeni</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for field, label in [('name','Ad'),('code','Kod'),('unit','Birim'),('year','Yıl'),('explanation','Açıklama'),('calculation_method','Hesaplama yöntemi'),('data_source','Kaynak'),('department_id','Müdürlük'),('targets','Hedef kayıtları')] %}
+                      {% if (diff.before or {}).get(field) != (diff.after or {}).get(field) %}
+                        <tr>
+                          <td>{{ label }}</td>
+                          <td>{% if field == 'targets' %}{{ (diff.before or {}).get(field, [])|contract_targets }}{% else %}{{ (diff.before or {}).get(field, '—') }}{% endif %}</td>
+                          <td>{% if field == 'targets' %}{{ (diff.after or {}).get(field, [])|contract_targets }}{% else %}{{ (diff.after or {}).get(field, '—') }}{% endif %}</td>
+                        </tr>
+                      {% endif %}
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+            </article>
+          {% endfor %}
+        {% else %}
+          <p>Gösterge tanımı ve hedeflerde fark yok.</p>
+        {% endif %}
+      </section>
+    {% endif %}
+    {% if comparison %}
+      <section class="reports-panel" id="newer-comparison" data-newer-comparison>
+        <h2>Baz program v{{ report.publication_version }} → Yeni program v{{ comparison.version }}</h2>
+        <p>Salt okunur hedef ve tanım karşılaştırması. Raporun baz yayını değişmez. Yeni baza geçmek için elle yeni rapor revizyonu oluşturun.</p>
+        {% if comparison.differences %}
+          {% for diff in comparison.differences %}
+            <article>
+              <h3>{{ (diff.after or diff.before).name }}</h3>
+              <p>{{ 'Yeni gösterge' if not diff.before else ('Kaldırılan gösterge' if not diff.after else 'Tanım veya hedef değişti') }}</p>
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Alan</th>
+                      <th>Önceki</th>
+                      <th>Yeni</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for field, label in [('name','Ad'),('code','Kod'),('unit','Birim'),('year','Yıl'),('explanation','Açıklama'),('calculation_method','Hesaplama yöntemi'),('data_source','Kaynak'),('department_id','Müdürlük'),('targets','Hedef kayıtları')] %}
+                      {% if (diff.before or {}).get(field) != (diff.after or {}).get(field) %}
+                        <tr>
+                          <td>{{ label }}</td>
+                          <td>{% if field == 'targets' %}{{ (diff.before or {}).get(field, [])|contract_targets }}{% else %}{{ (diff.before or {}).get(field, '—') }}{% endif %}</td>
+                          <td>{% if field == 'targets' %}{{ (diff.after or {}).get(field, [])|contract_targets }}{% else %}{{ (diff.after or {}).get(field, '—') }}{% endif %}</td>
+                        </tr>
+                      {% endif %}
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+            </article>
+          {% endfor %}
+        {% else %}
+          <p>Gösterge tanımı ve hedeflerde fark yok.</p>
+        {% endif %}
+      </section>
+    {% endif %}
+    {% set groups = report.indicators|groupby('department') %}
+    {% if groups|length > 3 %}
+      {{ cards.search('indicator-directorates') }}
+      <div class="directorate-grid" id="indicator-directorates">
+      {% for name, rows in groups %}
+        {% call cards.detail('indicator-department-' ~ loop.index, name, rows|length ~ ' gösterge') %}
+          {{ indicator_rows(rows) }}
+        {% endcall %}
+      {% endfor %}
+      </div>
+    {% else %}{{ indicator_rows(report.indicators) }}{% endif %}
   {% if user.role == 'strategy' and report.revision == report.current_revision %}
     <section class="reports-panel">
       <h2>Rapor revizyonu</h2>

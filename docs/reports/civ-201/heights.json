@@ -1,0 +1,33 @@
+{
+  "base": "e1eb2bff298c9a23680db3fc433d84a2ff21bf6c",
+  "viewport": [
+    1440,
+    900
+  ],
+  "seed": {
+    "period_id": 1,
+    "organization_id": 1,
+    "counts": {
+      "cards": 105,
+      "indicators": 226,
+      "activities": 182,
+      "economic_values": 1270
+    }
+  },
+  "heights": {
+    "before": {
+      "source-comparison": 2260016,
+      "operations": 617608,
+      "indicator-report": 306768,
+      "financial-overview": 22763,
+      "financial-budget": 18899
+    },
+    "after": {
+      "source-comparison": 2806,
+      "operations": 5542,
+      "indicator-report": 3121,
+      "financial-overview": 6372,
+      "financial-budget": 6372
+    }
+  }
+}

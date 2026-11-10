@@ -87,7 +87,7 @@
   .dashboard-page .dashboard-layout { display: grid; grid-template-columns: minmax(0,1fr) 18rem; gap: var(--space-6); align-items: start; }
   .dashboard-page .dashboard-main { grid-column: 1; grid-row: 1; min-width: 0; }
   .dashboard-page .dashboard-summary { position: sticky; top: var(--space-6); grid-column: 2; grid-row: 1; min-width: 0; }
-  .dashboard-page .dashboard-summary > .cards { grid-template-columns: minmax(0,1fr); gap: var(--space-3); }
+  .dashboard-page .dashboard-summary .cards { grid-template-columns: minmax(0,1fr); gap: var(--space-3); }
   .dashboard-page .dashboard-main > .dashboard-panel:first-child,
   .dashboard-page .dashboard-main > p + .dashboard-panel { margin-top: 0; }
 }
@@ -191,7 +191,7 @@
 /* CIV-123 · summary only; the progress panel and department task list keep
    their own layouts. Two columns require a wide summary container. */
 .dashboard-page .dashboard-summary { container-type: inline-size; }
-.dashboard-page .dashboard-summary > .cards {
+.dashboard-page .dashboard-summary .cards {
   grid-template-columns: minmax(0, 1fr);
   gap: 0 var(--space-6);
   max-width: 44rem;
@@ -221,5 +221,50 @@
 .dashboard-page .dashboard-summary .card small { grid-column: 1; grid-row: 2; }
 .dashboard-page .dashboard-summary .card:hover { background: var(--accent-soft); }
 @container (min-width: 48rem) {
-  .dashboard-page .dashboard-summary > .cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .dashboard-page .dashboard-summary .cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+/* CIV-203 · numbered to-do first; raw counters folded under a closed details. */
+.dashboard-page .dashboard-todo { padding: 0; border: 0; border-radius: 0; background: transparent; box-shadow: none; }
+.dashboard-page .dashboard-todo h2 { margin-bottom: var(--space-2); }
+.dashboard-page .dashboard-todo-list {
+  counter-reset: dashboard-todo;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.dashboard-page .dashboard-todo-list li {
+  counter-increment: dashboard-todo;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: var(--space-2);
+  align-items: baseline;
+  padding-block: var(--space-2);
+  border-top: 1px solid var(--border);
+}
+.dashboard-page .dashboard-todo-list li::before {
+  content: counter(dashboard-todo) ".";
+  font-weight: var(--font-medium);
+  font-variant-numeric: tabular-nums;
+}
+.dashboard-page .dashboard-todo-list a { font-weight: var(--font-medium); overflow-wrap: anywhere; }
+.dashboard-page .dashboard-todo-empty { margin: var(--space-2) 0 0; color: var(--text-secondary); font-size: var(--text-sm); }
+.dashboard-page .dashboard-counts-details { margin-top: var(--space-4); }
+.dashboard-page .dashboard-counts-details > summary {
+  width: fit-content;
+  max-width: 100%;
+  color: var(--text);
+  font-size: var(--text-base);
+  font-weight: var(--font-medium);
+  cursor: pointer;
+}
+.dashboard-page .dashboard-counts-details .cards { margin-top: var(--space-3); }
+#mudurluk-ilerleme .dashboard-counts-details { margin-bottom: var(--space-3); }
+#mudurluk-ilerleme .dashboard-counts-details .progress-list { margin-top: var(--space-3); }
+
+/* CIV-203 · Progress and Warning columns: right-aligned, tabular figures. */
+.dashboard-page table :is(th, td):nth-child(4),
+.dashboard-page table :is(th, td):nth-child(5) {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
 }

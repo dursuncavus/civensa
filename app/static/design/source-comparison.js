@@ -3,7 +3,7 @@
   if (!root) return;
   const filter = root.querySelector('.status-filter');
   const buttons = [...filter.querySelectorAll('[data-filter-status]')];
-  const rows = [...root.querySelectorAll('#source-comparison tr[data-status]')];
+  const rows = [...root.querySelectorAll('.source-comparison-table tr[data-status]')];
   const empty = root.querySelector('.filter-empty');
   const setFilter = status => {
     let visible = 0;
