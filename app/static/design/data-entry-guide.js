@@ -84,14 +84,16 @@
     const startsWith = (msg, name) => name && msg.startsWith(name + ':');
     const groups = {
       indicators: { title: 'Performans göstergeleri', items: [], first: null },
-      strategy: { title: 'Strateji biriminin tamamlayacağı eşleştirmeler', items: [] },
+      strategy: { title: 'Strateji biriminin tamamlayacağı katalog bağlantıları', items: [] },
       activities: { title: 'Faaliyet maliyetleri', items: [] },
       program: { title: 'Performans kartları ve ekonomik tablolar', items: [] },
     };
     messages.forEach(msg => {
+      // Card assignment is the directorate's own step on the program page; only catalogue links are Strateji's.
+      if (/kart bağlantısı eksik|kart ve alt program kapsamı/.test(msg)) { groups.program.items.push(msg); return; }
       const hit = indicatorNames.find(({ name }) => startsWith(msg, name.trim()));
       if (hit) { groups.indicators.items.push(msg); groups.indicators.first = groups.indicators.first || hit.card; return; }
-      if (/kataloğu bağlantısı|katalog kapsamı|kart bağlantısı eksik|kart ve alt program kapsamı/.test(msg)) { groups.strategy.items.push(msg); return; }
+      if (/kataloğu bağlantısı|katalog kapsamı/.test(msg)) { groups.strategy.items.push(msg); return; }
       if (activityNames.some(name => startsWith(msg, name))) { groups.activities.items.push(msg); return; }
       groups.program.items.push(msg);
     });

@@ -124,3 +124,19 @@ def test_review_queue_puts_waiting_packages_first(browser, client, db, sample):
         expect(rows.nth(1)).to_contain_text('Henüz gönderilmedi')
         assert 'Eski kayıt' not in rows.nth(1).inner_text()
         assert errors == []
+
+
+def test_card_assignment_goes_to_program_page_catalogue_to_strategy(browser, client, db, sample):
+    configure(db, sample, 'draft-clean', 'director')
+    context, page, errors = open_page(browser, client)
+    with context:
+        name = page.locator('#indicators article.record h3').first.inner_text()
+        page.evaluate('''name => globalThis.civSubmitErrors(document.querySelector('#submitDepartment'),
+            [name + ': kart bağlantısı eksik.', 'Sentetik faaliyet: sorumlu harcama birimleri kataloğu bağlantısı eksik.'])''', name)
+        groups = page.locator('.submit-errors details.submit-error-group')
+        program = groups.filter(has_text='Performans kartları ve ekonomik tablolar')
+        expect(program).to_contain_text('kart bağlantısı eksik')
+        expect(program.locator('a.button')).to_have_attribute('href', '/program/1?period_id=1')
+        expect(groups.filter(has_text='katalog bağlantıları')).to_contain_text('kataloğu bağlantısı eksik')
+        assert groups.filter(has_text='Performans göstergeleri').count() == 0
+        assert errors == []
