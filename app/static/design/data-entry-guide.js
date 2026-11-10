@@ -84,16 +84,15 @@
     const startsWith = (msg, name) => name && msg.startsWith(name + ':');
     const groups = {
       indicators: { title: 'Performans göstergeleri', items: [], first: null },
-      strategy: { title: 'Strateji biriminin tamamlayacağı katalog bağlantıları', items: [] },
       activities: { title: 'Faaliyet maliyetleri', items: [] },
-      program: { title: 'Performans kartları ve ekonomik tablolar', items: [] },
+      program: { title: 'Performans kartları, katalog bağlantıları ve ekonomik tablolar', items: [] },
     };
     messages.forEach(msg => {
-      // Card assignment is the directorate's own step on the program page; only catalogue links are Strateji's.
-      if (/kart bağlantısı eksik|kart ve alt program kapsamı/.test(msg)) { groups.program.items.push(msg); return; }
+      // Card assignment and the official catalogue link are both the directorate's own steps on the
+      // program page (/program/{id}/assign and /catalogue-link accept department users).
+      if (/kart bağlantısı eksik|kart ve alt program kapsamı|kataloğu bağlantısı|katalog kapsamı/.test(msg)) { groups.program.items.push(msg); return; }
       const hit = indicatorNames.find(({ name }) => startsWith(msg, name.trim()));
       if (hit) { groups.indicators.items.push(msg); groups.indicators.first = groups.indicators.first || hit.card; return; }
-      if (/kataloğu bağlantısı|katalog kapsamı/.test(msg)) { groups.strategy.items.push(msg); return; }
       if (activityNames.some(name => startsWith(msg, name))) { groups.activities.items.push(msg); return; }
       groups.program.items.push(msg);
     });
@@ -114,12 +113,6 @@
       const sum = document.createElement('summary');
       sum.textContent = group.title + ' · ' + group.items.length + ' eksik';
       details.append(sum);
-      if (key === 'strategy') {
-        const hint = document.createElement('p');
-        hint.className = 'smallnote';
-        hint.textContent = 'Bu maddeleri müdürlük düzeltemez; Strateji birimine haber verin.';
-        details.append(hint);
-      }
       let action = null;
       if (key === 'indicators') {
         action = document.createElement('button');
