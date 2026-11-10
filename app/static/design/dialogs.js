@@ -11,6 +11,7 @@
         || paragraph.querySelector('input,select,textarea,button')
         || paragraph.hasAttribute('role')) return;
     const details = document.createElement('details');
+    details.className = 'text-fold';
     const summary = document.createElement('summary');
     summary.textContent = paragraph.textContent.trim().slice(0, 100) + '…';
     paragraph.before(details);

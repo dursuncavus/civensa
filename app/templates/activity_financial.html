@@ -1,8 +1,8 @@
 {% import "directorate_cards.html" as cards %}
-{% macro planned_table(figures) %}
+{% macro planned_table(figures, show_department=true) %}
 {% set figure_years = figures|map(attribute='year')|unique|list %}
-{% if figure_years|length == 1 %}<p class="planned-year" data-planned-year="{{ figure_years[0] }}">Yıl: {{ figure_years[0] }}</p>{% endif %}<div class="ar-scroll"><table class="ar-table"><thead><tr><th>Müdürlük</th>{% if figure_years|length != 1 %}<th>Yıl</th>{% endif %}<th>Tablo</th><th class="pilot-numeric">Toplam</th></tr></thead><tbody>
-{% for figure in figures %}<tr><td>{{ figure.department }}</td>{% if figure_years|length != 1 %}<td>{{ figure.year }}</td>{% endif %}<td>{{ 'Maliyet' if figure.table == 'cost' else 'Ekonomik' }}</td><td class="pilot-numeric">{{ figure.amount|trmoney }} {% for entry in figure.errata %}<small title="Basılı: {{ entry.printed_value|trmoney }} TL{% if entry.get('stored_total') %}; saklanan kalemler toplamı: {{ entry.stored_total|trmoney }} TL{% endif %}">{{ entry.marker }}</small><small> Basılı: {{ entry.printed_value|trmoney }} TL{% if entry.get('stored_total') is not none %}; Saklanan kalemler toplamı: {{ entry.stored_total|trmoney }} TL{% endif %}</small>{% endfor %}{% if figure.needs_review %}<small> Kaynak kalemleri doğrulanmalı.</small>{% endif %}{% if figure.get('errata_warning') %}<small>{{ figure.errata_warning }}</small>{% endif %}</td></tr>{% endfor %}
+{% if figure_years|length == 1 %}<p class="planned-year" data-planned-year="{{ figure_years[0] }}">Yıl: {{ figure_years[0] }}</p>{% endif %}<div class="ar-scroll"><table class="ar-table"><thead><tr>{% if show_department %}<th>Müdürlük</th>{% endif %}{% if figure_years|length != 1 %}<th>Yıl</th>{% endif %}<th>Tablo</th><th class="pilot-numeric">Toplam</th></tr></thead><tbody>
+{% for figure in figures %}<tr>{% if show_department %}<td>{{ figure.department }}</td>{% endif %}{% if figure_years|length != 1 %}<td>{{ figure.year }}</td>{% endif %}<td>{{ 'Maliyet' if figure.table == 'cost' else 'Ekonomik' }}</td><td class="pilot-numeric">{{ figure.amount|trmoney }} {% for entry in figure.errata %}<small title="Basılı: {{ entry.printed_value|trmoney }} TL{% if entry.get('stored_total') %}; saklanan kalemler toplamı: {{ entry.stored_total|trmoney }} TL{% endif %}">{{ entry.marker }}</small><small> Basılı: {{ entry.printed_value|trmoney }} TL{% if entry.get('stored_total') is not none %}; Saklanan kalemler toplamı: {{ entry.stored_total|trmoney }} TL{% endif %}</small>{% endfor %}{% if figure.needs_review %}<small> Kaynak kalemleri doğrulanmalı.</small>{% endif %}{% if figure.get('errata_warning') %}<small>{{ figure.errata_warning }}</small>{% endif %}</td></tr>{% endfor %}
 </tbody></table></div>{% endmacro %}
 {% if financial %}
 {% set directorates = financial|financial_groups(financial_department_names, section.code) %}
@@ -26,7 +26,7 @@
   {% for group in directorates.departments %}
     {% set name = group.name %}{% set figures = group.figures %}
     {% call cards.detail('financial-department-' ~ loop.index, name, (figures|length ~ ' tutar · ' if planned else '') ~ group.missing|length ~ ' eksik') %}
-      {% if figures %}{{ planned_table(figures) }}{% endif %}
+      {% if figures %}{{ planned_table(figures, false) }}{% endif %}
       <h3>Eksikler ve kontroller</h3>
       {% for message in group.missing %}<p class="ar-warning">{{ message }}</p>{% else %}<p>Eksik veya tutarsızlık bulunmadı.</p>{% endfor %}
     {% endcall %}
