@@ -1,0 +1,13 @@
+/* CIV-210 · styles for data-entry-guide.js only; data-entry.css stays frozen (CIV-114). */
+.data-entry-page .entry-summary { display: flex; align-items: center; justify-content: space-between; gap: var(--space-4); flex-wrap: wrap; margin-bottom: var(--space-4); padding: var(--space-4); border: 1px solid var(--danger); border-radius: var(--radius); background: var(--danger-bg); color: var(--text); font-size: var(--text-sm); }
+.data-entry-page .entry-summary.is-clean { border-color: var(--border); background: var(--surface); }
+.data-entry-page .entry-summary p { margin: 0; flex: 1 1 24rem; }
+.data-entry-page .entry-summary .button { flex-shrink: 0; }
+.data-entry-page .submit-errors { margin-top: var(--space-4); color: var(--text); }
+.data-entry-page .submit-errors > b { display: block; color: var(--warning); }
+.data-entry-page .submit-error-group { margin-top: var(--space-3); padding-top: var(--space-3); border-top: 1px solid var(--border); }
+.data-entry-page .submit-error-group summary { cursor: pointer; font-weight: 600; }
+.data-entry-page .submit-error-group summary:focus-visible { outline: var(--focus); }
+.data-entry-page .submit-error-group .button { margin: var(--space-2) 0; }
+.data-entry-page .submit-error-group ul { margin: var(--space-2) 0 0; padding-left: var(--space-6); max-height: 18rem; overflow: auto; }
+.data-entry-page .submit-error-group li + li { margin-top: var(--space-1); }
