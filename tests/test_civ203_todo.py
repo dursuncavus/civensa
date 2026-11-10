@@ -76,27 +76,35 @@ def test_dashboard_todo_all_zero_shows_nothing_left(strategy_client, sample):
 
 
 def users_todo_items(html):
-    match = re.search(r'<ol class="users-todo-list">(.*?)</ol>', html, flags=re.S)
+    match = re.search(r'<section class="users-todo"[^>]*>(.*?)</section>', html, flags=re.S)
     return re.findall(r'<li>(.*?)</li>', match.group(1), flags=re.S) if match else []
 
 
-def test_users_todo_lists_three_steps_in_order(strategy_client, db, sample):
+def test_users_todo_names_each_missing_department_with_an_open_button(strategy_client, db, sample):
     db.add(Department(organization_id=sample['department'].organization_id, name='Yeni Sentetik Müdürlük'))
     db.commit()
     response = strategy_client.get('/users')
     assert response.status_code == 200
+    assert '1 müdürlüğün kişisel hesabı yok.' in response.text
     items = users_todo_items(response.text)
-    assert len(items) == 3
-    assert '1 müdürlüğe kişisel hesap oluştur' in items[0]
-    assert '/api/users/template.csv' in items[0]
-    assert 'CSV önizle' in items[1]
-    assert '#previewBulkUsers' in items[1]
-    assert 'parola dosyasını teslim et' in items[2]
-    assert '#downloadBulkCredentials' in items[2]
+    assert len(items) == 1
+    assert 'Yeni Sentetik Müdürlük' in items[0]
+    assert 'create-department-user' in items[0] and 'Hesap aç' in items[0]
+    # The bulk CSV steps are no longer dressed up as separate to-do items.
+    assert 'parola dosyasını teslim et' not in response.text
+
+
+def test_users_todo_folds_a_long_missing_list(strategy_client, db, sample):
+    for n in range(7):
+        db.add(Department(organization_id=sample['department'].organization_id, name=f'Sentetik Eksik {n}'))
+    db.commit()
+    html = strategy_client.get('/users').text
+    assert '<details class="users-todo-fold"><summary>7 müdürlüğü göster</summary>' in html
+    assert len(users_todo_items(html)) == 7
 
 
 def test_users_todo_empty_when_no_missing_departments(strategy_client):
     response = strategy_client.get('/users')
     assert response.status_code == 200
     assert 'Yapılacak iş kalmadı.' in response.text
-    assert '<ol class="users-todo-list">' not in response.text
+    assert 'users-todo-missing' not in response.text

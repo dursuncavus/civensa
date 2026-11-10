@@ -7,11 +7,17 @@
     <section class="users-todo" aria-labelledby="users-todo-title">
       <h2 id="users-todo-title">Yapılacaklar</h2>
       {% if missing_departments %}
-        <ol class="users-todo-list">
-          <li><a href="/api/users/template.csv">{{ missing_departments|length }} müdürlüğe kişisel hesap oluştur</a></li>
-          <li><a href="#previewBulkUsers">CSV önizle</a></li>
-          <li><a href="#downloadBulkCredentials">parola dosyasını teslim et</a></li>
-        </ol>
+        <p class="users-todo-lead"><b>{{ missing_departments|length }} müdürlüğün kişisel hesabı yok.</b> Müdürlüğün yanındaki <b>Hesap aç</b> düğmesiyle tek tek açın. Çok sayıda hesap için aşağıdaki toplu CSV bölümünü kullanın.</p>
+        {% set todo_rows %}
+          {% for d in missing_departments %}
+            <li><span>{{ d|department_display_name(period.id if period else none) }}</span> <button class="button small create-department-user" data-create-department="{{ d.id }}">Hesap aç</button></li>
+          {% endfor %}
+        {% endset %}
+        {% if missing_departments|length > 6 %}
+          <details class="users-todo-fold"><summary>{{ missing_departments|length }} müdürlüğü göster</summary><ul class="users-todo-missing">{{ todo_rows }}</ul></details>
+        {% else %}
+          <ul class="users-todo-missing">{{ todo_rows }}</ul>
+        {% endif %}
       {% else %}
         <p class="users-todo-empty">Yapılacak iş kalmadı.</p>
       {% endif %}
