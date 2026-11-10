@@ -18,3 +18,9 @@
 .pilot-numeric, .pilot-numeric input, .directorate-dialog :is(.indicator-target,.indicator-actual,.indicator-difference) { text-align: right !important; font-variant-numeric: tabular-nums; }
 #saved-notice { position: sticky; top: .5rem; z-index: 20; width: fit-content; padding: .5rem 1rem; border: 1px solid var(--border); border-radius: var(--radius); background: var(--success-bg); color: var(--success); }
 @media (max-width: 600px) { .directorate-grid { grid-template-columns: minmax(0,1fr); } }
+/* Long secondary text folded to one line: plain text behind an arrow, not a button. */
+.directorate-dialog details.text-fold > summary { display: block; min-height: 0; max-width: none; padding: var(--space-1) 0; border: 0; background: none; color: inherit; font: inherit; list-style: none; }
+.directorate-dialog details.text-fold > summary::-webkit-details-marker { display: none; }
+.directorate-dialog details.text-fold > summary::before { content: '▸ '; color: var(--text-secondary); }
+.directorate-dialog details.text-fold[open] > summary { font-size: 0; }
+.directorate-dialog details.text-fold[open] > summary::before { content: '▾ Kısalt'; font-size: var(--text-sm); }

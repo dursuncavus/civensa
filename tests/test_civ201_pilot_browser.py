@@ -360,3 +360,16 @@ def test_closing_a_dialog_keeps_the_unsaved_change_guard(browser, pilot_client):
         # The guard is still armed: leaving through a link asks first.
         page.locator('a[href="/modules"], nav a[href^="/"]').first.click()
         expect(confirm).to_be_visible()
+
+
+def test_idare_page_folds_long_lists_and_drops_repeated_department_column(pilot_client):
+    """CIV-204: the 33-directorate 'Onaylı birim sürümü eksik' list is folded and a
+    directorate's own dialog does not repeat its name in every table row."""
+    client, _ = pilot_client
+    html = client.get('/activity-sections/reports/1?code=III.A.1').text
+    panel = html[html.index('Onaylı birim sürümü eksik'):]
+    panel = panel[:panel.index('</section>')]
+    assert re.search(r'<details class="missing-units-fold"><summary>\d+ müdürlüğü göster</summary><ul>', panel)
+    dialog = html[html.index('id="financial-department-1"'):]
+    dialog = dialog[:dialog.index('</dialog>')]
+    assert '<th>Tablo</th>' in dialog and '<th>Müdürlük</th>' not in dialog

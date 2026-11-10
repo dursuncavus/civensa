@@ -10,6 +10,8 @@ from urllib.parse import urlsplit
 import pytest
 from playwright.sync_api import expect
 
+from sqlalchemy import select
+
 from app.models import Department, User
 from test_section_index_design import TEXT_PAIRS, contrast
 from test_sidebar_ui import browser
@@ -459,3 +461,38 @@ def test_browser_layout_contrast_and_existing_controls(browser, accounts, users_
             assert writes == [('POST', f'/api/users/{uid}/submit-authorization', {'can_submit': False}),
                               ('POST', f'/api/users/{uid}/submit-authorization', {'can_submit': True})]
         assert not errors
+
+
+def test_new_user_form_says_what_is_missing_and_shows_rejections(browser, accounts, users_data, db):
+    """Kaydet stays passive and names the missing field; a server rejection shows on the form."""
+    client = accounts[0]()
+    with browser.new_context(viewport={'width': 1440, 'height': 1000}, locale='tr-TR') as context:
+        def serve(route):
+            request = route.request
+            response = client.request(request.method, request.url, content=request.post_data_buffer,
+                headers={'content-type': request.headers.get('content-type', ''),
+                         'X-CSRF-Token': request.headers.get('x-csrf-token', '')}, follow_redirects=False)
+            headers = {k: v for k, v in response.headers.items() if k not in {'set-cookie', 'content-length'}}
+            route.fulfill(status=response.status_code, headers=headers, body=response.content)
+        context.route('http://testserver/**', serve)
+        page = context.new_page()
+        errors = []
+        page.on('pageerror', lambda error: errors.append(str(error)))
+        page.goto('http://testserver/users')
+        page.locator('#newUserBtn').click()
+        save, missing = page.locator('#saveUser'), page.locator('#userFormMissing')
+        expect(save).to_be_disabled()
+        page.locator('#userName').fill('SENTETİK Test Kişi')
+        page.locator('#userPassword').fill('Gecici-parola-1')
+        expect(save).to_be_disabled()
+        expect(missing).to_have_text('Kaydetmek için doldurun: E-posta.')
+        # An address already in use passes the form check but the server refuses it.
+        taken = db.scalar(select(User.email).where(User.is_active.is_(True)).limit(1))
+        page.locator('#userEmail').fill(taken)
+        expect(save).to_be_enabled()
+        expect(missing).to_have_text('')
+        save.click()
+        expect(page.locator('#userFormError')).to_have_text('Bu e-posta zaten kayıtlı.')
+        expect(save).to_be_enabled()
+        expect(save).to_have_text('Kaydet')
+        assert not errors, errors
