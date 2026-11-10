@@ -1525,6 +1525,21 @@ async def set_user_active(user_id: int, request: Request, db: Session = Depends(
     return {"ok": True, "active": target.is_active}
 
 
+@app.get("/api/users/deletable")
+def deletable_users(db: Session = Depends(get_db), user: User = Depends(require_strategy)):
+    from .user_deletion import deletable_user_ids
+    return {"ids": deletable_user_ids(db, user, db.scalars(select(User)).all())}
+
+
+@app.post("/api/users/{user_id}/delete")
+def remove_user(user_id: int, db: Session = Depends(get_db), user: User = Depends(require_strategy)):
+    from .user_deletion import delete_user
+    target = db.get(User, user_id)
+    if not target:
+        raise HTTPException(404, "Hesap bulunamadı. Sayfayı yenileyin.")
+    return {"ok": True, "id": delete_user(db, user, target)}
+
+
 @app.post("/api/users/{user_id}/reset-password")
 async def reset_user_password(user_id: int, request: Request, db: Session = Depends(get_db), user: User = Depends(require_strategy)):
     target = db.get(User, user_id)

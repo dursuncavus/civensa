@@ -28,7 +28,9 @@
     '<label>Müdürlük <select id="usersDeptFilter"><option value="">Tüm müdürlükler</option></select></label>' +
     '<label class="users-filter-search">Ara <input id="usersSearch" type="search" placeholder="Ad veya e-posta" autocomplete="off"></label>' +
     '<p id="usersFilterCount" class="muted" aria-live="polite"></p>';
-  wrap.parentNode.insertBefore(bar, wrap);
+  // Above the policy panel: the panel's paragraph must stay right before the table.
+  const panel = wrap.closest('.users-policy-table') || wrap;
+  panel.parentNode.insertBefore(bar, panel);
   const statusSel = bar.querySelector('#usersStatusFilter');
   const deptSel = bar.querySelector('#usersDeptFilter');
   const search = bar.querySelector('#usersSearch');
@@ -97,4 +99,31 @@
   [statusSel, deptSel].forEach(el => el.addEventListener('change', () => { groups.forEach(g => { g.open = null; }); apply(); }));
   search.addEventListener('input', () => { groups.forEach(g => { g.open = null; }); apply(); });
   apply();
+
+  // CIV-207 · "Sil" only on accounts nothing in the system refers to yet.
+  if (typeof jsonFetch !== 'function') return;
+  jsonFetch('/api/users/deletable').then(({ r, j }) => {
+    if (!r.ok || !j || !Array.isArray(j.ids)) return;
+    const ids = new Set(j.ids.map(String));
+    rows.forEach(({ tr }) => {
+      const id = tr.dataset.user;
+      const buttons = tr.querySelector('.rowbuttons');
+      if (!ids.has(id) || !buttons) return;
+      const name = (tr.querySelector('.user-identity b') || {}).textContent || 'Bu';
+      const del = document.createElement('button');
+      del.type = 'button';
+      del.className = 'button small danger delete-user';
+      del.textContent = 'Sil';
+      del.title = 'Bu hesabın sistemde hiç kaydı yok; kalıcı olarak silinebilir.';
+      del.addEventListener('click', async () => {
+        if (!window.confirm(name + ' hesabı kalıcı olarak silinsin mi? Bu işlem geri alınamaz.')) return;
+        del.disabled = true;
+        const res = await jsonFetch('/api/users/' + id + '/delete', { method: 'POST' });
+        if (!res.r.ok) { del.disabled = false; toast(res.j.detail || 'Hesap silinemedi.'); return; }
+        toast('Hesap silindi.');
+        setTimeout(() => location.reload(), 500);
+      });
+      buttons.appendChild(del);
+    });
+  });
 })();

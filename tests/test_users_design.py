@@ -550,3 +550,31 @@ def test_users_list_filters_by_status_directorate_and_search_in_groups(browser, 
         toggle.click()
         expect(rows.filter(has_text='Bora Sentetik')).to_be_visible()
         assert not errors, errors
+
+
+def test_unused_account_shows_sil_and_deletes_after_confirm(browser, accounts, users_data, db):
+    """CIV-207: Sil appears only on accounts with no records and removes the row."""
+    client = accounts[0]()
+    with browser.new_context(viewport={'width': 1440, 'height': 1000}, locale='tr-TR') as context:
+        def serve(route):
+            request = route.request
+            response = client.request(request.method, request.url, content=request.post_data_buffer,
+                headers={'content-type': request.headers.get('content-type', ''),
+                         'X-CSRF-Token': request.headers.get('x-csrf-token', '')}, follow_redirects=False)
+            headers = {k: v for k, v in response.headers.items() if k not in {'set-cookie', 'content-length'}}
+            route.fulfill(status=response.status_code, headers=headers, body=response.content)
+        context.route('http://testserver/**', serve)
+        page = context.new_page()
+        errors = []
+        page.on('pageerror', lambda error: errors.append(str(error)))
+        page.goto('http://testserver/users')
+        bora = page.locator('tr[data-user]').filter(has_text='Bora Sentetik')
+        expect(bora.locator('.delete-user')).to_have_text('Sil')
+        signed_in = page.locator('tr[data-user]').filter(has_text='Derya Sentetik')
+        expect(signed_in.locator('.toggle-user-active')).to_have_count(1)
+        expect(signed_in.locator('.delete-user')).to_have_count(0)
+        page.once('dialog', lambda dialog: dialog.accept())
+        bora.locator('.delete-user').click()
+        expect(page.locator('tr[data-user]').filter(has_text='Bora Sentetik')).to_have_count(0, timeout=5000)
+        assert db.scalar(select(User).where(User.email == 'test.layout@example.invalid')) is None
+        assert not errors, errors
