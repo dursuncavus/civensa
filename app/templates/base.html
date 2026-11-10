@@ -4,6 +4,7 @@
   {% set period_query = "?period_id=" ~ period.id if period is defined and period and period.id is defined else "" %}
   {% if period_query %}<meta name="pp-period-id" content="{{ period.id }}">{% endif %}
   {% if request.session.get("csrf_token") %}<meta name="csrf-token" content="{{ request.session.get('csrf_token') }}">{% endif %}
+  {% if user is defined and user and user.role == 'department' and user.position != 'director' and not user.can_submit %}<meta name="pp-can-submit" content="0">{% endif %}
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>{% block title %}Civensa{% endblock %}</title>
@@ -112,6 +113,8 @@
 <script src="/static/design/shell.js"></script>
 <script src="/static/design/dialogs.js" defer></script>
 <script src="/static/design/saved-notice.js" defer></script>
+<script src="/static/design/data-entry-guide.js" defer></script>
+<script src="/static/design/review-guide.js" defer></script>
 {% block scripts %}{% endblock %}
 </body>
 </html>
