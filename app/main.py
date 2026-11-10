@@ -524,8 +524,14 @@ def indicator_issues(ind: Indicator, period_year: int):
     for value in ind.values:
         if value.raw_text.strip() in {"-", "–", "—"} and value.value is None:
             continue
-        if value.state != "verified" or value.value is None:
-            issues.append(f"{value.year} {value_kind_label(value.value_kind)}: kaynak değeri doğrulanmalı ({value.raw_text}).")
+        label = f"{value.year} {value_kind_label(value.value_kind)}"
+        if value.value is None:
+            # CIV-210 · say what to type: the box shows "—" while the source text could not be read as a number.
+            issues.append(f"{label}: kaynak değeri doğrulanmalı. Kaynakta “{value.raw_text}” yazıyor; "
+                          "kutudaki — işaretini silip sayıyı girin ve kaydedin.")
+        elif value.state != "verified":
+            issues.append(f"{label}: kaynak değeri doğrulanmalı ({value.raw_text}). Değer yanlışsa doğrusunu girip kaydedin; "
+                          "doğruysa Strateji birimine bildirin.")
     return issues
 
 
