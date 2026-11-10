@@ -260,10 +260,16 @@ def test_phase3_additive_upgrade_preserves_phase2_history(foundation_db,people):
 
 def test_delegation_expires_after_initial_check(foundation_db,people,package,monkeypatch):
     db=foundation_db;x=people;p=package;now=auth.server_now(db)
-    grant(db,x,end=now+timedelta(seconds=1));submit(db,x,p)
+    # A 1 s window raced slow CI runners: the grant itself was refused (422)
+    # because its end had already passed when create_delegation validated it.
+    # Keep the window wide enough to grant and submit, then sleep past it.
+    window=timedelta(seconds=4)
+    grant(db,x,end=now+window);submit(db,x,p)
     initial=service.locked
     def delayed(*args,**kwargs):
-        result=initial(*args,**kwargs);db.execute(text('SELECT pg_sleep(1.1)'));return result
+        result=initial(*args,**kwargs)
+        remaining=(now+window-auth.server_now(db)).total_seconds()
+        db.execute(text('SELECT pg_sleep(:s)'),{'s':max(remaining,0)+0.2});return result
     monkeypatch.setattr(service,'locked',delayed)
     error(403,lambda:act(db,x,p,'director_approve','user'))
     assert p.state=='director_review'
