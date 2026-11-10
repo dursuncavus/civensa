@@ -547,8 +547,16 @@ def test_users_list_filters_by_status_directorate_and_search_in_groups(browser, 
         toggle.click()
         expect(toggle).to_have_attribute('aria-expanded', 'false')
         expect(page.locator('tr[data-user]:visible')).to_have_count(0)
+        # The closed header spans the row and says how to reopen it.
+        expect(toggle.locator('.user-group-hint')).to_have_text('Hesapları göster')
+        assert toggle.evaluate("b => b.getBoundingClientRect().width >= b.closest('tr').getBoundingClientRect().width - 2")
         toggle.click()
         expect(rows.filter(has_text='Bora Sentetik')).to_be_visible()
+        # CIV-208: a value the browser autofills (no input event) is still applied.
+        page.goto('http://testserver/users')
+        page.evaluate("document.getElementById('usersSearch').value = 'deniz@'")
+        expect(page.locator('tr[data-user]:visible')).to_have_count(1, timeout=3000)
+        expect(rows.filter(has_text='Deniz Sentetik')).to_be_visible()
         assert not errors, errors
 
 

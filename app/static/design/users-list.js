@@ -26,7 +26,7 @@
       '<option value="active">Etkin</option><option value="inactive">Pasif</option><option value="all">Tümü</option>' +
     '</select></label>' +
     '<label>Müdürlük <select id="usersDeptFilter"><option value="">Tüm müdürlükler</option></select></label>' +
-    '<label class="users-filter-search">Ara <input id="usersSearch" type="search" placeholder="Ad veya e-posta" autocomplete="off"></label>' +
+    '<label class="users-filter-search">Ara <input id="usersSearch" name="users-list-filter" type="search" placeholder="Ad veya e-posta" autocomplete="off" data-1p-ignore data-lpignore="true"></label>' +
     '<p id="usersFilterCount" class="muted" aria-live="polite"></p>';
   // Above the policy panel: the panel's paragraph must stay right before the table.
   const panel = wrap.closest('.users-policy-table') || wrap;
@@ -84,7 +84,13 @@
       const act = hits.filter(r => r.active).length;
       const parts = [hits.length + ' hesap'];
       if (statusSel.value === 'all') parts.push(act + ' etkin, ' + (hits.length - act) + ' pasif');
-      g.btn.textContent = (open ? '▾ ' : '▸ ') + g.name + ' · ' + parts.join(' · ');
+      g.btn.textContent = '';
+      const label = document.createElement('span');
+      label.textContent = (open ? '▾ ' : '▸ ') + g.name + ' · ' + parts.join(' · ');
+      const hint = document.createElement('span');
+      hint.className = 'user-group-hint';
+      hint.textContent = open ? 'Gizle' : 'Hesapları göster';
+      g.btn.append(label, hint);
       g.btn.setAttribute('aria-expanded', open ? 'true' : 'false');
       g.members.forEach(r => {
         const on = hits.includes(r) && open;
@@ -97,7 +103,12 @@
       : 'Bu seçime uyan hesap yok.';
   }
   [statusSel, deptSel].forEach(el => el.addEventListener('change', () => { groups.forEach(g => { g.open = null; }); apply(); }));
-  search.addEventListener('input', () => { groups.forEach(g => { g.open = null; }); apply(); });
+  const onSearch = () => { groups.forEach(g => { g.open = null; }); apply(); };
+  search.addEventListener('input', onSearch);
+  search.addEventListener('change', onSearch);
+  // Browsers may autofill a saved e-mail here without an input event: pick it
+  // up shortly after load so the groups open on what the box shows.
+  [300, 1200].forEach(ms => setTimeout(() => { if (fold(search.value)) onSearch(); }, ms));
   apply();
 
   // CIV-207 · "Sil" only on accounts nothing in the system refers to yet.
