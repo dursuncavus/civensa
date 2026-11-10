@@ -95,27 +95,12 @@
 /* CIV-203 · numbered to-do first; the raw summary folds under a closed details. */
 .users-page .users-todo { min-width: 0; margin: 0; padding: var(--space-6); border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); }
 .users-page .users-todo h2 { margin-bottom: var(--space-2); }
-.users-page .users-todo-list {
-  counter-reset: users-todo;
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-.users-page .users-todo-list li {
-  counter-increment: users-todo;
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  gap: var(--space-2);
-  align-items: baseline;
-  padding-block: var(--space-2);
-  border-top: 1px solid var(--border);
-}
-.users-page .users-todo-list li::before {
-  content: counter(users-todo) ".";
-  font-weight: var(--font-medium);
-  font-variant-numeric: tabular-nums;
-}
-.users-page .users-todo-list a { font-weight: var(--font-medium); overflow-wrap: anywhere; }
+.users-page .users-todo-lead { margin: 0 0 var(--space-3); font-size: var(--text-sm); }
+.users-page .users-todo-missing { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: var(--space-2); }
+.users-page .users-todo-missing li { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); min-width: 0; padding: var(--space-2) var(--space-3); border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface-muted, var(--surface)); }
+.users-page .users-todo-missing li > .button { flex-shrink: 0; white-space: nowrap; }
+.users-page .users-todo-missing li > span { min-width: 0; overflow-wrap: anywhere; font-weight: var(--font-medium); }
+.users-page .users-todo-fold > summary { width: fit-content; margin-bottom: var(--space-2); cursor: pointer; }
 .users-page .users-todo-empty { margin: 0; color: var(--text-secondary); font-size: var(--text-sm); }
 .users-page .users-counts-details { margin: var(--space-4) 0 0; }
 .users-page .users-counts-details > summary {
@@ -127,3 +112,18 @@
   cursor: pointer;
 }
 .users-page .users-counts-details .users-summary { margin-top: var(--space-3); }
+
+/* CIV-206 · list filters and directorate groups (built by users-list.js). */
+.users-page .users-filter { display: flex; flex-wrap: wrap; align-items: end; gap: var(--space-3); margin: 0 0 var(--space-3); }
+.users-page .users-filter label { display: grid; gap: var(--space-1); min-width: 0; font-size: var(--text-sm); font-weight: var(--font-medium); }
+.users-page .users-filter select { max-width: 100%; }
+.users-page .users-filter #usersDeptFilter { width: min(360px, 100%); }
+.users-page .users-filter-search { flex: 1 1 220px; }
+.users-page .users-filter-search input { width: 100%; }
+.users-page #usersFilterCount { flex-basis: 100%; margin: 0; font-size: var(--text-sm); }
+.users-page tr.user-group-row td { padding: 0; background: var(--surface-muted); text-align: left; }
+.users-page .user-group-toggle { position: sticky; left: 0; display: block; width: auto; max-width: 100vw; padding: var(--space-2) var(--space-3); border: 0; background: none; color: var(--text); font: inherit; font-weight: var(--font-medium); text-align: left; cursor: pointer; }
+.users-page .user-group-toggle:focus-visible { outline: 2px solid var(--focus, currentColor); outline-offset: -2px; }
+/* CIV-207 · delete only for accounts with no records. */
+.users-page .button.delete-user { border-color: var(--danger); color: var(--danger); background: var(--surface); }
+.users-page .button.delete-user:is(:hover,:focus-visible) { background: var(--danger-bg); }

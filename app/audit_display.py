@@ -102,6 +102,7 @@ ACTION_LABELS = {
     "user_can_submit_change": "Gönderim yetkisi güncellendi",
     "user_create": "Kullanıcı oluşturuldu",
     "user_deactivate": "Kullanıcı devre dışı bırakıldı",
+    "user_delete": "Kullanıcı hesabı silindi",
     "user_is_active_change": "Kullanıcı durumu güncellendi",
     "user_password_reset": "Kullanıcı parolası sıfırlandı",
     "user_position_change": "Kullanıcı unvanı güncellendi",
