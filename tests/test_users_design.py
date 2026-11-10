@@ -234,6 +234,8 @@ def test_browser_layout_contrast_and_existing_controls(browser, accounts, users_
         if phase == 'after':
             # CIV-203: the raw summary is folded behind "Bütün sayılar".
             page.locator('.users-counts-details summary').click()
+            # CIV-206: the list opens on active accounts; show all rows for the layout checks.
+            page.locator('#usersStatusFilter').select_option('all')
         if missing:
             page.locator('details:not(.users-counts-details) summary').click()
         else:
@@ -267,7 +269,7 @@ def test_browser_layout_contrast_and_existing_controls(browser, accounts, users_
               range.selectNodeContents(cell);
               return new Set([...range.getClientRects()].map(rect => Math.round(rect.top))).size <= 2;
             }""")
-            assert page.locator('.users-table tbody tr').evaluate_all("""rows => {
+            assert page.locator('.users-table tbody tr[data-user]').evaluate_all("""rows => {
               const unwrapped = rows.filter(row => {
                 const identity = row.querySelector('.user-identity');
                 return [...identity.querySelectorAll('b, .user-email')].every(el => {
@@ -495,4 +497,56 @@ def test_new_user_form_says_what_is_missing_and_shows_rejections(browser, accoun
         expect(page.locator('#userFormError')).to_have_text('Bu e-posta zaten kayıtlı.')
         expect(save).to_be_enabled()
         expect(save).to_have_text('Kaydet')
+        assert not errors, errors
+
+
+def test_users_list_filters_by_status_directorate_and_search_in_groups(browser, accounts, users_data, db):
+    """CIV-206: the list opens on active accounts, grouped per directorate, with filters."""
+    client = accounts[0]()
+    with browser.new_context(viewport={'width': 1440, 'height': 1000}, locale='tr-TR') as context:
+        def serve(route):
+            request = route.request
+            response = client.request(request.method, request.url, content=request.post_data_buffer,
+                headers={'content-type': request.headers.get('content-type', ''),
+                         'X-CSRF-Token': request.headers.get('x-csrf-token', '')}, follow_redirects=False)
+            headers = {k: v for k, v in response.headers.items() if k not in {'set-cookie', 'content-length'}}
+            route.fulfill(status=response.status_code, headers=headers, body=response.content)
+        context.route('http://testserver/**', serve)
+        page = context.new_page()
+        errors = []
+        page.on('pageerror', lambda error: errors.append(str(error)))
+        page.goto('http://testserver/users')
+        rows = page.locator('tr[data-user]')
+        inactive = rows.filter(has_text='Ceren Sentetik devre dışı hesap')
+        expect(page.locator('#usersStatusFilter')).to_have_value('active')
+        expect(inactive).to_be_hidden()
+        expect(rows.filter(has_text='Ada Sentetik')).to_be_visible()
+        assert page.locator('tr.user-group-row:visible').count() >= 2
+        # Every visible account sits below its own directorate's group row.
+        assert page.evaluate("""() => [...document.querySelectorAll('tr[data-user]')].filter(r => !r.hidden).every(r => {
+          let head = r.previousElementSibling;
+          while (head && !head.classList.contains('user-group-row')) head = head.previousElementSibling;
+          const dept = r.children[2].textContent.replace(/\s+/g, ' ').trim();
+          return head && head.textContent.includes(dept === '-' ? 'Müdürlüğü yok' : dept);
+        })""")
+        page.locator('#usersStatusFilter').select_option('inactive')
+        expect(inactive).to_be_visible()
+        expect(rows.filter(has_text='Ada Sentetik')).to_be_hidden()
+        expect(page.locator('#usersFilterCount')).to_have_text('1 hesap bulundu.')
+        page.locator('#usersStatusFilter').select_option('all')
+        page.locator('#usersSearch').fill('deniz@')
+        expect(page.locator('tr[data-user]:visible')).to_have_count(1)
+        expect(rows.filter(has_text='Deniz Sentetik')).to_be_visible()
+        page.locator('#usersSearch').fill('')
+        strategy_dept = rows.filter(has_text='Bora Sentetik').locator('td').nth(2).inner_text().strip()
+        page.locator('#usersDeptFilter').select_option(strategy_dept)
+        assert all(r.locator('td').nth(2).inner_text().strip() == strategy_dept
+                   for r in page.locator('tr[data-user]:visible').all())
+        # A group closes and reopens from its header.
+        toggle = page.locator('tr.user-group-row:visible .user-group-toggle').first
+        toggle.click()
+        expect(toggle).to_have_attribute('aria-expanded', 'false')
+        expect(page.locator('tr[data-user]:visible')).to_have_count(0)
+        toggle.click()
+        expect(rows.filter(has_text='Bora Sentetik')).to_be_visible()
         assert not errors, errors
