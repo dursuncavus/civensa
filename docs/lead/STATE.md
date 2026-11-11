@@ -1,7 +1,7 @@
 # CIVENSA — CURRENT STATE
 
 Updated: 11 Nov 2026 ~05:43 Istanbul (scheduled night check, D-461; before that CV Lider 72, D-460).
-Rules: AI_WORKING_CONSTITUTION v1.2 (Drive, global) · `HIERARCHY.md` v1.10 (D-450: DeepSeek codes small tasks; local lane on the Mac; D-449: Copilot reviews every task PR and codes small issue tasks; D-408: the lead also codes, Codex reviews its PRs) · `PROJECT_RULES.md` v1.4 (D-271: PRIOR ART field mandatory in every package) · `BACKUP_LEAD.md` v2.
+Rules: AI_WORKING_CONSTITUTION v1.2 (Drive, global) · `HIERARCHY.md` v1.10 (D-450: DeepSeek codes small tasks; local lane on the Mac; D-449: Copilot reviews every task PR and codes small issue tasks; D-408: the lead also codes, Codex reviews its PRs) · `PROJECT_RULES.md` v1.5 (D-468: owner supplies the current IDML before every design job; D-271: PRIOR ART field mandatory in every package) · `BACKUP_LEAD.md` v2.
 Backup log ("Civensa Yedek Kaydı", Drive): no entries after 31 Oct (DOĞRULANDI 7 Nov 22:25, no change after 1 Nov).
 Tags: DOĞRULANDI (lead checked) · TARİHSEL (past fact) · BEYAN (owner said) · BELİRSİZ (unknown).
 
@@ -58,7 +58,7 @@ CV Lider 61 (4 Nov ~21:25, DOĞRULANDI): no mail from Ali Abi; only open PR #382
 9. Claude account on Max from 4 Nov 2026 (BEYAN; next charge 4 Dec). Extra capacity goes to lead analysis/preparation work (D-400). The "Claude quota" block below is TARİHSEL (Pro era).
 10. Sunum module (D-411/D-412/D-413): reveal.js 6.0.1 + ECharts 6.1.0 via Civensa Jinja templates, Civensa design tokens; animated HTML + 16:9 PDF from the same file. Prototype https://claude.ai/artifact/DMpNp2f68JsogL2eMgJSRD review round 1 done (D-414); full Fen İşleri 2025 presentation with real data = CIV-180 reference (D-415); waits for the owner's hall-computer test + further remarks → CIV-180 (engine + FR müdürlük presentation). Future report modules proposed in D-411 (not accepted; after 1 Jan 2027).
 11. CIV-180–185 live since release #410 (D-428).
-Next IDs: task CIV-215, decision D-468. Phase5 through CIV-213 is live (release #477, 9235df1, D-462); next: Ali Abi pilot test from ~11 Nov, collect feedback; pilot reset plan before real data.
+Next IDs: task CIV-216, decision D-469 (CIV-215 + D-468 taken by the design-automation thread: owner-only InDesign export; current IDML before every design job, PROJECT_RULES v1.5 §26). Phase5 through CIV-213 is live (release #477, 9235df1, D-462); next: Ali Abi pilot test from ~11 Nov, collect feedback; pilot reset plan before real data.
 
 ## Claude quota (BEYAN, owner 27 Oct 16:21)
 - Session 11%, week 67%, weekly reset Saturday 00:00 (D-300). Copilot 96 / 1,500 credits, reset 1 Nov.

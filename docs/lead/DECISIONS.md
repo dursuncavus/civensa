@@ -1695,3 +1695,10 @@ Next IDs: task CIV-200, decision D-457.
 - Owner: "Sen yapman gereken model ve efor değişikliklerini kendin yapabilirsen yap." and "Codex'e görev verirken model ve efor belirtmeyi unutma. Sen de kurallarının arasına ihtiyacın olduğunda efor ve model değişikliğini bana sormadan yapabileceğini ekle."
 - Lead set this thread to Opus 5.5 / High (was Medium). Fable 5.2 not adopted; bounded trial only (API price 2x Opus 5.5; quota effect unverified).
 - "@codex" PR comments: review/questions only (verified: each comment is a new task on a fresh checkout; its commits never reached GitHub on PR #482).
+
+## D-468 (11 Nov 2026 ~15:55 Istanbul, owner + lead, thread "Tasarım otomasyonu seçeneklerini araştır") — current IDML before every design job; owner-only InDesign export module (CIV-215)
+- Research (lead): fountible.com is an AI Figma-like canvas (React/Tailwind, PNG/PDF/PPTX/video export, $0–99/month); its site states no IDML/InDesign support, no Excel/CSV data merge, no Turkish typesetting settings, no developer API; hosting OVH, region and GDPR/KVKK not stated (DOĞRULANDI on fountible.com, /pricing, /privacy, 11 Nov). Not used. Alternatives weighed: InDesign XML import / Tagged Text (built-in, no licence), Data Merge (no tables), EasyCatalog/Typefi (quote-based, price BELİRSİZ), Typst/LaTeX/Paged.js (would replace InDesign; rejected for a designer owner).
+- Decision: ADAPT — Civensa produces InDesign-ready table files carrying the owner's own paragraph/table/cell style names; he places them into his template. Task CIV-215.
+- BEYAN (owner 15:51): only the owner may see the module; no other user may see or learn that it exists; the module must be updatable.
+- BEYAN (owner 15:53): rule for all future work — the owner supplies the current IDML before every design job; an older design file is never reused. → PROJECT_RULES v1.5 §26. Consequence for CIV-215: style names are read from the IDML uploaded for each run (updatable without code changes).
+- BEYAN (owner 15:52): first trial uses the İç Kontrol 2-year report tables from Ali's data.

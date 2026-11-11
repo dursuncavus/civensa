@@ -1,11 +1,12 @@
-# CIVENSA PROJECT RULES — v1.4
+# CIVENSA PROJECT RULES — v1.5
 
 Status: ACTIVE · Type: Canonical Project Rules · Project: Civensa
 Scope: All Civensa research, analysis, product, UX, architecture, coding, testing, reporting, and multi-AI work
 Single Source of Truth: YES (this file, `docs/lead/PROJECT_RULES.md`)
-Version: 1.4 · Date: 2026-10-26
+Version: 1.5 · Date: 2026-11-11
 Depends on: AI WORKING CONSTITUTION v1.2 (Drive); `docs/lead/HIERARCHY.md` v1.4
 
+Change note (v1.5, D-468): new section 26 — every design/typesetting job starts from the current IDML the owner supplies for that job; older IDML copies are never reused. No other rule changed.
 Change note (v1.4, D-271): section 24 now enforces the research gate in every task package (mandatory PRIOR ART field). No other rule changed.
 Change note (v1.3, D-205): file moved from Drive into the repository. Sections 17 and 19 point to `docs/lead/` instead of Drive; dependency updated to constitution v1.2 and hierarchy v1.4. No product or engineering rule changed.
 Change note (v1.2): Section 19 replaced. Civensa decision authority moved from ChatGPT/Nexa to Claude at the owner's request on 13 Oct 2026.
@@ -149,6 +150,10 @@ Enforcement (v1.4, D-271): every task package (`docs/lead/tasks/CIV-###.md`) has
 ## 25. DEFINITION OF DONE
 A Civensa feature is not complete merely because it saves data, validation executes, or the UI displays success/error feedback.
 Where relevant, completion also requires end-to-end verification of: entry, save, edit, correction, deletion, blank and invalid states, understandable errors, recovery after errors, data consistency, layout/usability, and the complete real-user workflow.
+
+## 26. CURRENT DESIGN FILE FIRST (v1.5, D-468)
+Before any design, typesetting or InDesign-related job (style lists, table exports, typo fixes in a book, layout checks), the owner supplies the current IDML for that job. Do not start from, and do not reuse, an IDML found in the project files, the repository, Drive or an earlier session: the design may have changed. If no current file has been supplied, ask for it and wait. Data-loading fixtures pinned by a decision (e.g. the approved book a loader reads) are not design sources and keep their pins.
+Tools that depend on the design (e.g. the owner-only InDesign export, CIV-215) read style names from the IDML uploaded for that run, never from a stored or hard-coded list.
 
 ## Versioning and Synchronization Rule
 Any material change to these project rules requires:
