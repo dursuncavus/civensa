@@ -931,7 +931,15 @@ def approved_book_provenance(db, period_id):
             return None
         originals = {}
         links = {}
-        for audit in db.scalars(select(AuditLog).where(AuditLog.id <= last_load,
+        # D-466: a verified 2027 replacement rebuilt the catalogue. Catalogue
+        # audits of the superseded ONAYLI load describe deleted rows; read only
+        # those written after the last superseded load marker.
+        active_ids = {a.id for a, _ in loads}
+        floor = max((a.id for a in db.scalars(select(AuditLog).join(ImportBatch,
+            ImportBatch.id == AuditLog.entity_id).where(AuditLog.action == 'first_load_department',
+            AuditLog.entity_type == 'import_batch', ImportBatch.period_id == period_id))
+            if a.id not in active_ids), default=0)
+        for audit in db.scalars(select(AuditLog).where(AuditLog.id <= last_load, AuditLog.id > floor,
                 AuditLog.action.in_(['catalogue_create', 'catalogue_link'])).order_by(AuditLog.id)):
             data = json.loads(audit.details)
             if audit.action == 'catalogue_create' and data.get('source'):

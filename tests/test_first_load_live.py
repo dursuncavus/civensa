@@ -411,8 +411,8 @@ def test_live_pin_equals_current_migration_head():
 
 
 def test_approved_source_pin_and_old_book_refusal():
-    assert live.BOOK.name == '2027-performans-programi_SONN.idml'
-    assert live.BOOK_SHA256 == '8f8310138324bfe7560cae864595de1f7d1ad4bb7a982eebe4915a18e0728ec4'
+    assert live.BOOK.name == '2027-performans-programi_SONN_duzeltilmis.idml'
+    assert live.BOOK_SHA256 == '66d9d692bd9c324f6d4f492eca4d75721f28c80e248a971a2a331adf1170bf6f'
     with pytest.raises(live.Refusal, match='Kitap SHA256'):
         live.verify_book(live.BOOK.with_name('2027-performans-programi_16102026_duzeltilmis 2.idml'))
 

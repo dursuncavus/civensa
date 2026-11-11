@@ -29,8 +29,8 @@ def books():
 
 @pytest.fixture(scope='module')
 def compatible_books(books):
-    # Transaction-mechanics fixture ONLY. The real pinned SONN has catalogue
-    # differences and must refuse under rule 3. Never weaken that production guard.
+    # Transaction-mechanics fixture with an unchanged catalogue. The real pinned
+    # corrected book (catalogue differences, D-466) has its own tests below.
     corrected = deepcopy(books[0])
     for source in corrected['departments']:
         if source['name'] == 'Özel Kalem Müdürlüğü':
@@ -113,7 +113,7 @@ def test_pins_and_schema_head():
     from alembic.config import Config
     from alembic.script import ScriptDirectory
     assert live.book_config() == (live.BOOK, FIRST_LOAD_BOOKS[2027][1])
-    assert live.BOOK.name == '2027-performans-programi_SONN.idml'
+    assert live.BOOK.name == '2027-performans-programi_SONN_duzeltilmis.idml'
     assert hashlib.sha256(live.BOOK.read_bytes()).hexdigest() == live.BOOK_SHA256
     assert hashlib.sha256(replace.OLD_BOOK.read_bytes()).hexdigest() == replace.OLD_SHA256
     assert ScriptDirectory.from_config(Config(str(live.ROOT / 'alembic.ini'))).get_heads() == [live.HEAD]
@@ -140,7 +140,11 @@ def test_compatible_catalogue_atomic_rehearsal(target, compatible_books, approve
         assert receipt['old_sha256'] == replace.OLD_SHA256
         assert receipt['new_sha256'] == live.BOOK_SHA256
         assert receipt['counts'] == planned['counts']
-        assert replace.catalogue_state(db, 2) == planned['retained_catalogue']
+        after = replace.catalogue_state(db, 2)
+        assert receipt['decision'] == 'D-466'
+        assert receipt['catalogue_after'] == after
+        assert receipt['catalogue_before'] == planned['catalogue_before']
+        assert {k: v['count'] for k, v in after.items()} == {k: v['count'] for k, v in planned['catalogue_before'].items()}
         from app.program_service import approved_book_provenance
         assert approved_book_provenance(db, 2)['book_sha256'] == live.BOOK_SHA256
         assert len(live.completed_departments(db, 2)) == 34
@@ -325,20 +329,74 @@ def test_safe_parser_never_echoes_url(capsys):
     assert 'secret-connection' not in capsys.readouterr().err
 
 
-def test_real_sonn_refuses_catalogue_change_and_preserves_every_row(target, books, approved):
+def test_real_corrected_book_replaces_catalogue_atomically(target, books, approved, capsys):
+    """D-466: the real final book, including its 2027 catalogue changes."""
     before, sequences = row_state(target), state(target)
-    result = execute(target, books)
-    assert {d['table'] for d in result['catalogue_differences']} == {
+    planned = execute(target, books)
+    assert planned['refusals'] == [], planned['refusals']
+    assert {d['table'] for d in planned['catalogue_differences']} == {
         'subprograms', 'official_activities', 'activity_responsibilities'}
-    assert len(result['refusals']) == 3, result['refusals']
-    assert result['counts']['activities'] == dict(old=291, new=290)
+    assert planned['counts']['activities'] == dict(old=291, new=290)
     assert row_state(target) == before
     assert state(target) == sequences
+    output = capsys.readouterr().out
+    assert 'Katalog farkı · Resmî faaliyet' in output
+    assert '0006.Sosyal Güvenlik Kurumuna' in output
+    assert 'ortalama 11[0] adet' in output and 'ortalama 11[9] adet' in output  # Makine İkmal 110 → 119
+    with Session(target) as db:
+        protected = {year: period_rows_hash(db, year) for year in (2026, 2028)}
+    applied = execute(target, books, apply=True, backup=approved)
+    assert applied['mode'] == 'approved-load-replace-apply'
+    with Session(target) as db:
+        assert {year: period_rows_hash(db, year) for year in protected} == protected
+        actual = replace.signatures({name: replace.owned_rows(db, 2)[name] for name in replace.CONTENT})
+        receipt = json.loads(db.scalar(select(AuditLog.details).where(AuditLog.action == replace.ACTION)))
+        assert receipt['catalogue_after'] == replace.catalogue_state(db, 2)
+        assert receipt['catalogue_after']['subprograms']['count'] == receipt['catalogue_before']['subprograms']['count']
+        from app.program_service import approved_book_provenance
+        assert approved_book_provenance(db, 2)['book_sha256'] == live.BOOK_SHA256
+        assert len(live.completed_departments(db, 2)) == 34
+    # Equal to an independent fresh first load of the corrected book.
+    with disposable_database(local_test_url()) as fresh:
+        with Session(fresh) as db:
+            db.add_all([Organization(id=1, name='Taze düzeltilmiş'),
+                User(id=1, email='fresh@example.invalid', full_name='Strateji', role='strategy', password_hash='unused'),
+                ReportingPeriod(id=1, year=2026), ReportingPeriod(id=2, year=2027)])
+            with Session(target) as original:
+                for d in original.scalars(select(Department)):
+                    db.add(Department(id=d.id, organization_id=1, name=d.name))
+            db.commit()
+        assert not live.execute(fresh, books[1], organization_id=1, actor_id=1, apply=True)['failed']
+        with Session(fresh) as db:
+            fresh_rows = replace.owned_rows(db, 2)
+            assert actual == replace.signatures({name: fresh_rows[name] for name in replace.CONTENT})
+
+
+@pytest.mark.parametrize('kind', ['link_from_2028', 'subprogram_from_2028', 'responsibility_to_2028'])
+def test_cross_period_catalogue_reference_refuses(target, books, approved, kind):
+    """D-466 guard: a 2027 catalogue row shared with another period blocks, 0 rows written."""
+    from app.models import ActivityCatalogueLink, OfficialActivity, SubProgram, ActivityResponsibility
+    with Session(target) as db:
+        official = db.scalar(select(OfficialActivity).where(OfficialActivity.period_id == 2))
+        other = db.scalar(select(Activity).where(Activity.period_id == 3))
+        if kind == 'link_from_2028':
+            db.add(ActivityCatalogueLink(activity_id=other.id, official_activity_id=official.id))
+        elif kind == 'subprogram_from_2028':
+            other.subprogram_id = db.scalar(select(SubProgram.id).where(SubProgram.period_id == 2))
+        else:
+            foreign = OfficialActivity(period_id=3, program_code='', program_name='Korunan 2028',
+                subprogram_code='', subprogram_name='Korunan alt program', code='9999', name='9999 Korunan')
+            db.add(foreign); db.flush()
+            # A 2027 link that points at a 2028 catalogue entry.
+            act = db.scalar(select(Activity).where(Activity.period_id == 2))
+            db.add(ActivityCatalogueLink(activity_id=act.id, official_activity_id=foreign.id))
+        db.commit()
+    before, counts = row_state(target), state(target)
     result = execute(target, books, apply=True, backup=approved)
+    assert any('dönemler arası bağ' in reason for reason in result['refusals']), result['refusals']
     assert result['mode'] == 'approved-load-replace-plan'
-    assert len(result['refusals']) == 3
     assert row_state(target) == before
-    assert state(target) == sequences
+    assert state(target) == counts
 
 
 def test_existing_advisory_lock_refuses(target, compatible_books, approved):
@@ -369,10 +427,10 @@ def test_real_sonn_fresh_load_equals_signatures_and_keeps_unreadable_cells(books
             expected = replace.source_rows(books[1], mapping)
             assert replace.signatures({n: actual[n] for n in replace.CONTENT}) == replace.signatures(expected)
             values = [row for name in ('economic_values', 'activity_cost_values', 'department_cost_values') for row in actual[name]]
-            for raw in ('21.303.126.00', '19.292.188.00', '3.010.938.00'):
-                matching = [r for r in values if r['raw_text'] == raw]
-                assert matching, raw
-                assert all(r['amount'] is None and r['state'] == 'needs_review' for r in matching)
+            # Final book (D-465): the dot-decimal Makine İkmal cells are fixed.
+            assert not [r for r in values if r['raw_text'] in {'21.303.126.00', '19.292.188.00', '3.010.938.00'}]
+            fixed = [r for r in values if r['raw_text'] == '22.303.126,00']
+            assert fixed and all(r['amount'] == Decimal('22303126.00') for r in fixed)
             from app.program_service import approved_book_provenance
             assert approved_book_provenance(db, 2)['book_sha256'] == live.BOOK_SHA256
 

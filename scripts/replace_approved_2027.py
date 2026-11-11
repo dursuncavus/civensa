@@ -24,11 +24,14 @@ OLD_BOOK = live.BOOK.with_name(PREVIOUS_2027_BOOK[0])
 OLD_SHA256 = PREVIOUS_2027_BOOK[1]
 CONFIRMATION = '2027 KITABINI DUZELTILMIS KITAPLA DEGISTIR'
 ACTION = 'approved_book_2027_replaced'
-# Child before parent. Shared catalogue and historical import/audit rows stay.
+# Child before parent. Historical import/audit rows stay. D-466: the 2027-only
+# catalogue is replaced too (after FIELDS, child before parent).
 FIELDS = ('indicator_values', 'indicators', 'activity_cost_values', 'activity_catalogue_links',
           'activities', 'economic_values', 'department_cost_values', 'submission_events',
           'submissions', 'subprogram_scopes', 'department_scopes', 'report_cards')
 CONTENT = (*CATALOGUE, *FIELDS)
+CATALOGUE_DELETE = ('activity_responsibilities', 'official_activities', 'subprograms', 'programs')
+assert set(CATALOGUE_DELETE) == set(CATALOGUE)
 
 
 def verify_old_book():
@@ -354,11 +357,29 @@ def build_plan(db, old, new, *, organization_id, actor_id):
     actual = {name: owned[name] for name in CONTENT}
     observed = signatures(actual)
     refusals, catalogue_diff = [], []
+    # D-466: catalogue differences are expected parts of the corrected book. They
+    # are listed for the operator and replaced in the same transaction.
     for name in CATALOGUE:
         if wanted[name] != target[name]:
-            catalogue_diff.append(dict(table=name, removed=list((wanted[name] - target[name]).elements()),
-                                       added=list((target[name] - wanted[name]).elements())))
-            refusals.append(f'2027 {name}: ONAYLI ve düzeltilmiş kitap katalogları farklı; katalog geçişini sorumluya planlatın.')
+            catalogue_diff.append(dict(table=name, removed=sorted((wanted[name] - target[name]).elements()),
+                                       added=sorted((target[name] - wanted[name]).elements())))
+    # D-466 guard: every 2027 content row must belong to period #2 and point only
+    # to 2027 content (or shared organisation rows). A row of another period that
+    # references a 2027 row, or a 2027 row that references another period, blocks.
+    from app.db import Base
+    owned_ids = {name: {r['id'] for r in owned[name] if 'id' in r} for name in CONTENT}
+    for name in CONTENT:
+        table = Base.metadata.tables[name]
+        for row in owned[name]:
+            if 'period_id' in table.c and row['period_id'] != period.id:
+                refusals.append(f'2027 {name}: kayıt #{row.get("id")} başka döneme ({row["period_id"]}) ait ama 2027 kaydına bağlı; dönemler arası bağ var, sorumluya bildirin.')
+                continue
+            for column in table.columns:
+                for fk in column.foreign_keys:
+                    parent = fk.column.table.name
+                    value = row[column.name]
+                    if parent in CONTENT and value is not None and value not in owned_ids[parent]:
+                        refusals.append(f'2027 {name}: kayıt #{row.get("id")} başka dönemin {parent} kaydına (#{value}) bağlı; dönemler arası bağ var, sorumluya bildirin.')
     # Compare each directorate separately, including children reached through FKs.
     actual_groups, expected_groups = signatures(actual, grouped=True), signatures(expected, grouped=True)
     for d in departments:
@@ -422,7 +443,7 @@ def build_plan(db, old, new, *, organization_id, actor_id):
     result = dict(mode='approved-load-replace-plan', old_sha256=OLD_SHA256, new_sha256=live.BOOK_SHA256,
         counts={name: dict(old=len(expected[name]), new=len(corrected[name])) for name in CONTENT},
         catalogue_differences=catalogue_diff, refusals=refusals,
-        retained_catalogue=catalogue_state(db, 2))
+        catalogue_before=catalogue_state(db, 2))
     return result, actual, markers, corrected
 
 
@@ -430,11 +451,76 @@ def print_plan(result):
     print('2027 DÜZELTİLMİŞ KİTAPLA DEĞİŞTİRME PLANI · 0 satır yazıldı.')
     for name, counts in result['counts'].items():
         print(f'{name}: {counts["old"]} → {counts["new"]}')
+    labels = {'programs': 'Program', 'subprograms': 'Alt program',
+              'official_activities': 'Resmî faaliyet', 'activity_responsibilities': 'Sorumlu birim bağı'}
+    # Responsibilities reference their official activity by content digest.
+    officials = {digest(json.loads(r)): json.loads(r) for d in result['catalogue_differences']
+                 if d['table'] == 'official_activities' for r in (*d['removed'], *d['added'])}
     for difference in result['catalogue_differences']:
-        print('Katalog farkı: ' + encoded(difference))
+        label = labels[difference['table']]
+        print(f'Katalog farkı · {label}: {len(difference["removed"])} kaldırılacak, {len(difference["added"])} eklenecek.')
+        for line in catalogue_lines(difference, officials):
+            print(line)
     for refusal in result['refusals']:
         print('ENGEL: ' + refusal)
     print(f'Reddedilen: {len(result["refusals"])}')
+
+
+def _short(value, limit=90):
+    value = ' '.join(str(value or '').split())
+    return value if len(value) <= limit else value[:limit - 1] + '…'
+
+
+def _changed_window(old, new, width=30):
+    """The differing middle of two texts, with a little context on each side."""
+    old, new = ' '.join(str(old or '').split()), ' '.join(str(new or '').split())
+    start = next((i for i, (x, y) in enumerate(zip(old, new)) if x != y), min(len(old), len(new)))
+    tail = 0
+    while tail < min(len(old), len(new)) - start and old[-1 - tail] == new[-1 - tail]:
+        tail += 1
+    def window(text):
+        left = text[max(0, start - width):start]
+        changed = text[start:len(text) - tail]
+        # A whitespace-only change (e.g. the D-465 space after "AÇIKLAMA:") stays visible.
+        middle = 'boşluk' if changed and not changed.strip() else _short(changed, 120)
+        right = text[len(text) - tail:len(text) - tail + width]
+        return (('…' if start > width else '') + left + '[' + middle + ']' + right
+                + ('…' if tail > width else ''))
+    return window(old), window(new)
+
+
+def catalogue_lines(difference, officials):
+    """Human-readable Turkish lines for one table's catalogue difference."""
+    name = difference['table']
+    removed = [json.loads(r) for r in difference['removed']]
+    added = [json.loads(r) for r in difference['added']]
+    lines = []
+    if name == 'subprograms':
+        # Same programme/name on both sides: show only the changed text.
+        for old in list(removed):
+            new = next((r for r in added if r['name'] == old['name'] and r['program_id'] == old['program_id']), None)
+            if new is None:
+                continue
+            removed.remove(old)
+            added.remove(new)
+            for field, label in (('rationale', 'Gerekçe'), ('goal', 'Amaç')):
+                if old[field] != new[field]:
+                    before, after = _changed_window(old[field], new[field])
+                    lines.append(f'  ~ Alt program: {_short(old["name"], 60)} · {label}: "{before}" → "{after}"')
+    def describe(row):
+        if name == 'programs':
+            return f'Program: {_short(row.get("name"))}'
+        if name == 'subprograms':
+            return f'Alt program: {_short(row.get("name"), 60)} · Gerekçe: {_short(row.get("rationale"), 70)}'
+        if name == 'official_activities':
+            return f'{_short(row.get("subprogram_name"), 50)} / {_short(row.get("name"), 80)}'
+        official = officials.get(row.get('official_activity_id'))
+        what = describe_official(official) if official else 'resmî faaliyet özeti ' + str(row.get('official_activity_id'))[:12]
+        return f'Müdürlük #{row.get("department_id")} sorumluluğu: {what}'
+    def describe_official(row):
+        return f'{_short(row.get("subprogram_name"), 40)} / {_short(row.get("name"), 60)}'
+    lines += [f'  - {describe(r)}' for r in removed] + [f'  + {describe(r)}' for r in added]
+    return lines
 
 
 def execute(engine, old, new, *, organization_id, actor_id, apply=False, backup=None):
@@ -464,8 +550,7 @@ def execute(engine, old, new, *, organization_id, actor_id, apply=False, backup=
                 raise live.Refusal('Değiştirme onayı uyuşmuyor; 0 satır yazıldı. Planı kontrol edip yeniden deneyin.')
             live.verify_backup(backup)
             protected = {year: period_rows_hash(db, year) for year in db.scalars(select(ReportingPeriod.year).where(ReportingPeriod.id != 2))}
-            receipt = result['retained_catalogue']
-            for name in FIELDS:
+            for name in (*FIELDS, *CATALOGUE_DELETE):
                 table = Base.metadata.tables[name]
                 if not rows[name]:
                     continue
@@ -478,13 +563,13 @@ def execute(engine, old, new, *, organization_id, actor_id, apply=False, backup=
             for _, batch in markers:
                 batch.status = 'superseded'
             db.flush()
-            # Hash receipt hand-off: validate the retained catalogue before EACH
-            # shared loader call. The loader sees exactly the approved catalogue.
+            # D-466: the loader rebuilds the 2027 catalogue from the corrected book
+            # alone. Every table lock is held, so nothing else can write meanwhile.
+            if any(state['count'] for state in catalogue_state(db, 2).values()):
+                raise live.Refusal('2027 kataloğu tam temizlenemedi; tüm işlem geri alındı. Sorumluya bildirin.')
             actor = db.get(User, actor_id)
             validation = []
             for source in new['departments']:
-                if catalogue_state(db, 2) != receipt:
-                    raise live.Refusal('Korunan katalog özeti değişti; tüm işlem geri alındı. Sorumluya bildirin.')
                 batch = ImportBatch(period_id=2, filename=live.BOOK.name, status='preview', created_by=actor_id,
                                     payload_json=json.dumps(live.department_payload(new, source), ensure_ascii=False))
                 db.add(batch)
@@ -498,11 +583,13 @@ def execute(engine, old, new, *, organization_id, actor_id, apply=False, backup=
             after = owned_rows(db, 2)
             if signatures({name: after[name] for name in CONTENT}) != signatures(expected):
                 raise live.Refusal('Düzeltilmiş kitap son satır doğrulaması uyuşmuyor; tüm işlem geri alındı. Sorumluya bildirin.')
-            if catalogue_state(db, 2) != receipt or any(period_rows_hash(db, year) != before for year, before in protected.items()):
-                raise live.Refusal('Korunan katalog veya diğer dönem değişecekti; tüm işlem geri alındı. Sorumluya bildirin.')
+            if any(period_rows_hash(db, year) != before for year, before in protected.items()):
+                raise live.Refusal('Diğer dönem değişecekti; tüm işlem geri alındı. Sorumluya bildirin.')
             db.add(AuditLog(user_id=actor_id, action=ACTION, entity_type='reporting_period', entity_id=2,
                 details=encoded(dict(year=2027, head=live.HEAD, old_sha256=OLD_SHA256, new_sha256=live.BOOK_SHA256,
-                    counts=result['counts'], retained_catalogue=receipt, old_batch_ids=[b.id for _, b in markers]))))
+                    counts=result['counts'], decision='D-466',
+                    catalogue_before=result['catalogue_before'], catalogue_after=catalogue_state(db, 2),
+                    old_batch_ids=[b.id for _, b in markers]))))
             result.update(mode='approved-load-replace-apply', validation=validation)
         return result
 

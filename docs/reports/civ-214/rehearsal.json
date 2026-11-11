@@ -1,205 +1,200 @@
 {
-  "mode": "approved-load-replace-plan",
-  "old_sha256": "cbbf9018302d0a1d33d1dde0c4a64a2418d12b55cc29d046205371018673bd71",
-  "new_sha256": "8f8310138324bfe7560cae864595de1f7d1ad4bb7a982eebe4915a18e0728ec4",
-  "counts": {
-    "programs": {
-      "old": 28,
-      "new": 28
+  "apply_mode": "approved-load-replace-apply",
+  "mode": "approved-load-replace-rehearsal",
+  "plan": {
+    "catalogue_before": {
+      "activity_responsibilities": {
+        "count": 291,
+        "sha256": "bb4859888c207cb5ce722d1d76f33ea86ea599ec0822b02433c71e86ca85fdd5"
+      },
+      "official_activities": {
+        "count": 291,
+        "sha256": "2f2dd239efa4919fd76ca751abce7104b45d7b77bf85b387468fcbd38c43f718"
+      },
+      "programs": {
+        "count": 28,
+        "sha256": "fffefa3aefb701acde8dcd4fe58ca60c32e717e9fb1d33004e50910785ca9180"
+      },
+      "subprograms": {
+        "count": 38,
+        "sha256": "ff0c3960c5562eb0e66c628a99d5ac2de6adf2fae7bc537d0781de8a98384b76"
+      }
     },
-    "subprograms": {
-      "old": 38,
-      "new": 38
-    },
-    "official_activities": {
-      "old": 291,
-      "new": 290
-    },
-    "activity_responsibilities": {
-      "old": 291,
-      "new": 290
-    },
-    "indicator_values": {
-      "old": 1578,
-      "new": 1578
-    },
-    "indicators": {
-      "old": 263,
-      "new": 263
-    },
-    "activity_cost_values": {
-      "old": 5172,
-      "new": 5220
-    },
-    "activity_catalogue_links": {
-      "old": 286,
-      "new": 290
-    },
-    "activities": {
-      "old": 291,
-      "new": 290
-    },
-    "economic_values": {
-      "old": 1340,
-      "new": 1340
-    },
-    "department_cost_values": {
-      "old": 204,
-      "new": 204
-    },
-    "submission_events": {
-      "old": 0,
-      "new": 0
-    },
-    "submissions": {
-      "old": 34,
-      "new": 34
-    },
-    "subprogram_scopes": {
-      "old": 0,
-      "new": 0
-    },
-    "department_scopes": {
-      "old": 0,
-      "new": 0
-    },
-    "report_cards": {
-      "old": 64,
-      "new": 64
-    }
-  },
-  "catalogue_differences": [
-    {
-      "table": "subprograms",
-      "removed": [
-        "{\"goal\":\"Belediye hizmetlerinin kesintisiz yürütülmesini sağlamak amacıyla; yıllık ortalama 110 adet resmi plakalı araç ve iş makinelerinin faal tutulmasını sağlayarak, taşıt ve iş makinesi filosunun periyodik bakım, onarım ve teknik destek süreçlerini optimize etmek, operasyonel sürekliliği sağlamak, araç yönetim kapasitesini teknolojik altyapıyla güçlendirmek ve çevre dostu ulaşım modellerini yaygınlaştırmaktır.\",\"name\":\"Üst Yönetim ve İdari Mali Hizmetler\",\"period_id\":2,\"program_id\":\"cd0f94f36c2077d00fe48004971a1e28361708be18e976518b81d30c779252df\",\"rationale\":\"GEREKÇE: Belediyemizin saha operasyonları ile kentsel kamu hizmetlerinin aksamadan, güvenli ve zamanında yürütülmesi, bünyemizdeki araç ve iş makinesi filosunun her an göreve hazır tutulmasına bağlıdır. Mevcut makine parkının ekonomik ömrünü uzatmak, arıza kaynaklı iş gücü ve zaman kayıplarını önlemek, bakım-onarım maliyetlerini kontrol altında tutarak kamu kaynaklarını rasyonel kullanmak ve çevreye duyarlı modern bir filo yönetim yapısı oluşturmak amacıyla bu faaliyet yürütülmektedir. AÇIKLAMA: Belediyemiz hizmetlerinde kullanılan yıllık ortalama 110 adet resmi plakalı araç ve iş makinesinin kesintisiz faal tutulması amacıyla periyodik bakım, muayene, onarım, parça temini ve acil teknik müdahale süreçleri optimize edilecektir. Taşıt takip ve filo yönetim yazılımları gibi teknolojik altyapılar etkin şekilde kullanılarak yakıt tüketimi, rota planlaması ve operasyonel verimlilik anlık olarak izlenecektir. Hizmet süreçlerinde arıza riskleri en aza indirilip kurumsal hareket kabiliyeti artırılırken, düşük emisyonlu ve çevre dostu ulaşım uygulamalarının yaygınlaştırılmasıyla operasyonel sürdürülebilirlik güvence altına alınacaktır.\"}"
-      ],
-      "added": [
-        "{\"goal\":\"Belediye hizmetlerinin kesintisiz yürütülmesini sağlamak amacıyla; yıllık ortalama 119 adet resmi plakalı araç ve iş makinelerinin faal tutulmasını sağlayarak, taşıt ve iş makinesi filosunun periyodik bakım, onarım ve teknik destek süreçlerini optimize etmek, operasyonel sürekliliği sağlamak, araç yönetim kapasitesini teknolojik altyapıyla güçlendirmek ve çevre dostu ulaşım modellerini yaygınlaştırmaktır.\",\"name\":\"Üst Yönetim ve İdari Mali Hizmetler\",\"period_id\":2,\"program_id\":\"cd0f94f36c2077d00fe48004971a1e28361708be18e976518b81d30c779252df\",\"rationale\":\"GEREKÇE:Belediyemizin saha operasyonları ile kentsel kamu hizmetlerinin aksamadan, güvenli ve zamanında yürütülmesi, bünyemizdeki araç ve iş makinesi filosunun her an göreve hazır tutulmasına bağlıdır. Mevcut makine parkının ekonomik ömrünü uzatmak, arıza kaynaklı iş gücü ve zaman kayıplarını önlemek, bakım-onarım maliyetlerini kontrol altında tutarak kamu kaynaklarını rasyonel kullanmak ve çevreye duyarlı modern bir filo yönetim yapısı oluşturmak amacıyla bu faaliyet yürütülmektedir. AÇIKLAMA:Belediyemiz hizmetlerinde kullanılan yıllık ortalama 119 adet resmi plakalı araç ve iş makinesinin kesintisiz faal tutulması amacıyla periyodik bakım, muayene, onarım, parça temini ve acil teknik müdahale süreçleri optimize edilecektir. Taşıt takip ve filo yönetim yazılımları gibi teknolojik altyapılar etkin şekilde kullanılarak yakıt tüketimi, rota planlaması ve operasyonel verimlilik anlık olarak izlenecektir. Hizmet süreçlerinde arıza riskleri en aza indirilip kurumsal hareket kabiliyeti artırılırken, düşük emisyonlu ve çevre dostu ulaşım uygulamalarının yaygınlaştırılmasıyla operasyonel sürdürülebilirlik güvence altına alınacaktır.\"}"
-      ]
-    },
-    {
-      "table": "official_activities",
-      "removed": [
-        "{\"code\":\"0006\",\"name\":\"0006.Sosyal Güvenlik Kurumuna 5434 Sayılı Kanun Kapsamında Emekli İkramiyeleri Karşılığı Yapılan Ödemeler\",\"period_id\":2,\"program_code\":\"\",\"program_name\":\"Yönetim ve Destek Programı\",\"subprogram_code\":\"\",\"subprogram_name\":\"Üst Yönetim, İdari ve Mali Hizmetler\"}",
-        "{\"code\":\"0002\",\"name\":\"0002.Akıllı Araç Takip ve Bakım Yönetim Sistemi Projesi\",\"period_id\":2,\"program_code\":\"\",\"program_name\":\"Yönetim ve Destek Programı\",\"subprogram_code\":\"\",\"subprogram_name\":\"Üst Yönetim ve İdari Mali Hizmetler\"}",
-        "{\"code\":\"0003\",\"name\":\"0003.Bakım ve Onarım Atölyesi Modernizasyon Projesi\",\"period_id\":2,\"program_code\":\"\",\"program_name\":\"Yönetim ve Destek Programı\",\"subprogram_code\":\"\",\"subprogram_name\":\"Üst Yönetim ve İdari Mali Hizmetler\"}",
-        "{\"code\":\"0004\",\"name\":\"0004.Birimlerden gelen araç taleplerinin karşılanması\",\"period_id\":2,\"program_code\":\"\",\"program_name\":\"Yönetim ve Destek Programı\",\"subprogram_code\":\"\",\"subprogram_name\":\"Üst Yönetim ve İdari Mali Hizmetler\"}",
-        "{\"code\":\"0005\",\"name\":\"0005.Dış paydaşlardan gelen araç taleplerinin mevzuat ve imkânlar çerçevesinde karşılanması\",\"period_id\":2,\"program_code\":\"\",\"program_name\":\"Yönetim ve Destek Programı\",\"subprogram_code\":\"\",\"subprogram_name\":\"Üst Yönetim ve İdari Mali Hizmetler\"}",
-        "{\"code\":\"0011\",\"name\":\"0011.Çocuk Bakımevleri ile Çocuk Oyun ve Etkinlik Merkezlerinde çocuklara yönelik olarak okul öncesinde sosyal uyumu sağlamaya, motor ve bilişsel becerilerini geliştirmeye yönelik programları gerçekleştirmek\",\"period_id\":2,\"program_code\":\"\",\"program_name\":\"Çocukların Korunması ve Gelişiminin Sağlanması\",\"subprogram_code\":\"\",\"subprogram_name\":\"Çocukların Gelişimi\"}",
-        "{\"code\":\"0012\",\"name\":\"0012.Kadın kooperatifleri, kadın üreticiler, yerel üreticiler ile diğer kooperatiflerin ürettiği sağlıklı, ekonomik ve güvenilir ürünlerin satışa sunulduğu Büyükçekmece’den Tarım Market mağazasını işletmek,\",\"period_id\":2,\"program_code\":\"\",\"program_name\":\"Ticaretin Düzenlenmesi, Geliştirilmesi ve Kolaylaştırılması\",\"subprogram_code\":\"\",\"subprogram_name\":\"İç Ticaretin Düzenlenmesi ve Geliştirilmesi\"}",
-        "{\"code\":\"0013\",\"name\":\"0013.Yerel üreticilerle birlikte ilçede yetişen tarımsal ürünleri işleyerek katma değeri daha yüksek ürün haline getirmek.\",\"period_id\":2,\"program_code\":\"\",\"program_name\":\"Ticaretin Düzenlenmesi, Geliştirilmesi ve Kolaylaştırılması\",\"subprogram_code\":\"\",\"subprogram_name\":\"İç Ticaretin Düzenlenmesi ve Geliştirilmesi\"}",
-        "{\"code\":\"0014\",\"name\":\"0014.Belediyeye bağlı iktisadi işletme şubelerinin (sosyal tesis, otopark, düğün salonu vb.) işletmek.\",\"period_id\":2,\"program_code\":\"\",\"program_name\":\"Kamu Gelirleri Yönetimi\",\"subprogram_code\":\"\",\"subprogram_name\":\"Kamu Gelirlerinin Toplanması\"}",
-        "{\"code\":\"0015\",\"name\":\"0015.Vergi beyannameleri, müşavirlik, eğitim vb. çeşitli ödemeleri zamanında eksiksiz ve tam olarak yürütmek.\",\"period_id\":2,\"program_code\":\"\",\"program_name\":\"Kamu Gelirleri Yönetimi\",\"subprogram_code\":\"\",\"subprogram_name\":\"Kamu Gelirlerinin Toplanması\"}"
-      ],
-      "added": [
-        "{\"code\":\"0002\",\"name\":\"0002.Birimlerden gelen araç taleplerinin karşılanması\",\"period_id\":2,\"program_code\":\"\",\"program_name\":\"Yönetim ve Destek Programı\",\"subprogram_code\":\"\",\"subprogram_name\":\"Üst Yönetim ve İdari Mali Hizmetler\"}",
-        "{\"code\":\"0003\",\"name\":\"0003.Dış paydaşlardan gelen araç taleplerinin mevzuat ve imkânlar çerçevesinde karşılanması\",\"period_id\":2,\"program_code\":\"\",\"program_name\":\"Yönetim ve Destek Programı\",\"subprogram_code\":\"\",\"subprogram_name\":\"Üst Yönetim ve İdari Mali Hizmetler\"}",
-        "{\"code\":\"0004\",\"name\":\"0004.Akıllı Araç Takip ve Bakım Yönetim Sistemi Projesi\",\"period_id\":2,\"program_code\":\"\",\"program_name\":\"Yönetim ve Destek Programı\",\"subprogram_code\":\"\",\"subprogram_name\":\"Üst Yönetim ve İdari Mali Hizmetler\"}",
-        "{\"code\":\"0005\",\"name\":\"0005.Bakım ve Onarım Atölyesi Modernizasyon Projesi\",\"period_id\":2,\"program_code\":\"\",\"program_name\":\"Yönetim ve Destek Programı\",\"subprogram_code\":\"\",\"subprogram_name\":\"Üst Yönetim ve İdari Mali Hizmetler\"}",
-        "{\"code\":\"0001\",\"name\":\"0001.Çocuk Bakımevleri ile Çocuk Oyun ve Etkinlik Merkezlerinde çocuklara yönelik olarak okul öncesinde sosyal uyumu sağlamaya, motor ve bilişsel becerilerini geliştirmeye yönelik programları gerçekleştirmek\",\"period_id\":2,\"program_code\":\"\",\"program_name\":\"Çocukların Korunması ve Gelişiminin Sağlanması\",\"subprogram_code\":\"\",\"subprogram_name\":\"Çocukların Gelişimi\"}",
-        "{\"code\":\"0002\",\"name\":\"0002.Kadın kooperatifleri, kadın üreticiler, yerel üreticiler ile diğer kooperatiflerin ürettiği sağlıklı, ekonomik ve güvenilir ürünlerin satışa sunulduğu Büyükçekmece’den Tarım Market mağazasını işletmek,\",\"period_id\":2,\"program_code\":\"\",\"program_name\":\"Ticaretin Düzenlenmesi, Geliştirilmesi ve Kolaylaştırılması\",\"subprogram_code\":\"\",\"subprogram_name\":\"İç Ticaretin Düzenlenmesi ve Geliştirilmesi\"}",
-        "{\"code\":\"0003\",\"name\":\"0003.Yerel üreticilerle birlikte ilçede yetişen tarımsal ürünleri işleyerek katma değeri daha yüksek ürün haline getirmek.\",\"period_id\":2,\"program_code\":\"\",\"program_name\":\"Ticaretin Düzenlenmesi, Geliştirilmesi ve Kolaylaştırılması\",\"subprogram_code\":\"\",\"subprogram_name\":\"İç Ticaretin Düzenlenmesi ve Geliştirilmesi\"}",
-        "{\"code\":\"0004\",\"name\":\"0004.Belediyeye bağlı iktisadi işletme şubelerinin (sosyal tesis, otopark, düğün salonu vb.) işletmek.\",\"period_id\":2,\"program_code\":\"\",\"program_name\":\"Kamu Gelirleri Yönetimi\",\"subprogram_code\":\"\",\"subprogram_name\":\"Kamu Gelirlerinin Toplanması\"}",
-        "{\"code\":\"0005\",\"name\":\"0005.Vergi beyannameleri, müşavirlik, eğitim vb. çeşitli ödemeleri zamanında eksiksiz ve tam olarak yürütmek.\",\"period_id\":2,\"program_code\":\"\",\"program_name\":\"Kamu Gelirleri Yönetimi\",\"subprogram_code\":\"\",\"subprogram_name\":\"Kamu Gelirlerinin Toplanması\"}"
-      ]
-    },
-    {
-      "table": "activity_responsibilities",
-      "removed": [
-        "{\"department_id\":23,\"official_activity_id\":\"b584021eee17eaac466bc4437b426c745503cd137186cdecd372e8fe21aded43\"}",
-        "{\"department_id\":33,\"official_activity_id\":\"f1b6933165342a1a205c7317d0de01fcd307fb7db9b52c205b4f232df6e86302\"}",
-        "{\"department_id\":33,\"official_activity_id\":\"05ab6d6e5e397231b497f87707e5f9da8ac07582063fa22522b541a73c6faddf\"}",
-        "{\"department_id\":33,\"official_activity_id\":\"7d3897b1d9038a00ad9f436085522eb9bf904eda7a629f712b1b04d3c496e5fe\"}",
-        "{\"department_id\":33,\"official_activity_id\":\"9af3814d45ee5f240617e27c8c6575f4e5271b4781dddca29a2d76802cddb5b4\"}",
-        "{\"department_id\":34,\"official_activity_id\":\"66996d8a86c39b118dca03e97062778970be4f197ea0bc943275f7a777520e7a\"}",
-        "{\"department_id\":34,\"official_activity_id\":\"b4a620ad6d3106d0e12d1ac16e8446d43f23e689285308f6026c7b530f5b1a0e\"}",
-        "{\"department_id\":34,\"official_activity_id\":\"1e1effad736515f1f212cfccda974e6ed4dc0f4c80f5a37a01a54e19d5a8bcd6\"}",
-        "{\"department_id\":34,\"official_activity_id\":\"383e8ab26143ba5d2b2c55ac48d3b83121843d3e2b972fa4757e947ca7e094d1\"}",
-        "{\"department_id\":34,\"official_activity_id\":\"afca638d0570f512c58c1d4dac3a3b41c3e78ac81031e21022a67233568857c7\"}"
-      ],
-      "added": [
-        "{\"department_id\":33,\"official_activity_id\":\"30c55d1fde6213e8ddc7f4159093986379f270ad2d6e642838027eeb0af8097e\"}",
-        "{\"department_id\":33,\"official_activity_id\":\"a89971b46e1af4e2e1f7d2e9caad483868ffbf1ca1308ff23078eda3e84d6b14\"}",
-        "{\"department_id\":33,\"official_activity_id\":\"a87da7ce962044c388f78974d8e54a2c12bca89050f61b53b872de59515f261d\"}",
-        "{\"department_id\":33,\"official_activity_id\":\"d85e240c1785559b48da50393ba0bb5428f3691a4639b530d9b2de483d773a04\"}",
-        "{\"department_id\":34,\"official_activity_id\":\"eede758e181f5c51e40893fe0aa9f377fe89760163527ec226d3b12b550a1810\"}",
-        "{\"department_id\":34,\"official_activity_id\":\"27d664783f62a969b3f40726e859f81f5438bbb23b88c913a59d5f8f8f226c66\"}",
-        "{\"department_id\":34,\"official_activity_id\":\"0b2e7e084b64ddc7a8153c2753bf267c9991ab320a143a696429b8e89e686ad1\"}",
-        "{\"department_id\":34,\"official_activity_id\":\"3712fd6f116264d61503b799d188487d1f55f11f6dabb5b56b15a4b9064b5fc8\"}",
-        "{\"department_id\":34,\"official_activity_id\":\"c93140c2d7dd4049a19f3941bbd38f69acc32b8561a87bd69ea9ab735a3da1da\"}"
-      ]
-    }
-  ],
-  "refusals": [
-    "2027 subprograms: ONAYLI ve düzeltilmiş kitap katalogları farklı; katalog geçişini sorumluya planlatın.",
-    "2027 official_activities: ONAYLI ve düzeltilmiş kitap katalogları farklı; katalog geçişini sorumluya planlatın.",
-    "2027 activity_responsibilities: ONAYLI ve düzeltilmiş kitap katalogları farklı; katalog geçişini sorumluya planlatın."
-  ],
-  "retained_catalogue": {
-    "programs": {
-      "count": 28,
-      "sha256": "fffefa3aefb701acde8dcd4fe58ca60c32e717e9fb1d33004e50910785ca9180"
-    },
-    "subprograms": {
-      "count": 38,
-      "sha256": "ff0c3960c5562eb0e66c628a99d5ac2de6adf2fae7bc537d0781de8a98384b76"
-    },
-    "official_activities": {
-      "count": 291,
-      "sha256": "2f2dd239efa4919fd76ca751abce7104b45d7b77bf85b387468fcbd38c43f718"
-    },
-    "activity_responsibilities": {
-      "count": 291,
-      "sha256": "bb4859888c207cb5ce722d1d76f33ea86ea599ec0822b02433c71e86ca85fdd5"
-    }
-  },
-  "evidence": {
-    "postgresql": "18",
-    "schema_head": "c197a1b2c3d4",
-    "actual_replacement": "REFUSED: rule 3, catalogue differs",
-    "all_public_rows_unchanged": true,
-    "sequences_unchanged": true,
-    "protected_periods": [
-      2026,
-      2028
+    "catalogue_differences": [
+      {
+        "added": [
+          "{\"goal\":\"Araştırma, geliştirme ve yenilik faaliyetleri yoluyla belediyenin kurumsal kapasitesini güçlendirmek, proje üretme yetkinliğini artırmak, dış finansman kaynaklarından yararlanmak ve hizmet sunumunda yenilikçi uygulamaları yaygınlaştırmaktır.\",\"name\":\"Deneysel Geliştirme\",\"period_id\":2,\"program_id\":\"74beba898fe058e641e6f44619945ce31c1e3dcfc5062f95fcde9afe8b207a42\",\"rationale\":\"GEREKÇE: 2027-2029 Mahalli İdareler Bütçe Hazırlama Rehberi; belediyenin yürürlükteki stratejik planı, performans programı, faaliyet raporu ve ilgili müdürlük görev yönetmeliği hükümleri ifade eder. AÇIKLAMA: 5018 ve 5393 sayılı kanunların yasal zorunlulukları doğrultusunda; belediyemizin mali ve idari yönetim kapasitesini artırmak, kaynakları verimli kullanmak ve hesap verebilirliği sağlamak amaçlanmaktadır.\"}",
+          "{\"goal\":\"Belediye hizmetlerinin kesintisiz yürütülmesini sağlamak amacıyla; yıllık ortalama 119 adet resmi plakalı araç ve iş makinelerinin faal tutulmasını sağlayarak, taşıt ve iş makinesi filosunun periyodik bakım, onarım ve teknik destek süreçlerini optimize etmek, operasyonel sürekliliği sağlamak, araç yönetim kapasitesini teknolojik altyapıyla güçlendirmek ve çevre dostu ulaşım modellerini yaygınlaştırmaktır.\",\"name\":\"Üst Yönetim ve İdari Mali Hizmetler\",\"period_id\":2,\"program_id\":\"cd0f94f36c2077d00fe48004971a1e28361708be18e976518b81d30c779252df\",\"rationale\":\"GEREKÇE: Belediyemizin saha operasyonları ile kentsel kamu hizmetlerinin aksamadan, güvenli ve zamanında yürütülmesi, bünyemizdeki araç ve iş makinesi filosunun her an göreve hazır tutulmasına bağlıdır. Mevcut makine parkının ekonomik ömrünü uzatmak, arıza kaynaklı iş gücü ve zaman kayıplarını önlemek, bakım-onarım maliyetlerini kontrol altında tutarak kamu kaynaklarını rasyonel kullanmak ve çevreye duyarlı modern bir filo yönetim yapısı oluşturmak amacıyla bu faaliyet yürütülmektedir. AÇIKLAMA: Belediyemiz hizmetlerinde kullanılan yıllık ortalama 119 adet resmi plakalı araç ve iş makinesinin kesintisiz faal tutulması amacıyla periyodik bakım, muayene, onarım, parça temini ve acil teknik müdahale süreçleri optimize edilecektir. Taşıt takip ve filo yönetim yazılımları gibi teknolojik altyapılar etkin şekilde kullanılarak yakıt tüketimi, rota planlaması ve operasyonel verimlilik anlık olarak izlenecektir. Hizmet süreçlerinde arıza riskleri en aza indirilip kurumsal hareket kabiliyeti artırılırken, düşük emisyonlu ve çevre dostu ulaşım uygulamalarının yaygınlaştırılmasıyla operasyonel sürdürülebilirlik güvence altına alınacaktır.\"}"
+        ],
+        "removed": [
+          "{\"goal\":\"Araştırma, geliştirme ve yenilik faaliyetleri yoluyla belediyenin kurumsal kapasitesini güçlendirmek, proje üretme yetkinliğini artırmak, dış finansman kaynaklarından yararlanmak ve hizmet sunumunda yenilikçi uygulamaları yaygınlaştırmaktır.\",\"name\":\"Deneysel Geliştirme\",\"period_id\":2,\"program_id\":\"74beba898fe058e641e6f44619945ce31c1e3dcfc5062f95fcde9afe8b207a42\",\"rationale\":\"GEREKÇE: 2027-2029 Mahalli İdareler Bütçe Hazırlama Rehberi; belediyenin yürürlükteki stratejik planı, performans programı, faaliyet raporu ve ilgili müdürlük görev yönetmeliği hükümleri ifade eder. AÇIKLAMA:5018 ve 5393 sayılı kanunların yasal zorunlulukları doğrultusunda; belediyemizin mali ve idari yönetim kapasitesini artırmak, kaynakları verimli kullanmak ve hesap verebilirliği sağlamak amaçlanmaktadır.\"}",
+          "{\"goal\":\"Belediye hizmetlerinin kesintisiz yürütülmesini sağlamak amacıyla; yıllık ortalama 110 adet resmi plakalı araç ve iş makinelerinin faal tutulmasını sağlayarak, taşıt ve iş makinesi filosunun periyodik bakım, onarım ve teknik destek süreçlerini optimize etmek, operasyonel sürekliliği sağlamak, araç yönetim kapasitesini teknolojik altyapıyla güçlendirmek ve çevre dostu ulaşım modellerini yaygınlaştırmaktır.\",\"name\":\"Üst Yönetim ve İdari Mali Hizmetler\",\"period_id\":2,\"program_id\":\"cd0f94f36c2077d00fe48004971a1e28361708be18e976518b81d30c779252df\",\"rationale\":\"GEREKÇE: Belediyemizin saha operasyonları ile kentsel kamu hizmetlerinin aksamadan, güvenli ve zamanında yürütülmesi, bünyemizdeki araç ve iş makinesi filosunun her an göreve hazır tutulmasına bağlıdır. Mevcut makine parkının ekonomik ömrünü uzatmak, arıza kaynaklı iş gücü ve zaman kayıplarını önlemek, bakım-onarım maliyetlerini kontrol altında tutarak kamu kaynaklarını rasyonel kullanmak ve çevreye duyarlı modern bir filo yönetim yapısı oluşturmak amacıyla bu faaliyet yürütülmektedir. AÇIKLAMA: Belediyemiz hizmetlerinde kullanılan yıllık ortalama 110 adet resmi plakalı araç ve iş makinesinin kesintisiz faal tutulması amacıyla periyodik bakım, muayene, onarım, parça temini ve acil teknik müdahale süreçleri optimize edilecektir. Taşıt takip ve filo yönetim yazılımları gibi teknolojik altyapılar etkin şekilde kullanılarak yakıt tüketimi, rota planlaması ve operasyonel verimlilik anlık olarak izlenecektir. Hizmet süreçlerinde arıza riskleri en aza indirilip kurumsal hareket kabiliyeti artırılırken, düşük emisyonlu ve çevre dostu ulaşım uygulamalarının yaygınlaştırılmasıyla operasyonel sürdürülebilirlik güvence altına alınacaktır.\"}"
+        ],
+        "table": "subprograms"
+      },
+      {
+        "added": [
+          "{\"code\":\"0001\",\"name\":\"0001.Çocuk Bakımevleri ile Çocuk Oyun ve Etkinlik Merkezlerinde çocuklara yönelik olarak okul öncesinde sosyal uyumu sağlamaya, motor ve bilişsel becerilerini geliştirmeye yönelik programları gerçekleştirmek\",\"period_id\":2,\"program_code\":\"\",\"program_name\":\"Çocukların Korunması ve Gelişiminin Sağlanması\",\"subprogram_code\":\"\",\"subprogram_name\":\"Çocukların Gelişimi\"}",
+          "{\"code\":\"0002\",\"name\":\"0002.Birimlerden gelen araç taleplerinin karşılanması\",\"period_id\":2,\"program_code\":\"\",\"program_name\":\"Yönetim ve Destek Programı\",\"subprogram_code\":\"\",\"subprogram_name\":\"Üst Yönetim ve İdari Mali Hizmetler\"}",
+          "{\"code\":\"0002\",\"name\":\"0002.Kadın kooperatifleri, kadın üreticiler, yerel üreticiler ile diğer kooperatiflerin ürettiği sağlıklı, ekonomik ve güvenilir ürünlerin satışa sunulduğu Büyükçekmece’den Tarım Market mağazasını işletmek,\",\"period_id\":2,\"program_code\":\"\",\"program_name\":\"Ticaretin Düzenlenmesi, Geliştirilmesi ve Kolaylaştırılması\",\"subprogram_code\":\"\",\"subprogram_name\":\"İç Ticaretin Düzenlenmesi ve Geliştirilmesi\"}",
+          "{\"code\":\"0003\",\"name\":\"0003.Dış paydaşlardan gelen araç taleplerinin mevzuat ve imkânlar çerçevesinde karşılanması\",\"period_id\":2,\"program_code\":\"\",\"program_name\":\"Yönetim ve Destek Programı\",\"subprogram_code\":\"\",\"subprogram_name\":\"Üst Yönetim ve İdari Mali Hizmetler\"}",
+          "{\"code\":\"0003\",\"name\":\"0003.Yerel üreticilerle birlikte ilçede yetişen tarımsal ürünleri işleyerek katma değeri daha yüksek ürün haline getirmek.\",\"period_id\":2,\"program_code\":\"\",\"program_name\":\"Ticaretin Düzenlenmesi, Geliştirilmesi ve Kolaylaştırılması\",\"subprogram_code\":\"\",\"subprogram_name\":\"İç Ticaretin Düzenlenmesi ve Geliştirilmesi\"}",
+          "{\"code\":\"0004\",\"name\":\"0004.Akıllı Araç Takip ve Bakım Yönetim Sistemi Projesi\",\"period_id\":2,\"program_code\":\"\",\"program_name\":\"Yönetim ve Destek Programı\",\"subprogram_code\":\"\",\"subprogram_name\":\"Üst Yönetim ve İdari Mali Hizmetler\"}",
+          "{\"code\":\"0004\",\"name\":\"0004.Belediyeye bağlı iktisadi işletme şubelerinin (sosyal tesis, otopark, düğün salonu vb.) işletmek.\",\"period_id\":2,\"program_code\":\"\",\"program_name\":\"Kamu Gelirleri Yönetimi\",\"subprogram_code\":\"\",\"subprogram_name\":\"Kamu Gelirlerinin Toplanması\"}",
+          "{\"code\":\"0005\",\"name\":\"0005.Bakım ve Onarım Atölyesi Modernizasyon Projesi\",\"period_id\":2,\"program_code\":\"\",\"program_name\":\"Yönetim ve Destek Programı\",\"subprogram_code\":\"\",\"subprogram_name\":\"Üst Yönetim ve İdari Mali Hizmetler\"}",
+          "{\"code\":\"0005\",\"name\":\"0005.Vergi beyannameleri, müşavirlik, eğitim vb. çeşitli ödemeleri zamanında eksiksiz ve tam olarak yürütmek.\",\"period_id\":2,\"program_code\":\"\",\"program_name\":\"Kamu Gelirleri Yönetimi\",\"subprogram_code\":\"\",\"subprogram_name\":\"Kamu Gelirlerinin Toplanması\"}"
+        ],
+        "removed": [
+          "{\"code\":\"0002\",\"name\":\"0002.Akıllı Araç Takip ve Bakım Yönetim Sistemi Projesi\",\"period_id\":2,\"program_code\":\"\",\"program_name\":\"Yönetim ve Destek Programı\",\"subprogram_code\":\"\",\"subprogram_name\":\"Üst Yönetim ve İdari Mali Hizmetler\"}",
+          "{\"code\":\"0003\",\"name\":\"0003.Bakım ve Onarım Atölyesi Modernizasyon Projesi\",\"period_id\":2,\"program_code\":\"\",\"program_name\":\"Yönetim ve Destek Programı\",\"subprogram_code\":\"\",\"subprogram_name\":\"Üst Yönetim ve İdari Mali Hizmetler\"}",
+          "{\"code\":\"0004\",\"name\":\"0004.Birimlerden gelen araç taleplerinin karşılanması\",\"period_id\":2,\"program_code\":\"\",\"program_name\":\"Yönetim ve Destek Programı\",\"subprogram_code\":\"\",\"subprogram_name\":\"Üst Yönetim ve İdari Mali Hizmetler\"}",
+          "{\"code\":\"0005\",\"name\":\"0005.Dış paydaşlardan gelen araç taleplerinin mevzuat ve imkânlar çerçevesinde karşılanması\",\"period_id\":2,\"program_code\":\"\",\"program_name\":\"Yönetim ve Destek Programı\",\"subprogram_code\":\"\",\"subprogram_name\":\"Üst Yönetim ve İdari Mali Hizmetler\"}",
+          "{\"code\":\"0006\",\"name\":\"0006.Sosyal Güvenlik Kurumuna 5434 Sayılı Kanun Kapsamında Emekli İkramiyeleri Karşılığı Yapılan Ödemeler\",\"period_id\":2,\"program_code\":\"\",\"program_name\":\"Yönetim ve Destek Programı\",\"subprogram_code\":\"\",\"subprogram_name\":\"Üst Yönetim, İdari ve Mali Hizmetler\"}",
+          "{\"code\":\"0011\",\"name\":\"0011.Çocuk Bakımevleri ile Çocuk Oyun ve Etkinlik Merkezlerinde çocuklara yönelik olarak okul öncesinde sosyal uyumu sağlamaya, motor ve bilişsel becerilerini geliştirmeye yönelik programları gerçekleştirmek\",\"period_id\":2,\"program_code\":\"\",\"program_name\":\"Çocukların Korunması ve Gelişiminin Sağlanması\",\"subprogram_code\":\"\",\"subprogram_name\":\"Çocukların Gelişimi\"}",
+          "{\"code\":\"0012\",\"name\":\"0012.Kadın kooperatifleri, kadın üreticiler, yerel üreticiler ile diğer kooperatiflerin ürettiği sağlıklı, ekonomik ve güvenilir ürünlerin satışa sunulduğu Büyükçekmece’den Tarım Market mağazasını işletmek,\",\"period_id\":2,\"program_code\":\"\",\"program_name\":\"Ticaretin Düzenlenmesi, Geliştirilmesi ve Kolaylaştırılması\",\"subprogram_code\":\"\",\"subprogram_name\":\"İç Ticaretin Düzenlenmesi ve Geliştirilmesi\"}",
+          "{\"code\":\"0013\",\"name\":\"0013.Yerel üreticilerle birlikte ilçede yetişen tarımsal ürünleri işleyerek katma değeri daha yüksek ürün haline getirmek.\",\"period_id\":2,\"program_code\":\"\",\"program_name\":\"Ticaretin Düzenlenmesi, Geliştirilmesi ve Kolaylaştırılması\",\"subprogram_code\":\"\",\"subprogram_name\":\"İç Ticaretin Düzenlenmesi ve Geliştirilmesi\"}",
+          "{\"code\":\"0014\",\"name\":\"0014.Belediyeye bağlı iktisadi işletme şubelerinin (sosyal tesis, otopark, düğün salonu vb.) işletmek.\",\"period_id\":2,\"program_code\":\"\",\"program_name\":\"Kamu Gelirleri Yönetimi\",\"subprogram_code\":\"\",\"subprogram_name\":\"Kamu Gelirlerinin Toplanması\"}",
+          "{\"code\":\"0015\",\"name\":\"0015.Vergi beyannameleri, müşavirlik, eğitim vb. çeşitli ödemeleri zamanında eksiksiz ve tam olarak yürütmek.\",\"period_id\":2,\"program_code\":\"\",\"program_name\":\"Kamu Gelirleri Yönetimi\",\"subprogram_code\":\"\",\"subprogram_name\":\"Kamu Gelirlerinin Toplanması\"}"
+        ],
+        "table": "official_activities"
+      },
+      {
+        "added": [
+          "{\"department_id\":33,\"official_activity_id\":\"30c55d1fde6213e8ddc7f4159093986379f270ad2d6e642838027eeb0af8097e\"}",
+          "{\"department_id\":33,\"official_activity_id\":\"a87da7ce962044c388f78974d8e54a2c12bca89050f61b53b872de59515f261d\"}",
+          "{\"department_id\":33,\"official_activity_id\":\"a89971b46e1af4e2e1f7d2e9caad483868ffbf1ca1308ff23078eda3e84d6b14\"}",
+          "{\"department_id\":33,\"official_activity_id\":\"d85e240c1785559b48da50393ba0bb5428f3691a4639b530d9b2de483d773a04\"}",
+          "{\"department_id\":34,\"official_activity_id\":\"0b2e7e084b64ddc7a8153c2753bf267c9991ab320a143a696429b8e89e686ad1\"}",
+          "{\"department_id\":34,\"official_activity_id\":\"27d664783f62a969b3f40726e859f81f5438bbb23b88c913a59d5f8f8f226c66\"}",
+          "{\"department_id\":34,\"official_activity_id\":\"3712fd6f116264d61503b799d188487d1f55f11f6dabb5b56b15a4b9064b5fc8\"}",
+          "{\"department_id\":34,\"official_activity_id\":\"c93140c2d7dd4049a19f3941bbd38f69acc32b8561a87bd69ea9ab735a3da1da\"}",
+          "{\"department_id\":34,\"official_activity_id\":\"eede758e181f5c51e40893fe0aa9f377fe89760163527ec226d3b12b550a1810\"}"
+        ],
+        "removed": [
+          "{\"department_id\":23,\"official_activity_id\":\"b584021eee17eaac466bc4437b426c745503cd137186cdecd372e8fe21aded43\"}",
+          "{\"department_id\":33,\"official_activity_id\":\"05ab6d6e5e397231b497f87707e5f9da8ac07582063fa22522b541a73c6faddf\"}",
+          "{\"department_id\":33,\"official_activity_id\":\"7d3897b1d9038a00ad9f436085522eb9bf904eda7a629f712b1b04d3c496e5fe\"}",
+          "{\"department_id\":33,\"official_activity_id\":\"9af3814d45ee5f240617e27c8c6575f4e5271b4781dddca29a2d76802cddb5b4\"}",
+          "{\"department_id\":33,\"official_activity_id\":\"f1b6933165342a1a205c7317d0de01fcd307fb7db9b52c205b4f232df6e86302\"}",
+          "{\"department_id\":34,\"official_activity_id\":\"1e1effad736515f1f212cfccda974e6ed4dc0f4c80f5a37a01a54e19d5a8bcd6\"}",
+          "{\"department_id\":34,\"official_activity_id\":\"383e8ab26143ba5d2b2c55ac48d3b83121843d3e2b972fa4757e947ca7e094d1\"}",
+          "{\"department_id\":34,\"official_activity_id\":\"66996d8a86c39b118dca03e97062778970be4f197ea0bc943275f7a777520e7a\"}",
+          "{\"department_id\":34,\"official_activity_id\":\"afca638d0570f512c58c1d4dac3a3b41c3e78ac81031e21022a67233568857c7\"}",
+          "{\"department_id\":34,\"official_activity_id\":\"b4a620ad6d3106d0e12d1ac16e8446d43f23e689285308f6026c7b530f5b1a0e\"}"
+        ],
+        "table": "activity_responsibilities"
+      }
     ],
-    "live_database_contacted": false,
-    "fresh_sonn_counts": {
-      "programs": 28,
-      "subprograms": 38,
-      "official_activities": 290,
-      "activity_responsibilities": 290,
-      "indicator_values": 1578,
-      "indicators": 263,
-      "activity_cost_values": 5220,
-      "activity_catalogue_links": 290,
-      "activities": 290,
-      "economic_values": 1340,
-      "department_cost_values": 204,
-      "submission_events": 0,
-      "submissions": 34,
-      "subprogram_scopes": 0,
-      "department_scopes": 0,
-      "report_cards": 64
+    "counts": {
+      "activities": {
+        "new": 290,
+        "old": 291
+      },
+      "activity_catalogue_links": {
+        "new": 290,
+        "old": 286
+      },
+      "activity_cost_values": {
+        "new": 5220,
+        "old": 5172
+      },
+      "activity_responsibilities": {
+        "new": 290,
+        "old": 291
+      },
+      "department_cost_values": {
+        "new": 204,
+        "old": 204
+      },
+      "department_scopes": {
+        "new": 0,
+        "old": 0
+      },
+      "economic_values": {
+        "new": 1340,
+        "old": 1340
+      },
+      "indicator_values": {
+        "new": 1578,
+        "old": 1578
+      },
+      "indicators": {
+        "new": 263,
+        "old": 263
+      },
+      "official_activities": {
+        "new": 290,
+        "old": 291
+      },
+      "programs": {
+        "new": 28,
+        "old": 28
+      },
+      "report_cards": {
+        "new": 64,
+        "old": 64
+      },
+      "submission_events": {
+        "new": 0,
+        "old": 0
+      },
+      "submissions": {
+        "new": 34,
+        "old": 34
+      },
+      "subprogram_scopes": {
+        "new": 0,
+        "old": 0
+      },
+      "subprograms": {
+        "new": 38,
+        "old": 38
+      }
     },
-    "fresh_sonn_content_hashes": {
-      "programs": "9b3a959f647fc9edcec894d30c00c7d06e586c578338d9d5c6c3fc7c867b318e",
-      "subprograms": "93f70477ef6a94fccd2364b4936809a32c0c8bd9943cdeeac0cf6acb1e7fd786",
-      "official_activities": "f48e4d7c21d898f90db43d365608e82b0330fb6d3418ee8667a7e146bafd3203",
-      "activity_responsibilities": "3c92be6945640ff24fb17f97d29b07af21b910bacccda56767bf8db308f910de",
-      "indicator_values": "590324dc623b9a18550193ab6ce0b54f225bb6605e201ce6ee06c5696024a52f",
-      "indicators": "6182f8f4f582764b1177b840714408c7b0a42f199ed0a95998454bd1e33942c2",
-      "activity_cost_values": "26921239c726ef3a323baa56bd59fcb2259b23c0ce4d78e55f639f4c92750e34",
-      "activity_catalogue_links": "de7f92ceb62d0d5541fd2a6013824509d8cc1c4ca93c38dd3a4c8b6a6a79fda4",
-      "activities": "f34ff0770c876bd62aa2f58f709ce0293afcd75e31145d38225ffcfcce00e975",
-      "economic_values": "02242556ddb657d35cebcca3af6a131e9e8f781d7ef2a39fecf1a679cf48d15d",
-      "department_cost_values": "78092eb49e23fd0a54ac6c201bb02effbb0c81a556f161541ccc26122efd4b76",
-      "submission_events": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
-      "submissions": "050ea708c4a6e90c726f69de1e7646eb5bcdb699f9990cf774f2dd9a9caa640a",
-      "subprogram_scopes": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
-      "department_scopes": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
-      "report_cards": "ed3deed9f3ff631135bf65150ba80a65bfed4153fbfaabc444b902c88df8fe5d"
-    }
+    "new_sha256": "66d9d692bd9c324f6d4f492eca4d75721f28c80e248a971a2a331adf1170bf6f",
+    "old_sha256": "cbbf9018302d0a1d33d1dde0c4a64a2418d12b55cc29d046205371018673bd71",
+    "refusals": []
+  },
+  "provenance_book_sha256": "66d9d692bd9c324f6d4f492eca4d75721f28c80e248a971a2a331adf1170bf6f",
+  "receipt": {
+    "catalogue_after": {
+      "activity_responsibilities": {
+        "count": 290,
+        "sha256": "85378e15035e5740f9c1a0897e8c23a04e465b652bfe66b4d5a7b32e9354dce2"
+      },
+      "official_activities": {
+        "count": 290,
+        "sha256": "ecf357ddf684a138b0f0b6aaf0cf8c361c8e1d078dc59a187e1d3ce212130476"
+      },
+      "programs": {
+        "count": 28,
+        "sha256": "add64f91dbec73f1cbe62b1301546c428cbc74f39fd6e544b8f7a485131d9fb5"
+      },
+      "subprograms": {
+        "count": 38,
+        "sha256": "dc4a56181506fc5dd08b1e32fcda3f7e6cd28d4a054fe257dd10574dc75a8ef5"
+      }
+    },
+    "catalogue_before": {
+      "activity_responsibilities": {
+        "count": 291,
+        "sha256": "bb4859888c207cb5ce722d1d76f33ea86ea599ec0822b02433c71e86ca85fdd5"
+      },
+      "official_activities": {
+        "count": 291,
+        "sha256": "2f2dd239efa4919fd76ca751abce7104b45d7b77bf85b387468fcbd38c43f718"
+      },
+      "programs": {
+        "count": 28,
+        "sha256": "fffefa3aefb701acde8dcd4fe58ca60c32e717e9fb1d33004e50910785ca9180"
+      },
+      "subprograms": {
+        "count": 38,
+        "sha256": "ff0c3960c5562eb0e66c628a99d5ac2de6adf2fae7bc537d0781de8a98384b76"
+      }
+    },
+    "decision": "D-466",
+    "new_sha256": "66d9d692bd9c324f6d4f492eca4d75721f28c80e248a971a2a331adf1170bf6f",
+    "old_sha256": "cbbf9018302d0a1d33d1dde0c4a64a2418d12b55cc29d046205371018673bd71"
   }
 }

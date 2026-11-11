@@ -6,7 +6,7 @@ PREVIOUS_2027_BOOK = (
 )
 FIRST_LOAD_BOOKS = {
     2026: ('2026-performans-programi_ONAYLI.idml', '1aaa0bb81c3cf4e245edaab42452a972b8a59ffc252814216c7628f6dbaf33d6'),
-    2027: ('2027-performans-programi_SONN.idml', '8f8310138324bfe7560cae864595de1f7d1ad4bb7a982eebe4915a18e0728ec4'),
+    2027: ('2027-performans-programi_SONN_duzeltilmis.idml', '66d9d692bd9c324f6d4f492eca4d75721f28c80e248a971a2a331adf1170bf6f'),
 }
 READ_ONLY_AUDITS = frozenset({
     ('operations_backup_export', 'database'),

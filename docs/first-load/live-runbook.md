@@ -449,17 +449,17 @@ CIV-214 komutu yalnız **2027 / dönem #2** içindir. Eski ONAYLI ilk yüklemesi
 bütün içerik satırları, özgün paket kimlikleri ve denetim geçmişi doğrulanır.
 2026 ve diğer dönemler korunur. Şema **c197a1b2c3d4** olmalıdır; araç migrasyon
 çalıştırmaz. Bu bölüm, önceki bölümlerdeki eski şema/2027 kitap onayının yerine
-geçer: yeni ilk yüklemenin kaynağı **2027-performans-programi_SONN.idml**,
-SHA256 **8f8310138324bfe7560cae864595de1f7d1ad4bb7a982eebe4915a18e0728ec4**.
+geçer: yeni ilk yüklemenin kaynağı **2027-performans-programi_SONN_duzeltilmis.idml**,
+SHA256 **66d9d692bd9c324f6d4f492eca4d75721f28c80e248a971a2a331adf1170bf6f** (D-465).
 
-**Mevcut SONN ile uygulama engellidir.** Yerel gerçek-kitap provasında kataloglar
-farklıdır: Özel Kalem 0006 kaydı kalkar; Makine İkmal ve İşletme faaliyet
-kodları/adları ile bir alt programın amaç/gerekçesi değişir. Komut farkları
-listeler ve 0 satır yazar. Katalog geçişi bu görevin kapsamında değildir;
-engeli aşmak için kaynağı/veriyi değiştirmeyin. Çıktıyı sorumluya iletin.
-Makine İkmal'deki `21.303.126.00`, `19.292.188.00`, `3.010.938.00` hücreleri
-ayrıca okunamıyor; araç bunları sayı tahminiyle düzeltmez. Sahibin son InDesign
-exportundan sonra kaynak SHA256 sabitlemesini sorumlu yeniden yapmalıdır.
+**Katalog da değişir (D-466).** Düzeltilmiş kitapta 2027 kataloğu farklıdır:
+Özel Kalem 0006 kaydı kalkar; Makine İkmal ve İşletme faaliyet kodları/adları
+ile bir alt programın amaç/gerekçesi (110 → 119) değişir. Araç yalnız 2027'ye
+ait program, alt program, resmî faaliyet ve sorumlu birim satırlarını aynı
+işlemde siler ve düzeltilmiş kitaptan yeniden kurar. Plan her farkı
+`Katalog farkı · …` satırlarıyla, `-` kaldırılacak ve `+` eklenecek olarak
+Türkçe listeler. Başka bir dönemin satırı 2027 kataloğuna (ya da 2027 satırı
+başka bir döneme) bağlıysa `ENGEL … dönemler arası bağ` yazar ve 0 satır yazar.
 
 1. Veri girişini durdurun. Önceki bölümlerdeki gizli terminal yöntemiyle
    bağlantıyı yalnız `CIVENSA_FIRST_LOAD_DATABASE_URL` değişkenine girin.
@@ -482,10 +482,12 @@ exportundan sonra kaynak SHA256 sabitlemesini sorumlu yeniden yapmalıdır.
 4. Temizleme ve mevcut hizmetle düzeltilmiş kitabın yüklenmesi **tek işlemdir**.
    Kesinti/hata halinde bütün içerik değişiklikleri geri alınır. Başarı halinde
    `approved_book_2027_replaced` denetim kaydı iki kitap SHA256'sını, eski/yeni
-   sayımları ve korunan katalog özetini içerir. Paketler taslak kalır; kaynak
+   sayımları, kararı (D-466) ve kataloğun önce/sonra özetini içerir. Paketler taslak kalır; kaynak
    doğrulama bulguları kendiliğinden giderilmez. Başarıdan sonra aynı komutu
    yeniden uygulamayın; araç artık ONAYLI kökeniyle eşleşmediği için reddeder.
    Kesinti veya ret sonrasında salt okunur plan alın ve sorumluya bildirin.
 
 Bu geliştirme sırasında canlı veritabanına bağlanılmadı, dağıtım yapılmadı.
-Gerçek SONN ile başarılı değiştirme provası katalog farkı çözülmeden mümkün değildir.
+Gerçek düzeltilmiş kitapla değiştirme provası yerel PostgreSQL'de yapılır
+(`tests/test_replace_approved_2027.py`); canlı verinin ONAYLI ile eşitliğini
+araç uygulama anında denetler.
