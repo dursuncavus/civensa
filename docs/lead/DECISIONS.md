@@ -1702,3 +1702,9 @@ Next IDs: task CIV-200, decision D-457.
 - BEYAN (owner 15:51): only the owner may see the module; no other user may see or learn that it exists; the module must be updatable.
 - BEYAN (owner 15:53): rule for all future work — the owner supplies the current IDML before every design job; an older design file is never reused. → PROJECT_RULES v1.5 §26. Consequence for CIV-215: style names are read from the IDML uploaded for each run (updatable without code changes).
 - BEYAN (owner 15:52): first trial uses the İç Kontrol 2-year report tables from Ali's data.
+
+## D-469 (11 Nov 2026 ~18:30 Istanbul, lead, CV Lider 73 project thread) — CIV-216 fixes the flaky release-digest test; CIV-214 merged into phase5
+- Root cause (DOĞRULANDI, captured form vs server digest): `book_snapshot` loaded equal-year activity cost / indicator values ordered by `year` only; PostgreSQL returned ties in varying order, so the `/operations` release context digest changed between GET and POST → spurious 409 "Dönem içeriği veya kontroller değişti…" and `test_civ201_pilot_browser…[/operations?period_id=1]` failed (#482 CI twice; phase5 base locally 1 of 4).
+- CIV-216 (lead-coded, PR #487): relationships and `_load_snapshot_values` order by (year, id) and sort in Python after UNION ALL. New `tests/test_civ216_value_order.py` fails without the fix. Local: flaky test 10/10, 358 related tests green. Codex review: no major issues. CI green; merged to phase5 (700a954).
+- Live effect: only the order of equal-year rows in new reads; frozen publications unchanged; release confirmations already recorded may need re-confirming if their digest included a differently ordered list (BELİRSİZ whether any exist on live).
+- CIV-214 PR #482 (D-466): phase5 merged in, CI green on d9158ba, Codex review on the code commit 0897998 no major issues; merged to phase5 (9b0c19c). Live run still needs the owner: release to main, backup, read-only plan, phrase.
