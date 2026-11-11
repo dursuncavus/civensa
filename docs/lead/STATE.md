@@ -1,11 +1,12 @@
 # CIVENSA — CURRENT STATE
 
-Updated: 11 Nov 2026 ~05:43 Istanbul (scheduled night check, D-461; before that CV Lider 72, D-460).
+Updated: 11 Nov 2026 ~15:59 Istanbul (CV Lider 74: D-468 line under "Next session"); earlier 11 Nov 2026 ~05:43 Istanbul (scheduled night check, D-461; before that CV Lider 72, D-460).
 Rules: AI_WORKING_CONSTITUTION v1.2 (Drive, global) · `HIERARCHY.md` v1.10 (D-450: DeepSeek codes small tasks; local lane on the Mac; D-449: Copilot reviews every task PR and codes small issue tasks; D-408: the lead also codes, Codex reviews its PRs) · `PROJECT_RULES.md` v1.5 (D-468: owner supplies the current IDML before every design job; D-271: PRIOR ART field mandatory in every package) · `BACKUP_LEAD.md` v2.
 Backup log ("Civensa Yedek Kaydı", Drive): no entries after 31 Oct (DOĞRULANDI 7 Nov 22:25, no change after 1 Nov).
 Tags: DOĞRULANDI (lead checked) · TARİHSEL (past fact) · BEYAN (owner said) · BELİRSİZ (unknown).
 
 ## Next session — start here (D-253)
+D-468 (11 Nov ~15:55, CV Lider 74 = thread "Lider oturumu 74'ü yürüt", run alongside CV Lider 73): fountible.com rejected; owner-only InDesign export module = CIV-215 (owner-only visibility, style names read from the IDML uploaded per run; PROJECT_RULES v1.5 §26: owner supplies the current IDML before every design job). Trial 1 delivered 15:58: 27 İç Kontrol 2-year report tables (lead73/IK-2-yillik-rapor-tablolar.xlsx) as InDesign Tagged Text with the Tablo2 styles of the owner-designated IDML "2024-2026 ic kontrol 1 yillik raporu_stiller.idml" (sha256 919cb86a…); files /mnt/project-files/lead74/indesign-deneme-1.zip, generator lead74/ttgen.py. BELİRSİZ: the Tagged Text table/merge syntax is not yet verified in InDesign → owner places T11 and sends a screenshot; CIV-215 package written after that.
 D-465 (11 Nov ~13:50): lead fixed the D-463 typos in the 2027 book; owner approved Makine İkmal 2029 Personel/SGK 22.303.126 and Genel Bütçe 384.745.381. Final file 2027-performans-programi_SONN_duzeltilmis.idml (sha 66d9d692…) in tests/fixtures/first_load/source; CIV-214 re-pinned, Codex PR #482 to follow. Pilot: Ali Bey got the guide (Claude Doc with 20 screenshots) and per-directorate to-do list; starts with Fen İşleri.
 D-466 (11 Nov ~15:30): CIV-214 also replaces the 2027-only catalogue (Özel Kalem 0006, Makine/İşletme codes, 110→119) in the same transaction; cross-period references refuse. Lead implemented it on PR #482 (Codex's own commits never reached GitHub); Codex reviews. Live run needs owner: backup, plan, phrase.
 D-467 (11 Nov 15:27): HIERARCHY v1.11 — lead changes its own model/effort without asking (announces it); every Codex dispatch names model/effort; "@codex" comments for review/questions only.
