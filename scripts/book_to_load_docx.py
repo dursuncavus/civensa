@@ -19,10 +19,8 @@ from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
 from docx.shared import Pt
 
-FIRST_LOAD_BOOKS = {
-    2026: ('2026-performans-programi_ONAYLI.idml', '1aaa0bb81c3cf4e245edaab42452a972b8a59ffc252814216c7628f6dbaf33d6'),
-    2027: ('2027-performans-programi_ONAYLI.idml', 'cbbf9018302d0a1d33d1dde0c4a64a2418d12b55cc29d046205371018673bd71'),
-}
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from app.first_load_sources import FIRST_LOAD_BOOKS
 
 def norm(text):
     text = (text or '').replace('İ', 'i').replace('I', 'ı').lower()

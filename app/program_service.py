@@ -227,12 +227,13 @@ def record(obj):
 
 
 def _load_snapshot_values(db, owners, model, foreign_key, relationship):
-    """Batch the original per-owner SELECTs without changing year ties.
+    """Batch the original per-owner SELECTs in one round trip.
 
-    A selectinload's single ORDER BY year can reorder equal-year values on
-    PostgreSQL. Keep each legacy WHERE/ORDER BY in its own subquery, then
-    concatenate the results in one round trip (bounded for SQLite's UNION
-    limit). Already-loaded collections keep their original session semantics.
+    Each owner keeps its own WHERE/ORDER BY subquery (bounded for SQLite's
+    UNION limit). Values are ordered by (year, id) like the relationships:
+    year alone left equal-year rows in database order, so two reads of the
+    same period could serialise differently (CIV-216). Already-loaded
+    collections keep their original session semantics.
     """
     if db.dispatch.do_orm_execute:
         # A caller's ORM adapter may defer columns or inject loader criteria.
@@ -243,12 +244,14 @@ def _load_snapshot_values(db, owners, model, foreign_key, relationship):
     for offset in range(0, len(pending), 200):
         batch = pending[offset:offset + 200]
         statements = [select(select(model).where(getattr(model, foreign_key) == owner.id)
-            .order_by(model.year).subquery()) for owner in batch]
+            .order_by(model.year, model.id).subquery()) for owner in batch]
         grouped = defaultdict(list)
         for value in db.scalars(select(model).from_statement(union_all(*statements))):
             grouped[getattr(value, foreign_key)].append(value)
         for owner in batch:
-            set_committed_value(owner, relationship, grouped[owner.id])
+            # UNION ALL does not promise to keep subquery order: sort here too.
+            set_committed_value(owner, relationship,
+                sorted(grouped[owner.id], key=lambda value: (value.year, value.id)))
 
 
 @structure_read_scope
@@ -828,28 +831,20 @@ def approved_book_provenance(db, period_id):
     import hashlib
     from .models import ImportBatch, Publication, SubProgramScope
     from .import_service import _serialize_department_state, _clean
-    # Docker ships app/ without scripts/. Keep the immutable CLI pins here too;
-    # real-book tests compare the resulting publication against book_config().
-    approved_books = {
-        2026: ('2026-performans-programi_ONAYLI.idml',
-               '1aaa0bb81c3cf4e245edaab42452a972b8a59ffc252814216c7628f6dbaf33d6'),
-        2027: ('2027-performans-programi_ONAYLI.idml',
-               'cbbf9018302d0a1d33d1dde0c4a64a2418d12b55cc29d046205371018673bd71'),
-    }
-
+    from .first_load_sources import FIRST_LOAD_BOOKS, recognized_source, active_first_loads, READ_ONLY_AUDITS
     period = db.get(ReportingPeriod, period_id)
-    if not period or period.year not in approved_books:
+    if not period or period.year not in FIRST_LOAD_BOOKS:
         return None
     if db.scalar(select(Publication.id).where(Publication.period_id == period_id)):
         return None
-    filename, book_sha256 = approved_books[period.year]
-    loads = db.execute(select(AuditLog, ImportBatch).join(ImportBatch,
-        ImportBatch.id == AuditLog.entity_id).where(AuditLog.action == 'first_load_department',
-        AuditLog.entity_type == 'import_batch', ImportBatch.period_id == period_id)
-        .order_by(AuditLog.id)).all()
-    if len(loads) != {2026: 33, 2027: 34}[period.year]:
+    loads = active_first_loads(db, period_id)
+    if loads is None or len(loads) != {2026: 33, 2027: 34}[period.year]:
         return None
     try:
+        source = recognized_source(period.year, json.loads(loads[0][0].details)['book_sha256'])
+        if source is None:
+            return None
+        filename, book_sha256 = source
         departments = {}
         sections = {}
         expected_programs = set()
@@ -939,7 +934,15 @@ def approved_book_provenance(db, period_id):
             return None
         originals = {}
         links = {}
-        for audit in db.scalars(select(AuditLog).where(AuditLog.id <= last_load,
+        # D-466: a verified 2027 replacement rebuilt the catalogue. Catalogue
+        # audits of the superseded ONAYLI load describe deleted rows; read only
+        # those written after the last superseded load marker.
+        active_ids = {a.id for a, _ in loads}
+        floor = max((a.id for a in db.scalars(select(AuditLog).join(ImportBatch,
+            ImportBatch.id == AuditLog.entity_id).where(AuditLog.action == 'first_load_department',
+            AuditLog.entity_type == 'import_batch', ImportBatch.period_id == period_id))
+            if a.id not in active_ids), default=0)
+        for audit in db.scalars(select(AuditLog).where(AuditLog.id <= last_load, AuditLog.id > floor,
                 AuditLog.action.in_(['catalogue_create', 'catalogue_link'])).order_by(AuditLog.id)):
             data = json.loads(audit.details)
             if audit.action == 'catalogue_create' and data.get('source'):
@@ -1022,7 +1025,13 @@ def approved_book_provenance(db, period_id):
                 if actor is not None and transaction not in ambiguous_transactions:
                     authorship_transactions.update((did, actor, transaction) for did in dids)
         for audit in db.scalars(select(AuditLog).where(AuditLog.id > min(departments.values()))):
+            if (audit.action, audit.entity_type) in READ_ONLY_AUDITS:
+                continue
             if audit.action == 'first_load_department':
+                continue
+            # active_first_loads already validated this single atomic receipt.
+            if (audit.action == 'approved_book_2027_replaced'
+                    and audit.entity_type == 'reporting_period' and audit.entity_id == period_id):
                 continue
             if audit.id in allowed_mapping_audits:
                 continue

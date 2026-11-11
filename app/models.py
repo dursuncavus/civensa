@@ -92,7 +92,7 @@ class Indicator(Base):
     status: Mapped[str] = mapped_column(String(30), default="draft")
     department: Mapped[Department] = relationship(back_populates="indicators")
     subprogram: Mapped[SubProgram] = relationship()
-    values: Mapped[list["IndicatorValue"]] = relationship(back_populates="indicator", cascade="all, delete-orphan", order_by="IndicatorValue.year")
+    values: Mapped[list["IndicatorValue"]] = relationship(back_populates="indicator", cascade="all, delete-orphan", order_by="[IndicatorValue.year, IndicatorValue.id]")
     __table_args__ = (UniqueConstraint('period_id', 'persistent_indicator_id', name='uq_period_persistent_indicator'),)
 
 
@@ -124,7 +124,7 @@ class Activity(Base):
     department: Mapped[Department] = relationship(back_populates="activities")
     subprogram: Mapped[SubProgram | None] = relationship()
     contract_bound: Mapped[bool] = mapped_column(Boolean, default=False, server_default="0")
-    cost_values: Mapped[list["ActivityCostValue"]] = relationship(back_populates="activity", cascade="all, delete-orphan", order_by="ActivityCostValue.year")
+    cost_values: Mapped[list["ActivityCostValue"]] = relationship(back_populates="activity", cascade="all, delete-orphan", order_by="[ActivityCostValue.year, ActivityCostValue.id]")
 
 
 class ActivityCostValue(Base):
