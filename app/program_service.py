@@ -227,12 +227,13 @@ def record(obj):
 
 
 def _load_snapshot_values(db, owners, model, foreign_key, relationship):
-    """Batch the original per-owner SELECTs without changing year ties.
+    """Batch the original per-owner SELECTs in one round trip.
 
-    A selectinload's single ORDER BY year can reorder equal-year values on
-    PostgreSQL. Keep each legacy WHERE/ORDER BY in its own subquery, then
-    concatenate the results in one round trip (bounded for SQLite's UNION
-    limit). Already-loaded collections keep their original session semantics.
+    Each owner keeps its own WHERE/ORDER BY subquery (bounded for SQLite's
+    UNION limit). Values are ordered by (year, id) like the relationships:
+    year alone left equal-year rows in database order, so two reads of the
+    same period could serialise differently (CIV-216). Already-loaded
+    collections keep their original session semantics.
     """
     if db.dispatch.do_orm_execute:
         # A caller's ORM adapter may defer columns or inject loader criteria.
@@ -243,12 +244,14 @@ def _load_snapshot_values(db, owners, model, foreign_key, relationship):
     for offset in range(0, len(pending), 200):
         batch = pending[offset:offset + 200]
         statements = [select(select(model).where(getattr(model, foreign_key) == owner.id)
-            .order_by(model.year).subquery()) for owner in batch]
+            .order_by(model.year, model.id).subquery()) for owner in batch]
         grouped = defaultdict(list)
         for value in db.scalars(select(model).from_statement(union_all(*statements))):
             grouped[getattr(value, foreign_key)].append(value)
         for owner in batch:
-            set_committed_value(owner, relationship, grouped[owner.id])
+            # UNION ALL does not promise to keep subquery order: sort here too.
+            set_committed_value(owner, relationship,
+                sorted(grouped[owner.id], key=lambda value: (value.year, value.id)))
 
 
 @structure_read_scope
