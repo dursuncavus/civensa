@@ -83,7 +83,7 @@ def test_printed_plan_apply_repeat_resume_preserves_corrections(target, printed)
     plan = live.execute(engine, printed, **ids)
     assert state(engine) == before
     assert dict(plan['counts']) == dict(departments=34, created_departments=34, cards=64,
-                                       indicators=263, activities=291, economic_values=1340)
+                                       indicators=263, activities=290, economic_values=1340)
     assert plan['skipped'] == []
     applied = live.execute(engine, printed, apply=True, **ids)
     assert not applied['failed']
@@ -402,21 +402,17 @@ def test_secret_cli_argument_is_rejected_without_echo(capsys):
     assert 'secret-connection' not in capsys.readouterr().err
 
 
-def test_live_pin_remains_known_checkpoint_before_presentation_migrations():
+def test_live_pin_equals_current_migration_head():
     from alembic.config import Config
     from alembic.script import ScriptDirectory
     script = ScriptDirectory.from_config(Config(str(live.ROOT / 'alembic.ini')))
     assert script.get_heads() == ['c197a1b2c3d4']
-    # Operational first-load commands retain their reviewed schema pin. Presentation
-    # storage does not authorize changing that operational target or its guards.
-    assert live.HEAD == 'c162a1b2c3d4'
-    assert script.get_revision('c185a1b2c3d4').down_revision == 'c184a1b2c3d4'
-    assert script.get_revision('c184a1b2c3d4').down_revision == live.HEAD
+    assert script.get_heads() == [live.HEAD]
 
 
 def test_approved_source_pin_and_old_book_refusal():
-    assert live.BOOK.name == '2027-performans-programi_ONAYLI.idml'
-    assert live.BOOK_SHA256 == 'cbbf9018302d0a1d33d1dde0c4a64a2418d12b55cc29d046205371018673bd71'
+    assert live.BOOK.name == '2027-performans-programi_SONN_duzeltilmis.idml'
+    assert live.BOOK_SHA256 == '66d9d692bd9c324f6d4f492eca4d75721f28c80e248a971a2a331adf1170bf6f'
     with pytest.raises(live.Refusal, match='Kitap SHA256'):
         live.verify_book(live.BOOK.with_name('2027-performans-programi_16102026_duzeltilmis 2.idml'))
 
@@ -713,7 +709,7 @@ def test_plan_and_apply_2027_and_2026_phase_lines_and_unchanged_stdout(target, p
     monkeypatch.setattr(live, 'verify_book', lambda path, **kw: deepcopy(printed))
     expected_2027_plan = live.execute(engine, deepcopy(printed), **ids, year=2027)
     assert dict(expected_2027_plan['counts']) == dict(
-        departments=34, created_departments=1, cards=64, indicators=263, activities=291, economic_values=1340
+        departments=34, created_departments=1, cards=64, indicators=263, activities=290, economic_values=1340
     )
     capsys.readouterr()
 

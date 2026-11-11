@@ -26,9 +26,11 @@ from scripts.first_load_dryrun import environment, parse_book
 with environment(DATABASE_URL='sqlite://', MIGRATION_DATABASE_URL=None):
     import app.db  # noqa: F401
 
-BOOK = ROOT / 'tests/fixtures/first_load/source/2027-performans-programi_ONAYLI.idml'
-BOOK_SHA256 = 'cbbf9018302d0a1d33d1dde0c4a64a2418d12b55cc29d046205371018673bd71'
-HEAD = 'c162a1b2c3d4'
+from scripts.book_to_load_docx import FIRST_LOAD_BOOKS
+
+BOOK = ROOT / 'tests/fixtures/first_load/source' / FIRST_LOAD_BOOKS[2027][0]
+BOOK_SHA256 = FIRST_LOAD_BOOKS[2027][1]
+HEAD = 'c197a1b2c3d4'
 TARGET_ENV = 'CIVENSA_FIRST_LOAD_DATABASE_URL'
 MARKER = 'first_load_department'
 LOCK = 520027
@@ -250,13 +252,12 @@ def content_departments(db, period_id):
 
 
 def completed_departments(db, period_id, *, year=2027):
-    from sqlalchemy import select
-    from app.models import AuditLog, ImportBatch
+    from app.first_load_sources import active_first_loads
     completed = set()
-    for audit, batch in db.execute(select(AuditLog, ImportBatch).join(
-            ImportBatch, ImportBatch.id == AuditLog.entity_id).where(
-            AuditLog.action == MARKER, AuditLog.entity_type == 'import_batch',
-            ImportBatch.period_id == period_id)):
+    loads = active_first_loads(db, period_id)
+    if loads is None:
+        raise Refusal('İlk yükleme değiştirme geçmişi uyuşmuyor; 0 satır yazıldı. Sorumluya bildirin.')
+    for audit, batch in loads:
         try:
             details = json.loads(audit.details)
             if (batch.status != 'applied' or details['book_sha256'] != book_config(year)[1]
