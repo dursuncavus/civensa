@@ -828,28 +828,20 @@ def approved_book_provenance(db, period_id):
     import hashlib
     from .models import ImportBatch, Publication, SubProgramScope
     from .import_service import _serialize_department_state, _clean
-    # Docker ships app/ without scripts/. Keep the immutable CLI pins here too;
-    # real-book tests compare the resulting publication against book_config().
-    approved_books = {
-        2026: ('2026-performans-programi_ONAYLI.idml',
-               '1aaa0bb81c3cf4e245edaab42452a972b8a59ffc252814216c7628f6dbaf33d6'),
-        2027: ('2027-performans-programi_ONAYLI.idml',
-               'cbbf9018302d0a1d33d1dde0c4a64a2418d12b55cc29d046205371018673bd71'),
-    }
-
+    from .first_load_sources import FIRST_LOAD_BOOKS, recognized_source, active_first_loads, READ_ONLY_AUDITS
     period = db.get(ReportingPeriod, period_id)
-    if not period or period.year not in approved_books:
+    if not period or period.year not in FIRST_LOAD_BOOKS:
         return None
     if db.scalar(select(Publication.id).where(Publication.period_id == period_id)):
         return None
-    filename, book_sha256 = approved_books[period.year]
-    loads = db.execute(select(AuditLog, ImportBatch).join(ImportBatch,
-        ImportBatch.id == AuditLog.entity_id).where(AuditLog.action == 'first_load_department',
-        AuditLog.entity_type == 'import_batch', ImportBatch.period_id == period_id)
-        .order_by(AuditLog.id)).all()
-    if len(loads) != {2026: 33, 2027: 34}[period.year]:
+    loads = active_first_loads(db, period_id)
+    if loads is None or len(loads) != {2026: 33, 2027: 34}[period.year]:
         return None
     try:
+        source = recognized_source(period.year, json.loads(loads[0][0].details)['book_sha256'])
+        if source is None:
+            return None
+        filename, book_sha256 = source
         departments = {}
         sections = {}
         expected_programs = set()
@@ -1022,7 +1014,13 @@ def approved_book_provenance(db, period_id):
                 if actor is not None and transaction not in ambiguous_transactions:
                     authorship_transactions.update((did, actor, transaction) for did in dids)
         for audit in db.scalars(select(AuditLog).where(AuditLog.id > min(departments.values()))):
+            if (audit.action, audit.entity_type) in READ_ONLY_AUDITS:
+                continue
             if audit.action == 'first_load_department':
+                continue
+            # active_first_loads already validated this single atomic receipt.
+            if (audit.action == 'approved_book_2027_replaced'
+                    and audit.entity_type == 'reporting_period' and audit.entity_id == period_id):
                 continue
             if audit.id in allowed_mapping_audits:
                 continue

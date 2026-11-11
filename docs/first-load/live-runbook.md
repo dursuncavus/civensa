@@ -442,3 +442,50 @@ Bağlantıyı önceki bölümlerdeki gizli terminal yöntemiyle yalnız
    bildirin. Başarısız temizleme bütünüyle geri alınır; kaydedilmiş temizleme
    için 10. bölümdeki yedekten dönüş prosedürünü izleyin. Yükleme ayrı işlemdir;
    mevcut devam/kurtarma prosedürü geçerlidir.
+
+## 2027 düzeltilmiş kitap ile değiştirme
+
+CIV-214 komutu yalnız **2027 / dönem #2** içindir. Eski ONAYLI ilk yüklemesinin
+bütün içerik satırları, özgün paket kimlikleri ve denetim geçmişi doğrulanır.
+2026 ve diğer dönemler korunur. Şema **c197a1b2c3d4** olmalıdır; araç migrasyon
+çalıştırmaz. Bu bölüm, önceki bölümlerdeki eski şema/2027 kitap onayının yerine
+geçer: yeni ilk yüklemenin kaynağı **2027-performans-programi_SONN.idml**,
+SHA256 **8f8310138324bfe7560cae864595de1f7d1ad4bb7a982eebe4915a18e0728ec4**.
+
+**Mevcut SONN ile uygulama engellidir.** Yerel gerçek-kitap provasında kataloglar
+farklıdır: Özel Kalem 0006 kaydı kalkar; Makine İkmal ve İşletme faaliyet
+kodları/adları ile bir alt programın amaç/gerekçesi değişir. Komut farkları
+listeler ve 0 satır yazar. Katalog geçişi bu görevin kapsamında değildir;
+engeli aşmak için kaynağı/veriyi değiştirmeyin. Çıktıyı sorumluya iletin.
+Makine İkmal'deki `21.303.126.00`, `19.292.188.00`, `3.010.938.00` hücreleri
+ayrıca okunamıyor; araç bunları sayı tahminiyle düzeltmez. Sahibin son InDesign
+exportundan sonra kaynak SHA256 sabitlemesini sorumlu yeniden yapmalıdır.
+
+1. Veri girişini durdurun. Önceki bölümlerdeki gizli terminal yöntemiyle
+   bağlantıyı yalnız `CIVENSA_FIRST_LOAD_DATABASE_URL` değişkenine girin.
+   Bağlantıyı komut satırına, ekran görüntüsüne veya günlüğe yazmayın.
+   Salt okunur plan alın:
+   `python scripts/replace_approved_2027.py --organization-id … --actor-id …`.
+   Plan bütün tablo sayımlarını **eski → yeni** ve her engeli listeler.
+   `ENGEL` varsa uygulamaya geçmeyin. Müdürlük/tablo farkı, eşleştirme,
+   yayın, teslim/inceleme, IC/FR veya başka yazma geçmişi otomatik olarak silinmez.
+2. Engelsiz kaynakla yerel prova doğrulandıktan sonra
+   [yedek prosedürüyle](../operations/db-backup.md) yeni doğrulanmış yedek alın.
+   `.dump` ve yanındaki `.manifest.json` hazır olmalıdır. Manifestteki yedek zamanı
+   **60 dakikadan yeni**, şema yukarıdaki başlıkla aynı olmalıdır.
+3. Sahibin tek uygulama komutu, doğrudan etkileşimli terminalde:
+   `python scripts/replace_approved_2027.py --organization-id … --actor-id … --apply --backup …`.
+   Araç kilit altında planı tekrarlar, yedeği doğrular ve şu tam cümleyi ister:
+   **2027 KITABINI DUZELTILMIS KITAPLA DEGISTIR**.
+   Terminal yoksa veya cümle yanlışsa 0 satır yazılır. Onaydan sonra yedeğin
+   güncelliği tekrar denetlenir.
+4. Temizleme ve mevcut hizmetle düzeltilmiş kitabın yüklenmesi **tek işlemdir**.
+   Kesinti/hata halinde bütün içerik değişiklikleri geri alınır. Başarı halinde
+   `approved_book_2027_replaced` denetim kaydı iki kitap SHA256'sını, eski/yeni
+   sayımları ve korunan katalog özetini içerir. Paketler taslak kalır; kaynak
+   doğrulama bulguları kendiliğinden giderilmez. Başarıdan sonra aynı komutu
+   yeniden uygulamayın; araç artık ONAYLI kökeniyle eşleşmediği için reddeder.
+   Kesinti veya ret sonrasında salt okunur plan alın ve sorumluya bildirin.
+
+Bu geliştirme sırasında canlı veritabanına bağlanılmadı, dağıtım yapılmadı.
+Gerçek SONN ile başarılı değiştirme provası katalog farkı çözülmeden mümkün değildir.

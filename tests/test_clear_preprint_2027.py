@@ -172,7 +172,7 @@ def test_clear_chain_and_preserved_rows(target, printed):
     assert state(engine) == after
     planned = live.execute(engine, printed, **ids)
     assert state(engine) == after
-    for field, count in dict(departments=34, cards=64, indicators=263, activities=291, economic_values=1340).items():
+    for field, count in dict(departments=34, cards=64, indicators=263, activities=290, economic_values=1340).items():
         assert planned['counts'][field] == count
     assert planned['skipped'] == []
     assert planned['counts']['created_departments'] == 1
