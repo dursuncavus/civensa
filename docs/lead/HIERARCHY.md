@@ -1,11 +1,12 @@
-# CIVENSA AI HIERARCHY — v1.10
+# CIVENSA AI HIERARCHY — v1.11
 
 Status: ACTIVE — canonical for all Civensa work
-Date: 2026-11-09 (v1.10)
+Date: 2026-11-11 (v1.11)
 Decided by: Dursun Çavuş (owner), designed by Claude
 Global rules: AI_WORKING_CONSTITUTION v1.2 (Google Drive, global rules folder; rules 36–38 apply).
 Overrides for Civensa: AI_ROUTING_MATRIX v1.0 sections 1, 2 and 6 (already marked invalid for Civensa).
 
+Change note (v1.11, D-467, owner 11 Nov 2026 15:25–15:27 "Sen yapman gereken model ve efor değişikliklerini kendin yapabilirsen yap." / "Codex'e görev verirken model ve efor belirtmeyi unutma. Sen de kurallarının arasına ihtiyacın olduğunda efor ve model değişikliğini bana sormadan yapabileceğini ekle."): (1) the lead may change its own session model and effort level without asking (§1 LEVEL 1 MODEL/EFFORT). Gap: the owner had to choose these himself; code work ran at Medium while Anthropic guidance recommends at least High for coding/agentic work. Acceptance check: each change is announced in the thread in one line with the reason; no unannounced change. (2) Every Codex dispatch names model and effort (§7, already the rule; now also for "@codex" PR comments). (3) Verified 11 Nov: each "@codex" PR comment starts a new Codex task on a fresh checkout and its commits do not reach GitHub → "@codex" comments are used for reviews and questions only, not for code changes (§1 FOLLOW-UPS). No other AI is affected; no sync needed beyond this file.
 Change note (v1.10, D-450, owner 9 Nov 2026 11:21 "DeepSeek denetleme yapmadığı zamanlarda senin vereceğin görevleri de yapsın… Yerelde de bir yapı kuralım."): (1) DeepSeek, while not acting as backup lead, also takes lead-packaged small tasks (c). Gap: pilot calendar; Codex/Gemini lanes full. Known limit: DeepSeek scored 85 vs Gemini 95 in D-379/D-381 → findings/profiling and offline scripts first, no app/ logic until one task merges clean. Acceptance check: its first task (CIV-196) is accepted with at most one fix round. (2) Local lane on the owner's Mac (§1 LOCAL LANE). Gap: CI is the only test run for patches and lead code (pypi blocked in the lead sandbox; one CI round ≈ 25 min). Acceptance check: the lead runs the targeted tests of the next Gemini/DeepSeek patch on the Mac before opening its PR. Partly supersedes D-198: still no Codex CLI on the Mac and no second source of truth; the repo stays the only record.
 Change note (v1.9, D-449, owner 9 Nov 2026 11:12 "Copilot da aktif olsun."): GitHub Copilot joins LEVEL 2 as g). Gap: four FR tasks are queued before the 14 Dec pilot and every PR waits on one lead review; Copilot adds a second automated reviewer on every task PR and a lane for small issue-sized code tasks. Acceptance check: on its first 3 reviewed PRs Copilot produces at least one finding the lead accepts and no finding that blocks a merge wrongly; its first coding task merges with CI green and at most one fix round. Limitation: Copilot-bot commits need a lead update-branch to run CI (action_required); credits are limited (monthly reset) → coding tasks only when packaged by the lead.
 Change note (v1.8, D-408, owner 4 Nov 2026 18:19 "Artık sen de aktif olabilirsin. Denetimden fazlası olabilirsin."): the lead (Claude) may also implement tasks itself (§1 LEVEL 2 f). Gap: Codex is one serial lane and the Max plan leaves lead capacity unused (D-400); tasks that need deep lead context (book IDML analysis, data verification) lose detail when handed over. Review stays with a different model family: Codex ("@codex review" on the PR) + CI. Acceptance check: the first lead-coded task merges with CI green and a Codex review with at most one fix round. Limitation: the lead sandbox cannot install Python packages (pypi blocked) → CI is the only test run until the owner allows pypi.org and files.pythonhosted.org.
@@ -20,6 +21,7 @@ Change note (v1.0): Civensa decision authority moved from ChatGPT/Nexa to Claude
 
 ## Türkçe özet (kullanıcı için)
 - Civensa'da kararı Claude verir. Claude yokken DeepSeek sınırlı yetkiyle yedek liderdir; Claude dönünce onun kararlarını kontrol eder.
+- YENİ (v1.11): Lider kendi model ve efor ayarını gerektiğinde sana sormadan değiştirir ve thread'de tek satırla söyler. Codex'e her görevde model ve efor yazılır. "@codex" PR yorumları yalnız inceleme ve soru içindir; kod düzeltmesi senin üzerinden Codex görevine gider.
 - Kod yazan: Codex; küçük, kendi içinde kapalı işlerde Antigravity'deki Gemini de (v1.7). YENİ (v1.8): Claude da kendi görevlerini kodlar; onun kodunu Codex inceler, CI test eder. Kodu, yazan model ailesinden farklı biri inceler. YENİ (v1.10): DeepSeek boştayken liderin küçük görevlerini de yapar; Mac'te yerel test hattı kurulur. YENİ (v1.9): GitHub Copilot her görev PR'ını ayrıca otomatik inceler ve liderin issue olarak yazdığı küçük işleri kodlar.
 - Claude, incelediği ve CI'ı yeşil olan PR'ları phase5 geliştirme dalına kendisi birleştirir; düzeltmeleri Codex'e PR yorumuyla gönderir; gecede iki kez kendiliğinden kontrol yapar. Ana dal, yayın ve canlı sistem yine Dursun'da.
 - YENİ (v1.4): Kurallar, güncel durum, kararlar ve görev paketleri GitHub deposundaki `docs/lead/` klasöründe. Drive'da sadece genel anayasa ve eski kayıt arşivi kalır.
@@ -33,11 +35,12 @@ LEVEL 0 — OWNER: Dursun Çavuş
 - Human-only actions: payments, sign-ins, credentials (hidden prompts only), merges into staging/main, Render dashboard, Mac actions, marking draft PRs ready when the lead cannot.
 
 LEVEL 1 — LEAD: Claude (Claude app, model Opus)
+- MODEL/EFFORT (v1.11, D-467): the lead may change its own session model and effort level without asking the owner, when the work needs it (default: Opus at High for code work, Medium for chat/records; Fable only as a stated, bounded trial). Each change is announced in the thread in one line with the reason. Cross-family code review (Codex) is unchanged whatever model the lead uses.
 - Makes every Civensa decision not on the escalation list.
 - Writes specs and task packages; reviews pull requests and CI; verifies data; maintains the canonical records in `docs/lead/` (v1.4).
 - RECORDS (v1.4): changes `docs/lead/**` only on a `lead/...` branch through a PR into feature/authorization-workflow-phase5. Markdown-only record updates may be merged by the lead once the guard check is green; a lead PR that changes code or workflows needs review by a different model family first.
 - MERGE (v1.3): may merge a PR into feature/authorization-workflow-phase5 (merge commit, via GitHub REST) only when ALL hold: lead review done with no open HIGH/MEDIUM finding; CI green on the exact head commit; PR not draft; behind phase5 by 0, OR (v1.5, D-292) behind only by commits that change none of the PR's files and CI green on the PR head; after every code merge the full suite runs on phase5 (push trigger) and a red phase5 run is answered by reverting the last merge first; for migration PRs, alembic has exactly one head after merge. Each merge is logged (PR, head SHA, CI run) in DECISIONS.md.
-- FOLLOW-UPS (v1.3): may send correction messages to Codex as a PR comment starting with "@codex" on that PR. Text in English, scoped to the original package. Never asks Codex to merge, deploy or touch the live database.
+- FOLLOW-UPS (v1.3; narrowed v1.11): "@codex review" and questions as a PR comment starting with "@codex" on that PR. Code corrections go to the owner as a dispatch into the original Codex task (v1.11: "@codex" comment tasks cannot push to GitHub). Each comment states the intended model and effort. Text in English, scoped to the original package. Never asks Codex to merge, deploy or touch the live database.
 - SCHEDULED RUNS (v1.3): scheduled task "Civensa gece kontrol" runs twice a night. It first checks GitHub only; if nothing changed since the last run it stops. Otherwise it reviews, merges or sends follow-ups under the rules above, and updates `docs/lead/`. It never starts new Codex tasks, never acts on main/staging/live.
 - Tools: GitHub (REST; GraphQL blocked); Google Drive (constitution, archive); link to the owner's Mac; web research; subagents for independent verification on CRITICAL work.
 - Limitation: reads CI conclusions and check annotations, not CI log text → section 9.
@@ -95,7 +98,7 @@ TASK ID / title; GOAL; CURRENT STATE; RULES; CONSTRAINTS; FILES/DATA; OUTPUT; AC
 ## 7. Task dispatch convention
 - Task ID CIV-### (sequential, never reused). Package saved as `docs/lead/tasks/CIV-###.md`.
 - One task = one NEW Codex task titled "CIV-### <title>".
-- Dispatch line: PLATFORM → PROJECT/SPACE → NEW CONVERSATION TITLE → TEXT TO PASTE, plus model and reasoning level.
+- Dispatch line: PLATFORM → PROJECT/SPACE → NEW CONVERSATION TITLE → TEXT TO PASTE, plus model and reasoning level. Never omit model and reasoning level (owner, 11 Nov 2026). Codex default: GPT-6.1 Sol, Yüksek.
 - Results: Codex → PR titled with the task ID. Gemini → Google Doc titled with the task ID in Drive (lead records the outcome in DECISIONS.md). DeepSeek → "YEDEK KAYIT" block.
 
 ## 8. Tool / AI acceptance criteria (K6, D-196)
