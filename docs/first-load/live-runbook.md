@@ -461,6 +461,19 @@ işlemde siler ve düzeltilmiş kitaptan yeniden kurar. Plan her farkı
 Türkçe listeler. Başka bir dönemin satırı 2027 kataloğuna (ya da 2027 satırı
 başka bir döneme) bağlıysa `ENGEL … dönemler arası bağ` yazar ve 0 satır yazar.
 
+**Ön baskıdan kalan katalog (CIV-217).** Canlı 2027'de, D-135 ön baskı
+temizliğinin bıraktığı eski programlar/alt programlar ve 30 Ekim yüklemesinin
+üzerine yazmadığı eski alt program metinleri bulunabilir. Plan bunları ayrı
+listeler: `Kullanılmayan eski katalog · …` (hiçbir kaydın bağlı olmadığı,
+silinecek satırlar, `-` ile) ve `Eski alt program metni · …` (ONAYLI'dan farklı
+Gerekçe/Amaç alanları, `~` ile; düzeltilmiş kitap metni yazılır). Bunlar engel
+değildir ve aynı işlemde temizlenir; denetim kaydı ikisini de içerir. Buna
+karşılık ONAYLI kitapta olmayan ama başka bir kaydın bağlı olduğu bir program/alt
+program veya canlıda eksik bir ONAYLI katalog satırı `ENGEL` verir.
+İçerik satırları alt programa adıyla bağlanır; eski metin bütün müdürlüklerde
+imza farkı üretmez. 2026'ya ait katalog işlemleri, `period_id=1` PP değişikliği ve
+kullanıcı hesabı işlemleri 2027 denetim engeli sayılmaz.
+
 1. Veri girişini durdurun. Önceki bölümlerdeki gizli terminal yöntemiyle
    bağlantıyı yalnız `CIVENSA_FIRST_LOAD_DATABASE_URL` değişkenine girin.
    Bağlantıyı komut satırına, ekran görüntüsüne veya günlüğe yazmayın.
