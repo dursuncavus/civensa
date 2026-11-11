@@ -126,7 +126,7 @@ def test_review_queue_puts_waiting_packages_first(browser, client, db, sample):
         assert errors == []
 
 
-def test_card_assignment_goes_to_program_page_catalogue_to_strategy(browser, client, db, sample):
+def test_card_and_catalogue_links_go_to_program_page(browser, client, db, sample):
     configure(db, sample, 'draft-clean', 'director')
     context, page, errors = open_page(browser, client)
     with context:
@@ -137,6 +137,8 @@ def test_card_assignment_goes_to_program_page_catalogue_to_strategy(browser, cli
         program = groups.filter(has_text='Performans kartları ve ekonomik tablolar')
         expect(program).to_contain_text('kart bağlantısı eksik')
         expect(program.locator('a.button')).to_have_attribute('href', '/program/1?period_id=1')
-        expect(groups.filter(has_text='katalog bağlantıları')).to_contain_text('kataloğu bağlantısı eksik')
+        expect(program).to_contain_text('kataloğu bağlantısı eksik')
+        assert groups.count() == 1
+        assert 'düzeltemez' not in page.locator('.submit-errors').inner_text()
         assert groups.filter(has_text='Performans göstergeleri').count() == 0
         assert errors == []
