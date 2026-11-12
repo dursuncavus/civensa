@@ -24,7 +24,8 @@ def page_html(rows=79):
         for n in range(1, rows + 1))
     return (f'<!doctype html><html lang="tr"><head><meta charset="utf-8"><style>{tokens}\n{css}</style></head>'
             '<body><div class="internal-control-page"><section class="card questionnaire-form"><h2>Soru formu</h2>'
-            '<form method="post" action="/internal-control/questionnaires/batches/1/answers"><div class="ic-scroll"><table class="ic-question-grid ic-question-form-table"><thead><tr>'
+            '<form method="post" action="/internal-control/questionnaires/batches/1/answers">'
+            '<div class="ic-scroll" role="region" aria-label="Soru yanıtları" tabindex="0"><table class="ic-question-grid ic-question-form-table"><thead><tr>'
             '<th>Kod / Soru</th><th>Yanıt</th><th>Açıklama</th></tr></thead><tbody>'
             f'{body}</tbody></table></div><div class="ic-actions"><button class="button" id="save">Yanıtları kaydet</button>'
             '<button class="button primary" id="submit">Kaydet ve incelemeye gönder</button></div></form>'
@@ -71,7 +72,12 @@ def test_keyboard_focus_never_hides_behind_the_bar(browser, width):  # noqa: F81
     with browser.new_context(viewport={'width': width, 'height': 900}) as context:
         page = context.new_page()
         page.set_content(page_html(rows=30))
-        page.locator('tbody input').first.focus()
+        # Real keyboard entry: Tab from the page start reaches the focusable
+        # scroll region first (Codex P2: it must not jump to the table end).
+        page.keyboard.press('Tab')
+        assert page.evaluate("document.activeElement.classList.contains('ic-scroll')")
+        assert page.evaluate('window.scrollY') < 200  # browser's own small focus scroll only
+        page.keyboard.press('Tab')
         checked = 0
         for _ in range(70):
             info = page.evaluate('''() => {

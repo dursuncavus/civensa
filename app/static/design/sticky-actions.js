@@ -7,7 +7,10 @@
   if (!bar) return;
   bar.closest('form').addEventListener('focusin', event => {
     const target = event.target;
-    if (!(target instanceof HTMLElement) || bar.contains(target)) return;
+    // Only single controls: the focusable scroll region around the whole table
+    // (tabindex="0") must not jump the page to its end.
+    if (!(target instanceof HTMLElement) || bar.contains(target)
+        || !target.matches('input, textarea, select, button, a[href]')) return;
     const overlap = target.getBoundingClientRect().bottom - bar.getBoundingClientRect().top;
     if (overlap > 0) window.scrollBy(0, overlap + 8);
   });
