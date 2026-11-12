@@ -225,6 +225,17 @@ def test_browser_tables_and_capture(table_report, db, sample, tmp_path):
         context.route('http://testserver/**', serve)
         page = context.new_page()
         errors = []; page.on('pageerror', lambda error: errors.append(str(error)))
+        def capture_panel(panel, name, width):
+            # Capture the complete browser width, retaining the table's margin.
+            # A tall viewport keeps fixed off-screen skip links out of the image.
+            height = int(panel.bounding_box()['height']) + 40
+            page.set_viewport_size({'width': width, 'height': height})
+            page.evaluate('document.activeElement.blur()')
+            panel.evaluate('(el) => window.scrollTo(0, el.getBoundingClientRect().top + window.scrollY - 20)')
+            path = folder / name
+            page.screenshot(path=str(path))
+            with Image.open(path) as shot:
+                assert shot.width == width
         for width in (1440, 390):
             page.set_viewport_size({'width': width, 'height': 1000})
             page.goto(f'http://testserver/activity-sections/reports/{doc.id}/unit-tables')
@@ -234,14 +245,9 @@ def test_browser_tables_and_capture(table_report, db, sample, tmp_path):
                 panel = page.locator(f'#table-{kind}')
                 if width == 390:
                     assert panel.locator('.unit-scroll').evaluate('(el) => el.scrollWidth <= el.clientWidth')
-                # Keep the whole panel inside the viewport for Chromium's
-                # element capture (fixed off-screen skip links stay off-screen).
-                height = int(panel.bounding_box()['height']) + 100
-                page.set_viewport_size({'width': width, 'height': max(1000, height)})
-                page.evaluate('document.activeElement.blur()')
-                panel.screenshot(path=str(folder / f'tablo-{kind}-{width}.png'))
+                capture_panel(panel, f'tablo-{kind}-{width}.png', width)
+            capture_panel(page.locator('#photos'), f'photos-{width}.png', width)
             page.set_viewport_size({'width': width, 'height': 1000})
-            page.locator('#photos').screenshot(path=str(folder / f'photos-{width}.png'))
             # Client totals and draft mismatch warning use Turkish numbers.
             page.locator('[name=women_0]').fill('5')
             expect(page.locator('[data-staff-warning]')).to_contain_text('personel sayılarını düzeltin')
