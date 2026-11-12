@@ -12,6 +12,7 @@ from pathlib import Path
 from fastapi import HTTPException
 from PIL import Image, ImageOps, UnidentifiedImageError
 from sqlalchemy import select
+from sqlalchemy.orm import defer
 
 from . import activity_sections_service as sections
 from .activity_evidence_service import MAX_FILE
@@ -43,20 +44,38 @@ MONEY = {'inside', 'outside', 'spending', 'total'}
 ORPHAN_PHOTO_WARNING = 'Bu fotoğrafın faaliyeti güncel kitapta yok; kaldırın veya yeniden yükleyin.'
 
 
+def pinned_snapshot(db, publication):
+    """Digest-checked book snapshot, parsed once per DB session.
+
+    Publications are immutable (sha256-pinned), so one parse per request is
+    enough; listing pages build report data for every directorate (CIV-220).
+    """
+    cache = db.info.setdefault('ar_unit_book_snapshots', {})
+    key = (publication.id, publication.sha256)
+    if key not in cache:
+        if sections.digest(publication.snapshot_json) != publication.sha256:
+            return None
+        cache[key] = json.loads(publication.snapshot_json, parse_float=Decimal)
+    return cache[key]
+
+
 def book(db, doc):
     """Same pinned book and department activities used by ar_typeset_source."""
     report = db.scalar(select(ActivityReport).where(ActivityReport.organization_id == doc.organization_id,
                                                     ActivityReport.period_id == doc.period_id))
     revision = db.scalar(select(ActivityReportRevision).where(ActivityReportRevision.report_id == report.id,
         ActivityReportRevision.revision == report.current_revision)) if report else None
-    publication = db.get(Publication, revision.publication_id) if revision else db.scalar(
-        select(Publication).where(Publication.period_id == doc.period_id).order_by(Publication.version.desc()))
+    # Listing pages call this per directorate: never fetch the multi-MB snapshot
+    # column again once the session has parsed it (pinned_snapshot).
+    lean = select(Publication).options(defer(Publication.snapshot_json))
+    publication = db.scalar(lean.where(Publication.id == revision.publication_id)) if revision else db.scalar(
+        lean.where(Publication.period_id == doc.period_id).order_by(Publication.version.desc()))
     if not publication:
         return {'publication_id': None, 'activities': [], 'programmes': []}
-    if sections.digest(publication.snapshot_json) != publication.sha256:
+    snapshot = pinned_snapshot(db, publication)
+    if snapshot is None:
         sections.fail('Tablo 7 için bağlı kitap doğrulanamadı. Strateji ile kitap sürümünü kontrol edin.', 409)
     # PP errata affects financial totals only; catalogue/activity labels stay pinned.
-    snapshot = json.loads(publication.snapshot_json, parse_float=Decimal)
     department = next((d for d in snapshot.get('departments', []) if d['department_id'] == doc.department_id), {})
     officials = {a['id']: a for a in snapshot.get('catalogue', [])}
     activities, programmes = [], {}
@@ -199,9 +218,9 @@ def photo_activity(db, doc, activity_key):
         return f'Faaliyet kaydı: {activity_key}'
     publication = db.get(Publication, publication_id)
     if publication and publication.period_id == doc.period_id:
-        if sections.digest(publication.snapshot_json) != publication.sha256:
+        snapshot = pinned_snapshot(db, publication)
+        if snapshot is None:
             sections.fail('Fotoğrafın bağlı kitabı doğrulanamadı. Strateji ile fotoğraf kaydını ve kitap sürümünü kontrol edin.', 409)
-        snapshot = json.loads(publication.snapshot_json)
         for department in snapshot.get('departments', []):
             if department['department_id'] == doc.department_id:
                 for activity in department.get('activities', []):
