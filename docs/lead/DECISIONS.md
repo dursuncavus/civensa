@@ -1725,3 +1725,11 @@ Next IDs: task CIV-200, decision D-457.
 - Follow-up recorded (not scheduled): the first-load loader keeps existing subprogramme texts on reload (`_get_or_create_subprogram` fills blanks only; D-470). Any future reload must replace texts or refuse.
 - Next owner step (lead's choice): place lead74 "T11 Eylem KOS1.txt" into the İç Kontrol report template in InDesign and send a screenshot — the 2-year report is due ~18 Nov and the Tagged Text syntax is still BELİRSİZ (D-468); CIV-215 package follows.
 
+## D-472 (12 Nov 2026 ~19:10 Istanbul, lead, CV Lider 75 project thread) — InDesign Tagged Text table export verified (CIV-215 groundwork)
+- DOĞRULANDI (owner screenshots 14:30 and reply 19:10): Tagged Text from the trial generator places correctly in InDesign — merged cells, table/cell/paragraph styles, Turkish characters, header row, and column widths (`<ColStart:<tColAttrWidth:pt>>`) all arrive as intended. Closes the D-468 BELİRSİZ.
+- Owner's current IDML "2024-2026 ic kontrol 2 yillik raporu_tablo.idml" (sha256 4e62dbed…): fonts changed inside the styles (Tablo2 Metin = Helvetica Neue LT Pro 77 Bold Condensed; Tablo2 Başlık / Standart Satırı = 97 Black Condensed). Output carries style names only, never fonts → template fonts always win. Tablo2 Sayı / Toplam still inherit Kart_metin (owner told).
+- Rotation is on the text frame (owner rotates it), not in the table; the outer border was removed by local cell strokes → advised to set it once in the Tablo2 Eylem table style.
+- Generator reads column widths from tables the owner has laid out in the IDML supplied for the run (per table style + column count; uniform widths ignored) — PROJECT_RULES §26 holds.
+- BEYAN (owner 17:46): İç Kontrol codes are written with a space after the letters and dots only between digits (KFS 12.1, not KFS.12.1). Generator normalizes KOS/RDS/KFS/BİS/İZS codes, drops a trailing dot, and fixes the source typo "KF.11.1.2" → "KFS 11.1.2" (T20). Trial outputs: project files lead75/indesign-deneme-3.zip, generator lead75/ttgen.py (not in the repo; CIV-215 ports it).
+- Next: CIV-215 package (owner-only module, D-468) using this verified syntax.
+
