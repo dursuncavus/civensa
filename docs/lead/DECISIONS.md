@@ -1741,3 +1741,12 @@ Next IDs: task CIV-200, decision D-457.
 - Environment: owner approved Hugging Face hosts on the Default cloud environment allowlist for transcription; BEYAN (owner 19:30) "ihtiyacın olan her aracı yüklemen için tam yetki".
 - InDesign İK tables (D-472) paused by the owner ("şimdilik durduralım"), trial 3 stays in project files lead75/.
 
+
+## D-474 (12 Nov 2026 ~19:57 Istanbul, owner + lead, project thread "Codex ile GitHub akışını düzelt") — Codex PR fixes through the Codex CLI on the Mac (HIERARCHY v1.12)
+- Problem (BEYAN owner, confirmed 16:47): every fix the lead sent to Codex opened a separate Codex task ("ayrı başlık"), and nothing reached the PR.
+- DOĞRULANDI: 11 Nov on #482 the "@codex" comment tasks committed locally (15ac2e4, b8fe11b) but never pushed. 12 Nov test PR #497 (branch lead/codex-push-test): one "@codex address that feedback … commit to this PR's branch, do not open a new PR" comment started TWO Codex tasks (7fc2027, eba125b), neither pushed; Codex only "prepared PR metadata". Asked on #497, Codex answered it knows no supported phrasing, setting, AGENTS.md rule or button that pushes a comment task to the existing branch; its alternatives were a local session or a GitHub Action with the OpenAI API (rejected: D-246 no API).
+- Owner 16:53 "Codex CLI kuralım", 16:55 "npm ile codex'i kur", 16:56 "Bu tamam. Fikir güzel." → Codex CLI 0.167.2 installed on the Mac (/opt/homebrew/bin/codex), signed in with ChatGPT.
+- DOĞRULANDI end-to-end 12 Nov ~19:57: worktree ~/development/codex-lane/pr497 → `codex exec --sandbox workspace-write -c model_reasoning_effort=low` (model gpt-6.1-sol) added one line → lead checked the diff → pushed to the same branch, PR #497 head bdc669d. No new Codex task title, no new PR.
+- Decision: HIERARCHY v1.12 §1 FOLLOW-UPS and CODEX CLI LANE. "@codex" comments = review and questions only. Fix order: CLI lane (Mac linked) → lead fixes itself + "@codex review" → rework = new Codex task. The owner no longer relays fixes. Supersedes the "no Codex CLI on the Mac" part of D-198/D-450 and STATE queue item 7 (D-242/D-246/D-248 Copilot route; Copilot quota is spent).
+- BELİRSİZ: how CLI use counts against the ChatGPT Pro Codex limit (not verified, not measured). The Mac must be on and linked; otherwise route 2.
+- #497 closed without merge, branch deleted.

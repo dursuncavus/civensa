@@ -1,7 +1,7 @@
 # CIVENSA — CURRENT STATE
 
 Updated: 12 Nov 2026 ~12:50 Istanbul (CV Lider 75: D-471); earlier 11 Nov ~19:45 (CV Lider 73: D-470 line); earlier 11 Nov ~18:30 (D-469); earlier 11 Nov ~15:59 (CV Lider 74: D-468).
-Rules: AI_WORKING_CONSTITUTION v1.2 (Drive, global) · `HIERARCHY.md` v1.10 (D-450: DeepSeek codes small tasks; local lane on the Mac; D-449: Copilot reviews every task PR and codes small issue tasks; D-408: the lead also codes, Codex reviews its PRs) · `PROJECT_RULES.md` v1.5 (D-468: owner supplies the current IDML before every design job; D-271: PRIOR ART field mandatory in every package) · `BACKUP_LEAD.md` v2.
+Rules: AI_WORKING_CONSTITUTION v1.2 (Drive, global) · `HIERARCHY.md` v1.12 (D-474: Codex PR fixes via the Codex CLI on the Mac, same PR; D-450: DeepSeek codes small tasks; local lane on the Mac; D-449: Copilot reviews every task PR and codes small issue tasks; D-408: the lead also codes, Codex reviews its PRs) · `PROJECT_RULES.md` v1.5 (D-468: owner supplies the current IDML before every design job; D-271: PRIOR ART field mandatory in every package) · `BACKUP_LEAD.md` v2.
 Backup log ("Civensa Yedek Kaydı", Drive): no entries after 31 Oct (DOĞRULANDI 7 Nov 22:25, no change after 1 Nov).
 Tags: DOĞRULANDI (lead checked) · TARİHSEL (past fact) · BEYAN (owner said) · BELİRSİZ (unknown).
 
@@ -64,7 +64,7 @@ CV Lider 61 (4 Nov ~21:25, DOĞRULANDI): no mail from Ali Abi; only open PR #382
 9. Claude account on Max from 4 Nov 2026 (BEYAN; next charge 4 Dec). Extra capacity goes to lead analysis/preparation work (D-400). The "Claude quota" block below is TARİHSEL (Pro era).
 10. Sunum module (D-411/D-412/D-413): reveal.js 6.0.1 + ECharts 6.1.0 via Civensa Jinja templates, Civensa design tokens; animated HTML + 16:9 PDF from the same file. Prototype https://claude.ai/artifact/DMpNp2f68JsogL2eMgJSRD review round 1 done (D-414); full Fen İşleri 2025 presentation with real data = CIV-180 reference (D-415); waits for the owner's hall-computer test + further remarks → CIV-180 (engine + FR müdürlük presentation). Future report modules proposed in D-411 (not accepted; after 1 Jan 2027).
 11. CIV-180–185 live since release #410 (D-428).
-Next IDs: task CIV-220, decision D-474 (CIV-219 + D-473 = directorate FR tables, CV Lider 75; D-472 = InDesign export verified, CV Lider 75; CIV-218 + D-471 = İç Kontrol sticky save bar, CV Lider 75; CIV-217 + D-470 = 2027 replace guards on live evidence, CV Lider 73; CIV-216 + D-469 = flaky digest fix / merges, CV Lider 73; CIV-215 + D-468 taken by the design-automation thread: owner-only InDesign export; current IDML before every design job, PROJECT_RULES v1.5 §26). Phase5 through CIV-213 is live (release #477, 9235df1, D-462); next: Ali Abi pilot test from ~11 Nov, collect feedback; pilot reset plan before real data.
+Next IDs: task CIV-220, decision D-475 (D-474 = Codex CLI lane for PR fixes, HIERARCHY v1.12, thread "Codex ile GitHub akışını düzelt"; CIV-219 + D-473 = directorate FR tables, CV Lider 75; D-472 = InDesign export verified, CV Lider 75; CIV-218 + D-471 = İç Kontrol sticky save bar, CV Lider 75; CIV-217 + D-470 = 2027 replace guards on live evidence, CV Lider 73; CIV-216 + D-469 = flaky digest fix / merges, CV Lider 73; CIV-215 + D-468 taken by the design-automation thread: owner-only InDesign export; current IDML before every design job, PROJECT_RULES v1.5 §26). Phase5 through CIV-213 is live (release #477, 9235df1, D-462); next: Ali Abi pilot test from ~11 Nov, collect feedback; pilot reset plan before real data.
 
 ## Claude quota (BEYAN, owner 27 Oct 16:21)
 - Session 11%, week 67%, weekly reset Saturday 00:00 (D-300). Copilot 96 / 1,500 credits, reset 1 Nov.
@@ -138,5 +138,5 @@ Merged 26 Oct: #163 CIV-113 → 88c9dfb; #154 CIV-109 → 34329a7; #161 CIV-111 
 4. Measure scheduled run cost; reduce or stop if costly.
 5. (closed, D-286) D-205 Drive archive and pointer "KAYITLAR GITHUB'DA" done.
 6. (done 3 Nov ~15:50, CV Lider 52) DeepSeek mirror GUNCEL-DURUM.md refreshed from STATE.md (D-376) with the Mac linked; YEDEK-KAYIT.md has no entry after 29 Oct (already covered by D-309). Refresh again in the next live session with the Mac linked.
-7. Codex cloud fixes from PR comments: not set up (D-242); fix rounds move to Copilot (D-246/D-248).
+7. (closed, D-474) Codex fix rounds: "@codex <change>" comments cannot push; fixes go through the Codex CLI lane on the Mac (same PR branch), else the lead fixes and Codex reviews. Test PR #497 closed without merge.
 8. LOW backlog: shell top-right period label repeats the title on Genel Bakış (D-273);  012 date input display format (BELİRSİZ, D-251); 024 summary widens the 2027 column (D-250); 021 progress table at 390 has no scroll hint (D-268) — watch only; 022 home runs the all-department progress overview per load (D-285) — watch on pilot data.
