@@ -44,6 +44,9 @@
 .internal-control-page .ic-grid { display: grid; grid-template-columns: minmax(0,1fr); gap: var(--space-4); }
 .internal-control-page .ic-grid label { margin: 0; }
 .internal-control-page .ic-actions { display: flex; flex-wrap: wrap; gap: var(--space-3); margin-bottom: var(--space-4); }
+/* CIV-218: the 79-question form keeps its save buttons in view while scrolling (frozen markup unchanged). */
+.internal-control-page .questionnaire-form form[action$="/answers"] > .ic-actions { position: sticky; bottom: 0; z-index: 1; margin: 0; padding: var(--space-3) 0; background: var(--surface); border-top: 1px solid var(--border); }
+:root:has(.internal-control-page .questionnaire-form form[action$="/answers"] > .ic-actions) { scroll-padding-bottom: calc(var(--space-12) + var(--space-8)); }
 .internal-control-page .ic-scroll { max-width: 100%; overflow-x: auto; border: 1px solid var(--border); border-radius: var(--radius); }
 .internal-control-page table { width: 100%; min-width: 700px; border-collapse: collapse; }
 .internal-control-page :is(th,td) { padding: var(--space-3); border-bottom: 1px solid var(--border); color: var(--text); font-size: var(--text-sm); text-align: left; vertical-align: top; }
