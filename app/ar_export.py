@@ -42,7 +42,14 @@ class _ReportContent:
 
     def photo(self, photo):
         import base64
-        self.doc.add_picture(BytesIO(base64.b64decode(photo['image_base64'])), width=Twips(6000))
+        from PIL import Image
+        content = base64.b64decode(photo['image_base64'])
+        with Image.open(BytesIO(content)) as picture:
+            width, height = picture.size
+        scale = min(6000 / width, 8000 / height)
+        paragraph = self.doc.add_paragraph(style=BODY)
+        paragraph.add_run().add_picture(BytesIO(content),
+            width=Twips(round(width * scale)), height=Twips(round(height * scale)))
 
     def blocks(self, blocks):
         for block in blocks:

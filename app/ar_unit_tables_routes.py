@@ -29,7 +29,7 @@ def register(app):
         editable = bool(doc.department_id == user.department_id and user.role == 'department' and
                         not report['frozen'] and state(db, doc) in {'draft', 'returned'})
         return {'user': user, 'report': report, 'editable': editable,
-                'data': report.get('unit_tables', {}), 'numbers': service.NUMBERS,
+                'data': report.get('unit_tables', {}), 'numbers': service.NUMBERS, 'money': service.MONEY,
                 'staff': service.STAFF, 'project_states': service.PROJECT_STATES,
                 'table_blockers': service.blockers(report) if doc.department_id else []}
 

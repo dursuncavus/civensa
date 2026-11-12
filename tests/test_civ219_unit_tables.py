@@ -188,6 +188,9 @@ def test_scope_review_return_approval_and_exports(table_report, db, sample, tmp_
     assert consolidated['units'][0]['tables'] == snapshot['unit_tables']['tables']
     # The legacy idare API is readable by staff; new cross-unit tables must not
     # escape through that existing route, including its immutable release path.
+    central_page = client.get(f'/activity-sections/reports/{docs["idare"].id}/unit-tables')
+    assert central_page.status_code == 200 and 'id="table-1"' in central_page.text
+    assert 'Sentetik Engelsiz Park Projesi' in central_page.text and 'data-unit-table=' not in central_page.text
     idare_payload = sections.report_data(db, sample['strategy'], docs['idare'].id)
     from app.models import ARDocumentFreeze
     raw = sections.numeric_canonical(idare_payload)
@@ -239,6 +242,9 @@ def test_browser_tables_and_capture(table_report, db, sample, tmp_path):
             expect(page.locator('[data-staff-warning]')).to_contain_text('personel sayılarını düzeltin')
             expect(page.locator('[data-unit-table="2"] [data-column-total="women"]')).to_have_text('17')
             page.locator('[name=women_0]').fill('4')
+            page.locator('[name=inside_0]').fill('999.999.999.999.999,99')
+            page.locator('[name=outside_0]').fill('0,01')
+            expect(page.locator('[data-total]').first).to_have_text('1.000.000.000.000.000,00')
         # Exercise the real submit form, grouped errors and its linked field.
         ready_unit(db, doc, sample['user'])
         tables.save(db, sample['user'], doc.id, '2', doc.revision, staff(True)); db.commit()
@@ -346,3 +352,21 @@ def test_invalid_form_count_is_bounded_and_attempted_values_survive(table_report
         'include_0': 'on', 'name_0': 'Korunan bina', 'area_0': 'geçersiz'})
     assert response.status_code == 422 and 'value="geçersiz"' in response.text
     assert 'value="Korunan bina"' in response.text
+
+
+def test_photos_follow_book_order_and_tall_images_fit_word(table_report, db, sample):
+    _, doc, _, _ = table_report
+    source = tables.book(db, doc)['activities']
+    image = BytesIO(); Image.new('RGB', (10, 1600), '#21514a').save(image, format='PNG')
+    for index, caption in [(1, 'İkinci faaliyet'), (0, 'Birinci faaliyet')]:
+        tables.upload(db, sample['user'], doc.id, source[index]['key'], doc.revision,
+                      caption, image.getvalue(), 'sentetik.png')
+    payload = sections.report_data(db, sample['user'], doc.id)
+    assert [(p['label'], p['caption']) for p in payload['unit_tables']['photos']] == [
+        ('Fotoğraf 1', 'Birinci faaliyet'), ('Fotoğraf 2', 'İkinci faaliyet')]
+    from app.ar_export import build_activity_report_docx, TEMPLATE_PATH, BODY
+    from docx import Document
+    document = Document(BytesIO(build_activity_report_docx(payload, TEMPLATE_PATH)))
+    assert all(shape.width <= 3810000 and shape.height <= 5080000 for shape in document.inline_shapes)
+    pictures = [p for p in document.paragraphs if p._p.xpath('.//w:drawing')]
+    assert len(pictures) == 2 and all(p.style.name == BODY for p in pictures)

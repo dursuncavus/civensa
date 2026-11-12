@@ -13,7 +13,7 @@
 <details class="unit-notice"><summary>Gönderimden önce tamamlanacak alanlar ({{ table_blockers|length }})</summary>
 {% for group,items in table_blockers|groupby('group') %}<h3>{{ group }}</h3><ul>{% for item in items %}<li><a href="{{ item.link }}">{{ item.indicator }}</a>: {{ item.message }}</li>{% endfor %}</ul>{% endfor %}</details>
 {% endif %}
-{% for unit in data.units if data.units is defined %}<h2>{{ unit.department }}</h2>{% include 'ar_unit_tables_readonly.html' %}{% else %}
+{% for unit in data.units if data.units is defined %}{% set first_unit=loop.first %}<h2>{{ unit.department }}</h2>{% include 'ar_unit_tables_readonly.html' %}{% else %}
 {% if not report.department_id %}<p>Henüz onaylı birim tablosu yok.</p>{% endif %}
 {% endfor %}
 {% if report.department_id %}
@@ -28,7 +28,7 @@
 <form method="post" action="/activity-sections/reports/{{ report.id }}/unit-tables/{{ kind }}" data-unit-table="{{ kind }}">
 <input type="hidden" name="csrf_token" value="{{ request.session.get('csrf_token') }}"><input type="hidden" name="expected_revision" value="{{ report.revision }}">
 {% if kind=='8' %}<label>Proje bildirimi<select name="project_choice"><option value="">Seçin</option>{% for value,label in [('rows','Proje satırları var'),('none','Bu yıl proje yok')] %}<option value="{{ value }}" {% if attempt.get('project_choice')==value or (not attempt and ((value=='none' and t.no_projects is sameas true) or (value=='rows' and t.no_projects is sameas false))) %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>{% endif %}
-{% set count = (attempt.get('row_count',0)|int) if attempt else (t.rows|length + (1 if kind in ['1','8'] else 0)) %}
+{% set count = (attempt.get('row_count',0)|int) if attempt else ([t.rows|length + (1 if kind in ['1','8'] else 0), 2000]|min) %}
 <input type="hidden" name="row_count" value="{{ count }}">
 <div class="unit-scroll"><table><thead><tr>{% if kind in ['1','8'] %}<th>Kaydet</th>{% elif kind=='2' %}<th>Personel Türü</th>{% endif %}{% for key,label in t.columns %}<th>{{ label }}</th>{% endfor %}{% if kind=='7' %}<th>Uygulanmadı</th><th>Gerekçe</th>{% endif %}</tr></thead><tbody data-unit-rows>
 {% for i in range(count) %}{% set row=t.rows[i] if i<t.rows|length else {} %}
@@ -38,14 +38,14 @@
 {% for key,label in t.columns %}{% set value=attempt.get(key~'_'~i,'') if attempt else row.get(key) %}
 <td data-label="{{ label }}">
 {% if key=='activity' %}{{ row.activity }}<input type="hidden" name="key_{{ i }}" value="{{ attempt.get('key_'~i,row.key) }}">
-{% elif key=='total' %}<output data-total>{{ row.total|ar_number if row.total is not none else '—' }}</output>
+{% elif key=='total' %}<output data-total>{{ row.total|ar_number(money=true) if row.total is not none else '—' }}</output>
 {% elif key=='programme' or key=='state' %}<select id="table-{{ kind }}-row-{{ i }}-{{ key }}" name="{{ key }}_{{ i }}" aria-label="{{ label }} {{ i+1 }}"><option value="">Seçin</option>{% if key=='programme' %}{% for option in data.programmes %}<option value="{{ option.key }}" {% if value==option.key %}selected{% endif %}>{{ option.label }}</option>{% endfor %}{% else %}{% for option in project_states %}<option {% if value==option %}selected{% endif %}>{{ option }}</option>{% endfor %}{% endif %}</select>
 {% elif key=='outputs' %}<textarea id="table-{{ kind }}-row-{{ i }}-{{ key }}" name="{{ key }}_{{ i }}" aria-label="{{ label }} {{ i+1 }}" rows="3" maxlength="10000">{{ value if value is not none else '' }}</textarea>
-{% else %}<input id="table-{{ kind }}-row-{{ i }}-{{ key }}" name="{{ key }}_{{ i }}" aria-label="{{ label }} {{ i+1 }}" {% if key in numbers %}inputmode="decimal" class="unit-number"{% elif key in ['start','end'] %}type="date"{% endif %} value="{{ (value|ar_number if value is not none else '') if key in numbers and not attempt else (value if value is not none else '') }}">{% endif %}
+{% else %}<input id="table-{{ kind }}-row-{{ i }}-{{ key }}" name="{{ key }}_{{ i }}" aria-label="{{ label }} {{ i+1 }}" {% if key in numbers %}inputmode="decimal" class="unit-number"{% elif key in ['start','end'] %}type="date"{% endif %} value="{{ (value|ar_number(money=key in money) if value is not none else '') if key in numbers and not attempt else (value if value is not none else '') }}">{% endif %}
 </td>{% endfor %}
 {% if kind=='7' %}<td data-label="Uygulanmadı"><label><input type="checkbox" name="not_applied_{{ i }}" {% if (attempt.get('not_applied_'~i)=='on' if attempt else row.get('not_applied')) %}checked{% endif %}> Uygulanmadı</label></td><td data-label="Gerekçe"><textarea id="table-{{ kind }}-row-{{ i }}-reason" name="reason_{{ i }}" aria-label="Uygulanmadı gerekçesi {{ i+1 }}" rows="3" maxlength="10000">{{ attempt.get('reason_'~i,'') if attempt else row.get('reason','') }}</textarea></td>{% endif %}
 </tr>{% endfor %}</tbody>
-<tfoot><tr>{% if kind!='7' %}<th>TOPLAM</th>{% endif %}{% for key,label in t.columns %}{% if loop.first and kind=='7' %}<th>TOPLAM</th>{% else %}<td data-label="{{ label }}" class="{{ 'unit-total-value' if key in t.totals else '' }}">{% if key in t.totals %}<output data-column-total="{{ key }}">{{ t.totals[key].value|ar_number }}</output>{% endif %}</td>{% endif %}{% endfor %}{% if kind=='7' %}<td></td><td></td>{% endif %}</tr></tfoot></table></div>
+<tfoot><tr>{% if kind!='7' %}<th>TOPLAM</th>{% endif %}{% for key,label in t.columns %}{% if loop.first and kind=='7' %}<th>TOPLAM</th>{% else %}<td data-label="{{ label }}" class="{{ 'unit-total-value' if key in t.totals else '' }}">{% if key in t.totals %}<output data-column-total="{{ key }}">{{ t.totals[key].value|ar_number(money=key in money) }}</output>{% endif %}</td>{% endif %}{% endfor %}{% if kind=='7' %}<td></td><td></td>{% endif %}</tr></tfoot></table></div>
 {% if kind in ['1','8'] %}<button class="button" type="button" data-unit-add>Satır ekle</button>{% endif %} <button class="button primary">Tablo {{ kind }} kaydet</button>
 {% if kind=='2' %}<p data-staff-warning role="status">Kadın + Erkek = Fiili Çalışan olmalıdır. Taslak kaydedilebilir; tutarsızlık gönderimi engeller.</p>{% endif %}
 </form>

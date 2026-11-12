@@ -4,9 +4,16 @@
     const text = value.trim();
     if (!text) return null;
     if (!/^(?:\d+|\d{1,3}(?:\.\d{3})+)(?:,\d{1,2})?$/.test(text)) return null;
-    return Math.round(Number(text.replaceAll('.', '').replace(',', '.')) * 100);
+    const [whole, fraction = ''] = text.replaceAll('.', '').split(',');
+    return BigInt(whole) * 100n + BigInt(fraction.padEnd(2, '0'));
   };
-  const display = value => value === null ? '—' : (value / 100).toLocaleString('tr-TR', {maximumFractionDigits: 2});
+  const money = new Set(['inside', 'outside', 'spending', 'total']);
+  const display = (value, key) => {
+    if (value === null) return '—';
+    const whole = (value / 100n).toLocaleString('tr-TR');
+    const fraction = (value % 100n).toString().padStart(2, '0');
+    return whole + (money.has(key) ? ',' + fraction : fraction === '00' ? '' : ',' + fraction.replace(/0$/, ''));
+  };
   document.querySelectorAll('[data-unit-table]').forEach(form => {
     const update = () => {
       const totals = {};
@@ -19,13 +26,13 @@
           const key = input.name.replace(/_\d+$/, '');
           const value = parse(input.value);
           values[key] = value;
-          if (value !== null) totals[key] = (totals[key] ?? 0) + value;
+          if (value !== null) totals[key] = (totals[key] ?? 0n) + value;
         });
         const output = row.querySelector('[data-total]');
         if (output) {
           const total = values.inside != null && values.outside != null ? values.inside + values.outside : null;
-          output.textContent = display(total);
-          if (total !== null) totals.total = (totals.total ?? 0) + total;
+          output.textContent = display(total, 'total');
+          if (total !== null) totals.total = (totals.total ?? 0n) + total;
         }
         if (form.dataset.unitTable === '2') {
           const wrong = ['women', 'men', 'actual'].every(k => values[k] != null) && values.women + values.men !== values.actual;
@@ -33,7 +40,7 @@
           mismatch ||= wrong;
         }
       });
-      form.querySelectorAll('[data-column-total]').forEach(output => { output.textContent = display(totals[output.dataset.columnTotal] ?? null); });
+      form.querySelectorAll('[data-column-total]').forEach(output => { output.textContent = display(totals[output.dataset.columnTotal] ?? null, output.dataset.columnTotal); });
       const warning = form.querySelector('[data-staff-warning]');
       if (warning) warning.textContent = mismatch ? 'Kadın + Erkek = Fiili Çalışan olmalıdır. Tutarsızlık gönderimi engeller; personel sayılarını düzeltin.' : 'Kadın + Erkek = Fiili Çalışan olmalıdır. Taslak kaydedilebilir; tutarsızlık gönderimi engeller.';
     };

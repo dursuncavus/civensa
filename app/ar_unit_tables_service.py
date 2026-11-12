@@ -278,10 +278,19 @@ def blockers(payload):
     return result
 
 
-def require_complete(payload):
+def require_complete(payload, missing_sections=None):
     problems = blockers(payload)
     if problems:
-        raise HTTPException(409, {'message': 'Birim faaliyet raporu gönderilemedi. Aşağıdaki tablo alanlarını tamamlayın.', 'blockers': problems})
+        message = 'Birim faaliyet raporu gönderilemedi. Aşağıdaki tablo alanlarını tamamlayın.'
+        detail = {}
+        if missing_sections:
+            message = 'Birim faaliyet raporu gönderilemedi. Şu bölümleri tamamlayın: ' + '; '.join(missing_sections)
+            detail['errors'] = [{'field': 'sections', 'message': message}]
+            problems += [{'indicator': section['title'], 'group': 'Rapor bölümleri',
+                'link': f"/activity-sections/reports/{payload['id']}?code={section['code']}",
+                'message': 'Bölümün eksiklerini giderip Hazır veya gerekçeli Uygulanamaz seçin.'}
+                for section in payload['sections'] if section['title'] in missing_sections]
+        raise HTTPException(409, {'message': message, 'blockers': problems, **detail})
 
 
 def upload(db, user, document_id, activity_key, expected_revision, caption, raw, filename):

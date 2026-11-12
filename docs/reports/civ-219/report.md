@@ -20,4 +20,4 @@ Aşağıdaki görüntüler gerçek uygulama rotalarında, yalnız sentetik 2026 
 
 Onaylı sentetik çıktı: [Word](export-synthetic.docx) · [PDF](export-synthetic.pdf). Dört tablo, hesaplanan toplamlar ve fotoğraf listesi/görselleri mevcut rapor yazı tipleri ve stilleriyle dışa aktarılır.
 
-Doğrulama: PostgreSQL 17 üzerinde 125 odaklı kabul/regresyon testi geçti; 1440/390 tarayıcı kontrolleri ve gerçek form gönderimleri geçti. Migrasyon ileri/geri/ileri çalıştırıldı; veri varken geri alma ve incelemedeki/onaylı verinin SQL ile değiştirilmesi engellendi. Tam paket ve PR CI sonucu PR açıklamasında güncellenir. Canlı veritabanına bağlanılmadı; dağıtım veya birleştirme yapılmadı.
+Doğrulama: PostgreSQL 17 üzerinde son odaklı çalıştırmada 102 kabul/regresyon testi geçti; 1440/390 tarayıcı kontrolleri ve gerçek form gönderimleri geçti. Migrasyon ileri/geri/ileri çalıştırıldı; veri varken geri alma ve incelemedeki/onaylı verinin SQL ile değiştirilmesi engellendi. Tam paket ve PR CI sonucu PR açıklamasında güncellenir. Canlı veritabanına bağlanılmadı; dağıtım veya birleştirme yapılmadı.

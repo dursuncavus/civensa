@@ -302,9 +302,10 @@ def test_closed_directorate_ek2_requires_coverage_only_through_active_to(section
     assert '2027 Hizmet Müdürlüğü' in assurance_page.text and 'Bugünkü Müdürlük' not in assurance_page.text
 
     # Complete the other sections; EK-2's one missing closure day blocks freeze.
-    from ar_unit_workflow_helpers import ensure_core_ready, reviewer
+    from ar_unit_workflow_helpers import ensure_core_ready, reviewer, ready_tables
     from app.ar_unit_workflow_service import transition
-    ensure_core_ready(db, doc, sample['user']); db.commit()
+    ensure_core_ready(db, doc, sample['user'])
+    ready_tables(db, doc, sample['user']); db.commit()
     token = login(client, sample['strategy'].email)
     report = client.get(f'/api/activity-sections/reports/{doc.id}').json()
     for section in report['sections']:

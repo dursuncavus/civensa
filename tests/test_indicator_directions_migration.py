@@ -17,7 +17,8 @@ ROOT = Path(__file__).resolve().parents[1]
 def test_direction_migration_roundtrip_and_history_preservation(postgres_templates):
     scripts = ScriptDirectory.from_config(Config(str(ROOT / 'alembic.ini')))
     revision = scripts.get_revision('c197a1b2c3d4')
-    assert scripts.get_heads() == [revision.revision]
+    assert scripts.get_heads() == ['c219a1b2c3d4']
+    assert scripts.get_revision('c219a1b2c3d4').down_revision == revision.revision
     with postgres_templates.clone(revision.down_revision) as engine:
         def migrate(action, target, ok=True):
             result = subprocess.run([sys.executable, '-m', 'alembic', action, target], cwd=ROOT,

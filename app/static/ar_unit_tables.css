@@ -35,3 +35,5 @@
   .unit-scroll table { min-width: 0; }
   .unit-scroll tfoot td:not(.unit-total-value) { display: none; }
 }
+
+.unit-table-panel output { display: block; text-align: right; }

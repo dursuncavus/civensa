@@ -551,7 +551,7 @@ def deviation_percentage(delta, actual):
     return abs(difference) / abs(target) * 100 if target else None
 
 
-def needs_deviation_explanation(state, delta, explanation, actual=None):
+def needs_deviation_explanation(state, delta, explanation, actual):
     if state != 'verified' or delta is None or actual is None or explanation.strip():
         return False
     difference = Decimal(str(delta))
