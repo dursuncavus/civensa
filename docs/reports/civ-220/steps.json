@@ -1,0 +1,2431 @@
+[
+ {
+  "role": "strategy",
+  "step": "Giriş ekranı",
+  "result": "OK",
+  "load_ms": 754,
+  "note": ""
+ },
+ {
+  "role": "strategy",
+  "step": "Hesapla giriş",
+  "result": "OK",
+  "load_ms": 980,
+  "note": ""
+ },
+ {
+  "role": "strategy",
+  "step": "2026 onaylı kitap yayın hazırlığı",
+  "result": "SLOW",
+  "load_ms": 4301,
+  "note": ""
+ },
+ {
+  "role": "strategy",
+  "step": "Onaylı kitaptan yayınla",
+  "result": "SLOW",
+  "load_ms": 6525,
+  "note": ""
+ },
+ {
+  "role": "strategy",
+  "step": "2026 gösterge raporu oluşturma",
+  "result": "OK",
+  "load_ms": 897,
+  "note": ""
+ },
+ {
+  "role": "strategy",
+  "step": "Yayına bağlı 2026 FR revizyonu oluştur",
+  "result": "OK",
+  "load_ms": 2511,
+  "note": ""
+ },
+ {
+  "role": "strategy",
+  "step": "2026 birim ve idare raporları oluşturma",
+  "result": "OK",
+  "load_ms": 1062,
+  "note": ""
+ },
+ {
+  "role": "strategy",
+  "step": "2026 EK-1 raporlarını oluştur",
+  "result": "OK",
+  "load_ms": 2889,
+  "note": ""
+ },
+ {
+  "role": "fen_staff",
+  "step": "Giriş ekranı",
+  "result": "OK",
+  "load_ms": 668,
+  "note": ""
+ },
+ {
+  "role": "fen_staff",
+  "step": "Hesapla giriş",
+  "result": "OK",
+  "load_ms": 848,
+  "note": ""
+ },
+ {
+  "role": "fen_staff",
+  "step": "Müdürlük 2026 gösterge raporunu bul",
+  "result": "OK",
+  "load_ms": 812,
+  "note": ""
+ },
+ {
+  "role": "fen_staff",
+  "step": "2026 gösterge girişini aç",
+  "result": "OK",
+  "load_ms": 1133,
+  "note": ""
+ },
+ {
+  "role": "fen_staff",
+  "step": "390 piksel gösterge giriş sayfası",
+  "result": "OK",
+  "load_ms": 1125,
+  "note": ""
+ },
+ {
+  "role": "fen_staff",
+  "step": "390 piksel giriş formu alanları",
+  "result": "OK",
+  "load_ms": 39,
+  "note": ""
+ },
+ {
+  "role": "fen_staff",
+  "step": "Doğrulanmamış hedefin sonraki adımı",
+  "result": "OK",
+  "load_ms": 29,
+  "note": ""
+ },
+ {
+  "role": "fen_staff",
+  "step": "Gösterge gerçekleşmesi + dosya kanıtı (açıklama boş)",
+  "result": "OK",
+  "load_ms": 1259,
+  "note": ""
+ },
+ {
+  "role": "fen_staff",
+  "step": "Kaydet sonrası özet sayaçları",
+  "result": "OK",
+  "load_ms": 29,
+  "note": "5 gösterge\n1 Doğrulanmış\n·\n4 Kayıt yok\n·\n1 açıklama bekliyor"
+ },
+ {
+  "role": "fen_staff",
+  "step": "Gösterge gerçekleşmesi + kaynak",
+  "result": "OK",
+  "load_ms": 1243,
+  "note": ""
+ },
+ {
+  "role": "fen_staff",
+  "step": "Gösterge gerçekleşmesi + kaynak",
+  "result": "OK",
+  "load_ms": 1176,
+  "note": ""
+ },
+ {
+  "role": "fen_staff",
+  "step": "Gösterge gerçekleşmesi + kaynak",
+  "result": "OK",
+  "load_ms": 1209,
+  "note": ""
+ },
+ {
+  "role": "fen_staff",
+  "step": "Gösterge gerçekleşmesi + kaynak",
+  "result": "OK",
+  "load_ms": 1164,
+  "note": ""
+ },
+ {
+  "role": "fen_staff",
+  "step": "Müdürlük 2026 birim raporunu bul",
+  "result": "OK",
+  "load_ms": 1413,
+  "note": ""
+ },
+ {
+  "role": "fen_staff",
+  "step": "Birim raporu ve bölüm ağacı",
+  "result": "OK",
+  "load_ms": 1655,
+  "note": ""
+ },
+ {
+  "role": "fen_staff",
+  "step": "Bölüm aç: Yönetici özetiBoş",
+  "result": "OK",
+  "load_ms": 1462,
+  "note": ""
+ },
+ {
+  "role": "fen_staff",
+  "step": "Bölüm metni kaydet: Yönetici özetiBoş",
+  "result": "OK",
+  "load_ms": 1575,
+  "note": ""
+ },
+ {
+  "role": "fen_staff",
+  "step": "Bölüm aç: I- Genel bilgilerBoş",
+  "result": "OK",
+  "load_ms": 1424,
+  "note": ""
+ },
+ {
+  "role": "fen_staff",
+  "step": "Bölüm metni kaydet: I- Genel bilgilerBoş",
+  "result": "OK",
+  "load_ms": 1603,
+  "note": ""
+ },
+ {
+  "role": "fen_staff",
+  "step": "Bölüm aç: A- Misyon ve VizyonBoş",
+  "result": "OK",
+  "load_ms": 1483,
+  "note": ""
+ },
+ {
+  "role": "fen_staff",
+  "step": "Bölüm metni kaydet: A- Misyon ve VizyonBoş",
+  "result": "OK",
+  "load_ms": 1591,
+  "note": ""
+ },
+ {
+  "role": "fen_staff",
+  "step": "Bölüm aç: B- Yetki, Görev ve SorumluluklarBoş",
+  "result": "OK",
+  "load_ms": 1523,
+  "note": ""
+ },
+ {
+  "role": "fen_staff",
+  "step": "Bölüm metni kaydet: B- Yetki, Görev ve SorumluluklarBoş",
+  "result": "OK",
+  "load_ms": 1707,
+  "note": ""
+ },
+ {
+  "role": "fen_staff",
+  "step": "Bölüm aç: C- İdareye İlişkin BilgilerBoş",
+  "result": "OK",
+  "load_ms": 1459,
+  "note": ""
+ },
+ {
+  "role": "fen_staff",
+  "step": "Bölüm metni kaydet: C- İdareye İlişkin BilgilerBoş",
+  "result": "OK",
+  "load_ms": 1616,
+  "note": ""
+ },
+ {
+  "role": "fen_staff",
+  "step": "Bölüm aç: 1- Fiziksel YapıBoş",
+  "result": "OK",
+  "load_ms": 1577,
+  "note": ""
+ },
+ {
+  "role": "fen_staff",
+  "step": "Bölüm metni kaydet: 1- Fiziksel YapıBoş",
+  "result": "OK",
+  "load_ms": 1579,
+  "note": ""
+ },
+ {
+  "role": "fen_staff",
+  "step": "Bölüm aç: 2- Teşkilat YapısıBoş",
+  "result": "OK",
+  "load_ms": 1551,
+  "note": ""
+ },
+ {
+  "role": "fen_staff",
+  "step": "Bölüm metni kaydet: 2- Teşkilat YapısıBoş",
+  "result": "OK",
+  "load_ms": 1592,
+  "note": ""
+ },
+ {
+  "role": "fen_staff",
+  "step": "Bölüm aç: 3- Teknoloji ve Bilişim AltyapısıBoş",
+  "result": "OK",
+  "load_ms": 1760,
+  "note": ""
+ },
+ {
+  "role": "fen_staff",
+  "step": "Bölüm metni kaydet: 3- Teknoloji ve Bilişim AltyapısıBoş",
+  "result": "OK",
+  "load_ms": 1548,
+  "note": ""
+ },
+ {
+  "role": "fen_staff",
+  "step": "Bölüm aç: 4- İnsan KaynaklarıBoş",
+  "result": "OK",
+  "load_ms": 1536,
+  "note": ""
+ },
+ {
+  "role": "fen_staff",
+  "step": "Bölüm metni kaydet: 4- İnsan KaynaklarıBoş",
+  "result": "OK",
+  "load_ms": 1568,
+  "note": ""
+ },
+ {
+  "role": "fen_staff",
+  "step": "Bölüm aç: 5- Sunulan HizmetlerBoş",
+  "result": "OK",
+  "load_ms": 1426,
+  "note": ""
+ },
+ {
+  "role": "fen_staff",
+  "step": "Bölüm metni kaydet: 5- Sunulan HizmetlerBoş",
+  "result": "OK",
+  "load_ms": 1592,
+  "note": ""
+ },
+ {
+  "role": "fen_staff",
+  "step": "Bölüm aç: 6- Yönetim ve İç Kontrol SistemiBoş",
+  "result": "OK",
+  "load_ms": 1491,
+  "note": ""
+ },
+ {
+  "role": "fen_staff",
+  "step": "Bölüm metni kaydet: 6- Yönetim ve İç Kontrol SistemiBoş",
+  "result": "OK",
+  "load_ms": 1519,
+  "note": ""
+ },
+ {
+  "role": "fen_staff",
+  "step": "Bölüm aç: D- Diğer HususlarBoş",
+  "result": "OK",
+  "load_ms": 1811,
+  "note": ""
+ },
+ {
+  "role": "fen_staff",
+  "step": "Bölüm metni kaydet: D- Diğer HususlarBoş",
+  "result": "OK",
+  "load_ms": 1594,
+  "note": ""
+ },
+ {
+  "role": "fen_staff",
+  "step": "Bölüm aç: II- Amaçlar ve hedeflerBoş",
+  "result": "OK",
+  "load_ms": 1427,
+  "note": ""
+ },
+ {
+  "role": "fen_staff",
+  "step": "Bölüm metni kaydet: II- Amaçlar ve hedeflerBoş",
+  "result": "OK",
+  "load_ms": 1449,
+  "note": ""
+ },
+ {
+  "role": "fen_staff",
+  "step": "Bölüm aç: A- Temel Politika ve ÖnceliklerBoş",
+  "result": "OK",
+  "load_ms": 1409,
+  "note": ""
+ },
+ {
+  "role": "fen_staff",
+  "step": "Bölüm metni kaydet: A- Temel Politika ve ÖnceliklerBoş",
+  "result": "OK",
+  "load_ms": 1530,
+  "note": ""
+ },
+ {
+  "role": "fen_staff",
+  "step": "Bölüm aç: B- İdarenin Stratejik Planında Yer Alan Amaç ve HedeflerBoş",
+  "result": "OK",
+  "load_ms": 1418,
+  "note": ""
+ },
+ {
+  "role": "fen_staff",
+  "step": "Bölüm metni kaydet: B- İdarenin Stratejik Planında Yer Alan Amaç ve HedeflerBoş",
+  "result": "OK",
+  "load_ms": 1406,
+  "note": ""
+ },
+ {
+  "role": "fen_staff",
+  "step": "Bölüm aç: C- Diğer HususlarBoş",
+  "result": "OK",
+  "load_ms": 1534,
+  "note": ""
+ },
+ {
+  "role": "fen_staff",
+  "step": "Bölüm metni kaydet: C- Diğer HususlarBoş",
+  "result": "OK",
+  "load_ms": 1622,
+  "note": ""
+ },
+ {
+  "role": "fen_staff",
+  "step": "Bölüm aç: III- Faaliyetlere ilişkin bilgi ve değerlendirmelerBoş",
+  "result": "OK",
+  "load_ms": 1525,
+  "note": ""
+ },
+ {
+  "role": "fen_staff",
+  "step": "Bölüm metni kaydet: III- Faaliyetlere ilişkin bilgi ve değerlendirmelerBoş",
+  "result": "OK",
+  "load_ms": 1417,
+  "note": ""
+ },
+ {
+  "role": "fen_staff",
+  "step": "Bölüm aç: A- Malî BilgilerBoş",
+  "result": "OK",
+  "load_ms": 1588,
+  "note": ""
+ },
+ {
+  "role": "fen_staff",
+  "step": "Bölüm aç: 1- Bütçe Uygulama SonuçlarıBoş",
+  "result": "OK",
+  "load_ms": 1436,
+  "note": ""
+ },
+ {
+  "role": "fen_staff",
+  "step": "Bölüm aç: 2- Temel Malî Tablolara İlişkin AçıklamalarBoş",
+  "result": "OK",
+  "load_ms": 1359,
+  "note": ""
+ },
+ {
+  "role": "fen_staff",
+  "step": "Bölüm aç: 3- Malî Denetim SonuçlarıBoş",
+  "result": "OK",
+  "load_ms": 1540,
+  "note": ""
+ },
+ {
+  "role": "fen_staff",
+  "step": "Bölüm metni kaydet: 3- Malî Denetim SonuçlarıBoş",
+  "result": "OK",
+  "load_ms": 1427,
+  "note": ""
+ },
+ {
+  "role": "fen_staff",
+  "step": "Bölüm aç: 4- Diğer HususlarBoş",
+  "result": "OK",
+  "load_ms": 1395,
+  "note": ""
+ },
+ {
+  "role": "fen_staff",
+  "step": "Bölüm metni kaydet: 4- Diğer HususlarBoş",
+  "result": "OK",
+  "load_ms": 1514,
+  "note": ""
+ },
+ {
+  "role": "fen_staff",
+  "step": "Bölüm aç: B- Performans BilgileriBoş",
+  "result": "OK",
+  "load_ms": 1440,
+  "note": ""
+ },
+ {
+  "role": "fen_staff",
+  "step": "Bölüm metni kaydet: B- Performans BilgileriBoş",
+  "result": "OK",
+  "load_ms": 1469,
+  "note": ""
+ },
+ {
+  "role": "fen_staff",
+  "step": "Bölüm aç: 1- Program, Alt Program, Faaliyet BilgileriBoş",
+  "result": "OK",
+  "load_ms": 1429,
+  "note": ""
+ },
+ {
+  "role": "fen_staff",
+  "step": "Bölüm metni kaydet: 1- Program, Alt Program, Faaliyet BilgileriBoş",
+  "result": "OK",
+  "load_ms": 1466,
+  "note": ""
+ },
+ {
+  "role": "fen_staff",
+  "step": "Bölüm aç: 2- Performans Sonuçlarının DeğerlendirilmesiBoş",
+  "result": "OK",
+  "load_ms": 1612,
+  "note": ""
+ },
+ {
+  "role": "fen_staff",
+  "step": "Bölüm metni kaydet: 2- Performans Sonuçlarının DeğerlendirilmesiBoş",
+  "result": "OK",
+  "load_ms": 1502,
+  "note": ""
+ },
+ {
+  "role": "fen_staff",
+  "step": "Bölüm aç: i. Alt program hedef ve göstergeleriyle ilgili gerçekleşme sonuçları ve değerlendirmelerHazır",
+  "result": "OK",
+  "load_ms": 1480,
+  "note": ""
+ },
+ {
+  "role": "fen_staff",
+  "step": "Bölüm aç: ii. Performans denetim sonuçlarıBoş",
+  "result": "OK",
+  "load_ms": 1427,
+  "note": ""
+ },
+ {
+  "role": "fen_staff",
+  "step": "Bölüm metni kaydet: ii. Performans denetim sonuçlarıBoş",
+  "result": "OK",
+  "load_ms": 1460,
+  "note": ""
+ },
+ {
+  "role": "fen_staff",
+  "step": "Bölüm aç: 3- Stratejik Plan Değerlendirme TablolarıBoş",
+  "result": "OK",
+  "load_ms": 1406,
+  "note": ""
+ },
+ {
+  "role": "fen_staff",
+  "step": "Bölüm metni kaydet: 3- Stratejik Plan Değerlendirme TablolarıBoş",
+  "result": "OK",
+  "load_ms": 1436,
+  "note": ""
+ },
+ {
+  "role": "fen_staff",
+  "step": "Bölüm aç: 4- Performans Bilgi Sisteminin DeğerlendirilmesiBoş",
+  "result": "OK",
+  "load_ms": 1640,
+  "note": ""
+ },
+ {
+  "role": "fen_staff",
+  "step": "Bölüm metni kaydet: 4- Performans Bilgi Sisteminin DeğerlendirilmesiBoş",
+  "result": "OK",
+  "load_ms": 1421,
+  "note": ""
+ },
+ {
+  "role": "fen_staff",
+  "step": "Bölüm aç: 5- Diğer HususlarBoş",
+  "result": "OK",
+  "load_ms": 1544,
+  "note": ""
+ },
+ {
+  "role": "fen_staff",
+  "step": "Bölüm metni kaydet: 5- Diğer HususlarBoş",
+  "result": "OK",
+  "load_ms": 1590,
+  "note": ""
+ },
+ {
+  "role": "fen_staff",
+  "step": "Bölüm aç: IV- Kurumsal kabiliyet ve kapasitenin değerlendirilmesiBoş",
+  "result": "OK",
+  "load_ms": 1390,
+  "note": ""
+ },
+ {
+  "role": "fen_staff",
+  "step": "Bölüm metni kaydet: IV- Kurumsal kabiliyet ve kapasitenin değerlendirilmesiBoş",
+  "result": "OK",
+  "load_ms": 1463,
+  "note": ""
+ },
+ {
+  "role": "fen_staff",
+  "step": "Bölüm aç: A- ÜstünlüklerBoş",
+  "result": "OK",
+  "load_ms": 1435,
+  "note": ""
+ },
+ {
+  "role": "fen_staff",
+  "step": "Bölüm metni kaydet: A- ÜstünlüklerBoş",
+  "result": "OK",
+  "load_ms": 1509,
+  "note": ""
+ },
+ {
+  "role": "fen_staff",
+  "step": "Bölüm aç: B- ZayıflıklarBoş",
+  "result": "OK",
+  "load_ms": 1675,
+  "note": ""
+ },
+ {
+  "role": "fen_staff",
+  "step": "Bölüm metni kaydet: B- ZayıflıklarBoş",
+  "result": "OK",
+  "load_ms": 1580,
+  "note": ""
+ },
+ {
+  "role": "fen_staff",
+  "step": "Bölüm aç: C- DeğerlendirmeBoş",
+  "result": "OK",
+  "load_ms": 1521,
+  "note": ""
+ },
+ {
+  "role": "fen_staff",
+  "step": "Bölüm metni kaydet: C- DeğerlendirmeBoş",
+  "result": "OK",
+  "load_ms": 1580,
+  "note": ""
+ },
+ {
+  "role": "fen_staff",
+  "step": "Bölüm aç: V- Öneri ve tedbirlerBoş",
+  "result": "OK",
+  "load_ms": 1470,
+  "note": ""
+ },
+ {
+  "role": "fen_staff",
+  "step": "Bölüm metni kaydet: V- Öneri ve tedbirlerBoş",
+  "result": "OK",
+  "load_ms": 1552,
+  "note": ""
+ },
+ {
+  "role": "fen_staff",
+  "step": "Bölüm aç: EklerBoş",
+  "result": "OK",
+  "load_ms": 1515,
+  "note": ""
+ },
+ {
+  "role": "fen_staff",
+  "step": "Harcama yetkilisi güvence beyanı",
+  "result": "OK",
+  "load_ms": 1502,
+  "note": ""
+ },
+ {
+  "role": "fen_staff",
+  "step": "EK-2 beyan alanlarını kaydet",
+  "result": "OK",
+  "load_ms": 1912,
+  "note": ""
+ },
+ {
+  "role": "fen_staff",
+  "step": "Birim tabloları aç",
+  "result": "OK",
+  "load_ms": 1574,
+  "note": ""
+ },
+ {
+  "role": "fen_staff",
+  "step": "Tablo 1 fiziksel yapı kaydet",
+  "result": "OK",
+  "load_ms": 1788,
+  "note": ""
+ },
+ {
+  "role": "fen_staff",
+  "step": "Tablo 2 personel kaydet",
+  "result": "OK",
+  "load_ms": 1775,
+  "note": ""
+ },
+ {
+  "role": "fen_staff",
+  "step": "Tablo 7 faaliyet çıktı ve maliyet kaydet (5 faaliyet)",
+  "result": "OK",
+  "load_ms": 1681,
+  "note": ""
+ },
+ {
+  "role": "fen_staff",
+  "step": "Tablo 8 Bu yıl proje yok kaydet",
+  "result": "OK",
+  "load_ms": 1681,
+  "note": ""
+ },
+ {
+  "role": "fen_staff",
+  "step": "Faaliyet fotoğrafı yükle",
+  "result": "OK",
+  "load_ms": 1788,
+  "note": ""
+ },
+ {
+  "role": "fen_staff",
+  "step": "Mali Hizmetler uyarıları",
+  "result": "OK",
+  "load_ms": 1711,
+  "note": "Uyarılar (gönderimi engellemez)\n\nBu bölümü Mali Hizmetler dolduracak; gönderiminizi engellemez."
+ },
+ {
+  "role": "fen_staff",
+  "step": "Faaliyet gerçekleşmesi girişi ara",
+  "result": "OK",
+  "load_ms": 773,
+  "note": "Faaliyet başına sonuç girişi beklenmiyor (Strateji kararı 9.11.2026); açıklama EK-1 bölüm metnine yazılır."
+ },
+ {
+  "role": "fen_director",
+  "step": "Giriş ekranı",
+  "result": "OK",
+  "load_ms": 719,
+  "note": ""
+ },
+ {
+  "role": "fen_director",
+  "step": "Hesapla giriş",
+  "result": "OK",
+  "load_ms": 780,
+  "note": ""
+ },
+ {
+  "role": "fen_director",
+  "step": "Sapma açıklaması boşken gönderim kontrolü",
+  "result": "OK",
+  "load_ms": 1428,
+  "note": ""
+ },
+ {
+  "role": "fen_director",
+  "step": "Açıklamasız gerçekleşmeyi gönderme denemesi",
+  "result": "OK",
+  "load_ms": 1744,
+  "note": "Beklenen engel: açıklamasız sapma ile gönderilemedi."
+ },
+ {
+  "role": "fen_director",
+  "step": "Gönderim engelinden birim raporuna dön",
+  "result": "OK",
+  "load_ms": 1444,
+  "note": ""
+ },
+ {
+  "role": "fen_staff",
+  "step": "Sapma gerekçesini tamamla",
+  "result": "OK",
+  "load_ms": 1119,
+  "note": ""
+ },
+ {
+  "role": "fen_staff",
+  "step": "Gösterge gerçekleşmesi + kaynak",
+  "result": "OK",
+  "load_ms": 1233,
+  "note": ""
+ },
+ {
+  "role": "fen_director",
+  "step": "Birim raporunu gönder öncesi",
+  "result": "OK",
+  "load_ms": 1487,
+  "note": ""
+ },
+ {
+  "role": "fen_director",
+  "step": "Birim raporunu gönder",
+  "result": "OK",
+  "load_ms": 2481,
+  "note": ""
+ },
+ {
+  "role": "strategy",
+  "step": "Strateji birim incelemesi",
+  "result": "OK",
+  "load_ms": 845,
+  "note": ""
+ },
+ {
+  "role": "strategy",
+  "step": "Gerekçeli iade",
+  "result": "OK",
+  "load_ms": 1662,
+  "note": ""
+ },
+ {
+  "role": "fen_staff",
+  "step": "İade notunu gör ve düzelt",
+  "result": "OK",
+  "load_ms": 1501,
+  "note": ""
+ },
+ {
+  "role": "fen_staff",
+  "step": "İade notuna göre düzeltmeyi kaydet",
+  "result": "OK",
+  "load_ms": 1486,
+  "note": ""
+ },
+ {
+  "role": "fen_director",
+  "step": "Düzelt ve yeniden gönder öncesi",
+  "result": "OK",
+  "load_ms": 1553,
+  "note": ""
+ },
+ {
+  "role": "fen_director",
+  "step": "Düzelt ve yeniden gönder",
+  "result": "OK",
+  "load_ms": 1927,
+  "note": ""
+ },
+ {
+  "role": "strategy",
+  "step": "Strateji yeniden inceleme",
+  "result": "OK",
+  "load_ms": 864,
+  "note": ""
+ },
+ {
+  "role": "strategy",
+  "step": "Strateji bağımsız birim onayı",
+  "result": "OK",
+  "load_ms": 939,
+  "note": ""
+ },
+ {
+  "role": "strategy",
+  "step": "Onaylı Word olarak indir · Fen İşleri Müdürlüğü",
+  "result": "OK",
+  "load_ms": 336,
+  "note": "45380 bayt; SHA256: 2e919b38061f949b93f0ac8686a83c28fa43d2176ba355f0f0a89c17d1da720d; dosya başlığı doğrulandı."
+ },
+ {
+  "role": "strategy",
+  "step": "Onaylı PDF olarak indir · Fen İşleri Müdürlüğü",
+  "result": "OK",
+  "load_ms": 472,
+  "note": "66706 bayt; SHA256: 704c57fc85ff0246f7bffa470ccf946cb1cf38e278964fd8a36e6ecf4af6c37f; dosya başlığı doğrulandı."
+ },
+ {
+  "role": "afet_staff",
+  "step": "Giriş ekranı",
+  "result": "OK",
+  "load_ms": 699,
+  "note": ""
+ },
+ {
+  "role": "afet_staff",
+  "step": "Hesapla giriş",
+  "result": "OK",
+  "load_ms": 878,
+  "note": ""
+ },
+ {
+  "role": "afet_staff",
+  "step": "Müdürlük 2026 gösterge raporunu bul",
+  "result": "OK",
+  "load_ms": 762,
+  "note": ""
+ },
+ {
+  "role": "afet_staff",
+  "step": "2026 gösterge girişini aç",
+  "result": "OK",
+  "load_ms": 1148,
+  "note": ""
+ },
+ {
+  "role": "afet_staff",
+  "step": "390 piksel gösterge giriş sayfası",
+  "result": "OK",
+  "load_ms": 1049,
+  "note": ""
+ },
+ {
+  "role": "afet_staff",
+  "step": "390 piksel giriş formu alanları",
+  "result": "OK",
+  "load_ms": 53,
+  "note": ""
+ },
+ {
+  "role": "afet_staff",
+  "step": "Gösterge gerçekleşmesi + dosya kanıtı (açıklama boş)",
+  "result": "OK",
+  "load_ms": 757,
+  "note": ""
+ },
+ {
+  "role": "afet_staff",
+  "step": "Kaydet sonrası özet sayaçları",
+  "result": "OK",
+  "load_ms": 16,
+  "note": "10 gösterge\n1 Doğrulanmış\n·\n9 Kayıt yok\n·\n1 açıklama bekliyor"
+ },
+ {
+  "role": "afet_staff",
+  "step": "Gösterge gerçekleşmesi + kaynak",
+  "result": "OK",
+  "load_ms": 1240,
+  "note": ""
+ },
+ {
+  "role": "afet_staff",
+  "step": "Gösterge gerçekleşmesi + kaynak",
+  "result": "OK",
+  "load_ms": 1221,
+  "note": ""
+ },
+ {
+  "role": "afet_staff",
+  "step": "Gösterge gerçekleşmesi + kaynak",
+  "result": "OK",
+  "load_ms": 1195,
+  "note": ""
+ },
+ {
+  "role": "afet_staff",
+  "step": "Gösterge gerçekleşmesi + kaynak",
+  "result": "OK",
+  "load_ms": 730,
+  "note": ""
+ },
+ {
+  "role": "afet_staff",
+  "step": "Gösterge gerçekleşmesi + kaynak",
+  "result": "OK",
+  "load_ms": 1174,
+  "note": ""
+ },
+ {
+  "role": "afet_staff",
+  "step": "Gösterge gerçekleşmesi + kaynak",
+  "result": "OK",
+  "load_ms": 1197,
+  "note": ""
+ },
+ {
+  "role": "afet_staff",
+  "step": "Gösterge gerçekleşmesi + kaynak",
+  "result": "OK",
+  "load_ms": 699,
+  "note": ""
+ },
+ {
+  "role": "afet_staff",
+  "step": "Gösterge gerçekleşmesi + kaynak",
+  "result": "OK",
+  "load_ms": 1193,
+  "note": ""
+ },
+ {
+  "role": "afet_staff",
+  "step": "Gösterge gerçekleşmesi + kaynak",
+  "result": "OK",
+  "load_ms": 1237,
+  "note": ""
+ },
+ {
+  "role": "afet_staff",
+  "step": "Müdürlük 2026 birim raporunu bul",
+  "result": "OK",
+  "load_ms": 1448,
+  "note": ""
+ },
+ {
+  "role": "afet_staff",
+  "step": "Birim raporu ve bölüm ağacı",
+  "result": "OK",
+  "load_ms": 1503,
+  "note": ""
+ },
+ {
+  "role": "afet_staff",
+  "step": "Bölüm aç: Yönetici özetiBoş",
+  "result": "OK",
+  "load_ms": 1534,
+  "note": ""
+ },
+ {
+  "role": "afet_staff",
+  "step": "Bölüm metni kaydet: Yönetici özetiBoş",
+  "result": "OK",
+  "load_ms": 2017,
+  "note": ""
+ },
+ {
+  "role": "afet_staff",
+  "step": "Bölüm aç: I- Genel bilgilerBoş",
+  "result": "OK",
+  "load_ms": 1467,
+  "note": ""
+ },
+ {
+  "role": "afet_staff",
+  "step": "Bölüm metni kaydet: I- Genel bilgilerBoş",
+  "result": "OK",
+  "load_ms": 1599,
+  "note": ""
+ },
+ {
+  "role": "afet_staff",
+  "step": "Bölüm aç: A- Misyon ve VizyonBoş",
+  "result": "OK",
+  "load_ms": 1526,
+  "note": ""
+ },
+ {
+  "role": "afet_staff",
+  "step": "Bölüm metni kaydet: A- Misyon ve VizyonBoş",
+  "result": "OK",
+  "load_ms": 1602,
+  "note": ""
+ },
+ {
+  "role": "afet_staff",
+  "step": "Bölüm aç: B- Yetki, Görev ve SorumluluklarBoş",
+  "result": "OK",
+  "load_ms": 1559,
+  "note": ""
+ },
+ {
+  "role": "afet_staff",
+  "step": "Bölüm metni kaydet: B- Yetki, Görev ve SorumluluklarBoş",
+  "result": "OK",
+  "load_ms": 1596,
+  "note": ""
+ },
+ {
+  "role": "afet_staff",
+  "step": "Bölüm aç: C- İdareye İlişkin BilgilerBoş",
+  "result": "OK",
+  "load_ms": 1491,
+  "note": ""
+ },
+ {
+  "role": "afet_staff",
+  "step": "Bölüm metni kaydet: C- İdareye İlişkin BilgilerBoş",
+  "result": "OK",
+  "load_ms": 1989,
+  "note": ""
+ },
+ {
+  "role": "afet_staff",
+  "step": "Bölüm aç: 1- Fiziksel YapıBoş",
+  "result": "OK",
+  "load_ms": 1507,
+  "note": ""
+ },
+ {
+  "role": "afet_staff",
+  "step": "Bölüm metni kaydet: 1- Fiziksel YapıBoş",
+  "result": "OK",
+  "load_ms": 1631,
+  "note": ""
+ },
+ {
+  "role": "afet_staff",
+  "step": "Bölüm aç: 2- Teşkilat YapısıBoş",
+  "result": "OK",
+  "load_ms": 1525,
+  "note": ""
+ },
+ {
+  "role": "afet_staff",
+  "step": "Bölüm metni kaydet: 2- Teşkilat YapısıBoş",
+  "result": "OK",
+  "load_ms": 1588,
+  "note": ""
+ },
+ {
+  "role": "afet_staff",
+  "step": "Bölüm aç: 3- Teknoloji ve Bilişim AltyapısıBoş",
+  "result": "OK",
+  "load_ms": 1577,
+  "note": ""
+ },
+ {
+  "role": "afet_staff",
+  "step": "Bölüm metni kaydet: 3- Teknoloji ve Bilişim AltyapısıBoş",
+  "result": "OK",
+  "load_ms": 1696,
+  "note": ""
+ },
+ {
+  "role": "afet_staff",
+  "step": "Bölüm aç: 4- İnsan KaynaklarıBoş",
+  "result": "OK",
+  "load_ms": 1504,
+  "note": ""
+ },
+ {
+  "role": "afet_staff",
+  "step": "Bölüm metni kaydet: 4- İnsan KaynaklarıBoş",
+  "result": "OK",
+  "load_ms": 1864,
+  "note": ""
+ },
+ {
+  "role": "afet_staff",
+  "step": "Bölüm aç: 5- Sunulan HizmetlerBoş",
+  "result": "OK",
+  "load_ms": 1524,
+  "note": ""
+ },
+ {
+  "role": "afet_staff",
+  "step": "Bölüm metni kaydet: 5- Sunulan HizmetlerBoş",
+  "result": "OK",
+  "load_ms": 1551,
+  "note": ""
+ },
+ {
+  "role": "afet_staff",
+  "step": "Bölüm aç: 6- Yönetim ve İç Kontrol SistemiBoş",
+  "result": "OK",
+  "load_ms": 1453,
+  "note": ""
+ },
+ {
+  "role": "afet_staff",
+  "step": "Bölüm metni kaydet: 6- Yönetim ve İç Kontrol SistemiBoş",
+  "result": "OK",
+  "load_ms": 1552,
+  "note": ""
+ },
+ {
+  "role": "afet_staff",
+  "step": "Bölüm aç: D- Diğer HususlarBoş",
+  "result": "OK",
+  "load_ms": 1497,
+  "note": ""
+ },
+ {
+  "role": "afet_staff",
+  "step": "Bölüm metni kaydet: D- Diğer HususlarBoş",
+  "result": "OK",
+  "load_ms": 1490,
+  "note": ""
+ },
+ {
+  "role": "afet_staff",
+  "step": "Bölüm aç: II- Amaçlar ve hedeflerBoş",
+  "result": "OK",
+  "load_ms": 1820,
+  "note": ""
+ },
+ {
+  "role": "afet_staff",
+  "step": "Bölüm metni kaydet: II- Amaçlar ve hedeflerBoş",
+  "result": "OK",
+  "load_ms": 1571,
+  "note": ""
+ },
+ {
+  "role": "afet_staff",
+  "step": "Bölüm aç: A- Temel Politika ve ÖnceliklerBoş",
+  "result": "OK",
+  "load_ms": 1472,
+  "note": ""
+ },
+ {
+  "role": "afet_staff",
+  "step": "Bölüm metni kaydet: A- Temel Politika ve ÖnceliklerBoş",
+  "result": "OK",
+  "load_ms": 1598,
+  "note": ""
+ },
+ {
+  "role": "afet_staff",
+  "step": "Bölüm aç: B- İdarenin Stratejik Planında Yer Alan Amaç ve HedeflerBoş",
+  "result": "OK",
+  "load_ms": 1451,
+  "note": ""
+ },
+ {
+  "role": "afet_staff",
+  "step": "Bölüm metni kaydet: B- İdarenin Stratejik Planında Yer Alan Amaç ve HedeflerBoş",
+  "result": "OK",
+  "load_ms": 1511,
+  "note": ""
+ },
+ {
+  "role": "afet_staff",
+  "step": "Bölüm aç: C- Diğer HususlarBoş",
+  "result": "OK",
+  "load_ms": 1399,
+  "note": ""
+ },
+ {
+  "role": "afet_staff",
+  "step": "Bölüm metni kaydet: C- Diğer HususlarBoş",
+  "result": "OK",
+  "load_ms": 1513,
+  "note": ""
+ },
+ {
+  "role": "afet_staff",
+  "step": "Bölüm aç: III- Faaliyetlere ilişkin bilgi ve değerlendirmelerBoş",
+  "result": "OK",
+  "load_ms": 1965,
+  "note": ""
+ },
+ {
+  "role": "afet_staff",
+  "step": "Bölüm metni kaydet: III- Faaliyetlere ilişkin bilgi ve değerlendirmelerBoş",
+  "result": "OK",
+  "load_ms": 1510,
+  "note": ""
+ },
+ {
+  "role": "afet_staff",
+  "step": "Bölüm aç: A- Malî BilgilerBoş",
+  "result": "OK",
+  "load_ms": 1398,
+  "note": ""
+ },
+ {
+  "role": "afet_staff",
+  "step": "Bölüm aç: 1- Bütçe Uygulama SonuçlarıBoş",
+  "result": "OK",
+  "load_ms": 1515,
+  "note": ""
+ },
+ {
+  "role": "afet_staff",
+  "step": "Bölüm aç: 2- Temel Malî Tablolara İlişkin AçıklamalarBoş",
+  "result": "OK",
+  "load_ms": 1499,
+  "note": ""
+ },
+ {
+  "role": "afet_staff",
+  "step": "Bölüm aç: 3- Malî Denetim SonuçlarıBoş",
+  "result": "OK",
+  "load_ms": 1394,
+  "note": ""
+ },
+ {
+  "role": "afet_staff",
+  "step": "Bölüm metni kaydet: 3- Malî Denetim SonuçlarıBoş",
+  "result": "OK",
+  "load_ms": 1525,
+  "note": ""
+ },
+ {
+  "role": "afet_staff",
+  "step": "Bölüm aç: 4- Diğer HususlarBoş",
+  "result": "OK",
+  "load_ms": 1527,
+  "note": ""
+ },
+ {
+  "role": "afet_staff",
+  "step": "Bölüm metni kaydet: 4- Diğer HususlarBoş",
+  "result": "OK",
+  "load_ms": 2051,
+  "note": ""
+ },
+ {
+  "role": "afet_staff",
+  "step": "Bölüm aç: B- Performans BilgileriBoş",
+  "result": "OK",
+  "load_ms": 1640,
+  "note": ""
+ },
+ {
+  "role": "afet_staff",
+  "step": "Bölüm metni kaydet: B- Performans BilgileriBoş",
+  "result": "OK",
+  "load_ms": 1673,
+  "note": ""
+ },
+ {
+  "role": "afet_staff",
+  "step": "Bölüm aç: 1- Program, Alt Program, Faaliyet BilgileriBoş",
+  "result": "OK",
+  "load_ms": 1591,
+  "note": ""
+ },
+ {
+  "role": "afet_staff",
+  "step": "Bölüm metni kaydet: 1- Program, Alt Program, Faaliyet BilgileriBoş",
+  "result": "OK",
+  "load_ms": 1658,
+  "note": ""
+ },
+ {
+  "role": "afet_staff",
+  "step": "Bölüm aç: 2- Performans Sonuçlarının DeğerlendirilmesiBoş",
+  "result": "OK",
+  "load_ms": 1529,
+  "note": ""
+ },
+ {
+  "role": "afet_staff",
+  "step": "Bölüm metni kaydet: 2- Performans Sonuçlarının DeğerlendirilmesiBoş",
+  "result": "OK",
+  "load_ms": 1650,
+  "note": ""
+ },
+ {
+  "role": "afet_staff",
+  "step": "Bölüm aç: i. Alt program hedef ve göstergeleriyle ilgili gerçekleşme sonuçları ve değerlendirmelerHazır",
+  "result": "OK",
+  "load_ms": 1954,
+  "note": ""
+ },
+ {
+  "role": "afet_staff",
+  "step": "Bölüm aç: ii. Performans denetim sonuçlarıBoş",
+  "result": "OK",
+  "load_ms": 1581,
+  "note": ""
+ },
+ {
+  "role": "afet_staff",
+  "step": "Bölüm metni kaydet: ii. Performans denetim sonuçlarıBoş",
+  "result": "OK",
+  "load_ms": 1638,
+  "note": ""
+ },
+ {
+  "role": "afet_staff",
+  "step": "Bölüm aç: 3- Stratejik Plan Değerlendirme TablolarıBoş",
+  "result": "OK",
+  "load_ms": 1553,
+  "note": ""
+ },
+ {
+  "role": "afet_staff",
+  "step": "Bölüm metni kaydet: 3- Stratejik Plan Değerlendirme TablolarıBoş",
+  "result": "OK",
+  "load_ms": 1609,
+  "note": ""
+ },
+ {
+  "role": "afet_staff",
+  "step": "Bölüm aç: 4- Performans Bilgi Sisteminin DeğerlendirilmesiBoş",
+  "result": "OK",
+  "load_ms": 1571,
+  "note": ""
+ },
+ {
+  "role": "afet_staff",
+  "step": "Bölüm metni kaydet: 4- Performans Bilgi Sisteminin DeğerlendirilmesiBoş",
+  "result": "OK",
+  "load_ms": 1506,
+  "note": ""
+ },
+ {
+  "role": "afet_staff",
+  "step": "Bölüm aç: 5- Diğer HususlarBoş",
+  "result": "OK",
+  "load_ms": 1425,
+  "note": ""
+ },
+ {
+  "role": "afet_staff",
+  "step": "Bölüm metni kaydet: 5- Diğer HususlarBoş",
+  "result": "OK",
+  "load_ms": 1864,
+  "note": ""
+ },
+ {
+  "role": "afet_staff",
+  "step": "Bölüm aç: IV- Kurumsal kabiliyet ve kapasitenin değerlendirilmesiBoş",
+  "result": "OK",
+  "load_ms": 1525,
+  "note": ""
+ },
+ {
+  "role": "afet_staff",
+  "step": "Bölüm metni kaydet: IV- Kurumsal kabiliyet ve kapasitenin değerlendirilmesiBoş",
+  "result": "OK",
+  "load_ms": 1537,
+  "note": ""
+ },
+ {
+  "role": "afet_staff",
+  "step": "Bölüm aç: A- ÜstünlüklerBoş",
+  "result": "OK",
+  "load_ms": 1467,
+  "note": ""
+ },
+ {
+  "role": "afet_staff",
+  "step": "Bölüm metni kaydet: A- ÜstünlüklerBoş",
+  "result": "OK",
+  "load_ms": 1526,
+  "note": ""
+ },
+ {
+  "role": "afet_staff",
+  "step": "Bölüm aç: B- ZayıflıklarBoş",
+  "result": "OK",
+  "load_ms": 1465,
+  "note": ""
+ },
+ {
+  "role": "afet_staff",
+  "step": "Bölüm metni kaydet: B- ZayıflıklarBoş",
+  "result": "OK",
+  "load_ms": 1462,
+  "note": ""
+ },
+ {
+  "role": "afet_staff",
+  "step": "Bölüm aç: C- DeğerlendirmeBoş",
+  "result": "OK",
+  "load_ms": 1774,
+  "note": ""
+ },
+ {
+  "role": "afet_staff",
+  "step": "Bölüm metni kaydet: C- DeğerlendirmeBoş",
+  "result": "OK",
+  "load_ms": 1576,
+  "note": ""
+ },
+ {
+  "role": "afet_staff",
+  "step": "Bölüm aç: V- Öneri ve tedbirlerBoş",
+  "result": "OK",
+  "load_ms": 1575,
+  "note": ""
+ },
+ {
+  "role": "afet_staff",
+  "step": "Bölüm metni kaydet: V- Öneri ve tedbirlerBoş",
+  "result": "OK",
+  "load_ms": 1650,
+  "note": ""
+ },
+ {
+  "role": "afet_staff",
+  "step": "Bölüm aç: EklerBoş",
+  "result": "OK",
+  "load_ms": 1412,
+  "note": ""
+ },
+ {
+  "role": "afet_staff",
+  "step": "Harcama yetkilisi güvence beyanı",
+  "result": "OK",
+  "load_ms": 1370,
+  "note": ""
+ },
+ {
+  "role": "afet_staff",
+  "step": "EK-2 beyan alanlarını kaydet",
+  "result": "OK",
+  "load_ms": 1463,
+  "note": ""
+ },
+ {
+  "role": "afet_staff",
+  "step": "Birim tabloları aç",
+  "result": "OK",
+  "load_ms": 1519,
+  "note": ""
+ },
+ {
+  "role": "afet_staff",
+  "step": "Tablo 1 fiziksel yapı kaydet",
+  "result": "OK",
+  "load_ms": 2295,
+  "note": ""
+ },
+ {
+  "role": "afet_staff",
+  "step": "Tablo 2 personel kaydet",
+  "result": "OK",
+  "load_ms": 1809,
+  "note": ""
+ },
+ {
+  "role": "afet_staff",
+  "step": "Tablo 7 faaliyet çıktı ve maliyet kaydet (9 faaliyet)",
+  "result": "OK",
+  "load_ms": 1854,
+  "note": ""
+ },
+ {
+  "role": "afet_staff",
+  "step": "Tablo 8 Bu yıl proje yok kaydet",
+  "result": "OK",
+  "load_ms": 1812,
+  "note": ""
+ },
+ {
+  "role": "afet_staff",
+  "step": "Faaliyet fotoğrafı yükle",
+  "result": "OK",
+  "load_ms": 1826,
+  "note": ""
+ },
+ {
+  "role": "afet_staff",
+  "step": "Mali Hizmetler uyarıları",
+  "result": "OK",
+  "load_ms": 1509,
+  "note": "Uyarılar (gönderimi engellemez)\n\nBu bölümü Mali Hizmetler dolduracak; gönderiminizi engellemez."
+ },
+ {
+  "role": "afet_staff",
+  "step": "Faaliyet gerçekleşmesi girişi ara",
+  "result": "OK",
+  "load_ms": 769,
+  "note": "Faaliyet başına sonuç girişi beklenmiyor (Strateji kararı 9.11.2026); açıklama EK-1 bölüm metnine yazılır."
+ },
+ {
+  "role": "afet_director",
+  "step": "Giriş ekranı",
+  "result": "OK",
+  "load_ms": 723,
+  "note": ""
+ },
+ {
+  "role": "afet_director",
+  "step": "Hesapla giriş",
+  "result": "OK",
+  "load_ms": 866,
+  "note": ""
+ },
+ {
+  "role": "afet_director",
+  "step": "Sapma açıklaması boşken gönderim kontrolü",
+  "result": "OK",
+  "load_ms": 1555,
+  "note": ""
+ },
+ {
+  "role": "afet_director",
+  "step": "Açıklamasız gerçekleşmeyi gönderme denemesi",
+  "result": "OK",
+  "load_ms": 2269,
+  "note": "Beklenen engel: açıklamasız sapma ile gönderilemedi."
+ },
+ {
+  "role": "afet_director",
+  "step": "Gönderim engelinden birim raporuna dön",
+  "result": "OK",
+  "load_ms": 1468,
+  "note": ""
+ },
+ {
+  "role": "afet_staff",
+  "step": "Sapma gerekçesini tamamla",
+  "result": "OK",
+  "load_ms": 1155,
+  "note": ""
+ },
+ {
+  "role": "afet_staff",
+  "step": "Gösterge gerçekleşmesi + kaynak",
+  "result": "OK",
+  "load_ms": 1304,
+  "note": ""
+ },
+ {
+  "role": "afet_director",
+  "step": "Birim raporunu gönder öncesi",
+  "result": "OK",
+  "load_ms": 1546,
+  "note": ""
+ },
+ {
+  "role": "afet_director",
+  "step": "Birim raporunu gönder",
+  "result": "OK",
+  "load_ms": 1998,
+  "note": ""
+ },
+ {
+  "role": "strategy",
+  "step": "Strateji birim incelemesi",
+  "result": "OK",
+  "load_ms": 908,
+  "note": ""
+ },
+ {
+  "role": "strategy",
+  "step": "Gerekçeli iade",
+  "result": "OK",
+  "load_ms": 1548,
+  "note": ""
+ },
+ {
+  "role": "afet_staff",
+  "step": "İade notunu gör ve düzelt",
+  "result": "OK",
+  "load_ms": 1439,
+  "note": ""
+ },
+ {
+  "role": "afet_staff",
+  "step": "İade notuna göre düzeltmeyi kaydet",
+  "result": "OK",
+  "load_ms": 2123,
+  "note": ""
+ },
+ {
+  "role": "afet_director",
+  "step": "Düzelt ve yeniden gönder öncesi",
+  "result": "OK",
+  "load_ms": 1546,
+  "note": ""
+ },
+ {
+  "role": "afet_director",
+  "step": "Düzelt ve yeniden gönder",
+  "result": "OK",
+  "load_ms": 2024,
+  "note": ""
+ },
+ {
+  "role": "strategy",
+  "step": "Strateji yeniden inceleme",
+  "result": "OK",
+  "load_ms": 874,
+  "note": ""
+ },
+ {
+  "role": "strategy",
+  "step": "Strateji bağımsız birim onayı",
+  "result": "OK",
+  "load_ms": 917,
+  "note": ""
+ },
+ {
+  "role": "strategy",
+  "step": "Onaylı Word olarak indir · Afet İşleri ve Risk Değerlendirme Müdürlüğü",
+  "result": "OK",
+  "load_ms": 379,
+  "note": "45747 bayt; SHA256: 1aa81ba81899d272b4d1f9bdf02156d63548c3978f86463e89dcb3444e942280; dosya başlığı doğrulandı."
+ },
+ {
+  "role": "strategy",
+  "step": "Onaylı PDF olarak indir · Afet İşleri ve Risk Değerlendirme Müdürlüğü",
+  "result": "OK",
+  "load_ms": 147,
+  "note": "68888 bayt; SHA256: f258bdf663e143589efa9541084937b68e1418fa7b06b5d0b739eabb4724880e; dosya başlığı doğrulandı."
+ },
+ {
+  "role": "ozel_staff",
+  "step": "Giriş ekranı",
+  "result": "OK",
+  "load_ms": 740,
+  "note": ""
+ },
+ {
+  "role": "ozel_staff",
+  "step": "Hesapla giriş",
+  "result": "OK",
+  "load_ms": 825,
+  "note": ""
+ },
+ {
+  "role": "ozel_staff",
+  "step": "Müdürlük 2026 gösterge raporunu bul",
+  "result": "OK",
+  "load_ms": 749,
+  "note": ""
+ },
+ {
+  "role": "ozel_staff",
+  "step": "2026 gösterge girişini aç",
+  "result": "OK",
+  "load_ms": 1163,
+  "note": ""
+ },
+ {
+  "role": "ozel_staff",
+  "step": "390 piksel gösterge giriş sayfası",
+  "result": "OK",
+  "load_ms": 1161,
+  "note": ""
+ },
+ {
+  "role": "ozel_staff",
+  "step": "390 piksel giriş formu alanları",
+  "result": "OK",
+  "load_ms": 23,
+  "note": ""
+ },
+ {
+  "role": "ozel_staff",
+  "step": "Gösterge gerçekleşmesi + dosya kanıtı (açıklama boş)",
+  "result": "OK",
+  "load_ms": 1229,
+  "note": ""
+ },
+ {
+  "role": "ozel_staff",
+  "step": "Kaydet sonrası özet sayaçları",
+  "result": "OK",
+  "load_ms": 27,
+  "note": "5 gösterge\n1 Doğrulanmış\n·\n4 Kayıt yok\n·\n1 açıklama bekliyor"
+ },
+ {
+  "role": "ozel_staff",
+  "step": "Gösterge gerçekleşmesi + kaynak",
+  "result": "OK",
+  "load_ms": 1204,
+  "note": ""
+ },
+ {
+  "role": "ozel_staff",
+  "step": "Gösterge gerçekleşmesi + kaynak",
+  "result": "OK",
+  "load_ms": 1145,
+  "note": ""
+ },
+ {
+  "role": "ozel_staff",
+  "step": "Gösterge gerçekleşmesi + kaynak",
+  "result": "OK",
+  "load_ms": 1133,
+  "note": ""
+ },
+ {
+  "role": "ozel_staff",
+  "step": "Gösterge gerçekleşmesi + kaynak",
+  "result": "OK",
+  "load_ms": 1138,
+  "note": ""
+ },
+ {
+  "role": "ozel_staff",
+  "step": "Müdürlük 2026 birim raporunu bul",
+  "result": "OK",
+  "load_ms": 1679,
+  "note": ""
+ },
+ {
+  "role": "ozel_staff",
+  "step": "Birim raporu ve bölüm ağacı",
+  "result": "OK",
+  "load_ms": 1392,
+  "note": ""
+ },
+ {
+  "role": "ozel_staff",
+  "step": "Bölüm aç: Yönetici özetiBoş",
+  "result": "OK",
+  "load_ms": 1402,
+  "note": ""
+ },
+ {
+  "role": "ozel_staff",
+  "step": "Bölüm metni kaydet: Yönetici özetiBoş",
+  "result": "OK",
+  "load_ms": 1561,
+  "note": ""
+ },
+ {
+  "role": "ozel_staff",
+  "step": "Bölüm aç: I- Genel bilgilerBoş",
+  "result": "OK",
+  "load_ms": 1391,
+  "note": ""
+ },
+ {
+  "role": "ozel_staff",
+  "step": "Bölüm metni kaydet: I- Genel bilgilerBoş",
+  "result": "OK",
+  "load_ms": 1533,
+  "note": ""
+ },
+ {
+  "role": "ozel_staff",
+  "step": "Bölüm aç: A- Misyon ve VizyonBoş",
+  "result": "OK",
+  "load_ms": 1463,
+  "note": ""
+ },
+ {
+  "role": "ozel_staff",
+  "step": "Bölüm metni kaydet: A- Misyon ve VizyonBoş",
+  "result": "OK",
+  "load_ms": 1560,
+  "note": ""
+ },
+ {
+  "role": "ozel_staff",
+  "step": "Bölüm aç: B- Yetki, Görev ve SorumluluklarBoş",
+  "result": "OK",
+  "load_ms": 1695,
+  "note": ""
+ },
+ {
+  "role": "ozel_staff",
+  "step": "Bölüm metni kaydet: B- Yetki, Görev ve SorumluluklarBoş",
+  "result": "OK",
+  "load_ms": 1469,
+  "note": ""
+ },
+ {
+  "role": "ozel_staff",
+  "step": "Bölüm aç: C- İdareye İlişkin BilgilerBoş",
+  "result": "OK",
+  "load_ms": 1381,
+  "note": ""
+ },
+ {
+  "role": "ozel_staff",
+  "step": "Bölüm metni kaydet: C- İdareye İlişkin BilgilerBoş",
+  "result": "OK",
+  "load_ms": 1488,
+  "note": ""
+ },
+ {
+  "role": "ozel_staff",
+  "step": "Bölüm aç: 1- Fiziksel YapıBoş",
+  "result": "OK",
+  "load_ms": 1345,
+  "note": ""
+ },
+ {
+  "role": "ozel_staff",
+  "step": "Bölüm metni kaydet: 1- Fiziksel YapıBoş",
+  "result": "OK",
+  "load_ms": 1416,
+  "note": ""
+ },
+ {
+  "role": "ozel_staff",
+  "step": "Bölüm aç: 2- Teşkilat YapısıBoş",
+  "result": "OK",
+  "load_ms": 1437,
+  "note": ""
+ },
+ {
+  "role": "ozel_staff",
+  "step": "Bölüm metni kaydet: 2- Teşkilat YapısıBoş",
+  "result": "OK",
+  "load_ms": 1538,
+  "note": ""
+ },
+ {
+  "role": "ozel_staff",
+  "step": "Bölüm aç: 3- Teknoloji ve Bilişim AltyapısıBoş",
+  "result": "OK",
+  "load_ms": 1955,
+  "note": ""
+ },
+ {
+  "role": "ozel_staff",
+  "step": "Bölüm metni kaydet: 3- Teknoloji ve Bilişim AltyapısıBoş",
+  "result": "OK",
+  "load_ms": 1467,
+  "note": ""
+ },
+ {
+  "role": "ozel_staff",
+  "step": "Bölüm aç: 4- İnsan KaynaklarıBoş",
+  "result": "OK",
+  "load_ms": 1519,
+  "note": ""
+ },
+ {
+  "role": "ozel_staff",
+  "step": "Bölüm metni kaydet: 4- İnsan KaynaklarıBoş",
+  "result": "OK",
+  "load_ms": 1600,
+  "note": ""
+ },
+ {
+  "role": "ozel_staff",
+  "step": "Bölüm aç: 5- Sunulan HizmetlerBoş",
+  "result": "OK",
+  "load_ms": 1507,
+  "note": ""
+ },
+ {
+  "role": "ozel_staff",
+  "step": "Bölüm metni kaydet: 5- Sunulan HizmetlerBoş",
+  "result": "OK",
+  "load_ms": 1576,
+  "note": ""
+ },
+ {
+  "role": "ozel_staff",
+  "step": "Bölüm aç: 6- Yönetim ve İç Kontrol SistemiBoş",
+  "result": "OK",
+  "load_ms": 1508,
+  "note": ""
+ },
+ {
+  "role": "ozel_staff",
+  "step": "Bölüm metni kaydet: 6- Yönetim ve İç Kontrol SistemiBoş",
+  "result": "OK",
+  "load_ms": 1579,
+  "note": ""
+ },
+ {
+  "role": "ozel_staff",
+  "step": "Bölüm aç: D- Diğer HususlarBoş",
+  "result": "OK",
+  "load_ms": 1961,
+  "note": ""
+ },
+ {
+  "role": "ozel_staff",
+  "step": "Bölüm metni kaydet: D- Diğer HususlarBoş",
+  "result": "OK",
+  "load_ms": 1407,
+  "note": ""
+ },
+ {
+  "role": "ozel_staff",
+  "step": "Bölüm aç: II- Amaçlar ve hedeflerBoş",
+  "result": "OK",
+  "load_ms": 1361,
+  "note": ""
+ },
+ {
+  "role": "ozel_staff",
+  "step": "Bölüm metni kaydet: II- Amaçlar ve hedeflerBoş",
+  "result": "OK",
+  "load_ms": 1445,
+  "note": ""
+ },
+ {
+  "role": "ozel_staff",
+  "step": "Bölüm aç: A- Temel Politika ve ÖnceliklerBoş",
+  "result": "OK",
+  "load_ms": 1401,
+  "note": ""
+ },
+ {
+  "role": "ozel_staff",
+  "step": "Bölüm metni kaydet: A- Temel Politika ve ÖnceliklerBoş",
+  "result": "OK",
+  "load_ms": 1426,
+  "note": ""
+ },
+ {
+  "role": "ozel_staff",
+  "step": "Bölüm aç: B- İdarenin Stratejik Planında Yer Alan Amaç ve HedeflerBoş",
+  "result": "OK",
+  "load_ms": 1403,
+  "note": ""
+ },
+ {
+  "role": "ozel_staff",
+  "step": "Bölüm metni kaydet: B- İdarenin Stratejik Planında Yer Alan Amaç ve HedeflerBoş",
+  "result": "OK",
+  "load_ms": 1463,
+  "note": ""
+ },
+ {
+  "role": "ozel_staff",
+  "step": "Bölüm aç: C- Diğer HususlarBoş",
+  "result": "OK",
+  "load_ms": 1720,
+  "note": ""
+ },
+ {
+  "role": "ozel_staff",
+  "step": "Bölüm metni kaydet: C- Diğer HususlarBoş",
+  "result": "OK",
+  "load_ms": 1556,
+  "note": ""
+ },
+ {
+  "role": "ozel_staff",
+  "step": "Bölüm aç: III- Faaliyetlere ilişkin bilgi ve değerlendirmelerBoş",
+  "result": "OK",
+  "load_ms": 1501,
+  "note": ""
+ },
+ {
+  "role": "ozel_staff",
+  "step": "Bölüm metni kaydet: III- Faaliyetlere ilişkin bilgi ve değerlendirmelerBoş",
+  "result": "OK",
+  "load_ms": 1593,
+  "note": ""
+ },
+ {
+  "role": "ozel_staff",
+  "step": "Bölüm aç: A- Malî BilgilerBoş",
+  "result": "OK",
+  "load_ms": 1409,
+  "note": ""
+ },
+ {
+  "role": "ozel_staff",
+  "step": "Bölüm aç: 1- Bütçe Uygulama SonuçlarıBoş",
+  "result": "OK",
+  "load_ms": 1394,
+  "note": ""
+ },
+ {
+  "role": "ozel_staff",
+  "step": "Bölüm aç: 2- Temel Malî Tablolara İlişkin AçıklamalarBoş",
+  "result": "OK",
+  "load_ms": 1414,
+  "note": ""
+ },
+ {
+  "role": "ozel_staff",
+  "step": "Bölüm aç: 3- Malî Denetim SonuçlarıBoş",
+  "result": "OK",
+  "load_ms": 1394,
+  "note": ""
+ },
+ {
+  "role": "ozel_staff",
+  "step": "Bölüm metni kaydet: 3- Malî Denetim SonuçlarıBoş",
+  "result": "OK",
+  "load_ms": 1937,
+  "note": ""
+ },
+ {
+  "role": "ozel_staff",
+  "step": "Bölüm aç: 4- Diğer HususlarBoş",
+  "result": "OK",
+  "load_ms": 1426,
+  "note": ""
+ },
+ {
+  "role": "ozel_staff",
+  "step": "Bölüm metni kaydet: 4- Diğer HususlarBoş",
+  "result": "OK",
+  "load_ms": 1487,
+  "note": ""
+ },
+ {
+  "role": "ozel_staff",
+  "step": "Bölüm aç: B- Performans BilgileriBoş",
+  "result": "OK",
+  "load_ms": 1460,
+  "note": ""
+ },
+ {
+  "role": "ozel_staff",
+  "step": "Bölüm metni kaydet: B- Performans BilgileriBoş",
+  "result": "OK",
+  "load_ms": 1462,
+  "note": ""
+ },
+ {
+  "role": "ozel_staff",
+  "step": "Bölüm aç: 1- Program, Alt Program, Faaliyet BilgileriBoş",
+  "result": "OK",
+  "load_ms": 1399,
+  "note": ""
+ },
+ {
+  "role": "ozel_staff",
+  "step": "Bölüm metni kaydet: 1- Program, Alt Program, Faaliyet BilgileriBoş",
+  "result": "OK",
+  "load_ms": 1398,
+  "note": ""
+ },
+ {
+  "role": "ozel_staff",
+  "step": "Bölüm aç: 2- Performans Sonuçlarının DeğerlendirilmesiBoş",
+  "result": "OK",
+  "load_ms": 1345,
+  "note": ""
+ },
+ {
+  "role": "ozel_staff",
+  "step": "Bölüm metni kaydet: 2- Performans Sonuçlarının DeğerlendirilmesiBoş",
+  "result": "OK",
+  "load_ms": 1454,
+  "note": ""
+ },
+ {
+  "role": "ozel_staff",
+  "step": "Bölüm aç: i. Alt program hedef ve göstergeleriyle ilgili gerçekleşme sonuçları ve değerlendirmelerHazır",
+  "result": "OK",
+  "load_ms": 1934,
+  "note": ""
+ },
+ {
+  "role": "ozel_staff",
+  "step": "Bölüm aç: ii. Performans denetim sonuçlarıBoş",
+  "result": "OK",
+  "load_ms": 1382,
+  "note": ""
+ },
+ {
+  "role": "ozel_staff",
+  "step": "Bölüm metni kaydet: ii. Performans denetim sonuçlarıBoş",
+  "result": "OK",
+  "load_ms": 1432,
+  "note": ""
+ },
+ {
+  "role": "ozel_staff",
+  "step": "Bölüm aç: 3- Stratejik Plan Değerlendirme TablolarıBoş",
+  "result": "OK",
+  "load_ms": 1485,
+  "note": ""
+ },
+ {
+  "role": "ozel_staff",
+  "step": "Bölüm metni kaydet: 3- Stratejik Plan Değerlendirme TablolarıBoş",
+  "result": "OK",
+  "load_ms": 1716,
+  "note": ""
+ },
+ {
+  "role": "ozel_staff",
+  "step": "Bölüm aç: 4- Performans Bilgi Sisteminin DeğerlendirilmesiBoş",
+  "result": "OK",
+  "load_ms": 1460,
+  "note": ""
+ },
+ {
+  "role": "ozel_staff",
+  "step": "Bölüm metni kaydet: 4- Performans Bilgi Sisteminin DeğerlendirilmesiBoş",
+  "result": "OK",
+  "load_ms": 1435,
+  "note": ""
+ },
+ {
+  "role": "ozel_staff",
+  "step": "Bölüm aç: 5- Diğer HususlarBoş",
+  "result": "OK",
+  "load_ms": 1411,
+  "note": ""
+ },
+ {
+  "role": "ozel_staff",
+  "step": "Bölüm metni kaydet: 5- Diğer HususlarBoş",
+  "result": "OK",
+  "load_ms": 1504,
+  "note": ""
+ },
+ {
+  "role": "ozel_staff",
+  "step": "Bölüm aç: IV- Kurumsal kabiliyet ve kapasitenin değerlendirilmesiBoş",
+  "result": "OK",
+  "load_ms": 1994,
+  "note": ""
+ },
+ {
+  "role": "ozel_staff",
+  "step": "Bölüm metni kaydet: IV- Kurumsal kabiliyet ve kapasitenin değerlendirilmesiBoş",
+  "result": "OK",
+  "load_ms": 1599,
+  "note": ""
+ },
+ {
+  "role": "ozel_staff",
+  "step": "Bölüm aç: A- ÜstünlüklerBoş",
+  "result": "OK",
+  "load_ms": 1500,
+  "note": ""
+ },
+ {
+  "role": "ozel_staff",
+  "step": "Bölüm metni kaydet: A- ÜstünlüklerBoş",
+  "result": "OK",
+  "load_ms": 1626,
+  "note": ""
+ },
+ {
+  "role": "ozel_staff",
+  "step": "Bölüm aç: B- ZayıflıklarBoş",
+  "result": "OK",
+  "load_ms": 1527,
+  "note": ""
+ },
+ {
+  "role": "ozel_staff",
+  "step": "Bölüm metni kaydet: B- ZayıflıklarBoş",
+  "result": "OK",
+  "load_ms": 1622,
+  "note": ""
+ },
+ {
+  "role": "ozel_staff",
+  "step": "Bölüm aç: C- DeğerlendirmeBoş",
+  "result": "OK",
+  "load_ms": 1554,
+  "note": ""
+ },
+ {
+  "role": "ozel_staff",
+  "step": "Bölüm metni kaydet: C- DeğerlendirmeBoş",
+  "result": "OK",
+  "load_ms": 1600,
+  "note": ""
+ },
+ {
+  "role": "ozel_staff",
+  "step": "Bölüm aç: V- Öneri ve tedbirlerBoş",
+  "result": "OK",
+  "load_ms": 1589,
+  "note": ""
+ },
+ {
+  "role": "ozel_staff",
+  "step": "Bölüm metni kaydet: V- Öneri ve tedbirlerBoş",
+  "result": "OK",
+  "load_ms": 2243,
+  "note": ""
+ },
+ {
+  "role": "ozel_staff",
+  "step": "Bölüm aç: EklerBoş",
+  "result": "OK",
+  "load_ms": 1541,
+  "note": ""
+ },
+ {
+  "role": "ozel_staff",
+  "step": "Harcama yetkilisi güvence beyanı",
+  "result": "OK",
+  "load_ms": 1485,
+  "note": ""
+ },
+ {
+  "role": "ozel_staff",
+  "step": "EK-2 beyan alanlarını kaydet",
+  "result": "OK",
+  "load_ms": 1515,
+  "note": ""
+ },
+ {
+  "role": "ozel_staff",
+  "step": "Birim tabloları aç",
+  "result": "OK",
+  "load_ms": 1420,
+  "note": ""
+ },
+ {
+  "role": "ozel_staff",
+  "step": "Tablo 1 fiziksel yapı kaydet",
+  "result": "OK",
+  "load_ms": 1719,
+  "note": ""
+ },
+ {
+  "role": "ozel_staff",
+  "step": "Tablo 2 personel kaydet",
+  "result": "OK",
+  "load_ms": 1691,
+  "note": ""
+ },
+ {
+  "role": "ozel_staff",
+  "step": "Tablo 7 faaliyet çıktı ve maliyet kaydet (4 faaliyet)",
+  "result": "OK",
+  "load_ms": 1827,
+  "note": ""
+ },
+ {
+  "role": "ozel_staff",
+  "step": "Tablo 8 Bu yıl proje yok kaydet",
+  "result": "OK",
+  "load_ms": 1772,
+  "note": ""
+ },
+ {
+  "role": "ozel_staff",
+  "step": "Faaliyet fotoğrafı yükle",
+  "result": "OK",
+  "load_ms": 2134,
+  "note": ""
+ },
+ {
+  "role": "ozel_staff",
+  "step": "Mali Hizmetler uyarıları",
+  "result": "OK",
+  "load_ms": 1362,
+  "note": "Uyarılar (gönderimi engellemez)\n\nBu bölümü Mali Hizmetler dolduracak; gönderiminizi engellemez."
+ },
+ {
+  "role": "ozel_staff",
+  "step": "Faaliyet gerçekleşmesi girişi ara",
+  "result": "OK",
+  "load_ms": 729,
+  "note": "Faaliyet başına sonuç girişi beklenmiyor (Strateji kararı 9.11.2026); açıklama EK-1 bölüm metnine yazılır."
+ },
+ {
+  "role": "ozel_director",
+  "step": "Giriş ekranı",
+  "result": "OK",
+  "load_ms": 659,
+  "note": ""
+ },
+ {
+  "role": "ozel_director",
+  "step": "Hesapla giriş",
+  "result": "OK",
+  "load_ms": 791,
+  "note": ""
+ },
+ {
+  "role": "ozel_director",
+  "step": "Sapma açıklaması boşken gönderim kontrolü",
+  "result": "OK",
+  "load_ms": 1324,
+  "note": ""
+ },
+ {
+  "role": "ozel_director",
+  "step": "Açıklamasız gerçekleşmeyi gönderme denemesi",
+  "result": "OK",
+  "load_ms": 1699,
+  "note": "Beklenen engel: açıklamasız sapma ile gönderilemedi."
+ },
+ {
+  "role": "ozel_director",
+  "step": "Gönderim engelinden birim raporuna dön",
+  "result": "OK",
+  "load_ms": 1478,
+  "note": ""
+ },
+ {
+  "role": "ozel_staff",
+  "step": "Sapma gerekçesini tamamla",
+  "result": "OK",
+  "load_ms": 1191,
+  "note": ""
+ },
+ {
+  "role": "ozel_staff",
+  "step": "Gösterge gerçekleşmesi + kaynak",
+  "result": "OK",
+  "load_ms": 1262,
+  "note": ""
+ },
+ {
+  "role": "ozel_director",
+  "step": "Birim raporunu gönder öncesi",
+  "result": "OK",
+  "load_ms": 1511,
+  "note": ""
+ },
+ {
+  "role": "ozel_director",
+  "step": "Birim raporunu gönder",
+  "result": "OK",
+  "load_ms": 2712,
+  "note": ""
+ },
+ {
+  "role": "strategy",
+  "step": "Strateji birim incelemesi",
+  "result": "OK",
+  "load_ms": 856,
+  "note": ""
+ },
+ {
+  "role": "strategy",
+  "step": "Gerekçeli iade",
+  "result": "OK",
+  "load_ms": 1656,
+  "note": ""
+ },
+ {
+  "role": "ozel_staff",
+  "step": "İade notunu gör ve düzelt",
+  "result": "OK",
+  "load_ms": 1557,
+  "note": ""
+ },
+ {
+  "role": "ozel_staff",
+  "step": "İade notuna göre düzeltmeyi kaydet",
+  "result": "OK",
+  "load_ms": 1540,
+  "note": ""
+ },
+ {
+  "role": "ozel_director",
+  "step": "Düzelt ve yeniden gönder öncesi",
+  "result": "OK",
+  "load_ms": 1497,
+  "note": ""
+ },
+ {
+  "role": "ozel_director",
+  "step": "Düzelt ve yeniden gönder",
+  "result": "OK",
+  "load_ms": 1973,
+  "note": ""
+ },
+ {
+  "role": "strategy",
+  "step": "Strateji yeniden inceleme",
+  "result": "OK",
+  "load_ms": 886,
+  "note": ""
+ },
+ {
+  "role": "strategy",
+  "step": "Strateji bağımsız birim onayı",
+  "result": "OK",
+  "load_ms": 968,
+  "note": ""
+ },
+ {
+  "role": "strategy",
+  "step": "Onaylı Word olarak indir · Özel Kalem Müdürlüğü",
+  "result": "OK",
+  "load_ms": 394,
+  "note": "45237 bayt; SHA256: 314c2390ef47e52746ea7e30028a39d3d1bdf6f87f5a24f46e65b7ccf104e458; dosya başlığı doğrulandı."
+ },
+ {
+  "role": "strategy",
+  "step": "Onaylı PDF olarak indir · Özel Kalem Müdürlüğü",
+  "result": "OK",
+  "load_ms": 133,
+  "note": "66448 bayt; SHA256: 4bda2e714d490555712068528f65fff55348db0b0474f4b030cbf06f5dcd607b; dosya başlığı doğrulandı."
+ },
+ {
+  "role": "strategy",
+  "step": "İdare raporuna geçiş",
+  "result": "OK",
+  "load_ms": 2844,
+  "note": ""
+ },
+ {
+  "role": "strategy",
+  "step": "İdare konsolidasyonu ve eksik birimler",
+  "result": "OK",
+  "load_ms": 1367,
+  "note": ""
+ },
+ {
+  "role": "strategy",
+  "step": "İdare raporunu onayla ve dondur denemesi",
+  "result": "BLOCKER",
+  "load_ms": 1349,
+  "note": "Yalnız üç müdürlük provası; diğer birimlerin onayları ve idare içerikleri tamamlanmadı. Beklenen kapsam engeli."
+ }
+]

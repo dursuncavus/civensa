@@ -1,4 +1,5 @@
 """Financial validation, scoped editing, computed consolidation and XLSX previews."""
+from copy import deepcopy
 import hashlib
 import io
 import json
@@ -13,6 +14,7 @@ from fastapi import HTTPException
 from openpyxl import Workbook, load_workbook
 from openpyxl.utils.exceptions import InvalidFileException
 from sqlalchemy import select
+from sqlalchemy.orm import defer
 from . import activity_sections_service as sections
 from .structure_service import period_name
 from .models import (ARBudgetRow, ARFinancialPolicy, ARFinancialEntry, ARFinancialStatement,
@@ -356,11 +358,17 @@ def totals(rows,kind,missing_sources=0):
 
 def pp_references(db,doc,*,include_plan=False):
     year=db.get(ReportingPeriod,doc.period_id).year
-    pub=db.scalar(select(Publication).where(Publication.period_id==doc.period_id).order_by(Publication.version.desc()).limit(1))
+    pub=db.scalar(select(Publication).options(defer(Publication.snapshot_json)).where(Publication.period_id==doc.period_id).order_by(Publication.version.desc()).limit(1))
     if not pub:return ({},None,[]) if include_plan else ({},None)
-    if digest(pub.snapshot_json)!=pub.sha256:sections.fail('PP yayınının doğrulama kodu uyuşmuyor. Strateji ile yayını kontrol edin.',409)
-    from .data.pp_errata import apply_pp_errata
-    payload=apply_pp_errata(json.loads(pub.snapshot_json))
+    # CIV-220: listing pages build this for every directorate; the publication is
+    # immutable (sha256-pinned), so verify, parse and project it once per session.
+    cache=db.info.setdefault('pp_errata_payloads',{})
+    key=(pub.id,pub.sha256)
+    if key not in cache:
+        if digest(pub.snapshot_json)!=pub.sha256:sections.fail('PP yayınının doğrulama kodu uyuşmuyor. Strateji ile yayını kontrol edin.',409)
+        from .data.pp_errata import apply_pp_errata
+        cache[key]=apply_pp_errata(json.loads(pub.snapshot_json))
+    payload=cache[key]
     categories={'personnel':'01','sgk':'02','goods_services':'03','interest':'04','current_transfers':'05',
         'capital':'06','capital_transfers':'07','lending':'08','reserve':'09'}
     result={}
@@ -372,7 +380,7 @@ def pp_references(db,doc,*,include_plan=False):
             if row.get('amount') is None or row.get('state','verified')!='verified':result[key]=None
             elif key not in result or result[key] is not None:result[key]=result.get(key,Decimal(0))+Decimal(str(row['amount']))
     if include_plan:
-        planned = [row for row in payload['planned_figures']
+        planned = [deepcopy(row) for row in payload['planned_figures']
                    if year == 2026 and (row['year'] == year or row['errata'] or row.get('errata_warning'))
                    and (not doc.department_id or row['department_id'] == doc.department_id)]
         return result,pub.id,planned
