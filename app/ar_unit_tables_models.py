@@ -1,5 +1,6 @@
 """Directorate guide tables and append-only activity photos (evidence DB storage)."""
-from sqlalchemy import CheckConstraint, ForeignKey, LargeBinary, String, Text, UniqueConstraint, event
+from datetime import datetime
+from sqlalchemy import CheckConstraint, DateTime, ForeignKey, LargeBinary, String, Text, UniqueConstraint, event, func
 from sqlalchemy.orm import Mapped, mapped_column
 from .db import Base
 from .activity_sections_models import immutable
@@ -27,5 +28,15 @@ class ARUnitPhoto(Base):
     created_by: Mapped[int] = mapped_column(ForeignKey('users.id'))
 
 
-for action in ('before_update', 'before_delete'):
-    event.listen(ARUnitPhoto, action, immutable)
+class ARUnitPhotoRemoval(Base):
+    __tablename__ = 'ar_unit_photo_removals'
+    id: Mapped[int] = mapped_column(primary_key=True)
+    document_id: Mapped[int] = mapped_column(ForeignKey('ar_documents.id'))
+    photo_id: Mapped[int] = mapped_column(ForeignKey('ar_unit_photos.id'), unique=True)
+    created_by: Mapped[int] = mapped_column(ForeignKey('users.id'))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+for model in (ARUnitPhoto, ARUnitPhotoRemoval):
+    for action in ('before_update', 'before_delete'):
+        event.listen(model, action, immutable)

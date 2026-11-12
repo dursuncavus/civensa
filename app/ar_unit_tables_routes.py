@@ -24,7 +24,7 @@ def register(app):
         doc = sections.document(db, user, document_id)
         if not doc.department_id and user.role != 'strategy':
             sections.fail('İdare tablolarını yalnız Strateji inceleyebilir. Kendi birim raporunuzu açın.', 403)
-        report = sections.report_data(db, user, doc.id)
+        report = service.with_photo_labels(db, sections.report_data(db, user, doc.id))
         from .ar_unit_workflow_service import state
         editable = bool(doc.department_id == user.department_id and user.role == 'department' and
                         not report['frozen'] and state(db, doc) in {'draft', 'returned'})
@@ -97,6 +97,21 @@ def register(app):
         except HTTPException as error:
             ctx = context(db, user, document_id)
             ctx.update(form_error=error.detail, photo_attempt=dict(form))
+            return templates.TemplateResponse(request, 'ar_unit_tables.html', ctx, status_code=error.status_code)
+
+    @router.post('/activity-sections/reports/{document_id}/unit-tables/photos/{photo_id}/remove')
+    async def remove_photo(document_id: int, photo_id: int, request: Request,
+                           db: Session = Depends(get_db), user=Depends(require_user)):
+        sections.document(db, user, document_id)
+        form = await request.form(max_files=0, max_fields=3)
+        try:
+            try: revision = int(form.get('expected_revision', ''))
+            except (ValueError, TypeError): sections.fail('Fotoğraf için rapor sürümü geçersiz. Sayfayı yenileyin.')
+            transact(db, lambda: service.remove_photo(db, user, document_id, photo_id, revision))
+            return RedirectResponse(f'/activity-sections/reports/{document_id}/unit-tables#photos', 303)
+        except HTTPException as error:
+            ctx = context(db, user, document_id)
+            ctx.update(form_error=error.detail)
             return templates.TemplateResponse(request, 'ar_unit_tables.html', ctx, status_code=error.status_code)
 
     @router.get('/activity-sections/reports/{document_id}/unit-tables/photos/{photo_id}')

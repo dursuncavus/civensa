@@ -50,4 +50,4 @@ def test_migration_roundtrip_preserves_data_and_guards_approved_rows(postgres_te
         with engine.connect() as conn:
             assert conn.execute(text('SELECT payload_json FROM ar_unit_tables')).scalar() == '{"rows":[]}'
             assert conn.execute(text('SELECT count(*) FROM ar_unit_photos')).scalar() == 1
-            assert conn.execute(text('SELECT version_num FROM alembic_version')).scalar() == 'c219a1b2c3d4'
+            assert conn.execute(text('SELECT version_num FROM alembic_version')).scalar() == 'c219b1c2d3e4'

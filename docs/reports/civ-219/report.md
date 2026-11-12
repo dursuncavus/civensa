@@ -21,3 +21,20 @@ Aşağıdaki görüntüler gerçek uygulama rotalarında, yalnız sentetik 2026 
 Onaylı sentetik çıktı: [Word](export-synthetic.docx) · [PDF](export-synthetic.pdf). Dört tablo, hesaplanan toplamlar ve fotoğraf listesi/görselleri mevcut rapor yazı tipleri ve stilleriyle dışa aktarılır.
 
 Doğrulama: PostgreSQL 17 üzerinde son odaklı çalıştırmada 102 kabul/regresyon testi geçti; 1440/390 tarayıcı kontrolleri ve gerçek form gönderimleri geçti. Migrasyon ileri/geri/ileri çalıştırıldı; veri varken geri alma ve incelemedeki/onaylı verinin SQL ile değiştirilmesi engellendi. Son depolama/dışa aktarma çalıştırmasında PostgreSQL 18 üzerinde 38 test geçti. Tam paket ve PR CI sonucu PR açıklamasında güncellenir. Canlı veritabanına bağlanılmadı; dağıtım veya birleştirme yapılmadı.
+
+## PR #500 fotoğraf incelemesi — 12 Kasım 2026
+
+Taslak/iade durumunda kendi müdürlüğünün hesabı her fotoğraftaki **Fotoğrafı kaldır** düğmesini kullanabilir. Yeni `c219b1c2d3e4` migrasyonu kaldırma kararını kullanıcı ve zamanıyla ayrı, yalnız ekleme yapılabilen `ar_unit_photo_removals` tablosunda tutar; `unit_photo_remove` içerik olayı da kaydedilir. Asıl fotoğraf ve önceki gönderim/onay manifestleri korunur. Kaldırılan fotoğraf güncel taslak ve onun Word/PDF çıktısından çıkar; eski sabit kopyalar ve önceki onaydan yapılan konsolidasyon fotoğrafı dışa aktarabilir. `c219a1b2c3d4` değiştirilmedi.
+
+Her fotoğrafın açıklamasında Tablo 7 faaliyet kodu/adı ekranda ve Word/PDF'de gösterilir. Eski manifestlerde eksik olan etiket, saklanan manifest değiştirilmeden fotoğrafın özgün kitabından okunur. Güncel kitapta anahtarı bulunmayan fotoğraflar listenin sonunda özgün faaliyet adı ve “Bu fotoğrafın faaliyeti güncel kitapta yok; kaldırın veya yeniden yükleyin.” uyarısıyla kalır. Bu durum `#photos` bağlantılı gönderim engelidir; tabloyu yeniden kaydetmek engeli gizlemez.
+
+Bu düzeltme turunun doğrulaması (yukarıdaki önceki PostgreSQL sonuçlarından ayrıdır):
+
+- Üç bulgunun regresyon testleri düzeltmeden önce başarısız çalıştırıldı. Eski biçimli gönderilmiş manifestin ekrandaki etiketi için ek regresyon da önce başarısız çalıştırıldı.
+- CIV-219 tablo/fotoğraf, sapma ve SQLite migrasyon kontrolleri: **54 geçti, 2 kapsam dışında** (tarayıcı ve PostgreSQL SQL koruyucu testi). Geçici, repo dışındaki pytest eklentisi yalnız uygulama testlerindeki PostgreSQL işaretlerini SQLite denemesi için kaldırdı; PostgreSQL doğrulaması yapılmış sayılmaz. Dosyalar: `test_civ219_unit_tables.py`, `test_ar_deviation_gate.py`, `test_civ219_photo_review.py`, `test_civ219_photo_removal_migration.py`. SQLite ileri/geri/ileri geçişi ve kaldırma verisi varken geri alma engeli geçti; tek Alembic head doğrulandı.
+- Standart PostgreSQL işaretli odaklı komut da çalıştırıldı: ilk denemede 26 geçti, 42 atlandı, iki migrasyon testi veritabanı yapılandırması olmadığı için kurulum hatası verdi. PostgreSQL 18 ile geçici küme başlatma `shmget: Operation not permitted` hatasıyla engellendi. Tam `--require-postgres` komutu `CIVENSA_TEST_POSTGRES_URL` olmadığı için başlayamadı; PostgreSQL SQL tetikleyicileri ve tam paket doğrulanamadı.
+- Daha geniş ilk SQLite denemesinde 65 geçti; mevcut birim iş akışının PostgreSQL'e özgü saat dilimi ve eşzamanlı satır kilidi bekleyen iki testi başarısız oldu. Bu testlerin beklentileri değiştirilmedi.
+- Chrome/Playwright başlatma `SIGABRT` ile durdu; bağlı tarayıcı erişimi de “browser access host is unavailable” döndürdü. Bu nedenle 1440/390 fotoğraf PNG'leri yenilenemedi; yukarıdaki görüntüler önceki sürüme aittir. Tarayıcı kabul testi yeni faaliyet etiketi, kaldırma düğmesi ve yeniden açma sonrası gerçek kaldırma akışını kontrol edecek şekilde güncellendi fakat bu tur çalıştırılamadı.
+- Farklı model ailesiyle bağımsız inceleme denenirken Claude ve Gemini oturum açma istedi; inceleme tamamlanmadı. PR CI bu yerel değişiklikler için çalıştırılmadı. Push, PR açma, dağıtım ve canlı veritabanı erişimi yapılmadı.
+
+Commit için staging denemesi Git ortak dizinindeki `index.lock` yazımına `Operation not permitted` döndürdü; değişiklikler çalışma ağacında kaldı. İstenen commit başlığı: `CIV-219: fotoğraf kaldırma ve faaliyet bağlarını düzelt`.

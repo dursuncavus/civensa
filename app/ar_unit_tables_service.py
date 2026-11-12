@@ -15,7 +15,7 @@ from sqlalchemy import select
 
 from . import activity_sections_service as sections
 from .activity_evidence_service import MAX_FILE
-from .models import (ARDocument, ARUnitTable, ARUnitPhoto, ActivityReport, ActivityReportRevision,
+from .models import (ARDocument, ARUnitTable, ARUnitPhoto, ARUnitPhotoRemoval, ActivityReport, ActivityReportRevision,
                      Publication, User)
 from .numbers import parse_number, format_number
 
@@ -40,6 +40,7 @@ TABLES = {
 NUMBERS = {'area', 'positions', 'actual', 'women', 'men', 'inside', 'outside', 'physical', 'spending', 'total'}
 COUNTS = {'positions', 'actual', 'women', 'men'}
 MONEY = {'inside', 'outside', 'spending', 'total'}
+ORPHAN_PHOTO_WARNING = 'Bu fotoğrafın faaliyeti güncel kitapta yok; kaldırın veya yeniden yükleyin.'
 
 
 def book(db, doc):
@@ -190,6 +191,25 @@ def save(db, user, document_id, kind, expected_revision, rows, no_projects=None)
     return doc
 
 
+def photo_activity(db, doc, activity_key):
+    """Resolve historical labels from the immutable book the photo belongs to."""
+    try:
+        publication_id, activity_id = map(int, activity_key.split(':'))
+    except (ValueError, TypeError):
+        return f'Faaliyet kaydı: {activity_key}'
+    publication = db.get(Publication, publication_id)
+    if publication and publication.period_id == doc.period_id:
+        if sections.digest(publication.snapshot_json) != publication.sha256:
+            sections.fail('Fotoğrafın bağlı kitabı doğrulanamadı. Strateji ile fotoğraf kaydını ve kitap sürümünü kontrol edin.', 409)
+        snapshot = json.loads(publication.snapshot_json)
+        for department in snapshot.get('departments', []):
+            if department['department_id'] == doc.department_id:
+                for activity in department.get('activities', []):
+                    if activity['id'] == activity_id:
+                        return ' '.join(filter(None, [activity.get('code'), activity['name']]))
+    return f'Faaliyet kaydı: {activity_key}'
+
+
 def unit_data(db, doc):
     source = book(db, doc)
     tables = {}
@@ -218,9 +238,13 @@ def unit_data(db, doc):
                             book_changed=bool(record and kind in {'7', '8'} and data.get('publication_id') != source['publication_id']))
     photos = []
     order = {a['key']: i for i, a in enumerate(source['activities'])}
-    records = db.scalars(select(ARUnitPhoto).where(ARUnitPhoto.document_id == doc.id)).all()
-    for photo in sorted((p for p in records if p.activity_key in order), key=lambda p: (order[p.activity_key], p.id)):
+    names = {a['key']: a['activity'] for a in source['activities']}
+    records = db.scalars(select(ARUnitPhoto).where(ARUnitPhoto.document_id == doc.id,
+        ~select(ARUnitPhotoRemoval.id).where(ARUnitPhotoRemoval.photo_id == ARUnitPhoto.id).exists())).all()
+    for photo in sorted(records, key=lambda p: (order.get(p.activity_key, len(order)), p.id)):
         photos.append({'id': photo.id, 'document_id': doc.id, 'activity_key': photo.activity_key, 'caption': photo.caption,
+                       'activity': names.get(photo.activity_key) or photo_activity(db, doc, photo.activity_key),
+                       'orphaned': photo.activity_key not in order,
                        'label': f'Fotoğraf {len(photos)+1}', 'filename': photo.filename, 'sha256': photo.sha256,
                        'url': f'/activity-sections/reports/{doc.id}/unit-tables/photos/{photo.id}'})
     return {'tables': tables, 'photos': photos, 'programmes': source['programmes'],
@@ -247,6 +271,11 @@ def report_data(db, doc):
 def blockers(payload):
     data = payload.get('unit_tables', {})
     result = []
+    for photo in data.get('photos', []):
+        if photo.get('orphaned'):
+            result.append({'indicator': photo['label'], 'group': 'Faaliyet fotoğrafları',
+                'link': f'/activity-sections/reports/{payload["id"]}/unit-tables#photos',
+                'message': ORPHAN_PHOTO_WARNING})
     for kind, table in data.get('tables', {}).items():
         def missing(message, index=None, field=None):
             anchor = f'table-{kind}' if index is None else f'table-{kind}-row-{index}' + (f'-{field}' if field else '')
@@ -281,7 +310,7 @@ def blockers(payload):
 def require_complete(payload, missing_sections=None):
     problems = blockers(payload)
     if problems:
-        message = 'Birim faaliyet raporu gönderilemedi. Aşağıdaki tablo alanlarını tamamlayın.'
+        message = 'Birim faaliyet raporu gönderilemedi. Aşağıdaki tablo ve fotoğraf uyarılarını giderin.'
         detail = {}
         if missing_sections:
             message = 'Birim faaliyet raporu gönderilemedi. Şu bölümleri tamamlayın: ' + '; '.join(missing_sections)
@@ -329,6 +358,22 @@ def upload(db, user, document_id, activity_key, expected_revision, caption, raw,
     return photo
 
 
+def remove_photo(db, user, document_id, photo_id, expected_revision):
+    doc = writable(db, user, document_id, expected_revision, '7')
+    photo = db.get(ARUnitPhoto, photo_id)
+    if not photo or photo.document_id != doc.id:
+        sections.fail('Faaliyet fotoğrafı bulunamadı. Kendi raporunuzdaki fotoğrafı seçin.', 404)
+    if db.scalar(select(ARUnitPhotoRemoval.id).where(ARUnitPhotoRemoval.photo_id == photo.id)):
+        sections.fail('Faaliyet fotoğrafı zaten kaldırıldı. Güncel fotoğraf listesini görmek için sayfayı yenileyin.', 409)
+    db.add(ARUnitPhotoRemoval(document_id=doc.id, photo_id=photo.id, created_by=user.id))
+    sections.event(db, user, doc, 'III.B.2', 'unit_photo_remove',
+        {'photo_id': photo.id, 'activity_key': photo.activity_key, 'caption': photo.caption, 'sha256': photo.sha256},
+        {'photo_id': photo.id, 'removed': True})
+    doc.revision += 1
+    db.flush()
+    return doc
+
+
 def export_tables(data):
     """Pure renderer input, shared by Word/PDF and the consolidated view."""
     for unit in data.get('units', [data]):
@@ -345,13 +390,30 @@ def export_tables(data):
             yield unit, table, columns, rows
 
 
+def with_photo_labels(db, payload):
+    """Display old immutable manifests with their original activity labels."""
+    result = deepcopy(payload)
+    data = result.get('unit_tables', {})
+    for unit in data.get('units', [data]):
+        for photo in unit.get('photos', []):
+            if photo.get('activity'):
+                continue
+            doc = db.get(ARDocument, photo['document_id'])
+            if (not doc or doc.organization_id != result['organization_id'] or
+                    doc.period_id != result['period_id'] or
+                    doc.department_id != unit.get('department_id', result.get('department_id'))):
+                sections.fail('Fotoğrafın birim raporu doğrulanamadı. Strateji ile rapor sürümünü ve fotoğraf kaydını kontrol edin.', 409)
+            photo['activity'] = photo_activity(db, doc, photo['activity_key'])
+    return result
+
+
 def with_export_photos(db, payload):
     """Hydrate immutable evidence bytes only for rendering, never for persistence.
 
     Submission/freezes keep IDs and SHA-256 manifests, matching indicator evidence.
     A detached copy prevents a Word/PDF download from changing the stored source.
     """
-    result = deepcopy(payload)
+    result = with_photo_labels(db, payload)
     data = result.get('unit_tables', {})
     for unit in data.get('units', [data]):
         department_id = unit.get('department_id', result.get('department_id'))

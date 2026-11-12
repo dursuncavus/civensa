@@ -95,7 +95,7 @@ class _ReportContent:
             data = self.payload.get('unit_tables', {})
             for unit in data.get('units', [data]):
                 for photo in unit.get('photos', []):
-                    self.paragraph(f"{photo['label']} · {photo['caption']}" +
+                    self.paragraph(f"{photo['label']} · {photo['caption']} · {photo.get('activity', photo['activity_key'])}" +
                                    (' · ' + unit['department'] if unit.get('department') else ''), CAPTION)
                     if photo.get('image_base64'):
                         self.photo(photo)

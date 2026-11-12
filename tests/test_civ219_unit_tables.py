@@ -246,6 +246,8 @@ def test_browser_tables_and_capture(table_report, db, sample, tmp_path):
                 if width == 390:
                     assert panel.locator('.unit-scroll').evaluate('(el) => el.scrollWidth <= el.clientWidth')
                 capture_panel(panel, f'tablo-{kind}-{width}.png', width)
+            expect(page.locator('#photos figcaption')).to_contain_text('F.01 Park bakım ve onarım')
+            expect(page.get_by_role('button', name='Fotoğraf 1: Fotoğrafı kaldır', exact=True)).to_be_visible()
             capture_panel(page.locator('#photos'), f'photos-{width}.png', width)
             page.set_viewport_size({'width': width, 'height': 1000})
             # Client totals and draft mismatch warning use Turkish numbers.
@@ -284,6 +286,14 @@ def test_browser_tables_and_capture(table_report, db, sample, tmp_path):
         export_payload = tables.with_export_photos(db, snapshot)
         (folder / 'export-synthetic.docx').write_bytes(build_activity_report_docx(export_payload, TEMPLATE_PATH))
         (folder / 'export-synthetic.pdf').write_bytes(build_activity_report_pdf(export_payload))
+        # Removal is visible and usable only after reopening the approved copy.
+        expect(page.locator('#photos button')).to_have_count(0)
+        workflow.transition(db, approver, doc.id, 'reopen', doc.revision, 'Fotoğraf düzeltmesi.'); db.commit()
+        login(client, sample['user'].email)
+        page.goto(f'http://testserver/activity-sections/reports/{doc.id}/unit-tables')
+        page.get_by_role('button', name='Fotoğraf 1: Fotoğrafı kaldır', exact=True).click()
+        expect(page.locator('#photos figure')).to_have_count(0)
+        expect(page.locator('#photos')).to_contain_text('Henüz faaliyet fotoğrafı yok.')
         assert not errors
         context.close(); browser.close()
 
@@ -347,7 +357,10 @@ def test_changed_book_keeps_old_data_and_requires_explicit_review(table_report, 
     tables.save(db, sample['user'], doc.id, '7', doc.revision, [])
     tables.save(db, sample['user'], doc.id, '8', doc.revision, [], True)
     payload = sections.report_data(db, sample['user'], doc.id)
-    assert not tables.blockers(payload)
+    assert len(tables.blockers(payload)) == 1
+    assert tables.blockers(payload)[0]['link'].endswith('#photos')
+    tables.remove_photo(db, sample['user'], doc.id, payload['unit_tables']['photos'][0]['id'], doc.revision)
+    assert not tables.blockers(sections.report_data(db, sample['user'], doc.id))
 
 
 def test_invalid_form_count_is_bounded_and_attempted_values_survive(table_report, sample):
