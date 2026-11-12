@@ -46,7 +46,7 @@ def register(app):
     @router.post('/activity-sections/reports/{document_id}/unit-tables/{kind}')
     async def save_form(document_id: int, kind: str, request: Request,
                         db: Session = Depends(get_db), user=Depends(require_user)):
-        form = await request.form()
+        form = await request.form(max_files=0, max_fields=22000)
         attempted = dict(form)
         try:
             if kind not in service.TABLES:
@@ -72,6 +72,9 @@ def register(app):
         except HTTPException as error:
             if error.status_code not in {409, 422}: raise
             ctx = context(db, user, document_id)
+            try: attempted_count = int(attempted.get('row_count', '1'))
+            except (ValueError, TypeError): attempted_count = 1
+            attempted['row_count'] = str(min(2000, max(1, attempted_count)))
             ctx.update(form_error=error.detail, attempted=attempted, attempted_kind=kind)
             return templates.TemplateResponse(request, 'ar_unit_tables.html', ctx, status_code=error.status_code)
 

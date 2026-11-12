@@ -186,6 +186,17 @@ def test_scope_review_return_approval_and_exports(table_report, db, sample, tmp_
     assert approval.payload_json == before
     consolidated = sections.report_data(db, sample['strategy'], docs['idare'].id)['unit_tables']
     assert consolidated['units'][0]['tables'] == snapshot['unit_tables']['tables']
+    # The legacy idare API is readable by staff; new cross-unit tables must not
+    # escape through that existing route, including its immutable release path.
+    idare_payload = sections.report_data(db, sample['strategy'], docs['idare'].id)
+    from app.models import ARDocumentFreeze
+    raw = sections.numeric_canonical(idare_payload)
+    login(client, 'park@example.invalid')
+    assert 'unit_tables' not in client.get(f'/api/activity-sections/reports/{docs["idare"].id}').json()
+    assert client.get(f'/activity-sections/reports/{docs["idare"].id}/unit-tables').status_code == 403
+    db.add(ARDocumentFreeze(document_id=docs['idare'].id, payload_json=raw,
+        sha256=contracts.digest(raw), created_by=sample['strategy'].id)); db.commit()
+    assert 'unit_tables' not in client.get(f'/api/activity-sections/reports/{docs["idare"].id}').json()
 
 
 def test_browser_tables_and_capture(table_report, db, sample, tmp_path):
@@ -319,3 +330,19 @@ def test_changed_book_keeps_old_data_and_requires_explicit_review(table_report, 
     tables.save(db, sample['user'], doc.id, '8', doc.revision, [], True)
     payload = sections.report_data(db, sample['user'], doc.id)
     assert not tables.blockers(payload)
+
+
+def test_invalid_form_count_is_bounded_and_attempted_values_survive(table_report, sample):
+    client, doc, _, _ = table_report
+    token = login(client, sample['user'].email)
+    response = client.post(f'/activity-sections/reports/{doc.id}/unit-tables/1', data={
+        'csrf_token': token, 'expected_revision': doc.revision, 'row_count': '999999999',
+        'include_0': 'on', 'name_0': 'Korunan <örnek> adı'})
+    assert response.status_code == 422
+    assert 'Korunan &lt;örnek&gt; adı' in response.text
+    assert 'name_2000' not in response.text
+    response = client.post(f'/activity-sections/reports/{doc.id}/unit-tables/1', data={
+        'csrf_token': token, 'expected_revision': doc.revision, 'row_count': '1',
+        'include_0': 'on', 'name_0': 'Korunan bina', 'area_0': 'geçersiz'})
+    assert response.status_code == 422 and 'value="geçersiz"' in response.text
+    assert 'value="Korunan bina"' in response.text

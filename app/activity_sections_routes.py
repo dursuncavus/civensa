@@ -143,7 +143,8 @@ class TurkishValidationRoute(APIRoute):
                     'metadata':'Malî tablo bilgileri','file':'Dosya','import_id':'İçe aktarma önizlemesi',
                     'statement_id':'Malî tablo','kind':'Tablo türü','version':'Yayın sürümü',
                     'approval_id':'Birim onayı','table_keys':'Tablo ve satır anahtarları',
-                    'photo_id':'Fotoğraf','thumbnail':'Küçük önizleme','action':'Fotoğraf işlemi'}
+                    'photo_id':'Fotoğraf','thumbnail':'Küçük önizleme','action':'Fotoğraf işlemi',
+                    'no_projects':'Bu yıl proje yok'}
                 fields=[]
                 for issue in error.errors():
                     location=issue.get('loc',())
