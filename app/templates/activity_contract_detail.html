@@ -143,7 +143,8 @@
               {% include 'activity_evidence_row.html' %}
             </template>
             <button class="button" type="button" data-add-evidence {% if draft and error_field == 'source_title' and not sources %}aria-invalid="true" aria-describedby="form-error-{{ row.report_indicator_id }}"{% endif %}>Kaynak ekle</button>
-            <label>Açıklama / sapma gerekçesi · Gönderim için zorunlu (fark varsa)
+            {% include 'ar_deviation_hint.html' %}
+            <label>Açıklama / sapma gerekçesi · Sapma en az %10 ise gönderim için zorunlu
               <textarea name="explanation"{% if draft and error_field == 'explanation' %} aria-invalid="true" aria-describedby="form-error-{{ row.report_indicator_id }}"{% endif %}>{{ draft.get('explanation', latest.explanation if latest else '') }}</textarea>
             </label>
             <label>Düzeltici işlem (isteğe bağlı)

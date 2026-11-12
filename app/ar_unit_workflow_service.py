@@ -152,9 +152,11 @@ def transition(db, user, document_id, action, expected_revision, reason=''):
         payload = sections.report_data(db, user, doc.id, use_freeze=False, include_typeset=True)
         from .ar_typeset_source import require_keys
         require_keys(payload)
+        from .ar_unit_tables_service import require_complete
         missing = completeness(payload)
         if missing:
             raise pp_error(409, 'Birim faaliyet raporu gönderilemedi. Şu bölümleri tamamlayın: ' + '; '.join(missing), 'sections')
+        require_complete(payload)
         require_deviation_explanations(db, payload)
         payload.pop('workflow', None)
         payload['source_editor_ids'] = source_editors(db, doc)

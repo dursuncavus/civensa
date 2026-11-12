@@ -101,6 +101,11 @@ def render_pair(ctx):
     assert sources['activity_contract_detail.html'].count(original_target) == 1
     sources['activity_contract_detail.html'] = sources['activity_contract_detail.html'].replace(
         original_target, expected_target)
+    # CIV-219 deliberately updates the deviation threshold copy in an include;
+    # keep the original fixture and its hash while checking every control.
+    sources['activity_contract_detail.html'] = sources['activity_contract_detail.html'].replace(
+        '<label>Açıklama / sapma gerekçesi · Gönderim için zorunlu (fark varsa)',
+        "{% include 'ar_deviation_hint.html' %}<label>Açıklama / sapma gerekçesi · Sapma en az %10 ise gönderim için zorunlu")
     frozen_env = templates.env.overlay(loader=ChoiceLoader([DictLoader(sources), templates.env.loader]))
     before = frozen_env.get_template('activity_contract_detail.html').render(ctx)
     after = templates.env.get_template('activity_contract_detail.html').render(ctx)
@@ -292,7 +297,11 @@ def test_bullet_bar_requires_verified_nonzero_target_and_numeric_actual(state, v
     _, html = render_pair(ctx)
     assert ('class="indicator-bullet"' in html) is expected
     block = html.split('id="indicator-101"', 1)[1].split('</section>', 1)[0]
-    assert '%' not in re.sub(r'<[^>]+>', ' ', block)
+    # CIV-219 displays the deviation percentage; the achievement bullet itself
+    # still does not imply an achievement percentage.
+    bullet = re.search(r'<div class="indicator-bullet".*?</div>', block, re.S)
+    if bullet:
+        assert '%' not in re.sub(r'<[^>]+>', ' ', bullet.group())
 
 
 @pytest.mark.postgres

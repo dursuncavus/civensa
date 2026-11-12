@@ -101,6 +101,8 @@ def test_012_preserves_all_fields_and_action_targets(section_client, db, sample,
             ['a', [['href', f'/activity-sections/reports/{doc.id}/sunum'],
                    ['rel', 'noopener'], ['target', '_blank']]],
             ['a', [['href', f'/activity-sections/reports/{doc.id}/sunum.html']]]]
+        # CIV-219 adds four links to the separate directorate table forms.
+        expected += [['a', [['href', f'/activity-sections/reports/{doc.id}/unit-tables#table-{kind}']]] for kind in ('1','2','7','8')]
         assert Counter(json.dumps(c, sort_keys=True) for c in actual) == Counter(json.dumps(c, sort_keys=True) for c in expected), key
         # In the frozen output all field/button controls belong to the preceding
         # form record. Also verify actual nesting, so moving an unchanged field

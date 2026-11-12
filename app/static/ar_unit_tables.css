@@ -1,0 +1,37 @@
+.unit-tables { max-width: 1440px; min-width: 0; }
+.unit-tables nav { margin: 20px 0; }
+.unit-table-panel { padding: 24px; margin: 24px 0; scroll-margin-top: 24px; }
+.unit-table-panel h2 { line-height: 1.4; }
+.unit-table-panel label { display: block; }
+.unit-table-panel input:not([type=checkbox]), .unit-table-panel select, .unit-table-panel textarea { width: 100%; min-width: 120px; box-sizing: border-box; }
+.unit-table-panel textarea { min-width: 200px; }
+.unit-table-panel input[type=checkbox] { min-width: 24px; min-height: 24px; }
+.unit-table-panel .button { margin-top: 12px; }
+.unit-number, .unit-table-panel output { text-align: right; font-variant-numeric: tabular-nums; }
+.unit-scroll { overflow-x: auto; max-width: 100%; margin: 20px 0; }
+.unit-scroll table { border-collapse: collapse; width: 100%; }
+.unit-scroll th, .unit-scroll td { border: 1px solid var(--border, #cbd5e1); padding: 12px; vertical-align: top; }
+.unit-scroll th, .unit-scroll tfoot { background: var(--panel-soft, #eff3f7); }
+.unit-notice, .unit-tables .ar-error { padding: 16px; border: 1px solid #ad770c; background: #fff8e7; margin: 16px 0; }
+.unit-tables .ar-error { border-color: #b42318; }
+.unit-table-panel figure { max-width: 600px; margin: 20px 0; }
+.unit-table-panel img { max-width: 100%; height: auto; }
+.unit-table-panel [aria-invalid=true] { outline: 2px solid #b42318; }
+.unit-tables :target { outline: 2px solid #426a8a; outline-offset: 4px; }
+@media (max-width: 700px) {
+  .unit-table-panel { padding: 14px; }
+  .unit-scroll thead { display: none; }
+  .unit-scroll, .unit-scroll table, .unit-scroll tbody, .unit-scroll tfoot, .unit-scroll tr, .unit-scroll td, .unit-scroll th { display: block; width: auto; }
+  .unit-scroll tr { border: 1px solid #cbd5e1; margin-bottom: 18px; padding: 8px; }
+  .unit-scroll td, .unit-scroll th { border: 0; padding: 7px 0; overflow-wrap: anywhere; }
+  .unit-scroll td::before { content: attr(data-label); display: block; font-weight: 600; margin-bottom: 6px; }
+  .unit-table-panel input:not([type=checkbox]), .unit-table-panel textarea, .unit-table-panel select { min-width: 0; }
+  .unit-table-panel .button { width: 100%; white-space: normal; }
+}
+.unit-tables label, .unit-scroll th { text-transform: none; letter-spacing: normal; }
+.unit-tables label { font-size: 13px; }
+.unit-table-panel input[type=checkbox] { width: 24px; height: 24px; }
+@media (max-width: 700px) {
+  .unit-scroll table { min-width: 0; }
+  .unit-scroll tfoot td:not(.unit-total-value) { display: none; }
+}

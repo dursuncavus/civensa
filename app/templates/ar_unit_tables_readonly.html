@@ -1,0 +1,2 @@
+{% for kind,t in unit.tables.items() %}<section class="panel unit-table-panel" id="table-{{ kind }}-department-{{ unit.department_id }}"><h3>Tablo {{ kind }} — {{ t.title }}</h3><p>{{ t.section_title }}</p>{% include 'ar_unit_table_readonly.html' %}</section>{% endfor %}
+{% include 'ar_unit_photos.html' %}

@@ -106,6 +106,8 @@ def ready_and_freeze(client,token,doc,legacy=False):
         sender=db.scalar(select(User).where(User.department_id==doc.department_id,User.role=='department'))
         sender.can_submit=True
         ensure_core_ready(db,doc,sender)
+        from ar_unit_workflow_helpers import ready_tables
+        ready_tables(db,doc,sender)
         workflow.transition(db,sender,doc.id,'submit',doc.revision)
         db.commit()
         approver=reviewer(db,doc);db.commit()

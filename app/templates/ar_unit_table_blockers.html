@@ -1,0 +1,1 @@
+{% for group,items in blockers|groupby('group') %}<section><h2>{{ group }}</h2><ul>{% for blocker in items %}<li><a href="{{ blocker.link }}">{{ blocker.indicator }}</a>: {{ blocker.message }}</li>{% endfor %}</ul></section>{% endfor %}

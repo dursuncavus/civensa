@@ -406,7 +406,7 @@ def test_live_pin_equals_current_migration_head():
     from alembic.config import Config
     from alembic.script import ScriptDirectory
     script = ScriptDirectory.from_config(Config(str(live.ROOT / 'alembic.ini')))
-    assert script.get_heads() == ['c197a1b2c3d4']
+    assert script.get_heads() == ['c219a1b2c3d4']
     assert script.get_heads() == [live.HEAD]
 
 

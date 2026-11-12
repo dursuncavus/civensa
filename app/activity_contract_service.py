@@ -538,9 +538,25 @@ def save_actual(db, user, report_indicator_id, expected_revision, value, state, 
     return actual
 
 
-def needs_deviation_explanation(state, delta, explanation):
-    """Drafts may be saved; only verified nonzero differences need explanation."""
-    return state == 'verified' and delta is not None and Decimal(str(delta)) != 0 and not explanation.strip()
+def deviation_percentage(delta, actual):
+    """Absolute difference / absolute pinned target; zero target has no finite %.
+
+    The existing difference-v1 delta is persisted against that exact target.
+    Recover it from the captured actual and delta for historical revisions too.
+    """
+    if delta is None or actual is None:
+        return None
+    difference = Decimal(str(delta))
+    target = Decimal(str(actual)) - difference
+    return abs(difference) / abs(target) * 100 if target else None
+
+
+def needs_deviation_explanation(state, delta, explanation, actual=None):
+    if state != 'verified' or delta is None or actual is None or explanation.strip():
+        return False
+    difference = Decimal(str(delta))
+    target = Decimal(str(actual)) - difference
+    return abs(difference) >= abs(target) * Decimal('0.1') if target else difference != 0
 
 
 def approve_report(db, user, revision_id):
@@ -568,7 +584,7 @@ def approve_report(db, user, revision_id):
             if not actual:
                 continue
         delta = json.loads(actual.deviation_json)['delta']
-        if needs_deviation_explanation(actual.state, delta, actual.explanation):
+        if needs_deviation_explanation(actual.state, delta, actual.explanation, actual.value):
             blockers.append({'indicator': name, 'report_indicator_id': item.id, 'message': 'Hedef ile gerçekleşme farkı için açıklama girin.'})
     if blockers:
         raise HTTPException(409, {'message': 'Rapor onaylanmadı. Aşağıdaki göstergelerde belirtilen eksikleri giderip yeniden onaylayın.', 'blockers': blockers})
@@ -584,8 +600,9 @@ def actual_data(actual):
         'value': format(actual.value, 'f') if actual.value is not None else None,
         'raw_text': actual.raw_text, 'state': actual.state, 'evidence': json.loads(actual.evidence_json),
         'explanation': actual.explanation, 'deviation': json.loads(actual.deviation_json),
+        'deviation_percent': deviation_percentage(json.loads(actual.deviation_json).get('delta'), actual.value),
         'needs_deviation_explanation': needs_deviation_explanation(
-            actual.state, json.loads(actual.deviation_json).get('delta'), actual.explanation),
+            actual.state, json.loads(actual.deviation_json).get('delta'), actual.explanation, actual.value),
         'created_by': actual.created_by, 'created_at': actual.created_at.isoformat()}
 
 
