@@ -7,14 +7,14 @@ from zipfile import ZipFile
 
 import pytest
 from pypdf import PdfReader
-from sqlalchemy import select, text
+from sqlalchemy import func, select
 
 from test_civ219_unit_tables import table_report, save_all
 from test_activity_sections import section_client, login
 from ar_unit_workflow_helpers import ready_unit, reviewer
 from app import ar_unit_tables_service as tables, activity_sections_service as sections
 from app import ar_unit_workflow_service as workflow, activity_contract_service as contracts
-from app.models import ARContentEvent, ARUnitPhoto, Publication
+from app.models import ARContentEvent, ARUnitPhoto, ARUnitPhotoRemoval, Publication
 from app.ar_export import build_activity_report_docx, TEMPLATE_PATH
 from app.ar_pdf_export import build_activity_report_pdf
 
@@ -50,7 +50,7 @@ def test_remove_photo_preserves_submitted_copy(table_report, db, sample, copy_st
     assert doc.revision == revision + 1
     assert tables.unit_data(db, doc)['photos'] == []
     assert db.get(ARUnitPhoto, photo['id']).caption == photo['caption']
-    assert db.execute(text('SELECT count(*) FROM ar_unit_photo_removals')).scalar() == 1
+    assert db.scalar(select(func.count()).select_from(ARUnitPhotoRemoval)) == 1
     assert db.scalar(select(ARContentEvent).where(ARContentEvent.action == 'unit_photo_remove')).actor_id == sample['user'].id
     assert remove().status_code == 409
     current = tables.with_export_photos(db, sections.report_data(db, sample['user'], doc.id))
@@ -97,7 +97,6 @@ def test_photo_removal_scope_and_state(table_report, db, sample, status):
     result = client.post(url, data={'csrf_token': token, 'expected_revision': doc.revision})
     assert result.status_code == (303 if status == 'draft' else 409)
     if status == 'draft':
-        from app.models import ARUnitPhotoRemoval
         record = db.scalar(select(ARUnitPhotoRemoval))
         assert record.created_at is not None and record.created_by == sample['user'].id
         with pytest.raises(ValueError):
