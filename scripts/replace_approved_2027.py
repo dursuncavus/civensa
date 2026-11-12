@@ -6,6 +6,7 @@ from functools import lru_cache
 import hashlib
 import json
 import os
+import re
 from pathlib import Path
 import sys
 from tempfile import TemporaryDirectory
@@ -19,6 +20,11 @@ from sqlalchemy import select, text, or_
 from sqlalchemy.orm import Session
 
 from app.first_load_sources import PREVIOUS_2027_BOOK, READ_ONLY_AUDITS
+
+ACCOUNT_AUDITS = frozenset({'login', 'self_password_change', 'user_create', 'user_activate',
+    'user_deactivate', 'user_password_reset', 'user_change', 'user_position_change',
+    'user_permission_change', 'user_is_active_change', 'user_can_submit_change',
+    'user_bulk_create_item', 'user_bulk_create', 'user_bulk_create_revert'})
 
 OLD_BOOK = live.BOOK.with_name(PREVIOUS_2027_BOOK[0])
 OLD_SHA256 = PREVIOUS_2027_BOOK[1]
@@ -190,7 +196,9 @@ def source_rows(parsed, department_ids, pid=2):
 
 
 def signatures(rows, *, grouped=False):
-    """ID-independent full row multisets; preserve nulls, source text and FK content."""
+    """ID-independent full row multisets; preserve nulls, source text and FK content.
+
+    Programme/subprogramme parents are identified by name only (CIV-217)."""
     from app.db import Base
     from sqlalchemy import Numeric
     indexes = {name: {r['id']: r for r in values} for name, values in rows.items()
@@ -199,7 +207,16 @@ def signatures(rows, *, grouped=False):
     @lru_cache(None)
     def parent(name, identity):
         row = indexes.get(name, {}).get(identity)
-        return digest(normalize(name, row)) if row is not None else ['eksik/harici', identity]
+        if row is None:
+            return ['eksik/harici', identity]
+        # CIV-217: content rows point to a programme/subprogramme by its identity
+        # (names). Their texts are catalogue facts, compared and listed separately;
+        # an old text must not make every child row of 27 directorates differ.
+        if name == 'programs':
+            return ['program', row['name']]
+        if name == 'subprograms':
+            return ['subprogram', parent('programs', row['program_id']), row['name']]
+        return digest(normalize(name, row))
 
     def normalize(name, row):
         result = {}
@@ -299,11 +316,40 @@ def audit_refusals(db, owned, markers):
                'official_activity': 'official_activities', 'activity': 'activities', 'indicator': 'indicators',
                'indicator_value': 'indicator_values', 'submission': 'submissions', 'report_card': 'report_cards'}
     refusals = []
+    from app.db import Base
+    tables = Base.metadata.tables
+
+    def table_of(entity_type):
+        # Audit entity types are singular model names; tables are plural.
+        name = aliases.get(entity_type, entity_type)
+        for candidate in (name, name + 's', name[:-1] + 'ies' if name.endswith('y') else None):
+            if candidate in tables:
+                return candidate
+        return None
+
+    def other_period(log):
+        """An extant row this plan does not own belongs to another period (CIV-217)."""
+        table = table_of(log.entity_type)
+        if table is None or table in {'departments', 'users', 'organizations'} or 'id' not in tables[table].c:
+            return False
+        if log.entity_id in all_owned.get(table, set()):
+            return False
+        return db.scalar(select(tables[table].c.id).where(tables[table].c.id == log.entity_id)) is not None
+
     for log in db.scalars(select(AuditLog).where(AuditLog.created_at >= first).order_by(AuditLog.id)):
         if log.id in marker_ids:
             continue
         # Exact read-only actions only. Unknown actions are never presumed safe.
         if (log.action, log.entity_type) in READ_ONLY_AUDITS:
+            continue
+        # Account administration is not PP content (same list as the CIV-058 clear).
+        if log.action in ACCOUNT_AUDITS and log.entity_type in {'user', 'user_batch'}:
+            continue
+        # The PP edit hook names the period it changed: "period_id=<n>".
+        if (log.action == 'pp_data_change' and log.entity_type == 'department'
+                and re.fullmatch(r'period_id=\d+', log.details or '') and log.details != 'period_id=2'):
+            continue
+        if log.action in {'catalogue_create', 'catalogue_link'} and other_period(log):
             continue
         if log.action in {'catalogue_create', 'catalogue_link'}:
             table = 'official_activities' if log.action == 'catalogue_create' else 'activities'
@@ -317,17 +363,62 @@ def audit_refusals(db, owned, markers):
                 else:
                     refusals.append(f'2027 denetim kaydı #{log.id}: ilk yükleme dışı katalog işlemi; sorumluya bildirin.')
                 continue
-        table = aliases.get(log.entity_type, log.entity_type)
         # A known extant entity of another period can be excluded, never an
         # unknown/deleted entity, department-only write or mapping-batch audit.
-        from app.db import Base
-        t = Base.metadata.tables.get(table)
-        if t is not None and 'id' in t.c and log.entity_id not in all_owned.get(table, set()):
-            if table not in {'departments', 'users', 'organizations'}:
-                if db.scalar(select(t.c.id).where(t.c.id == log.entity_id)) is not None:
-                    continue
+        if other_period(log):
+            continue
         refusals.append(f'2027 veya dönemi belirsiz denetim kaydı #{log.id}: yazma geçmişi var; sorumluya bildirin.')
     return refusals
+
+
+def catalogue_review(owned, expected):
+    """CIV-217: split live 2027 programmes/subprogrammes into ONAYLI rows and unused leftovers.
+
+    Live 2027 still holds catalogue rows retained by the D-135 preprint clear: an
+    older programme list nobody references, and subprogrammes whose texts the
+    30 Oct load kept (it never overwrites existing texts). Every ONAYLI identity
+    (programme name, subprogramme name) must exist; any other row is accepted for
+    deletion only when no record of any table references it. Old texts are listed.
+    """
+    from app.db import Base
+    refusals, leftovers, stale = [], [], []
+    programs = {r['id']: r for r in owned['programs']}
+    expected_programs = {r['id']: r for r in expected['programs']}
+    wanted_programs = {r['name'] for r in expected['programs']}
+    wanted_subprograms = {(expected_programs[r['program_id']]['name'], r['name']): r for r in expected['subprograms']}
+    references = Counter()
+    for name, rows in owned.items():
+        if name in {'programs', 'subprograms'}:
+            continue
+        for column in Base.metadata.tables[name].columns:
+            for fk in column.foreign_keys:
+                if fk.column.table.name in {'programs', 'subprograms'}:
+                    references.update((fk.column.table.name, r[column.name]) for r in rows if r.get(column.name) is not None)
+    seen_programs, seen_subprograms, kept_programs = set(), set(), set()
+    for row in sorted(owned['subprograms'], key=lambda r: r['id']):
+        identity = (programs.get(row['program_id'], {}).get('name'), row['name'])
+        source = wanted_subprograms.get(identity)
+        if source is not None:
+            seen_subprograms.add(identity)
+            kept_programs.add(row['program_id'])
+            for field in ('rationale', 'goal'):
+                if (row[field] or '') != (source[field] or ''):
+                    stale.append(dict(id=row['id'], name=row['name'], field=field, live=row[field], approved=source[field]))
+        elif references[('subprograms', row['id'])]:
+            refusals.append(f'2027 subprograms: kayıt #{row["id"]} ONAYLI kitapta yok ama başka kayıtlar ona bağlı; sorumluya bildirin.')
+            kept_programs.add(row['program_id'])
+        else:
+            leftovers.append(dict(table='subprograms', id=row['id'], name=row['name']))
+    for row in sorted(owned['programs'], key=lambda r: r['id']):
+        if row['name'] in wanted_programs:
+            seen_programs.add(row['name'])
+        elif references[('programs', row['id'])] or row['id'] in kept_programs:
+            refusals.append(f'2027 programs: kayıt #{row["id"]} ONAYLI kitapta yok ama başka kayıtlar ona bağlı; sorumluya bildirin.')
+        else:
+            leftovers.append(dict(table='programs', id=row['id'], name=row['name']))
+    if seen_programs != wanted_programs or set(wanted_subprograms) != seen_subprograms:
+        refusals.append('2027 programs/subprograms: ONAYLI katalog satırı canlıda eksik; sorumluya bildirin.')
+    return refusals, leftovers, stale
 
 
 def build_plan(db, old, new, *, organization_id, actor_id):
@@ -388,9 +479,11 @@ def build_plan(db, old, new, *, organization_id, actor_id):
         for name in FIELDS:
             if actual_dept[name] != expected_dept[name]:
                 refusals.append(f'2027 {name}: ONAYLI satır imzası uyuşmuyor (müdürlük #{d.id}: {d.name}); sorumluya bildirin.')
-    for name in CATALOGUE:
+    for name in ('official_activities', 'activity_responsibilities'):
         if observed[name] != wanted[name]:
             refusals.append(f'2027 {name}: mevcut katalog ONAYLI imzasıyla uyuşmuyor (kurum/genel); sorumluya bildirin.')
+    catalogue_refusals, leftovers, stale = catalogue_review(owned, expected)
+    refusals.extend(catalogue_refusals)
     allowed = {'reporting_periods', 'import_batches', *CONTENT}
     for name, rows in owned.items():
         if rows and name not in allowed:
@@ -435,14 +528,14 @@ def build_plan(db, old, new, *, organization_id, actor_id):
         if bid not in marked and not (batch.status == 'superseded' and archived.get(str(bid)) == digest(batch_state(batch))):
             refusals.append(f'2027 import_batches: paket #{bid} ilk yükleme dışında; sorumluya bildirin.')
     refusals.extend(audit_refusals(db, owned, markers))
-    # The shared read-only publication provenance helper verifies the original
-    # applied_hash/IDs (before catalogue links), not just equal row values.
-    from app.program_service import approved_book_provenance
-    if approved_book_provenance(db, 2) is None:
-        refusals.append('2027 import_batches: özgün satır kimlikleri/uygulanmış paket özeti doğrulanamadı; sorumluya bildirin.')
+    # CIV-217: approved_book_provenance() recomputes each batch's applied_hash with
+    # today's serializer, so it can never verify a load made by older code after
+    # later migrations (the live 30 Oct load). Provenance here is the per-batch
+    # marker/payload check above plus the per-directorate content signatures.
     result = dict(mode='approved-load-replace-plan', old_sha256=OLD_SHA256, new_sha256=live.BOOK_SHA256,
         counts={name: dict(old=len(expected[name]), new=len(corrected[name])) for name in CONTENT},
         catalogue_differences=catalogue_diff, refusals=refusals,
+        leftover_catalogue=leftovers, stale_catalogue_texts=stale,
         catalogue_before=catalogue_state(db, 2))
     return result, actual, markers, corrected
 
@@ -461,6 +554,20 @@ def print_plan(result):
         print(f'Katalog farkı · {label}: {len(difference["removed"])} kaldırılacak, {len(difference["added"])} eklenecek.')
         for line in catalogue_lines(difference, officials):
             print(line)
+    leftovers = result.get('leftover_catalogue', [])
+    if leftovers:
+        programs = sum(1 for r in leftovers if r['table'] == 'programs')
+        print(f'Kullanılmayan eski katalog · {programs} program, {len(leftovers) - programs} alt program '
+              'silinecek (hiçbir kayıt bağlı değil).')
+        for row in leftovers:
+            print(f'  - {"Program" if row["table"] == "programs" else "Alt program"} #{row["id"]}: {_short(row["name"], 80)}')
+    stale = result.get('stale_catalogue_texts', [])
+    if stale:
+        print(f'Eski alt program metni · {len(stale)} alan ONAYLI metninden farklı; düzeltilmiş kitap metni yazılacak.')
+        for row in stale:
+            before, after = _changed_window(row['live'], row['approved'])
+            label = 'Gerekçe' if row['field'] == 'rationale' else 'Amaç'
+            print(f'  ~ Alt program #{row["id"]} {_short(row["name"], 50)} · {label}: canlı "{before}" · ONAYLI "{after}"')
     for refusal in result['refusals']:
         print('ENGEL: ' + refusal)
     print(f'Reddedilen: {len(result["refusals"])}')
@@ -589,6 +696,8 @@ def execute(engine, old, new, *, organization_id, actor_id, apply=False, backup=
                 details=encoded(dict(year=2027, head=live.HEAD, old_sha256=OLD_SHA256, new_sha256=live.BOOK_SHA256,
                     counts=result['counts'], decision='D-466',
                     catalogue_before=result['catalogue_before'], catalogue_after=catalogue_state(db, 2),
+                    leftover_catalogue=result['leftover_catalogue'],
+                    stale_catalogue_texts=[dict(id=r['id'], field=r['field']) for r in result['stale_catalogue_texts']],
                     old_batch_ids=[b.id for _, b in markers]))))
             result.update(mode='approved-load-replace-apply', validation=validation)
         return result

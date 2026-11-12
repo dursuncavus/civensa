@@ -447,3 +447,127 @@ def test_read_only_audits_allow_plan(target, compatible_books):
     before = row_state(target)
     assert execute(target, compatible_books)['refusals'] == []
     assert row_state(target) == before
+
+
+# CIV-217: live 2027 kept an older catalogue through the D-135 preprint clear, and
+# the 30 Oct load only filled blank subprogramme texts. The plan lists both and the
+# apply replaces them; a referenced or missing catalogue row still blocks.
+
+def _corrected_subprograms(target, books):
+    from app.import_service import department_key
+    with Session(target) as db:
+        mapping = {department_key(d.name): d.id for d in db.scalars(select(Department))}
+    rows = replace.source_rows(books[1], mapping)
+    programs = {r['id']: r['name'] for r in rows['programs']}
+    return {(programs[r['program_id']], r['name']): r for r in rows['subprograms']}
+
+
+def test_leftover_catalogue_and_stale_texts_are_listed_and_replaced(target, books, approved, capsys):
+    from app.models import Program, SubProgram
+    with Session(target) as db:
+        old_program = Program(period_id=2, name='ESKİ ÖN BASKI PROGRAMI')
+        db.add(old_program); db.flush()
+        old_child = SubProgram(period_id=2, program_id=old_program.id, name='Eski alt program')
+        kept = db.scalar(select(SubProgram).where(SubProgram.period_id == 2).order_by(SubProgram.id))
+        sibling = SubProgram(period_id=2, program_id=kept.program_id, name='Ön baskıda kalan alt program')
+        db.add_all([old_child, sibling]); db.flush()
+        identity = (kept.program.name, kept.name)
+        kept.rationale = 'GEREKÇE: ön baskı metni'
+        leftover_ids = {('programs', old_program.id), ('subprograms', old_child.id), ('subprograms', sibling.id)}
+        kept_id, old_program_id = kept.id, old_program.id
+        db.commit()
+    before = row_state(target)
+    planned = execute(target, books)
+    assert planned['refusals'] == [], planned['refusals']
+    assert {(r['table'], r['id']) for r in planned['leftover_catalogue']} == leftover_ids
+    assert [(r['id'], r['field'], r['live']) for r in planned['stale_catalogue_texts']] == [
+        (kept_id, 'rationale', 'GEREKÇE: ön baskı metni')]
+    assert row_state(target) == before
+    output = capsys.readouterr().out
+    assert 'Kullanılmayan eski katalog · 1 program, 2 alt program silinecek' in output
+    assert 'ESKİ ÖN BASKI PROGRAMI' in output and 'Eski alt program metni · 1 alan' in output
+    applied = execute(target, books, apply=True, backup=approved)
+    assert applied['mode'] == 'approved-load-replace-apply'
+    corrected = _corrected_subprograms(target, books)
+    with Session(target) as db:
+        assert db.get(Program, old_program_id) is None
+        assert db.scalar(select(Program).where(Program.period_id == 2, Program.name == 'ESKİ ÖN BASKI PROGRAMI')) is None
+        live_subprograms = {(s.program.name, s.name): s for s in db.scalars(select(SubProgram).where(SubProgram.period_id == 2))}
+        assert set(live_subprograms) == set(corrected)
+        assert all(live_subprograms[k].rationale == corrected[k]['rationale'] and live_subprograms[k].goal == corrected[k]['goal']
+                   for k in corrected)
+        assert live_subprograms[identity].rationale != 'GEREKÇE: ön baskı metni'
+        receipt = json.loads(db.scalar(select(AuditLog.details).where(AuditLog.action == replace.ACTION)))
+        assert {(r['table'], r['id']) for r in receipt['leftover_catalogue']} == leftover_ids
+        assert receipt['stale_catalogue_texts'] == [dict(id=kept_id, field='rationale')]
+        from app.program_service import approved_book_provenance
+        assert approved_book_provenance(db, 2)['book_sha256'] == live.BOOK_SHA256
+
+
+@pytest.mark.parametrize('kind', ['referenced_leftover', 'missing_onayli'])
+def test_catalogue_review_refusals_write_zero_rows(target, books, approved, kind):
+    from app.models import Program, SubProgram
+    with Session(target) as db:
+        indicator = db.scalar(select(Indicator).where(Indicator.period_id == 2).order_by(Indicator.id))
+        if kind == 'referenced_leftover':
+            stray = SubProgram(period_id=2, program_id=indicator.subprogram.program_id, name='Bağlı eski alt program')
+            db.add(stray); db.flush()
+            indicator.subprogram_id = stray.id
+            expected = 'ONAYLI kitapta yok ama başka kayıtlar ona bağlı'
+        else:
+            program = db.scalar(select(Program).where(Program.period_id == 2).order_by(Program.id))
+            program.name += ' (yeniden adlandırıldı)'
+            expected = 'ONAYLI katalog satırı canlıda eksik'
+        db.commit()
+    before, counts = row_state(target), state(target)
+    result = execute(target, books, apply=True, backup=approved)
+    assert result['mode'] == 'approved-load-replace-plan'
+    assert any(expected in reason for reason in result['refusals']), result['refusals']
+    assert row_state(target) == before
+    assert state(target) == counts
+
+
+def test_other_period_and_account_audits_allow_plan(target, compatible_books):
+    from app.models import Program
+    with Session(target) as db:
+        did = db.scalar(select(Department.id))
+        program_2026 = db.scalar(select(Program.id).where(Program.period_id == 1))
+        activity_2026 = db.scalar(select(Activity.id).where(Activity.period_id == 1))
+        db.add_all([AuditLog(user_id=1, action=action, entity_type=entity_type, entity_id=identity, details=details)
+            for action, entity_type, identity, details in (
+                ('catalogue_create', 'program', program_2026, None),
+                ('catalogue_link', 'activity', activity_2026, None),
+                ('pp_data_change', 'department', did, 'period_id=1'),
+                ('user_create', 'user', 1, None), ('user_bulk_create', 'user_batch', 7, None),
+                ('user_permission_change', 'user', 1, None))])
+        db.commit()
+    before = row_state(target)
+    assert execute(target, compatible_books)['refusals'] == []
+    assert row_state(target) == before
+
+
+@pytest.mark.parametrize('details', ['period_id=2', None, 'period_id=1; period_id=2'])
+def test_2027_or_unclear_pp_change_audit_refuses(target, compatible_books, details):
+    with Session(target) as db:
+        db.add(AuditLog(user_id=1, action='pp_data_change', entity_type='department',
+                        entity_id=db.scalar(select(Department.id)), details=details))
+        db.commit()
+    assert any('denetim kaydı' in reason for reason in execute(target, compatible_books)['refusals'])
+
+
+def test_old_code_load_without_recomputable_provenance_still_plans(target, books, approved):
+    """The 30 Oct live load predates later migrations; its applied_hash cannot be recomputed today."""
+    from app.models import ImportBatch
+    from app.program_service import approved_book_provenance
+    with Session(target) as db:
+        batch = db.scalar(select(ImportBatch).where(ImportBatch.period_id == 2, ImportBatch.status == 'applied')
+                          .order_by(ImportBatch.id))
+        batch.applied_hash = '0' * 64
+        db.commit()
+        assert approved_book_provenance(db, 2) is None
+    planned = execute(target, books)
+    assert planned['refusals'] == [], planned['refusals']
+    applied = execute(target, books, apply=True, backup=approved)
+    assert applied['mode'] == 'approved-load-replace-apply'
+    with Session(target) as db:
+        assert approved_book_provenance(db, 2)['book_sha256'] == live.BOOK_SHA256
