@@ -96,6 +96,15 @@ class _PDFReport(_ReportContent):
         ]))
         self.story.extend([table, Spacer(1, 10)])
 
+    def photo(self, photo):
+        import base64
+        from reportlab.platypus import Image
+        picture = Image(BytesIO(base64.b64decode(photo['image_base64'])))
+        scale = min(420 / picture.imageWidth, 300 / picture.imageHeight, 1)
+        picture.drawWidth = picture.imageWidth * scale
+        picture.drawHeight = picture.imageHeight * scale
+        self.story.append(picture)
+
     def decorate(self, canvas, doc):
         # Match Word's clean cover; mark every subsequent draft page.
         if doc.page == 1:

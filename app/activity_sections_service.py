@@ -489,6 +489,8 @@ def report_data(db,user,document_id,use_freeze=True,version=None,include_typeset
         for row in result['sections']:
             if row['code'] == 'EKLER': slot(db,doc,row,frozen=True)
         result.update(release_history(db,doc),release_version=freeze.version,revision=doc.revision)
+        if not doc.department_id and user.role != 'strategy':
+            result.pop('unit_tables', None)
         return result
     if doc.department_id and use_freeze:
         from .ar_unit_workflow_service import latest, verified_payload, view
@@ -523,6 +525,9 @@ def report_data(db,user,document_id,use_freeze=True,version=None,include_typeset
         result['core']=core
     from .activity_financial_service import financial_data, has_slot_data
     result['financial']=financial_data(db,doc)
+    from .ar_unit_tables_service import report_data as unit_tables_data
+    if doc.department_id or user.role == 'strategy':
+        result['unit_tables']=unit_tables_data(db,doc)
     contents={c.definition_id:c for c in db.scalars(select(ARSectionContent).where(ARSectionContent.document_id==doc.id))}
     for definition in definitions(db,doc):
         content=contents[definition.id]

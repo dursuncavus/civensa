@@ -143,7 +143,8 @@ class TurkishValidationRoute(APIRoute):
                     'metadata':'Malî tablo bilgileri','file':'Dosya','import_id':'İçe aktarma önizlemesi',
                     'statement_id':'Malî tablo','kind':'Tablo türü','version':'Yayın sürümü',
                     'approval_id':'Birim onayı','table_keys':'Tablo ve satır anahtarları',
-                    'photo_id':'Fotoğraf','thumbnail':'Küçük önizleme','action':'Fotoğraf işlemi'}
+                    'photo_id':'Fotoğraf','thumbnail':'Küçük önizleme','action':'Fotoğraf işlemi',
+                    'no_projects':'Bu yıl proje yok'}
                 fields=[]
                 for issue in error.errors():
                     location=issue.get('loc',())
@@ -265,6 +266,8 @@ def register(app):
         from .ar_export import build_activity_report_docx, TEMPLATE_PATH
         from docx.opc.exceptions import PackageNotFoundError
         payload,filename=export_payload(document_id,db,user,version)
+        from .ar_unit_tables_service import with_export_photos
+        payload=with_export_photos(db,payload)
         try:
             content=build_activity_report_docx(payload,TEMPLATE_PATH)
         except (FileNotFoundError,PackageNotFoundError):
@@ -281,6 +284,8 @@ def register(app):
         from .ar_pdf_export import build_activity_report_pdf
         from reportlab.pdfbase.ttfonts import TTFError
         payload,filename=export_payload(document_id,db,user,version)
+        from .ar_unit_tables_service import with_export_photos
+        payload=with_export_photos(db,payload)
         try:
             content=build_activity_report_pdf(payload)
         except (OSError,TTFError):

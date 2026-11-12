@@ -156,6 +156,8 @@ def ready_2026_narrative(db, doc, user):
         content.edited_by = user.id
     db.flush()
     assurance_service.save(db, user, doc.id, 'EK-2', {'expected_revision':doc.revision, 'variables':variables(year=2026)})
+    from ar_unit_workflow_helpers import ready_tables
+    ready_tables(db, doc, user)
     db.commit()
 
 

@@ -30,7 +30,7 @@ from scripts.book_to_load_docx import FIRST_LOAD_BOOKS
 
 BOOK = ROOT / 'tests/fixtures/first_load/source' / FIRST_LOAD_BOOKS[2027][0]
 BOOK_SHA256 = FIRST_LOAD_BOOKS[2027][1]
-HEAD = 'c197a1b2c3d4'
+HEAD = 'c219b1c2d3e4'
 TARGET_ENV = 'CIVENSA_FIRST_LOAD_DATABASE_URL'
 MARKER = 'first_load_department'
 LOCK = 520027

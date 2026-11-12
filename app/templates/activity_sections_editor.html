@@ -59,6 +59,7 @@
 {% for approval in typeset_approvals %}<p>Birim onayı {{ approval.revision }} · <a href="/activity-sections/reports/{{ report.id }}/typeset.json?approval_id={{ approval.id }}">Dizgi verisi (JSON)</a></p>{% endfor %}
 {% if form_error %}<div class="ar-error" role="alert">{{ form_error }} Girdiğiniz alanlar aşağıda korunmuştur.</div>{% endif %}
 {% include 'ar_unit_workflow.html' %}
+{% include 'ar_unit_tables_links.html' %}
 {% if not report.department_id %}
 <section class="panel ar-panel" aria-label="İdare sürüm geçmişi">
 <h2>İdare sürüm geçmişi</h2>

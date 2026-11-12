@@ -1,0 +1,5 @@
+{% if report.department_id or user.role=='strategy' %}
+<section class="panel ar-panel" aria-label="Birim faaliyet raporu tabloları"><h2>Birim faaliyet raporu tabloları</h2>
+<p>{% for number,code,label in [('1','I.C.1','Fiziksel Yapı'),('2','I.C.2','Yönetim Yapısı'),('7','III.B.2','Faaliyet ve Proje Bilgileri'),('8','III.B.2','Faaliyet ve Proje Bilgileri')] %}<a class="button" href="/activity-sections/reports/{{ report.id }}/unit-tables#table-{{ number }}">Tablo {{ number }} · {{ label }}</a> {% endfor %}</p>
+</section>
+{% endif %}

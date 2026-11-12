@@ -2562,3 +2562,6 @@ from . import pp_reopen_routes; app.include_router(pp_reopen_routes.router)
 
 from .actual_import_routes import register as register_actual_import_routes
 register_actual_import_routes(app)
+
+from .ar_unit_tables_routes import register as register_ar_unit_tables_routes
+register_ar_unit_tables_routes(app)
