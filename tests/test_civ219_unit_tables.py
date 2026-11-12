@@ -172,17 +172,22 @@ def test_scope_review_return_approval_and_exports(table_report, db, sample, tmp_
     assert snapshot['unit_tables']['photos'][0]['label'] == 'Fotoğraf 1'
     from app.ar_export import build_activity_report_docx, TEMPLATE_PATH
     from app.ar_pdf_export import build_activity_report_pdf
-    word = build_activity_report_docx(snapshot, TEMPLATE_PATH)
+    assert 'image_base64' not in approval.payload_json
+    export_payload = tables.with_export_photos(db, snapshot)
+    assert 'image_base64' not in snapshot['unit_tables']['photos'][0]
+    word = build_activity_report_docx(export_payload, TEMPLATE_PATH)
     with ZipFile(BytesIO(word)) as archive:
         xml = archive.read('word/document.xml').decode()
         for label in ['Tablo 1', 'Tablo 2', 'Tablo 7', 'Tablo 8', 'TOPLAM', 'Fotoğraf 1', '1.250,5', '2.469.135,78']:
             assert label in xml
         assert any(p.startswith('word/media/') for p in archive.namelist())
     from pypdf import PdfReader
-    pdf = build_activity_report_pdf(snapshot)
+    pdf = build_activity_report_pdf(export_payload)
     pdftext = '\n'.join(p.extract_text() for p in PdfReader(BytesIO(pdf)).pages)
     for label in ['Tablo 1', 'Tablo 2', 'Tablo 7', 'Tablo 8', 'Fotoğraf 1']:
         assert label in pdftext
+    assert client.get(f'/activity-sections/reports/{doc.id}/export.docx').content == word
+    assert client.get(f'/activity-sections/reports/{doc.id}/export.pdf').content == pdf
     assert approval.payload_json == before
     consolidated = sections.report_data(db, sample['strategy'], docs['idare'].id)['unit_tables']
     assert consolidated['units'][0]['tables'] == snapshot['unit_tables']['tables']
@@ -270,8 +275,9 @@ def test_browser_tables_and_capture(table_report, db, sample, tmp_path):
         snapshot = sections.report_data(db, sample['strategy'], doc.id)
         from app.ar_export import build_activity_report_docx, TEMPLATE_PATH
         from app.ar_pdf_export import build_activity_report_pdf
-        (folder / 'export-synthetic.docx').write_bytes(build_activity_report_docx(snapshot, TEMPLATE_PATH))
-        (folder / 'export-synthetic.pdf').write_bytes(build_activity_report_pdf(snapshot))
+        export_payload = tables.with_export_photos(db, snapshot)
+        (folder / 'export-synthetic.docx').write_bytes(build_activity_report_docx(export_payload, TEMPLATE_PATH))
+        (folder / 'export-synthetic.pdf').write_bytes(build_activity_report_pdf(export_payload))
         assert not errors
         context.close(); browser.close()
 
@@ -366,7 +372,7 @@ def test_photos_follow_book_order_and_tall_images_fit_word(table_report, db, sam
         ('Fotoğraf 1', 'Birinci faaliyet'), ('Fotoğraf 2', 'İkinci faaliyet')]
     from app.ar_export import build_activity_report_docx, TEMPLATE_PATH, BODY
     from docx import Document
-    document = Document(BytesIO(build_activity_report_docx(payload, TEMPLATE_PATH)))
+    document = Document(BytesIO(build_activity_report_docx(tables.with_export_photos(db, payload), TEMPLATE_PATH)))
     assert all(shape.width <= 3810000 and shape.height <= 5080000 for shape in document.inline_shapes)
     pictures = [p for p in document.paragraphs if p._p.xpath('.//w:drawing')]
     assert len(pictures) == 2 and all(p.style.name == BODY for p in pictures)

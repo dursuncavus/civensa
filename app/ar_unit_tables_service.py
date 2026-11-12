@@ -1,5 +1,6 @@
 """Guide tables: scoped drafts, book identities, computed totals and submit gates."""
 import base64
+from copy import deepcopy
 import hashlib
 import json
 import warnings
@@ -14,7 +15,7 @@ from sqlalchemy import select
 
 from . import activity_sections_service as sections
 from .activity_evidence_service import MAX_FILE
-from .models import (ARUnitTable, ARUnitPhoto, ActivityReport, ActivityReportRevision,
+from .models import (ARDocument, ARUnitTable, ARUnitPhoto, ActivityReport, ActivityReportRevision,
                      Publication, User)
 from .numbers import parse_number, format_number
 
@@ -219,9 +220,8 @@ def unit_data(db, doc):
     order = {a['key']: i for i, a in enumerate(source['activities'])}
     records = db.scalars(select(ARUnitPhoto).where(ARUnitPhoto.document_id == doc.id)).all()
     for photo in sorted((p for p in records if p.activity_key in order), key=lambda p: (order[p.activity_key], p.id)):
-        photos.append({'id': photo.id, 'activity_key': photo.activity_key, 'caption': photo.caption,
+        photos.append({'id': photo.id, 'document_id': doc.id, 'activity_key': photo.activity_key, 'caption': photo.caption,
                        'label': f'Fotoğraf {len(photos)+1}', 'filename': photo.filename, 'sha256': photo.sha256,
-                       'image_base64': base64.b64encode(photo.file_data).decode(),
                        'url': f'/activity-sections/reports/{doc.id}/unit-tables/photos/{photo.id}'})
     return {'tables': tables, 'photos': photos, 'programmes': source['programmes'],
             'publication_id': source['publication_id']}
@@ -343,3 +343,26 @@ def export_tables(data):
                 rows.append(['TOPLAM', *[format_number(table['totals'][key]['value'], money=key in MONEY)
                     if key in table['totals'] else '' for key, _ in columns[1:]]])
             yield unit, table, columns, rows
+
+
+def with_export_photos(db, payload):
+    """Hydrate immutable evidence bytes only for rendering, never for persistence.
+
+    Submission/freezes keep IDs and SHA-256 manifests, matching indicator evidence.
+    A detached copy prevents a Word/PDF download from changing the stored source.
+    """
+    result = deepcopy(payload)
+    data = result.get('unit_tables', {})
+    for unit in data.get('units', [data]):
+        department_id = unit.get('department_id', result.get('department_id'))
+        for photo in unit.get('photos', []):
+            record = db.get(ARUnitPhoto, photo['id'])
+            doc = db.get(ARDocument, photo['document_id'])
+            if (not record or not doc or record.document_id != doc.id or
+                    doc.organization_id != result['organization_id'] or doc.period_id != result['period_id'] or
+                    doc.department_id != department_id or record.activity_key != photo['activity_key'] or
+                    record.sha256 != photo['sha256'] or record.caption != photo['caption'] or
+                    hashlib.sha256(record.file_data).hexdigest() != photo['sha256']):
+                sections.fail('Faaliyet fotoğrafının sabit kaydı doğrulanamadı. Strateji ile rapor sürümünü ve fotoğraf kaydını kontrol edin.', 409)
+            photo['image_base64'] = base64.b64encode(record.file_data).decode()
+    return result

@@ -97,7 +97,8 @@ class _ReportContent:
                 for photo in unit.get('photos', []):
                     self.paragraph(f"{photo['label']} · {photo['caption']}" +
                                    (' · ' + unit['department'] if unit.get('department') else ''), CAPTION)
-                    self.photo(photo)
+                    if photo.get('image_base64'):
+                        self.photo(photo)
 
     def financial(self, code):
         # Shared storage labels only; rendering performs no service calls or queries.

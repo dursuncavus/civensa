@@ -23,7 +23,7 @@ class ARUnitPhoto(Base):
     caption: Mapped[str] = mapped_column(Text)
     filename: Mapped[str] = mapped_column(String(200))
     sha256: Mapped[str] = mapped_column(String(64))
-    file_data: Mapped[bytes] = mapped_column(LargeBinary)
+    file_data: Mapped[bytes] = mapped_column(LargeBinary, deferred=True)
     created_by: Mapped[int] = mapped_column(ForeignKey('users.id'))
 
 
