@@ -402,6 +402,16 @@ sıkıştırıyorsa **iki yedek** alın: prova için birincisi, canlı uygulamad
 önce ikincisi. Hash/sayım farkı veya herhangi bir FAIL varsa canlı uygulamaya
 geçmeyin; sorumlu Summary'de belirtilen ilk başarısız kontrolü incelesin.
 
+## Pilot öncesi envanter (CIV-221)
+
+Salt okunur; hiçbir satır yazmaz, yedek gerekmez. Hedef şema **c219b1c2d3e4**.
+Bağlantıyı yukarıdaki gizli terminal yöntemiyle yalnız
+`CIVENSA_FIRST_LOAD_DATABASE_URL` üzerinden verin, sonra:
+`python scripts/pilot_inventory.py`.
+Çıktıda ad ve e-posta vardır: yalnız sorumluyla paylaşın, repoya veya
+dosya paylaşımına koymayın. Sonda **Hedefe 0 satır yazıldı (salt okunur).**
+görünmelidir.
+
 ## 2026 pilot dönemini değiştirme
 
 CIV-172 / D-389 yalnız D-388'deki eski pilot envanterini kabul eder. Bu bölüm
