@@ -347,13 +347,26 @@ def register(app):
         return {'freeze_id':result.id,'sha256':result.sha256}
 
     def listing(db,user,period_id=None,section='',status=''):
+        # CIV-224: one structure/name cache and one listing memo for the whole
+        # page, so period-wide rows are read once, not once per directorate.
+        from .listing_memo import listing_memo
+        from .structure_service import structure_read_context
+        with listing_memo(db),structure_read_context(db):
+            return _listing(db,user,period_id,section,status)
+
+    def _listing(db,user,period_id=None,section='',status=''):
         service.actor(user)
         query=select(ARDocument).order_by(ARDocument.period_id,ARDocument.id)
         if period_id:query=query.where(ARDocument.period_id==period_id)
         reports=[];report_errors=[];baseline_cache={}
-        from .models import Department
-        names={d.name for d in db.scalars(select(Department))}
-        for doc in db.scalars(query):
+        from .models import Department, User
+        departments=db.scalars(select(Department)).all()
+        names={d.name for d in departments}
+        # Strong references keep these rows in the (weak) identity map, so the
+        # per-directorate db.get() calls below do not go back to the database.
+        keep=(departments,db.scalars(select(ReportingPeriod)).all(),db.scalars(select(Organization)).all(),
+              db.scalars(select(User)).all())
+        for doc in list(db.scalars(query)):
             if user.role!='strategy' and doc.department_id not in {None,user.department_id}:continue
             try:report=service.report_data(db,user,doc.id)
             except HTTPException as error:
