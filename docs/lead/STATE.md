@@ -127,7 +127,7 @@ Merged 26 Oct: #163 CIV-113 → 88c9dfb; #154 CIV-109 → 34329a7; #161 CIV-111 
 Current (13 Nov ~14:20, CV Lider 76, from ROLLOUT_CHECKLIST v1.2):
 - Kurum Yapısı: 3 plain renames (#15, #25, #27, D-482), before the January import.
 - EK-1 listing speed on live: open one screen, report the time.
-- With the Mac linked: CIV-195 v2 Strateji guide push; C2 rehearsal under D-479 (lead runs them).
+- CIV-195 v2 Strateji guide: lead pushing it from the Mac via Remote Control (13 Nov ~14:25), then PR + review. C2 rehearsal = DONE by D-476 (directorate accounts = the D-479 model; lead correction 13 Nov, was wrongly listed as open).
 - Pilot day (14 Dec week): Render Starter (payment) + db-backup before (D1/D2); Ali's announcement to directorates (Excel to Strateji as before, deadline) (E4).
 - Pilot week: Strateji walks draft → submit → return → approve → Word/PDF with 3 directorate accounts (C3).
 - January: deploy freeze 1–20 Jan (D4); Strateji uploads the Q4 workbook and fills unit tables.
