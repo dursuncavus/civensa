@@ -1833,3 +1833,11 @@ Next IDs: task CIV-224, decision D-485.
 - Render Starter stays a pilot-day option for general headroom, no longer the EK-1 fix.
 Next IDs: task CIV-225, decision D-486.
 
+## D-486 (13 Nov 2026 ~23:20 Istanbul, lead, CV Lider 76) — CIV-224 live: EK-1 listing 13–15 s → ~6 s
+- BEYAN (owner 23:14): "Yayında". DOĞRULANDI: #523 merged (main 28de2ea); db-backup ref phase5 run 43498381436 success (20:06Z); /health ok, migration c219b1c2d3e4.
+- DOĞRULANDI (lead, live, owner's Chrome, owner signed in himself): /activity-sections?period_id=1 (1293 rows, 539 KB) first load 9.1 s, then 6.0 / 6.0 / 7.2 / 5.8 s. /health db latency 10 ms.
+- Model analysis: ~374 queries × ~10 ms ≈ 3.7 s + HTML rendering on Render free (0.1 CPU) ≈ 2 s.
+- Lead decision: usable for the pilot; no further work now. Options if needed later: CIV-225 batch the remaining ~10 per-document queries (est. −3 s); Render Starter on pilot day helps the rendering part.
+- Follow-up (not blocking): tests/test_source_comparison_ui.py saw 9 rows instead of 3 once in CI (#521, passed on re-run) → cross-test data leak suspected; look at it when CI flakes again.
+Next IDs: task CIV-225, decision D-487.
+
