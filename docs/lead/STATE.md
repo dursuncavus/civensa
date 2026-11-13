@@ -124,6 +124,14 @@ Merged 27 Oct: #211 CIV-135 → 43f4de6 · #192 CIV-127 → 97f2225 · #201 CIV-
 Merged 26 Oct: #163 CIV-113 → 88c9dfb; #154 CIV-109 → 34329a7; #161 CIV-111 → 31b00e4 (D-283); #160 CIV-110 → 0b4b333 (D-282); #156 CIV-108 prototype → 633ac07 (D-277); #150 CIV-105 → 7cb58d9 (D-278; all jobs green, D-280); #148 CIV-106 → 1ed8620 (D-273); #145 CIV-104 → e0df9ce (D-268); #140 CIV-103 → 6efbe25 (D-265); #138 copilot-setup-steps → cbed4d8 (D-264); #136 production environment → d02b7cc; #132 CIV-102 → 873d361.
 
 ## Open — owner
+Current (13 Nov ~14:20, CV Lider 76, from ROLLOUT_CHECKLIST v1.2):
+- Kurum Yapısı: 3 plain renames (#15, #25, #27, D-482), before the January import.
+- EK-1 listing speed on live: open one screen, report the time.
+- With the Mac linked: CIV-195 v2 Strateji guide push; C2 rehearsal under D-479 (lead runs them).
+- Pilot day (14 Dec week): Render Starter (payment) + db-backup before (D1/D2); Ali's announcement to directorates (Excel to Strateji as before, deadline) (E4).
+- Pilot week: Strateji walks draft → submit → return → approve → Word/PDF with 3 directorate accounts (C3).
+- January: deploy freeze 1–20 Jan (D4); Strateji uploads the Q4 workbook and fills unit tables.
+Older items below are kept as written; not re-checked on 13 Nov (BELİRSİZ, many likely closed):
 - D-461: merge release #477 → Neon backup → Render deploy → /health ok → check /internal-control.
 - Rollout checklist (D-438/D-439, calendar approved): decide the support channel with Ali; ask Ali 9 Nov for the directorate user list (Ad Soyad, e-posta, Müdür/Personel).
 - 2025 evaluation deck (D-429): go through it with Ali 9 Nov (İndirilenler › SN-video › 2025-Meclis-Sunumu-Deneme.html).
