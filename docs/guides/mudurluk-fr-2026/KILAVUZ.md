@@ -3,7 +3,7 @@
 ## Başlamadan önce
 
 **2026 raporu için:** girişleri Strateji Geliştirme Müdürlüğü yapar (D-479). Müdürlükler verilerini bugünkü gibi Stratejiye iletir.
-Strateji her müdürlük için açılmış `<Müdürlük> (Strateji)` Müdür hesabını kullanır. Bu hesaplar yalnız Strateji içinde kalır.
+Strateji her müdürlük için açılmış “<Müdürlük> (Strateji)” Müdür hesabını kullanır. Bu hesaplar yalnız Strateji içinde kalır.
 Aşağıdaki adımlar bu hesaplar için de aynıdır. Başka bir müdürlüğe geçmek için çıkış yapıp o müdürlüğün hesabıyla girin.
 Gösterge gerçekleşmeleri tek tek değil, ana Excel dosyasından toplu aktarılır: [Gösterge gerçekleşmelerini Excel'den aktarma (Strateji)](#gösterge-gerçekleşmelerini-excelden-aktarma-strateji).
 
@@ -147,16 +147,16 @@ Sorularınız ve sorunlarınız için Strateji Geliştirme Müdürlüğü'ne ula
 ## Gösterge gerçekleşmelerini Excel'den aktarma (Strateji)
 
 Bu bölüm yalnız Strateji hesapları içindir. Kaynak, müdürlüklerden gelen satırların toplandığı ana çalışma kitabıdır (`veriler` sayfası).
-Yıllık değer yalnız `2026 YILI 4. ÇEYREK GERÇEKLEŞEN TOPLAMI` sütunundan ya da satırın hesaplama yönteminden alınır. Boş hücre sıfır sayılmaz.
+Yıllık değer yalnız “2026 YILI 4. ÇEYREK GERÇEKLEŞEN TOPLAMI” sütunundan ya da satırın hesaplama yönteminden alınır. Boş hücre sıfır sayılmaz.
 
-1. **Yüklemeden önce** Excel'de `Sorumlu Müdürlük` sütununu kontrol edin. Yapı Kontrol göstergeleri çalışma kitabında İmar ve Şehircilik altında durur. 2026 raporunda Yapı Kontrol ayrı müdürlüktür. Şu üç satırın müdürlüğünü `Yapı Kontrol Müdürlüğü` yapın:
+1. **Yüklemeden önce** Excel'de “Sorumlu Müdürlük” sütununu kontrol edin. Yapı Kontrol göstergeleri çalışma kitabında İmar ve Şehircilik altında durur. 2026 raporunda Yapı Kontrol ayrı müdürlüktür. Şu üç satırın müdürlüğünü “Yapı Kontrol Müdürlüğü” yapın:
    - Yıllık olarak tespit edilen ve yasal işlem başlatılan kaçak yapı sayısı
    - Yıllık olarak denetlenen ruhsatlı inşaat sayısı
    - Şikâyetleri çözüme kavuşturulan vatandaşların memnuniyet oranı
 
    Diğer yeni adlar (Harita ve Planlama, Sosyal Hizmetler, Basın Yayın ve Halkla İlişkiler) olduğu gibi kalır; Kurum Yapısı'ndaki ad değişikliğiyle eşleşir (D-482).
 2. Strateji hesabıyla `Gösterge gerçekleşmeleri` ekranını açın (`Gösterge gerçekleşmelerine gir` bağlantısı). `Excel'den içe aktar` bölümünde 2026 raporunun güncel revizyonunu seçin, ana Excel dosyasını seçin ve `Excel önizlemesini aç` düğmesine basın.
-3. Önizlemede her satırın `Durum` sütununu okuyun. `Eşleşti` satırında önerilen seçimi kontrol edin. `Onay gerekiyor` satırında Civensa'daki gösterge adını Excel'deki adla karşılaştırın; aynı gösterge değilse `Aktarma` bırakın. `Eşleşmedi`, `Eksik` ve `Hata` satırları aktarılmaz.
+3. Önizlemede her satırın `Durum` sütununu okuyun. `Eşleşti` satırında önerilen seçimi kontrol edin. “Onay gerekiyor” satırında Civensa'daki gösterge adını Excel'deki adla karşılaştırın; aynı gösterge değilse `Aktarma` bırakın. `Eşleşmedi`, `Eksik` ve `Hata` satırları aktarılmaz.
 4. Oran göstergelerinde Excel değeri kesirse (0,94) `×100 (oran kesirden yüzdeye)` seçeneğini, zaten yüzdeyse `olduğu gibi` seçeneğini seçin.
 5. `Onaylanan satırları uygula` düğmesine basın. Sonuç listesinde aktarılmayan satırları ve nedenlerini okuyun. Excel'i düzeltip yeniden yükleyebilirsiniz; önizleme 24 saat geçerlidir.
-6. Aktarılamayan göstergeyi ilgili müdürlüğün `(Strateji)` hesabıyla [Gösterge gerçekleşmesi ve kanıt](#gösterge-gerçekleşmesi-ve-kanıt) adımlarıyla elle girin. Kanıtları da o hesapla ekleyin.
+6. Aktarılamayan göstergeyi ilgili müdürlüğün “(Strateji)” hesabıyla [Gösterge gerçekleşmesi ve kanıt](#gösterge-gerçekleşmesi-ve-kanıt) adımlarıyla elle girin. Kanıtları da o hesapla ekleyin.
