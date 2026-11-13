@@ -1825,3 +1825,11 @@ Next IDs: task CIV-223, decision D-484.
 - Release PR #519 phase5 → main: CIV-223, CIV-195, CIV-222 code, guide fixes, lead records. No migration; head stays c219b1c2d3e4. Owner: merge → db-backup (ref phase5) → Render deploy → /health ok, c219b1c2d3e4. Then the lead re-measures the EK-1 listing via the owner's Chrome.
 Next IDs: task CIV-224, decision D-485.
 
+## D-485 (13 Nov 2026 ~21:10 Istanbul, lead, CV Lider 76) — release #519 live; EK-1 still slow: query round trips, not CPU; CIV-224
+- BEYAN (owner 20:39): "Yayında". DOĞRULANDI: #519 merged (main 4b9dccd); db-backup ref phase5 run 43474029719 success (17:33Z); /health ok, migration c219b1c2d3e4.
+- DOĞRULANDI (lead, live, owner's Chrome): /activity-sections?period_id=1 still 15.4 s and 13.0 s after the CIV-223 deploy.
+- DOĞRULANDI (local profile, 34-document FR fixture): 1514 queries per listing (37 per directorate, 296 for İdare: approved_sources ran 2 queries per directorate, 4 times per report). Live round trip to Neon ~6 ms (/health latency 5.9–6.8 ms) → ~9 s in round trips alone. D-483's CPU assumption was wrong (rule 29): Render Starter would not fix this listing.
+- Lead decision: CIV-224 #521 (lead-coded): request-scoped listing memo + batched approved_sources → 374 queries, identical report data (test). Codex: one P1 (task file under docs/lead in a task PR) fixed by moving it here; re-review clean. Merge when CI is green, then release phase5 → main and re-measure live. BELİRSİZ: live time after CIV-224 (estimate 3–4 s).
+- Render Starter stays a pilot-day option for general headroom, no longer the EK-1 fix.
+Next IDs: task CIV-225, decision D-486.
+
