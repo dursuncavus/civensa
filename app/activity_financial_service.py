@@ -17,6 +17,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import defer
 from . import activity_sections_service as sections
 from .structure_service import period_name
+from .listing_memo import memo, KEY as _MEMO_KEY
 from .models import (ARBudgetRow, ARFinancialPolicy, ARFinancialEntry, ARFinancialStatement,
     ARFinancialImport, ARStatementFigureKey, ARDocument, Department, ReportingPeriod, Program, SubProgram, Publication)
 from .numbers import parse_number, format_number
@@ -51,9 +52,13 @@ from .config import attachment_max_bytes
 MAX_FILE = attachment_max_bytes()
 
 
+def memo_active(db):
+    return _MEMO_KEY in db.info
+
+
 def idare_document(db, doc):
-    return db.scalar(select(ARDocument).where(ARDocument.organization_id==doc.organization_id,
-        ARDocument.period_id==doc.period_id, ARDocument.scope=='idare'))
+    return memo(db,('idare_document',doc.organization_id,doc.period_id),lambda:db.scalar(select(ARDocument).where(
+        ARDocument.organization_id==doc.organization_id,ARDocument.period_id==doc.period_id,ARDocument.scope=='idare')))
 
 
 def authorize(db, user, doc, kind):
@@ -187,7 +192,8 @@ def budget_raw(row):
 
 
 def stored_rows(db,doc,kind):
-    return db.scalars(select(ARBudgetRow).where(ARBudgetRow.document_id==doc.id,ARBudgetRow.kind==kind).order_by(ARBudgetRow.row_key)).all()
+    return memo(db,('budget_rows',doc.id,kind),lambda:db.scalars(select(ARBudgetRow).where(
+        ARBudgetRow.document_id==doc.id,ARBudgetRow.kind==kind).order_by(ARBudgetRow.row_key)).all())
 
 
 def save_budget(db,user,document_id,kind,rows,expected_revision):
@@ -207,6 +213,15 @@ def save_budget(db,user,document_id,kind,rows,expected_revision):
 
 
 def entries(db,doc,kind):
+    if memo_active(db):
+        # CIV-224: one query for all of a document's entry kinds during a listing.
+        def load():
+            grouped={}
+            for r in db.scalars(select(ARFinancialEntry).where(ARFinancialEntry.document_id==doc.id)
+                                .order_by(ARFinancialEntry.kind,ARFinancialEntry.position)):
+                grouped.setdefault(r.kind,[]).append(r.payload_json)
+            return grouped
+        return [json.loads(raw,parse_float=Decimal) for raw in memo(db,('financial_entries',doc.id),load).get(kind,[])]
     return [json.loads(r.payload_json,parse_float=Decimal) for r in db.scalars(select(ARFinancialEntry).where(
         ARFinancialEntry.document_id==doc.id,ARFinancialEntry.kind==kind).order_by(ARFinancialEntry.position))]
 
@@ -358,7 +373,7 @@ def totals(rows,kind,missing_sources=0):
 
 def pp_references(db,doc,*,include_plan=False):
     year=db.get(ReportingPeriod,doc.period_id).year
-    pub=db.scalar(select(Publication).options(defer(Publication.snapshot_json)).where(Publication.period_id==doc.period_id).order_by(Publication.version.desc()).limit(1))
+    pub=memo(db,('latest_publication',doc.period_id),lambda:db.scalar(select(Publication).options(defer(Publication.snapshot_json)).where(Publication.period_id==doc.period_id).order_by(Publication.version.desc()).limit(1)))
     if not pub:return ({},None,[]) if include_plan else ({},None)
     # CIV-220: listing pages build this for every directorate; the publication is
     # immutable (sha256-pinned), so verify, parse and project it once per session.
@@ -406,7 +421,7 @@ def has_slot_data(financial,code):
 
 def financial_data(db,doc):
     source=idare_document(db,doc)
-    policy=db.scalar(select(ARFinancialPolicy).where(ARFinancialPolicy.document_id==source.id))
+    policy=memo(db,('financial_policy',source.id),lambda:db.scalar(select(ARFinancialPolicy).where(ARFinancialPolicy.document_id==source.id)))
     result={'source_document_id':source.id,'source_revision':source.revision,'policy':{'lower_rate':policy.lower_rate if policy else None,'upper_rate':policy.upper_rate if policy else None},
         'tables':{},'checks':[],'missing':{k:[] for k in ('III.A.1','III.A.2','III.A.3','III.A.4')},
         'warnings':{k:[] for k in ('III.A.1','III.A.2','III.A.3','III.A.4')},'statements':[],'entries':{},'imports':[]}
@@ -414,7 +429,7 @@ def financial_data(db,doc):
     budget_issues=result['warnings' if doc.department_id else 'missing']['III.A.1']
     refs,pub_id,planned=pp_references(db,doc,include_plan=True)
     if planned:result['pp_planned_figures']=planned
-    units=db.scalars(select(ARDocument).where(ARDocument.organization_id==doc.organization_id,ARDocument.period_id==doc.period_id,ARDocument.department_id.is_not(None))).all()
+    units=memo(db,('unit_documents',doc.organization_id,doc.period_id),lambda:db.scalars(select(ARDocument).where(ARDocument.organization_id==doc.organization_id,ARDocument.period_id==doc.period_id,ARDocument.department_id.is_not(None))).all())
     approved=[]
     if not doc.department_id:
         from .ar_unit_workflow_service import approved_sources

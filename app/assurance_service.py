@@ -170,8 +170,13 @@ def slot(db, doc, row, frozen=False):
     """Single EKLER hook for live completeness and the frozen variable snapshot."""
     error = integrity_error()
     year = db.get(ReportingPeriod, doc.period_id).year
-    scope = db.scalar(select(DepartmentScope).where(DepartmentScope.period_id == doc.period_id,
-        DepartmentScope.department_id == doc.department_id)) if doc.department_id else None
+    from .listing_memo import KEY, memo
+    if doc.department_id and KEY in db.info:
+        scope = memo(db, ('department_scopes', doc.period_id), lambda: {s.department_id: s for s in db.scalars(
+            select(DepartmentScope).where(DepartmentScope.period_id == doc.period_id))}).get(doc.department_id)
+    else:
+        scope = db.scalar(select(DepartmentScope).where(DepartmentScope.period_id == doc.period_id,
+            DepartmentScope.department_id == doc.department_id)) if doc.department_id else None
     active_to = scope.active_to if scope and scope.active_to and scope.active_to.year == year else None
     department_name = period_name(db, doc.period_id, db.get(Department, doc.department_id)) if active_to else ''
     if frozen:

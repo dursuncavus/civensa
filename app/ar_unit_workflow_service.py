@@ -37,10 +37,11 @@ def verified_payload(record):
 
 
 def view(db, doc):
-    current = latest(db, doc)
-    status = current.to_status if current else 'draft'
     events = db.scalars(select(ARUnitWorkflowEvent).where(ARUnitWorkflowEvent.document_id == doc.id)
                         .order_by(ARUnitWorkflowEvent.id)).all()
+    # The newest event is the last one by id (same row latest() returns).
+    current = events[-1] if events else None
+    status = current.to_status if current else 'draft'
     return {'status': status, 'label': STATUSES[status], 'reason': current.reason if current else '',
             'events': [{'id': e.id, 'action': e.action, 'from_status': e.from_status, 'to_status': e.to_status,
                         'label': STATUSES[e.to_status], 'reason': e.reason, 'actor_id': e.actor_id,
@@ -54,10 +55,20 @@ def approved_sources(db, doc):
         .where(Department.organization_id == doc.organization_id, DepartmentScope.period_id == doc.period_id,
                DepartmentScope.status != 'excluded').order_by(Department.id)).all()
     sources, missing = [], []
+    # CIV-224: two queries for all directorates instead of two per directorate.
+    units = {}
+    for unit in db.scalars(select(ARDocument).where(ARDocument.organization_id == doc.organization_id,
+            ARDocument.period_id == doc.period_id, ARDocument.department_id.in_([d.id for d in deps]))
+            .order_by(ARDocument.id)):
+        units.setdefault(unit.department_id, unit)
+    newest = select(func.max(ARUnitWorkflowEvent.id)).where(
+        ARUnitWorkflowEvent.document_id.in_([u.id for u in units.values()]),
+        ARUnitWorkflowEvent.action == 'approve').group_by(ARUnitWorkflowEvent.document_id)
+    approvals = {e.document_id: e for e in db.scalars(select(ARUnitWorkflowEvent).where(
+        ARUnitWorkflowEvent.id.in_(newest)))} if units else {}
     for dep in deps:
-        unit = db.scalar(select(ARDocument).where(ARDocument.organization_id == doc.organization_id,
-            ARDocument.period_id == doc.period_id, ARDocument.department_id == dep.id))
-        approval = latest(db, unit, 'approve') if unit else None
+        unit = units.get(dep.id)
+        approval = approvals.get(unit.id) if unit else None
         name = period_name(db, doc.period_id, dep)
         if not approval:
             missing.append({'department_id': dep.id, 'department': name})

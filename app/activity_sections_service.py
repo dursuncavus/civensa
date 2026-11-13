@@ -122,8 +122,10 @@ def reopen_document(db,user,document_id,expected_revision,reason):
 
 def definitions(db, doc):
     kind = 'birim' if doc.department_id else 'idare'
-    return db.scalars(select(ARSectionDefinition).where(ARSectionDefinition.version==doc.definition_version,
-        ARSectionDefinition.applies_to.in_(['both',kind])).order_by(ARSectionDefinition.position)).all()
+    from .listing_memo import memo
+    return memo(db, ('section_definitions', doc.definition_version, kind), lambda: db.scalars(select(ARSectionDefinition).where(
+        ARSectionDefinition.version==doc.definition_version,
+        ARSectionDefinition.applies_to.in_(['both',kind])).order_by(ARSectionDefinition.position)).all())
 
 
 def owner(definition, doc):
@@ -440,10 +442,14 @@ def save_resources(db,user,document_id,kind,rows,expected_revision):
 
 def core_summary(db,doc):
     from .activity_contract_service import indicator_direction
-    report=db.scalar(select(ActivityReport).where(ActivityReport.organization_id==doc.organization_id,ActivityReport.period_id==doc.period_id))
+    from .listing_memo import memo
+    def load():
+        report=db.scalar(select(ActivityReport).where(ActivityReport.organization_id==doc.organization_id,ActivityReport.period_id==doc.period_id))
+        return report,(db.scalar(select(ActivityReportRevision).where(ActivityReportRevision.report_id==report.id,
+            ActivityReportRevision.revision==report.current_revision)) if report else None)
+    report,revision=memo(db,('core_report',doc.organization_id,doc.period_id),load)
     if not report:
         return {'status':'empty','total':0,'verified':0,'link':'/activity-reports','message':'Gösterge raporu henüz oluşturulmadı. Gerçekleşme ekranında raporu oluşturun.'}
-    revision=db.scalar(select(ActivityReportRevision).where(ActivityReportRevision.report_id==report.id,ActivityReportRevision.revision==report.current_revision))
     if not revision:
         return {'status':'empty','total':0,'verified':0,'link':'/activity-reports','message':'Güncel gösterge revizyonu bulunamadı. Gerçekleşme raporunu kontrol edin.'}
     query=select(ReportIndicator).join(PublicationIndicatorBinding,PublicationIndicatorBinding.id==ReportIndicator.publication_binding_id).where(ReportIndicator.report_revision_id==revision.id)
