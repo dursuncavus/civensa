@@ -40,6 +40,7 @@ def _all(db, strategy, docs):
 def _listed(db, strategy, docs):
     with listing_memo(db), structure_read_context(db):
         keep = [db.scalars(select(m)).all() for m in (Department, ReportingPeriod, Organization, User)]
+        sections.prefetch_listing(db, docs)
         result = _all(db, strategy, docs)
         assert keep
         return result
@@ -55,9 +56,29 @@ def test_listing_memo_same_data_fewer_queries(walk):
     db.expunge_all()
     listed, listed_count = _count(db, lambda: _listed(db, strategy, docs))
     assert listed == plain
-    # Measured: 1514 → 374 for 34 documents. Keep a margin, catch regressions.
-    assert listed_count * 3 < plain_count, (listed_count, plain_count)
-    assert listed_count <= 16 * len(docs), (listed_count, len(docs))
+    # Measured: CIV-224 1514 → 374, CIV-225 → under 60 for 34 documents.
+    assert listed_count * 10 < plain_count, (listed_count, plain_count)
+    assert listed_count <= 80, (listed_count, len(docs))
+
+
+def test_listing_with_indicators_same_data_fewer_queries(walk):
+    # CIV-225: each directorate has a pinned indicator with a verified actual,
+    # so the indicator summary (core_summary) is part of the comparison.
+    from ar_unit_workflow_helpers import ensure_core_ready
+    db, _, strategy, _, _, _ = walk
+    docs = create_fr(walk)
+    for doc in docs:
+        if doc.department_id:
+            ensure_core_ready(db, doc, strategy)
+    db.flush()
+    _all(db, strategy, docs)
+    db.expunge_all()
+    plain, plain_count = _count(db, lambda: _all(db, strategy, docs))
+    db.expunge_all()
+    listed, listed_count = _count(db, lambda: _listed(db, strategy, docs))
+    assert '"verified": 1' in listed
+    assert listed == plain
+    assert listed_count <= 90, (listed_count, plain_count)
 
 
 def test_memo_off_outside_listing_and_stops_on_writes(walk):

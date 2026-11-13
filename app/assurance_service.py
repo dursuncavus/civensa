@@ -182,8 +182,8 @@ def slot(db, doc, row, frozen=False):
     if frozen:
         placed = {item['code']: item for item in row.get('assurances', [])}
     else:
-        placed = {r.code: record_data(r) for r in db.scalars(
-            select(AssuranceStatement).where(AssuranceStatement.document_id == doc.id))}
+        placed = {r.code: record_data(r) for r in memo(db, ('assurance_statements', doc.id), lambda: db.scalars(
+            select(AssuranceStatement).where(AssuranceStatement.document_id == doc.id)).all())}
     items, missing = [], []
     for code in codes(doc):
         item = placed.get(code)
