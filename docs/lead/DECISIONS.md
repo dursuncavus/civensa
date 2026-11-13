@@ -1773,3 +1773,10 @@ Next IDs: task CIV-200, decision D-457.
 - Live now: CIV-218 (İç Kontrol sticky save bar), CIV-219 (directorate Tablo 1/2/7/8, photos, ±10% rule), CIV-220 (EK-1 listing cache).
 - Note: the GitHub run page did not refresh and showed a finished backup as running for 30 min; the run itself took ~2 min. Tell the owner to reload the page before waiting.
 - Open: EK-1 listing speed on live not measured; Ali Bey questions (2026 data entry, ML1 Excel, directorate name changes, support confirmation) unanswered; C2 rehearsal held until the data-entry decision.
+
+
+## D-478 (13 Nov 2026 ~11:40 Istanbul, CV Lider 76) — pre-pilot cleanup starts with a read-only inventory
+- Owner requirement D-459: all test accounts and pilot data go before real data entry (pilot week 14 Dec). Lead decision: three phases, nothing deleted before the owner sees the inventory and approves.
+- Phase 1 DONE: CIV-221 #506 (lead-coded, D-408) merged into phase5. scripts/pilot_inventory.py: REPEATABLE READ READ ONLY, schema must be c219b1c2d3e4; lists accounts (role/position, directorate, active, last login from audit 'login', referencing rows per table excl. notification_recipients as CIV-207) and per-directorate rows in every table with a departments FK (total / 2026-owned; tables with two directorate FKs reported per column, Codex P2). Tests: 0 rows written, wrong schema refuses. Codex re-review clean, CI green ccd3977.
+- Phase 2 (owner): run the inventory on the Mac per runbook, share output with the lead only; with Ali Bey mark test accounts; confirm Ali's live test is over.
+- Phase 3: CIV-222 guarded apply modelled on CIV-172 (pinned ids/counts, delete unreferenced test accounts, deactivate referenced ones, remove pinned directorates' 2026 entered data while keeping book/catalogue/mappings/audit, archive in audit, rehearsal on a backup copy, fresh verified backup, typed phrase). Live run only with owner approval, before 14 Dec.
