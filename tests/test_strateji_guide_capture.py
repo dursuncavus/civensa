@@ -37,11 +37,11 @@ def test_committed_strateji_guide_contract():
         'İzleme',
         'İnceleme, iade, onay',
         'Dışa aktarma',
-        'Daha sonra eklenecek bölümler',
+        "Gösterge gerçekleşmelerini Excel'den aktarma",
         'Yardım',
     ]
-    placeholder = '[EKLENECEK — gösterge Excel ile toplu içe aktarma (Strateji)]'
-    assert body.count(placeholder) == 1
+    assert '[EKLENECEK' not in body
+    assert '../mudurluk-fr-2026/KILAVUZ.md' in body
     assert 'Teknik sorunları sistem yöneticisine iletin.' in body
     for label in [
         'Rapor bölümleri ve beyanlar (EK-1)',

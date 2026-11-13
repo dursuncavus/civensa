@@ -5,9 +5,12 @@
 Bu kılavuzu 2026 Faaliyet Raporu yıllık döngüsünü yöneten Strateji Geliştirme Müdürlüğü kullanıcıları için kullanın.
 Döngüyü başlatmadan önce şu bilgileri hazırlayın:
 
-- Her müdürlük için `Müdür` ve `Personel` görevlerini içeren güncel kullanıcı listesi (`Ad Soyad`, `E-posta`, `Görev`).
+- Kişisel hesap açacaksanız (2027 ve sonrası) her müdürlük için `Müdür` ve `Personel` görevlerini içeren güncel kullanıcı listesi (`Ad Soyad`, `E-posta`, `Görev`).
 - 2026 onaylı Performans Programı kitabının meclis karar bilgisi (`Onay dayanağı`).
 - Müdürlüklere duyuracağınız veri girişi son günü (son günü Strateji Geliştirme Müdürlüğü kendisi belirler ve duyurur).
+
+**2026 raporu için (D-479):** müdürlük girişlerini de Strateji yapar. Canlıda her müdürlük için “Müdürlük adı (Strateji)” adlı bir `Müdür` hesabı açıktır; kişisel müdürlük hesabı açmanız gerekmez. Müdürlüğün bölümlerini, tablolarını ve gerçekleşmelerini o müdürlüğün hesabıyla girin ve gönderin; adımlar [müdürlük kılavuzundadır](../mudurluk-fr-2026/KILAVUZ.md). Bu hesapların parolası Strateji dışına çıkmaz.
+İnceleme, iade ve onayı ise kendi Strateji hesabınızla yapın. Birimi onaylayan Strateji Geliştirme Müdürü, o birimin verisini girmemiş kişi olmalıdır.
 
 Aşağıdaki ekranlar **SENTETİK** deneme verisi içerir. Örnek değerleri canlı kayıtlara kopyalamayın.
 
@@ -117,9 +120,9 @@ Birim raporunda `Onaylandı` durumunu kontrol edin. Üstteki `Dışa aktar` men�
 
 ![Onaylı raporda Word ve PDF indirme](img/23-disa-aktarma.png)
 
-## Daha sonra eklenecek bölümler
+## Gösterge gerçekleşmelerini Excel'den aktarma
 
-[EKLENECEK — gösterge Excel ile toplu içe aktarma (Strateji)]
+Müdürlüklerden gelen satırları topladığınız ana çalışma kitabını `Gösterge gerçekleşmeleri` ekranındaki `Excel'den içe aktar` bölümünden yükleyin. Yüklemeden önce yapılacak müdürlük adı düzeltmesi ve önizleme adımları müdürlük kılavuzunun [Gösterge gerçekleşmelerini Excel'den aktarma (Strateji)](../mudurluk-fr-2026/KILAVUZ.md#gösterge-gerçekleşmelerini-excelden-aktarma-strateji) bölümündedir.
 
 ## Yardım
 
