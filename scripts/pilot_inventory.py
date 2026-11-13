@@ -77,7 +77,14 @@ def collect(db, year=2026):
 
     owned = period_inventory_tables(year)
     data = {}
-    for table, column in department_columns():
+    columns = list(department_columns())
+    per_table = {}
+    for table, _ in columns:
+        per_table[table.name] = per_table.get(table.name, 0) + 1
+    for table, column in columns:
+        # A table with several directorate FKs (e.g. transfers from/to) is
+        # reported per column so one path never overwrites another.
+        key = table.name if per_table[table.name] == 1 else f'{table.name}.{column.name}'
         rows = db.execute(select(column, func.count()).select_from(table).where(column.is_not(None))
                           .group_by(column)).all()
         period_rows = {}
@@ -88,7 +95,7 @@ def collect(db, year=2026):
                                           .group_by(cte.c[column.name])).all())
         for department_id, count in rows:
             entry = data.setdefault(department_id, {})
-            entry[table.name] = (count, period_rows.get(department_id, 0))
+            entry[key] = (count, period_rows.get(department_id, 0))
     return dict(year=year, users=users, departments=departments, data=data)
 
 

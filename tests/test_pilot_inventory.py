@@ -1,5 +1,5 @@
 """CIV-221: read-only pilot inventory of accounts and directorate data; local PG only."""
-from datetime import datetime
+from datetime import date, datetime
 
 from sqlalchemy import func, select, text
 from sqlalchemy.orm import Session
@@ -48,6 +48,13 @@ def test_inventory_lists_accounts_references_and_directorate_rows_without_writin
                                code='G1', name='Gösterge', unit='Adet'))
             db.add(m.AuditLog(user_id=used.id, action='login', entity_type='user', entity_id=used.id,
                               created_at=datetime(2026, 11, 10, 9, 30)))
+            change = m.StructureChange(change_type='RENAMED', effective_date=date(2026, 1, 1),
+                                       council_decision_no='1', council_decision_date=date(2026, 1, 1),
+                                       snapshot_json='{}', created_by=strategy.id)
+            db.add(change)
+            db.flush()
+            db.add_all([m.StructureChangeLink(change_id=change.id, from_department_id=afet.id, to_department_id=fen.id),
+                        m.StructureChangeLink(change_id=change.id, from_department_id=fen.id, to_department_id=afet.id)])
             db.commit()
             ids = dict(strategy=strategy.id, used=used.id, unused=unused.id, fen=fen.id, afet=afet.id)
 
@@ -62,10 +69,13 @@ def test_inventory_lists_accounts_references_and_directorate_rows_without_writin
         assert users[ids['unused']]['active'] is False
         assert users[ids['strategy']]['last_login'] is None
         assert result['data'][ids['fen']]['indicators'] == (1, 1)
-        assert ids['afet'] not in result['data']
+        # Two directorate FKs on one table are reported per column, never overwritten.
+        assert result['data'][ids['fen']]['structure_change_links.from_department_id'] == (1, 0)
+        assert result['data'][ids['fen']]['structure_change_links.to_department_id'] == (1, 0)
+        assert 'indicators' not in result['data'][ids['afet']]
 
         report = inventory.format_report(result)
-        assert 'fen.mudur@civensa.local' in report and 'Fen İşleri: 1 / 1' in report
+        assert 'fen.mudur@civensa.local' in report and 'Fen İşleri: 3 / 1' in report
         assert report.endswith('Hedefe 0 satır yazıldı (salt okunur).')
 
 
