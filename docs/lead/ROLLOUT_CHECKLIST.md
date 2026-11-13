@@ -33,7 +33,7 @@ Gerekçe: pilot, gerçek kişilerle yolu bir kez dener; tam açılışı tatil �
 | A6 | Onay sırası (PR2): Başkan Yardımcısı ve Üst Yönetici adımları sistemde mi, kâğıtta mı? | Ali | KARAR 9 Kas (D-442): BY ve Üst Yönetici onayı kâğıtta; sistemde zincir Strateji onayıyla biter |
 | A7 | Uygulanamaz seçilen Mali Hizmetler bölümüne gerekçe yazılıyor (gerekçesiz hâli birim gönderimini engeller, D-436) | Mali Hizmetler + pilot provada kontrol | İzlenecek |
 | A8 | Basılı 2026 kitap tutarsızlıkları (D-375) düzeltilmiş rakamlar | Ali → Codex | Cevap geldi 9 Kas (D-442); CIV-190 ile uygulanıyor |
-| A9 | Müdürlük ad değişiklikleri "Kurum yapısı" ekranında kayıtlı (D-359, D-447) | Sahip/Strateji | D-482: 3 ad Kurum Yapısı'nda düz ad değişikliğiyle (#15 Harita ve Planlama, #25 Sosyal Hizmetler, #27 Basın, Yayın ve Halkla İlişkiler); Yapı Kontrol (#16) 2026'da ayrı kalır, Excel'de 3 satırı Yapı Kontrol'e alınır (KILAVUZ). Ocak aktarımından önce |
+| A9 | Müdürlük ad değişiklikleri "Kurum yapısı" ekranında kayıtlı (D-359, D-447) | Sahip/Strateji | D-482: 3 ad Kurum Yapısı'nda düz ad değişikliğiyle (#15 Harita ve Planlama, #25 Sosyal Hizmetler, #27 Basın, Yayın ve Halkla İlişkiler); Yapı Kontrol (#16) 2026'da ayrı kalır, Excel'de 3 satırı Yapı Kontrol'e alınır (KILAVUZ). Tamam 13 Kas (D-483, canlıda doğrulandı) |
 
 ## B. Hesaplar ve roller
 | # | Madde | Sahip | Durum |
@@ -52,7 +52,7 @@ Gerekçe: pilot, gerçek kişilerle yolu bir kez dener; tam açılışı tatil �
 | C1 | Otomatik müdürlük + Strateji provası (sentetik veri) | Codex | 321 OK / 4 BLOCKER (B2 ×3 + İdare dondurma, beklenen) — DOĞRULANDI CIV-188 |
 | C2 | A2–A5 sonrası prova yeniden çalışır, yeni BLOCKER yok | Lider | Tamam 12 Kas (D-476, CIV-220): 347 adım, 342 OK, yalnız beklenen İdare dondurma BLOCKER; adımlar müdürlük hesaplarıyla yürüdüğü için D-479 modelini de kapsar |
 | C3 | Pilot hafta: Strateji 3 müdürlüğün hesabıyla taslak → gönder → iade → yeniden gönder → onay → Word/PDF (D-479) | Ali | Pilot haftası |
-| C4 | Render'da hız ölçümü (H3: provada yavaş adımlar yerel ölçümdü) | Lider | Starter'a geçince |
+| C4 | Render'da hız ölçümü (H3: provada yavaş adımlar yerel ölçümdü) | Lider | Free'de ölçüldü: EK-1 2026 listesi ~14 sn (D-483); Starter'a geçince yeniden ölçülür, 5 sn üstüyse görev |
 
 ## D. Altyapı ve güvenlik
 | # | Madde | Sahip | Durum |

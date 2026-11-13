@@ -1809,3 +1809,11 @@ Next IDs: task CIV-200, decision D-457.
   4. KILAVUZ: top note that in 2026 Strateji enters everything through the "(Strateji)" accounts (D-479); the "Daha sonra eklenecek bölümler" placeholder replaced by real steps "Gösterge gerçekleşmelerini Excel'den aktarma (Strateji)". ROLLOUT_CHECKLIST v1.2 (A5, A9, B1, B7, E1).
 - Still open: CIV-195 v2 Strateji guide sits on the owner's Mac waiting for a push (D-456 era); EK-1 listing speed on live not measured; C2 rehearsal under D-479.
 Next IDs: task CIV-223, decision D-483.
+
+## D-483 (13 Nov 2026 ~14:50 Istanbul, lead, CV Lider 76) — renames applied on live; EK-1 listing speed measured on live
+- BEYAN (owner 14:18): "Ali Abi ile yapılacaklar dışında yapılması gerekenleri yap." Owner connected Claude in Chrome on the Mac and signed in to Civensa himself (14:37); the lead entered no password.
+- DOĞRULANDI (lead, live, via the owner's Chrome, Kurum Yapısı "Adı kaydet"): #15 → Harita ve Planlama Müdürlüğü, #25 → Sosyal Hizmetler Müdürlüğü, #27 → Basın, Yayın ve Halkla İlişkiler Müdürlüğü; re-read from the server for periods 2026 and 2027. #16 Yapı Kontrol unchanged (D-482). Live default/current period = 2027 (structure page opens on period_id=2).
+- DOĞRULANDI EK-1 listing on live (Render free, warm, /health 187 ms): /activity-sections 2026 (period_id=1, 1293 rows) 13.6–14.7 s server time over 4 loads; 2027 (no EK-1 reports yet) 0.6 s. Local CIV-220 measurement was 2.9 s → ratio ~5 fits Render free's CPU share (0.1 CPU).
+- Lead decision: no code change now. Pilot day moves to Render Starter (D1, 0.5 CPU); BELİRSİZ estimate ~3 s there. Re-measure the same URL right after the Starter switch; if it is still above 5 s, the lead opens a task to cache the parsed pinned book per process instead of per DB session (CIV-220 cache is per request).
+- CIV-195 v2 Strateji guide: PR #515 (Gemini patch from 9 Nov pushed from the Mac; lead D-479 edits; Codex P2 "aux tables dropped at head" fixed, capture verified end to end, 23 screenshots regenerated; Codex re-review clean).
+Next IDs: task CIV-223, decision D-484.
