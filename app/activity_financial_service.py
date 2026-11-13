@@ -362,13 +362,11 @@ def pp_references(db,doc,*,include_plan=False):
     if not pub:return ({},None,[]) if include_plan else ({},None)
     # CIV-220: listing pages build this for every directorate; the publication is
     # immutable (sha256-pinned), so verify, parse and project it once per session.
-    cache=db.info.setdefault('pp_errata_payloads',{})
-    key=(pub.id,pub.sha256)
-    if key not in cache:
-        if digest(pub.snapshot_json)!=pub.sha256:sections.fail('PP yayınının doğrulama kodu uyuşmuyor. Strateji ile yayını kontrol edin.',409)
-        from .data.pp_errata import apply_pp_errata
-        cache[key]=apply_pp_errata(json.loads(pub.snapshot_json))
-    payload=cache[key]
+    # CIV-223: the projection is also reused across requests (process cache).
+    from .pinned_book_cache import get_or_build
+    from .data.pp_errata import apply_pp_errata
+    payload=get_or_build(db,'pp_errata',pub,lambda raw:apply_pp_errata(json.loads(raw)))
+    if payload is None:sections.fail('PP yayınının doğrulama kodu uyuşmuyor. Strateji ile yayını kontrol edin.',409)
     categories={'personnel':'01','sgk':'02','goods_services':'03','interest':'04','current_transfers':'05',
         'capital':'06','capital_transfers':'07','lending':'08','reserve':'09'}
     result={}

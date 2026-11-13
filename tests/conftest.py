@@ -255,3 +255,13 @@ def client(db,sample):
     client=TestClient(app)
     yield client
     client.close();app.dependency_overrides.clear()
+
+
+@pytest.fixture(autouse=True)
+def fresh_pinned_book_cache():
+    # CIV-223: the parsed-book cache lives for the whole process; tests reuse
+    # publication ids across disposable databases, so start each test empty.
+    from app import pinned_book_cache
+    pinned_book_cache.clear()
+    yield
+    pinned_book_cache.clear()
