@@ -1766,3 +1766,10 @@ Next IDs: task CIV-200, decision D-457.
 - Rehearsal with rehber tables: Fen İşleri / Afet / Özel Kalem fill Tablo 1, 2, 7 (5/9/4 activities, last one "Uygulanmadı" with reason), 8 ("Bu yıl proje yok") and a photo; submit → return → resubmit → approve → Word/PDF. 347 steps: 342 OK, 4 SLOW, 1 BLOCKER (expected İdare freeze). CIV-188's three B2 blockers are gone.
 - Finding: Strateji's EK-1 listing took 33 s for 33 directorates (pinned multi-MB book fetched, verified, parsed and errata deep-copied per directorate since CIV-190; CIV-219 added a second parse). Fix: per-DB-session cache keyed by publication id + sha256, snapshot column deferred, planned rows returned as copies. 33 s → 2.9 s locally (not a Render capacity measurement). Regression test tests/test_civ220_listing_reuse.py (33 → 1 projection).
 - Local full run under -n 6 hit the container memory limit (24 failures in sunum/browser/pg_dump tests); CI full suite green is the authority.
+
+
+## D-477 (13 Nov 2026 ~11:00 Istanbul, CV Lider 76) — release #501 live
+- DOĞRULANDI: owner merged #501 (phase5 → main) at 07:19Z, main 4ec5444. db-backup (ref phase5) runs 43381610276 / 43383214281 / 43385000441 all success (06:51Z, 07:05Z, 07:20Z). Render deploy by owner. /health: status ok, migration current = head = c219b1c2d3e4 (owner paste 08:00Z).
+- Live now: CIV-218 (İç Kontrol sticky save bar), CIV-219 (directorate Tablo 1/2/7/8, photos, ±10% rule), CIV-220 (EK-1 listing cache).
+- Note: the GitHub run page did not refresh and showed a finished backup as running for 30 min; the run itself took ~2 min. Tell the owner to reload the page before waiting.
+- Open: EK-1 listing speed on live not measured; Ali Bey questions (2026 data entry, ML1 Excel, directorate name changes, support confirmation) unanswered; C2 rehearsal held until the data-entry decision.
