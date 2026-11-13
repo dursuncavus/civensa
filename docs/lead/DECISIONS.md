@@ -1817,3 +1817,11 @@ Next IDs: task CIV-223, decision D-483.
 - Lead decision: no code change now. Pilot day moves to Render Starter (D1, 0.5 CPU); BELİRSİZ estimate ~3 s there. Re-measure the same URL right after the Starter switch; if it is still above 5 s, the lead opens a task to cache the parsed pinned book per process instead of per DB session (CIV-220 cache is per request).
 - CIV-195 v2 Strateji guide: PR #515 (Gemini patch from 9 Nov pushed from the Mac; lead D-479 edits; Codex P2 "aux tables dropped at head" fixed, capture verified end to end, 23 screenshots regenerated; Codex re-review clean).
 Next IDs: task CIV-223, decision D-484.
+
+## D-484 (13 Nov 2026 ~16:00 Istanbul, lead, CV Lider 76) — CIV-223 per-process book cache merged; CIV-195 guide merged; release #519
+- BEYAN (owner): "İşleri bitirmeden durma. Takvime bağlı kalmak zorunda değiliz. Önde gidelim ama geri kalmayalım." The lead did not wait for the Starter re-measure (D-483) and built the per-process cache now.
+- CIV-223 #517 (lead-coded, Codex review, CI green on aef4431) merged into phase5: app/pinned_book_cache.py parses the pinned book once per process (LRU, 1 entry per kind: pp_errata, ar_unit_book). Every request still checks the stored digest in PostgreSQL (sha256 in the database, no snapshot transfer); a tampered snapshot is refused with 409 (test). BELİRSİZ: gain on live; measure /activity-sections?period_id=1 after the deploy (was 13.6–14.7 s).
+- CIV-195 #515 merged (Strateji guide, D-479 entry model, Excel import section, 23 screenshots). Lead error fixed by #518: #512 changed a KILAVUZ heading without its contract test (markdown-only PR, tests skipped) → phase5 test_fr_guide_capture broke; #518 restores it. Prevention: guide edits run tests/test_fr_guide_capture.py and tests/test_strateji_guide_capture.py locally before merge.
+- Release PR #519 phase5 → main: CIV-223, CIV-195, CIV-222 code, guide fixes, lead records. No migration; head stays c219b1c2d3e4. Owner: merge → db-backup (ref phase5) → Render deploy → /health ok, c219b1c2d3e4. Then the lead re-measures the EK-1 listing via the owner's Chrome.
+Next IDs: task CIV-224, decision D-485.
+
