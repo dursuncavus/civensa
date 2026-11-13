@@ -1,6 +1,6 @@
 # Müdürlüklere açılış kontrol listesi — Faaliyet Raporu 2026
 
-Sürüm: v1.0 · 7 Kas 2026 · CV Lider 70 (D-438, D-439) · takvim ve Ocak yayın dondurma **sahip onayladı** (BEYAN 7 Kas 22:46); destek kanalı açık.
+Sürüm: v1.1 · 13 Kas 2026 · CV Lider 76 (D-479: veriyi Strateji girer) · önceki v1.0 7 Kas 2026 · CV Lider 70 (D-438, D-439) · takvim ve Ocak yayın dondurma **sahip onayladı** (BEYAN 7 Kas 22:46); destek kanalı açık.
 Kaynak kararlar: D-351, D-352, D-358, D-361, D-367, D-387, D-431, D-434, D-435, D-436.
 Etiketler: DOĞRULANDI (lider kontrol etti) · BEYAN (sahip/Ali söyledi) · BELİRSİZ (bilinmiyor) · ÖNERİ (lider önerisi, onay gerekir).
 
@@ -38,20 +38,20 @@ Gerekçe: pilot, gerçek kişilerle yolu bir kez dener; tam açılışı tatil �
 ## B. Hesaplar ve roller
 | # | Madde | Sahip | Durum |
 | --- | --- | --- | --- |
-| B1 | Kullanıcı listesi: her müdürlük için Ad Soyad, e-posta, görev (Müdür / Personel) | Ali | Bekliyor |
+| B1 | (D-479) Kişi listesi gerekmez: her müdürlük için Strateji'nin kullandığı bir Müdür hesabı açılır (gönderebilir); hesap listesi CSV'sini lider canlı müdürlük numaralarıyla hazırlar (CIV-221 envanteri) | Lider hazırlar, Strateji/sahip yükler | Envanterden sonra |
 | B2 | Hesaplar toplu CSV ile açılır (sütunlar: Müdürlük ID, Müdürlük, Ad Soyad, E-posta, Görev); hatalı parti geri alınabilir | Strateji (Ali/sahip), lider kontrol eder | Özellik var (DOĞRULANDI app/personal_accounts.py, toplu geri alma) |
 | B3 | Her müdürlükte en fazla bir aktif Müdür (uygulama kuralı) | — | DOĞRULANDI (check_director_available) |
 | B4 | İlk girişte parola değiştirme zorunlu | — | DOĞRULANDI (must_change_password) |
 | B5 | İlk parolalar sohbet/e-posta ile değil, elden veya telefonla iletilir | Strateji | ÖNERİ |
 | B6 | Parola unutan kullanıcı: Strateji sıfırlar (sistemde e-posta ile kendi kendine sıfırlama yok) | Strateji | DOĞRULANDI (yalnız Strateji sıfırlar; e-posta gönderimi yok) |
-| B7 | Test hesapları canlıda pasif | Lider kontrol eder, sahip uygular | Açılıştan önce |
+| B7 | Test hesapları ve deneme verisi canlıdan kalkar (D-459, D-478: CIV-221 envanter → CIV-222 korumalı temizlik) | Lider hazırlar, sahip uygular | 14 Ara öncesi |
 
 ## C. Prova
 | # | Madde | Sahip | Durum |
 | --- | --- | --- | --- |
 | C1 | Otomatik müdürlük + Strateji provası (sentetik veri) | Codex | 321 OK / 4 BLOCKER (B2 ×3 + İdare dondurma, beklenen) — DOĞRULANDI CIV-188 |
 | C2 | A2–A5 sonrası prova yeniden çalışır, yeni BLOCKER yok | Codex görevi | Bekliyor |
-| C3 | Pilot hafta: 3 müdürlük gerçek hesapla taslak → gönder → iade → yeniden gönder → onay → Word/PDF | Pilot müdürlükler + Ali | Pilot haftası |
+| C3 | Pilot hafta: Strateji 3 müdürlüğün hesabıyla taslak → gönder → iade → yeniden gönder → onay → Word/PDF (D-479) | Ali | Pilot haftası |
 | C4 | Render'da hız ölçümü (H3: provada yavaş adımlar yerel ölçümdü) | Lider | Starter'a geçince |
 
 ## D. Altyapı ve güvenlik
