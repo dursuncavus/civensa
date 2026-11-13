@@ -363,3 +363,13 @@ sunum_highlights.fact_key
 sunum_highlights.kind
 sunum_highlights.label
 sunum_highlights.sentence
+
+# CIV-219: guide rows contain plain text/numbers and pinned book IDs; photo
+# captions, filenames and SHA-256 are text. Binary pixels live in file_data;
+# report snapshots retain ID/hash manifests and never embed image bytes.
+ar_unit_tables.kind
+ar_unit_tables.payload_json
+ar_unit_photos.activity_key
+ar_unit_photos.caption
+ar_unit_photos.filename
+ar_unit_photos.sha256

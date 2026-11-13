@@ -29,9 +29,11 @@ def test_committed_guide_contract():
     assert "`Excel'den içe aktar`" in body
     assert "Sorularınız ve sorunlarınız için Strateji Geliştirme Müdürlüğü'ne ulaşın." in body
     results = body.split('## Faaliyet sonuçları\n', 1)[1].split('\n## ', 1)[0]
-    assert 'Her faaliyet için ayrı bir sonuç girilmez.' in results
-    assert 'Gösterge gerçekleşmelerini ve kanıtlarını yukarıda anlatıldığı gibi girin.' in results
-    assert "2026 faaliyetlerinden biri için kısa bir açıklama gerekiyorsa ilgili EK-1 bölümünün `Bölüm içeriği` alanına yazın." in results
+    # CIV-219 supersedes the former no-per-activity-results guidance.
+    assert 'Her faaliyet için ayrı bir sonuç girilmez.' not in results
+    assert 'her faaliyet için ayrı somut çıktı girin' in results
+    assert all(f'Tablo {kind}' in results for kind in (1, 2, 7, 8))
+    assert 'Uygulanmadı' in results and 'Bu yıl proje yok' in results
     for label in ['Rapor bölümleri ve beyanlar (EK-1)', 'Gösterge gerçekleşmeleri',
                   'Taslak — Word (onaysız)', 'Taslak — PDF (onaysız)']:
         assert '`' + label + '`' in body
@@ -39,6 +41,7 @@ def test_committed_guide_contract():
         assert '`' + old + '`' not in body
     sources = [p for p in (ROOT/'app/templates').rglob('*') if p.is_file()]
     sources += [p for p in (ROOT/'app/static').rglob('*.js') if p.is_file()]
+    sources += [ROOT/'app/ar_unit_tables_service.py']  # Server-defined guide table labels.
     # All quoted UI text must exist verbatim; no normalized/paraphrased labels.
     for label in set(re.findall(r'`([^`]+)`', body)):
         assert any(label in p.read_text() for p in sources), label

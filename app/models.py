@@ -584,3 +584,6 @@ from .internal_control_models import (ICPlan, ICStandard, ICCondition, ICAction,
 from .activity_evidence_models import ActivityEvidenceFile, ActivityEvidenceFreeze
 from .sunum.models import SunumPhoto
 from .actual_import_models import ActualImport
+
+# Directorate guide tables are owned by the existing EK-1 unit document.
+from .ar_unit_tables_models import ARUnitTable, ARUnitPhoto, ARUnitPhotoRemoval  # noqa: F401,E402

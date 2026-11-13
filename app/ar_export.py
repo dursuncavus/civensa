@@ -40,6 +40,17 @@ def _field(paragraph, instruction, placeholder=''):
 class _ReportContent:
     """Content and number rules shared by the Word and PDF renderers."""
 
+    def photo(self, photo):
+        import base64
+        from PIL import Image
+        content = base64.b64decode(photo['image_base64'])
+        with Image.open(BytesIO(content)) as picture:
+            width, height = picture.size
+        scale = min(6000 / width, 8000 / height)
+        paragraph = self.doc.add_paragraph(style=BODY)
+        paragraph.add_run().add_picture(BytesIO(content),
+            width=Twips(round(width * scale)), height=Twips(round(height * scale)))
+
     def blocks(self, blocks):
         for block in blocks:
             if block['type'] == 'paragraph':
@@ -64,6 +75,30 @@ class _ReportContent:
             for key, total in table.get('totals', {}).items():
                 label = dict(columns).get(key, key)
                 self.paragraph(f"{label} toplamı: {format_number(total['value'])} · Boş değer: {total['missing']}", NOTE)
+
+    def unit_tables(self, code):
+        from .ar_unit_tables_service import export_tables
+        for unit, table, columns, rows in export_tables(self.payload.get('unit_tables', {})):
+            if table['section_code'] != code:
+                continue
+            title = f"Tablo {table['kind']} — {table['title']}"
+            if unit.get('department'):
+                title += ' · ' + unit['department']
+            self.paragraph(title, CAPTION)
+            if table.get('no_projects'):
+                self.paragraph('Bu yıl proje yok')
+            self.table([label for _, label in columns], rows)
+            for key, total in table['totals'].items():
+                if total['missing']:
+                    self.paragraph(f"{dict(columns)[key]}: {total['missing']} boş değer; toplam bilinen değerleri içerir.", NOTE)
+        if code == 'III.B.2':
+            data = self.payload.get('unit_tables', {})
+            for unit in data.get('units', [data]):
+                for photo in unit.get('photos', []):
+                    self.paragraph(f"{photo['label']} · {photo['caption']} · {photo.get('activity', photo['activity_key'])}" +
+                                   (' · ' + unit['department'] if unit.get('department') else ''), CAPTION)
+                    if photo.get('image_base64'):
+                        self.photo(photo)
 
     def financial(self, code):
         # Shared storage labels only; rendering performs no service calls or queries.
@@ -303,6 +338,7 @@ def _render_activity_report(report):
         report.paragraph(section['title'], f"Civensa Başlık {min(section['depth'] + 1, 4)}")
         if not payload['frozen'] and section.get('missing'):
             report.paragraph('Eksikler:\n' + '\n'.join('• ' + message for message in section['missing']), NOTE)
+        report.unit_tables(section['code'])
         if section['status'] == 'not_applicable':
             report.paragraph(f"Uygulanamaz: {section['reason']}")
             continue

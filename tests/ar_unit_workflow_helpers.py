@@ -4,7 +4,7 @@ from sqlalchemy import select
 from app import activity_sections_service as sections, ar_unit_workflow_service as workflow
 from app.activity_contract_service import canonical, digest
 from app.models import (ActivityReport, ActivityReportRevision, Publication, PublicationIndicatorBinding,
-    IndicatorIdentity, IndicatorDefinitionRevision, ReportIndicator, ActualRevision, ARDocument,
+    IndicatorIdentity, IndicatorDefinitionRevision, ReportIndicator, ActualRevision, ARDocument, ReportingPeriod,
     ARSectionContent, User, Department)
 
 
@@ -14,8 +14,10 @@ def ensure_core_ready(db, doc, actor):
     report = db.scalar(select(ActivityReport).where(ActivityReport.organization_id == doc.organization_id,
         ActivityReport.period_id == doc.period_id))
     if not report:
-        pub = Publication(period_id=doc.period_id, version=1, snapshot_json='{}', sha256=digest('{}'), created_by=actor.id)
-        db.add(pub); db.flush()
+        pub = db.scalar(select(Publication).where(Publication.period_id == doc.period_id).order_by(Publication.version.desc()))
+        if not pub:
+            pub = Publication(period_id=doc.period_id, version=1, snapshot_json='{}', sha256=digest('{}'), created_by=actor.id)
+            db.add(pub); db.flush()
         report = ActivityReport(organization_id=doc.organization_id, period_id=doc.period_id, current_revision=1)
         db.add(report); db.flush()
         revision = ActivityReportRevision(report_id=report.id, revision=1, publication_id=pub.id,
@@ -78,8 +80,9 @@ def ready_unit(db, doc, editor):
         content.reason = 'Bu örnekte malî veri bulunmuyor.' if content.status == 'not_applicable' else ''
         content.edited_by = editor.id
     db.flush()
-    assurance_service.save(db, editor, doc.id, 'EK-2', {'expected_revision':doc.revision, 'variables':variables()})
+    assurance_service.save(db, editor, doc.id, 'EK-2', {'expected_revision':doc.revision, 'variables':variables(year=db.get(ReportingPeriod, doc.period_id).year)})
     ensure_core_ready(db, doc, editor)
+    ready_tables(db, doc, editor)
     db.commit()
 
 
@@ -102,3 +105,18 @@ def approve_sources(db, idare):
         editor = db.scalar(select(User).where(User.department_id == doc.department_id, User.role == 'department'))
         ready_unit(db, doc, editor)
         approve_unit(db, doc, editor)
+
+
+def ready_tables(db, doc, editor):
+    """Complete the required CIV-219 tables with explicit synthetic declarations."""
+    from app import ar_unit_tables_service as tables
+    for kind, rows, choice in [
+        ('1', [], None),
+        ('2', [dict(key=key, status='Örnek statü', positions=0, actual=0, women=0, men=0) for key in tables.STAFF], None),
+        ('7', [dict(key=a['key'], not_applied=True, reason='Sentetik örnekte uygulanmadı.')
+               for a in tables.book(db, doc)['activities']], None),
+        ('8', [], True),
+    ]:
+        if tables.stored(db, doc, kind) is None:
+            tables.save(db, editor, doc.id, kind, doc.revision, rows, choice)
+    db.flush()

@@ -119,7 +119,7 @@ def test_form_save_is_a_draft_with_turkish_warning_and_optional_corrective_actio
     page = client.get(response.headers['location'])
     assert page.status_code == 200
     assert 'Hedef ile gerçekleşme arasında 12.500,23 fark var. Birim raporunu göndermeden önce açıklama girin.' in page.text
-    assert 'Gönderim için zorunlu (fark varsa)' in page.text
+    assert 'Sapma en az %10 ise gönderim için zorunlu' in page.text
     assert 'Kaydet taslak olarak saklar; eksik alanlar birim raporu gönderilirken kontrol edilir.' in page.text
     fields = Elements(page.text).textareas
     assert 'required' not in fields['explanation']  # Draft saves remain possible.
@@ -228,6 +228,13 @@ def test_only_current_report_revision_is_checked(deviation_report, db, sample, c
                 explanation='Eski açıklama' if current_missing else '')
     ready_unit(db, doc, sample['user'])
     client, doc, current, token = create(report_id=old['report_id'], expected_revision=1)
+    # A new book has new activity identities; explicitly complete its Tablo 7.
+    from app import ar_unit_tables_service as tables
+    tables.save(db, sample['user'], doc.id, '7', doc.revision,
+        [dict(key=a['key'], not_applied=True, reason='Yeni kitap için sentetik bildirim.')
+         for a in tables.book(db, doc)['activities']])
+    tables.save(db, sample['user'], doc.id, '8', doc.revision, [], True)
+    db.commit()
     slot = current['indicators'][0]['report_indicator_id']
     save_actual(client, token, slot, explanation='' if current_missing else 'Güncel açıklama')
     response = submit(client, token, doc)
@@ -241,7 +248,7 @@ def test_only_current_report_revision_is_checked(deviation_report, db, sample, c
     ('needs_review', '1', '', False), ('missing', '1', '', False),
 ])
 def test_shared_rule(state, delta, explanation, expected):
-    assert contracts.needs_deviation_explanation(state, delta, explanation) is expected
+    assert contracts.needs_deviation_explanation(state, delta, explanation, Decimal(str(delta or 0)) + Decimal('1.75')) is expected
 
 
 def test_approval_still_uses_the_existing_deviation_message(client, db, sample):

@@ -173,7 +173,7 @@ class Rehearsal:
     def goto(self, page, role, path, title, result='OK', note=''):
         start=self.begin()
         response=page.goto(self.base+path, wait_until='networkidle')
-        check(response is not None and response.status == 200, 'UI sayfası açılamadı.')
+        check(response is not None and response.status == 200, 'UI sayfası açılamadı: '+path+' HTTP '+str(response.status if response else None)+' '+(page.locator('body').inner_text()[:300] if response else ''))
         return self.capture(page, role, title, start, result, note)
 
     def click(self, page, role, button, title, result='OK', note=''):
@@ -286,6 +286,54 @@ class Rehearsal:
             self.capture(page,role,'Harcama yetkilisi güvence beyanı',self.begin())
         self.click(page,role,page.get_by_role('button',name='Beyan alanlarını kaydet'),'EK-2 beyan alanlarını kaydet')
 
+    def unit_tables(self,page,role,document):
+        """CIV-220: fill rehber Tablo 1, 2, 7, 8 and one activity photo through the real forms."""
+        path=document+'/unit-tables'
+        self.goto(page,role,path,'Birim tabloları aç')
+        def save(kind,title):
+            form=page.locator(f'form[data-unit-table="{kind}"]')
+            self.click(page,role,form.get_by_role('button',name=f'Tablo {kind} kaydet'),title)
+            check(page.locator('[role=alert]').count()==0,f'Tablo {kind} kaydında beklenmeyen hata: '+
+                  (page.locator('[role=alert]').first.inner_text() if page.locator('[role=alert]').count() else ''))
+        form=page.locator('form[data-unit-table="1"]')
+        form.locator('[name=include_0]').check()
+        for field,value in {'name_0':'Hizmet binası (SENTETİK)','address_0':'Prova Mahallesi (SENTETİK)',
+                'purpose_0':'Ofis','area_0':'1.250,5','ownership_0':'Belediye mülkü'}.items():
+            form.locator(f'[name="{field}"]').fill(value)
+        save('1','Tablo 1 fiziksel yapı kaydet')
+        form=page.locator('form[data-unit-table="2"]')
+        for i in range(4):
+            for field,value in {'status':'Genel idare (SENTETİK)','positions':'10','actual':'8','women':'3','men':'5'}.items():
+                form.locator(f'[name="{field}_{i}"]').fill(value)
+        save('2','Tablo 2 personel kaydet')
+        form=page.locator('form[data-unit-table="7"]')
+        count=int(form.locator('[name=row_count]').input_value())
+        check(count>0,'Tablo 7 müdürlük faaliyeti göstermedi.')
+        for i in range(count):
+            if count>1 and i==count-1:
+                form.locator(f'[name="not_applied_{i}"]').check()
+                form.locator(f'[name="reason_{i}"]').fill('SENTETİK: faaliyet 2026 yılında uygulanmadı.')
+                continue
+            form.locator(f'[name="outputs_{i}"]').fill(SYNTHETIC)
+            form.locator(f'[name="inside_{i}"]').fill('1.234,56')
+            form.locator(f'[name="outside_{i}"]').fill('0')
+        save('7',f'Tablo 7 faaliyet çıktı ve maliyet kaydet ({count} faaliyet)')
+        form=page.locator('form[data-unit-table="8"]')
+        form.locator('[name=project_choice]').select_option('none')
+        form.locator('[name=include_0]').uncheck()
+        save('8','Tablo 8 Bu yıl proje yok kaydet')
+        from PIL import Image
+        photo=self.folder/'sentetik-foto.png'
+        if not photo.exists(): Image.new('RGB',(320,200),(64,128,112)).save(photo)
+        form=page.locator('form[action$="/unit-tables/photos/upload"]')
+        form.locator('[name=caption]').fill('SENTETİK faaliyet fotoğrafı')
+        form.locator('[name=file]').set_input_files(str(photo))
+        self.click(page,role,form.get_by_role('button',name='Fotoğraf yükle'),'Faaliyet fotoğrafı yükle')
+        check(page.locator('figure figcaption').filter(has_text='Fotoğraf 1').count()==1,'Yüklenen fotoğraf listede görünmedi.')
+        open_items=page.locator('details.unit-notice summary').count()
+        if open_items:
+            self.goto(page,role,path,'Tablolarda kalan gönderim eksikleri','BLOCKER',page.locator('details.unit-notice').inner_text())
+
     def workflow(self,page,role,document,label,title,expected):
         self.goto(page,role,document,title+' öncesi')
         button=page.get_by_role('button',name=label,exact=True)
@@ -375,11 +423,14 @@ class Rehearsal:
                     check(page.locator('.indicator-report-summary').inner_text()==saved_counts,
                           'AJAX kaydı sonrası sayaçlar yeni sayfa yüklemesiyle eşleşmiyor.')
             self.goto(page,role,'/activity-sections','Müdürlük 2026 birim raporunu bul')
-            group=page.locator('article.report-group').filter(has=page.get_by_role('heading',name='2026 · '+unit['name'],exact=True))
+            # The year prefix is shown only when several years are listed (CIV-199/201).
+            heading=re.compile('^(2026 · )?'+re.escape(unit['name'])+'$')
+            group=page.locator('article.report-group').filter(has=page.get_by_role('heading',name=heading))
             link=group.locator('a[href*="/activity-sections/reports/"]').first
             document=urlsplit(link.get_attribute('href')).path
             unit['document']=document
             self.sections(page,role,document)
+            self.unit_tables(page,role,document)
             self.goto(page,role,document+'?code=III.A.1','Mali Hizmetler uyarıları')
             warnings=page.locator('[aria-label="Malî bilgi uyarıları"]').inner_text()
             check('gönderimi engellemez' in warnings,'Mali Hizmetler uyarısı bulunamadı.')
@@ -431,7 +482,7 @@ class Rehearsal:
                 self.downloads(director,unit,'Onaylı müdürlük',role=director_role)
         self.goto(strategy,'strategy',f'/activity-sections?period_id={pid}','İdare raporuna geçiş')
         groups=strategy.locator('article.report-group')
-        institution=next(g for g in groups.all() if 'İdare' in g.locator('h3').inner_text())
+        institution=next(g for g in groups.all() if 'İdare' in g.locator('h3').first.inner_text())
         path=urlsplit(institution.locator('td a[href*="?code="]').first.get_attribute('href')).path
         self.goto(strategy,'strategy',path,'İdare konsolidasyonu ve eksik birimler')
         row=self.click(strategy,'strategy',strategy.get_by_role('button',name='İçeriği onayla ve dondur'),
@@ -591,18 +642,26 @@ def _run(url, *, guide=False):
                 from app.sunum.models import SunumPhoto, SunumHighlight
                 from sqlalchemy import select, func
                 from sqlalchemy.orm import Session
+                # CIV-220: since CIV-219 the live loader pin equals the migration
+                # head, so the loaded schema is already current. Dropping the
+                # auxiliary tables then left them missing (upgrade is a no-op).
+                from alembic.runtime.migration import MigrationContext
+                from alembic.script import ScriptDirectory
+                with engine.connect() as connection:
+                    current = set(MigrationContext.configure(connection).get_current_heads())
+                at_head = current == set(ScriptDirectory.from_config(Config(str(ROOT/'alembic.ini'))).get_heads())
                 with Session(engine) as db:
                     for model in (SunumHighlight, SunumPhoto):
                         check(db.scalar(select(func.count()).select_from(model)) == 0, 'Yardımcı prova tablosu boş değil.')
                 for model in (SunumHighlight, SunumPhoto):
-                    model.__table__.drop(engine)
+                    if not at_head: model.__table__.drop(engine)
                 # CIV-199: the metadata-built schema also carries the later CIV-194/197
                 # auxiliary tables; drop them when present and still empty so their
                 # migrations can recreate them during the upgrade below.
                 from sqlalchemy import inspect as schema_inspect
                 from app.actual_import_models import ActualImport
                 from app.models import IndicatorDirection
-                for model in (ActualImport, IndicatorDirection):
+                for model in (ActualImport, IndicatorDirection) if not at_head else ():
                     if schema_inspect(engine).has_table(model.__tablename__):
                         with Session(engine) as db:
                             check(db.scalar(select(func.count()).select_from(model)) == 0, 'Yardımcı prova tablosu boş değil.')

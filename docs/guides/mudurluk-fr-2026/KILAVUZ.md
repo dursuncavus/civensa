@@ -62,7 +62,7 @@ Girişten sonra `Gösterge gerçekleşmelerine gir` bağlantısıyla göstergele
 
    ![Kanıt ve kaynak sürümü](img/09-kanit.png)
 
-5. Hedef ile gerçekleşme arasında fark varsa `Açıklama / sapma gerekçesi · Gönderim için zorunlu (fark varsa)` alanına nedenini yazın. Hangi işin, hangi nedenle farklı sonuçlandığını belirtin. Varsa `Düzeltici işlem (isteğe bağlı)` alanını da doldurun. `Yeni gerçekleşme revizyonu kaydet` düğmesine basın. Kaydetmek raporu göndermez. Boş sapma açıklamasıyla kayıt saklansa da rapor gönderilemez.
+5. Hedefe göre mutlak sapma en az %10 ise `Açıklama / sapma gerekçesi · Sapma en az %10 ise gönderim için zorunlu` alanına nedenini yazın. Sapma yüzdesi alanın yanında gösterilir; %10 altında açıklama isteğe bağlıdır. Hedef 0 ise sıfırdan farklı her gerçekleşmede açıklama gerekir. Hangi işin, hangi nedenle farklı sonuçlandığını belirtin. Varsa `Düzeltici işlem (isteğe bağlı)` alanını da doldurun. `Yeni gerçekleşme revizyonu kaydet` düğmesine basın. Kaydetmek raporu göndermez. Zorunlu sapma açıklaması boşken taslak kaydedilebilir; rapor gönderilemez.
 
    ![Sapma açıklaması ve kayıt](img/10-sapma.png)
 
@@ -126,9 +126,14 @@ Onay öncesinde de `Taslak — Word (onaysız)` veya `Taslak — PDF (onaysız)`
 
 ## Faaliyet sonuçları
 
-Her faaliyet için ayrı bir sonuç girilmez.
-Gösterge gerçekleşmelerini ve kanıtlarını yukarıda anlatıldığı gibi girin.
-2026 faaliyetlerinden biri için kısa bir açıklama gerekiyorsa ilgili EK-1 bölümünün `Bölüm içeriği` alanına yazın.
+Birim raporundaki `Birim faaliyet raporu tabloları` bağlantılarını açın. Her tabloyu ayrı kaydedin; boş değer bilinmiyor, 0 ise sıfır anlamındadır.
+
+- Tablo 1 `Müdürlük Hizmet Binaları ve Tesisleri`: Fiziksel Yapı bölümünde bina/tesis adı, adresi, kullanım amacı, alanı ve mülkiyet durumunu girin. Alan TOPLAM değeri otomatik hesaplanır.
+- Tablo 2 `Müdürlük İnsan Kaynakları Dağılımı (31.12.2026 itibarıyla)`: Yönetim Yapısı bölümündeki dört sabit personel türünü doldurun. Her satırda Kadın + Erkek = Fiili Çalışan olmalıdır. Tutarsızlık taslakta uyarılır, gönderimi engeller.
+- Tablo 7 `Faaliyet ve Alt Faaliyet Bazında Çıktı ve Maliyet Gerçekleşme Tablosu`: Faaliyet ve Proje Bilgileri bölümünde kitaptaki her faaliyet için ayrı somut çıktı girin. Faaliyet eklenemez veya yeniden adlandırılamaz. Harcamayı `1.234.567,89` biçiminde girin; Toplam Maliyet otomatik hesaplanır. Yürütülmeyen faaliyette `Uygulanmadı` seçin, çıktı ve tutarları boş bırakıp gerekçesini yazın.
+- Tablo 8 `2026 Yılı Proje İzleme ve Gerçekleşme Tablosu`: Proje satırlarını, müdürlüğünüzün kitap kapsamındaki Program / Alt Program seçimiyle doldurun. Proje yoksa açıkça `Bu yıl proje yok` seçin; proje satırlarını kaldırın.
+
+Tablo 7 faaliyetlerine isteğe bağlı JPG/PNG ve açıklama ekleyebilirsiniz. Fotoğraflar rapor sırasıyla numaralanır. Gönderim hatasında tablo grubunun altındaki bağlantıyla eksik alana gidin. Strateji tabloları salt okunur inceler ve gerekçeyle iade edebilir. Onaylı tablolar, hesaplanan toplamlar ve fotoğraflar Word/PDF çıktısına da dahil edilir.
 
 ## Yardım
 

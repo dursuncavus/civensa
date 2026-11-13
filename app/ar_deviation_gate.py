@@ -12,7 +12,7 @@ def require_deviation_explanations(db, payload):
     # captured identity rather than matching names, which need not be unique.
     missing = [(source['indicator_id'], row['name'])
                for row, source in zip(core['indicators'], payload['_typeset']['indicators'], strict=True)
-               if needs_deviation_explanation(row['actual_state'], row['deviation'].get('delta'), row['explanation'])]
+               if needs_deviation_explanation(row['actual_state'], row['deviation'].get('delta'), row['explanation'], row['actual'])]
     if not missing:
         return
     # CORE already supplies the current revision's scoped values. Fetch only

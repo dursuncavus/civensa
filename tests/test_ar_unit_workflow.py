@@ -75,6 +75,8 @@ def test_incomplete_submit_names_sections_including_core_and_no_audit(section_cl
     assert 'Alt program hedef ve göstergeleri' in response.json()['detail']
     assert 'EKLER' in response.json()['detail']
     assert response.json()['errors'][0]['field'] == 'sections'
+    assert any(b['link'].endswith('/unit-tables#table-1') for b in response.json()['blockers'])
+    assert any(b['link'].endswith('?code=EKLER') for b in response.json()['blockers'])
     assert db.scalar(select(func.count()).select_from(ARUnitWorkflowEvent)) == 0
 
 
