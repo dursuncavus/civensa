@@ -50,7 +50,7 @@ Gerekçe: pilot, gerçek kişilerle yolu bir kez dener; tam açılışı tatil �
 | # | Madde | Sahip | Durum |
 | --- | --- | --- | --- |
 | C1 | Otomatik müdürlük + Strateji provası (sentetik veri) | Codex | 321 OK / 4 BLOCKER (B2 ×3 + İdare dondurma, beklenen) — DOĞRULANDI CIV-188 |
-| C2 | A2–A5 sonrası prova yeniden çalışır, yeni BLOCKER yok | Codex görevi | Bekliyor |
+| C2 | A2–A5 sonrası prova yeniden çalışır, yeni BLOCKER yok | Lider | Tamam 12 Kas (D-476, CIV-220): 347 adım, 342 OK, yalnız beklenen İdare dondurma BLOCKER; adımlar müdürlük hesaplarıyla yürüdüğü için D-479 modelini de kapsar |
 | C3 | Pilot hafta: Strateji 3 müdürlüğün hesabıyla taslak → gönder → iade → yeniden gönder → onay → Word/PDF (D-479) | Ali | Pilot haftası |
 | C4 | Render'da hız ölçümü (H3: provada yavaş adımlar yerel ölçümdü) | Lider | Starter'a geçince |
 
