@@ -45,18 +45,15 @@ ORPHAN_PHOTO_WARNING = 'Bu fotoğrafın faaliyeti güncel kitapta yok; kaldırı
 
 
 def pinned_snapshot(db, publication):
-    """Digest-checked book snapshot, parsed once per DB session.
+    """Digest-checked book snapshot, parsed once per process (CIV-220/CIV-223).
 
-    Publications are immutable (sha256-pinned), so one parse per request is
-    enough; listing pages build report data for every directorate (CIV-220).
+    Publications are immutable (sha256-pinned); listing pages build report data
+    for every directorate, so the parsed book is shared and must not be mutated.
     """
-    cache = db.info.setdefault('ar_unit_book_snapshots', {})
-    key = (publication.id, publication.sha256)
-    if key not in cache:
-        if sections.digest(publication.snapshot_json) != publication.sha256:
-            return None
-        cache[key] = json.loads(publication.snapshot_json, parse_float=Decimal)
-    return cache[key]
+    # CIV-223: reused across requests too (process cache); read-only for callers.
+    from .pinned_book_cache import get_or_build
+    return get_or_build(db, 'ar_unit_book', publication,
+                        lambda raw: json.loads(raw, parse_float=Decimal))
 
 
 def book(db, doc):
