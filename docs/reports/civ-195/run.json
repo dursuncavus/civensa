@@ -1,0 +1,38 @@
+{
+  "rehearsal": true,
+  "guide": true,
+  "period": 2,
+  "units": [
+    {
+      "key": "fen",
+      "name": "Fen İşleri Müdürlüğü",
+      "department_id": 8,
+      "targets": [
+        "Hedef doğrulanmadı: basılı PP’deki hedef için doğrulanmış bir sayı yok. Fark hesaplanmaz; Strateji hedefi doğrulayacak. Basılı hedef metni: *1",
+        "Hedef doğrulanmadı: basılı PP’deki hedef için doğrulanmış bir sayı yok. Fark hesaplanmaz; Strateji hedefi doğrulayacak. Basılı hedef metni: *60",
+        "Hedef: 70.000",
+        "Hedef: 60.000",
+        "Hedef: 60"
+      ],
+      "document": "/activity-sections/reports/8"
+    }
+  ],
+  "book": "tests/fixtures/first_load/source/2026-performans-programi_ONAYLI.idml",
+  "book_sha256": "1aaa0bb81c3cf4e245edaab42452a972b8a59ffc252814216c7628f6dbaf33d6",
+  "counts": {
+    "departments": 33,
+    "created_departments": 0,
+    "cards": 105,
+    "indicators": 226,
+    "activities": 182,
+    "economic_values": 1270
+  },
+  "_server_errors": [],
+  "browser": "153.0.8010.12",
+  "approvals": [
+    "fen"
+  ],
+  "unexpected": [],
+  "server_errors": [],
+  "js": []
+}
