@@ -6,7 +6,8 @@ hesapları temizlenir. Hesaplar kimlik ve e-posta özetiyle sabitlenmiştir: can
 hedef bu listeden farklıysa araç 0 yazmayla durur.
 
 - Kalan: Strateji çalışma hesabı (1) ve Strateji Müdürü (36).
-- Silinen: hiç kaydı olmayan 4 hesap (37, 38, 39, 40), CIV-207 kuralıyla.
+- Silinen: hiç kaydı olmayan 2 hesap (39, 40), CIV-207 kuralıyla.
+- Dokunulmayan: zaten pasif 37 ve 38 (kişisel adresler; gerekirse Kullanıcılar ekranından silinir).
 - Pasife alınan: girişi olduğu için silinemeyen 34 test hesabı (2–35).
 
 Uygulama tek işlemdir; her hesap için denetim kaydı yazılır (user_delete /
@@ -26,11 +27,13 @@ from scripts import first_load_live as live
 CONFIRMATION = 'PILOT TEST HESAPLARINI KAPAT'
 ACTION = 'pilot_accounts_cleared'
 KEEP = (1, 36)
-DELETE = (37, 38, 39, 40)
+DELETE = (39, 40)
+# 37 and 38 are already inactive and have no records; they carry personal addresses that
+# cannot be pinned in a public repository, so the tool never writes to them.
+UNTOUCHED = (37, 38)
 DEACTIVATE = tuple(range(2, 36))
 # sha256(lower(e-mail))[:16] per id, from the CIV-221 live inventory (13 Nov 2026).
-# Hashes, not addresses: the repository is public. 37 and 38 are personal addresses and
-# are not pinned at all; they must instead be inactive department accounts without records.
+# Hashes, not addresses: the repository is public. 37 and 38 are never written (UNTOUCHED).
 PINNED = {
     1: 'e861907e30ff4cae', 2: 'cc24e714fd7937b6', 3: '354b60339bc4e3eb', 4: '6d08fbe57688d730',
     5: '1749e6c8e84c7d9b', 6: 'b6f4bdb9904ba4aa', 7: '5d3c21b93e7d68c2', 8: '63a4edae8e9a7492',
@@ -62,16 +65,13 @@ def build_plan(db, actor_id):
     load_all_models()
     live.require_head(db)
     users = {u.id: u for u in db.scalars(select(User))}
-    expected = set(KEEP) | set(DELETE) | set(DEACTIVATE)
+    expected = set(KEEP) | set(DELETE) | set(DEACTIVATE) | set(UNTOUCHED)
     if set(users) != expected:
         refuse(f'Hesap listesi envanterle uyuşmuyor: beklenen {len(expected)} hesap, bulunan {len(users)}; '
                'yeni envanter alın ve sorumluya bildirin')
     for uid, digest in sorted(PINNED.items()):
         if email_hash(users[uid].email) != digest:
             refuse(f'Hesap {uid} e-postası envanterle uyuşmuyor; sorumluya bildirin')
-    for uid in (37, 38):
-        if users[uid].is_active or users[uid].role != 'department':
-            refuse(f'Hesap {uid} envanterdeki gibi pasif müdürlük hesabı değil; sorumluya bildirin')
     if actor_id not in KEEP:
         refuse('--actor-id kalan Strateji hesaplarından biri olmalıdır (1 veya 36)')
     for uid in KEEP:

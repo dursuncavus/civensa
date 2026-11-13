@@ -66,15 +66,16 @@ def test_plan_writes_nothing_and_apply_deletes_four_and_deactivates_34(engine, m
     before = state(engine)
     plan = run(engine, monkeypatch, pinned)
     assert state(engine) == before
-    assert len(plan['delete']) == 4 and len(plan['deactivate']) == 34
+    assert len(plan['delete']) == 2 and len(plan['deactivate']) == 34
     assert 'Hedefe 0 satır yazıldı' in cleanup.format_summary(plan)
 
     run(engine, monkeypatch, pinned, apply=True, confirmation=cleanup.CONFIRMATION)
     users, actions = state(engine)
-    assert set(users) == set(range(1, 36)) | {36}
+    assert set(users) == set(range(1, 39))
+    assert not users[37] and not users[38]
     assert users[1] and users[36]
     assert not any(users[u] for u in range(2, 36))
-    assert actions['user_delete'] == 4 and actions['user_deactivate'] == 34 and actions[cleanup.ACTION] == 1
+    assert actions['user_delete'] == 2 and actions['user_deactivate'] == 34 and actions[cleanup.ACTION] == 1
     with Session(engine) as db:
         detail = json.loads(db.scalar(select(m.AuditLog.details).where(m.AuditLog.action == 'user_delete',
                                                                         m.AuditLog.entity_id == 39)))

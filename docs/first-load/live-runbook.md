@@ -415,7 +415,7 @@ görünmelidir.
 ## Pilot test hesaplarını kapatma (CIV-222)
 
 CIV-221 envanteri deneme verisi göstermedi; yalnız 38 test hesabı kapatılır
-(4 kayıtsız hesap silinir, 34 hesap pasife alınır; 1 ve 36 kalır). Hesap
+(2 kayıtsız hesap silinir, 34 hesap pasife alınır; 1 ve 36 kalır; zaten pasif 37 ve 38ye dokunulmaz). Hesap
 listesi kodda sabittir; canlı farklıysa araç 0 yazmayla durur.
 1. Salt okunur plan: `python scripts/pilot_accounts_cleanup.py --actor-id 1`.
 2. GitHub Actions'ta **Daily verified database backup** çalıştırın (dal
