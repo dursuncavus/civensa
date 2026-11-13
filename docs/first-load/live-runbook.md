@@ -402,6 +402,27 @@ sıkıştırıyorsa **iki yedek** alın: prova için birincisi, canlı uygulamad
 önce ikincisi. Hash/sayım farkı veya herhangi bir FAIL varsa canlı uygulamaya
 geçmeyin; sorumlu Summary'de belirtilen ilk başarısız kontrolü incelesin.
 
+## Pilot öncesi envanter (CIV-221)
+
+Salt okunur; hiçbir satır yazmaz, yedek gerekmez. Hedef şema **c219b1c2d3e4**.
+Bağlantıyı yukarıdaki gizli terminal yöntemiyle yalnız
+`CIVENSA_FIRST_LOAD_DATABASE_URL` üzerinden verin, sonra:
+`python scripts/pilot_inventory.py`.
+Çıktıda ad ve e-posta vardır: yalnız sorumluyla paylaşın, repoya veya
+dosya paylaşımına koymayın. Sonda **Hedefe 0 satır yazıldı (salt okunur).**
+görünmelidir.
+
+## Pilot test hesaplarını kapatma (CIV-222)
+
+CIV-221 envanteri deneme verisi göstermedi; yalnız 38 test hesabı kapatılır
+(2 kayıtsız hesap silinir, 34 hesap pasife alınır; 1 ve 36 kalır; zaten pasif 37 ve 38ye dokunulmaz). Hesap
+listesi kodda sabittir; canlı farklıysa araç 0 yazmayla durur.
+1. Salt okunur plan: `python scripts/pilot_accounts_cleanup.py --actor-id 1`.
+2. GitHub Actions'ta **Daily verified database backup** çalıştırın (dal
+   feature/authorization-workflow-phase5) ve yeşil bitmesini bekleyin.
+3. Aynı komuta `--apply` ekleyin; istenen onay cümlesini yazın.
+Pasife alma Kullanıcılar ekranından geri alınabilir.
+
 ## 2026 pilot dönemini değiştirme
 
 CIV-172 / D-389 yalnız D-388'deki eski pilot envanterini kabul eder. Bu bölüm
