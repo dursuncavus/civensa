@@ -19,6 +19,7 @@ from .activity_evidence_service import MAX_FILE
 from .models import (ARDocument, ARUnitTable, ARUnitPhoto, ARUnitPhotoRemoval, ActivityReport, ActivityReportRevision,
                      Publication, User)
 from .numbers import parse_number, format_number
+from .listing_memo import memo, KEY
 
 STAFF = ['Memur', 'Sözleşmeli Personel (657/4-B)', 'Kadrolu İşçi', 'Şirket Personeli (696 KHK)']
 PROJECT_STATES = ['Devam ediyor', 'Tamamlandı', 'Başlamadı', 'İptal']
@@ -56,8 +57,7 @@ def pinned_snapshot(db, publication):
                         lambda raw: json.loads(raw, parse_float=Decimal))
 
 
-def book(db, doc):
-    """Same pinned book and department activities used by ar_typeset_source."""
+def book_publication(db, doc):
     report = db.scalar(select(ActivityReport).where(ActivityReport.organization_id == doc.organization_id,
                                                     ActivityReport.period_id == doc.period_id))
     revision = db.scalar(select(ActivityReportRevision).where(ActivityReportRevision.report_id == report.id,
@@ -65,8 +65,14 @@ def book(db, doc):
     # Listing pages call this per directorate: never fetch the multi-MB snapshot
     # column again once the session has parsed it (pinned_snapshot).
     lean = select(Publication).options(defer(Publication.snapshot_json))
-    publication = db.scalar(lean.where(Publication.id == revision.publication_id)) if revision else db.scalar(
+    return db.scalar(lean.where(Publication.id == revision.publication_id)) if revision else db.scalar(
         lean.where(Publication.period_id == doc.period_id).order_by(Publication.version.desc()))
+
+
+def book(db, doc):
+    """Same pinned book and department activities used by ar_typeset_source."""
+    publication = memo(db, ('unit_book_publication', doc.organization_id, doc.period_id),
+                       lambda: book_publication(db, doc))
     if not publication:
         return {'publication_id': None, 'activities': [], 'programmes': []}
     snapshot = pinned_snapshot(db, publication)
@@ -94,6 +100,10 @@ def book(db, doc):
 
 
 def stored(db, doc, kind):
+    if KEY in db.info:
+        # CIV-224: one query for all of a document's tables during a listing.
+        return memo(db, ('unit_tables', doc.id), lambda: {t.kind: t for t in db.scalars(
+            select(ARUnitTable).where(ARUnitTable.document_id == doc.id))}).get(kind)
     return db.scalar(select(ARUnitTable).where(ARUnitTable.document_id == doc.id, ARUnitTable.kind == kind))
 
 
