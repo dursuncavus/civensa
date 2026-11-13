@@ -2630,30 +2630,13 @@ def strateji_guide_run(url):
             if Path(candidate).is_file():
                 os.environ['CIVENSA_CHROMIUM_PATH'] = candidate
                 break
-    orig_setup = fr.setup
-
-    def _setup_and_drop_newer_aux(engine, *, guide=False):
-        from sqlalchemy import func, select
-        from sqlalchemy.orm import Session
-        from app.models import ActualImport, IndicatorDirection
-
-        data = orig_setup(engine, guide=guide)
-        with Session(engine) as db:
-            for model in (ActualImport, IndicatorDirection):
-                check(
-                    db.scalar(select(func.count()).select_from(model)) == 0,
-                    'Yardımcı prova tablosu boş değil.',
-                )
-        for model in (IndicatorDirection, ActualImport):
-            model.__table__.drop(engine, checkfirst=True)
-        return data
-
+    # fr._run drops and re-migrates the empty CIV-194/197 auxiliary tables only
+    # when the loaded schema is behind head (CIV-220); no extra drop here.
     fr.OUT = STRATEJI_GUIDE_OUT
     fr.SCREENS = STRATEJI_GUIDE_SCREENS
     fr.Rehearsal = _build_strateji_guide_rehearsal()
     fr.guide_filename = strateji_guide_filename
     fr.write_guide_index = write_strateji_guide_index
-    fr.setup = _setup_and_drop_newer_aux
     try:
         return fr._run(url, guide=True)
     finally:

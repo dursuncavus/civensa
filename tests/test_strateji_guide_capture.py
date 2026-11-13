@@ -142,7 +142,7 @@ def test_strateji_guide_mode_restores_rehearsal_globals(monkeypatch):
         assert fr.write_guide_index is write_strateji_guide_index
         assert issubclass(fr.Rehearsal, previous[2])
         assert fr.Rehearsal is not previous[2]
-        assert fr.setup is not previous[5]
+        assert fr.setup is previous[5]
         raise RuntimeError('simulated strateji guide failure')
 
     monkeypatch.setattr(fr, '_run', fail)
