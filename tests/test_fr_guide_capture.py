@@ -23,7 +23,8 @@ def test_committed_guide_contract():
     assert headings == ['Başlamadan önce', 'Giriş ve parola', 'Personel ve Müdür',
                         'Gösterge gerçekleşmesi ve kanıt', 'EK-1 bölümleri ve EK-2',
                         'Gönderme (Müdür)', 'İade ve düzeltme', 'Onay sonrası',
-                        'Faaliyet sonuçları', 'Yardım', 'Daha sonra eklenecek bölümler']
+                        'Faaliyet sonuçları', 'Yardım',
+                        "Gösterge gerçekleşmelerini Excel'den aktarma (Strateji)"]
     assert '[EKLENECEK — faaliyet sonucu girişi, Ali Abi cevabı bekleniyor]' not in body
     assert '[EKLENECEK — gösterge Excel ile toplu giriş]' not in body
     assert "`Excel'den içe aktar`" in body
