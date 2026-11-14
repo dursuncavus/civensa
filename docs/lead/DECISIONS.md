@@ -1841,3 +1841,11 @@ Next IDs: task CIV-225, decision D-486.
 - Follow-up (not blocking): tests/test_source_comparison_ui.py saw 9 rows instead of 3 once in CI (#521, passed on re-run) → cross-test data leak suspected; look at it when CI flakes again.
 Next IDs: task CIV-225, decision D-487.
 
+
+## D-487 (14 Nov 2026 ~05:45 Istanbul, lead, night check "Civensa gece kontrol") — records gap: CIV-225 merged, release #526 waits for the owner
+- DOĞRULANDI (REST): after D-486 (docs/lead commit 60f381b, 20:17Z) a live session merged #525 CIV-225 (lead-coded, head 21e63fd, merged 21:11:08Z by the owner account → phase5 8480335) and opened release PR #526 phase5 → main (21:11:27Z, head 8480335). Neither was recorded in docs/lead/; no tasks/CIV-225.md package exists (scope taken from the #525 description: prefetch per-document tables for the EK-1 listing, 374 → ~50 queries, same report data per JSON comparison test).
+- DOĞRULANDI: #526 CI green on 8480335 (guard, secrets, backup-security, all four test shards; finished 21:35:53Z). No files under migrations/ (head stays c219b1c2d3e4). main...phase5: 4 ahead.
+- Owner: merge #526 → db-backup (ref phase5) → Render deploy → /health ok. Then the lead re-measures /activity-sections?period_id=1 on live (estimate 2–3 s, BELİRSİZ).
+- No mail from Ali Abi after T. No other open PR changed (#382 parked). No lead/* branch after T recorded this (D-363 check).
+- DeepSeek mirror GUNCEL-DURUM.md not reachable in scheduled runs; lead refreshes it in the next live session with the Mac linked.
+Next IDs: task CIV-226, decision D-488.
