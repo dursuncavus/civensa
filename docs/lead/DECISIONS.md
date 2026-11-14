@@ -1833,3 +1833,19 @@ Next IDs: task CIV-224, decision D-485.
 - Render Starter stays a pilot-day option for general headroom, no longer the EK-1 fix.
 Next IDs: task CIV-225, decision D-486.
 
+## D-486 (13 Nov 2026 ~23:20 Istanbul, lead, CV Lider 76) — CIV-224 live: EK-1 listing 13–15 s → ~6 s
+- BEYAN (owner 23:14): "Yayında". DOĞRULANDI: #523 merged (main 28de2ea); db-backup ref phase5 run 43498381436 success (20:06Z); /health ok, migration c219b1c2d3e4.
+- DOĞRULANDI (lead, live, owner's Chrome, owner signed in himself): /activity-sections?period_id=1 (1293 rows, 539 KB) first load 9.1 s, then 6.0 / 6.0 / 7.2 / 5.8 s. /health db latency 10 ms.
+- Model analysis: ~374 queries × ~10 ms ≈ 3.7 s + HTML rendering on Render free (0.1 CPU) ≈ 2 s.
+- Lead decision: usable for the pilot; no further work now. Options if needed later: CIV-225 batch the remaining ~10 per-document queries (est. −3 s); Render Starter on pilot day helps the rendering part.
+- Follow-up (not blocking): tests/test_source_comparison_ui.py saw 9 rows instead of 3 once in CI (#521, passed on re-run) → cross-test data leak suspected; look at it when CI flakes again.
+Next IDs: task CIV-225, decision D-487.
+
+
+## D-487 (14 Nov 2026 ~05:45 Istanbul, lead, night check "Civensa gece kontrol") — records gap: CIV-225 merged, release #526 waits for the owner
+- DOĞRULANDI (REST): after D-486 (docs/lead commit 60f381b, 20:17Z) a live session merged #525 CIV-225 (lead-coded, head 21e63fd, merged 21:11:08Z by the owner account → phase5 8480335) and opened release PR #526 phase5 → main (21:11:27Z, head 8480335). Neither was recorded in docs/lead/; no tasks/CIV-225.md package exists (scope taken from the #525 description: prefetch per-document tables for the EK-1 listing, 374 → ~50 queries, same report data per JSON comparison test).
+- DOĞRULANDI: #526 CI green on 8480335 (guard, secrets, backup-security, all four test shards; finished 21:35:53Z). No files under migrations/ (head stays c219b1c2d3e4). main...phase5: 4 ahead.
+- Owner: merge #526 → db-backup (ref phase5) → Render deploy → /health ok. Then the lead re-measures /activity-sections?period_id=1 on live (estimate 2–3 s, BELİRSİZ).
+- No mail from Ali Abi after T. No other open PR changed (#382 parked). No lead/* branch after T recorded this (D-363 check).
+- DeepSeek mirror GUNCEL-DURUM.md not reachable in scheduled runs; lead refreshes it in the next live session with the Mac linked.
+Next IDs: task CIV-226, decision D-488.

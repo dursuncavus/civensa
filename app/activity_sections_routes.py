@@ -366,7 +366,10 @@ def register(app):
         # per-directorate db.get() calls below do not go back to the database.
         keep=(departments,db.scalars(select(ReportingPeriod)).all(),db.scalars(select(Organization)).all(),
               db.scalars(select(User)).all())
-        for doc in list(db.scalars(query)):
+        docs=list(db.scalars(query))
+        visible=[d for d in docs if user.role=='strategy' or d.department_id in {None,user.department_id}]
+        service.prefetch_listing(db,visible)
+        for doc in docs:
             if user.role!='strategy' and doc.department_id not in {None,user.department_id}:continue
             try:report=service.report_data(db,user,doc.id)
             except HTTPException as error:

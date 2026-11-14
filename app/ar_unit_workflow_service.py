@@ -18,7 +18,17 @@ from .time_display import turkey_time
 STATUSES = {'draft': 'Taslak', 'submitted': 'Gönderildi', 'returned': 'İade edildi', 'approved': 'Onaylandı'}
 
 
+def events_of(db, doc):
+    from .listing_memo import memo
+    return memo(db, ('workflow_events', doc.id), lambda: db.scalars(select(ARUnitWorkflowEvent).where(
+        ARUnitWorkflowEvent.document_id == doc.id).order_by(ARUnitWorkflowEvent.id)).all())
+
+
 def latest(db, doc, action=None):
+    from .listing_memo import KEY
+    if KEY in db.info:
+        # CIV-225: inside a listing the document's events are already loaded.
+        return next((e for e in reversed(events_of(db, doc)) if action is None or e.action == action), None)
     query = select(ARUnitWorkflowEvent).where(ARUnitWorkflowEvent.document_id == doc.id)
     if action:
         query = query.where(ARUnitWorkflowEvent.action == action)
@@ -37,8 +47,7 @@ def verified_payload(record):
 
 
 def view(db, doc):
-    events = db.scalars(select(ARUnitWorkflowEvent).where(ARUnitWorkflowEvent.document_id == doc.id)
-                        .order_by(ARUnitWorkflowEvent.id)).all()
+    events = events_of(db, doc)
     # The newest event is the last one by id (same row latest() returns).
     current = events[-1] if events else None
     status = current.to_status if current else 'draft'
