@@ -1869,3 +1869,11 @@ Next IDs: task CIV-226, decision D-489.
 - tasks/CIV-226.md added. ROLLOUT_CHECKLIST C4 updated.
 - Local container note: backup/restore rehearsal tests fail on the base branch too (pg_dump/restore here); CI green.
 Next IDs: task CIV-227, decision D-490.
+
+## D-490 (15 Nov 2026 ~18:05 Istanbul, CV Lider 76) — remaining development list; CIV-227 small screen fixes merged
+- Owner (17:25): no more speed tests for now; asked what development is left. Lead answer (DOĞRULANDI from STATE/DECISIONS): pilot path complete. Waiting on owner: CIV-179 (#382, new FR template), Sunum/CIV-180 follow-up (hall-computer test + remarks), CIV-215 İK InDesign tables (paused, D-472). Waiting on Ali: only the announcement to directorates (E4). Lead correction (rule 23): the lead first listed lower-is-better, photos and support channel as open; all three were answered on 9 Nov (D-446: S10 = 4 "Gün" indicators, set live via CIV-197; S11 photos; S9 support = Ali). Cause: the answer was written from the STATE owner list, which still carried the 9 Nov questions. Prevention: check DECISIONS (D-446) before listing Ali items.
+- BEYAN (owner 17:27): photos are uploaded by directorates in general, but for the first year (2026 report) Ali Abi and the owner upload them (via the Strateji-held directorate accounts, D-479; no code change).
+- Open nuance kept: Sosyal Hizmetler 2 "Zaman" rows and Gelirler 2 "Oran (Kümülatif Azalan)" rows — direction unclear; ask Ali only when the karne goes to the council.
+- CIV-227 #532 (lead-coded, Codex clean on 2ef958a, CI green) merged into phase5: Genel Bakış progress table scroll hint below 760 px (D-268); resource-table "Kaydet" header no longer breaks (D-251). Not changed: D-273 repeated period badge (frozen dashboard hook contract keeps #ppPeriodYear), date input format (browser locale), D-250 (watch only). Not released yet; goes with the next release.
+- Flaky test_source_comparison_ui: short look, no cause found (per-test DB clones, no process caches on that path); still open, not a pilot blocker.
+Next IDs: task CIV-228, decision D-491.
