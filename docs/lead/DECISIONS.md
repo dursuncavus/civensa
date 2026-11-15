@@ -1849,3 +1849,11 @@ Next IDs: task CIV-225, decision D-487.
 - No mail from Ali Abi after T. No other open PR changed (#382 parked). No lead/* branch after T recorded this (D-363 check).
 - DeepSeek mirror GUNCEL-DURUM.md not reachable in scheduled runs; lead refreshes it in the next live session with the Mac linked.
 Next IDs: task CIV-226, decision D-488.
+
+## D-488 (15 Nov 2026 ~12:20 Istanbul, CV Lider 76) — release #526 LIVE: EK-1 2026 listing ~1.7 s
+- DOĞRULANDI: owner merged #526 (main 5928890, 09:14Z), db-backup ref phase5 success (run 09:14:39Z), deployed; /health ok, schema c219b1c2d3e4, migration current = head.
+- DOĞRULANDI (owner's Chrome, owner logged in himself, JS fetch timing): `/activity-sections?period_id=1` 200, 552 KB, 1293 table rows; loads 5.0 / 1.7 / 2.5 / 1.6 / 2.4 / 1.4 s. Was ~6 s (first 9 s) after D-486 and 13–15 s before CIV-224.
+- tasks/CIV-225.md written after the merge (D-487 gap).
+- Assessment (model analysis): listing speed is no longer a pilot blocker; Render Starter is not needed for this page. Remaining time is mostly server render + 552 KB transfer; no further work planned unless pilot users report it.
+- Follow-up unchanged: flaky tests/test_source_comparison_ui.py (9 vs 3 rows once).
+Next IDs: task CIV-226, decision D-489.
