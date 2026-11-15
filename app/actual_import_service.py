@@ -185,7 +185,21 @@ def option(indicator, reading, workbook_unit, book_row):
         'reading': reading['key'], 'rule': reading['rule'], 'scale': scale, 'value': value, 'raw_value': raw,
         'percent_value': raw * 100 if raw is not None else None,
         'current': previous['value'] if previous else None,
+        'current_explanation': previous.get('explanation', '') if previous else '',
         'expected_revision': previous['revision'] if previous else 0}
+
+
+def explanation_changed(workbook, current):
+    """A blank workbook cell keeps the screen text; only new text is a change."""
+    text = str(workbook).strip() if workbook is not None else ''
+    return bool(text) and text != (current or '').strip()
+
+
+def workbook_source(record, line):
+    """CIV-228: the Strateji workbook row is the source of a first imported actual."""
+    return {'title': 'Strateji ana Excel dosyası (2026 gösterge gerçekleşmeleri)',
+            'locator': f'veriler sayfası, {line}. satır',
+            'source_revision': f'SHA-256 {record.source_sha256}'}
 
 
 def summary(rows):
@@ -227,7 +241,8 @@ def preview_import(db, user, revision_id, data):
                 claimed.add(selected['id'])
                 if conflict or selected['scale'] != 'raw':
                     status = 'Onay gerekiyor'
-                elif raw is not None and selected['current'] is not None and raw == Decimal(selected['current']):
+                elif (raw is not None and selected['current'] is not None and raw == Decimal(selected['current'])
+                        and not explanation_changed(source.get('explanation'), selected.get('current_explanation'))):
                     status = 'Değişmedi'
         if raw is None and status != 'Hata':
             status = 'Eksik'; message = 'Sayısal yıllık değer yok. Eksik çeyrekleri veya yıllık toplamı tamamlayın; boş sıfır değildir.'
@@ -267,6 +282,16 @@ def import_preview(db, user, import_id, lock=False):
 
 
 def apply_import(db, user, import_id, expected_revision, choices):
+    # CIV-228: verify and parse the pinned book once per apply, not once per row
+    # (20 rows took 7.4 s, 90% in checked_publication).
+    db.info['checked_publication_memo'] = {}
+    try:
+        return _apply_import(db, user, import_id, expected_revision, choices)
+    finally:
+        db.info.pop('checked_publication_memo', None)
+
+
+def _apply_import(db, user, import_id, expected_revision, choices):
     record, preview = import_preview(db, user, import_id, lock=True)
     if record.result_json:
         return json.loads(record.result_json)
@@ -311,14 +336,19 @@ def apply_import(db, user, import_id, expected_revision, choices):
                 contract.lock_report(db, report)
                 previous = db.scalar(select(ActualRevision).where(ActualRevision.report_indicator_id == selected['id'])
                     .order_by(ActualRevision.revision.desc()))
-                if previous and previous.value == value:
-                    item.update(status='Değişmedi', message='Mevcut değer aynı; yeni revizyon yazılmadı.')
+                workbook_explanation = row['source'].get('explanation', '')
+                if previous and previous.value == value and not explanation_changed(workbook_explanation, previous.explanation):
+                    item.update(status='Değişmedi', message='Mevcut değer ve açıklama aynı; yeni revizyon yazılmadı.')
                 else:
-                    explanation = row['source'].get('explanation', '')
+                    explanation = workbook_explanation
                     if not explanation.strip():
                         explanation = previous.explanation if previous else ''
+                    # Keep screen evidence; without any, the workbook row itself is the source.
+                    evidence = json.loads(previous.evidence_json) if previous else []
+                    if not evidence:
+                        evidence = [workbook_source(record, row['line'])]
                     actual = contract.save_actual(db, user, selected['id'], selected['expected_revision'],
-                        format(value, 'f'), 'verified', json.loads(previous.evidence_json) if previous else [],
+                        format(value, 'f'), 'verified', evidence,
                         explanation, json.loads(previous.deviation_json) if previous else {})
                     db.flush()
                     item.update(status='Yazıldı', message='Yeni gerçekleşme revizyonu kaydedildi.',

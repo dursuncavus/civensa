@@ -60,7 +60,7 @@ def guide_filename(role, title):
     return name + '.png' if name else None
 
 
-def setup(engine, *, guide=False):
+def setup(engine, *, guide=False, unit_accounts=True):
     from sqlalchemy import select
     from sqlalchemy.orm import Session
     from app.models import Department, ReportingPeriod, User
@@ -88,7 +88,7 @@ def setup(engine, *, guide=False):
                     units=[], book=str(book.relative_to(ROOT)), book_sha256=digest,
                     counts=inspection['applied'], _server_errors=[])
         for key, name in [('fen','Fen İşleri Müdürlüğü'), ('afet','Afet İşleri ve Risk Değerlendirme Müdürlüğü'),
-                          ('ozel','Özel Kalem Müdürlüğü')]:
+                          ('ozel','Özel Kalem Müdürlüğü')] if unit_accounts else ():
             dep = db.scalar(select(Department).where(Department.name == ('Afet İşleri ve Risk Yönetimi Müdürlüğü' if key == 'afet' else name)))
             check(dep is not None, 'Prova müdürlüğü bulunamadı.')
             for position in ('staff', 'director'):
@@ -609,7 +609,7 @@ def write_report(rehearsal, failed):
     (OUT/'report.md').write_text('\n'.join(line.rstrip() for line in lines))
 
 
-def _run(url, *, guide=False):
+def _run(url, *, guide=False, pilot=False):
     from scripts.first_load_dryrun import environment
     from tests.first_load_checkpoint import disposable_first_load_database
     OUT.mkdir(parents=True,exist_ok=True); SCREENS.mkdir(parents=True,exist_ok=True)
@@ -631,7 +631,9 @@ def _run(url, *, guide=False):
             with disposable_first_load_database(url) as engine:
                 import app.db as app_db
                 app_db.engine.dispose(); app_db.engine=engine; app_db.SessionLocal.configure(bind=engine)
-                data=setup(engine, guide=guide)
+                if pilot:
+                    from scripts import fr_pilot_rehearsal as pilot_mode
+                data=pilot_mode.setup(engine) if pilot else setup(engine, guide=guide)
                 # The operational importer is pinned; bring disposable schema back to
                 # current head before the first browser action, using existing migrations.
                 from alembic import command
@@ -670,7 +672,7 @@ def _run(url, *, guide=False):
                 with environment(DATABASE_URL=rendered,MIGRATION_DATABASE_URL=rendered):
                     command.upgrade(Config(str(ROOT/'alembic.ini')),'head')
                 with local_http(engine,data) as base:
-                    rehearsal=Rehearsal(base,data,Path(temporary))
+                    rehearsal=(pilot_mode.PilotRehearsal if pilot else Rehearsal)(base,data,Path(temporary))
                     class Warnings(logging.Handler):
                         def emit(self,record):
                             if record.levelno>=logging.WARNING:
@@ -679,7 +681,7 @@ def _run(url, *, guide=False):
                     try: rehearsal.walk()
                     finally:
                         rehearsal.stack.close(); logging.getLogger().removeHandler(handler)
-                        safe={k:v for k,v in data.items() if k not in {'password','_clients','accounts'}}
+                        safe={k:v for k,v in data.items() if k not in {'password','shared_password','changed','plan_rows','_clients','accounts'}}
                         safe.update(unexpected=rehearsal.unexpected,server_errors=data['_server_errors'],js=rehearsal.js)
                         (OUT/'run.json').write_text(json.dumps(safe,ensure_ascii=False,indent=2)+'\n')
                 check(not rehearsal.unexpected and not rehearsal.js and not data['_server_errors'],'Beklenmeyen tarayıcı/sunucu hatası.')
@@ -696,6 +698,8 @@ def _run(url, *, guide=False):
         rehearsal.write()
         if guide:
             write_guide_index(rehearsal, failed)
+        elif pilot:
+            pilot_mode.write_report(rehearsal, failed)
         else:
             write_report(rehearsal,failed)
     return 1 if failed else 0

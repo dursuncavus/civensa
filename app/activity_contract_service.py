@@ -75,6 +75,18 @@ def authorize(user, department_id=None):
 
 
 def checked_publication(db, publication_id):
+    # CIV-228: a bulk writer (workbook import) may opt in to one check per
+    # publication for its transaction; publications are immutable once pinned.
+    memo = db.info.get('checked_publication_memo')
+    if memo is not None and publication_id in memo:
+        return memo[publication_id]
+    pub, payload = _checked_publication(db, publication_id)
+    if memo is not None:
+        memo[publication_id] = (pub, payload)  # also keeps pub out of weak identity-map eviction
+    return pub, payload
+
+
+def _checked_publication(db, publication_id):
     pub = db.get(Publication, publication_id)
     if not pub:
         raise HTTPException(404, 'Seçilen Performans Programı yayını bulunamadı.')

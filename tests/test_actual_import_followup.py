@@ -12,7 +12,7 @@ from openpyxl import load_workbook
 from sqlalchemy import select, func
 from app import actual_import_service as imp
 from app.models import ActualRevision
-from tests.test_actual_import import db, scenario, workbook, confirmed, apply
+from tests.test_actual_import import db, scenario, workbook, confirmed, apply, preview
 
 pytestmark = pytest.mark.postgres
 REAL_HEADERS = json.loads((Path(__file__).parent/'fixtures/civ192_headers.json').read_text())['headers']
@@ -191,3 +191,19 @@ def test_uncached_total_formula_can_only_fall_back_to_complete_quarters(client, 
     assert [r['key'] for r in p['rows'][0]['readings']] == ['method']
     assert apply(db, sample, record, p)['counts'] == {'Yazıldı':1}
     assert db.scalar(select(ActualRevision).order_by(ActualRevision.id.desc())).value == 10
+
+
+def test_workbook_explanation_alone_writes_new_revision(client, db, sample, scenario):
+    """CIV-228: Strateji adds a deviation explanation later in the workbook; the value is unchanged."""
+    current = db.scalar(select(ActualRevision).order_by(ActualRevision.id))
+    name = next(i['definition']['name'] for i in scenario['indicators'] if i['report_indicator_id'] == current.report_indicator_id)
+    record, p = preview(db, sample, scenario, [{'name': name, 'annual': current.value, 'explanation': 'Yeni sapma açıklaması'}])
+    assert p['rows'][0]['status'] == 'Eşleşti'
+    assert apply(db, sample, record, p)['counts'] == {'Yazıldı': 1}
+    latest = db.scalar(select(ActualRevision).where(ActualRevision.report_indicator_id == current.report_indicator_id)
+                       .order_by(ActualRevision.revision.desc()))
+    assert (latest.value, latest.explanation, latest.evidence_json) == (current.value, 'Yeni sapma açıklaması', current.evidence_json)
+    for explanation in ('Yeni sapma açıklaması', ''):
+        again, p2 = preview(db, sample, scenario, [{'name': name, 'annual': current.value, 'explanation': explanation}])
+        assert p2['rows'][0]['status'] == 'Değişmedi'
+        assert apply(db, sample, again, p2)['counts'] == {'Değişmedi': 1}
