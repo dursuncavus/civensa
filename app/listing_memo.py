@@ -27,6 +27,13 @@ def listing_memo(db):
         db.info.pop(KEY, None)
 
 
+def prefill(db, values):
+    """Store rows a listing loaded in bulk under the keys the helpers use."""
+    cache = db.info.get(KEY)
+    if cache is not None:
+        cache.update(values)
+
+
 def memo(db, key, load):
     cache = db.info.get(KEY)
     if cache is None:

@@ -57,6 +57,9 @@ def document(db, user, document_id):
 def latest_release(db, doc, version=None):
     query=select(ARDocumentFreeze).where(ARDocumentFreeze.document_id==doc.id)
     if version is not None:query=query.where(ARDocumentFreeze.version==version)
+    else:
+        from .listing_memo import memo
+        return memo(db,('latest_freeze',doc.id),lambda:db.scalar(query.order_by(ARDocumentFreeze.version.desc()).limit(1)))
     return db.scalar(query.order_by(ARDocumentFreeze.version.desc()).limit(1))
 
 
@@ -343,7 +346,8 @@ def resources(db,doc):
                     'approval_id':approval.id,'sha256':approval.sha256})
         docs=[]
     for source in docs:
-        rows=db.scalars(select(ARResourceRow).where(ARResourceRow.document_id==source.id).order_by(ARResourceRow.table_kind,ARResourceRow.position,ARResourceRow.id)).all()
+        from .listing_memo import memo
+        rows=memo(db,('resource_rows',source.id),lambda:db.scalars(select(ARResourceRow).where(ARResourceRow.document_id==source.id).order_by(ARResourceRow.table_kind,ARResourceRow.position,ARResourceRow.id)).all())
         for row in rows:
             result[row.table_kind]['rows'].append({**row_data(row),'department_id':source.department_id,
                 'department':period_name(db,doc.period_id,db.get(Department,source.department_id))})
@@ -440,6 +444,76 @@ def save_resources(db,user,document_id,kind,rows,expected_revision):
     return doc
 
 
+def prefetch_listing(db, docs):
+    """CIV-225: load each per-document table once for the whole listing.
+
+    Fills the listing memo under the same keys (and in the same row order)
+    that the per-document helpers use, so report_data reads from memory.
+    """
+    from sqlalchemy import func, tuple_
+    from .listing_memo import KEY, prefill
+    from .models import ARFinancialEntry, ARUnitTable, ARUnitPhoto, ARUnitPhotoRemoval, ARUnitWorkflowEvent
+    from .assurance_models import AssuranceStatement
+    ids=[d.id for d in docs]
+    if KEY not in db.info or not ids:return
+    def grouped(rows,key=lambda r:r.document_id):
+        out={i:[] for i in ids}
+        for row in rows:out[key(row)].append(row)
+        return out
+    values={}
+    newest=select(ARDocumentFreeze.document_id,func.max(ARDocumentFreeze.version)).where(
+        ARDocumentFreeze.document_id.in_(ids)).group_by(ARDocumentFreeze.document_id)
+    freezes={f.document_id:f for f in db.scalars(select(ARDocumentFreeze).where(
+        tuple_(ARDocumentFreeze.document_id,ARDocumentFreeze.version).in_(newest)))}
+    values.update({('latest_freeze',i):freezes.get(i) for i in ids})
+    for i,rows in grouped(db.scalars(select(ARUnitWorkflowEvent).where(ARUnitWorkflowEvent.document_id.in_(ids))
+                                     .order_by(ARUnitWorkflowEvent.id))).items():
+        values[('workflow_events',i)]=rows
+    for i,rows in grouped(db.scalars(select(ARResourceRow).where(ARResourceRow.document_id.in_(ids))
+            .order_by(ARResourceRow.document_id,ARResourceRow.table_kind,ARResourceRow.position,ARResourceRow.id))).items():
+        values[('resource_rows',i)]=rows
+    for i,rows in grouped(db.scalars(select(ARSectionContent).where(ARSectionContent.document_id.in_(ids)))).items():
+        values[('section_contents',i)]=rows
+    for i,rows in grouped(db.scalars(select(AssuranceStatement).where(AssuranceStatement.document_id.in_(ids)))).items():
+        values[('assurance_statements',i)]=rows
+    for i,rows in grouped(db.scalars(select(ARUnitPhoto).where(ARUnitPhoto.document_id.in_(ids),
+            ~select(ARUnitPhotoRemoval.id).where(ARUnitPhotoRemoval.photo_id==ARUnitPhoto.id).exists()))).items():
+        values[('unit_photos',i)]=rows
+    for i,rows in grouped(db.scalars(select(ARUnitTable).where(ARUnitTable.document_id.in_(ids)))).items():
+        values[('unit_tables',i)]={t.kind:t for t in rows}
+    entries={i:{} for i in ids}
+    for row in db.scalars(select(ARFinancialEntry).where(ARFinancialEntry.document_id.in_(ids))
+                          .order_by(ARFinancialEntry.document_id,ARFinancialEntry.kind,ARFinancialEntry.position)):
+        entries[row.document_id].setdefault(row.kind,[]).append(row.payload_json)
+    values.update({('financial_entries',i):entries[i] for i in ids})
+    prefill(db,values)
+
+
+def core_rows(db,revision_id,period_id):
+    """(item, binding, definition, latest actual, direction) for a whole report revision."""
+    from sqlalchemy import func, tuple_
+    from .models import IndicatorDirection
+    pairs=db.execute(select(ReportIndicator,PublicationIndicatorBinding).join(PublicationIndicatorBinding,
+        PublicationIndicatorBinding.id==ReportIndicator.publication_binding_id)
+        .where(ReportIndicator.report_revision_id==revision_id).order_by(ReportIndicator.id)).all()
+    if not pairs:return []
+    ids=[i.id for i,_ in pairs]
+    newest=select(ActualRevision.report_indicator_id,func.max(ActualRevision.revision)).where(
+        ActualRevision.report_indicator_id.in_(ids)).group_by(ActualRevision.report_indicator_id)
+    latest={a.report_indicator_id:a for a in db.scalars(select(ActualRevision).where(
+        tuple_(ActualRevision.report_indicator_id,ActualRevision.revision).in_(newest)))}
+    definitions={d.id:d for d in db.scalars(select(IndicatorDefinitionRevision).where(
+        IndicatorDefinitionRevision.id.in_({b.definition_revision_id for _,b in pairs})))}
+    directions={}
+    for row in db.execute(select(IndicatorDirection.indicator_id,IndicatorDirection.direction).where(
+            IndicatorDirection.period_id==period_id,
+            IndicatorDirection.indicator_id.in_({d.indicator_id for d in definitions.values()}))
+            .order_by(IndicatorDirection.id.desc())):
+        directions.setdefault(row.indicator_id,row.direction)
+    return [(i,b,definitions[b.definition_revision_id],latest.get(i.id),
+             directions.get(definitions[b.definition_revision_id].indicator_id) or 'higher') for i,b in pairs]
+
+
 def core_summary(db,doc):
     from .activity_contract_service import indicator_direction
     from .listing_memo import memo
@@ -452,20 +526,29 @@ def core_summary(db,doc):
         return {'status':'empty','total':0,'verified':0,'link':'/activity-reports','message':'Gösterge raporu henüz oluşturulmadı. Gerçekleşme ekranında raporu oluşturun.'}
     if not revision:
         return {'status':'empty','total':0,'verified':0,'link':'/activity-reports','message':'Güncel gösterge revizyonu bulunamadı. Gerçekleşme raporunu kontrol edin.'}
-    query=select(ReportIndicator).join(PublicationIndicatorBinding,PublicationIndicatorBinding.id==ReportIndicator.publication_binding_id).where(ReportIndicator.report_revision_id==revision.id)
-    if doc.department_id:
-        query=query.where(PublicationIndicatorBinding.department_id==doc.department_id)
-    items=db.scalars(query.order_by(ReportIndicator.id)).all();verified=0;indicators=[]
-    for item in items:
-        latest=db.scalar(select(ActualRevision).where(ActualRevision.report_indicator_id==item.id).order_by(ActualRevision.revision.desc()).limit(1))
+    from .listing_memo import KEY
+    if KEY in db.info:
+        # CIV-225: the listing reads every directorate's indicator rows in four queries.
+        rows=[r for r in memo(db,('core_rows',revision.id),lambda:core_rows(db,revision.id,doc.period_id))
+              if not doc.department_id or r[1].department_id==doc.department_id]
+    else:
+        query=select(ReportIndicator).join(PublicationIndicatorBinding,PublicationIndicatorBinding.id==ReportIndicator.publication_binding_id).where(ReportIndicator.report_revision_id==revision.id)
+        if doc.department_id:
+            query=query.where(PublicationIndicatorBinding.department_id==doc.department_id)
+        rows=[]
+        for item in db.scalars(query.order_by(ReportIndicator.id)).all():
+            latest=db.scalar(select(ActualRevision).where(ActualRevision.report_indicator_id==item.id).order_by(ActualRevision.revision.desc()).limit(1))
+            binding=db.get(PublicationIndicatorBinding,item.publication_binding_id)
+            definition=db.get(IndicatorDefinitionRevision,binding.definition_revision_id)
+            rows.append((item,binding,definition,latest,indicator_direction(db,definition.indicator_id,doc.period_id)))
+    items=[r[0] for r in rows];verified=0;indicators=[]
+    for item,binding,definition,latest,direction in rows:
         verified+=bool(latest and latest.state=='verified' and json.loads(latest.evidence_json))
-        binding=db.get(PublicationIndicatorBinding,item.publication_binding_id)
-        definition=db.get(IndicatorDefinitionRevision,binding.definition_revision_id)
         if digest(definition.definition_json)!=definition.sha256:
             fail('Gösterge tanımı doğrulanamadı. Strateji ile gösterge raporunu kontrol edin.',409)
         data=json.loads(definition.definition_json)
         indicators.append({'name':data['name'],'unit':data.get('unit'),'targets':data.get('targets',[]),
-            'direction':indicator_direction(db,definition.indicator_id,doc.period_id),
+            'direction':direction,
             'data_source':data.get('data_source',''), 'actual':latest.value if latest else None,
             'actual_state':latest.state if latest else 'missing','raw_text':latest.raw_text if latest else '',
             'evidence':json.loads(latest.evidence_json) if latest else [],
@@ -534,7 +617,8 @@ def report_data(db,user,document_id,use_freeze=True,version=None,include_typeset
     from .ar_unit_tables_service import report_data as unit_tables_data
     if doc.department_id or user.role == 'strategy':
         result['unit_tables']=unit_tables_data(db,doc)
-    contents={c.definition_id:c for c in db.scalars(select(ARSectionContent).where(ARSectionContent.document_id==doc.id))}
+    from .listing_memo import memo
+    contents={c.definition_id:c for c in memo(db,('section_contents',doc.id),lambda:db.scalars(select(ARSectionContent).where(ARSectionContent.document_id==doc.id)).all())}
     for definition in definitions(db,doc):
         content=contents[definition.id]
         row={'code':definition.code,'title':definition.title,'position':definition.position,

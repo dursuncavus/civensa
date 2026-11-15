@@ -265,8 +265,8 @@ def unit_data(db, doc):
     photos = []
     order = {a['key']: i for i, a in enumerate(source['activities'])}
     names = {a['key']: a['activity'] for a in source['activities']}
-    records = db.scalars(select(ARUnitPhoto).where(ARUnitPhoto.document_id == doc.id,
-        ~select(ARUnitPhotoRemoval.id).where(ARUnitPhotoRemoval.photo_id == ARUnitPhoto.id).exists())).all()
+    records = memo(db, ('unit_photos', doc.id), lambda: db.scalars(select(ARUnitPhoto).where(ARUnitPhoto.document_id == doc.id,
+        ~select(ARUnitPhotoRemoval.id).where(ARUnitPhotoRemoval.photo_id == ARUnitPhoto.id).exists())).all())
     for photo in sorted(records, key=lambda p: (order.get(p.activity_key, len(order)), p.id)):
         photos.append({'id': photo.id, 'document_id': doc.id, 'activity_key': photo.activity_key, 'caption': photo.caption,
                        'activity': names.get(photo.activity_key) or photo_activity(db, doc, photo.activity_key),
