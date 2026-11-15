@@ -1,0 +1,112 @@
+{
+  "rehearsal": true,
+  "guide": false,
+  "period": 2,
+  "units": [
+    {
+      "key": "fen",
+      "name": "Fen İşleri Müdürlüğü",
+      "department_id": 8,
+      "document": "/activity-sections/reports/8",
+      "blocked_text": "İçeriğe geç\nCivensa\nKurumsal raporlama\n\nPerformans Programı\n\nGenel Bakış\nVeri Girişi\n\nFaaliyet Raporu\n\nRapor bölümleri ve beyanlar (EK-1)\n\nİç Kontrol\n\nİç Kontrol Eylemlerimiz\n\nYönetim\n\nModüller\nGönderim Yetkileri\nParolamı Değiştir\nÇıkış\nBildirimler\nMüdürlük\nFen İşleri Müdürlüğü (Strateji)\nBirim faaliyet raporu işlemi tamamlanamadı\n\nBirim faaliyet raporu gönderilemedi. Şu göstergelerde hedef farkı açıklaması eksik: Kent genelinde yapılan parke taş ile yol yapım bakım ve onarım işi ile asfaltlama yapım, bakım, onarım işi.\n\nKent genelinde yapılan parke taş ile yol yapım bakım ve onarım işi ile asfaltlama yapım, bakım, onarım işi: Hedef ile gerçekleşme farkı için açıklama girin.\n\nRaporun son sürümünü aç"
+    },
+    {
+      "key": "afet",
+      "name": "Afet İşleri ve Risk Değerlendirme Müdürlüğü",
+      "department_id": 1,
+      "document": "/activity-sections/reports/2",
+      "blocked_text": "İçeriğe geç\nCivensa\nKurumsal raporlama\n\nPerformans Programı\n\nGenel Bakış\nVeri Girişi\n\nFaaliyet Raporu\n\nRapor bölümleri ve beyanlar (EK-1)\n\nİç Kontrol\n\nİç Kontrol Eylemlerimiz\n\nYönetim\n\nModüller\nGönderim Yetkileri\nParolamı Değiştir\nÇıkış\nBildirimler\nMüdürlük\nAfet İşleri ve Risk Değerlendirme Müdürlüğü (Strateji)\nBirim faaliyet raporu işlemi tamamlanamadı\n\nBirim faaliyet raporu gönderilemedi. Şu göstergelerde hedef farkı açıklaması eksik: Afet sonrasın için modernize edilen mevcut toplanma alanlarının sayısı.\n\nAfet sonrasın için modernize edilen mevcut toplanma alanlarının sayısı: Hedef ile gerçekleşme farkı için açıklama girin.\n\nRaporun son sürümünü aç"
+    },
+    {
+      "key": "ozel",
+      "name": "Özel Kalem Müdürlüğü",
+      "department_id": 31,
+      "document": "/activity-sections/reports/31",
+      "blocked_text": "İçeriğe geç\nCivensa\nKurumsal raporlama\n\nPerformans Programı\n\nGenel Bakış\nVeri Girişi\n\nFaaliyet Raporu\n\nRapor bölümleri ve beyanlar (EK-1)\n\nİç Kontrol\n\nİç Kontrol Eylemlerimiz\n\nYönetim\n\nModüller\nGönderim Yetkileri\nParolamı Değiştir\nÇıkış\nBildirimler\nMüdürlük\nÖzel Kalem Müdürlüğü (Strateji)\nBirim faaliyet raporu işlemi tamamlanamadı\n\nBirim faaliyet raporu gönderilemedi. Şu göstergelerde hedef farkı açıklaması eksik: Yıl içinde yapılan koordinasyon toplantısı sayısı.\n\nYıl içinde yapılan koordinasyon toplantısı sayısı: Hedef ile gerçekleşme farkı için açıklama girin.\n\nRaporun son sürümünü aç"
+    }
+  ],
+  "book": "tests/fixtures/first_load/source/2026-performans-programi_ONAYLI.idml",
+  "book_sha256": "1aaa0bb81c3cf4e245edaab42452a972b8a59ffc252814216c7628f6dbaf33d6",
+  "counts": {
+    "departments": 33,
+    "created_departments": 0,
+    "cards": 105,
+    "indicators": 226,
+    "activities": 182,
+    "economic_values": 1270
+  },
+  "_server_errors": [],
+  "importer_id": 2,
+  "pilot": true,
+  "browser": "153.0.8010.12",
+  "imports": [
+    {
+      "title": "İlk Excel",
+      "preview": "Eşleşti: 16 · Onay gerekiyor: 4",
+      "manual": 4,
+      "rows": 20,
+      "result": "Yazıldı: 20",
+      "lines": [
+        "Excel 2. satır · Yazıldı · Yeni gerçekleşme revizyonu kaydedildi. · 2 · TOPLA: Q1 + Q2 + Q3 + Q4",
+        "Excel 3. satır · Yazıldı · Yeni gerçekleşme revizyonu kaydedildi. · 12.000 · TOPLA: Q1 + Q2 + Q3 + Q4",
+        "Excel 4. satır · Yazıldı · Yeni gerçekleşme revizyonu kaydedildi. · 200 · TOPLA: Q1 + Q2 + Q3 + Q4",
+        "Excel 5. satır · Yazıldı · Yeni gerçekleşme revizyonu kaydedildi. · 13 · TOPLA: Q1 + Q2 + Q3 + Q4",
+        "Excel 6. satır · Yazıldı · Yeni gerçekleşme revizyonu kaydedildi. · 200 · TOPLA: Q1 + Q2 + Q3 + Q4",
+        "Excel 7. satır · Yazıldı · Yeni gerçekleşme revizyonu kaydedildi. · 100 · TOPLA: Q1 + Q2 + Q3 + Q4",
+        "Excel 8. satır · Yazıldı · Yeni gerçekleşme revizyonu kaydedildi. · 100 · TOPLA: Q1 + Q2 + Q3 + Q4",
+        "Excel 9. satır · Yazıldı · Yeni gerçekleşme revizyonu kaydedildi. · 100 · TOPLA: Q1 + Q2 + Q3 + Q4",
+        "Excel 10. satır · Yazıldı · Yeni gerçekleşme revizyonu kaydedildi. · 50 · TOPLA: Q1 + Q2 + Q3 + Q4",
+        "Excel 11. satır · Yazıldı · Yeni gerçekleşme revizyonu kaydedildi. · 100 · TOPLA: Q1 + Q2 + Q3 + Q4",
+        "Excel 12. satır · Yazıldı · Yeni gerçekleşme revizyonu kaydedildi. · 8 · TOPLA: Q1 + Q2 + Q3 + Q4",
+        "Excel 13. satır · Yazıldı · Yeni gerçekleşme revizyonu kaydedildi. · 8 · TOPLA: Q1 + Q2 + Q3 + Q4",
+        "Excel 14. satır · Yazıldı · Yeni gerçekleşme revizyonu kaydedildi. · 35.000 · TOPLA: Q1 + Q2 + Q3 + Q4",
+        "Excel 15. satır · Yazıldı · Yeni gerçekleşme revizyonu kaydedildi. · 60.000 · TOPLA: Q1 + Q2 + Q3 + Q4",
+        "Excel 16. satır · Yazıldı · Yeni gerçekleşme revizyonu kaydedildi. · 60 · TOPLA: Q1 + Q2 + Q3 + Q4",
+        "Excel 17. satır · Yazıldı · Yeni gerçekleşme revizyonu kaydedildi. · 15 · TOPLA: Q1 + Q2 + Q3 + Q4",
+        "Excel 18. satır · Yazıldı · Yeni gerçekleşme revizyonu kaydedildi. · 490 · TOPLA: Q1 + Q2 + Q3 + Q4",
+        "Excel 19. satır · Yazıldı · Yeni gerçekleşme revizyonu kaydedildi. · 25 · TOPLA: Q1 + Q2 + Q3 + Q4",
+        "Excel 20. satır · Yazıldı · Yeni gerçekleşme revizyonu kaydedildi. · 300 · TOPLA: Q1 + Q2 + Q3 + Q4",
+        "Excel 21. satır · Yazıldı · Yeni gerçekleşme revizyonu kaydedildi. · 94 · TOPLA: Q1 + Q2 + Q3 + Q4"
+      ]
+    },
+    {
+      "title": "Açıklamalı Excel",
+      "preview": "Değişmedi: 13 · Eşleşti: 3 · Onay gerekiyor: 4",
+      "manual": 4,
+      "rows": 20,
+      "result": "Değişmedi: 17 · Yazıldı: 3",
+      "lines": [
+        "Excel 2. satır · Yazıldı · Yeni gerçekleşme revizyonu kaydedildi. · 2 · TOPLA: Q1 + Q2 + Q3 + Q4",
+        "Excel 3. satır · Değişmedi · Mevcut değer ve açıklama aynı; yeni revizyon yazılmadı.",
+        "Excel 4. satır · Değişmedi · Mevcut değer ve açıklama aynı; yeni revizyon yazılmadı.",
+        "Excel 5. satır · Değişmedi · Mevcut değer ve açıklama aynı; yeni revizyon yazılmadı.",
+        "Excel 6. satır · Değişmedi · Mevcut değer ve açıklama aynı; yeni revizyon yazılmadı.",
+        "Excel 7. satır · Değişmedi · Mevcut değer ve açıklama aynı; yeni revizyon yazılmadı.",
+        "Excel 8. satır · Değişmedi · Mevcut değer ve açıklama aynı; yeni revizyon yazılmadı.",
+        "Excel 9. satır · Değişmedi · Mevcut değer ve açıklama aynı; yeni revizyon yazılmadı.",
+        "Excel 10. satır · Değişmedi · Mevcut değer ve açıklama aynı; yeni revizyon yazılmadı.",
+        "Excel 11. satır · Değişmedi · Mevcut değer ve açıklama aynı; yeni revizyon yazılmadı.",
+        "Excel 12. satır · Değişmedi · Mevcut değer ve açıklama aynı; yeni revizyon yazılmadı.",
+        "Excel 13. satır · Değişmedi · Mevcut değer ve açıklama aynı; yeni revizyon yazılmadı.",
+        "Excel 14. satır · Yazıldı · Yeni gerçekleşme revizyonu kaydedildi. · 35.000 · TOPLA: Q1 + Q2 + Q3 + Q4",
+        "Excel 15. satır · Değişmedi · Mevcut değer ve açıklama aynı; yeni revizyon yazılmadı.",
+        "Excel 16. satır · Değişmedi · Mevcut değer ve açıklama aynı; yeni revizyon yazılmadı.",
+        "Excel 17. satır · Yazıldı · Yeni gerçekleşme revizyonu kaydedildi. · 15 · TOPLA: Q1 + Q2 + Q3 + Q4",
+        "Excel 18. satır · Değişmedi · Mevcut değer ve açıklama aynı; yeni revizyon yazılmadı.",
+        "Excel 19. satır · Değişmedi · Mevcut değer ve açıklama aynı; yeni revizyon yazılmadı.",
+        "Excel 20. satır · Değişmedi · Mevcut değer ve açıklama aynı; yeni revizyon yazılmadı.",
+        "Excel 21. satır · Değişmedi · Mevcut değer ve açıklama aynı; yeni revizyon yazılmadı."
+      ]
+    }
+  ],
+  "first_import_complete": true,
+  "second_import_complete": true,
+  "approvals": [
+    "fen",
+    "afet",
+    "ozel"
+  ],
+  "unexpected": [],
+  "server_errors": [],
+  "js": []
+}

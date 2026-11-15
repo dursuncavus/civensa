@@ -1857,3 +1857,41 @@ Next IDs: task CIV-226, decision D-488.
 - Assessment (model analysis): listing speed is no longer a pilot blocker; Render Starter is not needed for this page. Remaining time is mostly server render + 552 KB transfer; no further work planned unless pilot users report it.
 - Follow-up unchanged: flaky tests/test_source_comparison_ui.py (9 vs 3 rows once).
 Next IDs: task CIV-226, decision D-489.
+
+## D-489 (15 Nov 2026 ~17:10 Istanbul, CV Lider 76) — CIV-226 live: list pages 2–10× faster; Genel Bakış still ~3.5 s (CPU on Render free)
+- DOĞRULANDI: CIV-226 #529 (lead-coded, Codex clean on 655e8c9, CI green) merged into phase5 (8e52b1a); owner merged release #530 (main 6286e9c), db-backup ref phase5 success (13:54Z), Render deploy; /health ok, latency 7.4 ms, schema c219b1c2d3e4.
+- DOĞRULANDI (owner's Chrome, owner logged in himself, JS fetch timing, 3 loads, before → after):
+  - Genel Bakış `/dashboard` 6.2–7.1 s → 3.4–4.4 s; `/api/progress` 5.4–6.0 → 3.3–4.4 s
+  - Faaliyet Raporu `/activity-report` 2.2–3.5 → 0.6–1.3 s; Kurum Yapısı `/structure` 2.1–2.4 → 0.6–1.2 s; Kullanıcılar `/users` 1.0–2.3 → 0.1–0.3 s
+  - Rapor Oluşturucu `/report-builder` 6.2–11.2 → 4.4–10.4 s (3.6 MB page, ~440 queries left; Strateji-only, rare)
+  - EK-1 listing unchanged ~1.3 s (first load 5 s).
+- Assessment (model analysis, not measured separately): Genel Bakış now issues ~32 queries (~0.3 s); the rest is CPU (progress + validation over all 2026 indicator/activity rows) on Render free 0.1 CPU. Render Starter (D1, pilot day) is the proportionate next step; re-measure there (C4). No further code work now.
+- tasks/CIV-226.md added. ROLLOUT_CHECKLIST C4 updated.
+- Local container note: backup/restore rehearsal tests fail on the base branch too (pg_dump/restore here); CI green.
+Next IDs: task CIV-227, decision D-490.
+
+## D-490 (15 Nov 2026 ~18:05 Istanbul, CV Lider 76) — remaining development list; CIV-227 small screen fixes merged
+- Owner (17:25): no more speed tests for now; asked what development is left. Lead answer (DOĞRULANDI from STATE/DECISIONS): pilot path complete. Waiting on owner: CIV-179 (#382, new FR template), Sunum/CIV-180 follow-up (hall-computer test + remarks), CIV-215 İK InDesign tables (paused, D-472). Waiting on Ali: only the announcement to directorates (E4). Lead correction (rule 23): the lead first listed lower-is-better, photos and support channel as open; all three were answered on 9 Nov (D-446: S10 = 4 "Gün" indicators, set live via CIV-197; S11 photos; S9 support = Ali). Cause: the answer was written from the STATE owner list, which still carried the 9 Nov questions. Prevention: check DECISIONS (D-446) before listing Ali items.
+- BEYAN (owner 17:27): photos are uploaded by directorates in general, but for the first year (2026 report) Ali Abi and the owner upload them (via the Strateji-held directorate accounts, D-479; no code change).
+- Open nuance kept: Sosyal Hizmetler 2 "Zaman" rows and Gelirler 2 "Oran (Kümülatif Azalan)" rows — direction unclear; ask Ali only when the karne goes to the council.
+- CIV-227 #532 (lead-coded, Codex clean on 2ef958a, CI green) merged into phase5: Genel Bakış progress table scroll hint below 760 px (D-268); resource-table "Kaydet" header no longer breaks (D-251). Not changed: D-273 repeated period badge (frozen dashboard hook contract keeps #ppPeriodYear), date input format (browser locale), D-250 (watch only). Not released yet; goes with the next release.
+- Flaky test_source_comparison_ui: short look, no cause found (per-test DB clones, no process caches on that path); still open, not a pilot blocker.
+Next IDs: task CIV-228, decision D-491.
+
+## D-491 (15 Nov 2026 ~18:40 Istanbul, CV Lider 76) — Sunum hall test passed; pilot-week rehearsal (CIV-228) handed to CV Lider 77
+- BEYAN (owner ~18:20): "Sunum meclis salonunda sorunsuz." The D-413/D-417 hall-computer gate is closed. Sunum (CIV-180, live since #410) still has: owner design remarks if any, and a review of the generated deck once real 2026 FR data exist.
+- Owner asked whether development is finished. Lead answer: pilot development done; left = inputs (CIV-179 template, Sunum remarks/real-data review, CIV-215 paused), CIV-227 ships with the next release; non-code pilot prep = Render Starter + backup on pilot day (D1/D2), Ali's announcement (E4), C3, January freeze (D4).
+- Owner chose (decision card 18:32, options: C3 rehearsal / flaky test / non-Civensa project / pause) the pilot-week rehearsal = CIV-228, ROLLOUT C3 under the D-479 model, lead-run locally: Strateji-held director-only accounts "<Müdürlük> (Strateji)" for 3 directorates (no staff accounts); indicator actuals via Strateji's workbook import (CIV-192); unit tables (Tablo 1/2/7/8, photos), sections, EK-2 by the director account; draft → submit → Strateji return → correct → resubmit → approve → Word/PDF; fix what breaks. Base tool: scripts/fr_rehearsal.py (CIV-188 + CIV-220, staff+director walk; C2 done, D-476).
+- Owner asked to start it in a new conversation → CV Lider 77. Handoff: /mnt/project-files/lead77/devir-notu.md. No code written in CV Lider 76 for CIV-228.
+Next IDs: task CIV-229, decision D-492.
+
+## D-492 (15 Nov 2026 ~19:55 Istanbul, CV Lider 77) — CIV-228 pilot-week rehearsal (C3) passes locally; workbook-import fixes merged
+- DOĞRULANDI (lead-run, local disposable PostgreSQL, `python scripts/guide_screenshots.py --fr-pilot`, report docs/reports/civ-228): D-479 account set = Strateji Müdürü (review/return/approve only), Strateji Kullanıcısı (workbook import), "<Müdürlük> (Strateji)" Müdür accounts for Fen İşleri, Afet İşleri ve Risk Değerlendirme, Özel Kalem; no staff accounts; first login sets one shared password (D-481).
+- Findings before the fix (same scenario): (1) BLOCKER: the CIV-192 import wrote 0/20 rows ("Doğrulanmış gerçekleşme için kaynak bulunmuyor") because no screen evidence exists yet; under D-479 the pilot would stop here. (2) A workbook explanation added later with an unchanged value was dropped as "Değişmedi", so the deviation gate kept blocking submission. (3) Apply re-verified the multi-MB book per row: 20 rows 7.4 s. (4) Every row started on "Aktarma": 20/20 manual picks (guide already assumed preselection).
+- Lead decision (replaces CIV-192 rule 5 "the import adds no evidence"): when an actual has no screen evidence, the workbook row is its source record (title, `veriler sayfası, N. satır`, file SHA-256); a later import replaces that generated reference with the applied file (Codex P2), screen evidence is never touched. Reason: under D-479 the workbook is the directorates' actual source (Ali, D-446/D-479); "İncelenmeli" without evidence would leave every actual unverified and skip the deviation gate. Reversible code change.
+- Also: new non-empty different explanation writes a revision (blank keeps the screen text); book verified once per apply (20 rows 0.69 s, 368 queries; TAHMİN live ~25 s for ~227 rows at ~6 ms/query, not measured); exact single-option rows preselected (manual picks 4/20).
+- After the fix: 304 steps, 301 OK, 3 SLOW (one-time publish/revision setup), 0 BLOCKER; deviation gate blocked each directorate until the explanatory workbook was re-imported (3 written, 17 unchanged); submit → return → correct → resubmit → approve → Word/PDF for all 3. C2 rehearsal unchanged (343 OK / 1 expected İdare BLOCKER / 3 SLOW).
+- Rule for the pilot (KOD, guide updated): import with "Strateji Kullanıcısı" (live account 1), approve with the Strateji Müdürü (account 36); the account that writes actuals cannot approve those units (SOD). Same-named indicators in one directorate (Fen, Afet pairs) need a per-row pick by card context.
+- PR #535 (lead-coded, Codex clean on 2872c5d after one P2 fix, CI green) merged into phase5 b6546e4. Not released; ships with the next release together with CIV-227. tasks/CIV-228.md added. ROLLOUT C3 rehearsal done locally; the live pilot-week run with Ali stays in C3.
+- Not measured: per-directorate log-out/log-in effort for Strateji (D-481 risk).
+Next IDs: task CIV-229, decision D-493.

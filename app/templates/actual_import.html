@@ -12,7 +12,7 @@
 <p>Onaylanan satırlar işlendi. Hatalı satırların nedenlerini aşağıda inceleyin; düzeltmelerden sonra yeniden yükleyebilirsiniz.</p>
 <ul>{% for row in result.rows %}<li>Excel {{ row.line }}. satır · <strong>{{ row.status }}</strong> · {{ row.message }}{% if row.value is defined %} · {{ row.value|trnum }} · {{ row.annual_rule }}{% endif %}</li>{% endfor %}</ul>
 {% else %}
-<p>Henüz gerçekleşme yazılmadı. Her satır için eşleşmeyi ve sayı yorumunu seçerek onaylayın. Aktarma seçili satırlar yazılmaz. Önizleme 24 saat geçerlidir.</p>
+<p>Henüz gerçekleşme yazılmadı. Adı tam eşleşen satırlar onaylı gelir; Onay gerekiyor satırlarında eşleşmeyi ve sayı yorumunu siz seçin. Aktarma seçili satırlar yazılmaz. Önizleme 24 saat geçerlidir.</p>
 <p>Doğrulanmış gerçekleşme için önceki kaydın kanıtı korunur; kanıtı olmayan veya iş akışının izin vermediği kayıtlar nedenleriyle sonuçta gösterilir.</p>
 <form method="post" action="/activity-reports/imports/{{ record.id }}/apply">
 <input type="hidden" name="csrf_token" value="{{ request.session.get('csrf_token') }}">
@@ -29,7 +29,7 @@
 <td>{% for o in row.options|unique(attribute='id') %}{{ o.current|trnum }}{% if not loop.last %}<br>{% endif %}{% endfor %}</td><td>{{ row.status }}<p>{{ row.message }}</p></td>
 <td class="selection">{% if row.status not in ['Hata', 'Eksik', 'Eşleşmedi'] %}<label>Satır {{ row.line }} onayı<select name="choice_{{ row.line }}"><option value="">Aktarma</option>
 {% for o in row.options %}
-{% if o.scale in ['raw','choose'] %}<option value="{{ o.id }}:raw:{{ o.reading }}">Onayla: {{ o.name }} · {{ o.context }} · {{ o.rule }} · {{ o.raw_value|trnum }} (olduğu gibi)</option>{% endif %}
+{% if o.scale in ['raw','choose'] %}<option value="{{ o.id }}:raw:{{ o.reading }}"{% if row.status in ['Eşleşti', 'Değişmedi'] and o.scale == 'raw' and row.options|length == 1 %} selected{% endif %}>Onayla: {{ o.name }} · {{ o.context }} · {{ o.rule }} · {{ o.raw_value|trnum }} (olduğu gibi)</option>{% endif %}
 {% if o.scale in ['percent','choose'] %}<option value="{{ o.id }}:percent:{{ o.reading }}">Onayla: {{ o.name }} · {{ o.context }} · {{ o.rule }} · {{ o.percent_value|trnum }} · ×100 (oran kesirden yüzdeye)</option>{% endif %}
 {% endfor %}</select></label>{% else %}Aktarılmaz{% endif %}</td></tr>
 {% endfor %}</tbody></table></div>
