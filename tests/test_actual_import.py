@@ -120,17 +120,20 @@ def test_matching_annual_rules_and_no_preview_writes(client, db, sample, scenari
     pub = db.get(Publication, scenario['publication_id']); original = pub.snapshot_json
     evidence = db.scalar(select(ActualRevision).order_by(ActualRevision.id)).evidence_json
     result = apply(db, sample, record, p)
-    assert result['counts'] == {'Yazıldı': 2, 'Eşleşmedi': 1, 'Hata': 2, 'Eksik': 1}
-    assert 'kaynak bulunmuyor' in result['rows'][5]['message']
+    # CIV-228: a first actual without screen evidence takes the workbook row as its source.
+    assert result['counts'] == {'Yazıldı': 3, 'Eşleşmedi': 1, 'Hata': 1, 'Eksik': 1}
+    first = db.get(ActualRevision, result['rows'][5]['actual_revision_id'])
+    assert json.loads(first.evidence_json) == [{'title': 'Strateji ana Excel dosyası (2026 gösterge gerçekleşmeleri)',
+        'locator': 'veriler sayfası, 7. satır', 'source_revision': f'SHA-256 {record.source_sha256}'}]
     assert list(db.execute(select(IndicatorDefinitionRevision.id, IndicatorDefinitionRevision.definition_json))) == definitions
     assert list(db.execute(select(IndicatorValue.id, IndicatorValue.value))) == targets
     assert list(db.execute(select(Indicator.id, Indicator.name, Indicator.unit))) == names
     assert pub.snapshot_json == original
-    assert db.scalar(select(ActualRevision).order_by(ActualRevision.id.desc())).evidence_json == evidence
-    assert db.scalar(select(func.count()).select_from(ActualRevision)) == count + 2
+    assert db.get(ActualRevision, result['rows'][0]['actual_revision_id']).evidence_json == evidence
+    assert db.scalar(select(func.count()).select_from(ActualRevision)) == count + 3
     audit = db.scalar(select(AuditLog).where(AuditLog.action == 'actual_import_apply'))
     assert json.loads(audit.details)['sha256'] == record.source_sha256
-    assert len(json.loads(audit.details)['row_ids_written']) == 2
+    assert len(json.loads(audit.details)['row_ids_written']) == 3
     assert apply(db, sample, record, p) == result
     assert db.scalar(select(func.count()).select_from(AuditLog).where(AuditLog.action == 'actual_import_apply')) == 1
     again, p2 = preview(db, sample, scenario, [{'name': 'Hizmet sayısı', 'q': [1, 2, 3, 4]}])
@@ -283,6 +286,8 @@ def test_browser_upload_confirm_apply(client, db, sample, scenario, tmp_path):
             expect(page.get_by_role('heading', name='Excel önizlemesi')).to_be_visible()
             expect(page.get_by_role('columnheader', name='Strateji oranı')).to_be_visible()
             assert page.locator('select[name=choice_3]').input_value() == ''
+            # CIV-228: an exact, unscaled match starts confirmed; Strateji can still choose Aktarma.
+            assert page.locator('select[name=choice_6]').input_value().endswith(':raw:q4_total')
             output = Path(os.environ['CIV192_SCREENSHOTS']) if os.getenv('CIV192_SCREENSHOTS') else tmp_path
             output.mkdir(parents=True, exist_ok=True)
             page.screenshot(path=str(output/'preview.png'), full_page=True)
@@ -295,8 +300,7 @@ def test_browser_upload_confirm_apply(client, db, sample, scenario, tmp_path):
             page.screenshot(path=str(output/'preview-selections.png'), full_page=True)
             page.get_by_role('button', name='Onaylanan satırları uygula').click()
             expect(page.get_by_role('heading', name='İçe aktarma sonucu')).to_be_visible()
-            assert 'Yazıldı: 3' in page.locator('main').inner_text()
-            assert 'kaynak bulunmuyor' in page.locator('main').inner_text()
+            assert 'Yazıldı: 4' in page.locator('main').inner_text()
             assert 'TOPLA: Q1 + Q2 + Q3 + Q4' in page.locator('main').inner_text()
             page.screenshot(path=str(output/'result.png'), full_page=True)
             assert not errors and not data['_server_errors']

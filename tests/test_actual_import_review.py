@@ -35,11 +35,12 @@ def test_future_merge_cannot_route_a_2026_actual(client, db, sample, scenario):
 
 
 def test_rejected_row_does_not_poison_next_row_lock(client, db, sample, scenario):
-    record, p = preview(db, sample, scenario, [{'name':'Kanıtsız sayı', 'annual':13},
+    # save_actual refuses an over-long explanation; the next row must still lock and write.
+    record, p = preview(db, sample, scenario, [{'name':'Kanıtsız sayı', 'annual':13, 'explanation':'x'*10001},
         {'name':'Hizmet sayısı', 'annual':19}])
     result = apply(db, sample, record, p)
     assert [row['status'] for row in result['rows']] == ['Hata','Yazıldı']
-    assert 'kaynak bulunmuyor' in result['rows'][0]['message']
+    assert 'çok uzun' in result['rows'][0]['message']
 
 
 def test_structure_directory_select_budget_is_constant(client, db, sample, scenario, monkeypatch):
@@ -113,3 +114,17 @@ def test_same_named_options_show_pinned_book_context(client, db, sample, merged)
     assert 'Sonradan değişen canlı kart adı' not in ' '.join(labels)
     assert any(sample['department'].name in label for label in labels)
     assert any(receiver.name in label for label in labels)
+
+
+def test_apply_checks_the_pinned_book_once(client, db, sample, scenario, monkeypatch):
+    """CIV-228: per-row book verification made a 227-row apply take minutes."""
+    from app import activity_contract_service as contract
+    calls = []
+    original = contract._checked_publication
+    monkeypatch.setattr(contract, '_checked_publication', lambda db, pid: calls.append(pid) or original(db, pid))
+    record, p = preview(db, sample, scenario, [{'name':'Hizmet sayısı', 'annual':19},
+        {'name':'Kanıtsız sayı', 'annual':13}, {'name':'Tamamlanan eğitim sayısı', 'annual':21}])
+    calls.clear()
+    assert apply(db, sample, record, p)['counts'] == {'Yazıldı': 3}
+    assert len(calls) == 1
+    assert 'checked_publication_memo' not in db.info

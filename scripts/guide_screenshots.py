@@ -2667,6 +2667,7 @@ def main():
     )
     modes.add_argument('--fr-guide', action='store_true', help='CIV-189: müdürlük kılavuzu ekranları (sentetik prova)')
     modes.add_argument('--strateji-guide', action='store_true', help='CIV-195: Strateji kılavuzu ekranları (sentetik prova)')
+    modes.add_argument('--fr-pilot', action='store_true', help='CIV-228: pilot haftası provası (D-479 Strateji hesapları)')
     modes.add_argument('--fr-rehearsal', action='store_true', help='CIV-187: 2026 FR müdürlük UI provası')
     parser.add_argument('--viewport-width', type=int, choices=(1440, 390), default=1440,
                         help='UI haritası görünüm genişliği (varsayılan: 1440).')
@@ -2703,6 +2704,9 @@ def main():
         return ui_main(args, url)
     if args.strateji_guide:
         return strateji_guide_run(url)
+    if args.fr_pilot:
+        from scripts.fr_pilot_rehearsal import run as pilot_run
+        return pilot_run(url)
     if args.fr_rehearsal or args.fr_guide:
         from scripts.fr_rehearsal import run
         return run(url, guide=args.fr_guide)
