@@ -1877,3 +1877,10 @@ Next IDs: task CIV-227, decision D-490.
 - CIV-227 #532 (lead-coded, Codex clean on 2ef958a, CI green) merged into phase5: Genel Bakış progress table scroll hint below 760 px (D-268); resource-table "Kaydet" header no longer breaks (D-251). Not changed: D-273 repeated period badge (frozen dashboard hook contract keeps #ppPeriodYear), date input format (browser locale), D-250 (watch only). Not released yet; goes with the next release.
 - Flaky test_source_comparison_ui: short look, no cause found (per-test DB clones, no process caches on that path); still open, not a pilot blocker.
 Next IDs: task CIV-228, decision D-491.
+
+## D-491 (15 Nov 2026 ~18:40 Istanbul, CV Lider 76) — Sunum hall test passed; pilot-week rehearsal (CIV-228) handed to CV Lider 77
+- BEYAN (owner ~18:20): "Sunum meclis salonunda sorunsuz." The D-413/D-417 hall-computer gate is closed. Sunum (CIV-180, live since #410) still has: owner design remarks if any, and a review of the generated deck once real 2026 FR data exist.
+- Owner asked whether development is finished. Lead answer: pilot development done; left = inputs (CIV-179 template, Sunum remarks/real-data review, CIV-215 paused), CIV-227 ships with the next release; non-code pilot prep = Render Starter + backup on pilot day (D1/D2), Ali's announcement (E4), C3, January freeze (D4).
+- Owner chose (decision card 18:32, options: C3 rehearsal / flaky test / non-Civensa project / pause) the pilot-week rehearsal = CIV-228, ROLLOUT C3 under the D-479 model, lead-run locally: Strateji-held director-only accounts "<Müdürlük> (Strateji)" for 3 directorates (no staff accounts); indicator actuals via Strateji's workbook import (CIV-192); unit tables (Tablo 1/2/7/8, photos), sections, EK-2 by the director account; draft → submit → Strateji return → correct → resubmit → approve → Word/PDF; fix what breaks. Base tool: scripts/fr_rehearsal.py (CIV-188 + CIV-220, staff+director walk; C2 done, D-476).
+- Owner asked to start it in a new conversation → CV Lider 77. Handoff: /mnt/project-files/lead77/devir-notu.md. No code written in CV Lider 76 for CIV-228.
+Next IDs: task CIV-229, decision D-492.
