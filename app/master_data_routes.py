@@ -56,6 +56,7 @@ def register(app):
             attempted_action=action, error=error), status_code=status)
 
     @app.get('/structure')
+    @structure.request_read_scope
     def screen(request: Request, period_id: str | None = None, db: Session = Depends(get_db), user: User = Depends(require_strategy)):
         try:
             pid = integer(period_id, 'Dönem') if period_id else None
