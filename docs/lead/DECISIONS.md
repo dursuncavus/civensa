@@ -1895,3 +1895,9 @@ Next IDs: task CIV-229, decision D-492.
 - PR #535 (lead-coded, Codex clean on 2872c5d after one P2 fix, CI green) merged into phase5 b6546e4. Not released; ships with the next release together with CIV-227. tasks/CIV-228.md added. ROLLOUT C3 rehearsal done locally; the live pilot-week run with Ali stays in C3.
 - Not measured: per-directorate log-out/log-in effort for Strateji (D-481 risk).
 Next IDs: task CIV-229, decision D-493.
+
+## D-493 (15 Nov 2026 ~21:00 Istanbul, CV Lider 77) — release #537 live: CIV-228 import fixes + CIV-227
+- DOĞRULANDI: owner merged #537 (phase5 → main, merge ac6aabc, 17:45Z); db-backup ref phase5 success (run created 17:47Z); owner deployed on Render (BEYAN 17:57Z "Hepsi tamam"); lead read /health 17:58Z: status ok, database ok, migration current = head = c219b1c2d3e4.
+- Live now: CIV-228 (workbook import writes first actuals with the workbook row as source, explanation re-import, one book check per apply, exact matches preselected; guide) and CIV-227 (small screen fixes).
+- Not checked on live: an actual workbook import (needs the real 2026 workbook; pilot step C3 with Ali). Pilot rule stays: import with Strateji Kullanıcısı, approve with Strateji Müdürü (D-492).
+Next IDs: task CIV-229, decision D-494.
