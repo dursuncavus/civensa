@@ -592,6 +592,18 @@ def _dt(value):
     return value.isoformat() if value else None
 
 
+def _catalogue_links(db, acts):
+    """Links in activity order, then official id order (the primary-key index order the per-activity query used), in one query (CIV-226)."""
+    if not acts:
+        return []
+    grouped = {a.id: [] for a in acts}
+    for activity_id, official_id in db.execute(select(ActivityCatalogueLink.activity_id,
+            ActivityCatalogueLink.official_activity_id).where(ActivityCatalogueLink.activity_id.in_(list(grouped)))
+            .order_by(ActivityCatalogueLink.activity_id, ActivityCatalogueLink.official_activity_id)):
+        grouped[activity_id].append(official_id)
+    return [{"activity_id": a.id, "official_activity_id": oid} for a in acts for oid in grouped[a.id]]
+
+
 def _serialize_department_state(db: Session, department_id: int, period_id: int) -> dict:
     dept = db.get(Department, department_id)
     inds = db.scalars(
@@ -618,7 +630,7 @@ def _serialize_department_state(db: Session, department_id: int, period_id: int)
         "department_name": dept.name if dept else "",
         "economics": [{c.name:getattr(v,c.name) for c in EconomicValue.__table__.columns} for v in db.scalars(select(EconomicValue).where(EconomicValue.period_id==period_id,EconomicValue.department_id==department_id).order_by(EconomicValue.id)).all()],
         "scope": [{c.name:getattr(v,c.name) for c in DepartmentScope.__table__.columns} for v in db.scalars(select(DepartmentScope).where(DepartmentScope.period_id==period_id,DepartmentScope.department_id==department_id)).all()],
-        "catalogue_links": [{"activity_id": a.id,"official_activity_id": oid} for a in acts for oid in db.scalars(select(ActivityCatalogueLink.official_activity_id).where(ActivityCatalogueLink.activity_id==a.id)).all()],
+        "catalogue_links": _catalogue_links(db, acts),
         "cards": [{c.name: getattr(card,c.name) for c in ReportCard.__table__.columns} for card in db.scalars(select(ReportCard).where(ReportCard.department_id==department_id,ReportCard.period_id==period_id).order_by(ReportCard.id)).all()],
         "user_ids": [u.id for u in users],
         "indicators": [

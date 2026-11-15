@@ -30,7 +30,7 @@ def integer(value, label='Kimlik'):
 def register(app):
     from .main import require_user, require_strategy, ensure_department_editable, templates, session_period, pp_period, check_pp_access, require_pp_period, log
     from .book_export import display_code, display_catalogue_keys
-    from .structure_service import department_display_name
+    from .structure_service import department_display_name, request_read_scope
     templates.env.filters['display_code'] = display_code
     templates.env.filters['display_catalogue_keys'] = display_catalogue_keys
     templates.env.filters['department_display_name'] = department_display_name
@@ -362,7 +362,18 @@ def register(app):
         db.commit();log(db,user,'source_money_verified',model.__tablename__,value.id)
         return RedirectResponse(f'/program/{department_id}?period_id={owner.period_id}',303)
 
+    def catalogue_responsibilities(db, period_id):
+        # CIV-226: one query instead of one per catalogue row (~290); used for membership only.
+        result = {item.id: [] for item in rows(db, OfficialActivity, period_id)}
+        for official_id, department_id in db.execute(select(ActivityResponsibility.official_activity_id,
+                ActivityResponsibility.department_id).join(OfficialActivity,
+                OfficialActivity.id == ActivityResponsibility.official_activity_id)
+                .where(OfficialActivity.period_id == period_id).order_by(ActivityResponsibility.id)):
+            result.setdefault(official_id, []).append(department_id)
+        return result
+
     @app.get('/report-builder')
+    @request_read_scope
     def builder(request:Request,db:Session=Depends(get_db),user:User=Depends(require_strategy),period_id:int|None=None):
         period=session_period(request,db,{"period_id":period_id} if period_id else None)
         if not period:raise pp_error(404)
@@ -379,7 +390,7 @@ def register(app):
             departments=period_departments(db,period.id),scopes=scopes,reconciliation=cost_reconciliation(db,period.id),
             department_names=department_names, approved_book=approved_book_provenance(db, period.id),
             pp_errata=errata_entries(period.year),
-            sections=rows(db,ReportSection,period.id),catalogue=rows(db,OfficialActivity,period.id),responsibilities={i.id:[r.department_id for r in db.scalars(select(ActivityResponsibility).where(ActivityResponsibility.official_activity_id==i.id)).all()] for i in rows(db,OfficialActivity,period.id)},
+            sections=rows(db,ReportSection,period.id),catalogue=rows(db,OfficialActivity,period.id),responsibilities=catalogue_responsibilities(db,period.id),
             **publication_history(db, period.id, user, department_names)))
 
     @app.get('/report-builder/sections.js', include_in_schema=False)

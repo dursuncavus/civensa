@@ -49,6 +49,23 @@ def structure_read_scope(function):
     return wrapped
 
 
+def request_read_scope(function):
+    """Route decorator: share structure reads for one GET request (CIV-226).
+
+    Pages that name every directorate (dashboard, users, structure, report
+    builder) looked up each name with 2 queries. The cache is cleared by any
+    structure write or flush and discarded when the handler returns.
+    """
+    @wraps(function)
+    def wrapped(*args, **kwargs):
+        db = kwargs.get('db')
+        if db is None:
+            return function(*args, **kwargs)
+        with structure_read_context(db):
+            return function(*args, **kwargs)
+    return wrapped
+
+
 def _read_cache(db):
     # A mutation made inside a read scope must be visible even before a query
     # would normally trigger autoflush. Flushing also clears cached absence.
@@ -416,9 +433,14 @@ def routing(db, base_id, target_year):
 def unresolved_work(db, base_id, target_year):
     routes, closed, _ = routing(db, base_id, target_year)
     result = []
-    for item in work_items(db, base_id):
-        rid = db.get(Indicator,item['id']).persistent_indicator_id if item['kind'] == 'indicator' else item['id']
-        if item['department_id'] in closed and (item['kind'], rid, item['department_id']) not in routes:
+    items = [item for item in work_items(db, base_id) if item['department_id'] in closed]
+    # One query for the persistent ids instead of one db.get per indicator (CIV-226).
+    indicator_ids = [item['id'] for item in items if item['kind'] == 'indicator']
+    persistent = dict(db.execute(select(Indicator.id, Indicator.persistent_indicator_id)
+        .where(Indicator.id.in_(indicator_ids))).all()) if indicator_ids else {}
+    for item in items:
+        rid = persistent[item['id']] if item['kind'] == 'indicator' else item['id']
+        if (item['kind'], rid, item['department_id']) not in routes:
             result.append(item)
     return result
 
