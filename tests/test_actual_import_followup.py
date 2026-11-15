@@ -207,3 +207,19 @@ def test_workbook_explanation_alone_writes_new_revision(client, db, sample, scen
         again, p2 = preview(db, sample, scenario, [{'name': name, 'annual': current.value, 'explanation': explanation}])
         assert p2['rows'][0]['status'] == 'Değişmedi'
         assert apply(db, sample, again, p2)['counts'] == {'Değişmedi': 1}
+
+
+def test_generated_workbook_source_follows_the_applied_file(client, db, sample, scenario):
+    """Codex #535: a later workbook must not keep citing the earlier file and row."""
+    name = 'Kanıtsız sayı'
+    first, p1 = preview(db, sample, scenario, [{'name': name, 'annual': 13}])
+    written = apply(db, sample, first, p1)['rows'][0]['actual_revision_id']
+    second, p2 = preview(db, sample, scenario, [{'name': 'Hizmet sayısı', 'annual': 3}, {'name': name, 'annual': 14}])
+    result = apply(db, sample, second, p2)
+    latest = db.get(ActualRevision, result['rows'][1]['actual_revision_id'])
+    assert latest.id != written
+    assert json.loads(latest.evidence_json) == [{'title': imp.WORKBOOK_SOURCE_TITLE,
+        'locator': 'veriler sayfası, 3. satır', 'source_revision': f'SHA-256 {second.source_sha256}'}]
+    # Screen evidence of another indicator is kept as entered, with no workbook reference added.
+    screen = db.get(ActualRevision, result['rows'][0]['actual_revision_id'])
+    assert [e['title'] for e in json.loads(screen.evidence_json)] == ['Kayıt defteri']

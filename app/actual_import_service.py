@@ -195,11 +195,26 @@ def explanation_changed(workbook, current):
     return bool(text) and text != (current or '').strip()
 
 
+WORKBOOK_SOURCE_TITLE = 'Strateji ana Excel dosyası (2026 gösterge gerçekleşmeleri)'
+
+
 def workbook_source(record, line):
-    """CIV-228: the Strateji workbook row is the source of a first imported actual."""
-    return {'title': 'Strateji ana Excel dosyası (2026 gösterge gerçekleşmeleri)',
-            'locator': f'veriler sayfası, {line}. satır',
+    """CIV-228: the Strateji workbook row is the source of an imported actual without screen evidence."""
+    return {'title': WORKBOOK_SOURCE_TITLE, 'locator': f'veriler sayfası, {line}. satır',
             'source_revision': f'SHA-256 {record.source_sha256}'}
+
+
+def generated_source(source):
+    return (isinstance(source, dict) and source.get('title') == WORKBOOK_SOURCE_TITLE
+            and not source.get('files') and str(source.get('source_revision', '')).startswith('SHA-256 '))
+
+
+def import_evidence(previous_evidence, record, line):
+    """Keep screen evidence; a workbook reference always cites the file being applied."""
+    kept = [source for source in previous_evidence if not generated_source(source)]
+    if len(kept) < len(previous_evidence) or not kept:
+        kept.append(workbook_source(record, line))
+    return kept
 
 
 def summary(rows):
@@ -344,9 +359,7 @@ def _apply_import(db, user, import_id, expected_revision, choices):
                     if not explanation.strip():
                         explanation = previous.explanation if previous else ''
                     # Keep screen evidence; without any, the workbook row itself is the source.
-                    evidence = json.loads(previous.evidence_json) if previous else []
-                    if not evidence:
-                        evidence = [workbook_source(record, row['line'])]
+                    evidence = import_evidence(json.loads(previous.evidence_json) if previous else [], record, row['line'])
                     actual = contract.save_actual(db, user, selected['id'], selected['expected_revision'],
                         format(value, 'f'), 'verified', evidence,
                         explanation, json.loads(previous.deviation_json) if previous else {})
