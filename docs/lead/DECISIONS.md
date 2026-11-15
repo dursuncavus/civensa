@@ -1857,3 +1857,15 @@ Next IDs: task CIV-226, decision D-488.
 - Assessment (model analysis): listing speed is no longer a pilot blocker; Render Starter is not needed for this page. Remaining time is mostly server render + 552 KB transfer; no further work planned unless pilot users report it.
 - Follow-up unchanged: flaky tests/test_source_comparison_ui.py (9 vs 3 rows once).
 Next IDs: task CIV-226, decision D-489.
+
+## D-489 (15 Nov 2026 ~17:10 Istanbul, CV Lider 76) — CIV-226 live: list pages 2–10× faster; Genel Bakış still ~3.5 s (CPU on Render free)
+- DOĞRULANDI: CIV-226 #529 (lead-coded, Codex clean on 655e8c9, CI green) merged into phase5 (8e52b1a); owner merged release #530 (main 6286e9c), db-backup ref phase5 success (13:54Z), Render deploy; /health ok, latency 7.4 ms, schema c219b1c2d3e4.
+- DOĞRULANDI (owner's Chrome, owner logged in himself, JS fetch timing, 3 loads, before → after):
+  - Genel Bakış `/dashboard` 6.2–7.1 s → 3.4–4.4 s; `/api/progress` 5.4–6.0 → 3.3–4.4 s
+  - Faaliyet Raporu `/activity-report` 2.2–3.5 → 0.6–1.3 s; Kurum Yapısı `/structure` 2.1–2.4 → 0.6–1.2 s; Kullanıcılar `/users` 1.0–2.3 → 0.1–0.3 s
+  - Rapor Oluşturucu `/report-builder` 6.2–11.2 → 4.4–10.4 s (3.6 MB page, ~440 queries left; Strateji-only, rare)
+  - EK-1 listing unchanged ~1.3 s (first load 5 s).
+- Assessment (model analysis, not measured separately): Genel Bakış now issues ~32 queries (~0.3 s); the rest is CPU (progress + validation over all 2026 indicator/activity rows) on Render free 0.1 CPU. Render Starter (D1, pilot day) is the proportionate next step; re-measure there (C4). No further code work now.
+- tasks/CIV-226.md added. ROLLOUT_CHECKLIST C4 updated.
+- Local container note: backup/restore rehearsal tests fail on the base branch too (pg_dump/restore here); CI green.
+Next IDs: task CIV-227, decision D-490.

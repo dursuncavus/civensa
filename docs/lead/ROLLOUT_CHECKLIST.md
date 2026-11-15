@@ -52,7 +52,7 @@ Gerekçe: pilot, gerçek kişilerle yolu bir kez dener; tam açılışı tatil �
 | C1 | Otomatik müdürlük + Strateji provası (sentetik veri) | Codex | 321 OK / 4 BLOCKER (B2 ×3 + İdare dondurma, beklenen) — DOĞRULANDI CIV-188 |
 | C2 | A2–A5 sonrası prova yeniden çalışır, yeni BLOCKER yok | Lider | Tamam 12 Kas (D-476, CIV-220): 347 adım, 342 OK, yalnız beklenen İdare dondurma BLOCKER; adımlar müdürlük hesaplarıyla yürüdüğü için D-479 modelini de kapsar |
 | C3 | Pilot hafta: Strateji 3 müdürlüğün hesabıyla taslak → gönder → iade → yeniden gönder → onay → Word/PDF (D-479) | Ali | Pilot haftası |
-| C4 | Render'da hız ölçümü (H3: provada yavaş adımlar yerel ölçümdü) | Lider | Free'de ölçüldü: EK-1 2026 listesi ~14 sn (D-483); Starter'a geçince yeniden ölçülür, 5 sn üstüyse görev |
+| C4 | Render'da hız ölçümü (H3: provada yavaş adımlar yerel ölçümdü) | Lider | Free'de, CIV-224/225/226 sonrası (D-488, D-489): EK-1 listesi ~1,3 sn, Genel Bakış 3,4–4,4 sn (işlemci), Faaliyet Raporu 0,6–1,3 sn, Kurum Yapısı 0,6–1,2 sn, Kullanıcılar 0,1–0,3 sn, Rapor Oluşturucu 4–10 sn (seyrek). Starter'a geçince yeniden ölçülür, 5 sn üstüyse görev |
 
 ## D. Altyapı ve güvenlik
 | # | Madde | Sahip | Durum |
