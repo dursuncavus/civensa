@@ -335,6 +335,70 @@ def validate_department(db, period_id, department_id):
         cards, economics, personnel_rows, links_by_activity, officials, responsible_ids, subprograms)
 
 
+def validate_departments(db, period_id, department_ids):
+    """validate_department for many directorates with one query per table (CIV-226).
+
+    The progress overview validated each of ~33 directorates separately
+    (~13 queries each); on the hosted database every query is a round trip.
+    Rows are grouped per directorate in the same id order, so the result for
+    each directorate equals validate_department.
+    """
+    ids = list(dict.fromkeys(department_ids))
+    if not ids:
+        return {}
+    period = db.get(ReportingPeriod, period_id)
+    scopes = {s.department_id: s for s in db.scalars(select(DepartmentScope).where(
+        DepartmentScope.period_id == period_id, DepartmentScope.department_id.in_(ids)))}
+    indicators = db.scalars(select(Indicator).where(Indicator.period_id == period_id,
+        Indicator.department_id.in_(ids)).options(joinedload(Indicator.card)).order_by(Indicator.id)).all()
+    activities = db.scalars(select(Activity).where(Activity.period_id == period_id,
+        Activity.department_id.in_(ids)).options(joinedload(Activity.card)).order_by(Activity.id)).all()
+    _load_snapshot_values(db, indicators, IndicatorValue, 'indicator_id', 'values')
+    _load_snapshot_values(db, activities, ActivityCostValue, 'activity_id', 'cost_values')
+
+    def grouped(items):
+        result = defaultdict(list)
+        for item in items: result[item.department_id].append(item)
+        return result
+
+    def period_rows(model):
+        return grouped(db.scalars(select(model).where(model.period_id == period_id,
+            model.department_id.in_(ids)).order_by(model.id)).all())
+
+    cards = period_rows(ReportCard)
+    economics = period_rows(EconomicValue)
+    personnel_rows = period_rows(DepartmentCostValue)
+    links = db.scalars(select(ActivityCatalogueLink).join(Activity).where(Activity.period_id == period_id,
+        Activity.department_id.in_(ids))).all()
+    activity_department = {a.id: a.department_id for a in activities}
+    links_by_department = defaultdict(lambda: defaultdict(list))
+    for link in links:
+        links_by_department[activity_department.get(link.activity_id)][link.activity_id].append(link)
+    official_ids = {link.official_activity_id for link in links}
+    officials = {item.id: item for item in db.scalars(select(OfficialActivity).where(OfficialActivity.id.in_(official_ids))).all()} if official_ids else {}
+    responsible = defaultdict(set)
+    if official_ids:
+        for department_id, official_id in db.execute(select(ActivityResponsibility.department_id,
+                ActivityResponsibility.official_activity_id).where(ActivityResponsibility.department_id.in_(ids),
+                ActivityResponsibility.official_activity_id.in_(official_ids))):
+            responsible[department_id].add(official_id)
+    subprogram_ids = {c.subprogram_id for group in cards.values() for c in group}
+    subprograms = {s.id: s for s in db.scalars(select(SubProgram).where(SubProgram.id.in_(subprogram_ids)))} if subprogram_ids else {}
+    by_indicator, by_activity = grouped(indicators), grouped(activities)
+    results = {}
+    for department_id in ids:
+        department_cards = cards.get(department_id, [])
+        department_links = links_by_department.get(department_id, {})
+        department_officials = {link.official_activity_id for group in department_links.values() for link in group}
+        results[department_id] = _validate_department_records(period_id, department_id, period.year,
+            scopes.get(department_id), by_indicator.get(department_id, []), by_activity.get(department_id, []),
+            department_cards, economics.get(department_id, []), personnel_rows.get(department_id, []),
+            defaultdict(list, department_links), {k: v for k, v in officials.items() if k in department_officials},
+            responsible[department_id] & department_officials,
+            {c.subprogram_id: subprograms.get(c.subprogram_id) for c in department_cards})
+    return results
+
+
 def _validate_department_records(period_id, department_id, year, scope, indicators, activities,
         cards, economics, personnel_rows, links_by_activity, officials, responsible_ids, subprograms):
     from .main import indicator_issues
@@ -950,27 +1014,36 @@ def approved_book_provenance(db, period_id):
             elif audit.action == 'catalogue_link' and (data.get('source') or {}).get('kind') in {
                     'first_load_book_membership', 'first_load_2026_exact_name'}:
                 links[audit.entity_id] = data['official_ids']
+        # CIV-226: one query per table instead of one per catalogue row/activity.
+        responsible_by_official = defaultdict(set)
+        if catalogue:
+            for official_id, department_id in db.execute(select(ActivityResponsibility.official_activity_id,
+                    ActivityResponsibility.department_id).where(
+                    ActivityResponsibility.official_activity_id.in_([item.id for item in catalogue]))):
+                responsible_by_official[official_id].add(department_id)
         for item in catalogue:
             original = originals.get(item.id)
             if not original or any(getattr(item, key) != value for key,value in original['values'].items()):
                 return None
-            ids = set(db.scalars(select(ActivityResponsibility.department_id).where(
-                ActivityResponsibility.official_activity_id == item.id)))
-            if ids != set(original['department_ids']):
+            if responsible_by_official[item.id] != set(original['department_ids']):
                 return None
         catalogue_ids = {item.id for item in catalogue}
         # Catch deleted catalogue rows too, including entries with no local link.
-        expected_catalogue_ids = {key for key,value in originals.items()
-                                  if set(value['department_ids']) & departments.keys()
-                                  and db.scalar(select(OfficialActivity.id).where(
-                                      OfficialActivity.id == key, OfficialActivity.period_id != period_id)) is None}
+        candidate_ids = [key for key,value in originals.items() if set(value['department_ids']) & departments.keys()]
+        other_period_ids = set(db.scalars(select(OfficialActivity.id).where(
+            OfficialActivity.id.in_(candidate_ids), OfficialActivity.period_id != period_id))) if candidate_ids else set()
+        expected_catalogue_ids = {key for key in candidate_ids if key not in other_period_ids}
         if catalogue_ids != expected_catalogue_ids:
             return None
         activities = rows(db, Activity, period_id)
+        actual_links = defaultdict(set)
+        if activities:
+            for activity_id, official_id in db.execute(select(ActivityCatalogueLink.activity_id,
+                    ActivityCatalogueLink.official_activity_id).where(
+                    ActivityCatalogueLink.activity_id.in_([activity.id for activity in activities]))):
+                actual_links[activity_id].add(official_id)
         for activity in activities:
-            actual = set(db.scalars(select(ActivityCatalogueLink.official_activity_id).where(
-                ActivityCatalogueLink.activity_id == activity.id)))
-            if actual != set(links.get(activity.id, [])):
+            if actual_links[activity.id] != set(links.get(activity.id, [])):
                 return None
         for model in (ReportCard, Indicator, Activity, DepartmentCostValue, EconomicValue):
             if any(row.department_id not in departments for row in rows(db, model, period_id)):

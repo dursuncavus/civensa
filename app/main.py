@@ -219,7 +219,7 @@ async def security_headers(request: Request, call_next):
     )
     return response
 app.mount("/static", StaticFiles(directory=BASE_DIR / "static"), name="static")
-from .structure_service import period_name
+from .structure_service import period_name, request_read_scope
 from .book_export import display_catalogue_keys
 
 templates = Jinja2Templates(directory=BASE_DIR / "templates")
@@ -675,6 +675,7 @@ def modules(request: Request, user: User = Depends(require_user)):
 
 
 @app.get("/activity-report", response_class=HTMLResponse)
+@request_read_scope
 def activity_report_workspace(request: Request, year: int = 2026, db: Session = Depends(get_db), user: User = Depends(require_user)):
     from .activity_report_service import annual_indicators
     from .structure_service import closure_notes
@@ -688,6 +689,7 @@ def activity_report_workspace(request: Request, year: int = 2026, db: Session = 
 
 
 @app.get("/dashboard", response_class=HTMLResponse)
+@request_read_scope
 def dashboard(request: Request, db: Session = Depends(get_db), user: User = Depends(require_user)):
     period = session_period(request, db)
     if not period:
@@ -703,7 +705,7 @@ def dashboard(request: Request, db: Session = Depends(get_db), user: User = Depe
             "user": user, "period": period, "department": dept, "department_label": period_name(db, period.id, dept), "submission": submission,
             "indicators": indicators, "issues": issues, "notifications": user_notifications(db, user),
             "department_state": next(
-                row["state"] for row in department_progress_overview(db, period)["rows"]
+                row["state"] for row in department_progress_overview(db, period, dept.id)["rows"]
                 if row["department_id"] == dept.id
             ),
         })
@@ -1354,6 +1356,7 @@ async def save_activity_mappings(request: Request, db: Session = Depends(get_db)
 
 
 @app.get("/users", response_class=HTMLResponse)
+@request_read_scope
 def users_page(request: Request, db: Session = Depends(get_db), user: User = Depends(require_strategy)):
     users = db.scalars(select(User).order_by(User.full_name)).all()
     departments = db.scalars(select(Department).order_by(Department.name)).all()
@@ -2395,17 +2398,24 @@ PROGRESS_LABELS = {
 }
 
 
-def department_progress_overview(db: Session, period: ReportingPeriod):
-    from .program_service import validate_department, period_departments
+def department_progress_overview(db: Session, period: ReportingPeriod, only_department_id: int | None = None):
+    """Progress rows per directorate; only_department_id limits the work to one row (CIV-226)."""
+    from .program_service import validate_departments, period_departments
     departments = period_departments(db, period.id)
+    if only_department_id is not None:
+        departments = [department for department in departments if department.id == only_department_id]
     submissions = db.scalars(select(Submission).where(Submission.period_id == period.id)).all()
     submission_by_department = {item.department_id: item for item in submissions}
+    scope = [Indicator.department_id == only_department_id] if only_department_id is not None else []
     indicators = db.scalars(
-        select(Indicator).where(Indicator.period_id == period.id).options(selectinload(Indicator.values))
+        select(Indicator).where(Indicator.period_id == period.id, *scope).options(selectinload(Indicator.values))
     ).all()
+    scope = [Activity.department_id == only_department_id] if only_department_id is not None else []
     activities = db.scalars(
-        select(Activity).where(Activity.period_id == period.id).options(selectinload(Activity.cost_values))
+        select(Activity).where(Activity.period_id == period.id, *scope).options(selectinload(Activity.cost_values))
     ).all()
+    # After the loads above, so validation reuses the loaded values (CIV-226).
+    validations = validate_departments(db, period.id, [department.id for department in departments])
     indicators_by_department = {}
     activities_by_department = {}
     mapping_states = activity_mapping_states(db, period.id)
@@ -2480,7 +2490,7 @@ def department_progress_overview(db: Session, period: ReportingPeriod):
         submission = submission_by_department.get(department.id)
         submission_status = submission.status if submission else "draft"
         activity_at = last_activity.get(department.id)
-        validation_errors, _ = validate_department(db, period.id, department.id)
+        validation_errors, _ = validations[department.id]
         warning_count = max(indicator_problem_count + unresolved_count, len(validation_errors))
         if validation_errors:
             calculated_progress = min(calculated_progress, 99)
@@ -2523,6 +2533,7 @@ def department_progress_overview(db: Session, period: ReportingPeriod):
 
 
 @app.get("/api/progress")
+@request_read_scope
 def progress_status(request: Request, db: Session = Depends(get_db), user: User = Depends(require_strategy)):
     period = session_period(request, db)
     payload = department_progress_overview(db, period)
