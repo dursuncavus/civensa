@@ -268,3 +268,7 @@
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
+
+/* CIV-227 (D-268): narrow screens cut the progress table; say it scrolls. */
+.dashboard-page .table-scroll-hint { display: none; margin: 0 0 var(--space-2); }
+@media (max-width: 760px) { .dashboard-page .table-scroll-hint { display: block; } }
